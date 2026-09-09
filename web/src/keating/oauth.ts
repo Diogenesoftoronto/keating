@@ -1,4 +1,6 @@
-import { getAppStorage as piGetAppStorage } from "@earendil-works/pi-web-ui";
+import { getAppStorage } from "./app-storage";
+import { readOAuthJson } from "./oauth-response";
+import { notOrganicDesktopCallbackPath } from "./notorganic-desktop";
 import {
 	getAuthorizationCodeOAuthProviderIds,
 	getOAuthProviderConfig,
@@ -12,12 +14,6 @@ export {
 	type AuthorizationCodeOAuthProviderConfig as OAuthProviderConfig,
 	type OAuthProviderId,
 } from "./oauth-provider-config";
-
-type AppStorage = Awaited<ReturnType<typeof piGetAppStorage>>;
-
-function getAppStorage(): AppStorage {
-	return piGetAppStorage();
-}
 
 export interface OAuthCredentials {
 	refresh: string;
@@ -62,9 +58,12 @@ function base64UrlEncode(buffer: Uint8Array): string {
 	return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
+export type DeviceOAuthProviderId = "github-copilot" | "openai-codex";
+
 interface PendingAuthorizationCodeOAuthState {
 	flow: "authorization-code";
 	verifier: string;
+	automatic?: boolean;
 	provider: AuthorizationCodeOAuthProviderId;
 	state: string;
 	redirectUri: string;
@@ -73,7 +72,7 @@ interface PendingAuthorizationCodeOAuthState {
 
 interface PendingDeviceOAuthState {
 	flow: "device-code";
-	provider: "github-copilot";
+	provider: DeviceOAuthProviderId;
 	deviceCode: string;
 	userCode: string;
 	verificationUri: string;
@@ -87,13 +86,14 @@ type PendingOAuthState = PendingAuthorizationCodeOAuthState | PendingDeviceOAuth
 export type PendingOAuthRequest =
 	| {
 			flow: "authorization-code";
+			automatic: boolean;
 			provider: AuthorizationCodeOAuthProviderId;
 			createdAt: number;
 			expiresAt: number;
 		}
 	| {
 			flow: "device-code";
-			provider: "github-copilot";
+			provider: DeviceOAuthProviderId;
 			userCode: string;
 			verificationUri: string;
 			createdAt: number;
@@ -137,6 +137,7 @@ export function getPendingOAuthRequest(now = Date.now()): PendingOAuthRequest | 
 		}
 		return {
 			flow: pending.flow,
+			automatic: pending.automatic === true,
 			provider: pending.provider,
 			createdAt: pending.createdAt,
 			expiresAt,
@@ -161,28 +162,32 @@ export function getPendingOAuthRequest(now = Date.now()): PendingOAuthRequest | 
 	};
 }
 
+let oauthAttempt = 0;
+
 export function cancelPendingOAuthRequest(): void {
+	oauthAttempt++;
 	clearPendingOAuth();
+	if (typeof window !== "undefined") void window.keatingDesktop?.cancelOAuthCallback?.().catch(() => {});
 }
 
 function createState(): string {
-	const array = new Uint8Array(16);
+	const array = new Uint8Array(32);
 	crypto.getRandomValues(array);
 	return base64UrlEncode(array);
 }
 
 export type OAuthInitiationResult =
-	| { flow: "authorization-code" }
+	| { flow: "authorization-code"; automatic: boolean }
 	| {
 			flow: "device-code";
-			provider: "github-copilot";
+			provider: DeviceOAuthProviderId;
 			userCode: string;
 			verificationUri: string;
 			expiresAt: number;
 		};
 
 function isDesktopOAuthHost(): boolean {
-	return typeof window !== "undefined" && !!window.keatingP2P;
+	return typeof window !== "undefined" && (!!window.keatingDesktop || !!window.keatingP2P);
 }
 
 function openOAuthPopup(providerId: OAuthProviderId): Window | null {
@@ -211,80 +216,69 @@ function openOAuthDestination(popup: Window | null, url: string): void {
 		return;
 	}
 	// In Electron, setWindowOpenHandler sends this validated HTTPS URL to the
-	// system browser and denies an in-app child window. The manual callback/code
-	// recovery UI remains in the Keating window.
+	// system browser and denies an in-app child window. Approval returns through
+	// the desktop receiver, or is detected by device-code polling.
 	window.open(url, "_blank", "noopener,noreferrer");
 }
 
-export async function initiateOAuth(providerId: OAuthProviderId): Promise<OAuthInitiationResult> {
+async function startDeviceSignIn(provider: DeviceOAuthProviderId, popup: Window | null, attempt: number): Promise<OAuthInitiationResult> {
+	const response = await fetch(`/api/oauth/${provider}/device`, { method: "POST", headers: { Accept: "application/json" } });
+	const device = await readOAuthJson(response);
+	if (!response.ok) {
+		const name = provider === "openai-codex" ? "OpenAI" : "GitHub";
+		throw new Error(provider === "openai-codex"
+			? "OpenAI device sign-in could not start. Check that device code login is enabled in your ChatGPT security settings, then try again."
+			: `${name} device sign-in could not start. Please try again.`);
+	}
+	const expectedUrl = provider === "openai-codex" ? "https://auth.openai.com/codex/device" : "https://github.com/login/device";
+	if (typeof device.device_code !== "string" || !device.device_code || typeof device.user_code !== "string" || !device.user_code
+		|| device.verification_uri !== expectedUrl || typeof device.expires_in !== "number" || !Number.isFinite(device.expires_in) || device.expires_in <= 0
+		|| (device.interval !== undefined && (typeof device.interval !== "number" || !Number.isFinite(device.interval) || device.interval < 0))) {
+		throw new Error("The provider returned an invalid device sign-in response.");
+	}
+	if (attempt !== oauthAttempt) throw new Error("Sign-in was cancelled. Please try again.");
+	const expiresAt = Date.now() + Math.min(device.expires_in, 1800) * 1000;
+	savePendingOAuth({ flow: "device-code", provider, deviceCode: device.device_code, userCode: device.user_code,
+		verificationUri: expectedUrl, intervalSeconds: Math.max(1, Math.min(device.interval ?? 5, 60)), expiresAt, createdAt: Date.now() });
+	openOAuthDestination(popup, expectedUrl);
+	return { flow: "device-code", provider, userCode: device.user_code, verificationUri: expectedUrl, expiresAt };
+}
+
+export async function initiateOAuth(providerId: OAuthProviderId, options: { method?: "device-code" | "manual" } = {}): Promise<OAuthInitiationResult> {
+	const attempt = ++oauthAttempt;
 	const popup = openOAuthPopup(providerId);
 	try {
-		if (providerId === "github-copilot") {
-			const response = await fetch("/api/oauth/github-copilot/device", { method: "POST" });
-			if (!response.ok) throw new Error(`GitHub device authorization failed: ${response.status}`);
-			const device = await response.json();
-			if (
-				typeof device.device_code !== "string" ||
-				typeof device.user_code !== "string" ||
-				typeof device.verification_uri !== "string" ||
-				typeof device.expires_in !== "number"
-			) {
-				throw new Error("GitHub returned an invalid device authorization response.");
-			}
-			const expiresAt = Date.now() + device.expires_in * 1000;
-			savePendingOAuth({
-				flow: "device-code",
-				provider: providerId,
-				deviceCode: device.device_code,
-				userCode: device.user_code,
-				verificationUri: device.verification_uri,
-				intervalSeconds: typeof device.interval === "number" ? device.interval : 5,
-				expiresAt,
-				createdAt: Date.now(),
-			});
-			openOAuthDestination(popup, device.verification_uri);
-			return {
-				flow: "device-code",
-				provider: providerId,
-				userCode: device.user_code,
-				verificationUri: device.verification_uri,
-				expiresAt,
-			};
+		if (window.keatingDesktop?.cancelOAuthCallback) await window.keatingDesktop.cancelOAuthCallback();
+		if (attempt !== oauthAttempt) throw new Error("Sign-in was cancelled. Please try again.");
+		if (providerId === "anthropic" && isDesktopOAuthHost() && options.method !== "manual" && !window.keatingDesktop?.prepareOAuthCallback) {
+			throw new Error("Claude’s automatic return needs the updated desktop app. Restart Keating after updating it, or choose authorization-code sign-in below.");
 		}
-
+		if (providerId === "github-copilot" || (providerId === "openai-codex" && (options.method === "device-code" || !window.keatingDesktop?.prepareOAuthCallback))) {
+			return await startDeviceSignIn(providerId, popup, attempt);
+		}
 		const config = getOAuthProviderConfig(providerId);
-		const redirectUri = resolveOAuthRedirectUri(providerId);
+		let redirectUri = resolveOAuthRedirectUri(providerId);
 		const { verifier, challenge } = await generatePKCE();
 		const state = providerId === "anthropic" ? verifier : createState();
-		savePendingOAuth({
-			flow: "authorization-code",
-			verifier,
-			provider: providerId,
-			state,
-			redirectUri,
-			createdAt: Date.now(),
-		});
-
-		const params = new URLSearchParams({
-			response_type: "code",
-			client_id: config.clientId,
-			redirect_uri: redirectUri,
-			scope: config.scopes.join(" "),
-			code_challenge: challenge,
-			code_challenge_method: "S256",
-			state,
-		});
-
-		if (config.extraAuthParams) {
-			for (const [key, value] of Object.entries(config.extraAuthParams)) {
-				params.set(key, value);
-			}
+		if (attempt !== oauthAttempt) throw new Error("Sign-in was cancelled. Please try again.");
+		let automatic = false;
+		if (window.keatingDesktop?.prepareOAuthCallback && options.method !== "manual") {
+			const receiver = await window.keatingDesktop.prepareOAuthCallback(state, providerId).catch(() => ({ available: false }));
+			if (attempt !== oauthAttempt) throw new Error("Sign-in was cancelled. Please try again.");
+			if (!receiver.available && providerId === "openai-codex") return await startDeviceSignIn(providerId, popup, attempt);
+			automatic = receiver.available;
+			if (!automatic && providerId === "anthropic") throw new Error("Claude’s automatic return could not start. Close any other Claude sign-in window and try again, or choose authorization-code sign-in below.");
+			if (automatic && providerId === "anthropic") redirectUri = "http://localhost:53692/callback";
 		}
-
+		savePendingOAuth({ flow: "authorization-code", verifier, provider: providerId, state, redirectUri, automatic, createdAt: Date.now() });
+		const params = new URLSearchParams({ response_type: "code", client_id: config.clientId, redirect_uri: redirectUri,
+			scope: config.scopes.join(" "), code_challenge: challenge, code_challenge_method: "S256", state });
+		if (config.extraAuthParams) for (const [key, value] of Object.entries(config.extraAuthParams)) params.set(key, value);
 		openOAuthDestination(popup, `${config.authorizeUrl}?${params.toString()}`);
-		return { flow: "authorization-code" };
+		return { flow: "authorization-code", automatic };
 	} catch (error) {
 		popup?.close();
+		if (attempt === oauthAttempt) cancelPendingOAuthRequest();
 		throw error;
 	}
 }
@@ -296,6 +290,8 @@ export interface OAuthCallbackResult {
 }
 
 export interface KeatingDesktopOAuthBridge {
+	prepareOAuthCallback?(state: string, provider?: AuthorizationCodeOAuthProviderId | "notorganic"): Promise<{ available: boolean }>;
+	cancelOAuthCallback?(): Promise<void>;
 	onOAuthCallback(listener: (callbackUrl: string) => void): () => void;
 }
 
@@ -357,6 +353,11 @@ export function subscribeDesktopOAuthCallback(
 ): () => void {
 	if (typeof window === "undefined" || !window.keatingDesktop) return () => {};
 	return window.keatingDesktop.onOAuthCallback((callbackUrl) => {
+		const accountCallback = notOrganicDesktopCallbackPath(callbackUrl);
+		if (accountCallback) {
+			window.location.assign(accountCallback);
+			return;
+		}
 		const pendingProvider = getPendingOAuthRequest()?.provider;
 		void completeOAuthFromInput(callbackUrl)
 			.then((result) => listener({
@@ -386,7 +387,7 @@ export async function handleOAuthCallback(code: string, state?: string | null): 
 		return { success: false, error: "OAuth request expired. Please try again." };
 	}
 
-	if (state && state !== pending.state) {
+	if ((pending.automatic && !state) || (state && state !== pending.state)) {
 		clearPendingOAuth();
 		return { success: false, error: "OAuth state mismatch. Please try signing in again." };
 	}
@@ -398,7 +399,7 @@ export async function handleOAuthCallback(code: string, state?: string | null): 
 	try {
 		const response = await fetch("/api/oauth/token", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: { "Content-Type": "application/json", Accept: "application/json" },
 			body: JSON.stringify({
 				provider: pending.provider,
 				code,
@@ -408,12 +409,17 @@ export async function handleOAuthCallback(code: string, state?: string | null): 
 			}),
 		});
 
+		const tokens = await readOAuthJson(response);
 		if (!response.ok) {
-			const errorBody = await response.text();
-			throw new Error(`Token exchange failed: ${response.status} ${errorBody}`);
+			throw new Error(`Sign-in could not finish (${response.status}). Please restart sign-in and try again.`);
 		}
 
-		const tokens = await response.json();
+		if (typeof tokens.access_token !== "string" || !tokens.access_token || typeof tokens.refresh_token !== "string" || !tokens.refresh_token
+			|| typeof tokens.expires_in !== "number" || !Number.isFinite(tokens.expires_in) || tokens.expires_in <= 0) {
+			throw new Error("The provider returned an invalid sign-in response. Please try again.");
+		}
+		const current = loadPendingOAuth();
+		if (current?.flow !== "authorization-code" || current.state !== pending.state) return { success: false, error: "Sign-in was cancelled." };
 
 		const credentials: OAuthCredentials = {
 			refresh: tokens.refresh_token,
@@ -455,50 +461,57 @@ function waitForDevicePoll(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 export async function completeOAuthDeviceFlow(
-	provider: "github-copilot",
+	provider: DeviceOAuthProviderId,
 	signal?: AbortSignal,
 ): Promise<OAuthCallbackResult> {
 	const pending = loadPendingOAuth();
 	if (!pending || pending.flow !== "device-code" || pending.provider !== provider) {
-		return { success: false, error: "No pending GitHub Copilot sign-in was found." };
+		return { success: false, error: "No pending device sign-in was found." };
 	}
 
+	const stillPending = () => {
+		const current = loadPendingOAuth();
+		return !signal?.aborted && current?.flow === "device-code" && current.provider === provider && current.deviceCode === pending.deviceCode;
+	};
 	let intervalSeconds = pending.intervalSeconds;
 	try {
 		while (Date.now() < pending.expiresAt) {
 			await waitForDevicePoll(intervalSeconds * 1000, signal);
-			const response = await fetch("/api/oauth/github-copilot/poll", {
+			if (!stillPending()) return { success: false, error: "Sign-in was cancelled." };
+			const response = await fetch(`/api/oauth/${provider}/poll`, {
+				signal,
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ device_code: pending.deviceCode }),
+				headers: { "Content-Type": "application/json", Accept: "application/json" },
+				body: JSON.stringify({ device_code: pending.deviceCode, ...(provider === "openai-codex" ? { user_code: pending.userCode } : {}) }),
 			});
 			if (response.status === 202) continue;
 			if (response.status === 429) {
 				intervalSeconds += 5;
 				continue;
 			}
+			const tokens = await readOAuthJson(response);
 			if (!response.ok) {
-				throw new Error(`GitHub Copilot sign-in failed: ${response.status}`);
+				throw new Error(`Device sign-in failed (${response.status}). Please try again.`);
 			}
-			const tokens = await response.json();
 			if (tokens.status !== "complete" || typeof tokens.access_token !== "string" || typeof tokens.refresh_token !== "string") {
-				throw new Error("GitHub returned an invalid Copilot token response.");
+				throw new Error("The provider returned an invalid sign-in response.");
 			}
+			if (!stillPending()) return { success: false, error: "Sign-in was cancelled." };
 			await saveOAuthCredentials({
 				refresh: tokens.refresh_token,
 				access: tokens.access_token,
 				expires: Date.now() + (tokens.expires_in ?? 3600) * 1000,
 				provider,
 			});
-			clearPendingOAuth();
+			if (stillPending()) clearPendingOAuth();
 			return { success: true, provider };
 		}
-		clearPendingOAuth();
-		return { success: false, error: "GitHub Copilot sign-in expired. Please try again." };
+		if (stillPending()) clearPendingOAuth();
+		return { success: false, error: "Sign-in expired. Please try again." };
 	} catch (error) {
 		return {
 			success: false,
-			error: error instanceof Error ? error.message : "GitHub Copilot sign-in failed.",
+			error: error instanceof Error ? error.message : "Device sign-in failed.",
 		};
 	}
 }
@@ -537,7 +550,23 @@ export async function deleteOAuthCredentials(provider: OAuthProviderId): Promise
 	await storage.providerKeys.delete(key);
 }
 
+const pendingAccessTokens = new Map<OAuthProviderId, Promise<string | null>>();
+
 export async function getOAuthAccessToken(provider: OAuthProviderId): Promise<string | null> {
+	const pending = pendingAccessTokens.get(provider);
+	if (pending) return pending;
+	// Model discovery and chat can request a credential together. Serialize the
+	// storage read too, so both callers cannot consume the same rotating token.
+	const request = resolveOAuthAccessToken(provider);
+	pendingAccessTokens.set(provider, request);
+	try {
+		return await request;
+	} finally {
+		pendingAccessTokens.delete(provider);
+	}
+}
+
+async function resolveOAuthAccessToken(provider: OAuthProviderId): Promise<string | null> {
 	const credentials = await loadOAuthCredentials(provider);
 	if (!credentials) return null;
 
@@ -567,7 +596,7 @@ async function refreshOAuthToken(
 	try {
 		const response = await fetch("/api/oauth/refresh", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
+			headers: { "Content-Type": "application/json", Accept: "application/json" },
 			body: JSON.stringify({
 				provider,
 				refresh_token: credentials.refresh,
@@ -578,14 +607,16 @@ async function refreshOAuthToken(
 			if (response.status === 401 || response.status === 403) {
 				await deleteOAuthCredentials(provider);
 			}
-			const detail = await response.text().catch(() => "");
 			console.warn(
-				`OAuth refresh failed for ${provider}: ${response.status}${detail ? ` ${detail.slice(0, 240)}` : ""}`,
+				`OAuth refresh failed for ${provider}: ${response.status}`,
 			);
 			return null;
 		}
 
-		const tokens = await response.json();
+		const tokens = await readOAuthJson(response);
+		if (typeof tokens.access_token !== "string" || !tokens.access_token) {
+			throw new Error("The provider returned an invalid access token. Please try again.");
+		}
 
 		const newCredentials: OAuthCredentials = {
 			refresh: tokens.refresh_token ?? credentials.refresh,

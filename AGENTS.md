@@ -1,307 +1,66 @@
 # AGENTS.md — Keating
 
-> What future agents need to know to work effectively in this repo.
+Keating is a teaching app with a CLI, Pi runtime, web UI, and mobile client.
+Keep local pedagogy logic separate from model execution and account authority.
 
-## Overview
+## Working style
 
-Keating is a Pi-powered "hyperteacher" — a CLI tool + web app that generates pedagogical artifacts (lesson plans, maps, animations, benchmarks, policy evolution) deterministically from a local Node.js core, while the actual interactive teaching experience lives in Pi prompt/skill/extension templates. The design deliberately separates: (1) the interactive Pi shell runtime layer and (2) the deterministic pedagogy engine.
+- Carry authorized work through implementation and relevant verification. Make routine decisions from context; ask only when missing information materially changes the result.
+- Treat follow-up messages and screenshots as refinements to the active task. Preserve accepted requirements across compaction.
+- Preserve unrelated dirty changes. Commit, publish, deploy, or delete only within the user's authorized scope.
+- Keep updates concise; report outcomes and verification limits. Give research and reports the depth requested.
+- Delegate independent, bounded work when it saves time; give each worker a clear scope and integrate its results.
+- Run checks proportional to the change. Avoid repeated full suites for small edits. Do not run Vet.
 
-## Project Structure
+## Context and tools
 
-- **`src/core/`** — Local pedagogy artifacts plus explicit model boundaries for animation, prompt evaluation, and fresh teaching experiments. Keep deterministic tests independent of provider calls.
-- **`src/cli/`** — Terminal CLI entrypoint (`main.ts`) and interactive setup (`setup.ts`).
-- **`src/runtime/`** — Pi/Feynman runtime detection and shell launcher.
-- **`src/pi/`** — Pi extension entrypoint (`hyperteacher-extension.ts`). Registers `/plan`, `/map`, `/animate`, `/bench`, `/evolve`, `/prompt-evolve`, `/feedback`, `/policy`, `/outputs`, `/trace`, etc.
-- **`pi/prompts/`** — Teaching prompt templates (`bridge.md`, `diagnose.md`, `improve.md`, `learn.md`, `quiz.md`).
-- **`pi/skills/`** — Pi skills directory for the runtime.
-- **`web/`** — Browser UI (React + TanStack Router + Vite + Nitro). Separate `package.json`, separate build.
-- **`test/`** — Root-level test suite. **Not** in `web/test/`, which is for web-specific tests.
-- **`shared/evolution/`** — Fresh teaching-episode benchmarks, immutable skill revisions, independent promotion gates, and fixed learner assessments. See `docs/teaching-evolution.md`.
-- **`scripts/`** — Build/utility scripts, plus `install/install.sh` used in release bundles.
-- **`docs/`** — Architecture docs, Typst study paper, VHS tape scripts for recordings.
-- **`video/`** — Remotion video project (`keating-intro/`).
-- **`bin/keating.js`** — Executable entrypoint for the CLI.
+- Prefix shell commands with `rtk`; use `rtk proxy <command>` when unfiltered output is needed. Search with `rg`.
+- Read only the files and reference sections relevant to the task. Batch independent reads and bound output before returning it to context.
+- When prior decisions matter, search Entire checkpoints narrowly before repeating an investigation. Treat imported sessions, model labels, and overlapping token totals as incomplete evidence.
+- Before compaction, preserve the objective, accepted decisions, changed files, completed checks, and remaining work. Resume from that state.
+- This file contains startup essentials. Use [agent reference](docs/agent-reference.md) for detailed commands and subsystem notes; do not preload it.
 
-## Build & Test Commands
+## Repository map
 
-This project uses **Bun** as its runtime. Do not assume npm/pnpm.
-The reproducible development environment and task graph are managed by **devenv** (`devenv.nix`). Run `devenv shell` (or use direnv with the existing `.envrc`) to enter the dev environment.
-Run `devenv tasks list` to see the available tasks, and invoke them by their full `keating:` namespace.
+| Work | Start here |
+| --- | --- |
+| Core artifacts and CLI | `src/core/`, `src/cli/main.ts`, `src/core/project.ts` |
+| Pi tools and runtime | `src/pi/hyper-teacher/`, `src/runtime/`, `pi/prompts/`, `pi/skills/` |
+| Terminal UI | `src/tui/` |
+| Web UI and agent | `web/src/components/`, `web/src/hooks/useKeatingAgent.tsx`, `web/src/keating/` |
+| Mobile and shared contracts | `mobile/`, `packages/learner-contracts/`, `shared/` |
+| Teaching evaluation | `shared/evolution/`, [teaching evolution](docs/teaching-evolution.md) |
+| Product design | [PRODUCT.md](PRODUCT.md); inspect neighboring components and existing interaction patterns |
+| Tests | `test/` at root; `web/src/test/` for web |
+
+## Development
+
+Use Bun and the existing Devenv environment (`rtk devenv shell` or direnv).
+Root and web have separate packages. Discover tasks with `rtk devenv tasks list`.
 
 | Task | Command |
-|------|---------|
-| Install deps | `devenv tasks run keating:install` (root + web) |
-| Build root | `devenv tasks run keating:build` — compiles to `dist/` via `tsc` with NodeNext resolution |
-| Build everything | `devenv tasks run keating:build-all` — root + web (vite + nitro) |
-| Test root | `devenv tasks run keating:test` — uses `bun:test` runtime with `fast-check` for property-based testing |
-| Test web | `devenv tasks run keating:test-web` |
-| Mutation testing | `devenv tasks run keating:mutate` — Stryker command runner against `src/core/` |
-| Run CLI | `bun src/cli/main.ts <command>` or `node ./bin/keating.js <command>` |
-| Dev server (web) | `devenv tasks run keating:web` (Vite dev on port 3000) |
-| Web build | `devenv tasks run keating:web-build` — `vite build && nitro build`, outputs to `web/dist/` and `web/.output/` |
-| Web preview | `devenv tasks run keating:web-preview` |
-| Render intro video | `devenv tasks run keating:video-intro` |
-| Check versions | `devenv tasks run keating:check-version` — CI-friendly read-only version sync check |
-| Sync versions | `devenv tasks run keating:sync-version` — auto-fix all tracked version strings |
-
-**Namespaced devenv tasks** are the canonical dev workflow: `devenv tasks run keating:build`, `devenv tasks run keating:test`, `devenv tasks run keating:shell`, `devenv tasks run keating:doctor`, `devenv tasks run keating:bench`, and `devenv tasks run keating:prompt-evolve`. The `plan`, `map`, `verify`, and `animate` tasks accept a topic through devenv input, for example `devenv tasks run keating:plan --input topic=linear-algebra`. Use the CLI directly for other parameterized commands, such as `bun src/cli/main.ts trace <substring>`; direct CLI forms also remain valid in scripts and VHS tapes.
-
-## Code Organization & Architecture
-
-### Three-Layer Split
-
-1. **Pi Runtime Layer** — `pi/prompts/`, `pi/skills/`, `src/pi/hyperteacher-extension.ts`. Flexible, interactive teaching shell. The extension registers slash commands (`/plan`, `/map`, etc.) that delegate to `src/core/project.ts`.
-2. **Deterministic Pedagogy Layer** — `src/core/lesson-plan.ts`, `src/core/map.ts`, `src/core/animation.ts`, `src/core/verification.ts`, `src/core/benchmark.ts`, `src/core/evolution.ts`, `src/core/prompt-evolution.ts`, `src/core/map-elites.ts`, etc. All pure/local logic. Produces inspectable artifacts under `.keating/outputs/`.
-
-### Deterministic vs Non-Deterministic Boundary
-
-The legacy artifact engine is deterministic **except** its explicit model boundaries:
-- `animation.ts` — calls `piComplete()` (LLM) to generate Hyperframes HTML. Falls back to a basic stub if the LLM call fails.
-- `pi-agent.ts` — thin wrapper over the Pi AI runtime for completions.
-- `teaching-evolution.ts` / `teaching-episode-runner.ts` — fresh Pi tutor executions plus independent judge/proposer calls.
-
-Topic definitions, lesson plans, algebraic simulations, policy mutations, and fixed learner-assessment grading are deterministic. Model-backed evaluation paths use injected doubles in tests.
-
-The new teaching experiment path is a separate nondeterministic boundary: `src/core/teaching-evolution.ts` executes Pi teaching episodes and independent model judge/proposer calls. Its shared gate and fixed learner-assessment grader are deterministic. Tests inject episode runners/judges/proposers; never make the test suite require hosted inference. Historical `bench` records are descriptive, not counterfactual candidate execution, and missing retention/transfer must remain unknown.
-
-### Key Data Flows
-
-- **CLI commands** (`src/cli/main.ts`) → `src/core/project.ts` artifact functions → write to `.keating/outputs/`
-- **Pi extension** (`src/pi/hyperteacher-extension.ts`) → same `project.ts` functions but wired to `ctx.ui.setEditorText()`, `ctx.ui.notify()`
-- **Web** (`web/src/hooks/useKeatingAgent.tsx`) → `@mariozechner/pi-agent-core` Agent → `web/src/keating/browser-tools.ts` (tool definitions) → tool execution
-- **Synthetic learner simulation** (`helpers.ts` stub) → deterministic score based on policy/weights → no real LLM in tests
-
-### Browser Port
-
-`web/src/keating/core.ts` is a hand-port of `src/core/types.ts` for the browser (no Node.js fs imports). `web/src/keating/browser-tools.ts` re-implements CLI tools for the web agent. When updating core types, check if the browser port needs updating too.
-
-### Artifact Directory Layout
-
-Artifacts are written under `.keating/` in the current working directory (gitignored). Structure:
-```
-.keating/
-  plans/<topic>.md
-  maps/<topic>.mmd
-  outputs/animations/<topic>/player.html, scene.html, storyboard.md, manifest.json
-  outputs/benchmarks/<topic>-
-  outputs/evolution/
-  outputs/prompt-evolution/
-  outputs/traces/
-  outputs/verifications/
-  state/learner.json
-  policy/
-```
-
-**Important**: `keating.config.json` and `.keating/` are per-project, gitignored. They are NOT checked into this repo. The checked-in `keating.config.json` in the repo root is only an example.
-
-## TypeScript Conventions
-
-- **Module resolution**: `NodeNext` at root, `Bundler` in web. All root imports use `.js` extensions (e.g., `import { foo } from "./bar.js"`).
-- **Strict mode**: enabled. No implicit any.
-- **Root tsconfig**: `src/**/*.ts`, `outDir: "dist"`, `rootDir: "."`. Compiles `src/` into `dist/src/`.
-- **Web tsconfig**: separate in `web/`, uses `@/` alias → `web/src/`.
-- **React**: version 19. Web uses Tailwind CSS v4 with `@tailwindcss/vite`.
-
-## Key Patterns & Gotchas
-
-### Import Extensions
-Root `src/` files **must** use `.js` extensions in imports, even for `.ts` files. The web package does not.
-
-### Topic Resolution & Fallbacks
-`resolveTopic()` in `src/core/topics.ts` looks up a hardcoded `TOPICS` record. If a topic is not found, `buildFallbackTopic()` auto-generates one using domain keyword heuristics and domain-specific example/exercise templates. This means giving an unknown topic string still produces a valid lesson plan — but quality depends on the domain guess.
-
-### Domain-Specific Phase Injections
-`buildLessonPlan()` in `src/core/lesson-plan.ts` injects extra phases based on `topic.domain`:
-- `code` → inserts "Live Code" phase after examples
-- `law` → appends citation instructions to examples
-- `medicine` → appends evidence-level references to formal core
-- `history` → appends timeline/source instructions to examples
-- `psychology` → appends replication status flags to misconceptions
-- `politics` → appends competing frameworks to transfer
-- `arts` → appends specific work analysis to examples
-
-### Policy Clamping
-All `TeacherPolicy` scalars must stay in `[0, 1]`. `clampPolicy()` in `src/core/policy.ts` enforces this. `exerciseCount` is clamped to integer `[1, 5]`. Weights are normalized to sum to 1. Tests assert these invariants.
-
-### Animation Scene Generation
-`animationSceneSource()` calls `piComplete()` with a detailed prompt asking for raw JS (no markdown blocks). The response is stripped of ` ```js ` fences. If the call throws, it falls back to a minimal stub. The scene kind is selected by domain (math → function-graph, science → distribution-bars, code → code-trace, etc.).
-
-### WeakSet for Speech Tool Deduplication
-`registerSpeechTool()` in `src/pi/hyperteacher-extension.ts` uses a `WeakSet<object>` to prevent double-registering the `keating_voice` tool on the same Pi instance across multiple session starts.
-
-### Web Proxy Plugin
-`web/vite.config.ts` contains a `chatProxyPlugin()` that proxies `/api/chat-proxy/**` to the target API specified in the `x-target-url` header. This is for browser CORS workaround when calling external LLM APIs. In production (Nitro), this is handled by `server/api/chat-proxy/[...slug].ts`.
-
-### Web PWA
-The web app is a PWA via `vite-plugin-pwa`. It caches WASM/ONNX files and HuggingFace model downloads with long expiration. WebGPU models are loaded via `@huggingface/transformers` — excluded from `optimizeDeps`. COOP/COEP headers are set in Vite dev server for SharedArrayBuffer support.
-
-### Nitro Routing Gotchas
-`web/nitro.config.ts` sets `fallthrough: false` for all static asset extensions so missing files return 404 instead of falling back to `index.html` (SPA route). The catch-all `/**: { static: true }` serves the SPA for unmatched routes.
-
-### Release Bundle
-The release workflow bundles `node_modules` into the tarball for a truly standalone install. The install script (`scripts/install/install.sh`) is moved to the bundle root, and the `install/` directory is deleted during packaging.
-
-### Narrated Intro Video Pipeline
-
-The narrated intro is composed at build time from two kinds of source footage:
-
-1. **TUI clips** — `docs/*.tape` files (VHS syntax) recorded by [`vhs`](https://github.com/charmbracelet/vhs) at framework boot time. Each tape types into the Keating CLI (or Pi shell) and renders to `docs/assets/<name>.mp4`. The two interactive-shell tapes (`intro.tape`, `session-flow.tape`) use generous fixed `Sleep`s after launching `devenv tasks run keating:shell` because the Pi extension boot time is variable — there is no `Wait`/`Expect` directive in VHS, only `Sleep`, so timing must be conservative. Non-interactive tapes (`learning-flow.tape`, `improve-flow.tape`, `tests.tape`, etc.) run CLI commands directly and are reliable. Validate every tape with `vhs validate docs/*.tape` before committing changes.
-
-2. **Web UI clips** — captured via the [playwriter MCP](https://playwriter.dev) against the local web dev server (`devenv tasks run keating:web` → http://localhost:3000). The capture flow is:
-   - Drive a headed Chrome tab, hide dev overlays (Playwriter toolbar, React Grab) via an injected `<style id="keating-record-overlay-hide">`.
-   - Use `getCDPSession()` → `Page.startScreencast` (not `chrome.tabCapture`) so the recording works without clicking the Playwriter extension icon — `chrome.tabCapture` works but requires an explicit user gesture per tab; CDP `Page.startScreencast` is fully scripted and survives navigation.
-   - Stream JPEG frames into `.keating/outputs/video/frames/<clip-name>/frame_*.jpg`.
-   - Stitch with ffmpeg at 60fps: `ffmpeg -framerate 60 -pattern_type glob -i 'frame_*.jpg' -c:v libx264 -pix_fmt yuv420p -crf 18 docs/assets/<clip>.mp4`.
-   - `devenv tasks run keating:video-web-stitch` runs `scripts/stitch-web-frames.mjs` to redo this stitching pass; the frame-pumping itself flows through the MCP capture driver.
-
-The Remotion composition in `video/keating-intro/src/{root.tsx,video.tsx}` consumes clips by name, and `scripts/render-keating-intro.mjs` mirrors the scene list (kept in sync manually — verify both files list the same scene count before rendering). Total intro duration: 104s across 10 scenes (7 TUI + 3 web). `devenv tasks run keating:video-intro` produces `.keating/outputs/video/keating-intro/keating-intro.mp4`.
-
-### Node Version
-`package.json` specifies `engines: { "node": ">=22.19.0" }`. Bun is the primary runtime used in CI.
-
-## Testing Strategy
-
-Follows an **Antithesis-style** mindset: semantic system laws over brittle snapshots.
-
-- **Property tests** (`fast-check`): randomized policies and topics should always produce coherent lesson plans, bounded scores, valid policy fields.
-- **Fuzz tests**: random topic strings, random policies, repeated map generation should not crash.
-- **Acceptance tests**: full artifact pipeline in a temp directory — verify plans, maps, benchmark reports, evolution reports, prompt-evolution artifacts, traces, and policy state are all created.
-- **Deterministic stubs**: `test/helpers.ts` provides `stubBenchmarkResult()` and `createDeterministicBenchmark()` so the benchmark/evolution code is testable without an LLM.
-- **Invariant helpers**: `policyIsBounded()`, `weightsAreNormalized()`, `benchmarkScoresAreBounded()` are used in tests to assert system laws continuously.
-
-Tests use `bun:test` (not vitest/jest). Run with `bun test ./test/*.test.ts`.
-
-## Prompt Evolution
-
-`prompt-evolve` scores prompt templates on 6 objectives: `voice`, `diagnosis`, `verification`, `retrieval`, `transfer`, `structure`. It does **not** silently overwrite the source prompt. It writes:
-- `.keating/outputs/prompt-evolution/<name>.md` (report)
-- `.keating/outputs/prompt-evolution/<name>.evolved.md` (evolved snapshot)
-
-Successive runs resume from the prior `*.evolved.md` artifact when available, so evolution accumulates across runs rather than always restarting from the base prompt.
-
-The selector is PROSPER-style: balanced multi-objective candidates beat narrow overfit edits.
-
-## Devenv Environment
-
-All system-level dev dependencies are managed by devenv (`devenv.nix`):
-- **bun** — JS runtime, bundler, package manager
-- **devenv tasks** — namespaced task runner (`keating:*`)
-- **bun pm version** — canonical package-version bumps
-
-Run `devenv shell` to enter the dev environment (or use direnv via the existing `.envrc`). Repo-local git hooks are also configured via devenv:
-- `pre-commit`: `devenv tasks run keating:check-version`
-- `pre-push`: `devenv tasks run keating:test` + `devenv tasks run keating:test-web`
-
-`devenv tasks run keating:bump-version --input version=minor` runs `bun pm version`
-with `--no-git-tag-version`, then synchronizes version strings. Use `patch`,
-`minor`, `major`, or an exact stable version. Update the changelog and run release
-checks before committing and tagging the complete release.
-
-## Speech Module
-
-Disabled by default. When `speech.enabled: true` in `keating.config.json`, a `keating_voice` tool is registered. In the Pi shell, it emits structured voice-tagged utterances (not audio), keeping the speech loop optional. In the web app, the same tool routes through Gemini Flash Live with actual audio output. The web app speech toggle is independent of CLI config.
-
-## Commands Summary
-
-```bash
-# Core CLI commands
-keating shell              # Launch Pi shell
-keating setup [--yes]      # Interactive config setup
-keating doctor             # Runtime diagnostic report
-keating version            # Show current version
-keating web [port]         # Start local web server
-
-# Artifact generation
-keating plan <topic>
-keating map <topic>
-keating animate <topic>
-keating verify <topic>
-
-# Evaluation & improvement
-keating bench [topic]           # Summarize retrospective learner evidence and missing measurements
-keating teaching-bench [--cases <json>] # Execute training episodes; never access holdout or activate
-keating evolve [topic]          # Save unvalidated parameter proposals; active policy unchanged
-keating prompt-evolve [prompt]  # Prompt evolution (default: "learn")
-keating auto-improve [--cases <json>] # One skill proposal, fresh paired validation, sealed holdout, gated activation
-keating auto-improve --force    # Override cooldown only; never reopen consumed holdout or bypass gates
-keating learning-check start <fractions|loop-bounds> [--learner <id>]
-keating learning-check show <id>
-keating learning-check list
-keating learning-check submit <id> <precheck|immediate|delayed|transfer> --answers '<json>' --assistance <none|assisted|unknown>
-keating improve                 # Self-improvement proposal from benchmark weaknesses
-keating improve accept <id>     # Accept a pending improvement proposal
-keating improve reject <id>     # Reject a pending proposal and restore snapshots
-keating edit <file>             # Apply search/replace edit (stdin JSON or interactive mode)
-
-# State inspection
-keating policy             # Show active policy
-keating trace [substring]  # Browse artifact traces
-keating learner-state      # Learner profile
-keating timeline           # Engagement timeline (spaced repetition)
-keating due                # Topics due for review
-keating feedback up|down|confused [topic] [--comment=...]
-```
-
-## Environment Variables
-
-- `GEMINI_API_KEY`
-- `OPENAI_API_KEY`
-- `ANTHROPIC_API_KEY`
-
-Keating tries the configured provider first, then falls back to OpenAI/Anthropic if the default key is missing.
-
-### Web / Not Organic provider
-
-The web app uses Not Organic for hosted inference, account-scoped wallets, and
-credit checkout. The production web flow is a public PKCE client: its five-minute
-capability is DPoP-bound to a non-extractable browser key, while product assertion,
-Creem, Portkey, and wallet authority stay in the Not Organic deployment.
-
-- `VITE_NOTORGANIC_ENABLED` — Public build flag controlling whether the hosted model and account surfaces are visible.
-- `VITE_NOTORGANIC_PUBLIC_ISSUER` — Provider gateway origin.
-- `VITE_NOTORGANIC_AUTHORIZATION_URL` — Provider portal `/authorize` endpoint.
-- `VITE_NOTORGANIC_CLIENT_ID` — Exact Keating HTTPS origin.
-- `VITE_NOTORGANIC_REDIRECT_URI` — Exact same-origin callback URL.
-- `VITE_NOTORGANIC_SCOPE` — Narrow public scopes, including `infer:balanced` for hosted chat.
-- `VITE_NOTORGANIC_MAX_COST_MICROUSD` — Per-request browser inference ceiling.
-- `NOTORGANIC_ENABLED` — Server switch for the Not Organic integration.
-- `NOTORGANIC_ISSUER` — Server-only provider gateway origin, normally `https://api.notorganic.info`, without `/v1`.
-- `NOTORGANIC_MAX_COST_MICROUSD` — Positive per-request reservation ceiling sent to the provider.
-- `NOTORGANIC_ASSERTION_PRIVATE_KEY` — Adapter-owned Ed25519 product assertion key. Never expose it through a `VITE_*` variable.
-- `NOTORGANIC_ASSERTION_KEY_ID` — Optional product assertion key id used by the deployment adapter.
-
-The legacy same-origin Nitro transport still requires an authenticated middleware/plugin to provide
-`event.context.notOrganicSessionAdapter`. It resolves the durable product
-session, signs and exchanges the short-lived Keating assertion, and retains the
-five-minute access token plus DPoP key server-side. Creem, Portkey, wallet
-ledger, and webhook credentials belong to the Not Organic deployment, not
-Keating.
-
-## Important Files & Their Roles
-
-| File | Purpose |
-|------|---------|
-| `keating.config.json` | Per-project runtime/model config. Gitignored in projects. |
-| `chrysalis.config.json` | Repo-local config for Chrysalis/Pi tooling. |
-| `SYSTEM.md` | System prompt sent to LLMs when Keating acts as a tutor. |
-| `src/core/topics.ts` | Hardcoded topic definitions + domain keyword heuristics for fallback generation. |
-| `src/core/policy.ts` | Default policy, clamping, signature hashing. |
-| `src/core/project.ts` | Central artifact coordinator. All CLI and Pi commands funnel through here. |
-| `src/core/animation.ts` | Hyperframes animation bundle generation with a model-generated scene and deterministic fallback. |
-| `src/core/benchmark.ts` | Descriptive historical learner evidence; separate synthetic simulation mode for internal callers. |
-| `src/core/teaching-evolution.ts` | Fresh episode artifacts and content-addressed active teaching revisions. |
-| `src/core/learning-checks.ts` | Durable pre/post, delayed recall, and transfer assessment records. |
-| `src/core/prompt-evolution.ts` | Prompt scoring + PROSPER selection. |
-| `web/src/hooks/useKeatingAgent.tsx` | Web app state machine (Agent, sessions, speech, storage). |
-| `web/src/keating/browser-tools.ts` | Web-ported tool definitions matching CLI capabilities. |
-| `test/helpers.ts` | Deterministic benchmark stubs + property arbitraries + invariant helpers. |
-
-## What NOT to Do
-
-- Do not add a new topic without checking if domain-specific phase injections are appropriate (see `lesson-plan.ts`).
-- Do not make benchmark or evolution code depend on LLM calls in tests — the test suite expects deterministic stubs.
-- Teaching revision activation requires both independent behavior gates; a positive score delta or five feedback records is insufficient. Holdout families are consumed before use and need independent renewal. Pi episode tools are restricted to `plan`, `map`, `verify`, `quiz`, `grade_quiz`, and workspace-contained `read`.
-- Keep synthetic/model-judged teaching behavior separate from actual learner assessments. Learning-check assistance is self-reported and revision exposure operator-recorded; neither establishes causal human effectiveness.
-- Do not change `pi.registerCommand()` handler signatures without updating `src/core/commands.ts` which generates command help text.
-- Do not assume the web build is just `vite build` — it is `vite build && npx nitro build`.
-- Do not commit generated artifacts — `.keating/`, `dist/`, `web/dist/`, `web/.output/` are all gitignored.
+| --- | --- |
+| Install | `rtk devenv tasks run keating:install` |
+| Root build / tests | `rtk devenv tasks run keating:build` / `keating:test` |
+| Web dev / build / tests | `rtk devenv tasks run keating:web` / `keating:web-build` / `keating:test-web` |
+| Full build | `rtk devenv tasks run keating:build-all` |
+| CLI with arguments | `rtk bun src/cli/main.ts <command>` |
+
+- Root TypeScript uses NodeNext and `.js` import extensions. Web uses Bundler resolution and `@/` for `web/src/`. Keep strict types.
+- Web production builds include Vite and Nitro; Vite alone is insufficient.
+- Use `bun:test` and existing fixtures. Favor behavior, invariants, and integration boundaries over implementation snapshots.
+- Wait for checks to finish before claiming success. Distinguish local tests from browser, provider, deployment, and release verification.
+- Releases use `bun pm version` through `keating:bump-version`; synchronize versions and changelog. Preserve Devenv hooks.
+- Keep generated `.keating/`, `dist/`, `web/dist/`, and `web/.output/` out of commits.
+
+## Architectural safeguards
+
+- Keep deterministic tests independent of hosted inference. Inject episode runners, judges, proposers, and other model doubles at explicit boundaries.
+- When core types or tools change, check browser parity in `web/src/keating/core.ts` and `browser-tools.ts`. Shared learner contracts require checking web, mobile, and TUI consumers.
+- Keep policy scalars in `[0, 1]`, exercise counts integral in `[1, 5]`, and weights normalized. Check domain phase injections when adding topics.
+- Command signature changes require checking `src/core/commands.ts` help generation.
+- Teaching revision activation requires both independent behavior gates. Consume holdout families before use; renew independently. `--force` bypasses cooldown only.
+- Teaching episodes may use only `plan`, `map`, `verify`, `quiz`, `grade_quiz`, and workspace-contained `read`.
+- Historical benchmarks, synthetic scores, and model judgments do not establish human learning effectiveness. Missing retention or transfer stays unknown.
+- Prompt evolution writes reports and evolved snapshots; it must not silently replace source prompts.
+- Keep Not Organic assertion keys, payment credentials, wallet authority, and server credentials out of browser bundles and `VITE_*` variables. Preserve PKCE and DPoP boundaries.

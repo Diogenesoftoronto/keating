@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { KeatingBot } from "./KeatingBot";
 import "./app-status-screen.css";
 
 export type AppStatus = "loading" | "404" | "403" | "500" | "offline";
@@ -27,7 +28,7 @@ function StatusArt({ source, animated }: { source: string; animated: boolean }) 
 	const [loaded, setLoaded] = useState(false);
 	if (unavailable) return null;
 	return <span className="app-status__art" aria-hidden="true">
-		<img className="app-status__bot" src={fallback ? "/brand/mascot-full.png" : source} alt="" draggable={false} onLoad={() => setLoaded(true)} onError={() => { setLoaded(false); if (fallback) setUnavailable(true); else setFallback(true); }} />
+		<img className="app-status__bot" src={fallback ? "/brand/mascot-full.avif" : source} alt="" draggable={false} onLoad={() => setLoaded(true)} onError={() => { setLoaded(false); if (fallback) setUnavailable(true); else setFallback(true); }} />
 		{animated && loaded && !fallback && <span className="app-status__screen-static" />}
 	</span>;
 }
@@ -35,11 +36,12 @@ function StatusArt({ source, animated }: { source: string; animated: boolean }) 
 /** Shared route/loading fallback. The copy stands on its own when artwork is unavailable. */
 export function AppStatusScreen({ status, title, description, onRetry, onBack, homeHref = "/" }: AppStatusScreenProps) {
 	const copy = STATUS_COPY[status];
-	const source = `/brand/bot-status-v1/${status === "offline" ? "loading" : status}.png`;
+	const source = `/brand/bot-status-v1/${status === "offline" ? "loading" : status}.avif`;
 	const loading = status === "loading";
 	return <main className="app-status" data-status={status} aria-label={copy.label}>
 		<div className="app-status__content">
-			<StatusArt key={source} source={source} animated={loading} />
+			{loading ? <span className="app-status__art" aria-hidden="true"><KeatingBot variant="body" state="loading" size={200} label="" /></span>
+				: <StatusArt key={source} source={source} animated={false} />}
 			<div className="app-status__message" role={loading ? "status" : undefined} aria-live={loading ? "polite" : undefined} aria-atomic={loading ? true : undefined}>
 				<p className="app-status__label">{copy.label}</p>
 				<h1>{title ?? copy.title}</h1>

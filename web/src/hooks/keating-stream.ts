@@ -15,8 +15,10 @@ import {
 	NOTORGANIC_DEFAULT_MODEL,
 	notOrganicPublicClient,
 } from "../notorganic-provider";
+import { createNotOrganicInferenceFetch } from "../notorganic-provider/inference-fetch";
 import { publicClientMaxCostMicrousd } from "../notorganic-provider/public-client";
 import {
+	isCodexSearchModel,
 	applyGoogleSearchGrounding,
 	applyProviderWebSearch,
 	resolveProviderWebSearchRoute,
@@ -26,6 +28,7 @@ import {
 	signalHostedSearchActivation,
 	type RawSearchCitation,
 } from "../keating/search";
+import { createCodexSearchFetch } from "../keating/search/codex-search-fetch";
 import { recordDiagnostic } from "../lib/diagnostics";
 import {
 	captureSessionModelContext,
@@ -55,13 +58,17 @@ export function withProviderWebSearch(
 	hasApiKey: boolean,
 	signalActivation = true,
 ): SimpleStreamOptions | undefined {
-	if (model.provider !== "google" && model.provider !== "openai" && model.provider !== "anthropic") {
+	if (model.provider !== "google" && model.provider !== "openai" && model.provider !== "anthropic" && !isCodexSearchModel(model)) {
 		return options;
 	}
 	let signalled = false;
 
 	return {
 		...options,
+		...(isCodexSearchModel(model) && hasApiKey ? {
+			transport: "sse" as const,
+			fetch: createCodexSearchFetch(model, options?.fetch),
+		} : {}),
 		onPayload: async (payload, payloadModel) => {
 			const userPayload = await options?.onPayload?.(payload, payloadModel);
 			const nextPayload = userPayload ?? payload;
@@ -334,9 +341,20 @@ function createBrowserStreamFn() {
 	};
 }
 
+export function normalizeProviderStreamOptions(
+	model: Pick<Model<Api>, "api">,
+	options: SimpleStreamOptions,
+): SimpleStreamOptions {
+	if (model.api !== "openai-codex-responses") return options;
+	// The subscription Codex request schema omits temperature. Shared teaching
+	// generators also serve APIs that support it, so omit it only at this boundary.
+	const { temperature: _temperature, ...codexOptions } = options;
+	return codexOptions;
+}
+
 export async function hybridStreamFn(model: Model<Api>, context: Context, options?: KeatingStreamOptions) {
 	const { hostedWebSearch = true, ...requestOptions } = options ?? {};
-	const cleanOptions: SimpleStreamOptions = requestOptions;
+	const cleanOptions = normalizeProviderStreamOptions(model, requestOptions);
 	captureSessionModelContext(model, context);
 	if (model.provider === "browser") {
 		recordSessionTransport({
@@ -369,11 +387,12 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 		streamOptions = {
 			...streamOptions,
 			apiKey: undefined,
-			headers: {
-				...Object.fromEntries(authenticated.entries()),
-				"idempotency-key": `keating_${crypto.randomUUID()}`,
-				"x-notorganic-max-cost-microusd": String(publicClientMaxCostMicrousd()),
-			},
+			headers: Object.fromEntries(authenticated.entries()),
+			fetch: createNotOrganicInferenceFetch(client, requestUrl, {
+				fetch: streamOptions?.fetch,
+				idempotencyKey: `keating_${crypto.randomUUID()}`,
+				maxCostMicrousd: publicClientMaxCostMicrousd(),
+			}),
 		};
 	}
 

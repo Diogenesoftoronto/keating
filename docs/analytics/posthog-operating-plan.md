@@ -176,6 +176,7 @@ Use PostHog experiment exposure events and decide the sample size and minimum ru
 | `VITE_POSTHOG_PROJECT_TOKEN` | Public project ingest token. Analytics is inert when absent. |
 | `VITE_POSTHOG_HOST` | PostHog UI host. Browser ingest remains same-origin through `/ingest`. |
 | `VITE_POSTHOG_DISABLED` | Emergency client analytics kill switch. |
+| `VITE_POSTHOG_DEBUG` | Opt-in SDK console logging, including transport errors. Defaults off in every build. Delivery failures remain rate-limited warnings in local Diagnostics. |
 | `VITE_POSTHOG_SESSION_REPLAY` | Explicit build-time replay allow switch. Defaults off in Docker. |
 | `POSTHOG_API_KEY` | Secret personal API key used only by the production build to upload source maps. |
 | `POSTHOG_PROJECT_ID` | Project receiving source maps. |

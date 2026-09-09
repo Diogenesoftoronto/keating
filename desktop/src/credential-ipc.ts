@@ -16,7 +16,7 @@ import {
 
 export const CREDENTIAL_IPC_CHANNEL = "keating:credentials:rpc";
 
-const CREDENTIAL_METHODS = new Set(["get", "set", "delete", "keys", "has", "clear"]);
+const CREDENTIAL_METHODS = new Set(["get", "set", "delete", "keys", "has", "clear", "status"]);
 
 interface CredentialRequest {
 	id: string;
@@ -87,6 +87,9 @@ export function registerCredentialIpc(
 			}
 			const params = request.params;
 			switch (request.method) {
+				case "status":
+					assertAllowedParams(params, []);
+					return { id: request.id, ok: true, result: await service.status() };
 				case "get":
 					return { id: request.id, ok: true, result: await service.get(credentialId(params)) };
 				case "set": {

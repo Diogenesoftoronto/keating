@@ -1,4 +1,5 @@
 import { defineNitroConfig } from "nitro/config";
+import { readdirSync } from "node:fs";
 
 const crossOriginIsolationHeaders: Record<string, string> = {
   "Cross-Origin-Opener-Policy": "same-origin",
@@ -7,14 +8,16 @@ const crossOriginIsolationHeaders: Record<string, string> = {
 
 const staticAssetHeaders: Record<string, string> = {
   ...crossOriginIsolationHeaders,
-  // Railway's Hikari edge otherwise transforms compressible responses. Keeping
-  // the origin bytes intact avoids Firefox rejecting an intermittently
-  // truncated or mismatched encoded response as corrupted content.
+  // Preserve origin encoding while investigating Firefox transmission errors.
+  // This does not disable browser or Railway CDN caching.
   "Cache-Control": "public, max-age=86400, no-transform",
 };
 
-const noFallthroughStaticAsset = (headers = staticAssetHeaders) =>
-  ({ fallthrough: false, headers }) as unknown as { static: false; headers: Record<string, string> };
+const staticAssetRule = (headers = staticAssetHeaders) => ({ headers });
+const publicAssetDirectories = ["brand", "tutorial", "avatars", "posters", "downloads", "tapes", "textures", "landing", "audio", "vendor", "reports"];
+const publicAssetFiles = readdirSync(new URL("./public/", import.meta.url), { withFileTypes: true })
+  .filter((entry) => entry.isFile() && !entry.name.endsWith(".js"))
+  .map((entry) => entry.name);
 
 export default defineNitroConfig({
   features: {
@@ -49,11 +52,17 @@ export default defineNitroConfig({
   // Ensure that /assets/* requests return 404 if not found, 
   // rather than falling back to index.html (SPA fallback).
   routeRules: {
+    // Worker scripts must revalidate across deployments, including the NodePod
+    // script imported by the single production PWA worker.
+    "/sw.js": staticAssetRule({ ...crossOriginIsolationHeaders, "Cache-Control": "no-cache, no-transform" }),
+    "/__sw__.js": staticAssetRule({ ...crossOriginIsolationHeaders, "Cache-Control": "no-cache, no-transform" }),
+    // APIs must never resolve to the SPA shell, including unknown/stale routes.
+    "/api/**": { static: false, headers: { "Cache-Control": "no-store" } },
     // PostHog reverse proxy. The browser SDK is configured with
     // `api_host: '/ingest'` so analytics traffic is same-origin (avoids ad
     // blockers / third-party cookie issues). In dev this is handled by
     // web/vite.config.ts `server.proxy`; in production Nitro must proxy it.
-    // These rules are more specific than the `/**/*.js` static rule below, so
+    // These rules are separate from the asset directory rules below, so
     // PostHog's `array.js` / `static` asset requests reach the proxy instead
     // of hitting the `fallthrough: false` 404.
     "/ingest/static": { proxy: { to: "https://us-assets.i.posthog.com/static" } },
@@ -65,23 +74,19 @@ export default defineNitroConfig({
     // Assets under /assets/** are content-hashed, so they can be cached
     // immutably for a year — a new build emits new filenames.
     "/assets/**": {
-      ...noFallthroughStaticAsset({
+      ...staticAssetRule({
         ...crossOriginIsolationHeaders,
         "Cache-Control": "public, max-age=31536000, immutable, no-transform",
       }),
     },
-    "/brand/**": noFallthroughStaticAsset(),
-    "/**/*.js": noFallthroughStaticAsset(),
-    "/**/*.css": noFallthroughStaticAsset(),
-    "/**/*.svg": noFallthroughStaticAsset(),
-    "/**/*.png": noFallthroughStaticAsset(),
-    "/**/*.ico": noFallthroughStaticAsset(),
-    "/**/*.wasm": noFallthroughStaticAsset(),
-    "/**/*.onnx": noFallthroughStaticAsset(),
-    "/**/*.pdf": noFallthroughStaticAsset(),
-    "/**/*.mp4": noFallthroughStaticAsset(),
-    "/**/*.webp": noFallthroughStaticAsset(),
-    "/**/*.gif": noFallthroughStaticAsset(),
+    // rou3 treats ** as a terminal catch-all: /**/*.png also matches /chat.
+    // Use asset directories and exact root filenames instead.
+    ...Object.fromEntries(
+      publicAssetDirectories.map((directory) => [`/${directory}/**`, staticAssetRule()]),
+    ),
+    ...Object.fromEntries(
+      publicAssetFiles.map((name) => [`/${name}`, staticAssetRule()]),
+    ),
     "/**": {
       static: true,
       headers: {
@@ -93,13 +98,22 @@ export default defineNitroConfig({
   publicAssets: [
     {
       dir: "dist",
-      maxAge: 60 * 60 * 24 * 365, // 1 year for hashed assets
+      maxAge: 0, // Cache policy comes from explicit routes, never the whole SPA.
     },
   ],
   // Bundle the OG renderer's font + resvg wasm so they are readable at runtime
-  // via useStorage("assets:server") (see server/utils/og-render.ts).
-  serverAssets: [{ baseName: "server", dir: "server/assets" }],
+  // via useStorage("assets:keating-og") (see server/utils/og-render.ts).
+  // Nitro reserves "server" for its automatically mounted assets directory.
+  serverAssets: [{ baseName: "keating-og", dir: "server/assets" }],
   handlers: [
+    // Nitro serves existing static files before these handlers. A missing image
+    // or worker must be a real 404, never a cacheable copy of the SPA HTML.
+    ...[
+      ...publicAssetDirectories.map((directory) => `/${directory}/**`),
+      ...publicAssetFiles.map((name) => `/${name}`),
+      "/sw.js", "/__sw__.js",
+    ].map((route) => ({ route, handler: "server/routes/assets/[...path].ts" })),
+    { route: "/api/**", handler: "server/api-not-found.ts" },
     { route: "/api/credit-waitlist", method: "POST", handler: "server/api/credit-waitlist/index.post.ts" },
     {
       route: "/api/training-datasets",
@@ -208,6 +222,14 @@ export default defineNitroConfig({
       handler: "server/api/oauth/github-copilot-device.ts",
     },
     {
+      route: "/api/oauth/openai-codex/device",
+      handler: "server/api/oauth/openai-codex-device.ts",
+    },
+    {
+      route: "/api/oauth/openai-codex/poll",
+      handler: "server/api/oauth/openai-codex-poll.ts",
+    },
+    {
       route: "/api/oauth/github-copilot/poll",
       handler: "server/api/oauth/github-copilot-poll.ts",
     },
@@ -224,12 +246,6 @@ export default defineNitroConfig({
       // worker or cached shell asks for a stale content-hash, this handler
       // catches the miss and returns a real 404 instead of the SPA shell.
       route: "/assets/**",
-      handler: "server/routes/assets/[...path].ts",
-    },
-    {
-      // Brand images must fail as images, never fall through to the SPA shell
-      // with a misleading text/html 200 response.
-      route: "/brand/**",
       handler: "server/routes/assets/[...path].ts",
     },
     {

@@ -1,0 +1,10 @@
+{
+  "version": "3.1.0",
+  "track": "fixed-cli-harness",
+  "status": "public-development-suite",
+  "files": {
+    "cases.json": "11d6a3a8bda6a46b8f0cb460741770c02933f25a7e0ce71f522cca9d17cc81fd",
+    "README.md": "26941e3c5f83b48fc9b01e105747be3241cbe92a91690fdc4361412d832f69c4",
+    "context-pairs.json": "1259b21a4db09067f5870f574209be2bf89265ecde08b92517efff45582dd263"
+  }
+}

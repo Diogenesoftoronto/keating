@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { __test_parseInteractiveSegments as parseInteractiveSegments } from "../components/AssistantChatPanel";
+import { parseInteractiveSegments } from "../components/interactive-segments";
 import { parseAnimationPayload } from "../components/AnimatedScene";
 
 /** Emit a tag exactly the way the browser tools do (double-stringified JSON). */

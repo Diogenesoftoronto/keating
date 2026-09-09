@@ -15,7 +15,6 @@ function questionLines(question: UiQuestion, prefix = ""): string[] {
   if (question.choices?.length) lines.push(...question.choices.map((choice) => `${prefix}  (${choice.id}) ${choice.label}`));
   if (question.items?.length) lines.push(...question.items.map((item) => `${prefix}  • ${item}`));
   if (question.blanks?.length) lines.push(`${prefix}  Fill ${question.blanks.length} blank${question.blanks.length === 1 ? "" : "s"}.`);
-  if (question.explanation) lines.push(`${prefix}Explanation: ${question.explanation}`);
   return lines;
 }
 
@@ -53,7 +52,7 @@ function nodePresentation(node: UiDocumentNode): UiDocumentPresentation {
       ? { heading: `Exam: ${node.title}`, body: [`${node.questions.length} questions · ${Math.ceil((node.examTimeLimit ?? 1800) / 60)} minutes`, "Open this exam in the web app to start its timed attempt.", ...node.questions.flatMap((question, index) => questionLines({ ...question, hint: undefined, explanation: undefined }, `${index + 1}. `))] }
       : { heading: `Quiz: ${node.title}`, body: node.questions.flatMap((question, index) => questionLines(question, `${index + 1}. `)) };
     case "goal": return { heading: `Goal: ${node.title}`, body: [...nonEmpty(node.description, `Status: ${node.status}`), ...node.steps.flatMap((step) => [`${step.status === "done" ? "[x]" : "[ ]"} ${step.title}`, ...(step.successCriteria?.map((criterion) => `  Success: ${criterion}`) ?? [])])] };
-    case "deck": return { heading: `Deck: ${node.title}`, body: [...nonEmpty(`Topic: ${node.topic}`, node.description), ...node.cards.flatMap((card, index) => [`${index + 1}. ${card.front}`, `   ${card.back}`, ...(card.tags?.length ? [`   Tags: ${card.tags.join(", ")}`] : [])])] };
+    case "deck": return { heading: `Deck: ${node.title}`, body: [...nonEmpty(`Topic: ${node.topic}`, node.description), ...node.cards.flatMap((card, index) => [`${index + 1}. ${card.front}`, "   Answer hidden — use document actions to reveal and rate.", ...(card.tags?.length ? [`   Tags: ${card.tags.join(", ")}`] : [])])] };
     case "study-plan": return {
       heading: node.title || "Study plan",
       body: [...nonEmpty(node.overview), ...(node.items ? studyPlanLines(node.items) : []), ...(node.relatedPlans?.flatMap((plan) => [`Related ${plan.relation || "plan"}: ${plan.title}`, ...nonEmpty(plan.detail && `  ${plan.detail}`)]) ?? []), ...(node.resource ? resourceLines(node.resource, "Plan resource") : [])],
@@ -90,6 +89,7 @@ function nodePresentation(node: UiDocumentNode): UiDocumentPresentation {
       heading: `${taskKindLabel(node.kind)}: ${node.title}`,
       body: [
         ...node.brief.split("\n"),
+        ...(node.submission?.capture ? [`Open this activity in the web app to record ${node.submission.capture.kind}${node.submission.capture.timeLimitSeconds ? ` (optional ${node.submission.capture.timeLimitSeconds}s target)` : ""}, replay, and attach your attempt.`] : []),
         ...nonEmpty(node.estimatedMinutes === undefined ? undefined : `Estimated effort: ${node.estimatedMinutes} minutes`),
         ...nonEmpty(node.round === undefined ? undefined : `Revision round: ${node.round}`),
         ...(node.criteria?.length ? ["Judged on:", ...node.criteria.map((criterion) => `  - ${criterion}`)] : []),

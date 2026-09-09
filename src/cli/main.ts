@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 
 import { DEFAULT_KEATING_CONFIG, configPath, loadKeatingConfig, writeKeatingConfig } from "../core/config.js";
 import { learnerStatePath } from "../core/paths.js";
+import { learnerProfileEnvironment, withLearnerProfileArgs } from "../core/learner-profile-selection.js";
 import { loadLearnerState, recordFeedback, saveLearnerState } from "../core/learner-state.js";
 import {
   animateTopicArtifact,
@@ -70,6 +71,7 @@ function printUsage(): void {
   console.log(bold("primary", "General Commands"));
   console.log(`  ${color.primary}shell${color.reset}  [initial prompt...]  Launch the AI-powered hyperteacher shell`);
   console.log(`  ${color.primary}tui${color.reset}    [initial prompt...]  Launch the OpenTUI host over Pi RPC`);
+  console.log(`  ${color.sepia}--profile=name${color.reset}  Select .keating/profiles/name.json with separate learner history`);
   console.log(`  ${color.primary}setup${color.reset}  [--yes]             Configure Keating for this project`);
   console.log(`  ${color.primary}profile${color.reset} [--name=…] [--image=…|--initials=…|--learner]  Configure TUI identity`);
   console.log(`  ${color.primary}login${color.reset}  [notorganic] [--manual|--status]  Connect five-minute hosted inference`);
@@ -767,7 +769,19 @@ async function runPackageCommand(cwd: string, args: string[]): Promise<void> {
 }
 
 async function run(): Promise<void> {
-  const rawArgs = process.argv.slice(2);
+  const cwd = process.cwd();
+  await withLearnerProfileArgs(cwd, process.argv.slice(2), async (args) => {
+    // One CLI process has one selected learner. Keep it available to terminal I/O
+    // callbacks whose async resource may have been created before command dispatch.
+    // Library callers still use isolated async contexts without changing process.env.
+    const env = learnerProfileEnvironment(cwd, process.env);
+    process.env.KEATING_LEARNER_PROFILE = env.KEATING_LEARNER_PROFILE ?? "";
+    process.env.KEATING_LEARNER_PROFILE_CWD = env.KEATING_LEARNER_PROFILE_CWD ?? "";
+    await runSelectedCommand(args);
+  });
+}
+
+async function runSelectedCommand(rawArgs: string[]): Promise<void> {
   const cwd = process.cwd();
   if (rawArgs.length === 1 && (rawArgs[0] === "--version" || rawArgs[0] === "-v" || rawArgs[0] === "version")) {
     console.log(`keating ${KEATING_VERSION}`);

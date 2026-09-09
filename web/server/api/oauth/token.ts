@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, createError } from "h3";
+import { defineEventHandler, readBody, createError, assertMethod, setResponseHeader } from "h3";
 import { getOAuthServerConfigs, type OAuthServerProviderId } from "./config";
 
 interface TokenRequestBody {
@@ -10,6 +10,8 @@ interface TokenRequestBody {
 }
 
 export default defineEventHandler(async (event) => {
+	setResponseHeader(event, "Cache-Control", "no-store");
+	assertMethod(event, "POST");
 	const body = await readBody<TokenRequestBody>(event);
 
 	if (!body?.provider || !body?.code || !body?.redirect_uri || !body?.code_verifier) {
@@ -60,8 +62,7 @@ export default defineEventHandler(async (event) => {
 		});
 
 		if (!response.ok) {
-			const errorText = await response.text();
-			console.error(`[oauth/token] ${body.provider} token exchange failed: ${response.status} ${errorText}`);
+			await response.body?.cancel();
 			throw createError({
 				statusCode: 502,
 				statusMessage: `Upstream token exchange failed: ${response.status}`,
@@ -75,7 +76,6 @@ export default defineEventHandler(async (event) => {
 		return await response.json();
 	} catch (error) {
 		if ((error as any).statusCode) throw error;
-		console.error(`[oauth/token] Error exchanging token for ${body.provider}:`, error);
 		throw createError({
 			statusCode: 500,
 			statusMessage: "Token exchange request failed",

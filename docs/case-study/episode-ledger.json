@@ -1,0 +1,156 @@
+{
+  "selection": "Purposive, episode-level close reading; no prevalence or saturation claim. Indexes refer to the hashed portable input. Ranges include tool messages, but findings distinguish visible dialogue from tools and embedded thinking.",
+  "episodes": [
+    {
+      "episode": "E1",
+      "portableSessionIndex": 64,
+      "topic": "Static embeddings",
+      "messageRangesInclusive": [
+        [
+          19,
+          37
+        ],
+        [
+          41,
+          56
+        ]
+      ],
+      "sessionIdSha256": "414a79cc50277b39715e195440f50264e9bb10486c3db1d4d8127ea167e98c0d",
+      "firstUserTimestamp": 1782430883241
+    },
+    {
+      "episode": "E2",
+      "portableSessionIndex": 62,
+      "topic": "Guile debugging",
+      "messageRangesInclusive": [
+        [
+          0,
+          27
+        ],
+        [
+          28,
+          62
+        ]
+      ],
+      "sessionIdSha256": "aeb6b900688001351069650ea277b687433ac29f65a42850ddb3fc436ff4dd48",
+      "firstUserTimestamp": 1782535934540
+    },
+    {
+      "episode": "E3a",
+      "portableSessionIndex": 54,
+      "topic": "Initial SwiReasoning",
+      "messageRangesInclusive": [
+        [
+          10,
+          23
+        ]
+      ],
+      "sessionIdSha256": "9ce005734f24226b8ae05deaa58d7e6953861814c57e3de693079811aba3071c",
+      "firstUserTimestamp": 1781398392798
+    },
+    {
+      "episode": "E3b",
+      "portableSessionIndex": 50,
+      "topic": "SwiReasoning revisit",
+      "messageRangesInclusive": [
+        [
+          11,
+          17
+        ]
+      ],
+      "sessionIdSha256": "07d1539d809b94585d84224bc18da60a432efe3f4c4401fc8fe4d0c531790271",
+      "firstUserTimestamp": 1782851126495
+    },
+    {
+      "episode": "E4",
+      "portableSessionIndex": 47,
+      "topic": "Vulkan and OpenGL",
+      "messageRangesInclusive": [
+        [
+          12,
+          61
+        ]
+      ],
+      "sessionIdSha256": "85368cb346afd86aa1d7b921e51481c32e34ee2ceb6e1e9bb63856aa71e28735",
+      "firstUserTimestamp": 1782964109494
+    },
+    {
+      "episode": "E5",
+      "portableSessionIndex": 27,
+      "topic": "Policy-gradient notation",
+      "messageRangesInclusive": [
+        [
+          7,
+          23
+        ]
+      ],
+      "sessionIdSha256": "481545cfffbcb6c20baf7d3024ec87c5aebb5f91fac42a2ae466dd690fb615fe",
+      "firstUserTimestamp": 1783571015349
+    },
+    {
+      "episode": "E6",
+      "portableSessionIndex": 65,
+      "topic": "Guix packaging",
+      "messageRangesInclusive": [
+        [
+          13,
+          81
+        ]
+      ],
+      "sessionIdSha256": "669c332ad78c8b41560702bda242eeea73c9e97bb45cc3b36bc1bb5511070207",
+      "firstUserTimestamp": 1782397776488
+    },
+    {
+      "episode": "E7",
+      "portableSessionIndex": 28,
+      "topic": "Free-will map",
+      "messageRangesInclusive": [
+        [
+          0,
+          19
+        ]
+      ],
+      "sessionIdSha256": "16a3b4f12c60a1115e666ce880ef83cdfaea10c3cab94cf2fd15349d10fac459",
+      "firstUserTimestamp": 1784104894370
+    },
+    {
+      "episode": "E8",
+      "portableSessionIndex": 19,
+      "topic": "City formation",
+      "messageRangesInclusive": [
+        [
+          0,
+          18
+        ]
+      ],
+      "sessionIdSha256": "be5fe4c7f3255e7cafe89269f8d362e8dc69be0ad6addc2eea508714737165f6",
+      "firstUserTimestamp": 1785088566394
+    },
+    {
+      "episode": "E9",
+      "portableSessionIndex": 32,
+      "topic": "Jazz background",
+      "messageRangesInclusive": [
+        [
+          0,
+          15
+        ]
+      ],
+      "sessionIdSha256": "c5901e29859e2f1cbf673e3938ea9eb7180ddcf0c9c5471d14f975723a30054d",
+      "firstUserTimestamp": 1784094603991
+    },
+    {
+      "episode": "E10",
+      "portableSessionIndex": 79,
+      "topic": "AI and compilers",
+      "messageRangesInclusive": [
+        [
+          0,
+          13
+        ]
+      ],
+      "sessionIdSha256": "e6c3af84a2e1b07a4edeb2321f974725b68df6d17813744e06518a740fef8205",
+      "firstUserTimestamp": 1779632157821
+    }
+  ]
+}

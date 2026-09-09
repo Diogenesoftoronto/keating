@@ -51,17 +51,17 @@ test("ALWAYS: default Pi provider uses OpenAI with the latest default model", ()
   expect(DEFAULT_KEATING_CONFIG.pi.defaultModel).toBe("gpt-5.5");
 });
 
-test("ALWAYS: loadKeatingConfig migrates legacy google-gemini-cli provider", async () => {
+test("ALWAYS: loadKeatingConfig preserves explicitly configured provider", async () => {
   const workdir = await mkdtemp(join(tmpdir(), "keating-cfg-"));
   await writeFile(configPath(workdir), JSON.stringify({
     pi: {
       runtimePreference: "prefer-standalone",
-      defaultProvider: "google-gemini-cli",
+      defaultProvider: "custom-provider",
       defaultModel: "gemini-3.1-pro-preview"
     }
   }), "utf8");
   const config = await loadKeatingConfig(workdir);
-  expect(config.pi.defaultProvider).toBe("google");
+  expect(config.pi.defaultProvider).toBe("custom-provider");
   expect(config.pi.defaultModel).toBe("gemini-3.1-pro-preview");
 });
 

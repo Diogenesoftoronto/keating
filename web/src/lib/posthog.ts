@@ -1,4 +1,5 @@
 import posthog from "posthog-js";
+import { createAnalyticsRequestErrorHandler } from "./analytics-diagnostics";
 import { sanitizePostHogEvent, sanitizeReplayRequest } from "./analytics-privacy";
 import {
 	readAnalyticsPreferences,
@@ -65,7 +66,9 @@ export function initPostHog() {
 			client.register(postHogGlobalProperties());
 			client.register_once({ first_seen_app_version: postHogGlobalProperties().app_version });
 		},
-		debug: import.meta.env.DEV,
+		on_request_error: createAnalyticsRequestErrorHandler(),
+		// SDK transport errors are debug logs, not application failures.
+		debug: import.meta.env.VITE_POSTHOG_DEBUG === "true",
 	});
 	return posthog;
 }

@@ -5,7 +5,7 @@ import {
 	SessionsStore,
 	SettingsStore,
 	setAppStorage,
-} from "@earendil-works/pi-web-ui";
+} from "../keating/app-storage";
 import { KeatingStorage } from "../keating/storage";
 import { IndexedDBStorageBackend } from "../lib/cloud-storage-backend";
 import {

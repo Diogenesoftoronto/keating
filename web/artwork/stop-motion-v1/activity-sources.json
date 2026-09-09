@@ -1,0 +1,34 @@
+[
+  {
+    "state": "walking",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-f76f292d-86f8-47f7-abf3-c4c9349d5f6d.png"
+  },
+  {
+    "state": "sitting",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-13b64872-d831-48e6-9d60-ef475c2871fb.png"
+  },
+  {
+    "state": "flipping",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-95c1eedc-bc8b-45cc-8584-0d597fb20b67.png"
+  },
+  {
+    "state": "reading",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-59e382ab-911c-4b95-a2d8-10903c1c8d42.png"
+  },
+  {
+    "state": "music",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-660d2c27-9e07-4d75-84f1-981c2bd50832.png"
+  },
+  {
+    "state": "science",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-dcb031c8-2cf5-4086-80b7-b6e55120a0d6.png"
+  },
+  {
+    "state": "maths",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-ad608792-29da-4a0d-8fde-1e98c6edcdc6.png"
+  },
+  {
+    "state": "coding",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-15225817-f18b-4c05-801b-3c977781ec89.png"
+  }
+]

@@ -165,3 +165,18 @@ export function toggleProviderVisibility(provider: string, hidden: boolean) {
 	saveModelPrefs(next);
 	return next;
 }
+
+export function setProvidersVisibility(providers: string[], hidden: boolean) {
+	const prefs = loadModelPrefs();
+	const nextHiddenProviders = new Set(prefs.hiddenProviders);
+	for (const provider of providers) {
+		if (hidden) nextHiddenProviders.add(provider);
+		else nextHiddenProviders.delete(provider);
+	}
+	const next: ModelPrefs = {
+		...prefs,
+		hiddenProviders: Array.from(nextHiddenProviders),
+	};
+	saveModelPrefs(next);
+	return next;
+}

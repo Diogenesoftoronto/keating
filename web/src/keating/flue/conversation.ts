@@ -22,6 +22,7 @@ import {
   type Model,
 } from "@earendil-works/pi-ai";
 import { FlueTransport, type FlueConfiguration } from "./transport";
+import { toModelMessages } from "./model-messages";
 
 type MutableState = { -readonly [K in keyof AgentState]: AgentState[K] };
 type Subscriber = (
@@ -125,6 +126,7 @@ export class FlueConversation {
   private client?: FlueClient;
   private observation?: AgentConversationObservation;
   private native?: FlueConversationState;
+  private pendingDelivery?: { message: AgentMessage; knownUserIds: Set<string> };
   private view = {
     conversation: undefined as FlueConversationState | undefined,
     running: false,
@@ -213,7 +215,7 @@ export class FlueConversation {
     this.sessionId = options.sessionId ?? crypto.randomUUID();
     this.streamFunction = options.streamFn;
     this.getApiKey = options.getApiKey;
-    this.convertToLlm = options.convertToLlm ?? ((messages) => messages as any);
+    this.convertToLlm = options.convertToLlm ?? toModelMessages;
     this.transformContext = options.transformContext;
     if (!options.initialState?.model)
       throw new Error("A model is required for Flue chat");
@@ -299,6 +301,10 @@ export class FlueConversation {
           : [input];
     return this.run(messages);
   }
+  /** Publish the learner turn before credential checks or workspace preparation. */
+  sendPrepared(message: AgentMessage, prepare: (signal: AbortSignal) => Promise<void>): Promise<void> {
+    return this.run([message], prepare);
+  }
   resume(): Promise<void> {
     const last = this.context.messages.at(-1);
     if (!last || !["user", "toolResult"].includes(last.role))
@@ -342,27 +348,46 @@ export class FlueConversation {
   private drain(queue: AgentMessage[], mode: string) {
     return queue.splice(0, mode === "one-at-a-time" ? 1 : queue.length);
   }
-  private run(messages: AgentMessage[]): Promise<void> {
+  private run(messages: AgentMessage[], prepare?: (signal: AbortSignal) => Promise<void>): Promise<void> {
     if (this.context.isStreaming)
       return Promise.reject(
         new Error(
           "The agent is already responding. Use steering or wait for it to finish.",
         ),
       );
+    const startIndex = this.context.messages.length;
+    messages = structuredClone(messages);
+    this.context.messages = [...this.context.messages, ...messages];
     this.context.isStreaming = true;
     this.context.errorMessage = undefined;
-    this.notify();
     this.controller = new AbortController();
+    this.notify();
     let settle!: () => void;
     this.idle = new Promise((resolve) => {
       settle = resolve;
     });
-    const startIndex = this.context.messages.length;
     return (async () => {
       try {
         await this.emit({ type: "agent_start" });
-        for (const message of messages)
-          await this.append(structuredClone(message));
+        for (const message of messages) {
+          await this.emit({ type: "message_start", message });
+          await this.emit({ type: "message_end", message });
+        }
+        this.controller!.signal.throwIfAborted();
+        if (prepare) {
+          const signal = this.controller!.signal;
+          let onAbort!: () => void;
+          const aborted = new Promise<never>((_, reject) => {
+            onAbort = () => reject(signal.reason);
+            signal.addEventListener("abort", onAbort, { once: true });
+          });
+          try {
+            await Promise.race([prepare(signal), aborted]);
+          } finally {
+            signal.removeEventListener("abort", onAbort);
+          }
+        }
+        this.controller!.signal.throwIfAborted();
         if (!this.bridge) {
           this.bridge = new FlueTransport(
             this.configuration(),
@@ -393,6 +418,11 @@ export class FlueConversation {
             this.notify();
           });
         }
+        // Establish the restored native history before matching this delivery.
+        // Otherwise an older user turn arriving in the first observation could
+        // incorrectly acknowledge the new, still-local message.
+        this.acceptNative(await this.client.history());
+        this.notify();
         let delivery = messages.length ? messages.at(-1)! : undefined;
         do {
           this.controller!.signal.throwIfAborted();
@@ -412,6 +442,12 @@ export class FlueConversation {
           const attachments = Array.isArray(content)
             ? content.filter((p) => p.type === "image")
             : [];
+          if (delivery?.role === "user") {
+            this.pendingDelivery = {
+              message: delivery,
+              knownUserIds: new Set(this.native?.messages.filter(message => message.role === "user").map(message => message.id) ?? []),
+            };
+          }
           const admission = await this.client.send({
             message: delivery
               ? { kind: "user", body: body || (Array.isArray(content) && content.some(audioContent) ? "[Audio recording]" : ""), attachments }
@@ -470,6 +506,7 @@ export class FlueConversation {
         this.bridge = undefined;
         this.bridgeReady = undefined;
       } finally {
+        this.pendingDelivery = undefined;
         clearTimeout(this.cancelTimer);
         this.cancelTimer = undefined;
         this.context.streamingMessage = undefined;
@@ -490,6 +527,11 @@ export class FlueConversation {
     })();
   }
   private acceptNative(conversation: FlueConversationState) {
+    const pending = this.pendingDelivery;
+    if (pending && conversation.messages.some(message => message.role === "user" && !pending.knownUserIds.has(message.id))) {
+      this.recorded.add(pending.message);
+      this.pendingDelivery = undefined;
+    }
     this.native = conversation;
     const bridge = this.bridge;
     if (!bridge) return;

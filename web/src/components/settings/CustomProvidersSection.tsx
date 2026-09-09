@@ -1,7 +1,7 @@
 import { Select } from "../Select";
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Trash2, X } from "lucide-react";
-import { getAppStorage } from "@earendil-works/pi-web-ui";
+import { getAppStorage } from "../../keating/app-storage";
 import {
 	discoverCustomProviderModels,
 	type KeatingCustomProvider,

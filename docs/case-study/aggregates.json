@@ -1,0 +1,234 @@
+{
+  "analysisVersion": 1,
+  "inputs": [
+    {
+      "role": "portable",
+      "sha256": "329ec5856aaa3cc0cdd3b3a9e8311aa885e27b728a5ab14bf804fe5b1bc7656e"
+    },
+    {
+      "role": "training",
+      "sha256": "e88b131c5ef24654a69a76fe2381031f0e5ce1b92d9884df9ddf1474068c605f"
+    }
+  ],
+  "portableGeneratedAt": "2026-09-06T20:37:45.129Z",
+  "trainingGeneratedAt": "2026-09-06T20:43:04.888Z",
+  "sessions": 81,
+  "uniqueSessionIds": 81,
+  "sessionFlags": {
+    "parentSessionId": 19,
+    "generatedAlternative": 11,
+    "hiddenAlternative": 7
+  },
+  "messageEvents": 1271,
+  "repeatedEventCopies": 548,
+  "messageRoles": {
+    "user": 314,
+    "assistant": 604,
+    "toolResult": 353
+  },
+  "invalidMessageTimestamps": 23,
+  "firstMessageUtc": "2026-05-09T03:52:53.964000+00:00",
+  "lastMessageUtc": "2026-09-06T08:10:07.254000+00:00",
+  "activeUtcDates": 42,
+  "monthlyMessages": {
+    "2026-05": {
+      "user": 46,
+      "assistant": 81,
+      "toolResult": 41
+    },
+    "2026-06": {
+      "user": 119,
+      "assistant": 201,
+      "toolResult": 118
+    },
+    "2026-07": {
+      "user": 121,
+      "assistant": 280,
+      "toolResult": 184
+    },
+    "2026-08": {
+      "user": 14,
+      "assistant": 21,
+      "toolResult": 7
+    },
+    "2026-09": {
+      "user": 4,
+      "assistant": 8,
+      "toolResult": 3
+    }
+  },
+  "dailyMessages": {
+    "2026-05-09": 23,
+    "2026-05-12": 10,
+    "2026-05-19": 8,
+    "2026-05-20": 11,
+    "2026-05-22": 15,
+    "2026-05-23": 4,
+    "2026-05-24": 14,
+    "2026-05-27": 15,
+    "2026-05-28": 8,
+    "2026-05-31": 60,
+    "2026-06-03": 34,
+    "2026-06-09": 32,
+    "2026-06-14": 23,
+    "2026-06-16": 10,
+    "2026-06-19": 6,
+    "2026-06-20": 4,
+    "2026-06-22": 9,
+    "2026-06-23": 31,
+    "2026-06-25": 119,
+    "2026-06-26": 20,
+    "2026-06-27": 85,
+    "2026-06-28": 8,
+    "2026-06-29": 39,
+    "2026-06-30": 18,
+    "2026-07-01": 2,
+    "2026-07-02": 63,
+    "2026-07-03": 30,
+    "2026-07-04": 35,
+    "2026-07-05": 16,
+    "2026-07-06": 32,
+    "2026-07-08": 114,
+    "2026-07-09": 80,
+    "2026-07-14": 31,
+    "2026-07-15": 136,
+    "2026-07-16": 4,
+    "2026-07-17": 2,
+    "2026-07-26": 34,
+    "2026-07-31": 6,
+    "2026-08-06": 14,
+    "2026-08-12": 14,
+    "2026-08-18": 14,
+    "2026-09-06": 15
+  },
+  "modelMetadata": {
+    "sessionsWithDifferentAssistantModelId": 19,
+    "sessionLabels": {
+      "minimax/MiniMax-M3": 37,
+      "openai/gpt-5.6-sol": 2,
+      "fireworks/accounts/fireworks/models/deepseek-v4-flash": 3,
+      "fireworks/accounts/fireworks/models/qwen3p7-plus": 4,
+      "minimax/MiniMax-M2.7": 15,
+      "fireworks/accounts/fireworks/models/glm-5p2": 13,
+      "openai/neuralwatt/GLM-5.2": 2,
+      "minimax/MiniMax-M2.7-highspeed": 3,
+      "google/gemini-3-flash-preview": 2
+    },
+    "distinctAssistantEventLabels": {
+      "fireworks/accounts/fireworks/models/deepseek-v4-flash": 30,
+      "minimax/MiniMax-M3": 177,
+      "anthropic/claude-sonnet-4-6": 1,
+      "openai/gpt-5.6-sol": 1,
+      "fireworks/accounts/fireworks/models/qwen3p7-plus": 35,
+      "openai-codex/gpt-5.4": 2,
+      "minimax/MiniMax-M2.7": 173,
+      "missing/missing": 13,
+      "fireworks/accounts/fireworks/models/glm-5p2": 131,
+      "openai/gpt-5.5": 1,
+      "Makora/unsloth/Qwen3.6-27B-NVFP4": 1,
+      "openai/neuralwatt/GLM-5.2": 5,
+      "opencode/big-pickle": 1,
+      "anthropic/claude-opus-4-8": 2,
+      "minimax/MiniMax-M2.7-highspeed": 20,
+      "google/gemini-3-flash-preview": 11
+    },
+    "assistantEventsWithConflictingCopyLabels": 0,
+    "interpretation": "Stored labels, not verified execution identities or historical provider routing. Session label is not assigned retrospectively to every turn."
+  },
+  "storageCounts": {
+    "lessonPlans": 27,
+    "lessonMaps": 21,
+    "animations": 10,
+    "verifications": 28,
+    "benchmarks": 12,
+    "evolutions": 5,
+    "policies": 6,
+    "feedback": 51,
+    "promptEvolutions": 6,
+    "improvements": 5,
+    "goals": 3,
+    "quizResults": 1,
+    "decks": 3,
+    "cardReviews": 37,
+    "questionChecks": 13
+  },
+  "feedbackSources": {
+    "unspecified": 1,
+    "turn-analysis": 42,
+    "explicit": 8
+  },
+  "questionCheckGrading": {
+    "model": 5,
+    "pending": 8
+  },
+  "reviewRatings": {
+    "3": 10,
+    "0": 4,
+    "1": 11,
+    "2": 12
+  },
+  "training": {
+    "fileRows": {
+      "data/keating.training.jsonl": 361,
+      "data/sft/train.chatml.jsonl": 161,
+      "data/sft/train.alpaca.jsonl": 308,
+      "data/rewards/train.rewarded.jsonl": 616,
+      "data/preferences/train.kto.jsonl": 119,
+      "data/preferences/train.dpo.chat.jsonl": 7,
+      "data/preferences/train.dpo.text.jsonl": 7,
+      "data/rl/prompts.grpo.jsonl": 379
+    },
+    "canonicalSources": {
+      "artifact/plan": 23,
+      "artifact/quiz": 4,
+      "artifact/map": 21,
+      "artifact/animation": 10,
+      "artifact/verification": 28,
+      "session/conversation": 275
+    },
+    "quality": {
+      "unscored": 298,
+      "rejected": 53,
+      "accepted": 10
+    },
+    "splits": {
+      "train": 341,
+      "validation": 20
+    },
+    "representedSessionIds": 70,
+    "sessionIdsAbsentFromPortable": 0,
+    "crossSplitSessionIds": 0,
+    "crossSplitExactCompletions": 0,
+    "validationCompletionsInAlpaca": 20,
+    "judgeEnabled": true,
+    "rewardedScored": 119,
+    "rewardSignalCounts": {
+      "explicit": 40,
+      "inferred": 79,
+      "quiz": 0,
+      "judge": 0
+    },
+    "manifestCounts": {
+      "artifactsRead": 86,
+      "sessionsRead": 81,
+      "sandboxFilesRead": 0,
+      "sandboxCommitsRead": 0,
+      "examplesWritten": 308,
+      "canonicalRecords": 361,
+      "trainRecords": 341,
+      "validationRecords": 20,
+      "sftExcluded": 53,
+      "duplicatesRemoved": 175,
+      "skipped": 700,
+      "redactions": 11,
+      "rewardedLines": 616,
+      "ktoLines": 119,
+      "preferenceLines": 7,
+      "dpoTextLines": 7,
+      "grpoPromptLines": 379
+    },
+    "manifestWarnings": [
+      "298 captured responses have no quality signal; review them before high-stakes training."
+    ]
+  }
+}

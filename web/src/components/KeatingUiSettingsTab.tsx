@@ -496,7 +496,6 @@ export function KeatingUiSettingsTab() {
 								onClose={() => setImageModelPickerOpen(false)}
 								onSelect={(modelId) => {
 									update({ imageModel: modelId });
-									setImageModelPickerOpen(false);
 								}}
 							/>
 

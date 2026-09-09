@@ -1,8 +1,10 @@
 # Not Organic hosted provider deployment
 
 Hosted access powers the hosted chat model, credit packs, course workspaces, and
-hosted notebooks. It is **off by default**. Pricing uses the provider's public
-OAuth/DPoP client when that complete browser contract is configured; legacy
+hosted notebooks. Local defaults configure public sign-in at
+`https://id.notorganic.info/authorize` with gateway `https://api.notorganic.info`.
+Checkout and the legacy server integration remain **off by default**.
+Pricing uses the provider's public OAuth/DPoP client; legacy
 server-proxied hosted surfaces still require the session adapter described in
 [Why server-proxied hosted calls still fail](#why-server-proxied-hosted-calls-still-fail).
 
@@ -33,15 +35,18 @@ Browser gate:
   Enable only after live payment credentials, approved prices and signed credit
   delivery have been verified. Account signup may be enabled independently.
 
-- `VITE_NOTORGANIC_ENABLED` — when `false`, hosted UI stays hidden rather than
-  rendering controls that cannot work.
+- `VITE_NOTORGANIC_ENABLED` — controls hosted inference availability. Account
+  sign-in remains available when the public issuer and authorization URL below
+  are configured, including when this flag is `false`. Checkout has its own gate.
 - `VITE_NOTORGANIC_PUBLIC_ISSUER` — public provider origin used for token,
   wallet, usage, checkout, and inference requests; omit `/v1`.
 - `VITE_NOTORGANIC_AUTHORIZATION_URL` — provider authorization endpoint used to
   begin the PKCE redirect flow.
-- `VITE_NOTORGANIC_CLIENT_ID` — public Keating OAuth client identifier.
-- `VITE_NOTORGANIC_REDIRECT_URI` — exact registered callback URL for this
-  Keating deployment.
+- `VITE_NOTORGANIC_CLIENT_ID` — public Keating OAuth client identifier. When
+  blank, uses the current HTTPS or HTTP loopback browser origin.
+- `VITE_NOTORGANIC_REDIRECT_URI` — exact callback URL for this Keating deployment.
+  When blank, uses `/notorganic/callback` on the current HTTPS or HTTP loopback
+  origin. This keeps the callback on the origin holding the PKCE transaction.
 - `VITE_NOTORGANIC_SCOPE` — requested public capability scopes. Keating needs
   `wallet:read usage:read billing:checkout infer:balanced realtime:connect` for the complete
   wallet, checkout, and balanced-inference surface.
@@ -51,7 +56,7 @@ Browser gate:
 
 `VITE_NOTORGANIC_ENABLED=true` alone does not enable checkout. Pricing offers
 provider connection and purchase actions only when the issuer, authorization
-URL, client ID, redirect URI, scope, and max-cost ceiling are all present. With
+URL, resolved client ID and redirect URI, scope, and max-cost ceiling are present. With
 an incomplete contract it truthfully retains the credit-waitlist flow.
 
 Nitro server:
@@ -65,7 +70,7 @@ Nitro server:
 
 ## Why server-proxied hosted calls still fail
 
-Enabling those variables is **not sufficient to authenticate a user**. A Nitro
+Enabling the legacy server route gate is **not sufficient to authenticate a user**. A Nitro
 middleware/plugin must put a `NotOrganicSessionAdapter` on each authenticated
 request at `event.context.notOrganicSessionAdapter`. That adapter must:
 

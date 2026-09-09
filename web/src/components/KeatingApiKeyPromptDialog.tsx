@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getAppStorage } from "@earendil-works/pi-web-ui";
+import { getAppStorage } from "../keating/app-storage";
 import { KeyRound, X } from "lucide-react";
 import { css } from "../../styled-system/css";
 import { handleTutorialLinkClick, tutorialApiKeyHref } from "../lib/tutorial-links";
@@ -27,13 +27,13 @@ export async function promptKeatingApiKey(
 	options: { force?: boolean } = {},
 ): Promise<boolean> {
 	if (typeof window === "undefined") return false;
+	if (isNotOrganicProvider(provider)) {
+		// Keating uses an account session, never a stored provider API key.
+		return promptNotOrganicAccess({ force: options.force, allowSignIn: true });
+	}
 	if (!options.force) {
 		const existing = await getAppStorage().providerKeys.get(provider);
 		if (existing) return true;
-	}
-
-	if (isNotOrganicProvider(provider)) {
-		return promptNotOrganicAccess({ force: options.force });
 	}
 
 	if (providerToOAuthId(provider)) {

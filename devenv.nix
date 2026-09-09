@@ -125,13 +125,10 @@ in
   # web/.env.local, which is gitignored. web/.env.example documents every
   # variable, secret or not.
   #
-  # Not Organic hosted access -- the hosted model, credit packs, course
-  # workspaces, and hosted notebooks -- is OFF by default. Setting these flags
-  # to "true" is necessary but NOT sufficient to authenticate anyone: the Nitro
-  # server also needs a NotOrganicSessionAdapter registered on each authenticated
-  # request, and nothing in the repo registers one outside tests. Until that
-  # exists, every hosted call returns 503 notorganic_auth_adapter_unavailable.
-  # That is intentional -- see web/src/notorganic-provider/OPERATIONS.md.
+  # Public Not Organic sign-in uses PKCE/DPoP directly with the provider.
+  # Checkout and the legacy server-proxied integration remain separately gated;
+  # the latter needs a NotOrganicSessionAdapter, not just an enabled flag.
+  # See web/src/notorganic-provider/OPERATIONS.md.
   #
   # This block, web/.env.example, and OPERATIONS.md must agree. That is enforced:
   #   devenv tasks run keating:check-env
@@ -143,13 +140,14 @@ in
     # Client-side gate. Vite exposes VITE_-prefixed shell variables on
     # import.meta.env, so this value reaches the browser bundle. While it is
     # "false" the hosted UI stays hidden instead of rendering dead controls.
-    VITE_NOTORGANIC_ENABLED = "false";
+    VITE_NOTORGANIC_ENABLED = "true";
     VITE_NOTORGANIC_CHECKOUT_ENABLED = "false";
 
-    # Browser-to-provider OAuth/DPoP contract. Deployment-specific values stay
-    # blank so a local shell cannot accidentally advertise working checkout.
-    VITE_NOTORGANIC_PUBLIC_ISSUER = "";
-    VITE_NOTORGANIC_AUTHORIZATION_URL = "";
+    # Public PKCE/DPoP sign-in is independent of the legacy server adapter.
+    # Client id and callback derive from the current browser origin; checkout
+    # retains its separate disabled gate.
+    VITE_NOTORGANIC_PUBLIC_ISSUER = "https://api.notorganic.info";
+    VITE_NOTORGANIC_AUTHORIZATION_URL = "https://id.notorganic.info/authorize";
     VITE_NOTORGANIC_CLIENT_ID = "";
     VITE_NOTORGANIC_REDIRECT_URI = "";
     VITE_NOTORGANIC_SCOPE = "wallet:read usage:read billing:checkout infer:balanced realtime:connect";

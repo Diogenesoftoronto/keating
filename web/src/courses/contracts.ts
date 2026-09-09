@@ -124,6 +124,7 @@ export const courseAssignmentSchema = z.object({
   taskKind: z.enum(["assignment", "practice", "draft", "fieldwork"]).optional(),
   availableFrom: isoDateSchema.optional(),
   targetWords: z.number().int().positive().optional(),
+  responseCapture: z.object({ kind: z.enum(["audio", "video"]), timeLimitSeconds: z.number().int().min(1).max(180).optional() }).strict().optional(),
   round: z.number().int().positive().optional(),
   taskItems: z.array(z.object({ id: idSchema, title: shortTextSchema, detail: z.string().optional() })).max(64).optional(),
   deliverables: z

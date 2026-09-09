@@ -28,7 +28,7 @@ import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import { ChatOnboarding, hasCompletedChatOnboarding } from "../components/ChatOnboarding";
-import { beginNotOrganicAuthorization } from "../notorganic-provider";
+import { promptNotOrganicAccess } from "../components/NotOrganicAccessPromptDialog";
 import { useSeo } from "../hooks/useSeo";
 import { useMediaQuery } from "../hooks/use-media-query";
 import { isCanvasFeatureEnabled } from "../lib/feature-flags";
@@ -1036,9 +1036,7 @@ function ChatContent() {
     await performShare();
   };
 
-  // NOTE: responsive Tailwind display variants (e.g. `hidden md:inline-flex`) are
-  // NOT reliable here because pi-web-ui ships its own compiled utilities. We
-  // drive show/hide from Panda globalCss via `.chat-only-desktop` (header icons,
+  // Panda globalCss drives responsive visibility via `.chat-only-desktop` (header icons,
   // md+) and `.chat-only-compact` (overflow-menu duplicates, < md).
   const actionButtonClass = cx("chat-action-button", actionButtonPandaClass);
   const showPersistenceBanner =
@@ -1117,7 +1115,7 @@ function ChatContent() {
           aria-label="Go to Keating home"
         >
           <img
-								src="/brand/logo-lockup-hd.png"
+								src="/brand/logo-lockup-compact.avif"
             alt="Keating"
             className={css({
               height: "1.5rem",
@@ -1580,7 +1578,7 @@ function ChatContent() {
       {showOnboarding && <div className={css({ flex: 1, minHeight: 0, overflowY: "auto", paddingInline: "1rem" })}>
         <ChatOnboarding
           onUseKeating={chooseKeatingModel}
-          onConnectAccount={() => beginNotOrganicAuthorization("/chat")}
+          onConnectAccount={async () => { await promptNotOrganicAccess({ allowSignIn: true }); }}
           onChooseModel={openModelSelector}
           onSkip={() => setShowOnboarding(false)}
           onComplete={goal => { setOnboardingGoal(goal); setShowOnboarding(false); }}

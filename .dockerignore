@@ -34,3 +34,10 @@ desktop
 *.log
 *.tgz
 *.tar.gz
+
+# Shared navigation policy is imported by the web build.
+!desktop/
+desktop/*
+!desktop/src/
+desktop/src/*
+!desktop/src/navigation.ts

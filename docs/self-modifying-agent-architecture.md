@@ -155,7 +155,7 @@ This is not yet the full NodePod or microVM runtime. It is the load-bearing inte
 | Snapshots | Stopped-sandbox disk-level snapshots; new VMs boot from them instantly |
 | Rootfs | Native passthrough (fastest) or Overlayfs with OCI image layering + COW |
 | SDK | Rust, Python, TypeScript, Go |
-| Agent integration | First-class MCP server + Agent Skills package (Claude Code, Cursor, Codex, Gemini CLI, GitHub Copilot) |
+| Agent integration | First-class MCP server + Agent Skills package (Claude Code, Cursor, Codex, GitHub Copilot) |
 | Rootless | No root or daemon required — runs as child process of calling application |
 
 **Critical capabilities for Keating**:

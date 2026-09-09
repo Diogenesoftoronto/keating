@@ -1,0 +1,90 @@
+[
+  {
+    "state": "idle",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-75db7e79-a6f7-4f33-a6e8-8e1110d50dc5.png"
+  },
+  {
+    "state": "listening",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-82fda797-1f37-49d1-9e5e-e323fed4610a.png"
+  },
+  {
+    "state": "thinking",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-3746a135-4b13-45b4-af2a-208d84c6bc97.png"
+  },
+  {
+    "state": "speaking",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-3322910c-01fc-4f7a-a238-17d5bdcf5aba.png"
+  },
+  {
+    "state": "success",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-a5cd8122-0763-4413-9723-4422cbad6667.png"
+  },
+  {
+    "state": "waving",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-b3fdf9f2-c594-44e7-b9a1-b02082c4fc24.png"
+  },
+  {
+    "state": "walking",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-f76f292d-86f8-47f7-abf3-c4c9349d5f6d.png"
+  },
+  {
+    "state": "sitting",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-13b64872-d831-48e6-9d60-ef475c2871fb.png"
+  },
+  {
+    "state": "flipping",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-95c1eedc-bc8b-45cc-8584-0d597fb20b67.png"
+  },
+  {
+    "state": "reading",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-59e382ab-911c-4b95-a2d8-10903c1c8d42.png"
+  },
+  {
+    "state": "music",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-660d2c27-9e07-4d75-84f1-981c2bd50832.png"
+  },
+  {
+    "state": "science",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-dcb031c8-2cf5-4086-80b7-b6e55120a0d6.png"
+  },
+  {
+    "state": "maths",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-ad608792-29da-4a0d-8fde-1e98c6edcdc6.png"
+  },
+  {
+    "state": "coding",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-15225817-f18b-4c05-801b-3c977781ec89.png"
+  },
+  {
+    "state": "chemistry",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-bbd6dbd3-f14e-4836-af4c-9d77280073c9.png"
+  },
+  {
+    "state": "biology",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-3bc160f6-75a2-4bc6-a98d-551d2551e251.png"
+  },
+  {
+    "state": "physics",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-213dbee5-1110-4842-87d9-338156c8445b.png"
+  },
+  {
+    "state": "astronomy",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-a692a138-80b8-4f0c-b0a7-9cd1fd48129f.png"
+  },
+  {
+    "state": "palaeontology",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-ead64bd3-055c-4d61-a0f5-d0e756294d52.png"
+  },
+  {
+    "state": "electronics",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-b283b1c8-5be9-4401-8406-4a4b0037a82d.png"
+  },
+  {
+    "state": "mycology",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-904d1896-c7c7-4a11-b892-d47d57d9e119.png"
+  },
+  {
+    "state": "loading",
+    "path": "/home/diogenes/.codex/generated_images/01a0845d-7684-7db2-a6bb-71e3adda3052/exec-984ad2a4-577c-40eb-bb8f-26b7f21bed61.png"
+  }
+]

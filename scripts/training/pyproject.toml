@@ -1,0 +1,24 @@
+[project]
+name = "keating-training-pilot"
+version = "0.1.0"
+description = "Bounded account-owned training and local checkpoint serving tools"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "tinker==0.27.1",
+    "tinker-cookbook==0.5.7",
+    "tml-renderers==0.1.0",
+    "torch==2.14.0+cpu",
+    "typer==0.27.2",
+]
+
+[tool.uv]
+package = false
+environments = ["sys_platform == 'linux' and platform_machine == 'x86_64'"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

@@ -1,6 +1,8 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 import { LearnerProfile, LearnerState, TopicDefinition } from "./types.js";
 import { clamp } from "./util.js";
+import { learnerProfileNameFromPath } from "./learner-profile-selection.js";
 
 const DEFAULT_LEARNER_STATE: Omit<LearnerState, "id"> = {
   coveredTopics: [],
@@ -26,6 +28,36 @@ function defaultLearnerState(): LearnerState {
 }
 
 export async function loadLearnerState(filePath: string): Promise<LearnerState> {
+  const name = learnerProfileNameFromPath(filePath);
+  if (name !== undefined) {
+    const defaults = defaultLearnerState();
+    defaults.id = name;
+    defaults.profile.id = name;
+    let parsed: unknown;
+    try { parsed = JSON.parse(await readFile(filePath, "utf8")); }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return defaults;
+      throw new Error(`Cannot load learner profile ${name}: expected a valid JSON learner-state object.`, { cause: error });
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error(`Invalid learner profile ${name}: expected an object.`);
+    const value = parsed as Record<string, unknown>;
+    if (value.profile !== undefined && (!value.profile || typeof value.profile !== "object" || Array.isArray(value.profile))) {
+      throw new Error(`Invalid learner profile ${name}: profile must be an object.`);
+    }
+    for (const key of ["coveredTopics", "identifiedMisconceptions", "feedback", "quizResults", "sessions"] as const) {
+      if (value[key] !== undefined && !Array.isArray(value[key])) throw new Error(`Invalid learner profile ${name}: ${key} must be an array.`);
+    }
+    const profile = value.profile as Record<string, unknown> | undefined;
+    if (profile?.background !== undefined && typeof profile.background !== "string") throw new Error(`Invalid learner profile ${name}: background must be text.`);
+    for (const key of Object.keys(defaults.profile).filter((key) => key !== "id")) {
+      if (profile?.[key] !== undefined && (typeof profile[key] !== "number" || !Number.isFinite(profile[key]) || Number(profile[key]) < 0 || Number(profile[key]) > 1)) {
+        throw new Error(`Invalid learner profile ${name}: ${key} must be a number from 0 to 1.`);
+      }
+    }
+    if ((value.id !== undefined && (typeof value.id !== "string" || !value.id.trim())) ||
+      (profile?.id !== undefined && (typeof profile.id !== "string" || !profile.id.trim()))) throw new Error(`Invalid learner profile ${name}: ids must be nonempty text.`);
+    return { ...defaults, ...value, profile: { ...defaults.profile, ...profile } } as LearnerState;
+  }
   // Read JSON from filePath. If file doesn't exist or is invalid, return default with id "learner-1"
   try {
     const raw = await readFile(filePath, "utf8");
@@ -38,7 +70,17 @@ export async function loadLearnerState(filePath: string): Promise<LearnerState> 
 }
 
 export async function saveLearnerState(filePath: string, state: LearnerState): Promise<void> {
+  await mkdir(dirname(filePath), { recursive: true });
   await writeFile(filePath, JSON.stringify(state, null, 2), "utf8");
+}
+
+/** Create a selected profile once; validate existing user-edited files without rewriting them. */
+export async function ensureNamedLearnerState(filePath: string): Promise<void> {
+  if (learnerProfileNameFromPath(filePath) === undefined) return;
+  const state = await loadLearnerState(filePath);
+  await mkdir(dirname(filePath), { recursive: true });
+  try { await writeFile(filePath, `${JSON.stringify(state, null, 2)}\n`, { encoding: "utf8", flag: "wx", mode: 0o600 }); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error; }
 }
 
 export function recordTopicCoverage(

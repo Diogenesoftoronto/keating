@@ -12,14 +12,14 @@ import { registerP2PIpc, type P2PBackendBridge } from "./ipc.js";
 import { registerCredentialIpc } from "./credential-ipc.js";
 import { DesktopCredentialService } from "./credential-service.js";
 import { CredentialVault } from "./credential-vault.js";
-import {
-	startOAuthCallbackReceiver,
-	type OAuthCallbackReceiver,
-} from "./oauth-callback.js";
+import { DesktopOAuthLifecycle } from "./oauth-lifecycle.js";
+import { registerOAuthIpc } from "./oauth-ipc.js";
 import {
 	startPackagedNitro,
 	type NitroRuntime,
 } from "./nitro-runtime.js";
+import { startNativeRuntime, type NativeRuntime } from "./native-runtime.js";
+import { registerNativeIpc } from "./native-ipc.js";
 import { DesktopLifecycle } from "./lifecycle.js";
 import { installDesktopPermissionPolicy } from "./permissions.js";
 import { resolveDesktopRuntimePaths } from "./runtime-paths.js";
@@ -37,28 +37,23 @@ const OAUTH_CALLBACK_IPC_CHANNEL = "keating:oauth-callback";
 let shuttingDown = false;
 let windowOpening: Promise<void> | null = null;
 let activeWindow: BrowserWindow | null = null;
-let oauthCallbackReceiver: OAuthCallbackReceiver | null = null;
 let pendingOAuthCallbackUrl: string | null = null;
+let nativeRuntimeOpening: Promise<NativeRuntime> | null = null;
+let nativeRuntime: NativeRuntime | null = null;
+let credentialService: DesktopCredentialService | null = null;
 const lifecycle = new DesktopLifecycle<P2PStore, NitroRuntime>();
 
-async function startDesktopOAuthCallbackReceiver(): Promise<void> {
-	if (oauthCallbackReceiver) return;
-	const result = await startOAuthCallbackReceiver({
-		onCallback({ url }) {
-			const callbackUrl = url.toString();
-			if (!activeWindow || activeWindow.isDestroyed() || activeWindow.webContents.isDestroyed()) {
-				pendingOAuthCallbackUrl = callbackUrl;
-				return;
-			}
-			activeWindow.webContents.send(OAUTH_CALLBACK_IPC_CHANNEL, callbackUrl);
-		},
-	});
-	if (result.available) {
-		oauthCallbackReceiver = result.receiver;
+const oauthLifecycle = new DesktopOAuthLifecycle((callbackUrl) => {
+	if (!activeWindow || activeWindow.isDestroyed() || activeWindow.webContents.isDestroyed()) {
+		pendingOAuthCallbackUrl = callbackUrl;
 		return;
 	}
-	console.warn(result.message);
-}
+	if (activeWindow.webContents.isLoadingMainFrame()) pendingOAuthCallbackUrl = callbackUrl;
+	else activeWindow.webContents.send(OAUTH_CALLBACK_IPC_CHANNEL, callbackUrl);
+	if (activeWindow.isMinimized()) activeWindow.restore();
+	activeWindow.show();
+	activeWindow.focus();
+}, undefined, () => { pendingOAuthCallbackUrl = null; });
 
 /**
  * Load or create the per-user 32-byte secret that derives the swarm topic and
@@ -167,6 +162,11 @@ async function createWindow(): Promise<void> {
 	try {
 		const renderer = await rendererLocation();
 		const store = await getP2PStore();
+		nativeRuntimeOpening = startNativeRuntime(join(app.getPath("userData"), "workspace"));
+		const workspaceRuntime = await nativeRuntimeOpening;
+		nativeRuntime = workspaceRuntime;
+		nativeRuntimeOpening = null;
+		if (shuttingDown) { await workspaceRuntime.stop(); return; }
 		window = new BrowserWindow({
 			width: 1200,
 			height: 800,
@@ -190,8 +190,10 @@ async function createWindow(): Promise<void> {
 		};
 		const rendererCleanups: Array<() => void | Promise<void>> = [
 			registerP2PIpc(window, bridge, { appOrigin: renderer.origin }),
+			await registerNativeIpc(window, workspaceRuntime, renderer.origin),
+			await registerOAuthIpc(window, oauthLifecycle, renderer.origin),
 		];
-		const credentials = new CredentialVault({
+		credentialService ??= new DesktopCredentialService(new CredentialVault({
 			path: join(app.getPath("userData"), "credentials.v1.json"),
 			codec: {
 				isEncryptionAvailable() {
@@ -203,10 +205,10 @@ async function createWindow(): Promise<void> {
 				encryptString: (plaintext) => safeStorage.encryptString(plaintext),
 				decryptString: (ciphertext) => safeStorage.decryptString(Buffer.from(ciphertext)),
 			},
-		});
+		}), bridge);
 		rendererCleanups.push(registerCredentialIpc(
 			window,
-			new DesktopCredentialService(credentials, bridge),
+			credentialService,
 			renderer.origin,
 		));
 		// Replacing the lifecycle binding first clears handlers from a prior macOS
@@ -217,12 +219,15 @@ async function createWindow(): Promise<void> {
 		});
 		rendererCleanups.push(installDesktopPermissionPolicy(window, renderer.origin));
 		installNavigationPolicy(window, renderer.origin);
+		const currentWindow = window;
+		window.webContents.on("did-finish-load", () => {
+			if (pendingOAuthCallbackUrl && !currentWindow.webContents.isDestroyed()) {
+				const callbackUrl = pendingOAuthCallbackUrl;
+				pendingOAuthCallbackUrl = null;
+				currentWindow.webContents.send(OAUTH_CALLBACK_IPC_CHANNEL, callbackUrl);
+			}
+		});
 		await window.loadURL(renderer.url);
-		if (pendingOAuthCallbackUrl && !window.webContents.isDestroyed()) {
-			const callbackUrl = pendingOAuthCallbackUrl;
-			pendingOAuthCallbackUrl = null;
-			window.webContents.send(OAUTH_CALLBACK_IPC_CHANNEL, callbackUrl);
-		}
 	} catch (error) {
 		if (window && !window.isDestroyed()) window.destroy();
 		await shutdownDesktop();
@@ -251,17 +256,21 @@ async function ensurePackagedNitro(): Promise<NitroRuntime> {
 }
 
 async function shutdownDesktop(): Promise<void> {
-	const receiver = oauthCallbackReceiver;
-	oauthCallbackReceiver = null;
+	if (nativeRuntimeOpening) {
+		try { nativeRuntime = await nativeRuntimeOpening; } catch { /* Startup already reports its error. */ }
+	}
+	const workspaceRuntime = nativeRuntime;
+	nativeRuntime = null;
+	pendingOAuthCallbackUrl = null;
 	await Promise.allSettled([
-		...(receiver ? [receiver.stop()] : []),
+		oauthLifecycle.cancel(),
+		...(workspaceRuntime ? [workspaceRuntime.stop()] : []),
 		lifecycle.shutdown(),
 	]);
 }
 
 app.whenReady()
 	.then(async () => {
-		await startDesktopOAuthCallbackReceiver();
 		await openWindow();
 		app.on("activate", () => {
 			if (BrowserWindow.getAllWindows().length === 0) {

@@ -1,3 +1,5 @@
+import { documentsFromMessage, splitAssistantOpenUiDocuments, TUI_SUBMISSION_MESSAGE } from "./ui/assistant-documents.js";
+import { uiDocumentPresentation } from "./ui/render.js";
 import { toolResultCardLines } from "../core/cards.js";
 import {
   createTuiPresentationProfile,
@@ -123,7 +125,12 @@ export function transcriptEntriesFromMessages(messages: readonly unknown[]): Tra
     }
     if (role === "assistant") {
       const entries: TranscriptEntry[] = [];
-      if (body) entries.push({ id: stableId("assistant", message, index), kind: "assistant", title: "Keating", body });
+      const prepared = splitAssistantOpenUiDocuments(body);
+      if (prepared.content) entries.push({ id: stableId("assistant", message, index), kind: "assistant", title: "Keating", body: prepared.content });
+      for (const [documentIndex, document] of documentsFromMessage(message).entries()) {
+        const presentation = uiDocumentPresentation(document);
+        entries.push({ id: `${stableId("document", message, index)}-${documentIndex}`, kind: "artifact", title: presentation.heading, body: presentation.body.join("\n") });
+      }
       if ((message.stopReason === "error" || message.stopReason === "aborted") && typeof message.errorMessage === "string") {
         entries.push({
           id: stableId("assistant-error", message, index),
@@ -133,6 +140,10 @@ export function transcriptEntriesFromMessages(messages: readonly unknown[]): Tra
         });
       }
       return entries;
+    }
+    if (role === "custom" && message.customType === TUI_SUBMISSION_MESSAGE) {
+      const summary = asRecord(message.details).learnerSummary;
+      return [{ id: stableId("submission", message, index), kind: "user", title: "Your activity response", body: typeof summary === "string" ? summary : "Activity response submitted for tutor feedback." }];
     }
     if (role === "toolResult") {
       const toolName = typeof message.toolName === "string" ? message.toolName : "tool";

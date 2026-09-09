@@ -5,10 +5,9 @@ import {
   listArtifacts,
   timelineArtifact
 } from "../../../core/project.js";
-import { learnerStatePath } from "../../../core/paths.js";
-import { loadLearnerState, recordSessionStart, saveLearnerState } from "../../../core/learner-state.js";
+import { loadLearnerContext } from "../../../core/learner-context.js";
 import { relative } from "node:path";
-import { keatingToolMaker, getCwd, feedbackOnlyTopics, up, down, confused } from "./shared.js";
+import { keatingToolMaker, getCwd } from "./shared.js";
 
 export const selfEvaluationTools = [
   keatingToolMaker(
@@ -54,23 +53,10 @@ export const selfEvaluationTools = [
   keatingToolMaker(
     "learner_state",
     "learner_state",
-    "Load the learner's profile, session history, and topic progress. ALWAYS call this at the start of every new conversation.",
+    "Read the learner's saved background, goals, feedback and learning history. This context is already loaded at conversation start; call to inspect current saved records without recording a new session.",
     {},
     async () => {
-      const statePath = learnerStatePath(getCwd());
-      const state = await loadLearnerState(statePath);
-      recordSessionStart(state);
-      await saveLearnerState(statePath, state);
-      const upCount = state.feedback.filter((f: any) => f.signal === up).length;
-      const downCount = state.feedback.filter((f: any) => f.signal === down).length;
-      const confusedCount = state.feedback.filter((f: any) => f.signal === confused).length;
-      const topicList = state.coveredTopics.slice(-10).map((t: any) => ` - ${t.slug} (${t.domain})`).join("\n") || "None yet";
-      const feedbackTopics = feedbackOnlyTopics(state);
-      const feedbackTopicList = feedbackTopics.length > 0
-        ? `\nFeedback-only topics: ${feedbackTopics.length}\n${feedbackTopics.map((topic) => ` - ${topic}`).join("\n")}`
-        : "";
-      const text = `Learner Profile:\nSessions: ${state.sessions?.length ?? 0}\nTopics explored: ${state.coveredTopics.length}\n${topicList}${feedbackTopicList}\nFeedback: 👍${upCount} 👎${downCount} 🤔${confusedCount}\nMisconceptions identified: ${state.identifiedMisconceptions.length}`;
-      return { content: [{ type: "text", text }] };
+      return { content: [{ type: "text", text: await loadLearnerContext(getCwd()) }] };
     }
   ),
   keatingToolMaker(

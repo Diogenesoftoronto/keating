@@ -16,6 +16,7 @@ import {
 	type SessionDebugEvent,
 } from "../../lib/session-debug";
 import { Toggle } from "../Toggle";
+import { CopyDiagnosticButton } from "./CopyDiagnosticButton";
 
 const stackClass = css({ display: "flex", flexDirection: "column", gap: "1.5rem" });
 const sectionClass = css({ display: "flex", flexDirection: "column", gap: "0.75rem" });
@@ -159,7 +160,11 @@ function SessionInspector() {
 					</div>
 
 					<div className={cardClass}>
-						<h4 className={headingClass}>Tool call timeline</h4>
+						<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: ".5rem" })}>
+              <h4 className={headingClass}>Tool call timeline</h4>
+              <CopyDiagnosticButton label="Copy failed tools" disabled={failedTools === 0} text={() => displayJson({ sessionId: snapshot.sessionId, transport: snapshot.transport, failures: snapshot.toolRuns.filter(run => run.status === "failed") })} />
+            </div>
+            <p className={mutedClass}>Copied tool details include captured arguments and results.</p>
 						{snapshot.toolRuns.length === 0 ? <p className={mutedClass}>No tool calls captured.</p> : (
 							<ol className={css({ display: "flex", maxHeight: "28rem", flexDirection: "column", gap: "0.5rem", overflowY: "auto" })}>
 								{[...snapshot.toolRuns].reverse().map((run) => (
@@ -168,7 +173,8 @@ function SessionInspector() {
 											<summary className={summaryClass}>
 												{run.name} · {run.status}{run.durationMs !== undefined ? ` · ${run.durationMs}ms` : ""}
 											</summary>
-											<pre className={preClass}>{displayJson({ callId: run.callId, arguments: run.arguments, result: run.result })}</pre>
+											<CopyDiagnosticButton label={run.status === "failed" ? "Copy failure" : "Copy tool details"} text={() => displayJson({ callId: run.callId, name: run.name, status: run.status, arguments: run.arguments, result: run.result })} />
+                        <pre className={preClass}>{displayJson({ callId: run.callId, arguments: run.arguments, result: run.result })}</pre>
 										</details>
 									</li>
 								))}
@@ -184,7 +190,8 @@ function SessionInspector() {
 									<li key={entry.id} className={css({ fontSize: "0.7rem", color: "var(--foreground)" })}>
 										<time dateTime={entry.timestamp} className={css({ color: "var(--muted-foreground)" })}>{new Date(entry.timestamp).toLocaleTimeString()}</time>{" "}
 										<code>{entry.kind}:{entry.name}</code>{entry.status ? ` · ${entry.status}` : ""}{entry.durationMs !== undefined ? ` · ${entry.durationMs}ms` : ""}
-										{entry.details !== undefined && <details><summary className={mutedClass}>Details</summary><pre className={preClass}>{displayJson(entry.details)}</pre></details>}
+										<CopyDiagnosticButton label={entry.status === "failed" ? "Copy failure" : "Copy event"} text={() => displayJson(entry)} />
+                    {entry.details !== undefined && <details><summary className={mutedClass}>Details</summary><pre className={preClass}>{displayJson(entry.details)}</pre></details>}
 									</li>
 								))}
 							</ol>
@@ -208,14 +215,6 @@ function SanitizedDiagnostics() {
 	const errorCount = entries.filter((entry) => entry.level === "error").length;
 	const recentEntries = entries.slice(-50).reverse();
 
-	const copyReport = async () => {
-		try {
-			await navigator.clipboard.writeText(buildDiagnosticReport());
-			setStatus("Sanitized report copied.");
-		} catch {
-			setStatus("Copy failed. Download the report instead.");
-		}
-	};
 
 	return (
 		<section className={sectionClass} aria-labelledby="sanitized-diagnostics-heading">
@@ -229,7 +228,8 @@ function SanitizedDiagnostics() {
 				<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
 					<div><strong className={headingClass}>{entries.length} events</strong><div className={mutedClass}>{warningCount} warnings · {errorCount} errors</div></div>
 					<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
-						<button type="button" className={buttonClass} onClick={() => void copyReport()}>Copy safe report</button>
+						<CopyDiagnosticButton label="Copy failures" disabled={errorCount === 0} text={() => buildDiagnosticReport({ entries: entries.filter(entry => entry.level === "error") })} />
+            <CopyDiagnosticButton label="Copy safe report" text={() => buildDiagnosticReport()} />
 						<button type="button" className={buttonClass} onClick={() => { downloadTextFile("keating-diagnostics.json", buildDiagnosticReport()); setStatus("Sanitized report downloaded."); }}>Download safe report</button>
 						<button type="button" className={buttonClass} disabled={entries.length === 0} onClick={() => { clearDiagnostics(); setStatus("Safe diagnostics cleared."); }}>Clear</button>
 					</div>
@@ -242,6 +242,7 @@ function SanitizedDiagnostics() {
 								<time dateTime={entry.timestamp} className={css({ color: "var(--muted-foreground)" })}>{new Date(entry.timestamp).toLocaleTimeString()}</time>{" "}
 								<strong className={css({ color: entry.level === "error" ? "var(--destructive)" : "var(--foreground)" })}>{entry.level}</strong>{" "}
 								<code>{entry.source}</code> · {entry.message}
+                  <CopyDiagnosticButton label={entry.level === "error" ? "Copy failure" : "Copy event"} text={() => displayJson(entry)} />
 								{entry.metadata && <code className={css({ display: "block", overflowWrap: "anywhere", color: "var(--muted-foreground)" })}>{JSON.stringify(entry.metadata)}</code>}
 							</li>
 						))}

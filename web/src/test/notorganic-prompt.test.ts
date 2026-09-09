@@ -64,4 +64,32 @@ describe("Not Organic access prompt behavior", () => {
 		closeNotOrganicPrompt(false);
 		expect(await result).toBe(false);
 	});
+
+	it("allows an explicit account popup while inference is disabled", async () => {
+		process.env.VITE_NOTORGANIC_ENABLED = "false";
+		const { promptNotOrganicAccess, getActiveNotOrganicPrompt, closeNotOrganicPrompt } = await import("../components/NotOrganicAccessPromptDialog");
+		expect(await promptNotOrganicAccess({ force: true })).toBe(false);
+		const result = promptNotOrganicAccess({ allowSignIn: true, force: true });
+		expect(getActiveNotOrganicPrompt()).not.toBeNull();
+		closeNotOrganicPrompt(false);
+		expect(await result).toBe(false);
+	});
+
+	it("does not let account sign-in enable credit purchases", async () => {
+		process.env.VITE_NOTORGANIC_ENABLED = "false";
+		const { promptNotOrganicAccess, getActiveNotOrganicPrompt } = await import("../components/NotOrganicAccessPromptDialog");
+		expect(await promptNotOrganicAccess({ allowSignIn: true, packId: "keating_pack_25", force: true })).toBe(false);
+		expect(getActiveNotOrganicPrompt()).toBeNull();
+	});
+
+	it("settles an earlier popup when another account request replaces it", async () => {
+		const { promptNotOrganicAccess, getActiveNotOrganicPrompt, closeNotOrganicPrompt } = await import("../components/NotOrganicAccessPromptDialog");
+		const first = promptNotOrganicAccess({ allowSignIn: true, force: true });
+		const firstId = getActiveNotOrganicPrompt()?.id;
+		const second = promptNotOrganicAccess({ allowSignIn: true, force: true });
+		expect(await first).toBe(false);
+		expect(getActiveNotOrganicPrompt()?.id).not.toBe(firstId);
+		closeNotOrganicPrompt(true);
+		expect(await second).toBe(true);
+	});
 });

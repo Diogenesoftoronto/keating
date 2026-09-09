@@ -1,6 +1,7 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import {
   PortableAgentInstance,
+  PORTABLE_TOOL_NAMES,
   useInstruction,
   useModel,
   useSkill,
@@ -34,8 +35,8 @@ const LESSON_CRITIC_DESCRIPTION =
 export function appendKeatingPortableCatalog(systemPrompt: string): string {
   return [
     systemPrompt,
-    `Available portable skills (load one with activate_skill only when needed):\n- ${IMPROVEMENT_SKILL.name}: ${IMPROVEMENT_SKILL.description}`,
-    `Available fresh-context delegates (invoke through task):\n- lesson-critic: ${LESSON_CRITIC_DESCRIPTION}`,
+    `Available portable skills (load one with ${PORTABLE_TOOL_NAMES.activateSkill} only when needed):\n- ${IMPROVEMENT_SKILL.name}: ${IMPROVEMENT_SKILL.description}`,
+    `Available fresh-context delegates (invoke through ${PORTABLE_TOOL_NAMES.task}):\n- lesson-critic: ${LESSON_CRITIC_DESCRIPTION}`,
   ].join("\n\n");
 }
 

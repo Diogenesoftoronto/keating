@@ -12,7 +12,8 @@ export const MAX_CREDENTIAL_VAULT_BYTES = 1024 * 1024;
 /**
  * Deliberately mirrors Electron safeStorage without importing Electron. The
  * main process can adapt `safeStorage` directly; tests can inject a local
- * deterministic codec. A false availability result is always fail-closed.
+ * deterministic codec. Unavailable encryption forbids credential encryption
+ * and decryption; inspecting or removing existing ciphertext remains safe.
  */
 export interface CredentialEncryptionCodec {
 	isEncryptionAvailable(): boolean;
@@ -38,6 +39,16 @@ export class CredentialVaultError extends Error {
 	}
 }
 
+/** The sole recoverable condition permitting main-process, session-only storage. */
+export class CredentialEncryptionUnavailableError extends CredentialVaultError {
+	constructor() {
+		super("Secure credential encryption is unavailable.");
+		this.name = "CredentialEncryptionUnavailableError";
+	}
+}
+
+export interface CredentialStorageStatus { persistence: "encrypted" | "session" }
+
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
 	if (!value || typeof value !== "object" || Array.isArray(value)) return false;
 	const prototype = Object.getPrototypeOf(value);
@@ -61,7 +72,7 @@ export function assertCredentialId(value: unknown): string {
 	return value;
 }
 
-function assertCredentialValue(value: unknown): string {
+export function assertCredentialValue(value: unknown): string {
 	if (typeof value !== "string" || byteLength(value) > MAX_CREDENTIAL_VALUE_BYTES) {
 		throw new CredentialVaultError("Credential value is invalid.");
 	}
@@ -141,6 +152,7 @@ export class CredentialVault {
 			const document = await this.#readDocument();
 			const encoded = document.entries[id];
 			if (encoded === undefined) return null;
+			this.#assertSecureEncryption();
 			try {
 				const value = this.#codec.decryptString(new Uint8Array(Buffer.from(encoded, "base64")));
 				return assertCredentialValue(value);
@@ -156,6 +168,7 @@ export class CredentialVault {
 			assertCredentialId(id);
 			const plaintext = assertCredentialValue(value);
 			const document = await this.#readDocument();
+			this.#assertSecureEncryption();
 			if (!(id in document.entries) && Object.keys(document.entries).length >= MAX_CREDENTIAL_ENTRIES) {
 				throw new CredentialVaultError("Credential vault has too many entries.");
 			}
@@ -203,6 +216,18 @@ export class CredentialVault {
 		});
 	}
 
+	async status(): Promise<CredentialStorageStatus> {
+		return this.#run(async () => {
+			// Corrupt or unsafe storage must never be disguised as a missing keyring.
+			await this.#readDocument();
+			try { this.#assertSecureEncryption(); return { persistence: "encrypted" }; }
+			catch (error) {
+				if (error instanceof CredentialEncryptionUnavailableError) return { persistence: "session" };
+				throw error;
+			}
+		});
+	}
+
 	#run<T>(operation: () => Promise<T>): Promise<T> {
 		const result = this.#serial.then(operation, operation);
 		this.#serial = result.then(() => undefined, () => undefined);
@@ -212,16 +237,15 @@ export class CredentialVault {
 	#assertSecureEncryption(): void {
 		try {
 			if (this.#codec?.isEncryptionAvailable() !== true) {
-				throw new CredentialVaultError("Secure credential encryption is unavailable.");
+				throw new CredentialEncryptionUnavailableError();
 			}
 		} catch (error) {
 			if (error instanceof CredentialVaultError) throw error;
-			throw new CredentialVaultError("Secure credential encryption is unavailable.");
+			throw new CredentialEncryptionUnavailableError();
 		}
 	}
 
 	async #readDocument(): Promise<VaultDocument> {
-		this.#assertSecureEncryption();
 		await this.#assertSafeExistingVault();
 		let contents: Buffer;
 		try {
@@ -256,7 +280,8 @@ export class CredentialVault {
 	}
 
 	async #writeDocument(document: VaultDocument): Promise<void> {
-		this.#assertSecureEncryption();
+		// Entries are already encrypted. Removing ciphertext remains safe while
+		// the keyring is locked, and ensures sign-out cannot resurrect credentials.
 		const normalized = validateDocument(document);
 		const encoded = Buffer.from(JSON.stringify(normalized), "utf8");
 		if (encoded.byteLength > MAX_CREDENTIAL_VAULT_BYTES) throw new CredentialVaultError("Credential vault is too large.");

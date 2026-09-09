@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.14.0] - 2026-09-09
+
+### Added
+- Interactive Keatingbot companions with authored study animations, chat draft shortcuts, and new artwork across courses, tutorials, loading, and the homepage.
+- Named learner profiles with separate sessions, goals, practice history, and onboarding, plus evidence-backed learner memory and context carried into new sessions.
+- Native desktop workspace and process tools, desktop-aware onboarding, and Linux AppImage, DEB, and RPM release packages.
+- Audio and video response tasks with shared activity contracts and explicit web handoff on unsupported surfaces.
+- Learning case-study reports, benchmark fixtures, and reproducible analysis and training utilities.
+
+### Changed
+- Move browser conversations onto the Flue runtime with persistent NodePod state and account-scoped teaching context.
+- Compress runtime artwork as AVIF while preserving original PNGs; load mascot sequences on demand and respect reduced motion.
+- Improve provider setup, search results, diagnostics, tutorial navigation, and desktop workspace controls.
+- Restore interactive teaching documents, objective grading, submission feedback, and readable confirmations in the terminal.
+
+### Fixed
+- Show learner messages immediately while credentials and model preparation are pending, preserving them through cancellation or failure.
+- Coordinate service-worker navigation, recover failed NodePod startup, and separate cacheable assets from HTML and authentication routes.
+- Harden OAuth callback handling and desktop credential lifecycles, including temporary session storage when encrypted storage is unavailable.
+- Preserve speech settings, provider visibility, and learner state across application surfaces.
+
 ## [3.13.1] - 2026-09-06
 
 ### Fixed

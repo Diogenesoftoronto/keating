@@ -1,7 +1,7 @@
 import { startSubmissionSync } from "./submissions/course-outbox";
 import ReactDOM from "react-dom/client";
 import { PostHogProvider } from "@posthog/react";
-import "@earendil-works/pi-web-ui/app.css";
+import "./base.css";
 import "../styled-system/styles.css";
 import "./hooks/keating-storage";
 // KaTeX CSS is imported by the components that actually render math

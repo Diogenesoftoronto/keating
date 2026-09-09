@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "purpose": "Authored training situations; one fresh rollout per case, feedback from actual compiler/action/tool checks, no historical hint reuse.",
+  "cases": [
+    {
+      "id": "train-fraction-quiz",
+      "family": "fractions",
+      "topic": "Equivalent fractions",
+      "kind": "quiz",
+      "component": "Quiz",
+      "count": 4,
+      "prompt": "We covered equivalent fractions: multiply numerator and denominator by the same nonzero factor. Give me a resumable four-question OpenUI Quiz with objective and open-ended items, including a recipe using half-cup and quarter-cup measures. Wait for submission."
+    },
+    {
+      "id": "train-discount-quiz",
+      "family": "discounts",
+      "topic": "Percentage discounts",
+      "kind": "quiz",
+      "component": "Quiz",
+      "count": 4,
+      "prompt": "We finished calculating discounts and distinguishing savings from sale price. Give me a resumable four-question OpenUI Quiz, mixing objective and open-ended formats, on 10% of $80, 20% off $100 and comparing $10 off different original prices. Wait before discussing answers."
+    },
+    {
+      "id": "train-loop-cards",
+      "family": "loops",
+      "topic": "Loop boundaries",
+      "kind": "flashcards",
+      "component": "Flashcards",
+      "count": 4,
+      "prompt": "We finished zero-based loop boundaries, last index length minus one, i < length and empty arrays. Give me four resumable OpenUI Flashcards that require recalling concrete examples before revealing an answer."
+    },
+    {
+      "id": "train-unit-simulation",
+      "family": "unit-price",
+      "topic": "Unit price",
+      "kind": "simulation",
+      "component": "Simulation",
+      "prompt": "Create an OpenUI Simulation for a pack costing $6. Let me change its weight from 100 g to 1000 g and show the price per 100 g. Use a workspace lifecycle and a prediction in the brief."
+    },
+    {
+      "id": "train-fraction-question",
+      "family": "fractions",
+      "topic": "Equivalent fractions",
+      "kind": "question",
+      "component": "Question",
+      "prompt": "I think doubling only the numerator always gives an equivalent fraction. Ask me one focused OpenUI text Question to check my reasoning before giving the answer."
+    },
+    {
+      "id": "train-discount-question",
+      "family": "discounts",
+      "topic": "Percentage discounts",
+      "kind": "question",
+      "component": "Question",
+      "prompt": "I think 20% off a $100 price means I pay $20. Ask one focused OpenUI text Question to check my understanding and wait for my answer."
+    }
+  ]
+}

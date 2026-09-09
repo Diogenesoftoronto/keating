@@ -110,3 +110,7 @@ docs/drafts/
 # HyperFrames render artifacts
 video/*/snapshots/
 video/*/.thumbnails/
+
+# Preserve editable originals for the generated mascot animation family.
+!web/artwork/stop-motion-v1/raw/*.png
+!web/artwork/stop-motion-v1/prepared/*.png

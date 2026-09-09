@@ -18,7 +18,6 @@ import { useKeatingSetting } from "../hooks/use-keating-setting";
 import { css, cx } from "../../styled-system/css";
 
 interface SpeechSettingsTabProps {
-	onSettingsChange?: (settings: WebSpeechSettings) => void;
 	hideNav?: boolean;
 }
 
@@ -103,7 +102,7 @@ const primaryButtonClass = css({
 	_disabled: { opacity: 0.5 },
 });
 
-export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechSettingsTabProps) {
+export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 	const [settings, patch] = useKeatingSetting("speech");
 	const [providers, setProviders] = useState<SpeechProviderDescriptor[]>([]);
 	const [draftCustom, setDraftCustom] = useState<CustomSpeechModel>({
@@ -132,10 +131,6 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 			cancelled = true;
 		};
 	}, []);
-
-	useEffect(() => {
-		onSettingsChange?.(settings);
-	}, [settings, onSettingsChange]);
 
 	const persist = (partial: Partial<WebSpeechSettings>) => patch(partial);
 
@@ -328,7 +323,6 @@ export function SpeechSettingsTab({ onSettingsChange, hideNav = false }: SpeechS
 							onClose={() => setAudioModelPickerOpen(false)}
 							onSelect={(modelId) => {
 								persist({ model: modelId });
-								setAudioModelPickerOpen(false);
 							}}
 						/>
 					)}

@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
+import { emptyApiProbe, isApiValidationResponse } from "./dev-readiness.mjs";
 
 const requestedApiPort = Number(process.env.KEATING_WEB_DEV_API_PORT ?? 4318);
 if (
@@ -66,23 +67,13 @@ function waitForExit(child) {
   });
 }
 
-async function run(command, args) {
-  const child = start(command, args);
-  const result = await waitForExit(child);
-  if (result.code !== 0) {
-    throw new Error(
-      `${command} ${args.join(" ")} failed with ${result.signal ?? result.code}.`,
-    );
-  }
-}
-
-async function waitForServer(url, child, accept = () => true, requestInit) {
+async function waitForServer(url, child, accept, requestInit) {
   for (let attempt = 0; attempt < 300; attempt += 1) {
     if (child.exitCode !== null)
       throw new Error("A Keating dev server exited during startup.");
     try {
       const response = await fetch(url, requestInit);
-      if (accept(response)) return response;
+      if (await accept(response)) return response;
     } catch {
       // The Nitro listener is still starting.
     }
@@ -98,10 +89,10 @@ if (!(await canListen(requestedClientPort))) {
 }
 
 const apiPort = await availablePort(requestedApiPort);
-await run("bun", ["x", "nitro", "build"]);
-
 const apiOrigin = `http://127.0.0.1:${apiPort}`;
-const api = start("node", [".output/server/index.mjs"], {
+// Let Nitro watch handlers and its config alongside Vite. A one-shot build
+// left the API stale when HMR introduced new OAuth routes in the renderer.
+const api = start("bun", ["x", "nitro", "dev", "--host", "127.0.0.1", "--port", String(apiPort)], {
   ...process.env,
   PORT: String(apiPort),
   NITRO_PORT: String(apiPort),
@@ -120,7 +111,7 @@ process.once("SIGINT", stop);
 process.once("SIGTERM", stop);
 
 try {
-  await waitForServer(`${apiOrigin}/api/courses/session`, api);
+  await waitForServer(`${apiOrigin}/api/oauth/token`, api, isApiValidationResponse, emptyApiProbe);
   console.log(`Nitro API ready at ${apiOrigin}`);
   const forwardedViteArgs = viteArgs.filter((arg, index) => {
     if (arg.startsWith("--port=")) return false;
@@ -145,18 +136,34 @@ try {
     },
   );
   const clientOrigin = `http://127.0.0.1:${requestedClientPort}`;
-  await waitForServer(
-    `${clientOrigin}/api/courses/session`,
-    client,
-    (response) => response.status !== 404,
-  );
   // Readiness must include OAuth, not just the Courses subset. An empty token
   // request must reach Nitro's validation without contacting any provider.
   await waitForServer(
     `${clientOrigin}/api/oauth/token`,
     client,
-    (response) => response.status === 400,
-    { method: "POST", headers: { "content-type": "application/json" }, body: "{}" },
+    isApiValidationResponse,
+    emptyApiProbe,
+  );
+  // Check the newly added device routes too: stale Nitro output can expose
+  // token exchange while the device endpoint still resolves to the SPA shell.
+  await waitForServer(
+    `${clientOrigin}/api/oauth/openai-codex/device`,
+    client,
+    (response) => isApiValidationResponse(response, 405),
+    { headers: { accept: "application/json" } },
+  );
+  await waitForServer(
+    `${clientOrigin}/api/oauth/openai-codex/poll`,
+    client,
+    isApiValidationResponse,
+    emptyApiProbe,
+  );
+  // Missing target validation exercises the chat route without provider traffic.
+  await waitForServer(
+    `${clientOrigin}/api/chat-proxy/chat/completions`,
+    client,
+    isApiValidationResponse,
+    emptyApiProbe,
   );
   console.log(`Keating web ready at ${clientOrigin}/chat`);
 

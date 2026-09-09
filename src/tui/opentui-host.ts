@@ -112,6 +112,7 @@ import { modelChoices, modelPickerTitle, modelProviderChoices } from "./model-pi
 import { publishTuiSession } from "./share.js";
 import { isTuiLeaderKey, TUI_LEADER_HINT, tuiLeaderAction } from "./leader.js";
 import { KEATING_VERSION } from "../core/version.js";
+import { sacredTextWidth } from "./sacred.js";
 import { overlayResponseTone, overlayTitleLines, truncateOverlayLabel } from "./overlay.js";
 import { createSacredSidebar, type SacredSidebar, type SacredSidebarNavigationItem } from "./sacred-sidebar.js";
 import {
@@ -150,6 +151,8 @@ interface SelectPresentationOptions {
   descriptions?: ReadonlyMap<string, string>;
   showDescription?: boolean;
   signal?: AbortSignal;
+  /** Full confirmation text, kept out of the truncated heading. */
+  message?: string;
 }
 
 interface TextInputPresentationOptions {
@@ -502,6 +505,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   let activityPhase: ActivityPhase = "thinking";
   let activityDetail: string | undefined;
   let dialogCancel: (() => void) | null = null;
+  let dialogScroll: ((direction: number) => void) | null = null;
   let dialogFocusNext: (() => void) | null = null;
   let dialogFocusPrevious: (() => void) | null = null;
   let dialogSearchInput: InputRenderable | null = null;
@@ -817,12 +821,19 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       const overlayWidth = Math.max(24, Math.floor(renderer.terminalWidth * 0.8));
       const innerWidth = Math.max(12, overlayWidth - 4);
       const titleLines = overlayTitleLines(title, innerWidth, 2);
-      const hint = truncateOverlayLabel("type to filter · Tab/↑/↓ or j/k navigate · Enter selects · Esc cancels", innerWidth);
+      const hint = truncateOverlayLabel(presentation.message ? "PgUp/PgDn read · Tab/↑/↓ choose · Enter selects · Esc cancels" : "type to filter · Tab/↑/↓ or j/k navigate · Enter selects · Esc cancels", innerWidth);
+      const maxHeight = Math.max(10, renderer.terminalHeight - 6);
+      // Border + padding use four rows; the hint and filter each use one.
+      const chromeRows = titleLines.length + 6;
+      const availableRows = Math.max(1, maxHeight - chromeRows);
+      const optionRows = Math.min(Math.max(1, options.length), presentation.message ? Math.max(1, Math.floor(availableRows / 2)) : availableRows);
+      const messageLines = presentation.message?.split("\n").reduce((count, line) => count + Math.max(1, Math.ceil(sacredTextWidth(line) / Math.max(1, innerWidth - 1))), 0) ?? 0;
+      const messageRows = Math.min(messageLines, Math.max(1, availableRows - optionRows));
       const optionName = (option: string) => truncateOverlayLabel(option, Math.max(8, innerWidth - 2));
       const modal = new BoxRenderable(renderer, {
         id: `keating-dialog-${Date.now()}`,
         width: "80%",
-        height: Math.min(Math.max(options.length + titleLines.length + 5, 8), Math.max(10, renderer.terminalHeight - 6)),
+        height: Math.min(maxHeight, chromeRows + optionRows + (presentation.message ? messageRows : 0)),
         position: "absolute",
         top: "10%",
         left: "10%",
@@ -873,6 +884,12 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         select.selectedBackgroundColor = openTuiColor(presentationProfile, role) ?? RGBA.defaultForeground();
       };
       modal.add(titleView);
+      if (presentation.message) {
+        const body = new ScrollBoxRenderable(renderer, { width: "100%", height: messageRows, flexShrink: 0, scrollY: true, scrollX: false });
+        body.add(new TextRenderable(renderer, { content: presentation.message, width: "100%", wrapMode: "word", fg: textColor, bg: sidebarSurfaceColor }));
+        modal.add(body);
+        dialogScroll = (direction) => body.scrollBy(direction * Math.max(1, messageRows - 1));
+      }
       modal.add(filterInput);
       modal.add(select);
       shell.add(modal);
@@ -883,6 +900,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         done = true;
         if (onAbort) presentation.signal?.removeEventListener("abort", onAbort);
         dialogCancel = null;
+        dialogScroll = null;
         dialogFocusNext = null;
         dialogFocusPrevious = null;
         dialogSearchInput = null;
@@ -937,7 +955,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       const modal = new BoxRenderable(renderer, {
         id: `keating-input-dialog-${Date.now()}`,
         width: "80%",
-        height: titleLines.length + 4,
+        height: titleLines.length + 6,
         position: "absolute",
         top: "30%",
         left: "10%",
@@ -980,6 +998,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         const preservedDraft = dialogInput.value;
         if (onAbort) presentation.signal?.removeEventListener("abort", onAbort);
         dialogCancel = null;
+        dialogScroll = null;
         dialogFocusNext = null;
         dialogFocusPrevious = null;
         dialogSearchInput = null;
@@ -1058,7 +1077,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         : idleStatus();
     },
     presentSelect,
-    presentConfirm(title, message) { return presentSelect(`${title}\n${message}`, ["Yes", "No"]).then((value) => value === undefined ? undefined : value === "Yes"); },
+    presentConfirm(title, message) { return presentSelect(title, ["Yes", "No"], { message }).then((value) => value === undefined ? undefined : value === "Yes"); },
     presentInput(title, placeholder) { return presentTextInput(title, undefined, placeholder); },
     presentEditor(title, prefill) { return presentTextInput(title, prefill, "Edit response…"); },
   };
@@ -1123,7 +1142,16 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     }
     restorePendingDraft(terminalResponseError);
   });
-  const controller = new HostController(client, surface, { uiActionDispatcher });
+  const controller = new HostController(client, surface, {
+    uiActionDispatcher,
+    async restoreUiDocument(document) {
+      const journal = await new FileUiActionJournalStorage(cwd, "receiver").load(document.id);
+      return journal?.receipts.reduce((latest, receipt) => {
+        const candidate = receipt.result?.resultingDocument;
+        return candidate && candidate.createdAt === document.createdAt && candidate.revision > latest.revision ? candidate : latest;
+      }, document) ?? document;
+    },
+  });
   controller.attach();
   await controller.initialize();
   const refreshKnownPiCommands = async () => {
@@ -2329,6 +2357,10 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       } else if (key.name === "escape") {
         key.preventDefault();
         dialogCancel();
+      } else if ((key.name === "pageup" || key.name === "pagedown") && dialogScroll) {
+        key.preventDefault();
+        key.stopPropagation();
+        dialogScroll(key.name === "pageup" ? -1 : 1);
       } else if (key.name === "tab") {
         key.preventDefault();
         if (key.shift) dialogFocusPrevious?.();

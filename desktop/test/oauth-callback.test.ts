@@ -12,6 +12,8 @@ import {
 	type OAuthCallbackReceiver,
 } from "../src/oauth-callback.js";
 
+const STATE = "a".repeat(32);
+
 interface HttpResult {
 	statusCode: number | undefined;
 	headers: Record<string, string | string[] | undefined>;
@@ -35,7 +37,7 @@ function get(origin: string, path: string, method = "GET"): Promise<HttpResult> 
 }
 
 async function receiver(onCallback: (callback: { url: URL; code: string; state: string }) => void | Promise<void>): Promise<OAuthCallbackReceiver> {
-	const result = await startOAuthCallbackReceiver({ port: 0, onCallback });
+	const result = await startOAuthCallbackReceiver({ expectedState: STATE, port: 0, onCallback });
 	if (!result.available) throw new Error(result.message);
 	return result.receiver;
 }
@@ -49,10 +51,13 @@ describe("desktop OAuth loopback callback receiver", () => {
 		const seen: Array<{ url: URL; code: string; state: string }> = [];
 		const callbackReceiver = await receiver((callback) => seen.push(callback));
 		try {
-			const result = await get(callbackReceiver.origin, `${OAUTH_CALLBACK_PATH}?code=proof-code&state=proof-state`);
+			const wrongState = await get(callbackReceiver.origin, `${OAUTH_CALLBACK_PATH}?code=untrusted&state=wrong`);
+			expect(wrongState.statusCode).toBe(400);
+			expect(seen).toHaveLength(0);
+			const result = await get(callbackReceiver.origin, `${OAUTH_CALLBACK_PATH}?code=proof-code&state=${STATE}`);
 			expect(result.statusCode).toBe(200);
 			expect(seen).toHaveLength(1);
-			expect(seen[0]).toMatchObject({ code: "proof-code", state: "proof-state" });
+			expect(seen[0]).toMatchObject({ code: "proof-code", state: STATE });
 			expect(seen[0]?.url.origin).toBe(callbackReceiver.origin);
 			expect(seen[0]?.url.hostname).toBe(OAUTH_CALLBACK_HOST);
 			expect(seen[0]?.url.pathname).toBe(OAUTH_CALLBACK_PATH);
@@ -90,7 +95,7 @@ describe("desktop OAuth loopback callback receiver", () => {
 		const callbackReceiver = await receiver(() => { calls += 1; });
 		try {
 			const secret = "sensitive-code-value";
-			const accepted = await get(callbackReceiver.origin, `${OAUTH_CALLBACK_PATH}?code=${secret}&state=opaque-state`);
+			const accepted = await get(callbackReceiver.origin, `${OAUTH_CALLBACK_PATH}?code=${secret}&state=${STATE}`);
 			expect(accepted.statusCode).toBe(200);
 			expect(accepted.body).not.toContain(secret);
 			expect(accepted.headers["content-security-policy"]).toContain("default-src 'none'");
@@ -138,11 +143,11 @@ describe("desktop OAuth loopback callback receiver", () => {
 		const address = occupied.address();
 		if (!address || typeof address === "string") throw new Error("Could not reserve a test loopback port.");
 		try {
-			const result = await startOAuthCallbackReceiver({ port: address.port, onCallback: () => {} });
+			const result = await startOAuthCallbackReceiver({ expectedState: STATE, port: address.port, onCallback: () => {} });
 			expect(result).toMatchObject({
 				available: false,
 				reason: "port-unavailable",
-				action: "manual-paste",
+				action: "device-code",
 			});
 		} finally {
 			await new Promise<void>((resolve) => occupied.close(() => resolve()));
@@ -153,7 +158,7 @@ describe("desktop OAuth loopback callback receiver", () => {
 		const first = await receiver(() => {});
 		const port = Number(new URL(first.origin).port);
 		await Promise.all([first.stop(), first.stop()]);
-		const restarted = await startOAuthCallbackReceiver({ port, onCallback: () => {} });
+		const restarted = await startOAuthCallbackReceiver({ expectedState: STATE, port, onCallback: () => {} });
 		expect(restarted.available).toBe(true);
 		if (restarted.available) await restarted.receiver.stop();
 	});

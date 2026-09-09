@@ -1,3 +1,4 @@
+import { SharedUiDocumentRenderer } from "./shared-renderer";
 import { useMemo } from "react";
 import {
 	createLibrary,
@@ -640,7 +641,34 @@ export const LanguagePracticeDocument = defineComponent({
     component: OpenUILanguagePractice,
 });
 
+const responsePropsSchema = z.object({
+    id: z.string(), title: z.string(), brief: z.string(), criteria: z.array(z.string()).optional(),
+    timeLimitSeconds: z.number().int().min(1).max(180).optional(), lifecycle: lifecycleSchema.default("resumable"),
+});
+function OpenUIResponse({ props, kind }: { props: z.infer<typeof responsePropsSchema>; kind: "AudioResponse" | "VideoResponse" }) {
+    const streaming = useIsStreaming();
+    const triggerAction = useTriggerAction();
+    const document = useMemo(() => compileOpenUISourceToSharedDocument(`root = LearningSurface([attempt])\nattempt = ${kind}(${JSON.stringify(props)})`, { documentId: props.id }), [props, kind]);
+    if (streaming) return <p role="status">Preparing your recording activity…</p>;
+    return <SharedUiDocumentRenderer document={document} onAction={event => {
+        void triggerAction(event.humanFriendlyMessage, undefined, { type: "continue_conversation", params: { interaction: "recorded-response", ...event.intent } });
+        return true;
+    }} />;
+}
+export const AudioResponse = defineComponent({
+    name: "AudioResponse", props: responsePropsSchema.extend({}),
+    description: "Record, replay, retry and attach a spoken response with reflection. Use for spoken recall, explanation, or roleplay. Optional timeLimitSeconds (1–180) is a fluency target the learner can disable. Specify language and task in brief and observable criteria. Recording does not transcribe, recognize answers or grade pronunciation.",
+    component: ({ props }) => <OpenUIResponse props={props} kind="AudioResponse" />,
+});
+export const VideoResponse = defineComponent({
+    name: "VideoResponse", props: responsePropsSchema.extend({}),
+    description: "Record, replay, retry and attach a video demonstration with reflection. Use for sign-language practice, showing a process, or explaining a physical example. Specify the sign language and observable criteria in brief. Optional timeLimitSeconds (1–180) is adjustable to untimed practice. Microphone is opt-in. No automated sign recognition or accuracy grading.",
+    component: ({ props }) => <OpenUIResponse props={props} kind="VideoResponse" />,
+});
+
 const learningBlock = z.union([
+	AudioResponse.ref,
+	VideoResponse.ref,
 	Explanation.ref,
 	Callout.ref,
 	Question.ref,
@@ -687,6 +715,8 @@ export const keatingOpenUILibrary = createLibrary({
 	id: "keating-learning-v1",
 	root: "LearningSurface",
 	components: [
+		AudioResponse,
+		VideoResponse,
 		LearningSurface,
 		Explanation,
 		Callout,
@@ -708,6 +738,7 @@ export const keatingOpenUILibrary = createLibrary({
 		MusicLab,
 	],
 	componentGroups: [
+		{ name: "Perform and reflect", components: ["AudioResponse", "VideoResponse"] },
 		{ name: "Teaching", components: ["Explanation", "Callout", "Question", "Quiz", "Exam", "Flashcards", "LanguagePractice"] },
 		{ name: "Workspace", components: ["StudyPlan", "ConceptMap", "LearningImage", "SharedNotes"] },
 		{ name: "Work away from the chat", components: ["Assignment", "Practice", "Draft", "Fieldwork"] },
@@ -721,6 +752,7 @@ const openUILibraryPrompt = keatingOpenUILibrary.prompt({
 	bindings: true,
 	preamble: "Use OpenUI only when manipulating or responding to the component materially helps the learner understand and participate.",
 	additionalRules: [
+		"Use AudioResponse or VideoResponse for recorded performance followed by reflection. Treat timing as optional fluency practice; never infer correctness from speed or claim to have heard or seen a recording from attachment metadata alone.",
 		"Wrap every OpenUI program in an openui Markdown fence.",
 		"Add lifecycle=ephemeral|resumable|workspace and a stable id=<document-id> to the opening fence.",
 		"Use ordinary Markdown for prose that does not need interaction.",

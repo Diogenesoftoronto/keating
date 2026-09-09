@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { css } from "../../styled-system/css";
 import { Nav } from "../components/Nav";
+import { KeatingBot } from "../components/KeatingBot";
+import "./courses-mascot.css";
 import { CoursesAccessGate } from "../components/courses/CoursesAccessGate";
 import { CourseAssembler } from "../components/courses/CourseAssembler";
 import { listCourses } from "../courses/client";
@@ -97,7 +99,12 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
           pb: "1.5rem",
         })}
       >
-        <div>
+        <div className="courses-welcome">
+          <div className="courses-welcome__mascot">
+            <KeatingBot variant="body" size={144} label="" animated={!error}
+              state={error ? "idle" : loading ? "loading" : assemblerOpen ? "thinking" : courses.length ? "reading" : "waving"} />
+          </div>
+          <div className="courses-welcome__copy">
           <p
             className={css({
               fontFamily: "var(--mono-display)",
@@ -123,7 +130,7 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
               lineHeight: 1,
             })}
           >
-            Learning with a spine.
+            What’s next to learn?
           </h1>
           <p
             className={css({
@@ -133,9 +140,9 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
               lineHeight: 1.6,
             })}
           >
-            Lesson plans that carry their readings, practice, peers, and
-            progress with them.
+            Pick up where you left off, or build something new with Keating.
           </p>
+          </div>
         </div>
         <div
           className={css({
@@ -217,7 +224,7 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
         </p>
       )}
       {loading ? (
-        <p
+        <p role="status"
           className={css({
             py: "5rem",
             textAlign: "center",
@@ -237,7 +244,6 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
           })}
         >
           <div className={css({ p: { base: "1.5rem", md: "2.5rem" } })}>
-            <BookOpen size={30} />
             <h2
               className={css({
                 mt: "1.25rem",
@@ -245,7 +251,7 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
                 fontSize: "2rem",
               })}
             >
-              Begin with an empty spine.
+              Bring your first big question.
             </h2>
             <p
               className={css({
@@ -254,9 +260,9 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
                 lineHeight: 1.65,
               })}
             >
-              Talk through the learners, outcomes, pace, and material you
-              already have. Keating will propose an outline, wait for your
-              changes, then build the durable course with you.
+              What would you love to understand? Tell Keating what you want
+              to learn and bring any notes or readings. You’ll shape the
+              outline together before building your first course.
             </p>
             <div
               className={css({

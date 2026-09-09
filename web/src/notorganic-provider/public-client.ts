@@ -1,3 +1,5 @@
+import { isNotOrganicDesktop, NOTORGANIC_DESKTOP_ORIGIN, NOTORGANIC_DESKTOP_CALLBACK } from "../keating/notorganic-desktop";
+
 /**
  * Browser-only Not Organic public-client boundary.
  *
@@ -33,9 +35,15 @@ export interface NotOrganicProviderSession {
 interface AuthorizationTransaction {
 	state: string;
 	verifier: string;
+	issuer: string;
+	clientId: string;
 	redirectUri: string;
 	createdAt: number;
 	returnTo?: string;
+}
+
+interface AuthorizationReceipt extends Omit<AuthorizationTransaction, "verifier"> {
+	codeHash: string;
 }
 
 export function safeAuthorizationReturnTo(value: string | undefined): string {
@@ -48,6 +56,9 @@ export function safeAuthorizationReturnTo(value: string | undefined): string {
 export class NotOrganicPublicClientError extends Error {}
 
 const TRANSACTION_KEY = "keating.notorganic.authorization";
+const RECEIPT_KEY = "keating.notorganic.authorization-completed";
+const AUTHORIZATION_TTL = 10 * 60_000;
+const pendingExchanges = new WeakMap<Storage, Map<string, Promise<NotOrganicProviderSession>>>();
 const SESSION_KEY = "keating.notorganic.session";
 const DPOP_DATABASE = "keating-notorganic";
 const DPOP_STORE = "keys";
@@ -171,11 +182,35 @@ function publicClientEnv(): Record<string, string | undefined> {
 	return import.meta.env ?? {};
 }
 
-export function publicClientConfig(env: Record<string, string | undefined> = publicClientEnv()): NotOrganicPublicClientConfig | null {
-	const issuer = env.VITE_NOTORGANIC_PUBLIC_ISSUER?.replace(/\/+$/, "");
-	const authorizationUrl = env.VITE_NOTORGANIC_AUTHORIZATION_URL;
-	const clientId = env.VITE_NOTORGANIC_CLIENT_ID;
-	const redirectUri = env.VITE_NOTORGANIC_REDIRECT_URI;
+function publicClientOrigin(origin: string | undefined): string | undefined {
+	if (!origin) return undefined;
+	try {
+		const url = new URL(origin);
+		const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+		if (url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) return undefined;
+		return url.origin;
+	} catch {
+		return undefined;
+	}
+}
+
+export function publicClientConfig(
+	env: Record<string, string | undefined> = publicClientEnv(),
+	origin = globalThis.location?.origin,
+	desktop = isNotOrganicDesktop(),
+): NotOrganicPublicClientConfig | null {
+	// Account authorization is independent of the hosted inference gate. The
+	// account menu offers sign-in even while VITE_NOTORGANIC_ENABLED is false.
+	// Require the explicit issuer/authorization contract in either case.
+	const issuer = env.VITE_NOTORGANIC_PUBLIC_ISSUER?.trim().replace(/\/+$/, "");
+	const authorizationUrl = env.VITE_NOTORGANIC_AUTHORIZATION_URL?.trim();
+	// The provider accepts dynamic public clients at HTTPS and loopback origins.
+	// Derive these together so localhost, 127.0.0.1, and custom dev ports return
+	// to the exact origin holding the PKCE transaction and DPoP key.
+	const browserOrigin = publicClientOrigin(origin);
+	const clientId = desktop ? NOTORGANIC_DESKTOP_ORIGIN : env.VITE_NOTORGANIC_CLIENT_ID?.trim() || browserOrigin;
+	const redirectUri = desktop ? NOTORGANIC_DESKTOP_CALLBACK : env.VITE_NOTORGANIC_REDIRECT_URI?.trim()
+		|| (browserOrigin ? `${browserOrigin}/notorganic/callback` : undefined);
 	if (!issuer || !authorizationUrl || !clientId || !redirectUri) return null;
 	return {
 		issuer,
@@ -196,12 +231,18 @@ export function publicClientMaxCostMicrousd(env: Record<string, string | undefin
 }
 
 export class NotOrganicPublicClient {
-	constructor(readonly config: NotOrganicPublicClientConfig, private readonly fetcher: typeof fetch = fetch) {}
+	private readonly fetcher: typeof fetch;
+	// Native browser fetch checks its receiver in Firefox. Storing it unbound
+	// and invoking this.fetcher() incorrectly makes this client the Window.
+	constructor(readonly config: NotOrganicPublicClientConfig, fetcher: typeof fetch = globalThis.fetch) {
+		this.fetcher = fetcher === globalThis.fetch ? fetcher.bind(globalThis) : fetcher;
+	}
 
 	async authorizationUrl(returnTo = "/pricing"): Promise<string> {
 		const verifier = randomBase64Url();
 		const state = randomBase64Url();
-		writeJson(TRANSACTION_KEY, { state, verifier, redirectUri: this.config.redirectUri, createdAt: Date.now(), returnTo: safeAuthorizationReturnTo(returnTo) } satisfies AuthorizationTransaction);
+		requireBrowserStorage().removeItem(RECEIPT_KEY);
+		writeJson(TRANSACTION_KEY, { state, verifier, issuer: this.config.issuer, clientId: this.config.clientId, redirectUri: this.config.redirectUri, createdAt: Date.now(), returnTo: safeAuthorizationReturnTo(returnTo) } satisfies AuthorizationTransaction);
 		const url = new URL(this.config.authorizationUrl);
 		url.searchParams.set("client_id", this.config.clientId);
 		url.searchParams.set("redirect_uri", this.config.redirectUri);
@@ -224,26 +265,67 @@ export class NotOrganicPublicClient {
 	}
 
 	async completeAuthorization(search: URLSearchParams): Promise<NotOrganicProviderSession> {
-		const error = search.get("error");
-		if (error) throw new NotOrganicPublicClientError(`Not Organic sign-in was not approved: ${error}`);
 		const code = search.get("code");
 		const state = search.get("state");
+		const storage = requireBrowserStorage();
 		const transaction = readJson<AuthorizationTransaction>(TRANSACTION_KEY);
-		requireBrowserStorage().removeItem(TRANSACTION_KEY);
-		if (!code || !state || !transaction || transaction.state !== state || transaction.redirectUri !== this.config.redirectUri || Date.now() - transaction.createdAt > 10 * 60_000) {
+		const matches = (value: AuthorizationTransaction | AuthorizationReceipt | null) => value
+			&& value.state === state && value.issuer === this.config.issuer && value.clientId === this.config.clientId
+			&& value.redirectUri === this.config.redirectUri && Number.isFinite(value.createdAt)
+			&& value.createdAt <= Date.now() && Date.now() - value.createdAt < AUTHORIZATION_TTL;
+		// A completed callback can be mounted again (or reloaded). Only return the
+		// existing session when a locally recorded completion matches this exact
+		// code, state and client. The callback alone never establishes a session.
+		if (!transaction && code && state && !search.has("error")) {
+			const receipt = readJson<AuthorizationReceipt>(RECEIPT_KEY);
+			if (receipt && matches(receipt) && receipt.codeHash === await sha256Base64Url(code)) {
+				const session = this.getSession();
+				if (session) return session;
+			}
+		}
+		if (!transaction) {
+			throw new NotOrganicPublicClientError("Not Organic sign-in could not be verified in this tab. Return to the browser tab where you started signing in, or start the connection again.");
+		}
+		if (!state || !matches(transaction) || typeof transaction.verifier !== "string" || !/^[A-Za-z0-9_-]{43,128}$/.test(transaction.verifier)) {
 			throw new NotOrganicPublicClientError("Not Organic sign-in could not be verified. Start the connection again.");
 		}
+		if (search.has("error")) {
+			storage.removeItem(TRANSACTION_KEY);
+			throw new NotOrganicPublicClientError("Not Organic sign-in was not approved. Try connecting again.");
+		}
+		if (!code) throw new NotOrganicPublicClientError("Not Organic sign-in could not be verified. Start the connection again.");
+		let exchanges = pendingExchanges.get(storage);
+		if (!exchanges) pendingExchanges.set(storage, exchanges = new Map());
+		const key = JSON.stringify([this.config.issuer, this.config.clientId, this.config.redirectUri, state, code]);
+		const pending = exchanges.get(key);
+		if (pending) return pending;
+		const activeExchanges = exchanges;
+		const exchange = this.exchangeAuthorization(code, transaction).finally(() => activeExchanges.delete(key));
+		exchanges.set(key, exchange);
+		return exchange;
+	}
+
+	private async exchangeAuthorization(code: string, transaction: AuthorizationTransaction): Promise<NotOrganicProviderSession> {
 		const response = await this.fetcher(`${this.config.issuer}/v1/public/token`, {
 			method: "POST",
 			headers: { "content-type": "application/json" },
 			body: JSON.stringify({ code, code_verifier: transaction.verifier, client_id: this.config.clientId, redirect_uri: this.config.redirectUri, dpop_jwk: await dpopPublicJwk() }),
 		});
 		const token = await response.json().catch(() => null) as Partial<NotOrganicPublicToken> | null;
-		if (!response.ok || !token || typeof token.access_token !== "string" || token.token_type !== "DPoP" || typeof token.expires_in !== "number" || !Number.isFinite(token.expires_in)) {
+		if (!response.ok || !token || typeof token.access_token !== "string" || !token.access_token || token.token_type !== "DPoP" || typeof token.expires_in !== "number" || !Number.isFinite(token.expires_in) || token.expires_in <= 0) {
 			throw new NotOrganicPublicClientError("Not Organic could not finish sign-in. Try connecting again.");
+		}
+		const codeHash = await sha256Base64Url(code);
+		// Signing out or starting a newer login while the request was in flight
+		// cancels its authority to replace the current session/transaction.
+		if (readJson<AuthorizationTransaction>(TRANSACTION_KEY)?.state !== transaction.state
+			|| Date.now() - transaction.createdAt >= AUTHORIZATION_TTL) {
+			throw new NotOrganicPublicClientError("Not Organic sign-in could not be verified. Start the connection again.");
 		}
 		const session = { accessToken: token.access_token, expiresAt: Date.now() + token.expires_in * 1_000, scope: typeof token.scope === "string" ? token.scope : "", returnTo: safeAuthorizationReturnTo(transaction.returnTo) };
 		writeJson(SESSION_KEY, session);
+		writeJson(RECEIPT_KEY, { state: transaction.state, issuer: transaction.issuer, clientId: transaction.clientId, redirectUri: transaction.redirectUri, createdAt: transaction.createdAt, codeHash } satisfies AuthorizationReceipt);
+		requireBrowserStorage().removeItem(TRANSACTION_KEY);
 		return session;
 	}
 
@@ -271,6 +353,7 @@ export class NotOrganicPublicClient {
 	async signOut(): Promise<void> {
 		requireBrowserStorage().removeItem(SESSION_KEY);
 		requireBrowserStorage().removeItem(TRANSACTION_KEY);
+		requireBrowserStorage().removeItem(RECEIPT_KEY);
 		await deleteDpopKey();
 	}
 }

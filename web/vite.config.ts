@@ -473,11 +473,21 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,cjs,css,html,ico,png,svg,woff2,woff}"],
+        // Install the app shell, not every tutorial, poster, and source artwork.
+        // Images are cached on demand below; visiting chat should not download
+        // tens of megabytes of unrelated PNGs in the background.
+        globPatterns: ["assets/**/*.{js,cjs,css,woff2,woff,svg,png,webp,avif}", "index.html", "registerSW.js", "favicon.svg", "pwa-*.png"],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
-        importScripts: ["sw-update-reload.js"],
+        // One root worker owns both offline assets and NodePod previews.
+        // Registering /sw.js and /__sw__.js at the same scope replaces each
+        // worker with the other during startup. Load NodePod's fetch listener
+        // first so its virtual requests are handled before Workbox routes.
+        // Do not navigate live tabs on activation: that interrupts first-load
+        // initialization, pending sign-in callbacks, and unsaved composers.
+        importScripts: ["__sw__.js"],
+        globIgnores: ["**/__sw__.js", "**/sw-update-reload.js"],
         // Never substitute the precached SPA shell for share routes, API
         // routes, or hashed assets. A stale service worker serving the old
         // index.html for /s/:id caused "module script … MIME type text/html"
@@ -486,7 +496,7 @@ export default defineConfig({
         // server-rendered OpenGraph meta on /s/:id).
         // A PDF navigation must reach the document, including when opened
         // from an installed PWA. Serving index.html here hides the paper.
-        navigateFallbackDenylist: [/^\/s\//, /^\/api\//, /^\/assets\//, /\.pdf(?:\?|$)/i],
+        navigateFallbackDenylist: [/^\/s\//, /^\/api\//, /^\/assets\//, /^\/(?:__preview__|__virtual__|oauth|notorganic)\//, /\.pdf(?:\?|$)/i],
         // vite-plugin-pwa FAILS the build if a precached file exceeds this
         // limit (it does not silently skip), so it must stay above the largest
         // emitted chunk. sandbox-export is currently ~4.3MB; we round up to
@@ -495,6 +505,16 @@ export default defineConfig({
         // exceeding this cap.
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6MB
         runtimeCaching: [
+          {
+            urlPattern: ({ url, sameOrigin }) => sameOrigin &&
+              /^\/(?:brand|tutorial|avatars|posters|downloads|tapes|textures|landing)\/.*\.(?:avif|webp|png|jpe?g|svg)$/i.test(url.pathname),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "image-cache",
+              cacheableResponse: { statuses: [200] },
+              expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
           {
             // Content-hashed build assets: filename changes on every build, so
             // CacheFirst is safe and gives offline support for chunks that were

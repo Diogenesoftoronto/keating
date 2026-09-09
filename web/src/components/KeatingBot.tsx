@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import "./keating-bot.css";
 
-export type KeatingBotState = "idle" | "listening" | "thinking" | "speaking" | "success" | "waving";
+export const KEATING_BOT_CHAT_STATES = ["idle", "listening", "thinking", "speaking", "success", "waving", "loading"] as const;
+export const KEATING_BOT_ACTIVITY_STATES = ["walking", "sitting", "flipping", "reading", "music", "science", "maths", "coding", "chemistry", "biology", "physics", "astronomy", "palaeontology", "electronics", "mycology", "lotus", "connecting", "understanding"] as const;
+export type KeatingBotState = typeof KEATING_BOT_CHAT_STATES[number] | typeof KEATING_BOT_ACTIVITY_STATES[number];
+
+/** Whole-body movement must stay in view even in a compact head placement. */
+export function keatingBotSpriteVariant(variant: "head" | "body", state: KeatingBotState): "head" | "body" {
+	return state === "walking" || state === "flipping" || state === "lotus" || state === "connecting" || state === "understanding" ? "body" : variant;
+}
 
 export interface KeatingBotProps {
 	variant?: "head" | "body";
@@ -14,8 +21,12 @@ export interface KeatingBotProps {
 	frame?: number;
 }
 
-const SPRITE_URLS = { head: "/brand/keatingbot-sprites-v1.png", body: "/brand/keatingbot-body-sprites-v1.png" };
-const FALLBACK_URL = "/brand/mascot-head-v2.png";
+/** Eight row-major authored poses in a four-column, two-row atlas. */
+export function keatingBotFramePosition(frame: number): { x: string; y: string } {
+	const selected = Math.min(7, Math.max(0, Number.isFinite(frame) ? Math.floor(frame) : 0));
+	return { x: `${selected % 4 / 3 * 100}%`, y: `${Math.floor(selected / 4) * 100}%` };
+}
+const FALLBACK_URL = "/brand/mascot-head-v2.avif";
 const spriteReady = new Map<string, Promise<boolean>>();
 
 function loadSprite(url: string): Promise<boolean> {
@@ -38,11 +49,9 @@ export function KeatingBot({ variant = "head", state = "idle", size = 64, label 
 	const [visible, setVisible] = useState(false);
 	const [pageVisible, setPageVisible] = useState(true);
 	const [fallbackFailed, setFallbackFailed] = useState(false);
-	const bodyWave = state === "waving" && variant === "body";
-	const strip = state === "thinking" || state === "speaking" || bodyWave;
-	const frameCount = bodyWave ? 12 : state === "speaking" ? 8 : 4;
-	const selectedFrame = frame === undefined ? undefined : Math.min(frameCount - 1, Math.max(0, Number.isFinite(frame) ? Math.floor(frame) : 0));
-	const spriteUrl = bodyWave ? "/brand/keatingbot-body-waving-v3.png" : strip ? `/brand/keatingbot-${variant}-${state}-v2.png` : SPRITE_URLS[variant];
+	const selectedFrame = frame === undefined ? undefined : keatingBotFramePosition(frame);
+	const spriteVariant = keatingBotSpriteVariant(variant, state);
+	const spriteUrl = `/brand/stop-motion-v1/keatingbot-${spriteVariant}-${state}.avif`;
 	useEffect(() => {
 		let mounted = true;
 		void loadSprite(spriteUrl).then(loaded => { if (mounted) setReadyUrl(loaded ? spriteUrl : undefined); });
@@ -69,13 +78,12 @@ export function KeatingBot({ variant = "head", state = "idle", size = 64, label 
 		aria-hidden={label ? undefined : true}
 		data-state={state}
 		data-variant={variant}
-		data-strip={strip}
 		data-frozen={selectedFrame !== undefined}
 		data-animated={animated}
 		data-paused={!visible || !pageVisible}
-		style={{ "--keating-bot-size": `${dimension}px`, "--keating-bot-frame": `${(selectedFrame ?? 0) / (frameCount - 1) * 100}%` } as CSSProperties}
+		style={{ "--keating-bot-size": `${dimension}px`, "--keating-bot-frame-x": selectedFrame?.x, "--keating-bot-frame-y": selectedFrame?.y } as CSSProperties}
 	>
 		{readyUrl === spriteUrl ? <span key={`${variant}:${state}`} className="keating-bot__motion" aria-hidden="true"><span className="keating-bot__sprite" style={{ backgroundImage: `url("${spriteUrl}")` }} /></span>
-			: !fallbackFailed && <img className="keating-bot__fallback" src={variant === "body" ? "/brand/mascot-full.png" : FALLBACK_URL} alt="" aria-hidden="true" draggable={false} onError={() => setFallbackFailed(true)} />}
+			: !fallbackFailed && <img className="keating-bot__fallback" src={state === "lotus" ? "/brand/mascot-lotus.avif" : spriteVariant === "body" ? "/brand/mascot-full.avif" : FALLBACK_URL} alt="" aria-hidden="true" draggable={false} onError={() => setFallbackFailed(true)} />}
 	</span>;
 }

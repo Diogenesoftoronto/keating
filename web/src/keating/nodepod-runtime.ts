@@ -6,6 +6,22 @@ import { captureNodePodProcess } from "./nodepod-process-capture";
 
 let nodePodInstance: Nodepod | null = null;
 let nodePodBootPromise: Promise<Nodepod | null> | null = null;
+let bootGeneration = 0;
+let nodePodTeardownPromise: Promise<void> | null = null;
+let closeBootRepository: (() => void) | null = null;
+
+async function loadNodePodBootDependencies() {
+	const [{ Nodepod }, { NODEPOD_BOOT_FILES }, { openSandboxRepo, closeSandboxRepo }] = await Promise.all([
+		import("@scelar/nodepod"),
+		import("./nodepod-boot-files"),
+		import("./sandbox-git"),
+	]);
+	return { Nodepod, NODEPOD_BOOT_FILES, openSandboxRepo, closeSandboxRepo };
+}
+
+type NodePodBootDependencies = Pick<Awaited<ReturnType<typeof loadNodePodBootDependencies>>, "NODEPOD_BOOT_FILES" | "openSandboxRepo" | "closeSandboxRepo"> & {
+	Nodepod: Pick<typeof import("@scelar/nodepod").Nodepod, "boot">;
+};
 
 // Baseline content for diff computation
 const baselineContent = new Map<string, string>();
@@ -23,28 +39,38 @@ export async function getNodePod(): Promise<Nodepod | null> {
 	return null;
 }
 
-export async function bootNodePod(): Promise<Nodepod | null> {
+export async function bootNodePod(loadDependencies: () => Promise<NodePodBootDependencies> = loadNodePodBootDependencies): Promise<Nodepod | null> {
+	if (nodePodTeardownPromise) await nodePodTeardownPromise;
 	if (nodePodInstance) return nodePodInstance;
 	if (nodePodBootPromise) return nodePodBootPromise;
 
-	nodePodBootPromise = (async () => {
+	const generation = bootGeneration;
+	const attempt = (async () => {
+		let pod: Nodepod | null = null;
+		let closeRepository: (() => void) | null = null;
+		let stage = "loading modules";
+		const baseline = new Map<string, string>();
+		const checkActive = () => {
+			if (generation !== bootGeneration) throw new DOMException("NodePod boot was stopped", "AbortError");
+		};
 		try {
-			const [{ Nodepod }, { NODEPOD_BOOT_FILES }, { openSandboxRepo }] = await Promise.all([
-				import("@scelar/nodepod"),
-				import("./nodepod-boot-files"),
-				import("./sandbox-git"),
-			]);
-			bootFileCount = Object.keys(NODEPOD_BOOT_FILES).length;
-			const pod = await Nodepod.boot({
+			const { Nodepod, NODEPOD_BOOT_FILES, openSandboxRepo, closeSandboxRepo } = await loadDependencies();
+			checkActive();
+			stage = "starting sandbox";
+			pod = await Nodepod.boot({
 				files: {},
 				workdir: "/workspace",
+				swUrl: import.meta.env?.PROD ? "/sw.js" : "/__sw__.js",
 			});
+			checkActive();
+			stage = "populating workspace";
 
 			// Populate VFS with bundled source files
 			for (const [relPath, content] of Object.entries(NODEPOD_BOOT_FILES)) {
 				const vPath = `/workspace/${relPath}`;
 				await writeFileToVfs(pod, vPath, content);
-				baselineContent.set(vPath, content);
+				baseline.set(vPath, content);
+				checkActive();
 			}
 
 			// Create package.json and tsconfig for the workspace
@@ -105,32 +131,63 @@ globalThis.assertEq = assertEq;
 			);
 
 			// Open the git-backed sandbox repository for version tracking
+			stage = "opening sandbox history";
+			closeRepository = closeSandboxRepo;
 			await openSandboxRepo();
+			checkActive();
 
+			baselineContent.clear();
+			for (const [path, content] of baseline) baselineContent.set(path, content);
+			bootFileCount = baseline.size;
+			closeBootRepository = closeRepository;
 			nodePodInstance = pod;
 			console.log("[nodepod] Booted successfully with", bootFileCount, "source files, instanceId:", pod.instanceId);
 			return pod;
 		} catch (err) {
-			console.warn("[nodepod] Boot failed:", err instanceof Error ? err.message : String(err));
+			// Keep the original error object: Firefox's terse TypeErrors are only
+			// actionable with their stack and the initialization stage attached.
+			console.warn(`[nodepod] Boot failed during ${stage}:`, err);
+			try { closeRepository?.(); } catch (cleanupError) {
+				console.warn("[nodepod] Repository cleanup failed:", cleanupError);
+			}
+			try { pod?.teardown(); } catch (cleanupError) {
+				console.warn("[nodepod] Sandbox cleanup failed:", cleanupError);
+			}
 			return null;
 		}
 	})();
-
-	return nodePodBootPromise;
+	nodePodBootPromise = attempt;
+	try {
+		return await attempt;
+	} finally {
+		// A failed attempt must not poison every subsequent boot until reload.
+		if (nodePodBootPromise === attempt) nodePodBootPromise = null;
+	}
 }
 
 export async function teardownNodePod(): Promise<void> {
-	if (nodePodInstance) {
-		if (activeTerminal) {
-			activeTerminal.detach();
-			activeTerminal = null;
-		}
-		const { closeSandboxRepo } = await import("./sandbox-git");
-		closeSandboxRepo();
-		nodePodInstance.teardown();
+	if (nodePodTeardownPromise) return nodePodTeardownPromise;
+	const stopping = (async () => {
+		bootGeneration++;
+		await nodePodBootPromise;
+		const pod = nodePodInstance;
 		nodePodInstance = null;
 		nodePodBootPromise = null;
 		baselineContent.clear();
+		bootFileCount = 0;
+		const terminal = activeTerminal;
+		activeTerminal = null;
+		const closeRepository = closeBootRepository;
+		closeBootRepository = null;
+		try {
+			terminal?.detach();
+		} finally {
+			try { closeRepository?.(); } finally { pod?.teardown(); }
+		}
+	})();
+	nodePodTeardownPromise = stopping;
+	try { await stopping; } finally {
+		if (nodePodTeardownPromise === stopping) nodePodTeardownPromise = null;
 	}
 }
 

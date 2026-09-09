@@ -18,6 +18,7 @@ export interface KeatingP2PBridge {
 }
 
 export interface KeatingCredentialBridge {
+	status?(): Promise<{ persistence: "encrypted" | "session" }>;
 	get(id: string): Promise<string | null>;
 	set(id: string, value: string): Promise<void>;
 	delete(id: string): Promise<void>;

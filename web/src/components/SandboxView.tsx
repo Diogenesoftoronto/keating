@@ -30,6 +30,8 @@ import X from "reicon-react/icons/X";
 import { KeatingIcon } from "./KeatingIcon";
 import "./sandbox-view.css";
 import { JsonCrackBlock } from "./JsonCrackBlock";
+import { DesktopWorkspacePanel } from "./DesktopWorkspacePanel";
+import { isDesktopNativeRuntime } from "../lib/desktop-native";
 
 import {
   loadAgentRuntimeConfig,
@@ -167,12 +169,20 @@ export function SandboxView({
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [runtime, setRuntime] = useState<KeatingAgentRuntimeConfig | null>(null);
+  const [runtimeError, setRuntimeError] = useState("");
   const [nodePodActive, setNodePodActive] = useState(false);
   const [booting, setBooting] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("status");
   const [isTabPending, startTabTransition] = useTransition();
   const [events, setEvents] = useState<LogEvent[]>([]);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [nativeDirty, setNativeDirty] = useState(false);
+  const [confirmNativeClose, setConfirmNativeClose] = useState(false);
+  const requestClose = () => {
+    if (nativeDirty) { setConfirmNativeClose(true); return; }
+    setConfirmNativeClose(false);
+    onClose();
+  };
 
   /* status */
   const [nodePodInfoState, setNodePodInfoState] = useState<Awaited<ReturnType<typeof nodePodInfo>> | null>(null);
@@ -280,13 +290,19 @@ export function SandboxView({
   }
 
   const refreshConfig = useCallback(async () => {
+    try {
     const config = await loadAgentRuntimeConfig(true);
+    setRuntimeError("");
     setRuntime(config);
+    if (isDesktopNativeRuntime(config)) { setNodePodActive(false); return; }
     const active = isNodePodActive();
     setNodePodActive(active);
     if (active || getSnapshotLog().length > 0) {
       const info = await nodePodInfo().catch(() => null);
       setNodePodInfoState(info);
+    }
+    } catch (error) {
+      setRuntimeError(error instanceof Error ? error.message : "The workspace could not connect.");
     }
   }, []);
 
@@ -704,19 +720,21 @@ export function SandboxView({
   const advancedTab = ["snapshots", "vc", "probes"].includes(activeTab) ? activeTab : "";
 
   return (
-    <dialog ref={dialogRef} className="sandbox-runtime" aria-labelledby="runtime-title" onCancel={onClose} onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <dialog ref={dialogRef} className="sandbox-runtime" aria-labelledby="runtime-title" onCancel={(event) => { event.preventDefault(); requestClose(); }} onClick={(event) => { if (event.target === event.currentTarget) requestClose(); }}>
       <div className={styles.panel}>
         <header className={styles.header}>
           <div className="runtime-heading">
             <span className="runtime-mark"><KeatingIcon icon={Cpu} size={24} active={nodePodActive} /></span>
             <div className={styles.minW0}>
-              <h2 id="runtime-title">Runtime</h2>
-              <p>{runtime ? runtimeLabel(runtime.mode) : "Loading environment…"}</p>
+              <h2 id="runtime-title">{isDesktopNativeRuntime(runtime) ? "Desktop workspace" : "Runtime"}</h2>
+              <p>{runtimeError ? "Workspace unavailable" : isDesktopNativeRuntime(runtime) ? "Native files and processes" : runtime ? runtimeLabel(runtime.mode) : "Loading environment…"}</p>
             </div>
           </div>
-          <button type="button" className="runtime-icon-button" aria-label="Close runtime" onClick={onClose} autoFocus><KeatingIcon icon={X} size={20} /></button>
+          <button type="button" className="runtime-icon-button" aria-label="Close runtime" onClick={requestClose} autoFocus><KeatingIcon icon={X} size={20} /></button>
         </header>
 
+        {confirmNativeClose && <div className="desktop-workspace-close" role="alert"><p>Your file has unsaved edits.</p><div><button type="button" onClick={() => setConfirmNativeClose(false)}>Keep editing</button><button type="button" onClick={() => { setConfirmNativeClose(false); setNativeDirty(false); onClose(); }}>Discard and close</button></div></div>}
+        {runtimeError ? <div className="runtime-body"><div className="runtime-error" role="alert">{runtimeError}</div><button type="button" onClick={() => void refreshAll()}>Retry connection</button></div> : isDesktopNativeRuntime(runtime) && runtime?.projectRoot ? <DesktopWorkspacePanel workspacePath={runtime.projectRoot} onDirtyChange={setNativeDirty} /> : <>
         <div className="runtime-control-bar">
           <span className="runtime-state" data-running={nodePodActive} role="status"><span className="runtime-state-dot" />{status}</span>
           <div className="runtime-controls">
@@ -744,6 +762,7 @@ export function SandboxView({
         </nav>
 
         <div className={styles.body} data-view={activeTab} aria-busy={isTabPending}>{renderTab()}</div>
+        </>}
       </div>
     </dialog>
   );

@@ -104,7 +104,7 @@ const PRODUCT_FEATURES: ProductFeature[] = [
     title: "Mark the teaching, not just the answer.",
     description:
       "Browse the recorded turns, switch between rendered and raw text, and open the folded Margin or Model results when the review needs them.",
-    poster: "/tutorial/review-workspace.png",
+    poster: "/tutorial/review-workspace.avif",
     to: "/review",
     action: "Open Review",
   },
@@ -122,7 +122,7 @@ const PRODUCT_FEATURES: ProductFeature[] = [
     title: "Assemble the room before you teach in it.",
     description:
       "Start a blank course or select generated interaction cards from the artifact tray; empty plan and deck sections say what will appear there later.",
-    poster: "/tutorial/surface-course-builder.png",
+    poster: "/tutorial/surface-course-builder.avif",
     to: "/courses",
     action: "Explore Courses",
   },
@@ -274,9 +274,9 @@ export function SurfaceScreencasts() {
                 aria-label="Keatingbot, learner, and tutor portrait styles"
               >
                 {[
-                  ["/avatars/keatingbot-newsprint.png", "Keatingbot in the terminal print style"],
-                  ["/avatars/learner-newsprint.png", "Generated learner portrait in the terminal print style"],
-                  ["/avatars/tutor-newsprint.png", "Generated tutor portrait in the terminal print style"],
+                  ["/avatars/keatingbot-newsprint.avif", "Keatingbot in the terminal print style"],
+                  ["/avatars/learner-newsprint.avif", "Generated learner portrait in the terminal print style"],
+                  ["/avatars/tutor-newsprint.avif", "Generated tutor portrait in the terminal print style"],
                 ].map(([src, alt], index) => (
                   <img
                     key={src}

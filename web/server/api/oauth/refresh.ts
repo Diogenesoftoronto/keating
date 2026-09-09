@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, createError } from "h3";
+import { defineEventHandler, readBody, createError, assertMethod, setResponseHeader } from "h3";
 import { getOAuthServerConfigs, type OAuthServerProviderId } from "./config";
 import { OAuthUpstreamError, refreshGitHubCopilotToken } from "./github-copilot";
 
@@ -8,6 +8,8 @@ interface RefreshRequestBody {
 }
 
 export default defineEventHandler(async (event) => {
+	setResponseHeader(event, "Cache-Control", "no-store");
+	assertMethod(event, "POST");
 	const body = await readBody<RefreshRequestBody>(event);
 
 	if (!body?.provider || !body?.refresh_token) {
@@ -67,8 +69,7 @@ export default defineEventHandler(async (event) => {
 		});
 
 		if (!response.ok) {
-			const errorText = await response.text();
-			console.error(`[oauth/refresh] ${body.provider} refresh failed: ${response.status} ${errorText}`);
+			await response.body?.cancel();
 			throw createError({
 				statusCode: response.status === 401 || response.status === 403 ? 401 : 502,
 				statusMessage: `Token refresh failed: ${response.status}`,
@@ -78,7 +79,6 @@ export default defineEventHandler(async (event) => {
 		return await response.json();
 	} catch (error) {
 		if ((error as any).statusCode) throw error;
-		console.error(`[oauth/refresh] Error refreshing token for ${body.provider}:`, error);
 		throw createError({
 			statusCode: 500,
 			statusMessage: "Token refresh request failed",

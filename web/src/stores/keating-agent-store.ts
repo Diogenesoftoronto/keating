@@ -94,7 +94,7 @@ interface KeatingAgentStore {
   toggleSessionSidebar: () => void;
   toggleMobileSidebar: () => void;
   closeMobileSidebar: () => void;
-  setSpeechSettings: (settings: WebSpeechSettings) => void;
+  syncSpeechSettings: (settings: WebSpeechSettings) => void;
   toggleSpeech: () => void;
   setPersistentStorageStatus: (status: PersistentStorageStatus) => void;
   setPersistentStorageChecked: (checked: boolean) => void;
@@ -130,18 +130,18 @@ export const useKeatingAgentStore = create<KeatingAgentStore>((set, get) => ({
   },
   toggleMobileSidebar: () => set((state) => ({ mobileSidebarOpen: !state.mobileSidebarOpen })),
   closeMobileSidebar: () => set({ mobileSidebarOpen: false }),
-  setSpeechSettings: (speechSettings) => {
+  syncSpeechSettings: (speechSettings) => {
     const wasEnabled = get().speechSettings.enabled;
-    saveWebSpeechSettings(speechSettings);
+    // Observing persisted settings must never write them back or emit another event.
+    if (JSON.stringify(get().speechSettings) === JSON.stringify(speechSettings)) return;
     if (speechSettings.enabled && !wasEnabled) primeSpeechAudio().catch(console.warn);
     set({ speechSettings });
   },
   toggleSpeech: () => {
     const current = get().speechSettings;
     const speechSettings = { ...current, enabled: !current.enabled };
+    get().syncSpeechSettings(speechSettings);
     saveWebSpeechSettings(speechSettings);
-    if (speechSettings.enabled) primeSpeechAudio().catch(console.warn);
-    set({ speechSettings });
   },
   setPersistentStorageStatus: (persistentStorageStatus) => set({ persistentStorageStatus }),
   setPersistentStorageChecked: (persistentStorageChecked) => set({ persistentStorageChecked }),

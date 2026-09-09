@@ -1,0 +1,13 @@
+.courses-welcome {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+.courses-welcome__copy { min-width: 0; }
+.courses-welcome__mascot { width: 144px; flex: 0 0 144px; }
+.courses-welcome__mascot .keating-bot { width: 100%; height: auto; aspect-ratio: 1; }
+@media (max-width: 639px) {
+  .courses-welcome { align-items: flex-start; gap: 0.5rem; }
+  .courses-welcome__mascot { width: 88px; flex-basis: 88px; }
+}

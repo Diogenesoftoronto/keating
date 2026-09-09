@@ -1,0 +1,576 @@
+{
+  "schema_version": 1,
+  "id": "teaching-v3-natural-profile-pairs",
+  "status": "agent-authored-development-cases",
+  "description": "Four five-turn episodes in two pairs. Learner utterances are identical within each pair; only the small fictional stored profile and learning history differ. Expected delivery is production CLI startup context, pending application integration; verify actual context in run receipts. No extra profile-pointer user message is part of the cases. Evaluator references, pair labels and rubrics must never be sent to the tutor.",
+  "cases": [
+    {
+      "id": "profile-linear-baking",
+      "family": "profile-linear-baking",
+      "category": "profile_contextual_examples",
+      "title": "Fixed and variable amounts with a home-baking background",
+      "pair_id": "linear-fixed-term-profiles",
+      "contrast_condition": "baking-experience",
+      "learner_profile": "I’m 34, Punjabi is my first language, and I bake biscuits for friends while reading recipes in English. I’m learning simple algebra and have explained correctly in earlier practice that doubling the number of identical trays doubles the total biscuit count. I have only read about straight-line graphs, still mix up formulas with a fixed extra amount, and enjoy keeping track of ingredients.",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "I’m stuck on y = 3x + 6. If x doubles, why doesn’t y?"
+        },
+        {
+          "kind": "message",
+          "text": "I put in 2 and got 12. Then I put in 4 and got 18, but I was expecting 24."
+        },
+        {
+          "kind": "message",
+          "text": "I haven’t worked out costs myself. I usually just count pieces."
+        },
+        {
+          "kind": "message",
+          "text": "So the extra 6 happens once, not once for each x? I tried x = 0 and got 6."
+        },
+        {
+          "kind": "message",
+          "text": "What if I compare two small jobs instead of one big one?"
+        }
+      ],
+      "rubric": [
+        {
+          "dimension": "correctness",
+          "criteria": {
+            "0": "Claims y doubles here, changes the fixed term per piece, or gives an invalid grouped-job comparison.",
+            "1": "Computes examples correctly but obscures the fixed contribution or fails to state an assumption that matters for separate jobs.",
+            "2": "Keeps fixed and variable terms distinct, validates the learner’s correct substitutions, and handles separate versus combined jobs under explicit appropriate assumptions."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "contextual_example",
+          "criteria": {
+            "0": "Uses a misleading analogy, invents personal facts, or substitutes hobby words without mapping the quantities.",
+            "1": "Gives a relevant but weakly mapped example, or over-assumes domain knowledge from the profile.",
+            "2": "Offers an interpretable example or focused clarification suited to the reported experience, with a clear mapping of input, repeated contribution and one-time contribution; a well-chosen neutral context is acceptable when more useful. Responds respectfully to stated individual context without assuming ability from age or language."
+          },
+          "evidence_steps": [
+            0,
+            1
+          ]
+        },
+        {
+          "dimension": "updates_after_feedback",
+          "criteria": {
+            "0": "Continues assuming pricing expertise after the learner disclaims it or ignores the demonstrated fixed-term insight.",
+            "1": "Acknowledges the new information but makes little useful adjustment or restarts all arithmetic unnecessarily.",
+            "2": "Uses the counting-pieces clarification to make the explanation more concrete or accessible, then builds on the learner’s zero-input and fixed-term reasoning without claiming mastery."
+          },
+          "evidence_steps": [
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "prior_knowledge_bridge",
+          "criteria": {
+            "0": "Claims mastery from having seen a topic, replaces individual evidence with age or language stereotypes, or gives a misleading connection to prior learning.",
+            "1": "Mentions a previously studied idea or familiar activity but does not explain how the established reasoning connects to the current difficulty.",
+            "2": "Uses a demonstrated prior idea to explain a meaningful structural connection to the current problem, while treating exposure-only or unresolved topics as uncertain; a focused check or alternative accessible bridge is valid when the learner’s later evidence warrants it; absent expected startup context is a harness-fidelity gap, not evidence that the tutor ignored available background."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "For y=3x+6, y(2)=12, y(4)=18, and y(0)=6. Doubling x from 2 to 4 does not double y.",
+          "The variable contribution 3x doubles when x doubles; the fixed term 6 does not. y(2x)=6x+6 whereas 2y(x)=6x+12.",
+          "In an explicitly stated toy model with a fixed setup contribution of 6 per job, two jobs of size x each have total 2(3x+6), while one job of size 2x has total 3(2x)+6. The two-job total is 6 greater.",
+          "The last comparison depends on what defines a job and whether the fixed contribution is incurred separately. The equation alone does not establish real pricing or physical setup rules.",
+          "A cost example is optional. Any dimensionally consistent hypothetical mapping of x, 3x, 6 and y can clarify fixed versus variable contributions. A baking or woodwork interest does not establish pricing knowledge."
+        ],
+        "observable_evidence": [
+          {
+            "after_learner_step": 0,
+            "evidence": "The learner knows the displayed equation but confuses doubling input with doubling the whole output; the profile offers possible familiar contexts, not a mandatory analogy. The supplied background distinguishes a previously demonstrated idea from exposure alone; use that distinction when the recorded production startup context contains it."
+          },
+          {
+            "after_learner_step": 1,
+            "evidence": "Substitution is correct in two cases; the unresolved issue is the expected scaling, not arithmetic inability."
+          },
+          {
+            "after_learner_step": 2,
+            "evidence": "The learner explicitly disclaims costing experience and reports counting pieces. Earlier use of a cost analogy was not necessarily wrong, but subsequent support should not assume pricing fluency."
+          },
+          {
+            "after_learner_step": 3,
+            "evidence": "The learner states the fixed-term idea and checks zero input. This supports a local interpretation check without proving broader mastery."
+          },
+          {
+            "after_learner_step": 4,
+            "evidence": "The learner introduces job grouping, making the frequency of the fixed contribution consequential. A toy assumption or brief clarification is needed before a definite real-world claim."
+          }
+        ],
+        "profile_use_boundary": "The profile contains reported experience and interests, not a diagnosis or a command to use a particular analogy. Judge whether the chosen example clarifies the mathematical structure. A suitable neutral example or a focused clarification may be better than a forced hobby reference. Fictional numerical examples must be stated as such, not attributed to the learner as personal facts.",
+        "unwarranted_learner_beliefs": [
+          "Do not infer age, gender, intelligence, income, occupation beyond what is stated, or a fixed learning style from these profiles.",
+          "Later feedback may revise an assumption that was reasonable earlier. Judge each response using only the information available at that step.",
+          "Scripted correct work does not establish causal learning gains, independent retention, or stable mastery.",
+          "Later learner messages stand as new observations or attempts; they do not claim that the tutor gave any particular unseen example or explanation.",
+          "Explicit age and language history may inform respectful, accessible communication but do not establish ability or a required teaching style. The individual’s demonstrated work and later feedback override demographic generalizations; no cultural analogy is required."
+        ],
+        "acceptable_variation": "No exact analogy, example numbers, phrase, activity format or teaching sequence is required. Accept correct explanations and suitable concrete examples in or outside the reported interest. Reward an explicit useful mapping of quantities or operations, not topic-word substitution. Clarifying a consequential ambiguity is valid; unnecessary interrogation is not.",
+        "learning_history_evidence": "Demonstrated: explains proportional repeated groups using identical trays. Only studied: straight-line graphs. Unresolved: fixed extra amount in a formula.",
+        "background_delivery": "Expected mechanism: the production CLI automatically loads the supplied fictional stored profile and learning history at session startup. This application fix is pending integration when these cases are authored. The evaluator must verify the actual applied context; no profile-file pointer or additional user teaching instruction is part of these identical learner utterances."
+      },
+      "state_checks": [],
+      "profile_source": "production-startup-context-expected",
+      "learning_history": {
+        "demonstrated": [
+          "Explained why doubling identical trays doubles the total biscuit count."
+        ],
+        "exposure_only": [
+          "Read about straight-line graphs."
+        ],
+        "unresolved": [
+          "How a fixed extra amount changes scaling."
+        ]
+      }
+    },
+    {
+      "id": "profile-linear-woodwork",
+      "family": "profile-linear-woodwork",
+      "category": "profile_contextual_examples",
+      "title": "Fixed and variable amounts with a woodwork background",
+      "pair_id": "linear-fixed-term-profiles",
+      "contrast_condition": "woodwork-experience",
+      "learner_profile": "I’m 15, use English day to day, and assemble small wooden planters from kits because I like seeing how parts fit. I’m learning simple algebra and have correctly completed and explained a table where each extra kit adds three pieces to a count. I have only seen graph axes in a lesson, have not explained what a starting value means yet, and mostly use arithmetic for my projects.",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "I’m stuck on y = 3x + 6. If x doubles, why doesn’t y?"
+        },
+        {
+          "kind": "message",
+          "text": "I put in 2 and got 12. Then I put in 4 and got 18, but I was expecting 24."
+        },
+        {
+          "kind": "message",
+          "text": "I haven’t worked out costs myself. I usually just count pieces."
+        },
+        {
+          "kind": "message",
+          "text": "So the extra 6 happens once, not once for each x? I tried x = 0 and got 6."
+        },
+        {
+          "kind": "message",
+          "text": "What if I compare two small jobs instead of one big one?"
+        }
+      ],
+      "rubric": [
+        {
+          "dimension": "correctness",
+          "criteria": {
+            "0": "Claims y doubles here, changes the fixed term per piece, or gives an invalid grouped-job comparison.",
+            "1": "Computes examples correctly but obscures the fixed contribution or fails to state an assumption that matters for separate jobs.",
+            "2": "Keeps fixed and variable terms distinct, validates the learner’s correct substitutions, and handles separate versus combined jobs under explicit appropriate assumptions."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "contextual_example",
+          "criteria": {
+            "0": "Uses a misleading analogy, invents personal facts, or substitutes hobby words without mapping the quantities.",
+            "1": "Gives a relevant but weakly mapped example, or over-assumes domain knowledge from the profile.",
+            "2": "Offers an interpretable example or focused clarification suited to the reported experience, with a clear mapping of input, repeated contribution and one-time contribution; a well-chosen neutral context is acceptable when more useful. Responds respectfully to stated individual context without assuming ability from age or language."
+          },
+          "evidence_steps": [
+            0,
+            1
+          ]
+        },
+        {
+          "dimension": "updates_after_feedback",
+          "criteria": {
+            "0": "Continues assuming pricing expertise after the learner disclaims it or ignores the demonstrated fixed-term insight.",
+            "1": "Acknowledges the new information but makes little useful adjustment or restarts all arithmetic unnecessarily.",
+            "2": "Uses the counting-pieces clarification to make the explanation more concrete or accessible, then builds on the learner’s zero-input and fixed-term reasoning without claiming mastery."
+          },
+          "evidence_steps": [
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "prior_knowledge_bridge",
+          "criteria": {
+            "0": "Claims mastery from having seen a topic, replaces individual evidence with age or language stereotypes, or gives a misleading connection to prior learning.",
+            "1": "Mentions a previously studied idea or familiar activity but does not explain how the established reasoning connects to the current difficulty.",
+            "2": "Uses a demonstrated prior idea to explain a meaningful structural connection to the current problem, while treating exposure-only or unresolved topics as uncertain; a focused check or alternative accessible bridge is valid when the learner’s later evidence warrants it; absent expected startup context is a harness-fidelity gap, not evidence that the tutor ignored available background."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "For y=3x+6, y(2)=12, y(4)=18, and y(0)=6. Doubling x from 2 to 4 does not double y.",
+          "The variable contribution 3x doubles when x doubles; the fixed term 6 does not. y(2x)=6x+6 whereas 2y(x)=6x+12.",
+          "In an explicitly stated toy model with a fixed setup contribution of 6 per job, two jobs of size x each have total 2(3x+6), while one job of size 2x has total 3(2x)+6. The two-job total is 6 greater.",
+          "The last comparison depends on what defines a job and whether the fixed contribution is incurred separately. The equation alone does not establish real pricing or physical setup rules.",
+          "A cost example is optional. Any dimensionally consistent hypothetical mapping of x, 3x, 6 and y can clarify fixed versus variable contributions. A baking or woodwork interest does not establish pricing knowledge."
+        ],
+        "observable_evidence": [
+          {
+            "after_learner_step": 0,
+            "evidence": "The learner knows the displayed equation but confuses doubling input with doubling the whole output; the profile offers possible familiar contexts, not a mandatory analogy. The supplied background distinguishes a previously demonstrated idea from exposure alone; use that distinction when the recorded production startup context contains it."
+          },
+          {
+            "after_learner_step": 1,
+            "evidence": "Substitution is correct in two cases; the unresolved issue is the expected scaling, not arithmetic inability."
+          },
+          {
+            "after_learner_step": 2,
+            "evidence": "The learner explicitly disclaims costing experience and reports counting pieces. Earlier use of a cost analogy was not necessarily wrong, but subsequent support should not assume pricing fluency."
+          },
+          {
+            "after_learner_step": 3,
+            "evidence": "The learner states the fixed-term idea and checks zero input. This supports a local interpretation check without proving broader mastery."
+          },
+          {
+            "after_learner_step": 4,
+            "evidence": "The learner introduces job grouping, making the frequency of the fixed contribution consequential. A toy assumption or brief clarification is needed before a definite real-world claim."
+          }
+        ],
+        "profile_use_boundary": "The profile contains reported experience and interests, not a diagnosis or a command to use a particular analogy. Judge whether the chosen example clarifies the mathematical structure. A suitable neutral example or a focused clarification may be better than a forced hobby reference. Fictional numerical examples must be stated as such, not attributed to the learner as personal facts.",
+        "unwarranted_learner_beliefs": [
+          "Do not infer age, gender, intelligence, income, occupation beyond what is stated, or a fixed learning style from these profiles.",
+          "Later feedback may revise an assumption that was reasonable earlier. Judge each response using only the information available at that step.",
+          "Scripted correct work does not establish causal learning gains, independent retention, or stable mastery.",
+          "Later learner messages stand as new observations or attempts; they do not claim that the tutor gave any particular unseen example or explanation.",
+          "Explicit age and language history may inform respectful, accessible communication but do not establish ability or a required teaching style. The individual’s demonstrated work and later feedback override demographic generalizations; no cultural analogy is required."
+        ],
+        "acceptable_variation": "No exact analogy, example numbers, phrase, activity format or teaching sequence is required. Accept correct explanations and suitable concrete examples in or outside the reported interest. Reward an explicit useful mapping of quantities or operations, not topic-word substitution. Clarifying a consequential ambiguity is valid; unnecessary interrogation is not.",
+        "learning_history_evidence": "Demonstrated: explains constant increments of three in a count table. Only studied: graph axes. Unresolved: interpretation of a starting value.",
+        "background_delivery": "Expected mechanism: the production CLI automatically loads the supplied fictional stored profile and learning history at session startup. This application fix is pending integration when these cases are authored. The evaluator must verify the actual applied context; no profile-file pointer or additional user teaching instruction is part of these identical learner utterances."
+      },
+      "state_checks": [],
+      "profile_source": "production-startup-context-expected",
+      "learning_history": {
+        "demonstrated": [
+          "Completed and explained a count table with three more pieces per extra kit."
+        ],
+        "exposure_only": [
+          "Saw graph axes in a lesson."
+        ],
+        "unresolved": [
+          "What a starting value represents."
+        ]
+      }
+    },
+    {
+      "id": "profile-percent-stockroom",
+      "family": "profile-percent-stockroom",
+      "category": "profile_contextual_examples",
+      "title": "Percentage changes with stock-count spreadsheet experience",
+      "pair_id": "percentage-change-profiles",
+      "contrast_condition": "stockroom-spreadsheet-experience",
+      "learner_profile": "I’m 47, Spanish is my first language, and I help count items in a small craft shop using an English spreadsheet. I’m learning how percentages describe changes and have correctly explained that a rise from 20 items to 30 adds 10 items by subtraction. I have read about percentages in a spreadsheet guide but have not worked out which starting amount a percentage increase compares with, and I like spotting patterns in weekly lists.",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "It went from 20% to 30%. Why is someone calling that a 50% increase?"
+        },
+        {
+          "kind": "message",
+          "text": "I checked 100 entries: 20 before and 30 after. That looks like 10 more."
+        },
+        {
+          "kind": "message",
+          "text": "I’m still mixed up. I can read a small table, but the percent signs lose me."
+        },
+        {
+          "kind": "message",
+          "text": "With 200 entries I’d have 40 before and 60 after. Would that still be a 50% increase?"
+        },
+        {
+          "kind": "message",
+          "text": "What if the starting percentage is zero?"
+        }
+      ],
+      "rubric": [
+        {
+          "dimension": "correctness",
+          "criteria": {
+            "0": "Conflates ten percentage points with a ten-percent relative rise, rejects the correct doubled counts, or reports a finite conventional relative increase from zero.",
+            "1": "Gets the headline numbers right but leaves the reference amount unclear or gives an unqualified zero-baseline answer.",
+            "2": "Distinguishes percentage-point difference from change relative to the starting value, correctly handles both fixed denominators, and explains why a zero baseline prevents the usual relative calculation while other descriptions remain available."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "contextual_example",
+          "criteria": {
+            "0": "Invents learner-specific performance or business facts, or uses a surface hobby reference that distorts percentages and counts.",
+            "1": "Uses a plausible example without clearly identifying the counted event, denominator or original amount.",
+            "2": "Chooses an accessible example or clarification informed by the profile where helpful, clearly mapping the event, fixed total, original count and added count; a more effective neutral example is equally valid. Responds respectfully to stated individual context without assuming ability from age or language."
+          },
+          "evidence_steps": [
+            0,
+            1
+          ]
+        },
+        {
+          "dimension": "updates_after_feedback",
+          "criteria": {
+            "0": "Ignores the report of confusion, repeats unexplained symbolic formulas, or treats the correct 40-to-60 attempt as wrong.",
+            "1": "Acknowledges the feedback but does not clarify the base, or repeats all earlier work without recognizing the new attempt.",
+            "2": "Makes the relation concrete through a small table or comparably accessible count-based explanation, then uses the correct 40-to-60 attempt to clarify why the relative change stays the same."
+          },
+          "evidence_steps": [
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "prior_knowledge_bridge",
+          "criteria": {
+            "0": "Claims mastery from having seen a topic, replaces individual evidence with age or language stereotypes, or gives a misleading connection to prior learning.",
+            "1": "Mentions a previously studied idea or familiar activity but does not explain how the established reasoning connects to the current difficulty.",
+            "2": "Uses a demonstrated prior idea to explain a meaningful structural connection to the current problem, while treating exposure-only or unresolved topics as uncertain; a focused check or alternative accessible bridge is valid when the learner’s later evidence warrants it; absent expected startup context is a harness-fidelity gap, not evidence that the tutor ignored available background."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "A change from 20% to 30% is 10 percentage points. Relative to the original 20%, the change is (30-20)/20=0.5, or 50%.",
+          "On a fixed denominator of 100 entries, the relevant count rises from 20 to 30, an increase of 10. Ten is half of the original 20.",
+          "On a fixed denominator of 200 entries, 20% is 40 and 30% is 60. The extra 20 is half of the original 40, so the relative increase remains 50%.",
+          "A conventional relative percentage increase from an initial value of zero is undefined because its formula divides by zero. A change from 0% to a specified positive percentage can still be described in percentage points or absolute counts with a specified denominator.",
+          "No particular new endpoint is supplied in the final question. Illustrative endpoints are hypothetical, not reported observations. Relative count changes across groups of unequal sizes require additional denominator information."
+        ],
+        "observable_evidence": [
+          {
+            "after_learner_step": 0,
+            "evidence": "The learner asks about apparently conflicting descriptions of a percentage change. The profile offers an optional context; neither rates, source data nor denominator changes beyond the utterance are established. The supplied background distinguishes a previously demonstrated idea from exposure alone; use that distinction when the recorded production startup context contains it."
+          },
+          {
+            "after_learner_step": 1,
+            "evidence": "The learner correctly identifies ten extra entries out of a fixed hundred, but has not yet connected that change to the original twenty."
+          },
+          {
+            "after_learner_step": 2,
+            "evidence": "The learner reports continuing confusion and comfort reading a small table. This is current feedback, not evidence of a fixed learning style or inability."
+          },
+          {
+            "after_learner_step": 3,
+            "evidence": "The learner correctly rescales both counts to a two-hundred-entry denominator and asks whether the relative increase persists."
+          },
+          {
+            "after_learner_step": 4,
+            "evidence": "The learner asks about the zero-baseline boundary. Earlier responses should not be penalized for not anticipating this future question."
+          }
+        ],
+        "profile_use_boundary": "The profile contains reported experience and interests, not a diagnosis or a command to use a particular analogy. Judge whether the chosen example clarifies the mathematical structure. A suitable neutral example or a focused clarification may be better than a forced hobby reference. Fictional numerical examples must be stated as such, not attributed to the learner as personal facts.",
+        "unwarranted_learner_beliefs": [
+          "Do not infer age, gender, intelligence, income, occupation beyond what is stated, or a fixed learning style from these profiles.",
+          "Later feedback may revise an assumption that was reasonable earlier. Judge each response using only the information available at that step.",
+          "Scripted correct work does not establish causal learning gains, independent retention, or stable mastery.",
+          "Later learner messages stand as new observations or attempts; they do not claim that the tutor gave any particular unseen example or explanation.",
+          "Explicit age and language history may inform respectful, accessible communication but do not establish ability or a required teaching style. The individual’s demonstrated work and later feedback override demographic generalizations; no cultural analogy is required."
+        ],
+        "acceptable_variation": "No exact analogy, example numbers, phrase, activity format or teaching sequence is required. Accept correct explanations and suitable concrete examples in or outside the reported interest. Reward an explicit useful mapping of quantities or operations, not topic-word substitution. Clarifying a consequential ambiguity is valid; unnecessary interrogation is not.",
+        "learning_history_evidence": "Demonstrated: computes and explains absolute change from 20 to 30. Only studied: spreadsheet percentages. Unresolved: denominator for relative increase.",
+        "background_delivery": "Expected mechanism: the production CLI automatically loads the supplied fictional stored profile and learning history at session startup. This application fix is pending integration when these cases are authored. The evaluator must verify the actual applied context; no profile-file pointer or additional user teaching instruction is part of these identical learner utterances."
+      },
+      "state_checks": [],
+      "profile_source": "production-startup-context-expected",
+      "learning_history": {
+        "demonstrated": [
+          "Explained that changing from 20 items to 30 adds 10 by subtraction."
+        ],
+        "exposure_only": [
+          "Read about percentages in a spreadsheet guide."
+        ],
+        "unresolved": [
+          "Which starting amount a relative percentage change compares with."
+        ]
+      }
+    },
+    {
+      "id": "profile-percent-gamecoding",
+      "family": "profile-percent-gamecoding",
+      "category": "profile_contextual_examples",
+      "title": "Percentage changes with small-game coding experience",
+      "pair_id": "percentage-change-profiles",
+      "contrast_condition": "gamecoding-experience",
+      "learner_profile": "I’m 16, English is my first language, and I make tiny browser games while keeping lists of trial outcomes. I’m learning how percentages describe changes and have correctly explained in earlier fraction practice why 10 is half of 20. I have only seen percentage displays in game statistics, have not connected them to relative change yet, and enjoy comparing versions of a game.",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "It went from 20% to 30%. Why is someone calling that a 50% increase?"
+        },
+        {
+          "kind": "message",
+          "text": "I checked 100 entries: 20 before and 30 after. That looks like 10 more."
+        },
+        {
+          "kind": "message",
+          "text": "I’m still mixed up. I can read a small table, but the percent signs lose me."
+        },
+        {
+          "kind": "message",
+          "text": "With 200 entries I’d have 40 before and 60 after. Would that still be a 50% increase?"
+        },
+        {
+          "kind": "message",
+          "text": "What if the starting percentage is zero?"
+        }
+      ],
+      "rubric": [
+        {
+          "dimension": "correctness",
+          "criteria": {
+            "0": "Conflates ten percentage points with a ten-percent relative rise, rejects the correct doubled counts, or reports a finite conventional relative increase from zero.",
+            "1": "Gets the headline numbers right but leaves the reference amount unclear or gives an unqualified zero-baseline answer.",
+            "2": "Distinguishes percentage-point difference from change relative to the starting value, correctly handles both fixed denominators, and explains why a zero baseline prevents the usual relative calculation while other descriptions remain available."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "contextual_example",
+          "criteria": {
+            "0": "Invents learner-specific performance or business facts, or uses a surface hobby reference that distorts percentages and counts.",
+            "1": "Uses a plausible example without clearly identifying the counted event, denominator or original amount.",
+            "2": "Chooses an accessible example or clarification informed by the profile where helpful, clearly mapping the event, fixed total, original count and added count; a more effective neutral example is equally valid. Responds respectfully to stated individual context without assuming ability from age or language."
+          },
+          "evidence_steps": [
+            0,
+            1
+          ]
+        },
+        {
+          "dimension": "updates_after_feedback",
+          "criteria": {
+            "0": "Ignores the report of confusion, repeats unexplained symbolic formulas, or treats the correct 40-to-60 attempt as wrong.",
+            "1": "Acknowledges the feedback but does not clarify the base, or repeats all earlier work without recognizing the new attempt.",
+            "2": "Makes the relation concrete through a small table or comparably accessible count-based explanation, then uses the correct 40-to-60 attempt to clarify why the relative change stays the same."
+          },
+          "evidence_steps": [
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "prior_knowledge_bridge",
+          "criteria": {
+            "0": "Claims mastery from having seen a topic, replaces individual evidence with age or language stereotypes, or gives a misleading connection to prior learning.",
+            "1": "Mentions a previously studied idea or familiar activity but does not explain how the established reasoning connects to the current difficulty.",
+            "2": "Uses a demonstrated prior idea to explain a meaningful structural connection to the current problem, while treating exposure-only or unresolved topics as uncertain; a focused check or alternative accessible bridge is valid when the learner’s later evidence warrants it; absent expected startup context is a harness-fidelity gap, not evidence that the tutor ignored available background."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "A change from 20% to 30% is 10 percentage points. Relative to the original 20%, the change is (30-20)/20=0.5, or 50%.",
+          "On a fixed denominator of 100 entries, the relevant count rises from 20 to 30, an increase of 10. Ten is half of the original 20.",
+          "On a fixed denominator of 200 entries, 20% is 40 and 30% is 60. The extra 20 is half of the original 40, so the relative increase remains 50%.",
+          "A conventional relative percentage increase from an initial value of zero is undefined because its formula divides by zero. A change from 0% to a specified positive percentage can still be described in percentage points or absolute counts with a specified denominator.",
+          "No particular new endpoint is supplied in the final question. Illustrative endpoints are hypothetical, not reported observations. Relative count changes across groups of unequal sizes require additional denominator information."
+        ],
+        "observable_evidence": [
+          {
+            "after_learner_step": 0,
+            "evidence": "The learner asks about apparently conflicting descriptions of a percentage change. The profile offers an optional context; neither rates, source data nor denominator changes beyond the utterance are established. The supplied background distinguishes a previously demonstrated idea from exposure alone; use that distinction when the recorded production startup context contains it."
+          },
+          {
+            "after_learner_step": 1,
+            "evidence": "The learner correctly identifies ten extra entries out of a fixed hundred, but has not yet connected that change to the original twenty."
+          },
+          {
+            "after_learner_step": 2,
+            "evidence": "The learner reports continuing confusion and comfort reading a small table. This is current feedback, not evidence of a fixed learning style or inability."
+          },
+          {
+            "after_learner_step": 3,
+            "evidence": "The learner correctly rescales both counts to a two-hundred-entry denominator and asks whether the relative increase persists."
+          },
+          {
+            "after_learner_step": 4,
+            "evidence": "The learner asks about the zero-baseline boundary. Earlier responses should not be penalized for not anticipating this future question."
+          }
+        ],
+        "profile_use_boundary": "The profile contains reported experience and interests, not a diagnosis or a command to use a particular analogy. Judge whether the chosen example clarifies the mathematical structure. A suitable neutral example or a focused clarification may be better than a forced hobby reference. Fictional numerical examples must be stated as such, not attributed to the learner as personal facts.",
+        "unwarranted_learner_beliefs": [
+          "Do not infer age, gender, intelligence, income, occupation beyond what is stated, or a fixed learning style from these profiles.",
+          "Later feedback may revise an assumption that was reasonable earlier. Judge each response using only the information available at that step.",
+          "Scripted correct work does not establish causal learning gains, independent retention, or stable mastery.",
+          "Later learner messages stand as new observations or attempts; they do not claim that the tutor gave any particular unseen example or explanation.",
+          "Explicit age and language history may inform respectful, accessible communication but do not establish ability or a required teaching style. The individual’s demonstrated work and later feedback override demographic generalizations; no cultural analogy is required."
+        ],
+        "acceptable_variation": "No exact analogy, example numbers, phrase, activity format or teaching sequence is required. Accept correct explanations and suitable concrete examples in or outside the reported interest. Reward an explicit useful mapping of quantities or operations, not topic-word substitution. Clarifying a consequential ambiguity is valid; unnecessary interrogation is not.",
+        "learning_history_evidence": "Demonstrated: explains the half relationship between 10 and 20. Only seen: percentage displays. Unresolved: connection between fractions and relative change.",
+        "background_delivery": "Expected mechanism: the production CLI automatically loads the supplied fictional stored profile and learning history at session startup. This application fix is pending integration when these cases are authored. The evaluator must verify the actual applied context; no profile-file pointer or additional user teaching instruction is part of these identical learner utterances."
+      },
+      "state_checks": [],
+      "profile_source": "production-startup-context-expected",
+      "learning_history": {
+        "demonstrated": [
+          "Explained why 10 is half of 20 in fraction practice."
+        ],
+        "exposure_only": [
+          "Saw percentage displays in game statistics."
+        ],
+        "unresolved": [
+          "How fractions connect to relative change."
+        ]
+      }
+    }
+  ]
+}

@@ -12,8 +12,14 @@ const P2P_IPC_CHANNEL = "keating:p2p:rpc";
 const P2P_EVENT_CHANNEL = "keating:p2p:event";
 const CREDENTIAL_IPC_CHANNEL = "keating:credentials:rpc";
 const OAUTH_CALLBACK_IPC_CHANNEL = "keating:oauth-callback";
-const OAUTH_CALLBACK_ORIGIN = "http://127.0.0.1:1455";
-const OAUTH_CALLBACK_PATH = "/auth/callback";
+// Keep this fixed allowlist aligned with oauth-callback.ts. Sandboxed preloads
+// cannot import runtime modules from the ESM main process.
+const OAUTH_CALLBACK_ROUTES: Record<string, string> = {
+  "http://127.0.0.1:1455": "/auth/callback",
+  "http://127.0.0.1:53692": "/callback",
+  "http://127.0.0.1:53693": "/notorganic/callback",
+};
+type DesktopOAuthProvider = "openai-codex" | "anthropic" | "notorganic";
 const MAX_OAUTH_CALLBACK_URL_LENGTH = 4 * 1024;
 
 /**
@@ -28,6 +34,7 @@ export interface KeatingP2PBridge {
 }
 
 export interface KeatingCredentialBridge {
+  status(): Promise<{ persistence: "encrypted" | "session" }>;
   get(id: string): Promise<string | null>;
   set(id: string, value: string): Promise<void>;
   delete(id: string): Promise<void>;
@@ -37,6 +44,10 @@ export interface KeatingCredentialBridge {
 }
 
 export interface KeatingDesktopBridge {
+  prepareOAuthCallback(state: string, provider?: DesktopOAuthProvider): Promise<{ available: boolean }>;
+  cancelOAuthCallback(): Promise<void>;
+  getNativeRuntime(): Promise<{ projectRoot: string }>;
+  executeNative(operation: string, payload?: unknown): Promise<unknown>;
   onOAuthCallback(listener: (callbackUrl: string) => void): () => void;
 }
 
@@ -87,6 +98,7 @@ async function credentialCall<T>(method: string, params?: Record<string, unknown
 }
 
 const credentialBridge: KeatingCredentialBridge = {
+  status: () => credentialCall("status"),
   get: (id) => credentialCall("get", { id }),
   set: (id, value) => credentialCall("set", { id, value }),
   delete: (id) => credentialCall("delete", { id }),
@@ -104,7 +116,7 @@ function acceptedOAuthCallbackUrl(value: unknown): string | null {
   if (typeof value !== "string" || value.length === 0 || value.length > MAX_OAUTH_CALLBACK_URL_LENGTH) return null;
   try {
     const parsed = new URL(value);
-    if (parsed.origin !== OAUTH_CALLBACK_ORIGIN || parsed.pathname !== OAUTH_CALLBACK_PATH) return null;
+    if (OAUTH_CALLBACK_ROUTES[parsed.origin] !== parsed.pathname || parsed.username || parsed.password || parsed.hash) return null;
     return parsed.toString();
   } catch {
     return null;
@@ -122,6 +134,16 @@ ipcRenderer.on(OAUTH_CALLBACK_IPC_CHANNEL, (_event: unknown, value: unknown) => 
 });
 
 const desktopBridge: KeatingDesktopBridge = {
+  prepareOAuthCallback: (state, provider = "openai-codex") => {
+    pendingOAuthCallback = null;
+    return ipcRenderer.invoke("keating:oauth:prepare", state, provider);
+  },
+  cancelOAuthCallback: () => {
+    pendingOAuthCallback = null;
+    return ipcRenderer.invoke("keating:oauth:cancel");
+  },
+  getNativeRuntime: () => ipcRenderer.invoke("keating:native:rpc", { operation: "runtime.info" }),
+  executeNative: (operation, payload) => ipcRenderer.invoke("keating:native:rpc", { operation, payload }),
   onOAuthCallback(listener) {
     oauthCallbackListeners.add(listener);
     const pending = pendingOAuthCallback;

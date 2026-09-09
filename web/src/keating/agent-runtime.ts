@@ -1,4 +1,5 @@
 import { isNodePodActive, NODEPOD_LOCAL_ENDPOINT } from "./nodepod-runtime";
+import { desktopNativeBridge, loadDesktopNativeRuntime } from "../lib/desktop-native";
 import {
   DEFAULT_AGENT_RUNTIME_CONFIG,
   normalizeAgentRuntimeConfig,
@@ -52,6 +53,15 @@ export function applyNodePodRuntimeOverlay(
 
 export async function loadAgentRuntimeConfig(force = false): Promise<KeatingAgentRuntimeConfig> {
   if (runtimeConfigPromise && !force) return runtimeConfigPromise;
+  const desktop = desktopNativeBridge();
+  if (desktop) {
+    // Never silently switch native file/command work into a browser VFS.
+    runtimeConfigPromise = loadDesktopNativeRuntime(desktop).catch(error => {
+      runtimeConfigPromise = null;
+      throw error;
+    });
+    return runtimeConfigPromise;
+  }
   runtimeConfigPromise = fetch("/api/agent-runtime/config", { headers: { accept: "application/json" } })
     .then((response) => response.ok ? response.json() : DEFAULT_AGENT_RUNTIME_CONFIG)
     .then(normalizeAgentRuntimeConfig)

@@ -9,7 +9,7 @@ import {
   type KeyboardEvent,
   type PointerEvent,
 } from "react";
-import { Plus } from "reicon-react/icons/Plus";
+import { PenLine } from "reicon-react/icons/PenLine";
 import { SidebarLeft } from "reicon-react/icons/SidebarLeft";
 import { ChevronDown } from "reicon-react/icons/ChevronDown";
 import { BranchUp } from "reicon-react/icons/BranchUp";
@@ -351,7 +351,7 @@ export function SessionBrowserDesktop({
         onNewSession();
       }}
     >
-      <KeatingIcon icon={Plus} size={22} />
+      <KeatingIcon icon={PenLine} size={20} />
     </button>
   ) : null;
 
@@ -382,10 +382,10 @@ export function SessionBrowserDesktop({
     >
       <header className="session-panel__header">
         <h2>
-          Sessions <span>{store.items.length}</span>
+          {newButton}
+          <span>{store.items.length}</span>
         </h2>
         <div>
-          {newButton}
           {onCollapsedChange ? (
             <button
               type="button"

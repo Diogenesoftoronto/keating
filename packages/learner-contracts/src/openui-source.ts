@@ -41,7 +41,7 @@ export type OpenUISourceCompileResult =
 export const SHARED_OPENUI_COMPONENT_MAPPERS = [
   "LearningSurface", "Explanation", "Callout", "Question", "Quiz", "Exam", "Flashcards",
   "StudyPlan", "ConceptMap", "LearningImage", "SharedNotes",
-  "Assignment", "Practice", "Draft", "Fieldwork", "Simulation", "CodingChallenge", "MusicLab", "LanguagePractice",
+  "Assignment", "Practice", "Draft", "Fieldwork", "AudioResponse", "VideoResponse", "Simulation", "CodingChallenge", "MusicLab", "LanguagePractice",
 ] as const satisfies typeof WEB_OPENUI_COMPONENTS;
 
 // Persisted sessions may still contain the retired streamed animation component.
@@ -278,6 +278,8 @@ const POSITIONAL_FIELDS: Readonly<Record<string, readonly string[]>> = {
   LearningImage: ["src", "alt", "lifecycle", "title", "caption"],
   LearningAnimation: ["topic", "html", "lifecycle", "summary"],
   SharedNotes: ["id", "title", "lifecycle", "initialValue", "placeholder"],
+  AudioResponse: ["id", "title", "brief", "criteria", "timeLimitSeconds", "lifecycle"],
+  VideoResponse: ["id", "title", "brief", "criteria", "timeLimitSeconds", "lifecycle"],
   Assignment: ["id", "title", "brief", "criteria", "lifecycle", "estimatedMinutes", "steps", "dueAt", "availableFrom"],
   Practice: ["id", "title", "brief", "exercises", "lifecycle", "estimatedMinutes", "dueAt", "availableFrom"],
   Draft: ["id", "title", "prompt", "rubric", "lifecycle", "targetWords", "round", "dueAt", "availableFrom"],
@@ -624,6 +626,11 @@ function mapElement(element: SourceElement, index: number): UiDocumentNode[] {
       ...(props.controls !== undefined ? { controls: props.controls as UiSimulationParameter[] } : {}),
       ...(props.visualization !== undefined ? { visualization: props.visualization as "pianoroll" | "scope" } : {}),
     }];
+    case "AudioResponse":
+    case "VideoResponse": return [taskNode("practice", id, props, props.brief, props.criteria, undefined, {
+      format: "text", label: "What would you improve on your next attempt?", placeholder: "Replay your attempt, notice one thing, and explain your next step.",
+      capture: { kind: element.typeName === "AudioResponse" ? "audio" : "video", ...(props.timeLimitSeconds !== undefined ? { timeLimitSeconds: props.timeLimitSeconds as number } : {}) },
+    })];
     case "Assignment": return [taskNode("assignment", id, props, props.brief, props.criteria, props.steps, { format: "text", label: "Your submission", placeholder: "Paste or describe the work you produced." })];
     case "Practice": return [taskNode("practice", id, props, props.brief, undefined, props.exercises, { format: "text", label: "What happened while you practised?", placeholder: "Where did you get stuck, and what did you notice?" })];
     case "Draft": return [taskNode("draft", id, props, props.prompt, props.rubric, undefined, {

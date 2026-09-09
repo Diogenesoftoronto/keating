@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, open, readFile, readdir, rename, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { stateDir } from "./paths.js";
 import { setTimeout as pause } from "node:timers/promises";
 import {
   createLearningCheck, parseLearningCheckRecord, presentLearningCheck, submitLearningCheckResponse,
@@ -10,7 +11,7 @@ import {
 export type { LearningCheckSubmission, LearningCheckTopic, LearningCheckView } from "../../shared/evolution/learning-checks.js";
 export interface LearningCheckClock { now?: () => Date }
 const validId = /^lc-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-function root(cwd: string): string { return join(cwd, ".keating", "state", "learning-checks"); }
+function root(cwd: string): string { return join(stateDir(cwd), "learning-checks"); }
 function recordPath(cwd: string, id: string): string {
   if (!validId.test(id)) throw new Error("Invalid learning-check id.");
   return join(root(cwd), `${id}.json`);

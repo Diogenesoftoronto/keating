@@ -1,17 +1,3 @@
-self.addEventListener("activate", (event) => {
-	event.waitUntil(
-		(async () => {
-			const windows = await self.clients.matchAll({
-				type: "window",
-				includeUncontrolled: true,
-			});
-
-			await Promise.allSettled(
-				windows.map((client) => {
-					if (!("navigate" in client)) return Promise.resolve();
-					return client.navigate(client.url);
-				}),
-			);
-		})(),
-	);
-});
+// Kept as a compatibility endpoint for already-installed service workers.
+// Activation must not navigate open tabs: it can interrupt startup, sign-in,
+// or a message being composed. New workers no longer import this script.

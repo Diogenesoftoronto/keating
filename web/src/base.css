@@ -1,0 +1,6 @@
+/* Keep the app's base text size independent of the scaled rem unit.
+ * Reset, theme, scrollbars and component styles belong to Panda. */
+body {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}

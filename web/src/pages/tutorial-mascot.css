@@ -1,0 +1,27 @@
+.tutorial-mascot-hello {
+  width: 128px;
+  height: 112px;
+  margin: -12px 0 8px -12px;
+  pointer-events: none;
+}
+.tutorial-mascot-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 104px;
+  align-items: center;
+  gap: 16px;
+}
+.tutorial-mascot-model-heading { padding: 16px 24px; }
+.tutorial-mascot-companion {
+  display: block;
+  width: 104px;
+  height: 104px;
+  pointer-events: none;
+}
+.tutorial-mascot-companion > .keating-bot { width: 100%; height: 100%; }
+@media (max-width: 480px) {
+  .tutorial-mascot-hello { width: 104px; height: 92px; margin-top: -8px; }
+  .tutorial-mascot-hello > .keating-bot { width: 104px; height: 104px; }
+  .tutorial-mascot-heading { grid-template-columns: minmax(0, 1fr) 72px; gap: 8px; }
+  .tutorial-mascot-companion { width: 72px; height: 72px; }
+  .tutorial-mascot-model-heading { padding: 16px; }
+}

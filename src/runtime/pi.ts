@@ -8,6 +8,7 @@ import { homedir } from "node:os";
 import { DEFAULT_PI_PROVIDER, FALLBACK_PI_MODELS, type KeatingConfig, loadKeatingConfig, mergePiDefaultsWithOverrides } from "../core/config.js";
 import { ensureProjectScaffold } from "../core/project.js";
 import { sessionsDir, configDir } from "../core/paths.js";
+import { assertDefaultProfileSessionPath, assertProfileSessionPath, learnerProfileEnvironment, selectedLearnerProfile, withLearnerProfileArgs } from "../core/learner-profile-selection.js";
 import {
   PROVIDER_ENV_KEYS,
   envWithProviderAliases,
@@ -351,6 +352,30 @@ export async function detectAiRuntime(cwd: string): Promise<AiRuntimeReport> {
 }
 
 export async function launchShell(cwd: string, args: string[]): Promise<number> {
+  return withLearnerProfileArgs(cwd, args, (selectedArgs) => launchSelectedShell(cwd, selectedArgs));
+}
+
+function validateProfileSessionArgs(cwd: string, args: string[]): void {
+  const name = selectedLearnerProfile(cwd);
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index]!;
+    if (arg === "--") break;
+    for (const flag of ["--session", "--session-dir"]) {
+      const value = arg === flag ? args[index + 1] : arg.startsWith(`${flag}=`) ? arg.slice(flag.length + 1) : undefined;
+      if (value === undefined) continue;
+      if (flag === "--session-dir") {
+        if (name && resolve(cwd, value) !== resolve(sessionsDir(cwd))) throw new Error("--session-dir cannot override the selected learner profile.");
+        if (!name) assertDefaultProfileSessionPath(join(cwd, ".keating", "profiles"), resolve(cwd, value));
+      } else if (!/^[0-9a-f-]+$/i.test(value)) {
+        if (name) assertProfileSessionPath(sessionsDir(cwd), resolve(cwd, value));
+        else assertDefaultProfileSessionPath(join(cwd, ".keating", "profiles"), resolve(cwd, value));
+      }
+    }
+  }
+}
+
+async function launchSelectedShell(cwd: string, args: string[]): Promise<number> {
+  validateProfileSessionArgs(cwd, args);
   await ensureProjectScaffold(cwd);
   const config = await loadKeatingConfig(cwd);
   await syncPiSettings(cwd, config);
@@ -412,7 +437,7 @@ export async function launchShell(cwd: string, args: string[]): Promise<number> 
           cwd,
           stdio: "inherit",
           env: {
-            ...authSelection.env,
+            ...learnerProfileEnvironment(cwd, authSelection.env),
             KEATING_AUTH_MISSING_PROVIDER: authSelection.missingProvider ?? "",
             PI_SKIP_VERSION_CHECK: process.env.PI_SKIP_VERSION_CHECK ?? "1",
             PI_CODING_AGENT_DIR: configDir(cwd)
@@ -422,7 +447,7 @@ export async function launchShell(cwd: string, args: string[]): Promise<number> 
           cwd,
           stdio: "inherit",
           env: {
-            ...authSelection.env,
+            ...learnerProfileEnvironment(cwd, authSelection.env),
             KEATING_AUTH_MISSING_PROVIDER: authSelection.missingProvider ?? "",
             PI_SKIP_VERSION_CHECK: process.env.PI_SKIP_VERSION_CHECK ?? "1",
             PI_CODING_AGENT_DIR: configDir(cwd)
@@ -444,6 +469,11 @@ export type KeatingRpcClient = KeatingPtyRpcClient;
 export type { KeatingRpcExtensionUiResponse };
 
 export async function launchRpcClient(cwd: string, args: string[] = []): Promise<KeatingRpcClient> {
+  return withLearnerProfileArgs(cwd, args, (selectedArgs) => launchSelectedRpcClient(cwd, selectedArgs));
+}
+
+async function launchSelectedRpcClient(cwd: string, args: string[]): Promise<KeatingRpcClient> {
+  validateProfileSessionArgs(cwd, args);
   await ensureProjectScaffold(cwd);
   const config = await loadKeatingConfig(cwd);
   await syncPiSettings(cwd, config);
@@ -501,8 +531,10 @@ export async function launchRpcClient(cwd: string, args: string[] = []): Promise
     relayPath,
     cwd,
     args: sharedArgs,
+    sessionDirectory: selectedLearnerProfile(cwd) ? sessionsDir(cwd) : undefined,
+    profilesDirectory: join(cwd, ".keating", "profiles"),
     env: {
-      ...authSelection.env,
+      ...learnerProfileEnvironment(cwd, authSelection.env),
       // OpenTUI owns provider recovery end-to-end and must not redirect to
       // classic Pi's /login surface during extension startup.
       KEATING_AUTH_MISSING_PROVIDER: "",

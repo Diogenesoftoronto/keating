@@ -1,0 +1,42 @@
+.notorganic-callback {
+  width: min(34rem, calc(100% - 2.5rem));
+  margin: 0 auto;
+  padding: 4rem 0 6rem;
+  flex: 1;
+}
+.notorganic-callback .connection-icon { color: var(--primary); margin-bottom: 1.25rem; }
+.notorganic-callback .notorganic-callback-title {
+  margin: 0 0 1rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -.02em;
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+}
+.connection-message { margin: 0; font-size: 1rem; line-height: 1.65; color: var(--muted-foreground); overflow-wrap: anywhere; }
+.connection-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.75rem; }
+.connection-actions button {
+  min-height: 2.75rem;
+  padding: .625rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: .375rem;
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  font-size: .9375rem;
+  cursor: pointer;
+}
+.connection-actions button:hover { background: var(--secondary); }
+.connection-actions .connection-primary { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
+.connection-actions .connection-primary:hover { filter: brightness(.94); background: var(--primary); }
+.connection-actions button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.connection-actions button:disabled { opacity: .65; cursor: wait; }
+.connection-spinner { animation: connection-spin 1.1s linear infinite; }
+@keyframes connection-spin { to { transform: rotate(360deg); } }
+@media (max-width: 420px) {
+  .notorganic-callback { padding-top: 2.5rem; }
+  .connection-actions { flex-direction: column; }
+  .connection-actions button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .connection-spinner { animation: none; } }
