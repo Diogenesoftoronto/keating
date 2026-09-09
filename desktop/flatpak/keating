@@ -1,0 +1,3 @@
+#!/bin/sh
+# Zypak keeps Electron's subprocess model inside the Flatpak sandbox.
+exec zypak-wrapper.sh /app/keating/keating-desktop "$@"

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Keating
+Comment=Learn through conversation, practice, and feedback
+Exec=keating %U
+Icon=help.keating.desktop
+Terminal=false
+Categories=Education;
+StartupWMClass=Keating
+StartupNotify=true

@@ -1,0 +1,20 @@
+{
+  "app-id": "help.keating.desktop",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "25.08",
+  "sdk": "org.freedesktop.Sdk",
+  "base": "org.electronjs.Electron2.BaseApp",
+  "base-version": "25.08",
+  "branch": "stable",
+  "command": "keating",
+  "separate-locales": false,
+  "finish-args": [
+    "--share=network",
+    "--share=ipc",
+    "--socket=wayland",
+    "--socket=fallback-x11",
+    "--socket=pulseaudio",
+    "--device=dri",
+    "--env=ELECTRON_OZONE_PLATFORM_HINT=auto"
+  ]
+}

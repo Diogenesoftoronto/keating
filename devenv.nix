@@ -645,7 +645,22 @@ in
   };
 
   # ── Git hooks ───────────────────────────────────────────────────
+  tasks."keating:mirror-radicle" = {
+    description = "Initialize private Radicle storage and mirror pushed main and release tags";
+    exec = "bun scripts/mirror-radicle-main.ts";
+  };
+
   git-hooks.hooks = {
+    keating-radicle-main = {
+      enable = true;
+      name = "keating-radicle-main";
+      entry = "devenv tasks run keating:mirror-radicle";
+      language = "system";
+      pass_filenames = false;
+      always_run = true;
+      stages = [ "pre-push" ];
+    };
+
     keating-version-check = {
       enable = true;
       name = "keating-version-check";

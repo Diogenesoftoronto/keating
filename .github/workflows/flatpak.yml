@@ -1,0 +1,109 @@
+name: Publish signed Flatpak repository
+
+on:
+  release:
+    types: [published]
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published stable release tag (empty selects latest)
+        required: false
+        type: string
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/flatpak.yml'
+      - 'desktop/flatpak/**'
+      - 'desktop/signing/**'
+      - 'desktop/scripts/build-flatpak.mjs'
+      - 'desktop/scripts/prepare-release-signing.mjs'
+      - 'desktop/scripts/extract-appimage.mjs'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: keating-flatpak-stable
+  cancel-in-progress: false
+
+jobs:
+  package:
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+      GNUPGHOME: ${{ runner.temp }}/keating-signing
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Install packaging tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak gpg squashfs-tools appstream appstream-compose
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+      - name: Select published stable artifacts
+        run: |
+          if [ -z "$RELEASE_TAG" ]; then RELEASE_TAG=$(gh release view --json tagName --jq .tagName); fi
+          export RELEASE_TAG
+          node -e 'if (!/^v\d+\.\d+\.\d+$/.test(process.env.RELEASE_TAG)) process.exit(1)'
+          gh release view "$RELEASE_TAG" --json isDraft,isPrerelease --jq 'select(.isDraft == false and .isPrerelease == false)' | grep -q isDraft
+          echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
+          gh release download "$RELEASE_TAG" --pattern '*.AppImage' --dir downloaded
+      - name: Prepare signing key
+        env:
+          KEATING_RELEASE_SIGNING_KEY: ${{ secrets.KEATING_RELEASE_SIGNING_KEY }}
+          KEATING_RELEASE_SIGNING_PASSPHRASE: ${{ secrets.KEATING_RELEASE_SIGNING_PASSPHRASE }}
+        run: node desktop/scripts/prepare-release-signing.mjs
+      - name: Build signed repository for both architectures
+        run: |
+          set -euo pipefail
+          VERSION="${RELEASE_TAG#v}"
+          FINGERPRINT=$(cat desktop/signing/fingerprint.txt)
+          for ARCH in x86_64 aarch64; do
+            IMAGE_ARCH="$ARCH"
+            if [ "$ARCH" = aarch64 ]; then IMAGE_ARCH=arm64; fi
+            flatpak install --user --noninteractive --assumeyes --arch="$ARCH" flathub org.freedesktop.Platform//25.08 org.freedesktop.Sdk//25.08 org.electronjs.Electron2.BaseApp//25.08
+            node desktop/scripts/extract-appimage.mjs "downloaded/Keating-$VERSION-linux-$IMAGE_ARCH.AppImage" "extracted-$ARCH"
+            node desktop/scripts/build-flatpak.mjs --app-dir "extracted-$ARCH" --repo site/flatpak --arch "$ARCH" --gpg-sign "$FINGERPRINT" --version "$VERSION"
+          done
+          cp desktop/signing/keating-release-key.asc site/flatpak/
+          touch site/.nojekyll
+          printf '%s\n' '<!doctype html><title>Keating Linux downloads</title><h1>Keating Flatpak</h1><p><a href="flatpak/help.keating.desktop.flatpakref">Install Keating</a></p><p><a href="https://keating.help/download">All downloads</a></p>' > site/index.html
+          test "$(du -sb site | cut -f1)" -lt 950000000
+      - name: Verify signed installation and sandboxed runtime
+        run: |
+          flatpak remote-add --user --gpg-import=desktop/signing/keating-release-key.asc keating-check "$PWD/site/flatpak"
+          flatpak install --user --noninteractive --assumeyes keating-check help.keating.desktop
+          flatpak info --show-permissions help.keating.desktop
+          SENTINEL="$HOME/keating-host-only-check"
+          printf 'host-only' > "$SENTINEL"
+          flatpak run --command=sh help.keating.desktop -c 'test ! -e "$HOME/keating-host-only-check"; test -f /app/keating/resources/nitro/server/index.mjs'
+          rm "$SENTINEL"
+          flatpak run --env=ELECTRON_RUN_AS_NODE=1 --command=/app/keating/keating-desktop help.keating.desktop -e 'const {createRequire}=require("node:module"); const req=createRequire("/app/keating/resources/app.asar/package.json"); req("hyperswarm"); req("corestore"); console.log("Native modules loaded inside Flatpak")' 
+      - name: Remove private signing material
+        if: always()
+        run: |
+          gpgconf --kill gpg-agent || true
+          rm -rf "$GNUPGHOME"
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+  deploy:
+    needs: package
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

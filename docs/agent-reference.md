@@ -196,7 +196,16 @@ All system-level dev dependencies are managed by devenv (`devenv.nix`):
 
 Run `devenv shell` to enter the dev environment (or use direnv via the existing `.envrc`). Repo-local git hooks are also configured via devenv:
 - `pre-commit`: `devenv tasks run keating:check-version`
-- `pre-push`: `devenv tasks run keating:test` + `devenv tasks run keating:test-web`
+- `pre-push`: root/web tests and `devenv tasks run keating:mirror-radicle`.
+  For pushes targeting `main`, the mirror hook initializes a private Radicle
+  repository if the `rad` remote is absent, then pushes the exact outgoing commit
+  and reachable `v*` release tags. Install Radicle and unlock your identity with
+  `rad auth` first. It preserves the GitHub upstream and never force-pushes.
+  Other branches, tag-only pushes, deletions, and pushes directly to Radicle skip
+  mirroring. The internal Radicle push bypasses hooks to prevent recursion.
+  A mirror failure stops the original push; a later GitHub failure can leave
+  Radicle ahead because pre-push runs before GitHub accepts the update.
+  Local Radicle storage acceptance does not prove replication to another peer.
 
 `devenv tasks run keating:bump-version --input version=minor` runs `bun pm version`
 with `--no-git-tag-version`, then synchronizes version strings. Use `patch`,
