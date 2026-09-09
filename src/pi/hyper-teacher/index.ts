@@ -41,6 +41,7 @@ import { feedbackOnlyTopics } from "./tools/shared.js";
 import { registerPiUiActionCommand } from "../../tui/ui/rpc-action-transport.js";
 import registerNotOrganicProvider from "../notorganic-provider-extension.js";
 import { activeTeachingPrompt, teachingBasePrompt } from "../../core/teaching-evolution.js";
+import { appendLearnerContext, loadLearnerContext, stripLearnerContext } from "../../core/learner-context.js";
 
 function topicFromArgs(args: string | string[]): string {
   return (Array.isArray(args) ? args.join(" ") : String(args ?? "")).trim();
@@ -408,7 +409,10 @@ export default function hyperteacher(pi: any): void {
     pinnedTeaching ??= await activeTeachingPrompt(ctx.cwd);
     // Preserve Pi's host/user context while applying the exact evaluated teaching supplement.
     const supplement = pinnedTeaching.prompt.slice(pinnedTeaching.basePrompt.length);
-    const hostPrompt = hostTeachingBase ? event.systemPrompt.replace(hostTeachingBase, pinnedTeaching.basePrompt) : event.systemPrompt;
-    return { systemPrompt: `${hostPrompt}${supplement}` };
+    const withoutLearner = stripLearnerContext(event.systemPrompt);
+    const hostPrompt = hostTeachingBase ? withoutLearner.replace(hostTeachingBase, pinnedTeaching.basePrompt) : withoutLearner;
+    // Refresh from the production files on every learner turn, including a restored/new session.
+    const teachingPrompt = hostPrompt.endsWith(supplement) ? hostPrompt : `${hostPrompt}${supplement}`;
+    return { systemPrompt: appendLearnerContext(teachingPrompt, await loadLearnerContext(ctx.cwd)) };
   });
 }

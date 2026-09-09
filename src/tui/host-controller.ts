@@ -16,12 +16,16 @@ import {
   type UiDocument,
   type UiDocumentNode,
   type UiQuestion,
+  type UiRowAnswer,
   type UiQuestionGroupResponse,
   type UiQuizResponse,
   type UiStudyPlanItem,
 } from "./learner-contracts.js";
 import { adaptToolResultToUiDocument, adaptUiDocument } from "./ui/adapter.js";
+import { PI_UI_ACTION_RESULT_PREFIX } from "./ui/rpc-action-transport.js";
 import { uiDocumentPresentation } from "./ui/render.js";
+import { carriesUiDocument, documentsFromMessage, splitAssistantOpenUiDocuments, TUI_SUBMISSION_MESSAGE } from "./ui/assistant-documents.js";
+export { splitAssistantOpenUiDocuments } from "./ui/assistant-documents.js";
 import {
   hasMeaningfulToolResult,
   MISSING_TOOL_RESULT_MESSAGE,
@@ -72,6 +76,7 @@ export interface HostControllerOptions {
    * The injected dispatcher can be a UiActionJournalStore-backed adapter.
    */
   uiActionDispatcher?: UiActionDispatcher;
+  restoreUiDocument?: (document: UiDocument) => Promise<UiDocument>;
 }
 
 export interface HostClientLike {
@@ -124,41 +129,9 @@ function briefArgs(args: unknown): string {
   return entries.join(", ");
 }
 
-const PEDAGOGICAL_UI_TOOLS = new Set([
-  "animate", "deck", "generate_image", "grade_quiz", "map", "plan", "quiz", "scene",
-  "set_learner_goal", "verify",
-]);
 
-const CANONICAL_OPENUI_FENCE = /```(?:keating-ui|ui-document|openui-json)(?:[^\n]*)\n([\s\S]*?)```/gi;
-const INCOMPLETE_CANONICAL_OPENUI_FENCE = /```(?:keating-ui|ui-document|openui-json)(?:[^\n]*)\n[\s\S]*$/i;
 
-/** Keep canonical OpenUI transport out of the transcript and hand it to the terminal renderer. */
-export function splitAssistantOpenUiDocuments(source: string): { content: string; documents: string[] } {
-  const documents: string[] = [];
-  const withoutComplete = source.replace(CANONICAL_OPENUI_FENCE, (_match, body: string) => {
-    const candidate = body.trim();
-    if (candidate) documents.push(candidate);
-    return "";
-  });
-  return {
-    content: withoutComplete
-      .replace(INCOMPLETE_CANONICAL_OPENUI_FENCE, "")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim(),
-    documents,
-  };
-}
 
-function carriesUiDocument(toolName: string, result: unknown): boolean {
-  if (PEDAGOGICAL_UI_TOOLS.has(toolName)) return true;
-  if (!result || typeof result !== "object" || Array.isArray(result)) return false;
-  const outer = result as Record<string, unknown>;
-  if ("uiDocument" in outer || outer.protocol === "keating.ui" || (outer.schemaVersion === 1 && Array.isArray(outer.nodes))) return true;
-  const details = outer.details;
-  if (!details || typeof details !== "object" || Array.isArray(details)) return false;
-  return ["uiDocument", "goal", "goals", "quiz", "question", "questions", "deck", "cards", "image", "scene", "storyboard"]
-    .some((key) => key in (details as Record<string, unknown>));
-}
 
 export class HostController {
   private client: HostClientLike;
@@ -171,11 +144,13 @@ export class HostController {
   private lastUndeliveredAction: UiAction | null = null;
   private currentSessionPath: string | undefined;
   private readonly uiActionDispatcher?: UiActionDispatcher;
+  private readonly restoreUiDocument?: (document: UiDocument) => Promise<UiDocument>;
 
   constructor(client: HostClientLike, surface: HostSurface, options: HostControllerOptions = {}) {
     this.client = client;
     this.surface = surface;
     this.uiActionDispatcher = options.uiActionDispatcher;
+    this.restoreUiDocument = options.restoreUiDocument;
   }
 
   /** Allows a host to expose the currently focused canonical document. */
@@ -204,6 +179,23 @@ export class HostController {
     if (clearDocument) this.clearActiveDocument();
     if (messages.status === "fulfilled") {
       this.surface.hydrateEntries(transcriptEntriesFromMessages(messages.value));
+      const latest = messages.value.flatMap(documentsFromMessage).at(-1);
+      if (latest) {
+        try {
+          const restored = await this.restoreUiDocument?.(latest) ?? latest;
+          const adapted = adaptUiDocument(restored);
+          if (!adapted.ok) throw new Error("The saved learning document is invalid.");
+          this.activeDocument = adapted.document;
+          this.surface.setUiDocument(adapted.document, this.documentControls(adapted.document));
+          if (restored.revision > latest.revision) {
+            const presentation = uiDocumentPresentation(restored);
+            this.append("artifact", presentation.heading, presentation.body.join("\n"));
+          }
+        } catch (error) {
+          this.clearActiveDocument();
+          this.appendError("Saved document unavailable", error);
+        }
+      }
     } else {
       this.appendError("Session history unavailable", messages.reason);
     }
@@ -434,7 +426,7 @@ export class HostController {
 
     switch (candidate.type) {
       case "message_update": {
-        const message = (event as { message?: { role?: string } }).message;
+        const message = (event as { message?: { role?: string; customType?: string } }).message;
         if (message?.role === "assistant") {
           const prepared = splitAssistantOpenUiDocuments(messageText(message));
           const hydrated = transcriptEntriesFromMessages([{ ...message, content: prepared.content }]);
@@ -444,13 +436,15 @@ export class HostController {
         return;
       }
       case "message_end": {
-        const message = (event as { message?: { role?: string } }).message;
+        const message = (event as { message?: { role?: string; customType?: string } }).message;
         if (message?.role === "assistant") {
           this.surface.setStreaming(null);
           const prepared = splitAssistantOpenUiDocuments(messageText(message));
           const entries = transcriptEntriesFromMessages([{ ...message, content: prepared.content }]);
           for (const entry of entries) this.surface.appendEntry({ ...entry, id: this.nextId(entry.kind) });
           for (const document of prepared.documents) this.activateUiDocument(document);
+        } else if (message?.role === "custom" && message.customType === TUI_SUBMISSION_MESSAGE) {
+          for (const entry of transcriptEntriesFromMessages([message])) this.surface.appendEntry({ ...entry, id: this.nextId(entry.kind) });
         }
         return;
       }
@@ -622,6 +616,7 @@ export class HostController {
           if (action) await this.dispatchUiAction(action);
         }, node.title || "Answer every question, then submit once.")];
       case "quiz":
+        if (node.mode === "exam") return [];
         return [this.control(`quiz-${node.id}`, `Take quiz: ${node.title}`, async () => {
           const action = await this.quizAction(document, node);
           if (action) await this.dispatchUiAction(action);
@@ -643,7 +638,7 @@ export class HostController {
       case "deck":
         return [
           ...node.cards.map((card) => this.control(`deck-rate-${node.id}-${card.id}`, `Rate card: ${card.front}`, async () => {
-            const action = await this.deckRateAction(document, node.id, card.id, card.front);
+            const action = await this.deckRateAction(document, node.id, card.id, card.front, card.back);
             if (action) await this.dispatchUiAction(action);
           })),
           this.control(`deck-complete-${node.id}`, `Complete deck: ${node.title}`, async () => {
@@ -675,6 +670,10 @@ export class HostController {
   }
 
   private async questionAction(document: UiDocument, question: UiQuestion): Promise<UiAction | undefined> {
+    if (question.kind === "classification" || question.kind === "matching") {
+      const rows = await this.questionRows(question);
+      return rows ? this.action(document, question.id, "submit-answer", { answer: rows }) : undefined;
+    }
     if (question.choices?.length) {
       const selection = await this.selectQuestionChoices(question, question.prompt);
       if (!selection) return undefined;
@@ -696,7 +695,7 @@ export class HostController {
 
   private async selectQuestionChoices(question: UiQuestion, title: string): Promise<string[] | undefined> {
     const choices = question.choices ?? [];
-    if (!question.multiSelect) {
+    if (!question.multiSelect && question.kind !== "multi_select") {
       const chosen = await this.surface.presentSelect(title, choices.map((choice) => `${choice.id} · ${choice.label}`));
       if (chosen === undefined) return undefined;
       const option = choices.find((choice) => chosen.startsWith(`${choice.id} ·`));
@@ -713,10 +712,33 @@ export class HostController {
     }
   }
 
+  private async questionRows(question: UiQuestion): Promise<UiRowAnswer[] | undefined> {
+    const rows: UiRowAnswer[] = [];
+    for (const item of question.items ?? []) {
+      const choices = question.kind === "matching" && question.uniqueMatches !== false
+        ? question.choices?.filter((choice) => !rows.some((row) => row.optionId === choice.id)) : question.choices;
+      const options = await this.selectQuestionChoices({ ...question, kind: "choice", multiSelect: false, choices }, `${question.prompt}: ${item}`);
+      if (!options?.[0]) return undefined;
+      let reason: string | undefined;
+      if (question.requireReasons) {
+        do {
+          reason = await this.surface.presentInput(`Reason for ${item}`);
+          if (reason === undefined) return undefined;
+        } while (!reason.trim());
+      }
+      rows.push({ item, optionId: options[0], ...(reason ? { reason } : {}) });
+    }
+    return rows;
+  }
+
   private async questionGroupAction(document: UiDocument, node: Extract<UiDocumentNode, { type: "question-group" }>): Promise<UiAction | undefined> {
     const responses: UiQuestionGroupResponse[] = [];
     for (const question of node.questions) {
-      if (question.choices?.length) {
+      if (question.kind === "classification" || question.kind === "matching") {
+        const rows = await this.questionRows(question);
+        if (!rows) return undefined;
+        responses.push({ questionId: question.id, type: "rows", rows });
+      } else if (question.choices?.length) {
         const optionIds = await this.selectQuestionChoices(question, question.prompt);
         if (!optionIds) return undefined;
         let text: string | undefined;
@@ -732,16 +754,6 @@ export class HostController {
         const answers = value.split("\n").map((part) => part.trim());
         if (answers.length !== question.blanks?.length) { this.surface.setEditorText(value); return undefined; }
         responses.push({ questionId: question.id, type: "blanks", answers });
-      } else if (question.kind === "classification" || question.kind === "matching") {
-        const rows = [] as Array<{ item: string; optionId: string; reason?: string }>;
-        for (const item of question.items ?? []) {
-          const optionIds = await this.selectQuestionChoices({ ...question, multiSelect: false }, `${question.prompt}: ${item}`);
-          if (!optionIds?.[0]) return undefined;
-          const reason = question.requireReasons ? await this.surface.presentInput(`Reason for ${item}`) : undefined;
-          if (question.requireReasons && reason === undefined) return undefined;
-          rows.push({ item, optionId: optionIds[0], ...(reason ? { reason } : {}) });
-        }
-        responses.push({ questionId: question.id, type: "rows", rows });
       } else {
         const answer = await this.surface.presentEditor(question.prompt);
         if (answer === undefined) return undefined;
@@ -777,7 +789,9 @@ export class HostController {
     });
   }
 
-  private async deckRateAction(document: UiDocument, nodeId: string, cardId: string, title: string): Promise<UiAction | undefined> {
+  private async deckRateAction(document: UiDocument, nodeId: string, cardId: string, title: string, back: string): Promise<UiAction | undefined> {
+    if (!await this.surface.presentConfirm(`Recall: ${title}`, "Try answering before revealing. Show the answer?")) return undefined;
+    if (!await this.surface.presentConfirm(`Answer: ${title}`, `${back}\n\nContinue to rate your recall?`)) return undefined;
     const selected = await this.surface.presentSelect(`Rate: ${title}`, ["0 · Again", "1 · Hard", "2 · Good", "3 · Easy"]);
     if (selected === undefined) return undefined;
     const rating = Number(selected[0]);
@@ -788,6 +802,8 @@ export class HostController {
   private async deckCompletionAction(document: UiDocument, node: Extract<UiDocumentNode, { type: "deck" }>): Promise<UiAction | undefined> {
     const ratings = [] as Array<{ cardId: string; rating: 0 | 1 | 2 | 3; appliedIntervalDays: number; easeAfter: number }>;
     for (const card of node.cards) {
+      if (!await this.surface.presentConfirm(`Recall: ${card.front}`, "Try answering before revealing. Show the answer?")) return undefined;
+      if (!await this.surface.presentConfirm(`Answer: ${card.front}`, `${card.back}\n\nContinue to rate your recall?`)) return undefined;
       const selected = await this.surface.presentSelect(`Rate: ${card.front}`, ["0 · Again", "1 · Hard", "2 · Good", "3 · Easy"]);
       if (selected === undefined) return undefined;
       const rating = Number(selected[0]);
@@ -803,6 +819,7 @@ export class HostController {
   private handleUiRequest(request: UiRequestEvent): void {
     switch (request.method) {
       case "notify":
+        if (request.message?.startsWith(PI_UI_ACTION_RESULT_PREFIX)) return;
         if (request.message) this.append(request.notifyType === "error" ? "error" : "notice", "Keating", sanitizeDiagnostic(request.message));
         return;
       case "setStatus":

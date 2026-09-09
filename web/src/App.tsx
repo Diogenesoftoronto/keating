@@ -375,6 +375,22 @@ function KeatingUiPreferencesSync() {
 }
 
 export function App() {
+  useEffect(() => {
+    if (!window.keatingDesktop) return;
+    let disposed = false;
+    let unsubscribe: (() => void) | undefined;
+    void import("./keating/oauth").then(({ subscribeDesktopOAuthCallback, OAUTH_MESSAGE_CHANNEL }) => {
+      if (disposed) return;
+      // Keep receiving browser approvals when settings is closed or routes change.
+      unsubscribe = subscribeDesktopOAuthCallback(result => {
+        window.dispatchEvent(new MessageEvent("message", {
+          origin: window.location.origin,
+          data: { type: OAUTH_MESSAGE_CHANNEL, ...result },
+        }));
+      });
+    });
+    return () => { disposed = true; unsubscribe?.(); };
+  }, []);
   return (
     <>
       <KeatingUiPreferencesSync />

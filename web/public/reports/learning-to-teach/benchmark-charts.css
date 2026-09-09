@@ -1,0 +1,70 @@
+.benchmark-charts{margin:42px 0;padding:28px 0;border-top:1px solid var(--ink,#1c211b);color:var(--ink,#1c211b);font-family:var(--body,Arial,sans-serif)}
+.benchmark-charts .bc-heading{display:flex;align-items:baseline;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:22px}
+.benchmark-charts .bc-heading h3{font-size:2rem}
+.benchmark-charts .bc-note{font-size:.78rem;line-height:1.65;color:var(--soft,#4a5247);max-width:75ch;margin:10px 0 18px}
+.benchmark-charts .bc-controls{display:flex;align-items:start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.benchmark-charts .bc-filter{display:flex;align-items:center;gap:12px;font-size:.8rem;flex-wrap:wrap}
+.benchmark-charts .bc-quality-control{margin-top:16px}
+.benchmark-charts .bc-quality-control[hidden]{display:none}
+.benchmark-charts select{max-width:100%;background:var(--card,#f6f2e8);border:1px solid var(--line,#798173);color:inherit;padding:10px 28px 10px 12px;border-radius:4px;font-size:.8rem;min-height:44px}
+.benchmark-charts .bc-model-picker{font-size:.8rem;max-width:100%}
+.benchmark-charts .bc-model-picker summary{cursor:pointer;min-height:44px;padding:10px 4px;color:var(--green,#14743c)}
+.benchmark-charts .bc-model-choices{border:0;padding:8px 0;display:flex;flex-wrap:wrap;gap:4px 22px;max-width:640px}
+.benchmark-charts .bc-model-choices label{display:flex;align-items:center;gap:9px;min-height:40px;overflow-wrap:anywhere;cursor:pointer}
+.benchmark-charts input[type=checkbox]{accent-color:var(--green,#14743c);width:17px;height:17px;flex-shrink:0}
+.benchmark-charts .bc-modes{display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid var(--line,#798173);padding-bottom:12px}
+.benchmark-charts .bc-button{border:1px solid transparent;background:transparent;color:var(--soft,#4a5247);padding:9px 12px;min-height:44px;font-size:.78rem;border-radius:4px;transition:background-color .16s ease-out,color .16s ease-out}
+.benchmark-charts .bc-button:hover:not(:disabled){background:var(--paper-deep,#e9e2d2);color:var(--ink,#1c211b)}
+.benchmark-charts .bc-button[aria-pressed=true]{background:var(--green,#14743c);color:#fff}
+.benchmark-charts .bc-button:disabled{opacity:1;color:var(--soft,#4a5247);text-decoration:line-through;cursor:not-allowed}
+.benchmark-charts .bc-coverage{min-height:2.7em;margin:16px 0}
+.benchmark-charts .bc-plot{width:100%;overflow-x:auto;padding:10px 0 8px;background:var(--card,#f6f2e8)}
+.benchmark-charts .bc-plot svg{display:block;width:100%;min-width:960px;height:auto;overflow:visible}
+.benchmark-charts .bc-svg-label,.benchmark-charts .bc-svg-number,.benchmark-charts .bc-axis-label,.benchmark-charts .bc-point-label{font-family:var(--body,Arial,sans-serif);fill:var(--ink,#1c211b);font-size:13px}
+.benchmark-charts .bc-svg-number{font-variant-numeric:tabular-nums;font-size:12px}
+.benchmark-charts .bc-axis-label{fill:var(--soft,#4a5247);font-size:12px}
+.benchmark-charts .bc-grid{stroke:var(--line,#798173);stroke-width:1;stroke-dasharray:3 5}
+.benchmark-charts .bc-bar{fill:var(--green,#14743c)}
+.benchmark-charts .bc-mark{cursor:pointer}
+.benchmark-charts .bc-mark:hover .bc-bar,.benchmark-charts .bc-mark:focus .bc-bar{fill:var(--ink,#1c211b)}
+.benchmark-charts .bc-mark:focus-visible{outline:2px solid var(--green,#14743c);outline-offset:3px}
+.benchmark-charts .bc-dot{fill:var(--paper,#f1ece0);stroke:var(--green,#14743c);stroke-width:2}
+.benchmark-charts .bc-on-frontier .bc-dot{fill:var(--green,#14743c)}
+.benchmark-charts .bc-frontier{fill:none;stroke:var(--green,#14743c);stroke-width:1.5;stroke-dasharray:5 5}
+.benchmark-charts .bc-point-legend{display:flex;flex-wrap:wrap;gap:0 18px;padding:8px 18px}
+.benchmark-charts .bc-link{font-family:inherit;border:0;padding:7px 0;background:transparent;color:var(--green,#14743c);font-size:inherit;line-height:1.5;text-align:left;text-decoration:underline;text-underline-offset:.2em;min-height:44px;cursor:pointer;overflow-wrap:anywhere}
+.benchmark-charts .bc-link:hover{color:var(--ink,#1c211b)}
+.benchmark-charts .bc-point-legend .bc-link{font-size:.74rem}
+.benchmark-charts .bc-table-wrap{overflow-x:auto;width:100%;margin-top:18px}
+.benchmark-charts .bc-table{width:100%;border-collapse:collapse;font-size:.76rem;min-width:690px;line-height:1.5}
+.benchmark-charts .bc-table th,.benchmark-charts .bc-table td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line,#798173);vertical-align:top;font-variant-numeric:tabular-nums}
+.benchmark-charts .bc-table thead th{font-size:.7rem;color:var(--soft,#4a5247);font-weight:500}
+.benchmark-charts .bc-table tbody th{font-weight:500;max-width:240px;overflow-wrap:anywhere}
+.benchmark-charts .bc-table td{white-space:nowrap}
+.benchmark-charts .bc-count{display:block;font-size:.66rem;color:var(--soft,#4a5247);margin-top:3px}
+.benchmark-charts .bc-empty{padding:38px 24px;font-size:.86rem;color:var(--soft,#4a5247)}
+.benchmark-charts .bc-detail:empty{display:none}
+.benchmark-charts .bc-detail{margin-top:28px;padding:22px 0;border-top:1px solid var(--ink,#1c211b)}
+.benchmark-charts .bc-detail-heading{display:flex;justify-content:space-between;gap:24px;align-items:baseline;flex-wrap:wrap}
+.benchmark-charts .bc-detail-heading h4{font-family:var(--body,Arial,sans-serif);font-weight:500;font-size:1.1rem;line-height:1.45}
+.benchmark-charts .bc-detail-heading .bc-link{font-size:.75rem}
+.benchmark-charts .bc-category-breakdown{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.benchmark-charts .bc-category{border:1px solid var(--line,#798173);background:var(--card,#f6f2e8);color:var(--ink,#1c211b);padding:8px 11px;border-radius:4px;font-size:.72rem;min-height:44px;text-align:left}
+.benchmark-charts .bc-category:hover{border-color:var(--green,#14743c)}
+.benchmark-charts .bc-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:640px){.benchmark-charts{margin-top:28px;padding-top:22px}.benchmark-charts .bc-heading{gap:6px}.benchmark-charts .bc-modes{gap:2px}.benchmark-charts .bc-button{font-size:.72rem;padding:8px}.benchmark-charts .bc-filter{display:block;width:100%}.benchmark-charts select{display:block;width:100%;margin-top:6px}.benchmark-charts .bc-note{font-size:.74rem}.benchmark-charts .bc-plot svg{min-width:960px}.benchmark-charts .bc-table th,.benchmark-charts .bc-table td{padding:9px}}
+@media(prefers-reduced-motion:reduce){.benchmark-charts .bc-button{transition:none}}
+.benchmark-charts .bc-provider-legend{display:flex;flex-wrap:wrap;gap:10px 22px;margin:18px 0;font-size:.76rem}
+.benchmark-charts .bc-provider{display:inline-flex;align-items:center;gap:7px}
+.benchmark-charts .bc-provider::before{content:'';display:inline-block;width:9px;height:9px;flex:none;border-radius:50%;background:var(--provider-color,var(--green))}
+.benchmark-charts .bc-bar{fill:var(--provider-color,var(--green));transition:opacity .16s ease-out}
+.benchmark-charts .bc-mark:hover .bc-bar,.benchmark-charts .bc-mark:focus .bc-bar{fill:var(--provider-color,var(--green));opacity:.76}
+.benchmark-charts .bc-dot{stroke:var(--provider-color,var(--green));transition:stroke-width .16s ease-out}
+.benchmark-charts .bc-on-frontier .bc-dot{fill:var(--provider-color,var(--green))}
+.benchmark-charts .bc-mark:hover .bc-dot,.benchmark-charts .bc-mark:focus .bc-dot{stroke-width:4}
+.benchmark-charts .bc-frontier{stroke:var(--soft)}
+.benchmark-charts .bc-metric{border:0;border-bottom:1px dotted var(--provider-color,var(--green));background:transparent;color:var(--ink);font:inherit;font-weight:600;font-variant-numeric:tabular-nums;min-height:36px;padding:4px 3px;cursor:help;transition:background-color .16s ease-out,color .16s ease-out}
+.benchmark-charts .bc-metric:hover,.benchmark-charts .bc-metric:focus-visible{color:var(--provider-color,var(--green));background:var(--paper-deep)}
+.benchmark-charts .bc-tooltip{position:fixed;inset:auto;margin:0;max-width:min(340px,calc(100vw - 16px));width:max-content;padding:14px 17px;border:1px solid var(--ink);border-radius:4px;background:var(--terminal,#0c1510);color:#f6f2e8;font:400 .78rem/1.6 var(--body,Arial,sans-serif);overflow-wrap:anywhere;z-index:10}
+.benchmark-charts .bc-tooltip[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){.benchmark-charts .bc-bar,.benchmark-charts .bc-dot,.benchmark-charts .bc-metric{transition:none}}

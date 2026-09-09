@@ -3,6 +3,7 @@ import {
   ResourceConflictError,
   StructuralInvariantError,
 } from "./errors";
+import { PORTABLE_TOOL_NAMES } from "./tool-names";
 import { assertJsonValue, cloneJson } from "./json";
 import type {
   AgentFunction,
@@ -35,6 +36,7 @@ import type {
 
 const NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const RESERVED_TOOL_NAMES = new Set([
+  ...Object.values(PORTABLE_TOOL_NAMES),
   "activate_skill",
   "finish",
   "give_up",

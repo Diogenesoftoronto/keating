@@ -77,7 +77,7 @@ describe("mobile OpenUI document wire", () => {
     expect(parsed.documents[0]?.nodes.map((node) => node.type)).toEqual([
       "markdown", "callout", "question-group", "quiz", "quiz", "language-practice", "deck", "study-plan",
       "concept-map", "image", "notes", "task", "task", "task", "task", "simulation",
-      "coding-challenge", "music-lab",
+      "coding-challenge", "music-lab", "task", "task",
     ]);
     expect(parsed.content).toBe("Before\nAfter");
     expect(parsed.content).not.toContain("LearningSurface");

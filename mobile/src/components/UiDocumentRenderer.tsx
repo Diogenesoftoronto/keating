@@ -697,6 +697,7 @@ function TaskNode({ node, document, disabled, busy, durableActions, run }: NodeA
         </View>;
       })}
     </View> : null}
+    {node.submission?.capture ? <Text>Open this activity in the web app to record {node.submission.capture.kind}, replay, and attach your attempt{node.submission.capture.timeLimitSeconds ? ` (optional ${node.submission.capture.timeLimitSeconds}s target)` : ""}.</Text> : null}
     {format === "none" ? null : submitted ? <View>
       <Text style={styles.nodeKicker}>SUBMITTED</Text>
       <Text>{submitted.submission}</Text>

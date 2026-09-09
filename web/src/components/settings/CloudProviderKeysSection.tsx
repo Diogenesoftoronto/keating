@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getAppStorage } from "@earendil-works/pi-web-ui";
+import { getAppStorage } from "../../keating/app-storage";
 import { handleTutorialLinkClick, tutorialApiKeyHref } from "../../lib/tutorial-links";
 import {
 	completeOAuthFromInput,
@@ -10,8 +10,8 @@ import {
 	providerToOAuthId,
 	loadOAuthCredentials,
 	deleteOAuthCredentials,
-	subscribeDesktopOAuthCallback,
 	type OAuthProviderId,
+	type DeviceOAuthProviderId,
 } from "../../keating/oauth";
 import {
 	beginNotOrganicAuthorization,
@@ -69,8 +69,23 @@ const smallButtonClass = css({
 });
 
 export function CloudProviderKeysSection({ providers }: { providers: string[] }) {
+	const [persistence, setPersistence] = useState<"encrypted" | "session" | null>(null);
+	useEffect(() => {
+		const bridge = window.keatingCredentials;
+		if (!bridge?.status) return;
+		let active = true;
+		const refresh = () => void bridge.status!().then(status => { if (active) setPersistence(status.persistence); }).catch(() => { if (active) setPersistence(null); });
+		refresh();
+		window.addEventListener("focus", refresh);
+		const interval = window.setInterval(refresh, 30_000);
+		return () => { active = false; window.clearInterval(interval); window.removeEventListener("focus", refresh); };
+	}, []);
 	const storageDescription = typeof window !== "undefined" && window.keatingCredentials
-		? "Cloud LLM providers with predefined models. API keys are stored in your operating system credential vault."
+		? persistence === "session"
+			? "Your system keyring is unavailable. Sign-ins and keys stay in memory until you quit Keating; sign in again after restarting."
+			: persistence === "encrypted"
+				? "Sign-ins and API keys are encrypted using your system keyring."
+				: "Sign-ins and API keys are managed by the desktop app."
 		: "Cloud LLM providers with predefined models. API keys are stored locally in your browser.";
 	return (
 		<div id="settings-section-cloud-providers" className={sectionClass}>
@@ -92,6 +107,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	const [keyErrors, setKeyErrors] = useState<Record<string, string>>({});
 	const [oauthStatus, setOAuthStatus] = useState<Record<string, boolean>>({});
 	const [oauthLoading, setOauthLoading] = useState<Record<string, boolean>>({});
+	const [oauthAutomatic, setOAuthAutomatic] = useState<Record<string, boolean>>({});
 	const [oauthInputs, setOAuthInputs] = useState<Record<string, string>>({});
 	const [oauthErrors, setOAuthErrors] = useState<Record<string, string>>({});
 	const [oauthDevices, setOAuthDevices] = useState<
@@ -100,7 +116,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	const [hostedSummary, setHostedSummary] = useState<string>("");
 	const devicePollAbortRef = useRef<AbortController | null>(null);
 
-	const finishDeviceSignIn = useCallback(async (provider: string, oauthProvider: "github-copilot") => {
+	const finishDeviceSignIn = useCallback(async (provider: string, oauthProvider: DeviceOAuthProviderId) => {
 		devicePollAbortRef.current?.abort();
 		const controller = new AbortController();
 		devicePollAbortRef.current = controller;
@@ -115,7 +131,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			recordDiagnostic("error", "auth", "Provider sign-in failed", { provider, method: "device-code" });
 			setOAuthErrors((prev) => ({
 				...prev,
-				[provider]: result.error ?? "GitHub Copilot sign-in failed.",
+				[provider]: result.error ?? "Sign-in failed. Please try again.",
 			}));
 		}
 		setOAuthDevices((prev) => ({ ...prev, [provider]: undefined }));
@@ -187,7 +203,10 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		const providerNames = oauthProviderToProviderNames(pending.provider);
 		setOauthLoading((prev) => setProviderAliases(prev, providerNames, true));
 		setOAuthErrors((prev) => setProviderAliases(prev, providerNames, ""));
-		if (pending.flow !== "device-code") return;
+		if (pending.flow !== "device-code") {
+			setOAuthAutomatic(prev => setProviderAliases(prev, providerNames, pending.automatic));
+			return;
+		}
 
 		const device = {
 			userCode: pending.userCode,
@@ -200,8 +219,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	}, [providers.join(","), finishDeviceSignIn]);
 
 	useEffect(() => {
-		const handler = (event: MessageEvent) => {
-			if (event.data?.type !== "keating-oauth-result") return;
+		const handleResult = (event: { data: { success: boolean; provider?: OAuthProviderId; error?: string } }) => {
 			const { success, provider: oauthProvider } = event.data;
 			const providerNames = oauthProviderToProviderNames(oauthProvider);
 			if (success && oauthProvider) {
@@ -219,13 +237,13 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 				return next;
 			});
 		};
+		const handler = (event: MessageEvent) => {
+			if (event.origin !== window.location.origin || event.data?.type !== "keating-oauth-result") return;
+			handleResult(event);
+		};
 		window.addEventListener("message", handler);
-		const unsubscribeDesktop = subscribeDesktopOAuthCallback((result) => handler({
-			data: { type: "keating-oauth-result", ...result },
-		} as MessageEvent));
 		return () => {
 			window.removeEventListener("message", handler);
-			unsubscribeDesktop();
 		};
 	}, []);
 
@@ -248,7 +266,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		}
 	};
 
-	const handleSignIn = (provider: string) => {
+	const handleSignIn = (provider: string, method?: "device-code" | "manual") => {
 		recordDiagnostic("info", "auth", "Provider sign-in started", { provider, method: "subscription" });
 		if (provider === NOTORGANIC_PROVIDER_ID) {
 			setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
@@ -288,9 +306,16 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
 		setOAuthInputs((prev) => ({ ...prev, [provider]: "" }));
 		setOauthLoading((prev) => ({ ...prev, [provider]: true }));
-		void initiateOAuth(oauthId)
+		devicePollAbortRef.current?.abort();
+		setOAuthDevices({});
+		setOAuthAutomatic({});
+		setOauthLoading({ [provider]: true });
+		void initiateOAuth(oauthId, { method })
 			.then((initiation) => {
-				if (initiation.flow !== "device-code") return;
+				if (initiation.flow !== "device-code") {
+					setOAuthAutomatic(prev => ({ ...prev, [provider]: initiation.automatic }));
+					return;
+				}
 				setOAuthDevices((prev) => ({
 					...prev,
 					[provider]: {
@@ -342,6 +367,20 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			recordDiagnostic("error", "auth", "Provider sign-in failed", { provider, method: "manual-code" });
 			setOAuthErrors((prev) => ({ ...prev, [provider]: result.error ?? "OAuth sign-in failed." }));
 			setOauthLoading((prev) => ({ ...prev, [provider]: false }));
+		}
+	};
+
+	const handlePasteOAuth = async (provider: string) => {
+		const pending = getPendingOAuthRequest();
+		try {
+			const input = await navigator.clipboard.readText();
+			// Clipboard permission can outlive a cancelled or restarted sign-in.
+			const current = getPendingOAuthRequest();
+			if (!pending || !current || pending.provider !== current.provider || pending.createdAt !== current.createdAt) return;
+			setOAuthInputs((prev) => ({ ...prev, [provider]: input.trim() }));
+			setOAuthErrors((prev) => ({ ...prev, [provider]: input.trim() ? "" : "Copy the authorization code from Claude first." }));
+		} catch {
+			setOAuthErrors((prev) => ({ ...prev, [provider]: "Clipboard access is unavailable. Paste the code into the field below." }));
 		}
 	};
 
@@ -421,6 +460,8 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 				const hasOAuth = oauthStatus[provider] === true;
 				const loading = oauthLoading[provider] === true;
 				const device = oauthDevices[provider];
+				const approvalName = oauthId === "openai-codex" ? "OpenAI" : "GitHub";
+				const automatic = oauthAutomatic[provider] === true;
 
 				if (isOAuth) {
 					return (
@@ -452,21 +493,22 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 									>
 										{loading
 											? device
-												? "Waiting for GitHub approval…"
-												: "Finish sign-in below"
+												? `Waiting for ${approvalName} approval…`
+												: automatic ? "Waiting for browser approval…" : "Connecting…"
 											: `Sign in with ${OAUTH_PROVIDER_LABELS[provider] ?? provider}`}
 									</button>
 									{loading && device && (
 										<div className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
 											<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-												Enter this one-time code in the GitHub window. Keating will finish connecting after GitHub approves your Copilot subscription.
+												Enter this one-time code on {approvalName}’s page. Keating will connect automatically after you approve.
 											</p>
 											<div className={css({ marginTop: "0.5rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
-												<code className={css({ fontSize: "1rem", fontWeight: 700, letterSpacing: "0.08em", color: "var(--foreground)" })}>
+												<code aria-label="One-time sign-in code" className={css({ fontSize: "1rem", fontWeight: 700, letterSpacing: "0.08em", color: "var(--foreground)" })}>
 													{device.userCode}
 												</code>
+												<button type="button" className={smallButtonClass} onClick={() => void navigator.clipboard.writeText(device.userCode).catch(() => setOAuthErrors(prev => ({ ...prev, [provider]: "Copy is unavailable. Select the code above to copy it." })))}>Copy code</button>
 												<a href={device.verificationUri} target="_blank" rel="noreferrer" className={linkClass}>
-													Open GitHub
+													Open {approvalName}
 												</a>
 											</div>
 											<button className={smallButtonClass} type="button" onClick={() => handleCancelOAuth(provider)}>
@@ -474,21 +516,31 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 											</button>
 										</div>
 									)}
-									{loading && !device && oauthId !== "github-copilot" && (
+									{loading && !device && (oauthId === "openai-codex" || automatic) && (
+										<div className={css({ border: "1px solid var(--border)", borderRadius: "0.375rem", padding: "0.75rem", display: "grid", gap: "0.75rem" })}>
+											<p role="status" className={descriptionClass}>{automatic ? "Approve sign-in in your browser. Keating will finish connecting automatically." : "Preparing sign-in…"}</p>
+											<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.75rem" })}>
+												{oauthId === "openai-codex" && <button type="button" className={smallButtonClass} onClick={() => { handleCancelOAuth(provider); handleSignIn(provider, "device-code"); }}>Use a one-time code instead</button>}
+												{oauthId !== "openai-codex" && <button type="button" className={smallButtonClass} onClick={() => { handleCancelOAuth(provider); handleSignIn(provider, "manual"); }}>Use an authorization code instead</button>}
+												<button type="button" className={smallButtonClass} onClick={() => handleCancelOAuth(provider)}>Cancel</button>
+											</div>
+										</div>
+									)}
+									{loading && !device && !automatic && oauthId === "anthropic" && (
 										<div className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.5rem" })}>
 											<p className={css({ marginBottom: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-												{oauthId === "anthropic"
-													? "After approval, Claude displays an authorization code. Copy it, return to this Keating tab, paste it below, and choose Complete."
-													: "The localhost error page after approval is expected. Copy its full URL, return to this Keating tab, paste it below, and choose Complete."}
+												Copy the authorization code from Claude, then paste it here to connect.
 											</p>
-											<div className={css({ display: "flex", gap: "0.5rem" })}>
+											{(typeof window === "undefined" || !window.keatingDesktop) && <p className={descriptionClass}>Claude’s browser sign-in needs this code. Automatic return is available in the Keating desktop app.</p>}
+											<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
 												<input
 													type="text"
 													className={css({ minWidth: 0, flex: 1, borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.5rem", paddingBlock: "0.375rem", fontSize: "0.75rem" })}
-													placeholder="Callback URL or authorization code"
+													aria-label="Authorization code" placeholder="Authorization code"
 													value={oauthInputs[provider] ?? ""}
 													onChange={(e) => setOAuthInputs((prev) => ({ ...prev, [provider]: e.target.value }))}
 												/>
+												{typeof navigator !== "undefined" && typeof navigator.clipboard?.readText === "function" && <button type="button" className={smallButtonClass} onClick={() => void handlePasteOAuth(provider)}>Paste code</button>}
 												<button
 											className={smallButtonClass}
 											disabled={!oauthInputs[provider]?.trim()}
@@ -506,6 +558,9 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 										<div className={css({ borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", backgroundColor: "color-mix(in srgb, var(--destructive) 5%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.75rem", color: "var(--destructive)" })}>
 											{oauthErrors[provider]}
 										</div>
+									)}
+									{!loading && oauthId === "anthropic" && oauthErrors[provider]?.includes("automatic return") && (
+										<button type="button" className={smallButtonClass} onClick={() => handleSignIn(provider, "manual")}>Use authorization-code sign-in</button>
 									)}
 								</div>
 							)}

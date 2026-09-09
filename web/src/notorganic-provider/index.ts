@@ -1,4 +1,5 @@
 import type { Model } from "@earendil-works/pi-ai";
+import { isNotOrganicDesktop, prepareNotOrganicDesktopAuthorization } from "../keating/notorganic-desktop";
 import {
 	NotOrganicPublicClient,
 	publicClientConfig,
@@ -91,7 +92,11 @@ export function notOrganicPublicClient(): NotOrganicPublicClient | null {
 export async function beginNotOrganicAuthorization(returnTo = window.location.pathname): Promise<void> {
 	const client = notOrganicPublicClient();
 	if (!client) throw new Error("This Keating deployment has not enabled Not Organic sign-in.");
-	window.location.assign(await client.authorizationUrl(returnTo));
+	const url = await client.authorizationUrl(returnTo);
+	if (isNotOrganicDesktop()) await prepareNotOrganicDesktopAuthorization(url);
+	// Electron externalizes this navigation while preserving this renderer's
+	// session storage and DPoP key. The native receiver returns the callback.
+	window.location.assign(url);
 }
 
 export function getNotOrganicAccount(fetcher?: typeof fetch): Promise<NotOrganicAccount> {

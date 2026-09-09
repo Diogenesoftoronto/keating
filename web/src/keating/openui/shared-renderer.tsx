@@ -1,3 +1,4 @@
+import { ResponseCapture } from "../../components/ResponseCapture";
 import { localRead, localWrite } from "../../submissions/local-store";
 import { SubmissionAttachments, AttachmentLinks } from "../../components/SubmissionAttachments";
 import { SaveTaskToCourse } from "../../components/courses/SaveTaskToCourse";
@@ -797,6 +798,7 @@ function Task({ documentId, node, receipt, receipts, disabled, onAction }: { doc
 	const [submission, setSubmission] = useState(() => submitted?.submission ?? "");
 	const [attachments, setAttachments] = useState<UiSubmissionAttachment[]>(() => submitted?.attachments ?? []);
 	const [uploading, setUploading] = useState(false);
+	const [captureBusy, setCaptureBusy] = useState(false);
 	const [note, setNote] = useState<Record<string, string>>({});
 	type SavedTask = { intent: Extract<SharedUiActionIntent, { type: "submit-task" }>; savedAt: string };
 	const [saved, setSaved] = useState<SavedTask>();
@@ -894,10 +896,14 @@ function Task({ documentId, node, receipt, receipts, disabled, onAction }: { doc
 					? <input className={input} type="url" disabled={disabled || !restored || saving} value={submission} placeholder={node.submission?.placeholder ?? "https://"} onChange={(event) => setSubmission(event.currentTarget.value)} />
 					: <textarea className={cx(input, css({ minHeight: "6rem" }))} disabled={disabled || !restored || saving} value={submission} placeholder={node.submission?.placeholder ?? "Your work"} onChange={(event) => setSubmission(event.currentTarget.value)} />}
 			</label>
-			<SubmissionAttachments value={attachments} onChange={setAttachments} disabled={disabled || !restored || saving} onBusyChange={setUploading} />
+			{node.submission?.capture ? <ResponseCapture key={`${storageKey}:${node.submission.capture.kind}:${node.submission.capture.timeLimitSeconds}`} capture={node.submission.capture} disabled={disabled || !restored || saving || uploading || attachments.length >= 10} onBusyChange={setCaptureBusy} onAttach={(file, summary) => {
+                setAttachments(current => [...current, file]);
+                setSubmission(current => [current.trim(), summary].filter(Boolean).join("\n\n"));
+            }} /> : null}
+			<SubmissionAttachments value={attachments} onChange={setAttachments} disabled={disabled || !restored || saving || captureBusy} onBusyChange={setUploading} />
 			{target ? <small className={css({ color: words >= target ? "var(--muted-foreground)" : "var(--muted-foreground)" })}>{words} of about {target} words</small> : null}
 			<div>
-				<button className="shared-task__submit" type="button" disabled={disabled || !restored || saving || uploading || notYetOpen || (!submission.trim() && !attachments.length)} onClick={submit}>{saving ? "Saving…" : labels.verb}</button>
+				<button className="shared-task__submit" type="button" disabled={disabled || !restored || saving || uploading || captureBusy || notYetOpen || (!submission.trim() && !attachments.length)} onClick={submit}>{saving ? "Saving…" : labels.verb}</button>
 			</div>
 			{saveError ? <p role="alert">{saveError}</p> : null}
 		</div>}

@@ -152,6 +152,12 @@ export const PROVIDER_CAPABILITY_RULES: readonly CapabilityRule[] = [
 		},
 	},
 	{
+		id: "openai-codex-responses",
+		provider: "openai-codex",
+		api: "openai-codex-responses",
+		capabilities: OPENAI_TEXT,
+	},
+	{
 		id: "openai-responses",
 		provider: "openai",
 		api: "openai-responses",

@@ -1,0 +1,141 @@
+{
+  "chartDataVersion": 1,
+  "portableSha256": "329ec5856aaa3cc0cdd3b3a9e8311aa885e27b728a5ab14bf804fe5b1bc7656e",
+  "eventFingerprint": "sha256(json([role, timestamp, content], sort_keys=True, ensure_ascii=False))",
+  "firstObservedDateUtc": "2026-05-09",
+  "lastObservedDateUtc": "2026-09-06",
+  "datedMessageRoles": {
+    "user": 304,
+    "assistant": 591,
+    "toolResult": 353
+  },
+  "undatedEventsExcludedFromTimeChart": 23,
+  "weeklyMessages": [
+    {
+      "weekStartUtc": "2026-05-04",
+      "observedDays": 2,
+      "user": 6,
+      "assistant": 10,
+      "toolResult": 7
+    },
+    {
+      "weekStartUtc": "2026-05-11",
+      "observedDays": 7,
+      "user": 3,
+      "assistant": 5,
+      "toolResult": 2
+    },
+    {
+      "weekStartUtc": "2026-05-18",
+      "observedDays": 7,
+      "user": 13,
+      "assistant": 25,
+      "toolResult": 14
+    },
+    {
+      "weekStartUtc": "2026-05-25",
+      "observedDays": 7,
+      "user": 24,
+      "assistant": 41,
+      "toolResult": 18
+    },
+    {
+      "weekStartUtc": "2026-06-01",
+      "observedDays": 7,
+      "user": 8,
+      "assistant": 16,
+      "toolResult": 10
+    },
+    {
+      "weekStartUtc": "2026-06-08",
+      "observedDays": 7,
+      "user": 15,
+      "assistant": 24,
+      "toolResult": 16
+    },
+    {
+      "weekStartUtc": "2026-06-15",
+      "observedDays": 7,
+      "user": 6,
+      "assistant": 9,
+      "toolResult": 5
+    },
+    {
+      "weekStartUtc": "2026-06-22",
+      "observedDays": 7,
+      "user": 85,
+      "assistant": 130,
+      "toolResult": 57
+    },
+    {
+      "weekStartUtc": "2026-06-29",
+      "observedDays": 7,
+      "user": 43,
+      "assistant": 92,
+      "toolResult": 68
+    },
+    {
+      "weekStartUtc": "2026-07-06",
+      "observedDays": 7,
+      "user": 29,
+      "assistant": 113,
+      "toolResult": 84
+    },
+    {
+      "weekStartUtc": "2026-07-13",
+      "observedDays": 7,
+      "user": 41,
+      "assistant": 73,
+      "toolResult": 59
+    },
+    {
+      "weekStartUtc": "2026-07-20",
+      "observedDays": 7,
+      "user": 11,
+      "assistant": 20,
+      "toolResult": 3
+    },
+    {
+      "weekStartUtc": "2026-07-27",
+      "observedDays": 7,
+      "user": 2,
+      "assistant": 4,
+      "toolResult": 0
+    },
+    {
+      "weekStartUtc": "2026-08-03",
+      "observedDays": 7,
+      "user": 4,
+      "assistant": 7,
+      "toolResult": 3
+    },
+    {
+      "weekStartUtc": "2026-08-10",
+      "observedDays": 7,
+      "user": 3,
+      "assistant": 7,
+      "toolResult": 4
+    },
+    {
+      "weekStartUtc": "2026-08-17",
+      "observedDays": 7,
+      "user": 7,
+      "assistant": 7,
+      "toolResult": 0
+    },
+    {
+      "weekStartUtc": "2026-08-24",
+      "observedDays": 7,
+      "user": 0,
+      "assistant": 0,
+      "toolResult": 0
+    },
+    {
+      "weekStartUtc": "2026-08-31",
+      "observedDays": 7,
+      "user": 4,
+      "assistant": 8,
+      "toolResult": 3
+    }
+  ]
+}

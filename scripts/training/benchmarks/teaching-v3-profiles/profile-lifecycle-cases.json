@@ -1,0 +1,479 @@
+{
+  "schema_version": 1,
+  "id": "teaching-v3-profile-lifecycle",
+  "status": "agent-authored-development-cases-capabilities-pending",
+  "description": "Three six-learner-turn episodes with one fresh session each. Ordinary questions, attempts and natural corrections drive automatic profile formation; no learner memory-management commands or initial target biographies are supplied. Capture genuine writes, uncertainty, active-state revision and startup retrieval before judging lifecycle success. This is an expected new capability, not an existing passing integration.",
+  "cases": [
+    {
+      "id": "profile-life-notation-revision",
+      "family": "profile-life-notation-revision",
+      "category": "interaction_formed_profile",
+      "title": "Ordinary notation feedback revises automatically formed context",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "I’m starting basic statistics. What does an average mean? A short paragraph about what the symbols mean is easier for me than a formula on its own."
+        },
+        {
+          "kind": "message",
+          "text": "For the values 2, 4 and 6, I get an average of 4 because their total is 12 and there are three values."
+        },
+        {
+          "kind": "message",
+          "text": "I’m tired tonight and the symbols are annoying me. Maybe I’m just hopeless at this."
+        },
+        {
+          "kind": "message",
+          "text": "I’ve noticed a tiny table of symbol meanings is easier for me than a paragraph. I only mean unfamiliar notation."
+        },
+        {
+          "kind": "new_session"
+        },
+        {
+          "kind": "message",
+          "text": "I’ve just met Σ. What does it mean for the values 2, 4 and 6?"
+        },
+        {
+          "kind": "message",
+          "text": "And how is that different from the average of those same values?"
+        }
+      ],
+      "rubric": [
+        {
+          "dimension": "interaction_formed_context",
+          "criteria": {
+            "0": "Invents a durable fact, infers mastery or a fixed learning style, or treats an intended write as a confirmed save.",
+            "1": "Recognizes current study or a reported format preference but records it too broadly, without clear source or actual persistence evidence.",
+            "2": "Forms useful scoped current-study and format context from the ordinary interaction when supported, distinguishes report from inference, and keeps actual storage outcomes separate from conversational claims."
+          },
+          "evidence_steps": [
+            0,
+            1
+          ]
+        },
+        {
+          "dimension": "updates_and_uncertainty",
+          "criteria": {
+            "0": "Retains the earlier paragraph preference as current despite later feedback, or stores hopelessness as an ability trait.",
+            "1": "Acknowledges the change but leaves the active format ambiguous or handles temporary frustration only generically.",
+            "2": "Updates the notation-specific format from later feedback, preserves its scope, and avoids converting tonight’s frustration into a lasting trait; confirmed state and uncertain inference remain distinct."
+          },
+          "evidence_steps": [
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "later_retrieval_and_use",
+          "criteria": {
+            "0": "Fabricates earlier context, assumes prior sigma knowledge, or reuses the superseded format as a current preference.",
+            "1": "Answers the new questions but weakly uses or overgeneralizes the available profile evidence.",
+            "2": "After a fresh session, uses actual retrieved notation-format and study evidence where useful, without a profile recital or invented mastery; meaningfully distinguishes the new symbol from the earlier averaging knowledge."
+          },
+          "evidence_steps": [
+            5,
+            6
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Rejects the sound average4 reasoning, calls the sum4, or calls the average12.",
+            "1": "Gets the numbers right but leaves the relationship between sum and average unclear.",
+            "2": "Credits the earlier mean explanation, explains sigma as summing to12, and clearly relates the mean4 to dividing that sum by three."
+          },
+          "evidence_steps": [
+            1,
+            5,
+            6
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "At step0, the learner reports starting basic statistics and finding a short paragraph of symbol meanings easier than a bare formula. This supports narrow current-study and format evidence, not a fixed learning-style trait.",
+          "At step1, (2+4+6)/3=4. This is a sound learner-supplied averaging explanation, not proof of independent mastery.",
+          "Step2 describes tiredness tonight. Hopelessness is a momentary self-evaluation, not supported evidence of enduring inability.",
+          "At step3, the learner now reports that a tiny symbol-meaning table is easier than a paragraph, scoped to unfamiliar notation. The active preference should reflect this later feedback rather than contradictory current defaults.",
+          "Step4 starts a fresh session. The ordinary sigma question at step5 should receive a mathematically sound response and any useful format adaptation from actual available stored context, without being asked to recite a profile.",
+          "At step5 the sum represented by sigma is12. At step6 the average remains4 because12 is divided among3 values. A prior correct average does not mean sigma was already known."
+        ],
+        "capability_boundary": "Automatic interaction-derived profile formation, correction and startup retrieval are expected new capabilities under audit. Capture actual tool/write outcomes, profile state and provenance at each step, plus actual applied context after new_session. A recorded intention or fluent memory claim is not proof of storage. Unsupported capability is a harness-fidelity limitation, not a passed persistence result. No assumed tool names or storage paths are prescribed.",
+        "evidence_boundary": "Learner messages are ordinary questions, attempts and corrections, never instructions to save or manage a profile. Infer only useful narrowly supported topic, knowledge-evidence or format context from what has been disclosed so far. Distinguish explicit self-reports from uncertain inferences. Do not seed target facts or copy prior messages into the fresh session to imitate profile recall. Later feedback is not available at earlier steps; reasonable earlier examples are not retroactively wrong.",
+        "assessment_boundary": "Correct scripted work is evidence of the stated reasoning in that interaction, not causal learning, independent retention, or stable mastery. An isolated error or temporary frustration does not establish a lasting trait, diagnosis, or inability.",
+        "acceptable_variation": "No particular analogy, phrase, activity representation or profile-summary wording is required. Equivalent concise active-state representations with source evidence and clear supersession are valid. The tutor need not recite a profile: useful contextual teaching after actual retrieval is the behavior of interest. Appropriate clarification is acceptable when an inferred fact is uncertain. No profile inference should turn a queried scenario into a job or hobby without evidence.",
+        "capture_expectation": "Inspect actual named-profile state and tool/write receipts: evidence must refer to genuine earlier learner text; explicitly reported information and tentative observed inferences must remain distinguishable. Check supersession/removal in the active view and later real startup context. No exact string layout, fake successful tool result or preseeded target fact is required."
+      },
+      "lifecycle_expected": {
+        "initial_profile_target_facts": [],
+        "formation_mode": "automatic_from_interactions_no_memory_commands",
+        "events": [
+          {
+            "after_step": 0,
+            "operation": "form_supported_context",
+            "supported_facts": [
+              "Current study: basic statistics.",
+              "Reports a short symbol-meaning paragraph is easier than a bare formula."
+            ],
+            "source": "learner_step_0",
+            "certainty": "explicit self-report; scope limited to this format context"
+          },
+          {
+            "after_step": 1,
+            "operation": "record_narrow_evidence_if_useful",
+            "supported_evidence": [
+              "Supplied correct mean computation and explanation for2,4,6."
+            ],
+            "not_established": [
+              "Independent mastery of statistics."
+            ]
+          },
+          {
+            "after_step": 2,
+            "operation": "avoid_trait_inference",
+            "must_not_be_active_traits": [
+              "Hopeless at statistics.",
+              "Permanent inability with symbols."
+            ]
+          },
+          {
+            "after_step": 3,
+            "operation": "revise_active_preference",
+            "supported_facts": [
+              "For unfamiliar notation, reports a tiny table of symbol meanings is easier than a paragraph."
+            ],
+            "superseded_as_current": [
+              "Paragraph preferred over a table for unfamiliar notation."
+            ]
+          },
+          {
+            "after_step": 5,
+            "operation": "fresh_session_contextual_use",
+            "requires_actual_startup_context": true,
+            "active_view_must_match_step": 3,
+            "no_explicit_recall_question": true
+          }
+        ],
+        "history_policy": "Retain only useful minimal evidence with provenance and uncertainty. Historical observations may remain, but superseded or unsupported inferences must not be presented as current facts. Fresh-session reuse must be supported by actual persisted startup context."
+      },
+      "state_checks": [],
+      "profile_lifecycle": true
+    },
+    {
+      "id": "profile-life-study-and-evidence",
+      "family": "profile-life-study-and-evidence",
+      "category": "interaction_formed_profile",
+      "title": "Questions shift current study without turning mistakes into traits",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "I’m working through JavaScript arrays. On [\"Ada\", \"Bo\", \"Cy\"], the indexes are 0, 1 and 2, right?"
+        },
+        {
+          "kind": "message",
+          "text": "I tried i <= names.length and got an extra undefined. I keep messing this up today."
+        },
+        {
+          "kind": "message",
+          "text": "On a one-name list, i < names.length runs at index 0 once. On an empty list, 0 < 0 is false, so it never runs."
+        },
+        {
+          "kind": "message",
+          "text": "Now I’m trying to understand copying arrays. Is a different variable name the same as a different list?"
+        },
+        {
+          "kind": "new_session"
+        },
+        {
+          "kind": "message",
+          "text": "I wrote const a = [1, 2]; const b = a; b.push(3). I think a is still [1, 2] because b has a different name."
+        },
+        {
+          "kind": "message",
+          "text": "If I write const b = [...a] before the push, would only b change for this list?"
+        }
+      ],
+      "rubric": [
+        {
+          "dimension": "evidence_scoped_formation",
+          "criteria": {
+            "0": "Infers enduring inability from the mistake, certifies mastery from a few examples, or invents persisted progress.",
+            "1": "Captures a broadly correct topic but blurs correct attempts, unresolved ideas and ability claims.",
+            "2": "Forms a narrow current-topic and learning-evidence record from ordinary attempts when supported, distinguishing correct supplied reasoning, an isolated error and unresolved concepts without overstating persistence."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "dimension": "context_update",
+          "criteria": {
+            "0": "Keeps loop bounds as the sole active topic after the copying question or falsely records copying as understood.",
+            "1": "Notes copying but leaves current interest versus historical work ambiguous.",
+            "2": "Updates active focus to array copying from the learner’s new question while preserving useful prior loop evidence as history and leaving copying understanding uncertain."
+          },
+          "evidence_steps": [
+            3
+          ]
+        },
+        {
+          "dimension": "later_contextual_help",
+          "criteria": {
+            "0": "Invents recalled history or a durable weakness, or ignores the actual shared-array misconception to retest unrelated loop material.",
+            "1": "Gives correct generic help but weakly distinguishes current copying work from earlier indexing evidence.",
+            "2": "Uses actual available retained context to meet the new copying question at an appropriate level and adapt to the later spread-copy attempt, without reciting a profile or claiming earlier mastery."
+          },
+          "evidence_steps": [
+            5,
+            6
+          ]
+        },
+        {
+          "dimension": "code_correctness",
+          "criteria": {
+            "0": "Accepts the extra index, rejects the valid boundary traces, or says assigning b=a makes a copy.",
+            "1": "Gets the main outputs right but leaves aliasing or the scope of a spread copy unclear.",
+            "2": "Correctly handles zero-based bounds, explains the shared mutation for b=a, and validates spread-copy independence for the stated flat-number array without claiming it solves all nested copying."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            5,
+            6
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "At step0 the learner is working through JavaScript arrays and correctly names indexes0,1,2 for a three-entry array. Current interest is observed; durable mastery is not established.",
+          "At step1, an inclusive bound i<=names.length includes an out-of-bounds access. One mistaken attempt and frustration today do not prove permanent weakness.",
+          "At step2, the one-element and empty-array traces for the strict bound are correct. Preserve their limited evidential scope if recording progress.",
+          "At step3, the learner’s ordinary question moves to copying and asks whether a new name implies a new array. This supports updating active topic focus to array copying, with the meaning of copying still unresolved.",
+          "Step4 is a fresh session. At step5, b=a aliases the same array; after b.push(3), both names refer to[1,2,3]. The prior indexing work is useful context only if actually retained and retrieved.",
+          "At step6, starting again with a=[1,2] and making b=[...a] before b.push(3) gives a=[1,2] and b=[1,2,3]. This shallow copy separates the flat numeric entries here; it does not establish independence for nested mutable objects."
+        ],
+        "capability_boundary": "Automatic interaction-derived profile formation, correction and startup retrieval are expected new capabilities under audit. Capture actual tool/write outcomes, profile state and provenance at each step, plus actual applied context after new_session. A recorded intention or fluent memory claim is not proof of storage. Unsupported capability is a harness-fidelity limitation, not a passed persistence result. No assumed tool names or storage paths are prescribed.",
+        "evidence_boundary": "Learner messages are ordinary questions, attempts and corrections, never instructions to save or manage a profile. Infer only useful narrowly supported topic, knowledge-evidence or format context from what has been disclosed so far. Distinguish explicit self-reports from uncertain inferences. Do not seed target facts or copy prior messages into the fresh session to imitate profile recall. Later feedback is not available at earlier steps; reasonable earlier examples are not retroactively wrong.",
+        "assessment_boundary": "Correct scripted work is evidence of the stated reasoning in that interaction, not causal learning, independent retention, or stable mastery. An isolated error or temporary frustration does not establish a lasting trait, diagnosis, or inability.",
+        "acceptable_variation": "No particular analogy, phrase, activity representation or profile-summary wording is required. Equivalent concise active-state representations with source evidence and clear supersession are valid. The tutor need not recite a profile: useful contextual teaching after actual retrieval is the behavior of interest. Appropriate clarification is acceptable when an inferred fact is uncertain. No profile inference should turn a queried scenario into a job or hobby without evidence.",
+        "capture_expectation": "Inspect actual named-profile state and tool/write receipts: evidence must refer to genuine earlier learner text; explicitly reported information and tentative observed inferences must remain distinguishable. Check supersession/removal in the active view and later real startup context. No exact string layout, fake successful tool result or preseeded target fact is required."
+      },
+      "lifecycle_expected": {
+        "initial_profile_target_facts": [],
+        "formation_mode": "automatic_from_interactions_no_memory_commands",
+        "events": [
+          {
+            "after_step": 0,
+            "operation": "form_topic_context",
+            "supported_facts": [
+              "Working on JavaScript array indexes."
+            ],
+            "certainty": "learner-stated current work, not permanent identity"
+          },
+          {
+            "after_step": 2,
+            "operation": "retain_narrow_attempt_evidence",
+            "supported_evidence": [
+              "Correct three-name indexes supplied.",
+              "Inclusive bound produced extra undefined.",
+              "Correct one-item and empty-array strict-bound traces later supplied."
+            ],
+            "not_established": [
+              "Bad at programming.",
+              "Loop bounds mastered."
+            ]
+          },
+          {
+            "after_step": 3,
+            "operation": "update_active_focus",
+            "supported_facts": [
+              "Current question concerns array copying versus another variable name."
+            ],
+            "permitted_history": [
+              "Prior loop-bound examples, with limited evidence."
+            ],
+            "unresolved": [
+              "Whether a new variable name creates another array."
+            ]
+          },
+          {
+            "after_step": 5,
+            "operation": "fresh_session_contextual_use",
+            "requires_actual_startup_context": true,
+            "active_view_must_match_step": 3,
+            "no_explicit_recall_question": true
+          }
+        ],
+        "history_policy": "Retain only useful minimal evidence with provenance and uncertainty. Historical observations may remain, but superseded or unsupported inferences must not be presented as current facts. Fresh-session reuse must be supported by actual persisted startup context."
+      },
+      "state_checks": [],
+      "profile_lifecycle": true
+    },
+    {
+      "id": "profile-life-background-retraction",
+      "family": "profile-life-background-retraction",
+      "category": "interaction_formed_profile",
+      "title": "A worksheet question is clarified before later personalization",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "How do bakers scale a recipe when they change the number of trays? I’m learning ratios."
+        },
+        {
+          "kind": "message",
+          "text": "My arithmetic check: if two trays hold 12 biscuits, six identical trays hold 36. I multiplied both counts by three."
+        },
+        {
+          "kind": "message",
+          "text": "I don’t bake; that tray question was for a worksheet. My own collection is stamps. How would scaling work with those?"
+        },
+        {
+          "kind": "message",
+          "text": "Two stamps in each envelope and six envelopes gives twelve stamps. I think that’s the same kind of relationship."
+        },
+        {
+          "kind": "new_session"
+        },
+        {
+          "kind": "message",
+          "text": "I’m putting three stamps in each envelope this time. How many do I need for four envelopes?"
+        },
+        {
+          "kind": "message",
+          "text": "If I have eighteen stamps and put three in each envelope, that would make six envelopes, right?"
+        }
+      ],
+      "rubric": [
+        {
+          "dimension": "formation_without_biographical_guessing",
+          "criteria": {
+            "0": "Stores a baking job or hobby as established from a queried scenario, or invents a saved personal fact.",
+            "1": "Recognizes ratio study but treats a contextual interest as more certain or durable than the question supports.",
+            "2": "Forms supported ratio-topic and narrow attempt evidence when useful, treats the baking scenario as a context rather than biography, and labels any inference with appropriate uncertainty."
+          },
+          "evidence_steps": [
+            0,
+            1
+          ]
+        },
+        {
+          "dimension": "correction_and_evidence_update",
+          "criteria": {
+            "0": "Continues presenting baking as personal background after the clarification or ignores the disclosed stamp context.",
+            "1": "Acknowledges the correction but leaves an old personal inference active or loses useful arithmetic evidence with it.",
+            "2": "Uses the natural clarification to remove or supersede any unsupported baking-personal inference, records the disclosed stamp interest only at its actual scope, and retains correct tray arithmetic as exercise evidence rather than biography."
+          },
+          "evidence_steps": [
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "later_reuse",
+          "criteria": {
+            "0": "Invents recalled personal facts, revives baking as the learner’s real hobby, or merely echoes stamp vocabulary without useful reasoning.",
+            "1": "Gives a relevant count but weakly connects the available earlier grouping reasoning to the new problem.",
+            "2": "After restart, uses actual retained topic and learning evidence where useful to support the new fixed-rate and reverse-grouping questions, without a forced profile recital or stereotype; keeps past worksheet work separate from personal history."
+          },
+          "evidence_steps": [
+            5,
+            6
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Rejects correct36,12 or6 results or confuses rates, item counts and envelope counts.",
+            "1": "Computes correctly but leaves the proportional grouping or inverse division unclear.",
+            "2": "Explains fixed-per-unit scaling coherently in the tray and stamp cases, and validates18 divided by3 as6 envelopes while respecting the stated counting assumptions."
+          },
+          "evidence_steps": [
+            1,
+            3,
+            5,
+            6
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "Step0 establishes current study of ratios and a queried baking scenario. It does not establish the learner’s occupation, baking hobby or personal baking experience.",
+          "Step1 correctly scales two trays and12 biscuits by three to six trays and36 biscuits under the identical-tray assumption. The attempt can be recorded narrowly; it does not make the scenario biographical.",
+          "Step2 explicitly clarifies that the baking context was a worksheet and discloses a personal stamp collection. Any tentative baking-personalization inference should be corrected; if none was made, it need not be invented or deleted fictitiously.",
+          "Step3 correctly identifies proportional repeated grouping:2 stamps/envelope times6 envelopes gives12 stamps. This is evidence of a correct supplied explanation, not independent retention.",
+          "Step4 starts a fresh session. The ordinary stamp question at step5 should use only actual available prior context;3 stamps/envelope times4 envelopes gives12 stamps.",
+          "At step6,18 stamps divided into groups of3 yields6 envelopes. These are counting exercises with stated allocation rules, not claims about real postage requirements.",
+          "Earlier tray examples may remain as learning exercises in history. They must not reappear as the learner’s actual job or hobby after the clarification."
+        ],
+        "capability_boundary": "Automatic interaction-derived profile formation, correction and startup retrieval are expected new capabilities under audit. Capture actual tool/write outcomes, profile state and provenance at each step, plus actual applied context after new_session. A recorded intention or fluent memory claim is not proof of storage. Unsupported capability is a harness-fidelity limitation, not a passed persistence result. No assumed tool names or storage paths are prescribed.",
+        "evidence_boundary": "Learner messages are ordinary questions, attempts and corrections, never instructions to save or manage a profile. Infer only useful narrowly supported topic, knowledge-evidence or format context from what has been disclosed so far. Distinguish explicit self-reports from uncertain inferences. Do not seed target facts or copy prior messages into the fresh session to imitate profile recall. Later feedback is not available at earlier steps; reasonable earlier examples are not retroactively wrong.",
+        "assessment_boundary": "Correct scripted work is evidence of the stated reasoning in that interaction, not causal learning, independent retention, or stable mastery. An isolated error or temporary frustration does not establish a lasting trait, diagnosis, or inability.",
+        "acceptable_variation": "No particular analogy, phrase, activity representation or profile-summary wording is required. Equivalent concise active-state representations with source evidence and clear supersession are valid. The tutor need not recite a profile: useful contextual teaching after actual retrieval is the behavior of interest. Appropriate clarification is acceptable when an inferred fact is uncertain. No profile inference should turn a queried scenario into a job or hobby without evidence.",
+        "capture_expectation": "Inspect actual named-profile state and tool/write receipts: evidence must refer to genuine earlier learner text; explicitly reported information and tentative observed inferences must remain distinguishable. Check supersession/removal in the active view and later real startup context. No exact string layout, fake successful tool result or preseeded target fact is required."
+      },
+      "lifecycle_expected": {
+        "initial_profile_target_facts": [],
+        "formation_mode": "automatic_from_interactions_no_memory_commands",
+        "events": [
+          {
+            "after_step": 0,
+            "operation": "form_topic_not_biography",
+            "supported_facts": [
+              "Learning ratios.",
+              "Asking about a baking worksheet-like scenario."
+            ],
+            "not_established": [
+              "Baking as own hobby.",
+              "Baker as occupation."
+            ],
+            "certainty": "topic stated; personal connection unknown"
+          },
+          {
+            "after_step": 1,
+            "operation": "retain_narrow_attempt_evidence",
+            "supported_evidence": [
+              "Correctly scaled the identical-tray quantities by three."
+            ],
+            "not_established": [
+              "Real baking experience.",
+              "Mastery of proportional reasoning."
+            ]
+          },
+          {
+            "after_step": 2,
+            "operation": "clarify_and_correct_inference",
+            "supported_facts": [
+              "Baking question was a worksheet context.",
+              "Learner reports a stamp collection."
+            ],
+            "must_not_be_active_personal_facts": [
+              "Home baking hobby.",
+              "Baking occupation."
+            ],
+            "correction_policy": "If no unsupported baking fact was stored, preserve that correct absence rather than fabricating a deletion."
+          },
+          {
+            "after_step": 3,
+            "operation": "add_limited_learning_evidence",
+            "supported_evidence": [
+              "Correctly connected2 stamps per envelope and6 envelopes to12 stamps."
+            ]
+          },
+          {
+            "after_step": 5,
+            "operation": "fresh_session_contextual_use",
+            "requires_actual_startup_context": true,
+            "active_view_must_match_step": 3,
+            "no_explicit_recall_question": true
+          }
+        ],
+        "history_policy": "Retain only useful minimal evidence with provenance and uncertainty. Historical observations may remain, but superseded or unsupported inferences must not be presented as current facts. Fresh-session reuse must be supported by actual persisted startup context."
+      },
+      "state_checks": [],
+      "profile_lifecycle": true
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "benchmark_id": "keating-teaching-v2",
+  "version": 2,
+  "scale": {
+    "0": "Behavior misses or contradicts the requirement.",
+    "1": "Partially useful but has a material gap.",
+    "2": "Meets the behavior with appropriate flexibility.",
+    "unscored": "No reviewer judgment yet; do not convert to zero or treat as passing."
+  },
+  "dimensions": {
+    "responsiveness": {
+      "label": "Respond to the learner’s current request",
+      "anchors": "Use the case-specific zero/one/two anchors; equivalent wording and alternative sound teaching approaches count."
+    },
+    "correctness": {
+      "label": "Subject-matter and reasoning correctness",
+      "anchors": "Use the case-specific zero/one/two anchors; equivalent wording and alternative sound teaching approaches count."
+    },
+    "scaffolding": {
+      "label": "Challenge and support at the learner’s edge",
+      "anchors": "Use the case-specific zero/one/two anchors; equivalent wording and alternative sound teaching approaches count."
+    },
+    "learner_agency": {
+      "label": "Let the learner reason and control their attempt",
+      "anchors": "Use the case-specific zero/one/two anchors; equivalent wording and alternative sound teaching approaches count."
+    },
+    "adaptation": {
+      "label": "Change help in response to actual feedback",
+      "anchors": "Use the case-specific zero/one/two anchors; equivalent wording and alternative sound teaching approaches count."
+    },
+    "transfer": {
+      "label": "Apply ideas and weigh alternatives in a concrete setting",
+      "anchors": "Use the case-specific zero/one/two anchors; equivalent wording and alternative sound teaching approaches count."
+    },
+    "clarity": {
+      "label": "Compact, understandable communication",
+      "anchors": "Use the case-specific zero/one/two anchors; equivalent wording and alternative sound teaching approaches count."
+    },
+    "evidence_discipline": {
+      "label": "Distinguish observed performance from unsupported conclusions",
+      "anchors": "Use the case-specific zero/one/two anchors; equivalent wording and alternative sound teaching approaches count."
+    },
+    "tool_judgment": {
+      "label": "Use durable operations only for their actual purpose",
+      "anchors": "Use the case-specific zero/one/two anchors; equivalent wording and alternative sound teaching approaches count."
+    }
+  },
+  "review_protocol": [
+    "Read the entire fixed conversation and all candidate assistant/tool turns. Use only dimensions named in that case and cite actual evidence for each rating.",
+    "Use zero/one/two behavior anchors with flexible valid wording. Do not reward exact identity phrases, asking a question by itself, verbosity, agreement, or withholding requested help.",
+    "Contract validity and subject-matter or teaching judgment are separate. A compiled quiz may still contain wrong keys, weak alternatives or answer-bearing hints.",
+    "For prediction tasks, check whether visible prose, titles, hints or explanations reveal the result before the attempt. Legitimate quiz/deck answer-key storage is not surrounding-prose leakage.",
+    "A choice plus a separate text field can collect a justification; a bare choice click does not demonstrate reasoning. Inspect the actual prompt and canonical activity, not only an optional requireReasons declaration.",
+    "Assess grading by the supplied submitted answers and their task requirements. Paraphrases may be fully correct; missing required reasoning may justify partial credit. Only pending submitted entries may be graded.",
+    "A native call is not an empty final answer while a permitted tool continuation remains. Judge final delivery after the bounded episode; preserve tool failures and incomplete episodes rather than imagining a continuation.",
+    "Transport failures and unavailable outputs remain missing judgments, not fabricated teaching scores. Report rated and missing counts and disagreement separately for each dimension.",
+    "Any AI judge must have a recorded model, prompt and version and is explicitly uncalibrated until tested against independent human ratings. Authored contrast controls are checks of intended discrimination, not human validation.",
+    "Report model-judged dimensions, deterministic contract checks and human ratings separately. Do not combine them into one validated teaching effectiveness measure.",
+    "Cross-provider runs preserve the fixed input but must disclose unsupported controls, reasoning settings, provider templates and tool-adapter differences. Matched requested settings do not guarantee identical effective generation.",
+    "These are public development cases. Preserve earlier definitions and results; new cases or changed expectations require a new identified version. Separate fresh conversations are needed for generalization claims."
+  ],
+  "limitations": [
+    "This is an authored development benchmark, not a validated measure of human learning, retention, transfer outcomes or causal training effectiveness.",
+    "Long histories test use of fixed prior context; they do not measure recovery across a whole conversation generated by the candidate itself.",
+    "The bounded episode executes only available deterministic local tool behaviors. It does not establish production storage, external service reliability, browser accessibility or visual rendering quality.",
+    "Difficulty labels and case frequencies are author judgments, not empirically measured item difficulty or representative production traffic weights.",
+    "Exact objective verdict fixtures cover clear cases; the broader meaning-based rubric remains subjective and requires reviewer coverage and calibration.",
+    "Long exams have larger output allowances so coverage is not mainly a short-output-budget test; output length and provider truncation are still recorded."
+  ],
+  "version_policy": "Freeze v2 dimensions, case-specific anchors, context and execution definition before candidate calls. Preserve v1 and earlier artifacts unchanged."
+}

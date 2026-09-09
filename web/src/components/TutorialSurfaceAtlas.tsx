@@ -24,7 +24,7 @@ export const TUTORIAL_SURFACES: TutorialSurface[] = [
     description:
       "The main workspace for Socratic conversation, visible reasoning, tools, session forks, and interactive lesson objects.",
     href: "/chat",
-    image: "/tutorial/surface-classroom.png",
+    image: "/tutorial/surface-classroom.avif",
     alt: "Keating classroom with its session rail, conversation, and composer.",
   },
   {
@@ -34,7 +34,7 @@ export const TUTORIAL_SURFACES: TutorialSurface[] = [
     description:
       "Search local, browser, hosted, and cloud models; then filter by vision, reasoning, context, or provider.",
     href: "/chat?settings=providers",
-    image: "/tutorial/surface-models.png",
+    image: "/tutorial/surface-models.avif",
     alt: "Keating model browser with provider and capability filters.",
   },
   {
@@ -44,7 +44,7 @@ export const TUTORIAL_SURFACES: TutorialSurface[] = [
     description:
       "A duplex room for camera, audio, live transcripts, tools, connection state, and measurable response timing.",
     href: "/live",
-    image: "/tutorial/surface-live.png",
+    image: "/tutorial/surface-live.avif",
     alt: "Keating Live with video, audio, transcript, and connection status panels.",
   },
   {
@@ -54,7 +54,7 @@ export const TUTORIAL_SURFACES: TutorialSurface[] = [
     description:
       "Open a whole-turn note in the Margin, choose its signal, and add the required rationale before any optional detail.",
     href: "/review",
-    image: "/tutorial/review-annotation.png",
+    image: "/tutorial/review-annotation.avif",
     alt: "Keating Review with a tutor response and a new whole-turn annotation open in the Margin.",
   },
   {
@@ -64,7 +64,7 @@ export const TUTORIAL_SURFACES: TutorialSurface[] = [
     description:
       "Prioritize open checks and spaced-repetition cards, see what is due, and move decks between Keating and Anki.",
     href: "/coming-up",
-    image: "/tutorial/surface-coming-up.png",
+    image: "/tutorial/surface-coming-up.avif",
     alt: "Keating Coming Up runway with due cards, review time, and a priority board.",
   },
   {
@@ -74,7 +74,7 @@ export const TUTORIAL_SURFACES: TutorialSurface[] = [
     description:
       "Create a blank course or select generated interaction cards from the artifact tray; plans and flashcard decks remain explicit when empty.",
     href: "/courses",
-    image: "/tutorial/surface-course-builder.png",
+    image: "/tutorial/surface-course-builder.avif",
     alt: "Keating course builder with a blank-course form, empty plan and deck sections, and repeated generated interaction cards in the artifact tray.",
   },
   {
@@ -84,7 +84,7 @@ export const TUTORIAL_SURFACES: TutorialSurface[] = [
     description:
       "Choose ChatML, Alpaca, or both; select a source and response-length threshold; redact secrets; then export a training ZIP.",
     href: "/usage",
-    image: "/tutorial/usage-training-export.png",
+    image: "/tutorial/usage-training-export.avif",
     alt: "Keating Training data export with Both formats, All sources, an 80-character minimum, and secret redaction enabled.",
   },
   {
@@ -94,7 +94,7 @@ export const TUTORIAL_SURFACES: TutorialSurface[] = [
     description:
       "Run the same pedagogical workload across models and compare quality, speed, cost, and repeatable benchmark evidence.",
     href: "/bench",
-    image: "/tutorial/surface-bench.png",
+    image: "/tutorial/surface-bench.avif",
     alt: "Keating Bench model comparison with pedagogical scores, speed, and cost.",
   },
   {
@@ -124,7 +124,7 @@ export const TUTORIAL_SURFACES: TutorialSurface[] = [
     description:
       "Read release notes and field work from Keating's AT Protocol publication, with honest loading and failure states.",
     href: "/blog",
-    image: "/tutorial/surface-publishing.png",
+    image: "/tutorial/surface-publishing.avif",
     alt: "Keating publication with release notes, essays, and an explicit upstream status.",
   },
 ];

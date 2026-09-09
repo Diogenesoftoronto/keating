@@ -89,7 +89,7 @@ describe("buildProviderRequest", () => {
 
     expect(request.url).toBe("https://api.openai.com/v1/responses");
     expect((request.init.headers as Record<string, string>).Authorization).toBe("Bearer sk-test");
-    expect(body.instructions).toContain("hyperteacher");
+    expect(body.instructions).toContain("Keating Bot, the AI tutor in Keating");
     expect(body.input.at(-1)).toEqual({ role: "assistant", content: messages[1].content });
     expect(body.temperature).toBeUndefined();
   });
@@ -190,7 +190,7 @@ describe("buildProviderRequest", () => {
 
     expect(request.url).toBe("https://api.anthropic.com/v1/messages");
     expect(headers["x-api-key"]).toBe("anthropic-key");
-    expect(body.system).toContain("hyperteacher");
+    expect(body.system).toContain("Keating Bot, the AI tutor in Keating");
     expect(body.messages[0]).toEqual({ role: "user", content: messages[0].content });
   });
 

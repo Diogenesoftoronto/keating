@@ -1,6 +1,7 @@
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, extname, join, resolve } from "node:path";
+import { stateDir } from "../core/paths.js";
 
 import { Jimp } from "jimp";
 
@@ -59,7 +60,7 @@ const BRAILLE_LEFT = [0x01, 0x02, 0x04, 0x40] as const;
 const BRAILLE_RIGHT = [0x08, 0x10, 0x20, 0x80] as const;
 
 export function tuiProfilePath(cwd: string): string {
-  return join(cwd, ".keating", "state", "tui-profile.json");
+  return join(stateDir(cwd), "tui-profile.json");
 }
 
 function cleanText(value: unknown, fallback: string, maximum = 80): string {

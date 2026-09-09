@@ -9,7 +9,7 @@ export function Footer() {
       <div className="wrap">
         <div className="foot-grid">
           <div className="foot-brand">
-			<img src="/brand/logo-lockup-hd.png" alt="Keating" />
+			<img src="/brand/logo-lockup-compact.avif" alt="Keating" />
             <p>
               <T>An AI tutor for explanations, practice, and review.</T>
             </p>

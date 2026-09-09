@@ -9,6 +9,8 @@ import {
 import { useReducedMotion } from "../hooks/use-media-query";
 import { ShaderField } from "./ShaderField";
 import { ScrambleText } from "./ScrambleText";
+import { KeatingBot } from "./KeatingBot";
+import "./lotus-motion.css";
 
 const HERO_HEADLINE_LINES = [
   ["Bring", "the", "question."],
@@ -17,19 +19,19 @@ const HERO_HEADLINE_LINES = [
 
 const MASCOT_REACTIONS = [
   {
-    src: "/brand/mascot-live-idle.png",
+    src: "/brand/mascot-live-idle.avif",
     phrase: "Bring me the part that almost makes sense.",
   },
   {
-    src: "/brand/mascot-live-listening.png",
+    src: "/brand/mascot-live-listening.avif",
     phrase: "I am listening for the thin part.",
   },
   {
-    src: "/brand/mascot-live-working.png",
+    src: "/brand/mascot-live-working.avif",
     phrase: "Good. Now let us test the structure.",
   },
   {
-    src: "/brand/mascot-live-speaking.png",
+    src: "/brand/mascot-live-speaking.avif",
     phrase: "Your turn. Teach it back to me.",
   },
 ] as const;
@@ -40,7 +42,7 @@ const LEARNING_STAGES = [
     verb: "Listen",
     title: "Find the thin part.",
     body: "Keating listens to the way you explain an idea, then separates what you can reconstruct from what you only recognize.",
-    image: "/brand/mascot-live-listening.png",
+    image: "/brand/mascot-live-listening.avif",
     imageAlt: "Keating listening closely",
     note: "The next question begins where your explanation loses its shape.",
     accent: "listen",
@@ -50,7 +52,7 @@ const LEARNING_STAGES = [
     verb: "Rebuild",
     title: "Work from first principles.",
     body: "The easy answer stays out of reach long enough for you to rebuild the mechanism, connect the prerequisites, and make the idea your own.",
-    image: "/brand/mascot-live-working.png",
+    image: "/brand/mascot-live-working.avif",
     imageAlt: "Keating working through a problem",
     note: "Plans, maps, traces, and animations make the structure inspectable.",
     accent: "work",
@@ -60,7 +62,7 @@ const LEARNING_STAGES = [
     verb: "Probe",
     title: "Let the explanation meet resistance.",
     body: "A counterexample, transfer question, or request for evidence reveals whether the new understanding survives outside the original prompt.",
-    image: "/brand/mascot-live-speaking.png",
+    image: "/brand/mascot-live-speaking.avif",
     imageAlt: "Keating asking the next question",
     note: "The teacher adjusts, but the learner keeps authorship of the reasoning.",
     accent: "probe",
@@ -70,7 +72,7 @@ const LEARNING_STAGES = [
     verb: "Return",
     title: "Teach it back later.",
     body: "Keating turns the session into a return path. What is due, uncertain, or worth verifying remains visible across the browser and CLI.",
-    image: "/brand/mascot-lotus.png",
+    image: "/brand/mascot-lotus.avif",
     imageAlt: "Keating sitting calmly in a review pose",
     note: "If the explanation still holds later, the knowledge is finally yours.",
     accent: "return",
@@ -204,7 +206,7 @@ export function HeroWonderStage({ children }: { children: ReactNode }) {
       <ShaderField colorVar="--phosphor" density={58} intensity={0.92} opacity={0.4} />
       <img
         className="hero-orbit-mark"
-        src="/brand/logo-badge.png"
+        src="/brand/logo-badge.avif"
         alt=""
         aria-hidden="true"
         width={470}
@@ -317,7 +319,7 @@ export function KineticTeachingText() {
       </div>
       <img
         className="kinetic-mascot"
-        src="/brand/mascot-head-v2.png"
+        src="/brand/mascot-head-v2.avif"
         alt=""
         aria-hidden="true"
         width={1254}
@@ -456,14 +458,14 @@ export function LearningJourney() {
             </div>
             <div className="journey-card-image">
               <span className="journey-orbit" aria-hidden="true" />
-              <img
+              {stage.image === "/brand/mascot-lotus.avif" ? <div className="journey-lotus-sprite"><KeatingBot variant="body" state="lotus" size={320} label={stage.imageAlt} /></div> : <img
                 src={stage.image}
                 alt={stage.imageAlt}
                 width={640}
                 height={640}
                 loading="lazy"
                 decoding="async"
-              />
+              />}
             </div>
           </article>
         ))}
@@ -547,7 +549,7 @@ export function CrtPlaythrough() {
       >
         <div className="crt-program-stage">
           <div className="crt-wrap">
-            <img src="/brand/crt-monitor.png" alt="" aria-hidden="true" width={573} height={436} />
+            <img src="/brand/crt-monitor.avif" alt="" aria-hidden="true" width={573} height={436} />
             <div className="crt-screen crt-program-screen">
               {CRT_FRAMES.map((frame, index) => {
                 const active = index === activeIndex;

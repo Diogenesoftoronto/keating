@@ -133,8 +133,8 @@ describe("portable browser resources", () => {
     expect(authored.tools.find(({ name }) => name === "quiz")).toBe(nativeTool);
     expect(authored.tools.map(({ name }) => name)).toEqual([
       "quiz",
-      "activate_skill",
-      "task",
+      "keating_activate_skill",
+      "keating_task",
     ]);
     expect(authored.systemPrompt).toContain("Teach from learner evidence.");
     expect(authored.systemPrompt).toContain("teaching-improvement");
@@ -161,8 +161,8 @@ describe("portable browser resources", () => {
     const first = await adapter.reconcile(instance.render(Agent));
     expect(first.systemPrompt).toContain("retrieval: Designs retrieval checks.");
     expect(first.systemPrompt).not.toContain("PRIVATE SKILL INSTRUCTIONS");
-    const activate = first.tools.find(({ name }) => name === "activate_skill")!;
-    const read = first.tools.find(({ name }) => name === "read_skill_resource")!;
+    const activate = first.tools.find(({ name }) => name === "keating_activate_skill")!;
+    const read = first.tools.find(({ name }) => name === "keating_read_skill_resource")!;
     await expect(read.execute("read-before", { skill: "retrieval", path: "rubric.md" }))
       .rejects.toThrow("Activate portable skill retrieval");
 
@@ -174,7 +174,7 @@ describe("portable browser resources", () => {
     revision = "skill-v2";
     const second = await adapter.reconcile(instance.render(Agent));
     expect(second.reconciliation.clearedSkillNames).toEqual(["retrieval"]);
-    const nextRead = second.tools.find(({ name }) => name === "read_skill_resource")!;
+    const nextRead = second.tools.find(({ name }) => name === "keating_read_skill_resource")!;
     await expect(nextRead.execute("read-stale", { skill: "retrieval", path: "rubric.md" }))
       .rejects.toThrow("Activate portable skill retrieval");
   });
@@ -204,7 +204,7 @@ describe("portable browser resources", () => {
     }
 
     const resources = await adapter.reconcile(instance.render(Agent));
-    const task = resources.tools.find(({ name }) => name === "task")!;
+    const task = resources.tools.find(({ name }) => name === "keating_task")!;
     const result = await task.execute("delegate", { subagent: "reviewer", task: "Check retrieval quality." });
 
     expect(toolText(result)).toBe('{"verdict":"pass"}');

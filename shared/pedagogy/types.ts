@@ -52,6 +52,8 @@ export interface SimulationWeights {
 
 export interface LearnerProfile {
   id: string;
+  /** Optional learner-stated biography, studies, interests and prior experience; data, not instructions. */
+  background?: string;
   priorKnowledge: number;
   abstractionComfort: number;
   analogyNeed: number;

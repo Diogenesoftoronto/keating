@@ -98,18 +98,16 @@ export function useKeatingSetting<K extends SettingKey>(
 
 	const patch = useCallback(
 		(next: Patch<Value>) => {
-			setValue((prev) => {
-				const partial =
-					typeof next === "function"
-						? (next as (prev: Value) => Partial<Value>)(prev)
-						: next;
-				const merged =
-					prev && typeof prev === "object"
-						? ({ ...prev, ...partial } as Value)
-						: ((partial as unknown) as Value);
-				adapter.save(merged);
-				return merged;
-			});
+			// Persist from the event handler, never inside a React state updater:
+			// save synchronously notifies every subscriber (including this hook).
+			const prev = adapter.load();
+			const partial = typeof next === "function"
+				? (next as (prev: Value) => Partial<Value>)(prev)
+				: next;
+			const merged = prev && typeof prev === "object"
+				? ({ ...prev, ...partial } as Value)
+				: (partial as unknown as Value);
+			adapter.save(merged);
 		},
 		[adapter],
 	);

@@ -183,7 +183,14 @@ export function validateSubmissionAttachment(value: unknown): value is UiSubmiss
     && (value.sizeBytes as number) <= 25 * 1024 * 1024;
 }
 
+export interface UiResponseCapture {
+  kind: "audio" | "video";
+  /** Optional fluency target. Learners may choose untimed practice. */
+  timeLimitSeconds?: number;
+}
+
 export interface UiTaskSubmission {
+  capture?: UiResponseCapture;
   /** `none` is a task tracked only by its items, with nothing handed back. */
   format: "text" | "link" | "none";
   label?: string;
@@ -466,7 +473,7 @@ const CONCEPT_MAP_KEYS = new Set(["type", "id", "title", "source"]);
 const NOTES_KEYS = new Set(["type", "id", "title", "value", "placeholder"]);
 const TASK_KEYS = new Set(["type", "kind", "id", "title", "brief", "criteria", "items", "estimatedMinutes", "dueAt", "availableFrom", "round", "submission"]);
 const TASK_ITEM_KEYS = new Set(["id", "title", "detail", "status", "note"]);
-const TASK_SUBMISSION_KEYS = new Set(["format", "label", "placeholder", "targetWords"]);
+const TASK_SUBMISSION_KEYS = new Set(["format", "label", "placeholder", "targetWords", "capture"]);
 const SIMULATION_KEYS = new Set(["type", "id", "title", "brief", "parameters", "readouts"]);
 const CODING_CHALLENGE_KEYS = new Set(["type", "id", "title", "prompt", "language", "starterCode", "entrypoint", "tests", "hint"]);
 const CODING_TEST_KEYS = new Set(["id", "label", "args", "expected"]);
@@ -657,9 +664,16 @@ function validateTaskItem(value: unknown): value is UiTaskItem {
     && (item.note === undefined || boundedString(item.note, MAX_TEXT, true));
 }
 
+export function validateResponseCapture(value: unknown): value is UiResponseCapture {
+  if (!isRecord(value) || !hasOnlyKeys(value, new Set(["kind", "timeLimitSeconds"]))) return false;
+  return (value.kind === "audio" || value.kind === "video")
+    && (value.timeLimitSeconds === undefined || (Number.isInteger(value.timeLimitSeconds) && (value.timeLimitSeconds as number) >= 1 && (value.timeLimitSeconds as number) <= 180));
+}
+
 function validateTaskSubmission(value: unknown): value is UiTaskSubmission {
   const submission = value as UiTaskSubmission;
   return hasOnlyKeys(value, TASK_SUBMISSION_KEYS) && TASK_SUBMISSION_FORMATS.has(submission.format)
+    && (submission.capture === undefined || (submission.format === "text" && validateResponseCapture(submission.capture)))
     && (submission.label === undefined || boundedString(submission.label, 512, true))
     && (submission.placeholder === undefined || boundedString(submission.placeholder, 4096, true))
     && (submission.targetWords === undefined || (isNonNegativeFinite(submission.targetWords) && submission.targetWords <= 100_000));
@@ -1029,7 +1043,7 @@ export function validateUiActionAgainstDocument(action: unknown, document: unkno
     }
     case "choose-option": {
       if (!question?.choices || question.choices.length === 0) return false;
-      if (!question.multiSelect && action.optionIds.length !== 1) return false;
+      if (!question.multiSelect && question.kind !== "multi_select" && action.optionIds.length !== 1) return false;
       const allowed = new Set(question.choices.map((choice) => choice.id));
       return action.optionIds.every((id) => allowed.has(id));
     }
@@ -1100,7 +1114,7 @@ function validateQuestionGroupResponsesAgainstQuestions(
     if (response.type === "choice") {
       const allowed = new Set(question.choices?.map((choice) => choice.id) ?? []);
       if (response.optionIds.some((optionId) => !allowed.has(optionId))) return false;
-      if (!question.multiSelect && response.optionIds.length > 1) return false;
+      if (!question.multiSelect && question.kind !== "multi_select" && response.optionIds.length > 1) return false;
       if (response.optionIds.length === 0 && !question.allowText) return false;
       return response.text === undefined || question.allowText === true;
     }

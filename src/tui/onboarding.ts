@@ -139,7 +139,7 @@ export function navigateTuiOnboarding(
 }
 
 export function onboardingStatePath(cwd: string): string {
-  return join(cwd, ".keating", "state", "tui-onboarding.json");
+  return join(stateDir(cwd), "tui-onboarding.json");
 }
 
 export async function loadTuiOnboardingState(cwd: string): Promise<TuiOnboardingState> {
@@ -157,7 +157,7 @@ export async function loadTuiOnboardingState(cwd: string): Promise<TuiOnboarding
 
 export async function markTuiOnboardingSeen(cwd: string, version?: string): Promise<void> {
   const path = onboardingStatePath(cwd);
-  await mkdir(join(cwd, ".keating", "state"), { recursive: true });
+  await mkdir(stateDir(cwd), { recursive: true });
   await writeFile(path, `${JSON.stringify({
     schemaVersion: 1,
     completedAt: new Date().toISOString(),
@@ -216,3 +216,4 @@ export async function hasOnboardingState(cwd: string): Promise<boolean> {
     return false;
   }
 }
+import { stateDir } from "../core/paths.js";

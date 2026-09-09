@@ -1,5 +1,6 @@
 import { mkdir, readFile, readdir, rename, rm, rmdir, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { stateDir } from "./paths.js";
 import { randomUUID } from "node:crypto";
 import { hostname } from "node:os";
 import type { EvolutionState, EvolutionStore } from "../../shared/evolution/loop.js";
@@ -7,7 +8,7 @@ import type { EvolutionState, EvolutionStore } from "../../shared/evolution/loop
 /** Durable project/account data stays outside disposable episode workspaces. */
 export class FileEvolutionStore implements EvolutionStore {
   readonly directory: string;
-  constructor(cwd: string) { this.directory = join(cwd, ".keating", "state", "teaching-evolution"); }
+  constructor(cwd: string) { this.directory = join(stateDir(cwd), "teaching-evolution"); }
   private path(key: string): string {
     if (!/^(state|(?:revisions|raw|experiments|suites|wiki)\/[a-zA-Z0-9-]+)$/.test(key)) throw new Error("invalid_evolution_storage_key");
     return join(this.directory, `${key}.json`);

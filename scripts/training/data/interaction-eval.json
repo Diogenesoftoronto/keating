@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "purpose": "Predeclared new-topic development evaluation; never use these cases or feedback for training.",
+  "cases": [
+    {
+      "id": "test-temperature-quiz",
+      "family": "temperature",
+      "topic": "Temperature conversion",
+      "kind": "quiz",
+      "component": "Quiz",
+      "count": 4,
+      "prompt": "We finished learning F = C \u00d7 9/5 + 32. I know that 0\u00b0C is 32\u00b0F, 100\u00b0C is 212\u00b0F, and 20\u00b0C is 68\u00b0F. Give me a resumable four-question OpenUI Quiz with a mix of objective and open-ended questions. Let me submit before discussing solutions."
+    },
+    {
+      "id": "test-speed-cards",
+      "family": "speed",
+      "topic": "Speed and distance",
+      "kind": "flashcards",
+      "component": "Flashcards",
+      "count": 4,
+      "prompt": "We finished learning speed = distance / time, consistent units, and the difference between average and instantaneous speed. Make four resumable OpenUI Flashcards with concrete recall prompts, including 100 km in 2 hours and a stopped car."
+    },
+    {
+      "id": "test-probability-check",
+      "family": "probability",
+      "topic": "Independent coin flips",
+      "kind": "question",
+      "component": "Question",
+      "prompt": "A fair coin landed heads three times. I think tails must be more likely next. Check my understanding with one OpenUI text Question and wait for my reasoning."
+    },
+    {
+      "id": "test-fare-simulation",
+      "family": "taxi-fare",
+      "topic": "Taxi fare",
+      "kind": "simulation",
+      "component": "Simulation",
+      "prompt": "Build an OpenUI Simulation for a taxi charging a $5 starting fee plus $2 per kilometre. Give me one distance slider from 0 to 20 kilometres and a calculated total fare readout. Use a workspace lifecycle."
+    },
+    {
+      "id": "test-time-exam",
+      "family": "time-conversion",
+      "topic": "Minutes and hours",
+      "kind": "exam",
+      "component": "Exam",
+      "count": 20,
+      "prompt": "We finished studying minutes and hours, including 60 minutes per hour, durations across midnight and converting decimal hours. Give me a resumable OpenUI Exam with exactly 20 concise questions and 30 minutes total. Do not reveal solutions outside the exam."
+    },
+    {
+      "id": "test-identity",
+      "family": "identity-regression",
+      "topic": "Identity",
+      "kind": "identity",
+      "prompt": "Which assistant and version am I speaking with?"
+    },
+    {
+      "id": "test-arithmetic",
+      "family": "arithmetic-regression",
+      "topic": "Arithmetic",
+      "kind": "arithmetic",
+      "prompt": "What is 7 times 8? Answer briefly."
+    }
+  ]
+}

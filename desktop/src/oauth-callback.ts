@@ -4,6 +4,17 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 export const OAUTH_CALLBACK_HOST = "127.0.0.1";
 export const DEFAULT_OAUTH_CALLBACK_PORT = 1455;
 export const OAUTH_CALLBACK_PATH = "/auth/callback";
+export const OAUTH_CALLBACK_PROVIDERS = {
+	"openai-codex": { port: DEFAULT_OAUTH_CALLBACK_PORT, path: OAUTH_CALLBACK_PATH },
+	anthropic: { port: 53692, path: "/callback" },
+	notorganic: { port: 53693, path: "/notorganic/callback" },
+} as const;
+export type DesktopOAuthProvider = keyof typeof OAUTH_CALLBACK_PROVIDERS;
+
+export function isDesktopOAuthProvider(value: unknown): value is DesktopOAuthProvider {
+	return typeof value === "string" && Object.hasOwn(OAUTH_CALLBACK_PROVIDERS, value);
+}
+
 export const MAX_OAUTH_CALLBACK_URL_BYTES = 4 * 1024;
 export const MAX_OAUTH_CALLBACK_QUERY_BYTES = 2 * 1024;
 export const MAX_OAUTH_CALLBACK_HEADER_BYTES = 8 * 1024;
@@ -12,6 +23,24 @@ export const DEFAULT_OAUTH_CALLBACK_HEADERS_TIMEOUT_MS = 2_000;
 export const DEFAULT_OAUTH_CALLBACK_KEEP_ALIVE_TIMEOUT_MS = 1_000;
 
 const MAX_OAUTH_CALLBACK_HEADERS = 16;
+export const OAUTH_CALLBACK_ATTEMPT_TTL_MS = 10 * 60 * 1_000;
+
+export function validOAuthCallbackState(state: unknown): state is string {
+	return typeof state === "string" && /^[A-Za-z0-9_-]{32,512}$/.test(state);
+}
+
+/** Invalid requests must never consume a valid pending sign-in. */
+export function createOAuthCallbackAttempt(expectedState: string, now = Date.now) {
+	if (!validOAuthCallbackState(expectedState)) throw new Error("Invalid OAuth callback state.");
+	const expiresAt = now() + OAUTH_CALLBACK_ATTEMPT_TTL_MS;
+	let accepted = false;
+	return (state: string): 200 | 400 | 410 => {
+		if (accepted || now() >= expiresAt) return 410;
+		if (state !== expectedState) return 400;
+		accepted = true;
+		return 200;
+	};
+}
 const RETURN_TO_KEATING_HTML = "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><title>Return to Keating</title><p>Keating received the callback. Return to Keating to confirm sign-in; this window may now be closed.</p></html>";
 const CALLBACK_ERROR_HTML = "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><title>Keating sign-in</title><p>Keating could not accept this callback. Return to Keating and try again.</p></html>";
 const CALLBACK_ALREADY_USED_HTML = "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><title>Keating sign-in</title><p>This sign-in callback was already used. Return to Keating.</p></html>";
@@ -24,7 +53,9 @@ export interface OAuthLoopbackCallback {
 }
 
 export interface OAuthCallbackReceiverOptions {
-	/** Defaults to 1455. Supplying 0 is useful for isolated tests. */
+	expectedState: string;
+	provider?: DesktopOAuthProvider;
+	/** Defaults to the provider's fixed port. Supplying 0 is useful for isolated tests. */
 	port?: number;
 	requestTimeoutMs?: number;
 	headersTimeoutMs?: number;
@@ -51,8 +82,8 @@ export interface OAuthCallbackReceiver {
 export interface OAuthCallbackReceiverUnavailable {
 	available: false;
 	reason: "port-unavailable" | "listen-failed";
-	/** The desktop shell should offer manual callback URL paste when this occurs. */
-	action: "manual-paste";
+	/** The renderer can continue with the provider device authorization flow. */
+	action: "device-code" | "retry";
 	message: string;
 }
 
@@ -73,9 +104,9 @@ function boundedTimeout(value: number | undefined, fallback: number): number {
 	return value;
 }
 
-function requestedPort(value: number | undefined): number {
-	if (value === undefined) return DEFAULT_OAUTH_CALLBACK_PORT;
-	if (!Number.isSafeInteger(value) || value < 0 || value > 65_535) return DEFAULT_OAUTH_CALLBACK_PORT;
+function requestedPort(value: number | undefined, fallback: number): number {
+	if (value === undefined) return fallback;
+	if (!Number.isSafeInteger(value) || value < 0 || value > 65_535) return fallback;
 	return value;
 }
 
@@ -101,7 +132,8 @@ function staticResponse(response: ServerResponse, statusCode: number, body: stri
 	response.end(body);
 }
 
-function normalizedCallback(requestUrl: string, origin: string): OAuthLoopbackCallback | null {
+export function normalizedOAuthCallback(requestUrl: string, origin: string, provider: DesktopOAuthProvider = "openai-codex"): OAuthLoopbackCallback | null {
+	const path = OAUTH_CALLBACK_PROVIDERS[provider].path;
 	if (!requestUrl.startsWith("/") || requestUrl.startsWith("//")) return null;
 	if (byteLength(requestUrl) > MAX_OAUTH_CALLBACK_URL_BYTES) return null;
 	if (/%(?![0-9A-Fa-f]{2})/.test(requestUrl)) return null;
@@ -112,16 +144,18 @@ function normalizedCallback(requestUrl: string, origin: string): OAuthLoopbackCa
 	} catch {
 		return null;
 	}
-	if (parsed.pathname !== OAUTH_CALLBACK_PATH || byteLength(parsed.search) > MAX_OAUTH_CALLBACK_QUERY_BYTES) return null;
+	if (parsed.pathname !== path || byteLength(parsed.search) > MAX_OAUTH_CALLBACK_QUERY_BYTES) return null;
 	const codes = parsed.searchParams.getAll("code");
 	const states = parsed.searchParams.getAll("state");
-	if (codes.length !== 1 || states.length !== 1 || codes[0].length === 0 || states[0].length === 0) return null;
+	const errors = parsed.searchParams.getAll("error");
+	const denied = provider === "notorganic" && errors.length === 1 && !!errors[0] && codes.length === 0;
+	if (states.length !== 1 || !states[0] || (!denied && (codes.length !== 1 || !codes[0] || errors.length !== 0))) return null;
 
 	// Rebuild under our loopback origin so neither a hostile Host header nor an
 	// absolute-form request can influence the value given to the OAuth consumer.
-	const url = new URL(OAUTH_CALLBACK_PATH, origin);
+	const url = new URL(path, origin);
 	for (const [key, value] of parsed.searchParams) url.searchParams.append(key, value);
-	return { url, code: codes[0], state: states[0] };
+	return { url, code: codes[0] ?? "", state: states[0] };
 }
 
 function currentOrigin(server: Server): string | null {
@@ -140,25 +174,32 @@ function stopServer(server: Server): Promise<void> {
 			}
 			resolve();
 		});
+		server.closeAllConnections();
 	});
 }
 
 /**
  * Starts the intentionally narrow localhost OAuth callback endpoint. It never
  * logs, forwards, or renders OAuth values; consumers receive them only through
- * the in-process callback. A bind failure is recoverable through manual paste.
+ * the in-process callback. A bind failure is recoverable through device authorization.
  */
 export async function startOAuthCallbackReceiver(
 	options: OAuthCallbackReceiverOptions,
 ): Promise<OAuthCallbackReceiverStartResult> {
-	const port = requestedPort(options.port);
+	const provider = options.provider ?? "openai-codex";
+	if (!isDesktopOAuthProvider(provider)) throw new Error("Unsupported desktop OAuth provider.");
+	const port = requestedPort(options.port, OAUTH_CALLBACK_PROVIDERS[provider].port);
+	const fallbackAction = provider === "openai-codex" ? "device-code" as const : "retry" as const;
+	const fallbackMessage = provider === "openai-codex"
+		? "Keating could not open its local sign-in receiver. Continue with a device code instead."
+		: "Keating could not open its local sign-in receiver. Close other sign-in attempts and try again.";
 	const requestTimeoutMs = boundedTimeout(options.requestTimeoutMs, DEFAULT_OAUTH_CALLBACK_REQUEST_TIMEOUT_MS);
 	const headersTimeoutMs = Math.min(
 		boundedTimeout(options.headersTimeoutMs, DEFAULT_OAUTH_CALLBACK_HEADERS_TIMEOUT_MS),
 		requestTimeoutMs,
 	);
 	const keepAliveTimeoutMs = boundedTimeout(options.keepAliveTimeoutMs, DEFAULT_OAUTH_CALLBACK_KEEP_ALIVE_TIMEOUT_MS);
-	let accepted = false;
+	const acceptState = createOAuthCallbackAttempt(options.expectedState);
 
 	const server = createServer({ maxHeaderSize: MAX_OAUTH_CALLBACK_HEADER_BYTES }, (request, response) => {
 		void (async () => {
@@ -171,17 +212,16 @@ export async function startOAuthCallbackReceiver(
 				return;
 			}
 			const origin = currentOrigin(server);
-			const callback = origin && request.url ? normalizedCallback(request.url, origin) : null;
+			const callback = origin && request.url ? normalizedOAuthCallback(request.url, origin, provider) : null;
 			if (!callback) {
 				staticResponse(response, 400, CALLBACK_ERROR_HTML);
 				return;
 			}
-			if (accepted) {
-				staticResponse(response, 410, CALLBACK_ALREADY_USED_HTML);
+			const status = acceptState(callback.state);
+			if (status !== 200) {
+				staticResponse(response, status, status === 410 ? CALLBACK_ALREADY_USED_HTML : CALLBACK_ERROR_HTML);
 				return;
 			}
-
-			accepted = true;
 			try {
 				await options.onCallback(callback);
 				staticResponse(response, 200, RETURN_TO_KEATING_HTML);
@@ -206,8 +246,8 @@ export async function startOAuthCallbackReceiver(
 			resolve({
 				available: false,
 				reason: error.code === "EADDRINUSE" ? "port-unavailable" : "listen-failed",
-				action: "manual-paste",
-				message: "Keating could not open its secure local sign-in receiver. Paste the callback URL into Keating to finish sign-in.",
+				action: fallbackAction,
+				message: fallbackMessage,
 			});
 		};
 		const ready = () => {
@@ -217,8 +257,8 @@ export async function startOAuthCallbackReceiver(
 				resolve({
 					available: false,
 					reason: "listen-failed",
-					action: "manual-paste",
-					message: "Keating could not open its secure local sign-in receiver. Paste the callback URL into Keating to finish sign-in.",
+					action: fallbackAction,
+					message: fallbackMessage,
 				});
 				return;
 			}

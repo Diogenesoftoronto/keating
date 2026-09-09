@@ -1,17 +1,27 @@
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import * as appStorage from "../keating/app-storage";
+import { IndexedDBStorageBackend } from "../lib/cloud-storage-backend";
 
 let providerKeys: Record<string, string | undefined> = {};
 
-mock.module("@earendil-works/pi-web-ui", () => ({
-	getAppStorage: () => ({
-		customProviders: { getAll: async () => [] },
-		providerKeys: { get: async (provider: string) => providerKeys[provider] },
-	}),
-}));
+let storageSpy: ReturnType<typeof spyOn> | undefined;
+beforeEach(() => {
+	const keys = new appStorage.ProviderKeysStore();
+	keys.get = async (provider) => providerKeys[provider] ?? null;
+	keys.set = async (provider, value) => { providerKeys[provider] = value; };
+	keys.delete = async (provider) => { delete providerKeys[provider]; };
+	const custom = new appStorage.CustomProvidersStore();
+	custom.getAll = async () => [];
+	storageSpy = spyOn(appStorage, "getAppStorage").mockReturnValue(new appStorage.AppStorage(
+		new appStorage.SettingsStore(), keys, new appStorage.SessionsStore(), custom,
+		new IndexedDBStorageBackend({ dbName: "provider-model-test", version: 1, stores: [] }),
+	));
+});
 
 const originalFetch = globalThis.fetch;
 
 afterEach(() => {
+	storageSpy?.mockRestore();
 	globalThis.fetch = originalFetch;
 	providerKeys = {};
 });
@@ -71,6 +81,38 @@ describe("gateway model discovery", () => {
 });
 
 describe("chat model fallback selection", () => {
+	it("shares a single rotating Codex refresh between concurrent model consumers", async () => {
+		providerKeys["oauth:openai-codex"] = JSON.stringify({
+			provider: "openai-codex", access: "expired", refresh: "refresh-once",
+			expires: 0, apiKey: "legacy-key",
+		});
+		let refreshCount = 0;
+		globalThis.fetch = (async (_input, init) => {
+			refreshCount++;
+			expect(JSON.parse(String(init?.body)).refresh_token).toBe("refresh-once");
+			await new Promise((resolve) => setTimeout(resolve, 0));
+			return Response.json({ access_token: "fresh-codex", refresh_token: "rotated", expires_in: 3600 });
+		}) as typeof fetch;
+		const { getProviderApiKey } = await import("../lib/provider-models");
+		expect(await Promise.all(Array.from({ length: 8 }, () => getProviderApiKey("openai-codex"))))
+			.toEqual(Array(8).fill("fresh-codex"));
+		expect(refreshCount).toBe(1);
+		expect(JSON.parse(providerKeys["oauth:openai-codex"]!)).toMatchObject({ access: "fresh-codex", refresh: "rotated" });
+		expect(await getProviderApiKey("openai-codex")).toBe("fresh-codex");
+		expect(refreshCount).toBe(1);
+	});
+
+	it("retains Codex credentials after an invalid refresh response and permits retry", async () => {
+		const saved = JSON.stringify({ provider: "openai-codex", access: "expired", refresh: "refresh-once", expires: 0 });
+		providerKeys["oauth:openai-codex"] = saved;
+		globalThis.fetch = (async () => Response.json({ expires_in: 3600 })) as unknown as typeof fetch;
+		const { getProviderApiKey } = await import("../lib/provider-models");
+		expect(await getProviderApiKey("openai-codex")).toBeUndefined();
+		expect(providerKeys["oauth:openai-codex"]).toBe(saved);
+		globalThis.fetch = (async () => Response.json({ access_token: "retried", refresh_token: "rotated", expires_in: 3600 })) as unknown as typeof fetch;
+		expect(await getProviderApiKey("openai-codex")).toBe("retried");
+	});
+
 	it("keeps an explicitly selected model instead of silently replacing it", async () => {
 		const { resolveAvailableChatModel } = await import("../lib/provider-models");
 		const selected = {

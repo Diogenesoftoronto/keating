@@ -1,0 +1,1217 @@
+{
+  "layout": {
+    "columns": 4,
+    "rows": 2,
+    "cell": 256
+  },
+  "head_crop": [
+    0.16,
+    0.01,
+    0.84,
+    0.47
+  ],
+  "avif_quality": 75,
+  "avif_chroma": "444",
+  "states": [
+    {
+      "state": "idle",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/idle.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-idle.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 386736,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-idle.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 86844,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-idle.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 229612,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-idle.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 38946,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "listening",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/listening.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-listening.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 382049,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-listening.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 85571,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-listening.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 226037,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-listening.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 37061,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "thinking",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/thinking.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-thinking.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 361103,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-thinking.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 78240,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-thinking.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 232262,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-thinking.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 39361,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "speaking",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/speaking.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-speaking.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 387594,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-speaking.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 86972,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-speaking.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 228067,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-speaking.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 38607,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "success",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/success.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-success.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 368495,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-success.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 81077,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-success.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 244452,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-success.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 43300,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "waving",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/waving.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-waving.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 375468,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-waving.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 84621,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-waving.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 245599,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-waving.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 43827,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "walking",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/walking.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-walking.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 325158,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-walking.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 71025,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-walking.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 189247,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-walking.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 32618,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "sitting",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/sitting.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-sitting.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 372019,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-sitting.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 78829,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-sitting.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 204019,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-sitting.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 33484,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "flipping",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/flipping.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-flipping.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 329263,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-flipping.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 71962,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-flipping.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 215961,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-flipping.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 39533,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "reading",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/reading.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-reading.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 416318,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-reading.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 79022,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-reading.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 252606,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-reading.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 40946,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "music",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/music.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-music.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 392856,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-music.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 87314,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-music.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 252190,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-music.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 43891,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "science",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/science.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-science.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 420699,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-science.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 96478,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-science.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 225734,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-science.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 40006,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "maths",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/maths.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-maths.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 480562,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-maths.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 97299,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-maths.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 272571,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-maths.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 44282,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "coding",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/coding.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-coding.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 414586,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-coding.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 75456,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-coding.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 236304,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-coding.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 36385,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "chemistry",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/chemistry.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-chemistry.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 409531,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-chemistry.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 99894,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-chemistry.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 241948,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-chemistry.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 46203,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "biology",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/biology.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-biology.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 467307,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-biology.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 100653,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-biology.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 234375,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-biology.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 40341,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "physics",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/physics.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-physics.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 387843,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-physics.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 83508,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-physics.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 183774,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-physics.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 30579,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "astronomy",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/astronomy.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-astronomy.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 519609,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-astronomy.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 119466,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-astronomy.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 279992,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-astronomy.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 47440,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "palaeontology",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/palaeontology.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-palaeontology.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 518052,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-palaeontology.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 100484,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-palaeontology.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 241279,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-palaeontology.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 39155,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "electronics",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/electronics.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-electronics.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 495425,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-electronics.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 94703,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-electronics.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 257144,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-electronics.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 40180,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "mycology",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/mycology.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-mycology.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 499048,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-mycology.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 95935,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-mycology.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 261706,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-mycology.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 41485,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "loading",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/loading.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-loading.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 356987,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-loading.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 78370,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-loading.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 212957,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-loading.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 35809,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "lotus",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/lotus.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-lotus.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 526653,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-lotus.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 97731,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-lotus.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 296189,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-lotus.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 42674,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "connecting",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/connecting.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-connecting.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 473713,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-connecting.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 86319,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-connecting.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 278880,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-connecting.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 42607,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    },
+    {
+      "state": "understanding",
+      "raw": "/home/diogenes/Projects/keating/web/artwork/stop-motion-v1/raw/understanding.png",
+      "raw_dimensions": [
+        1774,
+        887
+      ],
+      "variants": {
+        "body": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-body-understanding.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 436181,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-body-understanding.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 87894,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        },
+        "head": {
+          "frames": 8,
+          "source": {
+            "path": "artwork/stop-motion-v1/prepared/keatingbot-head-understanding.png",
+            "width": 1024,
+            "height": 512,
+            "bytes": 250160,
+            "channels": "srgba 4.0",
+            "transparent": true
+          },
+          "production": {
+            "path": "public/brand/stop-motion-v1/keatingbot-head-understanding.avif",
+            "width": 1024,
+            "height": 512,
+            "bytes": 41156,
+            "channels": "srgba 4.0",
+            "transparent": true
+          }
+        }
+      }
+    }
+  ]
+}

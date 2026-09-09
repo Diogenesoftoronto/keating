@@ -2,12 +2,13 @@ import { describe, expect, test } from "bun:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
+	splitSearchSources,
 	formatSites,
 	isWebSearchToolName,
 	parseWebSearchResult,
-	WebSearchPart,
 	type ParsedWebSearch,
-} from "../src/components/WebSearchPart";
+} from "../src/components/web-search-result";
+import { WebSearchPart } from "../src/components/WebSearchPart";
 
 describe("web search part — tool name detection", () => {
 	test("renders an incomplete result as a failure instead of a spinner", () => {
@@ -187,3 +188,21 @@ describe("web search part — site formatting", () => {
 		expect(formatted).toBe("1. One\n2. https://two.example");
 	});
 });
+
+ test("native Codex source footer becomes a source component without changing answer text", () => {
+  const parsed = splitSearchSources("A finding.\n\nSources: [Paper](<https://example.com/paper>) · [Docs](<https://example.com/docs>)");
+  expect(parsed.text).toBe("A finding.");
+  expect(parsed.sites.map(site => site.title)).toEqual(["Paper", "Docs"]);
+  expect(splitSearchSources("An ordinary Sources: sentence.").sites).toEqual([]);
+ });
+ test("source previews are bounded and keep accessible links", () => {
+  const citations = Array.from({ length: 6 }, (_, i) => ({ title: `Paper ${i}`, url: `https://example.com/${i}` }));
+  const html = renderToStaticMarkup(createElement(WebSearchPart, { toolName: "web_search", result: { citations } }));
+  expect(html.match(/class="search-result__source"/g)).toHaveLength(3);
+  expect(html).toContain("Show all 6 sources");
+  expect(html).toContain('aria-expanded="false"');
+  expect(html).toContain('rel="noopener noreferrer"');
+ });
+ test("deduplicates repeated sources", () => {
+  expect(parseWebSearchResult({ citations: [{ url: "https://example.com" }, { url: "https://example.com" }] }, {}).sites).toHaveLength(1);
+ });

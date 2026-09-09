@@ -84,7 +84,7 @@ export function detectSupportedMermaidGrammar(source: string): WebMermaidGrammar
 export const WEB_OPENUI_COMPONENTS = [
   "LearningSurface", "Explanation", "Callout", "Question", "Quiz", "Exam", "Flashcards",
   "StudyPlan", "ConceptMap", "LearningImage", "SharedNotes",
-  "Assignment", "Practice", "Draft", "Fieldwork", "Simulation", "CodingChallenge", "MusicLab", "LanguagePractice",
+  "Assignment", "Practice", "Draft", "Fieldwork", "AudioResponse", "VideoResponse", "Simulation", "CodingChallenge", "MusicLab", "LanguagePractice",
 ] as const;
 
 export interface MermaidParityFixture {
@@ -147,7 +147,9 @@ export const MERMAID_PARITY_FIXTURES: readonly MermaidParityFixture[] = [
 
 /** One parser-valid browser program containing every registered Keating OpenUI component. */
 export const OPENUI_SOURCE_PARITY_FIXTURE = [
-  'root = LearningSurface([explanation, callout, question, quiz, exam, language, flashcards, plan, map, image, notes, assignment, practice, draft, fieldwork, simulation, coding, music], "Rendering parity", "Every registered component in one semantic fixture.", "workspace")',
+  'root = LearningSurface([explanation, callout, question, quiz, exam, language, flashcards, plan, map, image, notes, assignment, practice, draft, fieldwork, simulation, coding, music, audio, video], "Rendering parity", "Every registered component in one semantic fixture.", "workspace")',
+  'audio = AudioResponse("rendering-audio", "Animal recall", "Name ten animals in Mandarin, then replay and reflect.", ["Distinct animal names", "Notice uncertain words"], 30, "resumable")',
+  'video = VideoResponse("rendering-video", "Sign recall", "Sign ten familiar ASL signs. Keep your hands and face visible.", ["Clear handshape and movement", "Reflect before retrying"], 20, "resumable")',
   'coding = CodingChallenge("rendering-coding", "Double a number", "Return twice the input.", "javascript", "function double(value) { return value; }", "double", [{ id: "positive", label: "Positive input", args: [3], expected: 6 }, { id: "zero", label: "Zero", args: [0], expected: 0 }], "workspace")',
   'music = MusicLab("rendering-music", "Hear a major triad", "note(\\"c4 e4 g4\\").s(\\"sine\\").gain(0.1)", "workspace", "Press Play, then replace e4 with eb4.")',
   `exam = Exam("rendering-exam", "Caches & tradeoffs", ${JSON.stringify(EXAM_SOURCE_QUESTIONS_FIXTURE)}, "resumable", 1800)`,

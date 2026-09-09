@@ -1,12 +1,13 @@
 import { useEffect, useReducer, useState } from "react";
 import { getProviders } from "@earendil-works/pi-ai/compat";
-import { getAppStorage } from "@earendil-works/pi-web-ui";
+import { getAppStorage } from "../keating/app-storage";
 import { css } from "../../styled-system/css";
 import { settingsSection } from "../../styled-system/recipes";
 import {
 	addCustomModel,
 	toggleProviderVisibility,
 } from "../keating/ui-settings";
+import { setProvidersVisibility } from "../keating/model-prefs";
 import { useKeatingUiSettings } from "../hooks/use-ui-settings";
 import { useModelPrefs } from "../hooks/use-model-prefs";
 import { SettingsSectionNav, type SettingsSection } from "./SettingsSectionNav";
@@ -138,10 +139,15 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 	const providers = sortProvidersByPriority(Array.from(new Set([
 		...(isNotOrganicFeatureEnabled() ? [NOTORGANIC_PROVIDER_ID] : []),
 		...getProviders(),
+		...customProviders.map((provider) => provider.name),
 	])));
 
 	const handleToggleProvider = (provider: string, hidden: boolean) => {
 		toggleProviderVisibility(provider, hidden);
+	};
+
+	const handleSetAllProvidersHidden = (hidden: boolean) => {
+		setProvidersVisibility(providers, hidden);
 	};
 
 	const handleAddModel = async (model: { name: string; id: string; provider: string; api: string; baseUrl: string; apiKey: string; reasoning: boolean; vision: boolean }) => {
@@ -265,6 +271,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 				providers={providers}
 				modelPrefs={modelPrefs}
 				onToggle={handleToggleProvider}
+				onSetAllHidden={handleSetAllProvidersHidden}
 			/>
 
 			<div className={dividerClass} />

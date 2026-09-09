@@ -1,8 +1,10 @@
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import { selectedLearnerProfile } from "./learner-profile-selection.js";
 
 export function keatingRoot(cwd: string): string {
-  return join(cwd, ".keating");
+  const profile = selectedLearnerProfile(cwd);
+  return profile ? join(cwd, ".keating", "profiles", profile) : join(cwd, ".keating");
 }
 
 export function stateDir(cwd: string): string {
@@ -50,7 +52,8 @@ export function sessionsDir(cwd: string): string {
 }
 
 export function configDir(cwd: string): string {
-  return join(keatingRoot(cwd), "pi-config");
+  // Provider credentials and runtime configuration are project-wide, not learner history.
+  return join(cwd, ".keating", "pi-config");
 }
 
 export function currentPolicyPath(cwd: string): string {
@@ -66,11 +69,17 @@ export function promptEvolutionArchivePath(cwd: string): string {
 }
 
 export function learnerStatePath(cwd: string): string {
+  const profile = selectedLearnerProfile(cwd);
+  if (profile) return join(cwd, ".keating", "profiles", `${profile}.json`);
   return join(stateDir(cwd), "learner.json");
 }
 
 export function goalsStatePath(cwd: string): string {
   return join(stateDir(cwd), "goals.json");
+}
+
+export function learnerMemoryPath(cwd: string): string {
+  return join(stateDir(cwd), "learner-memory.json");
 }
 
 export function verificationsDir(cwd: string): string {

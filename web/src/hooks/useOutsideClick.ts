@@ -3,7 +3,7 @@ import { useEffect, type RefObject } from "react";
 /**
  * Closes a popover/menu/dropdown when the user clicks outside the referenced
  * element. Standardizes the pattern previously duplicated in SessionCard,
- * ForkMapCard, and SessionBrowserDesktop.
+ * SessionBrowserDesktop.
  *
  * The listener is only attached while `open` is true, so we never pay the
  * cost of a window-level handler when the popover is closed.

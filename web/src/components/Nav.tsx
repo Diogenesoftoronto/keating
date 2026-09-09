@@ -124,7 +124,7 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
           }}
         >
           <img
-					src="/brand/logo-lockup-hd.png"
+					src="/brand/logo-lockup-compact.avif"
             alt="Keating"
             style={{ height: "1.875rem", width: "auto" }}
           />

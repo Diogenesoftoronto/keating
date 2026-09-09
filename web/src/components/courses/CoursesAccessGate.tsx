@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ArrowRight, KeyRound, RadioTower } from "lucide-react";
+import { ArrowRight, KeyRound } from "lucide-react";
+import { KeatingBot } from "../KeatingBot";
 import { usePostHog } from "@posthog/react";
 import { css } from "../../../styled-system/css";
 import {
@@ -33,7 +34,10 @@ export function CoursesAccessGate({ state, onRetry }: { state: CoursesAccessGate
 	};
 
 	if (state.status === "loading") {
-		return <div className={css({ py: "8rem", textAlign: "center", color: "var(--ink-soft)" })}>Checking your course workspace…</div>;
+		return <main className={css({ py: "5rem", textAlign: "center", color: "var(--ink-soft)" })}>
+			<KeatingBot variant="body" state="loading" size={144} label="" />
+			<p role="status">Checking your course workspace…</p>
+		</main>;
 	}
 	return (
 		<main className={css({ mx: "auto", maxW: "58rem", px: "1rem", py: { base: "3rem", md: "5rem" } })}>
@@ -68,14 +72,11 @@ export function CoursesAccessGate({ state, onRetry }: { state: CoursesAccessGate
 					) : null}
 				</div>
 				<div className={css({ borderTop: "2px solid var(--ink)", bg: "var(--terminal, #0c1510)", p: "2rem", color: "var(--paper)", md: { borderTop: 0, borderLeft: "2px solid var(--ink)" } })}>
-					<RadioTower size={28} color="var(--phosphor, #4be388)" />
+					<div className={css({ textAlign: "center" })}><KeatingBot variant="body" state="reading" size={192} label="" /></div>
 					<p className={css({ mt: "1.25rem", fontFamily: "var(--mono-display)", fontSize: "0.72rem", lineHeight: 1.8, letterSpacing: "0.06em", color: "var(--phosphor, #4be388)" })}>
-						BROWSER → AUTHENTICATED GATEWAY<br />
-						GATEWAY → PEAR NETWORK<br />
-						TEACHER ACCESS → CONSENTED<br />
-						SOURCE DOCUMENTS → IMMUTABLE
+						A PLACE FOR YOUR NEXT QUESTION
 					</p>
-					<p className={css({ mt: "1.5rem", fontSize: "0.8rem", lineHeight: 1.6, color: "#b9c7bc" })}>The browser never receives a Pear signing key or provider token.</p>
+					<p className={css({ mt: "1.5rem", fontSize: "0.8rem", lineHeight: 1.6, color: "#b9c7bc" })}>Bring a subject you’re curious about. Keating helps you turn it into lessons, readings, and practice you can return to.</p>
 				</div>
 			</section>
 			{state.recovery === "account" && <NotOrganicAccessPromptDialog />}

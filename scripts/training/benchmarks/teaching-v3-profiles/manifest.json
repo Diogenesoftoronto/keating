@@ -1,0 +1,12 @@
+{
+  "version": "3.2.0",
+  "track": "fixed-cli-harness",
+  "status": "public-development-suite",
+  "files": {
+    "cases.json": "894a4485865971f0db7248811211a1e441eeea775f15f774711c99570f7ede67",
+    "README.md": "c2b48bb5f9cd22377e0b00ff0873ea330510e6fcc692468887d3fc9cc3f96b7e",
+    "context-pairs.json": "1259b21a4db09067f5870f574209be2bf89265ecde08b92517efff45582dd263",
+    "profile-cases.json": "95b1013993a4f82211550da4308144a5246db2b9f68ff3bab0df40f38d84368f",
+    "profile-lifecycle-cases.json": "3978d3cd656ee5ce8d622e7277e0143d1080c061294a43b453d840c8edb81649"
+  }
+}

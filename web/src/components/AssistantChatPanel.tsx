@@ -1,7 +1,23 @@
+import {
+  assistantTextParts,
+  makeAttachmentErrorMessage,
+  makePromptErrorMessage,
+  textFromContent,
+} from "./assistant-chat-messages";
+import {
+  generatedImageTagPattern,
+  goalTagPattern,
+  parseInteractiveSegments,
+  questionTagPattern,
+  quizTagPattern,
+} from "./interactive-segments";
 import type { FlueConversationMessage } from "@flue/sdk";
 import { type KeatingAudioContent } from "../keating/flue/conversation";
 import "./keating-interaction-motion.css";
 import { KeatingBot } from "./KeatingBot";
+import { chatMascotState } from "./chat-mascot-state";
+import { ChatMascotMenu } from "./ChatMascotMenu";
+import "./chat-mascot.css";
 import { RecordingWaveform } from "./RecordingWaveform";
 import { prepareAudioAttachment } from "../lib/audio-attachment";
 import type { FlueConversation } from "../keating/flue/conversation";
@@ -155,7 +171,8 @@ import {
   type MicRecorder,
 } from "../keating/speech-providers/stt";
 import { JsonCrackBlock } from "./JsonCrackBlock";
-import { WebSearchPart, isWebSearchToolName } from "./WebSearchPart";
+import { WebSearchPart } from "./WebSearchPart";
+import { isWebSearchToolName, splitSearchSources } from "./web-search-result";
 import { FailedResponseRecovery } from "./FailedResponseRecovery";
 import { FlashcardRenderer } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
@@ -618,12 +635,16 @@ function StreamingTextPart({
     return <LearnerResponseReview response={learnerResponse} />;
   }
 
+  const searchContent = splitSearchSources(visibleText);
   return (
+    <>
     <MarkdownText
-      text={visibleText}
+      text={searchContent.text}
 		documentScope={sessionId ? { sessionId, messageId } : messageId}
       isRunning={status?.type === "running"}
     />
+    {searchContent.sites.length > 0 && <WebSearchPart toolName="web_search" result={{ citations: searchContent.sites }} status={{ type: "complete" }} />}
+    </>
   );
 }
 
@@ -802,17 +823,23 @@ function ImagePart({ image, filename }: { image: string; filename?: string }) {
 function SpeechComposerControl({
   expanded,
   onExpandedChange,
+  onRecordingChange,
   onConversationComplete,
   onRequestCredential,
 }: {
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
+  onRecordingChange?: (recording: boolean) => void;
   onConversationComplete: (turns: LiveTranscriptTurn[]) => void | Promise<void>;
   onRequestCredential?: (provider: string) => Promise<boolean>;
 }) {
   const composer = useComposerRuntime();
   const [available, setAvailable] = useState<boolean | null>(null);
   const [recording, setRecording] = useState(false);
+  useEffect(() => {
+    onRecordingChange?.(recording);
+    return () => onRecordingChange?.(false);
+  }, [recording, onRecordingChange]);
   const [recordingStream, setRecordingStream] = useState<MediaStream | null>(null);
   const [busy, setBusy] = useState(false);
   const [audioError, setAudioError] = useState("");
@@ -1459,95 +1486,7 @@ function ArtifactChips({ text }: { text: string }) {
   );
 }
 
-// Tag payloads are JSON string literals (double-stringified by the emitting
-// tools) and may contain literal ">" characters — e.g. HTML/JS source in an
-// animation body — so match a complete quoted string first and only fall back
-// to the legacy "anything up to >" form for old unquoted payloads.
-const TAG_PAYLOAD = String.raw`("(?:[^"\\]|\\.)*"|[^>]+)`;
-const quizTagPattern = new RegExp(
-  String.raw`<keating-quiz\s+json=${TAG_PAYLOAD}\s*\/>`,
-  "g",
-);
-const sceneTagPattern = new RegExp(
-  String.raw`<keating-scene\s+markdown=${TAG_PAYLOAD}\s*\/>`,
-  "g",
-);
-const questionTagPattern = new RegExp(
-  String.raw`<keating-question\s+json=${TAG_PAYLOAD}\s*\/>`,
-  "g",
-);
-const goalTagPattern = new RegExp(
-  String.raw`<keating-goal\s+json=${TAG_PAYLOAD}\s*\/>`,
-  "g",
-);
-const generatedImageTagPattern = new RegExp(
-  String.raw`<keating-image\s+json=${TAG_PAYLOAD}\s*\/>`,
-  "g",
-);
-const quizResultTagPattern = new RegExp(
-  String.raw`<keating-quiz-result\s+json=${TAG_PAYLOAD}\s*\/>`,
-  "g",
-);
-const interactiveTagPattern = new RegExp(
-  String.raw`<keating-(quiz|scene|question|goal|image|quiz-result|quiz-grade|animation|deck)\s+(json|markdown)=${TAG_PAYLOAD}\s*\/>`,
-  "g",
-);
 const URL_IN_TEXT_PATTERN = /\bhttps?:\/\/[^\s<>"')\]]+/i;
-
-function parseInteractiveSegments(
-  text: string,
-): Array<
-  | { type: "text"; content: string }
-  | { type: "quiz"; json: string }
-  | { type: "scene"; markdown: string }
-  | { type: "question"; json: string }
-  | { type: "goal"; json: string }
-  | { type: "image"; json: string }
-  | { type: "quiz-result"; json: string }
-  | { type: "quiz-grade"; json: string }
-  | { type: "animation"; json: string }
-  | { type: "deck"; json: string }
-> {
-  const segments: ReturnType<typeof parseInteractiveSegments> = [];
-  let lastIndex = 0;
-
-  for (const match of text.matchAll(interactiveTagPattern)) {
-    const index = match.index ?? 0;
-    if (index > lastIndex) {
-      segments.push({ type: "text", content: text.slice(lastIndex, index) });
-    }
-
-    const tag = match[1];
-    const payload = match[3];
-    if (tag === "quiz") segments.push({ type: "quiz", json: payload });
-    if (tag === "quiz-result")
-      segments.push({ type: "quiz-result", json: payload });
-    if (tag === "quiz-grade")
-      segments.push({ type: "quiz-grade", json: payload });
-    if (tag === "scene") {
-      let markdown = payload;
-      try {
-        markdown = JSON.parse(payload);
-      } catch {
-        // Older tags may already carry raw markdown.
-      }
-      segments.push({ type: "scene", markdown });
-    }
-    if (tag === "question") segments.push({ type: "question", json: payload });
-    if (tag === "goal") segments.push({ type: "goal", json: payload });
-    if (tag === "image") segments.push({ type: "image", json: payload });
-    if (tag === "animation")
-      segments.push({ type: "animation", json: payload });
-    if (tag === "deck") segments.push({ type: "deck", json: payload });
-    lastIndex = index + match[0].length;
-  }
-
-  if (lastIndex < text.length) {
-    segments.push({ type: "text", content: text.slice(lastIndex) });
-  }
-  if (segments.length === 0) segments.push({ type: "text", content: text });
-  return segments;
-}
 
 function stripQuestionTags(text: string): string {
   return text.replace(questionTagPattern, "").trim();
@@ -2996,25 +2935,6 @@ function assistantContentFromAgentContent(content: unknown) {
     .filter((part) => part.type !== "text" || part.text);
 }
 
-function textFromContent(content: unknown): string {
-  if (typeof content === "string") return content;
-  if (!Array.isArray(content)) return "";
-  return content
-    .map((part) => {
-      if (part?.type === "text" && typeof part.text === "string")
-        return part.text;
-      if (part?.type === "thinking" && typeof part.thinking === "string")
-        return part.thinking;
-      if (part?.type === "reasoning" && typeof part.text === "string")
-        return part.text;
-      if (part?.type === "image") return "[image]";
-      if (part?.type === "toolCall") return `[tool: ${part.name ?? "unknown"}]`;
-      return "";
-    })
-    .filter(Boolean)
-    .join("\n");
-}
-
 function foldToolResults(messages: AgentMessage[]): AgentMessage[] {
   const folded: AgentMessage[] = [];
   const assistantByToolCallId = new Map<string, any>();
@@ -3170,12 +3090,6 @@ function visibleAgentMessages(
   );
 }
 
-type AssistantTextPart =
-  | { type: "text"; text: string }
-  | { type: "reasoning"; text: string };
-
-const THINK_TAG_PATTERN = /<\/?think(?:ing)?>/gi;
-
 function normalizeReasoningText(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
@@ -3227,62 +3141,6 @@ function normalizeAssistantContentParts(parts: any[]): any[] {
   }
 
   return normalized;
-}
-
-function assistantTextParts(text: string): AssistantTextPart[] {
-  if (!text) return [{ type: "text", text: "" }];
-
-  // Some OpenAI-compatible reasoning models leak malformed closing tags without
-  // a matching opening tag. When that happens, the safest behavior is to treat
-  // everything before the final closing tag as hidden reasoning and only render
-  // the post-close tail as the learner-visible answer.
-  if (!/<think(?:ing)?>/i.test(text) && /<\/think(?:ing)?>/i.test(text)) {
-    const matches = [...text.matchAll(/<\/think(?:ing)?>/gi)];
-    const last = matches.at(-1);
-    if (last && typeof last.index === "number") {
-      const reasoning = text.slice(0, last.index).trim();
-      const visible = text.slice(last.index + last[0].length).trim();
-      const parts: AssistantTextPart[] = [];
-      if (reasoning) parts.push({ type: "reasoning", text: reasoning });
-      if (visible) parts.push({ type: "text", text: visible });
-      return parts.length > 0 ? parts : [{ type: "text", text: "" }];
-    }
-  }
-
-  const parts: AssistantTextPart[] = [];
-  let cursor = 0;
-  let reasoningStart: number | null = null;
-
-  for (const match of text.matchAll(THINK_TAG_PATTERN)) {
-    const tag = match[0].toLowerCase();
-    const tagIndex = match.index ?? 0;
-    if (!tag.startsWith("</")) {
-      if (reasoningStart === null) {
-        const visible = text.slice(cursor, tagIndex);
-        if (visible) parts.push({ type: "text", text: visible });
-        reasoningStart = tagIndex + match[0].length;
-        cursor = reasoningStart;
-      }
-      continue;
-    }
-
-    if (reasoningStart !== null) {
-      const reasoning = text.slice(reasoningStart, tagIndex);
-      if (reasoning.trim()) parts.push({ type: "reasoning", text: reasoning });
-      cursor = tagIndex + match[0].length;
-      reasoningStart = null;
-    }
-  }
-
-  if (reasoningStart !== null) {
-    const reasoning = text.slice(reasoningStart);
-    if (reasoning.trim()) parts.push({ type: "reasoning", text: reasoning });
-    return parts.length > 0 ? parts : [{ type: "text", text: "" }];
-  }
-
-  const tail = text.slice(cursor);
-  if (tail) parts.push({ type: "text", text: tail });
-  return parts.length > 0 ? parts : [{ type: "text", text: "" }];
 }
 
 function assistantHasPendingToolCalls(content: unknown): boolean {
@@ -3556,79 +3414,6 @@ function messagesFromLiveTranscript(
   return messages;
 }
 
-function hasUserTextMessage(messages: AgentMessage[], text: string): boolean {
-  const normalized = text.trim();
-  return messages.some((message) => {
-    const msg = message as any;
-    if (msg.role !== "user" && msg.role !== "user-with-attachments")
-      return false;
-    return textFromContent(msg.content).trim() === normalized;
-  });
-}
-
-function makeAttachmentErrorMessage(
-  agent: FlueConversation,
-  errorMessage: string,
-): AgentMessage {
-  return {
-    role: "assistant",
-    content: [],
-    api: agent.context.model.api,
-    provider: agent.context.model.provider,
-    model: agent.context.model.id,
-    usage: {
-      input: 0,
-      output: 0,
-      cacheRead: 0,
-      cacheWrite: 0,
-      totalTokens: 0,
-      cost: {
-        input: 0,
-        output: 0,
-        cacheRead: 0,
-        cacheWrite: 0,
-        total: 0,
-      },
-    },
-    stopReason: "error",
-    errorMessage,
-    timestamp: Date.now(),
-  } as AgentMessage;
-}
-
-function errorMessageText(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === "string") return error;
-  try {
-    return JSON.stringify(error);
-  } catch {
-    return String(error);
-  }
-}
-
-function makePromptErrorMessage(agent: FlueConversation, error: unknown): AgentMessage {
-  return makeAttachmentErrorMessage(agent, errorMessageText(error));
-}
-
-function recordCredentialBlockedSend(
-  agent: FlueConversation,
-  userMessage: AgentMessage,
-  provider: string,
-): void {
-  const userText = textFromContent((userMessage as any).content);
-  if (!userText || !hasUserTextMessage(agent.context.messages, userText)) {
-    agent.context.messages.push(userMessage);
-  }
-  agent.context.messages.push(
-    makePromptErrorMessage(
-      agent,
-      new Error(
-        `Authentication error: no credentials are available for ${provider}. Open Settings → Providers & Models, connect the provider, then retry this message.`,
-      ),
-    ),
-  );
-}
-
 function makePrefillStatusMessage(agent: FlueConversation, step: number): AgentMessage {
   return {
     role: "assistant",
@@ -3781,7 +3566,6 @@ export function SuggestedPrompts({
         sm: { paddingInline: "1rem" },
       })}
     >
-      <KeatingBot variant="body" state="waving" size={120} label="" />
       <div className={css({ maxWidth: "36rem", textAlign: "center" })}>
         <h1
           className={css({
@@ -4290,6 +4074,7 @@ function AssistantThread({
   const [loadingStep, setLoadingStep] = useState(0);
   const [composerHasUrl, setComposerHasUrl] = useState(false);
   const [voiceComposerOpen, setVoiceComposerOpen] = useState(false);
+  const [micRecording, setMicRecording] = useState(false);
   const [dismissedQuizId, setDismissedQuizId] = useState<string | null>(null);
   const [hasGoogleKey, setHasGoogleKey] = useState<boolean | null>(null);
   const isRunning = agent?.getSnapshot().running ?? false;
@@ -4365,42 +4150,34 @@ function AssistantThread({
       ...local.map((message, index) => toAssistantMessage(message, legacy.length + index, legacy.length + local.length, false, modelRef.current?.provider)),
     ].sort((left, right) => (left.createdAt?.getTime() ?? 0) - (right.createdAt?.getTime() ?? 0));
   }, [agent, version, localVersion, messages, isRunning, speechEnabled]);
+  const mascotState = chatMascotState({ messages: threadMessages, running: isRunning, recording: micRecording });
   const convertMessage = useCallback((message: ThreadMessageLike) => message, []);
 
-  const sendText = useCallback(
-    async (text: string) => {
-      if (!agent || !text.trim()) return;
-      if (agent.context.isStreaming) return;
-      const provider = agent.context.model.provider;
-      if (
-        callbacks.onApiKeyRequired &&
-        !(await callbacks.onApiKeyRequired(provider))
-      ) {
-        recordCredentialBlockedSend(agent, makeUserTextMessage(text), provider);
-        setLocalVersion((current) => current + 1);
-        await callbacks.onLocalMessagesChanged?.();
-        return;
-      }
-      await callbacks.onBeforeSend?.();
-      setComposerHasUrl(false);
-      try {
-        await agent.send(text);
-      } catch (error) {
-        console.error(
-          "Keating send failed before the model stream started:",
-          error,
-        );
-        posthog.capture("message_send_failed", { error_type: "prompt_error" });
-        if (!hasUserTextMessage(agent.context.messages, text)) {
-          agent.context.messages.push(makeUserTextMessage(text));
+  const sendUserMessage = useCallback(async (userMessage: AgentMessage) => {
+    if (!agent || agent.context.isStreaming) return false;
+    setComposerHasUrl(false);
+    try {
+      await agent.sendPrepared(userMessage, async (signal) => {
+        const provider = agent.context.model.provider;
+        if (callbacks.onApiKeyRequired && !(await callbacks.onApiKeyRequired(provider))) {
+          throw new Error(`Authentication error: no credentials are available for ${provider}. Open Settings → Providers & Models, connect the provider, then retry this message.`);
         }
-        agent.context.messages.push(makePromptErrorMessage(agent, error));
-        setLocalVersion((current) => current + 1);
-        await callbacks.onLocalMessagesChanged?.();
-      }
-    },
-    [agent, callbacks, posthog],
-  );
+        signal.throwIfAborted();
+        await callbacks.onBeforeSend?.();
+      });
+    } catch (error) {
+      console.error("Keating send failed:", error);
+      posthog.capture("message_send_failed", { error_type: "prompt_error" });
+      agent.context.messages.push(makePromptErrorMessage(agent, error));
+      setLocalVersion(current => current + 1);
+    }
+    await callbacks.onLocalMessagesChanged?.();
+    return true;
+  }, [agent, callbacks, posthog]);
+
+  const sendText = useCallback(async (text: string) => {
+    if (text.trim()) await sendUserMessage(makeUserTextMessage(text));
+  }, [sendUserMessage]);
 
   const onNew = useCallback(
     async (message: AppendMessage) => {
@@ -4437,39 +4214,9 @@ function AssistantThread({
         return true;
       }
 
-      const provider = agent.context.model.provider;
-      if (
-        callbacks.onApiKeyRequired &&
-        !(await callbacks.onApiKeyRequired(provider))
-      ) {
-        recordCredentialBlockedSend(agent, userMessage, provider);
-        setLocalVersion((current) => current + 1);
-        await callbacks.onLocalMessagesChanged?.();
-        return true;
-      }
-      await callbacks.onBeforeSend?.();
-      setComposerHasUrl(false);
-      try {
-        await agent.send(userMessage);
-		await callbacks.onLocalMessagesChanged?.();
-		return true;
-      } catch (error) {
-        console.error(
-          "Keating send failed before the model stream started:",
-          error,
-        );
-        posthog.capture("message_send_failed", { error_type: "prompt_error" });
-        const userText = textFromContent((userMessage as any).content);
-        if (!userText || !hasUserTextMessage(agent.context.messages, userText)) {
-          agent.context.messages.push(userMessage);
-        }
-        agent.context.messages.push(makePromptErrorMessage(agent, error));
-        setLocalVersion((current) => current + 1);
-        await callbacks.onLocalMessagesChanged?.();
-		return true;
-      }
+      return sendUserMessage(userMessage);
     },
-    [agent, callbacks, posthog],
+    [agent, callbacks, sendUserMessage],
   );
 
   const onCancel = useCallback(async () => {
@@ -5011,6 +4758,7 @@ function AssistantThread({
                       />
                     </div>
                   )}
+                  <ChatMascotMenu state={mascotState} busy={isRunning || micRecording} />
                   <ComposerPrimitive.Root
                     className={cx(
                       "composer-root",
@@ -5062,6 +4810,7 @@ function AssistantThread({
                       <SpeechComposerControl
                         expanded={voiceComposerOpen}
                         onExpandedChange={setVoiceComposerOpen}
+                        onRecordingChange={setMicRecording}
                         onConversationComplete={preserveLiveConversation}
                         onRequestCredential={callbacks.onApiKeyRequired}
                       />
@@ -5445,13 +5194,6 @@ function AssistantMessage({
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [feedbackType, setFeedbackType] = useState<"up" | "down">("up");
   const onAuthError = useContext(AuthErrorContext);
-  const botState = useMessage(message => {
-    if (message.status?.type !== "running") return "idle" as const;
-    const lastPart = message.content.at(-1);
-    // Reasoning and tool work use the thinking sequence. Mouth animation starts
-    // when this response is actually producing visible text.
-    return lastPart?.type === "text" && lastPart.text.trim() ? "speaking" as const : "thinking" as const;
-  });
   const authError = useMessage(
     (message) =>
       message.metadata.custom?.keatingAuthError as AuthErrorEntry | undefined,
@@ -5561,18 +5303,6 @@ function AssistantMessage({
             sm: { gap: "0.75rem", paddingInline: "0.25rem" },
           })}
         >
-          <div
-            className={cx(
-              "chat-avatar",
-              css({
-                display: "none",
-                marginTop: "0.125rem",
-                sm: { display: "flex" },
-              }),
-            )}
-          >
-            <KeatingBot state={botState} size={36} animated={botState !== "idle"} label="Keating" />
-          </div>
           <div className={css({ minWidth: 0, flex: 1, lineHeight: "1.5rem" })}>
             <div className="msg-meta">
               <b>KEATING</b>
@@ -5820,24 +5550,6 @@ function KeatingThinkingIndicator({ status }: { status: string }) {
         color: "var(--muted-foreground)",
       })}
     >
-      <div
-        className={cx(
-          "keating-thinking-avatar",
-          css({
-            display: "flex",
-            height: "2.5rem",
-            width: "2.5rem",
-            flexShrink: 0,
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: "0.5rem",
-            border: "1px solid var(--border)",
-            backgroundColor: "var(--card)",
-          }),
-        )}
-      >
-        <KeatingBot state="thinking" size={38} label="" />
-      </div>
       <div className={css({ minWidth: 0 })}>
         <div
           className={css({
@@ -5925,10 +5637,6 @@ AssistantChatPanel.displayName = "AssistantChatPanel";
 
 // Test-only export for parser regressions around malformed reasoning tags from
 // OpenAI-compatible providers.
-export const __test_assistantTextParts = assistantTextParts;
-export const __test_parseInteractiveSegments = parseInteractiveSegments;
-export const __test_interactiveTagPattern = interactiveTagPattern;
-export const __test_recordCredentialBlockedSend = recordCredentialBlockedSend;
 
 function ConversationSubscription({
   agent,

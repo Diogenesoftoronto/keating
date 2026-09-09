@@ -71,13 +71,16 @@
   color: var(--foreground);
 }
 .session-panel .session-panel__new {
-  background: var(--primary);
-  color: var(--primary-foreground);
-  box-shadow: 0 2px 0 color-mix(in srgb, var(--primary) 70%, black);
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  background: color-mix(in srgb, var(--primary) 18%, var(--background));
+  color: var(--primary);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--primary) 28%, transparent);
 }
 .session-panel .session-panel__new:hover {
-  background: color-mix(in srgb, var(--primary) 90%, black);
-  color: var(--primary-foreground);
+  background: color-mix(in srgb, var(--primary) 32%, var(--background));
+  color: var(--primary);
 }
 .session-panel .session-panel__new:active {
   transform: translateY(1px);

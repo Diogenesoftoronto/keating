@@ -1,0 +1,1143 @@
+{
+  "schemaVersion": 1,
+  "metadata": {
+    "denominatorUnit": "retained topic-bearing conversation families",
+    "totalFamilies": 56,
+    "includedFamilies": 46,
+    "excludedFamilies": 10,
+    "discussedFamilies": 32,
+    "openingOnlyFamilies": 14,
+    "exclusionReasons": {
+      "greeting-or-workspace-check": 8,
+      "project-access-repair-only": 1,
+      "generic-tool-demo-without-learner-selected-subject": 1
+    },
+    "totalSessionObjects": 81,
+    "parentLinkedFamilies": 63,
+    "nonSelfParentLinks": 18,
+    "selfParentRoots": 1,
+    "exactHistoryFamilyJoins": 7,
+    "unresolvedParentLinks": 0,
+    "parentCycles": 0,
+    "portableSha256": "329ec5856aaa3cc0cdd3b3a9e8311aa885e27b728a5ab14bf804fe5b1bc7656e",
+    "classification": "One reviewed primary subject per family; discussion/practice versus opening only.",
+    "countMeaning": "Conversation-family coverage; not elapsed time, mastery, or completed lessons."
+  },
+  "subjects": [
+    {
+      "id": "ai",
+      "label": "Machine learning & AI",
+      "count": 12,
+      "discussedCount": 9,
+      "openingOnlyCount": 3,
+      "topics": [
+        "Policy gradients",
+        "Writing-evaluation models",
+        "Synthetic data generation",
+        "AI compute economics",
+        "SwiReasoning revisit",
+        "Needle model and tensor foundations",
+        "Latent and explicit reasoning",
+        "Static embeddings",
+        "Bradley-Terry ranking",
+        "AI inference providers",
+        "Laguna language models",
+        "SDPO and continual learning"
+      ],
+      "discussedTopics": [
+        "Policy gradients",
+        "Writing-evaluation models",
+        "Synthetic data generation",
+        "AI compute economics",
+        "SwiReasoning revisit",
+        "Needle model and tensor foundations",
+        "Latent and explicit reasoning",
+        "Static embeddings",
+        "Bradley-Terry ranking"
+      ],
+      "openingOnlyTopics": [
+        "AI inference providers",
+        "Laguna language models",
+        "SDPO and continual learning"
+      ],
+      "representativeTopics": [
+        "Static embeddings",
+        "Policy gradients",
+        "Latent and explicit reasoning"
+      ]
+    },
+    {
+      "id": "software",
+      "label": "Software engineering",
+      "count": 12,
+      "discussedCount": 9,
+      "openingOnlyCount": 3,
+      "topics": [
+        "Self-hosted application architecture",
+        "Semantic code differencing",
+        "Keating application architecture",
+        "Guile REPL debugging",
+        "Guix packaging",
+        "Verifying generated backend code",
+        "Electron and Tauri",
+        "AI coding and compiler history",
+        "Functional-language selection",
+        "Specification-driven development",
+        "Guile debugging quiz request",
+        "TypeScript quality-tool comparison"
+      ],
+      "discussedTopics": [
+        "Self-hosted application architecture",
+        "Semantic code differencing",
+        "Keating application architecture",
+        "Guile REPL debugging",
+        "Guix packaging",
+        "Verifying generated backend code",
+        "Electron and Tauri",
+        "AI coding and compiler history",
+        "Functional-language selection"
+      ],
+      "openingOnlyTopics": [
+        "Specification-driven development",
+        "Guile debugging quiz request",
+        "TypeScript quality-tool comparison"
+      ],
+      "representativeTopics": [
+        "Guile REPL debugging",
+        "Guix packaging",
+        "Semantic code differencing"
+      ]
+    },
+    {
+      "id": "systems",
+      "label": "Networks, systems & hardware",
+      "count": 6,
+      "discussedCount": 4,
+      "openingOnlyCount": 2,
+      "topics": [
+        "Zero-trust networking",
+        "Vulkan and OpenGL",
+        "Application hosting and VM provisioning",
+        "Email protocols and delivery",
+        "OpenZiti capabilities",
+        "Bluetooth microcontrollers in C"
+      ],
+      "discussedTopics": [
+        "Zero-trust networking",
+        "Vulkan and OpenGL",
+        "Application hosting and VM provisioning",
+        "Email protocols and delivery"
+      ],
+      "openingOnlyTopics": [
+        "OpenZiti capabilities",
+        "Bluetooth microcontrollers in C"
+      ],
+      "representativeTopics": [
+        "Zero-trust networking",
+        "Vulkan and OpenGL",
+        "Email protocols and delivery"
+      ]
+    },
+    {
+      "id": "business",
+      "label": "Business, finance & civics",
+      "count": 4,
+      "discussedCount": 2,
+      "openingOnlyCount": 2,
+      "topics": [
+        "Business registration",
+        "Product discovery and scope",
+        "Household budgeting",
+        "Canadian lawmaking"
+      ],
+      "discussedTopics": [
+        "Business registration",
+        "Product discovery and scope"
+      ],
+      "openingOnlyTopics": [
+        "Household budgeting",
+        "Canadian lawmaking"
+      ],
+      "representativeTopics": [
+        "Business registration",
+        "Product discovery and scope"
+      ]
+    },
+    {
+      "id": "science",
+      "label": "Biology & physics",
+      "count": 4,
+      "discussedCount": 4,
+      "openingOnlyCount": 0,
+      "topics": [
+        "Phylogenetic trees",
+        "AI-designed protein binders",
+        "Antibodies and protein models",
+        "Quantum entanglement"
+      ],
+      "discussedTopics": [
+        "Phylogenetic trees",
+        "AI-designed protein binders",
+        "Antibodies and protein models",
+        "Quantum entanglement"
+      ],
+      "openingOnlyTopics": [],
+      "representativeTopics": [
+        "Phylogenetic trees",
+        "AI-designed protein binders",
+        "Quantum entanglement"
+      ]
+    },
+    {
+      "id": "humanities",
+      "label": "Humanities & social sciences",
+      "count": 3,
+      "discussedCount": 2,
+      "openingOnlyCount": 1,
+      "topics": [
+        "City formation",
+        "Free will",
+        "Memory biases"
+      ],
+      "discussedTopics": [
+        "City formation",
+        "Free will"
+      ],
+      "openingOnlyTopics": [
+        "Memory biases"
+      ],
+      "representativeTopics": [
+        "City formation",
+        "Free will"
+      ]
+    },
+    {
+      "id": "arts",
+      "label": "Music, art & language",
+      "count": 3,
+      "discussedCount": 1,
+      "openingOnlyCount": 2,
+      "topics": [
+        "Jazz improvisation",
+        "3D rigging",
+        "New York slang"
+      ],
+      "discussedTopics": [
+        "Jazz improvisation"
+      ],
+      "openingOnlyTopics": [
+        "3D rigging",
+        "New York slang"
+      ],
+      "representativeTopics": [
+        "Jazz improvisation"
+      ]
+    },
+    {
+      "id": "pedagogy",
+      "label": "Learning & pedagogy",
+      "count": 2,
+      "discussedCount": 1,
+      "openingOnlyCount": 1,
+      "topics": [
+        "Socratic teaching and self-evaluation",
+        "Keating teaching approach"
+      ],
+      "discussedTopics": [
+        "Socratic teaching and self-evaluation"
+      ],
+      "openingOnlyTopics": [
+        "Keating teaching approach"
+      ],
+      "representativeTopics": [
+        "Socratic teaching and self-evaluation"
+      ]
+    }
+  ],
+  "families": [
+    {
+      "familyHash": "ca8d79d71557fbb6c605205ca55a683e69e78b3408333f2749cce65cf1fdfcb3",
+      "anchorSessionHash": "747c4cb2b9cd03012a171b777ed958554df6604d78134e2869767f1ac9eb2701",
+      "sessionHashes": [
+        "747c4cb2b9cd03012a171b777ed958554df6604d78134e2869767f1ac9eb2701",
+        "e17f4888c5394ff35b6c962d890ae638504560da636d9fb09f8a3cf1ee622a30",
+        "5579fa5235173b2c99986a24e161030868fdc2764bc30188a9eb0ef956da2732"
+      ],
+      "sessionCount": 3,
+      "included": true,
+      "subjectId": "business",
+      "topic": "Business registration",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "e298b99ec5085d967906199e43e260754019f0af101175a22d7765badbf0015f",
+      "anchorSessionHash": "3afc1a0a4428d9a1c4e1eaf71e22ef576a1bb882b4b1efaf6583a484306bb7cd",
+      "sessionHashes": [
+        "3afc1a0a4428d9a1c4e1eaf71e22ef576a1bb882b4b1efaf6583a484306bb7cd"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "humanities",
+      "topic": "Memory biases",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "d02d3bcbdceefa2a0330835c99c5197f38cb90cfe53362bdf9b2574d1094e26b",
+      "anchorSessionHash": "db1d29f4cb932630e35434a2b953ac45d8018d3a5f3a1623d671f380ecdc59b8",
+      "sessionHashes": [
+        "db1d29f4cb932630e35434a2b953ac45d8018d3a5f3a1623d671f380ecdc59b8"
+      ],
+      "sessionCount": 1,
+      "included": false,
+      "subjectId": null,
+      "topic": null,
+      "stage": null,
+      "exclusionReason": "greeting-or-workspace-check"
+    },
+    {
+      "familyHash": "9bc829f56da8601692dbd2758502335c75d5744c0c73bba91c23ba84375050d6",
+      "anchorSessionHash": "871b26073302d27a6ce4dc83fda4023215cd9476a26f5333b1c1bce2db0fbc38",
+      "sessionHashes": [
+        "871b26073302d27a6ce4dc83fda4023215cd9476a26f5333b1c1bce2db0fbc38"
+      ],
+      "sessionCount": 1,
+      "included": false,
+      "subjectId": null,
+      "topic": null,
+      "stage": null,
+      "exclusionReason": "greeting-or-workspace-check"
+    },
+    {
+      "familyHash": "648e46c84c6eb98513965a0c4f5d0d7fc0b5e15d49f19d5925ee629ad7785235",
+      "anchorSessionHash": "1139f251655b82c232e17f455711ec4846b9ff7d0037029615df0ada17b1b3d1",
+      "sessionHashes": [
+        "1139f251655b82c232e17f455711ec4846b9ff7d0037029615df0ada17b1b3d1"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "business",
+      "topic": "Household budgeting",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "5b6e9c23ecc607388ce0130d8c630510633445cda206848b4c3f2d2198991afc",
+      "anchorSessionHash": "ea127753c995d4c6ab2cb775ae132f7ec502330f62728e3ebbb441d5f162c583",
+      "sessionHashes": [
+        "5cd416d85f5f32fdc3d2abd16bd9890c8077b6d6edae014790a0f3cef8f9b3d7",
+        "747c1212f41af09d5b759045aa87adaa124915f5fe322b527ef5670244b04378",
+        "ea127753c995d4c6ab2cb775ae132f7ec502330f62728e3ebbb441d5f162c583"
+      ],
+      "sessionCount": 3,
+      "included": true,
+      "subjectId": "business",
+      "topic": "Canadian lawmaking",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "04859fc31732905e15fb14ef410b07051841de322e660a8cbdac5f088f1fb25a",
+      "anchorSessionHash": "be5fe4c7f3255e7cafe89269f8d362e8dc69be0ad6addc2eea508714737165f6",
+      "sessionHashes": [
+        "ffd65df0f48eaeea8a2a68969b1e10d7be3a77d4d004ef2fff1a9bf15c2606e6",
+        "92eda056e51f4ee383c8b1fc12302a5bc09aef58b5012ce4bf11a54619b96c1c",
+        "80e8977ae5376391c311f8d29b05c1f3c22b41a96622b0fa38a0b55301f405cf",
+        "ec167b6b334bb637857f6425b5a22ca9065124c513629687930304ff7fdffbea",
+        "b89885da14e97524a9ddbe6015719fa453632c5d3ea8040ab13928a6c0647b6c",
+        "826c56f55b364edf3ee0cbd16761101784ca6fe620b2497eda3d75a3d9a68581",
+        "c50339e0cb9eb64750536db2addeeb87823f2edd58f3704e7152bf90a412f961",
+        "7ae1f52733ab45e138df762cfe56a781142f32d8fa21c5e832af9c92ab0d6290",
+        "7ffec0bae095b661a369686f72ea833bd2ffb42c624e783303be32254957af3e",
+        "be5fe4c7f3255e7cafe89269f8d362e8dc69be0ad6addc2eea508714737165f6",
+        "d34746a39475b7abe0596d93957542128254bde07e925f05a2b6b51dc7e3db21",
+        "02fec53bf0d76c8c3da570945ab3d6035d31a72a284e75177a1ef289583720e5",
+        "1d30c22109d43339a9cc0aa7db6b1be1550d56aa403ce04f3821cefb74988839"
+      ],
+      "sessionCount": 13,
+      "included": true,
+      "subjectId": "humanities",
+      "topic": "City formation",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "442ba2450033fb544d1594d2e13a08638926f50fafdf824bfe51d24265454ef9",
+      "anchorSessionHash": "170ebc479a7cd932479b403cbe50a0c57c6fe17071958bf03f5c65f0699ca3c4",
+      "sessionHashes": [
+        "170ebc479a7cd932479b403cbe50a0c57c6fe17071958bf03f5c65f0699ca3c4"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "science",
+      "topic": "Phylogenetic trees",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "408cf2f5efda81fc336236b320309c50aa770715d3c976dc504a1a99148b7a72",
+      "anchorSessionHash": "548ed21eea203297c87c40fc5fae5ae1af6a57c7e8241c554489cee7bd018bd6",
+      "sessionHashes": [
+        "548ed21eea203297c87c40fc5fae5ae1af6a57c7e8241c554489cee7bd018bd6"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "software",
+      "topic": "Specification-driven development",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "72daac7b6c64681bba04159bf2ce6ec8f6d79e6738b29f7f023807d79752496b",
+      "anchorSessionHash": "d7f8bd303b5933a26435134626e1013645ad6d635afc65824cecbd5a3c0a55a3",
+      "sessionHashes": [
+        "d7f8bd303b5933a26435134626e1013645ad6d635afc65824cecbd5a3c0a55a3"
+      ],
+      "sessionCount": 1,
+      "included": false,
+      "subjectId": null,
+      "topic": null,
+      "stage": null,
+      "exclusionReason": "greeting-or-workspace-check"
+    },
+    {
+      "familyHash": "d1500a6a5b3a72275b9f9c6bedeedca4e4cad0e36896e4392c185e92f035cb19",
+      "anchorSessionHash": "152719d5ced5f425f1a4b19d26fc88adf05022c9e72b2b3cc8a86a5b02f61213",
+      "sessionHashes": [
+        "152719d5ced5f425f1a4b19d26fc88adf05022c9e72b2b3cc8a86a5b02f61213"
+      ],
+      "sessionCount": 1,
+      "included": false,
+      "subjectId": null,
+      "topic": null,
+      "stage": null,
+      "exclusionReason": "greeting-or-workspace-check"
+    },
+    {
+      "familyHash": "d1d44edf0337387acccf8b3d77a467507547d9ba0245454a35ad27739c38be94",
+      "anchorSessionHash": "481545cfffbcb6c20baf7d3024ec87c5aebb5f91fac42a2ae466dd690fb615fe",
+      "sessionHashes": [
+        "481545cfffbcb6c20baf7d3024ec87c5aebb5f91fac42a2ae466dd690fb615fe"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "ai",
+      "topic": "Policy gradients",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "082f5964b39d6d1e0c46ea269c63fbca92cda3caf9d4ed9bc09a6cf351a44268",
+      "anchorSessionHash": "16a3b4f12c60a1115e666ce880ef83cdfaea10c3cab94cf2fd15349d10fac459",
+      "sessionHashes": [
+        "16a3b4f12c60a1115e666ce880ef83cdfaea10c3cab94cf2fd15349d10fac459"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "humanities",
+      "topic": "Free will",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "481fcdb0d06027c59c3acf0fd31561ca642006ae769bd89d8afa456e67fac8a3",
+      "anchorSessionHash": "ffd05a655e2c88ea34ba956a7d850995e887d7fa23e95d6b3c16ea31de66bb9d",
+      "sessionHashes": [
+        "ffd05a655e2c88ea34ba956a7d850995e887d7fa23e95d6b3c16ea31de66bb9d"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "software",
+      "topic": "Self-hosted application architecture",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "0900fe138b82100249fe32ec982df0918bb62725070c8a65d28fd9cad5d03d35",
+      "anchorSessionHash": "ce3708a9b0627ba098acc3c5e0a982bab6f59bcfbf7a15e42ff32ffde49bf6f6",
+      "sessionHashes": [
+        "ce3708a9b0627ba098acc3c5e0a982bab6f59bcfbf7a15e42ff32ffde49bf6f6",
+        "ee4c63e01befeda86e00a1297d84c1de6c8495bce9bcffb59fc539c3254f06c7"
+      ],
+      "sessionCount": 2,
+      "included": true,
+      "subjectId": "ai",
+      "topic": "Writing-evaluation models",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "b2d6dd1f0f6823b003e2fd734bbca8aaa10cb4087541f3c8f2c31942f82c6e13",
+      "anchorSessionHash": "c5901e29859e2f1cbf673e3938ea9eb7180ddcf0c9c5471d14f975723a30054d",
+      "sessionHashes": [
+        "c5901e29859e2f1cbf673e3938ea9eb7180ddcf0c9c5471d14f975723a30054d"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "arts",
+      "topic": "Jazz improvisation",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "ac9ad469c4893902181d644f5368085c1643d348920c6d2896b34de91800db0e",
+      "anchorSessionHash": "f1ff03f7727d12894a3ca3f5643bc3c56555ddb6609ecc77f3543c3a677df94f",
+      "sessionHashes": [
+        "f1ff03f7727d12894a3ca3f5643bc3c56555ddb6609ecc77f3543c3a677df94f",
+        "3f9646ae6b3c05a8f2b192b651256018302f66917f9a1f49a378da5e13bb4442"
+      ],
+      "sessionCount": 2,
+      "included": true,
+      "subjectId": "systems",
+      "topic": "Zero-trust networking",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "26237b524a8529fd4de0bfe2511d403d50499d33a7dda4aea8d0a392f8221f41",
+      "anchorSessionHash": "003260797ac7fd1fbf0df902dec9c355c9d1af7a05cc0120c2fadf50383058cf",
+      "sessionHashes": [
+        "003260797ac7fd1fbf0df902dec9c355c9d1af7a05cc0120c2fadf50383058cf"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "systems",
+      "topic": "OpenZiti capabilities",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "0377f4e37916e986885d2a6db90611febc17bb3349eff88d8ffaa414c9fbc0c6",
+      "anchorSessionHash": "472e251ae084702f827013e26b6843f1bdba712ff042e0f629f154c59ddf4a00",
+      "sessionHashes": [
+        "472e251ae084702f827013e26b6843f1bdba712ff042e0f629f154c59ddf4a00",
+        "51e661827460f10cd0fcf12f55d4148e6b66910110046512b8b16d0b2e3568f0",
+        "85368cb346afd86aa1d7b921e51481c32e34ee2ceb6e1e9bb63856aa71e28735",
+        "0bc6db529d126e573541ddc829ae859fbc53edcf3b1b8025f7e2e2b2ef57aae2"
+      ],
+      "sessionCount": 4,
+      "included": true,
+      "subjectId": "systems",
+      "topic": "Vulkan and OpenGL",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "a32458a02ef8c4cc1fd5f3a87a6a5cebc18400e50b3acd40315e9d98482f9e95",
+      "anchorSessionHash": "c35b000e6b862a54011a3d9fee443b2c8822ff19f31c84fdb53547371102ee4b",
+      "sessionHashes": [
+        "c35b000e6b862a54011a3d9fee443b2c8822ff19f31c84fdb53547371102ee4b"
+      ],
+      "sessionCount": 1,
+      "included": false,
+      "subjectId": null,
+      "topic": null,
+      "stage": null,
+      "exclusionReason": "project-access-repair-only"
+    },
+    {
+      "familyHash": "37e6ade2d53c596bce07ad39089de1e9af3670878bded58d2eba6bd944adefad",
+      "anchorSessionHash": "178a43bfdc780815586f0ba2b1b3bd80741475d93c61ac025ba11986cbdeb4c1",
+      "sessionHashes": [
+        "178a43bfdc780815586f0ba2b1b3bd80741475d93c61ac025ba11986cbdeb4c1",
+        "dab27c11978f18bce828d5d735becd8be9a35cad6509325a7f75a5febffba92c"
+      ],
+      "sessionCount": 2,
+      "included": true,
+      "subjectId": "software",
+      "topic": "Semantic code differencing",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "7736f48d6e4afb0802cef51da9fe6f1c5d7a2f88b6034ff0f2c08a67977004e5",
+      "anchorSessionHash": "712e8c51fa6eca636dd093479ccc155e09a5e68fb4e3136fe017250daa7ea754",
+      "sessionHashes": [
+        "712e8c51fa6eca636dd093479ccc155e09a5e68fb4e3136fe017250daa7ea754"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "systems",
+      "topic": "Application hosting and VM provisioning",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "f89ab8bacd917362ae21803c43f522d1888ca78536f5fbe5022757b16f146994",
+      "anchorSessionHash": "edc26cff17801704f2186adeb71c0c2a0103baf54ee56ea300a2caa1838ce04a",
+      "sessionHashes": [
+        "edc26cff17801704f2186adeb71c0c2a0103baf54ee56ea300a2caa1838ce04a"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "ai",
+      "topic": "Synthetic data generation",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "812b919ebb046670efc2afcf9cfb9b956a627d4074a4690fc377a6a8a9153d77",
+      "anchorSessionHash": "6fef233327d63f64adc80e86490cbf762970ad598ef305742205617db9827c1f",
+      "sessionHashes": [
+        "6fef233327d63f64adc80e86490cbf762970ad598ef305742205617db9827c1f",
+        "f474b80517c3072e416a63416ac86b41236fe78d1fbcdd225698ee993649d731"
+      ],
+      "sessionCount": 2,
+      "included": true,
+      "subjectId": "ai",
+      "topic": "AI compute economics",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "7c4319d0b3d90df66e4dccd576787a9140750707ea77f958d4e65dad5af8f527",
+      "anchorSessionHash": "6ad3deb6b8f0bfbe2d130038e8a82a7585fcaeb7210923ef85c7797103d79b97",
+      "sessionHashes": [
+        "6ad3deb6b8f0bfbe2d130038e8a82a7585fcaeb7210923ef85c7797103d79b97"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "systems",
+      "topic": "Email protocols and delivery",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "8a44d50be605f07cb1179e79d09efd98c22bc1732aa5710edc91ddcaab0c36f1",
+      "anchorSessionHash": "c7c3eda0dfcf295438910b9a9e5cc9b36483151e2288cb8a2c2ff4f74f806949",
+      "sessionHashes": [
+        "c7c3eda0dfcf295438910b9a9e5cc9b36483151e2288cb8a2c2ff4f74f806949"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "software",
+      "topic": "Keating application architecture",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "699d9e2d58477c2daf7efec43677eeb0c8a7475a6619662d711c6b7d1061c893",
+      "anchorSessionHash": "082d5f861d96d282eeba586c722978cefeb446edcf038313810fc11034349ec9",
+      "sessionHashes": [
+        "082d5f861d96d282eeba586c722978cefeb446edcf038313810fc11034349ec9"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "ai",
+      "topic": "AI inference providers",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "4dabf9e6fa3c9c42663a27cbadf401373aff501cbdbdb2a7dcce91f3a040d29f",
+      "anchorSessionHash": "07d1539d809b94585d84224bc18da60a432efe3f4c4401fc8fe4d0c531790271",
+      "sessionHashes": [
+        "07d1539d809b94585d84224bc18da60a432efe3f4c4401fc8fe4d0c531790271"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "ai",
+      "topic": "SwiReasoning revisit",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "1bb4ee62b8c119e0ace8ab6232d9469a0f332b40d65da2e1b18fbe25d92366c7",
+      "anchorSessionHash": "cac30431d04b9a272a75f0f6aa4eee775df39fb1b5663c646fcc3b4e7f3d5268",
+      "sessionHashes": [
+        "cac30431d04b9a272a75f0f6aa4eee775df39fb1b5663c646fcc3b4e7f3d5268"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "science",
+      "topic": "AI-designed protein binders",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "eb97b554a254034b22e3cbdaeef63d6f53ec7f512976bdd435535af9b35c4a6e",
+      "anchorSessionHash": "e67dade786485e0cf76c0d581b833328a40c4dc79b7abe12d109d4977a9e6c56",
+      "sessionHashes": [
+        "e67dade786485e0cf76c0d581b833328a40c4dc79b7abe12d109d4977a9e6c56"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "ai",
+      "topic": "Needle model and tensor foundations",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "b33f12311278e69d9e114dff8114d6fa816d90e40cc525ae9c2d9de78143b880",
+      "anchorSessionHash": "2ac228a281fd035777d2d0a1af2fe5d920e0b0330f9312e6148e7ac10fd4966b",
+      "sessionHashes": [
+        "2ac228a281fd035777d2d0a1af2fe5d920e0b0330f9312e6148e7ac10fd4966b"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "science",
+      "topic": "Antibodies and protein models",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "3f672f0cfce58bbc36af8126fff9b9982ed2ef96916170145385491f73b35fd3",
+      "anchorSessionHash": "9ce005734f24226b8ae05deaa58d7e6953861814c57e3de693079811aba3071c",
+      "sessionHashes": [
+        "9ce005734f24226b8ae05deaa58d7e6953861814c57e3de693079811aba3071c"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "ai",
+      "topic": "Latent and explicit reasoning",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "3c622cead95a4b59ecbe5777f643f66d8f6d097808f844d490ab2dd0a4647143",
+      "anchorSessionHash": "8d73562273f03b056408279a75c2ba9529262392b152a23f3174f0f59227fb5b",
+      "sessionHashes": [
+        "8d73562273f03b056408279a75c2ba9529262392b152a23f3174f0f59227fb5b"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "science",
+      "topic": "Quantum entanglement",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "461ed4321f2d35d2839a624f0b4ca35a6187561ade563e80c3fe85366dcc345f",
+      "anchorSessionHash": "b42ba3c8f41dc409d7b138ab98aee8cc0e3436a164edfdf9bf6bf28d5d8ebe4f",
+      "sessionHashes": [
+        "b42ba3c8f41dc409d7b138ab98aee8cc0e3436a164edfdf9bf6bf28d5d8ebe4f"
+      ],
+      "sessionCount": 1,
+      "included": false,
+      "subjectId": null,
+      "topic": null,
+      "stage": null,
+      "exclusionReason": "greeting-or-workspace-check"
+    },
+    {
+      "familyHash": "e43f67ea051fdb6c18f2431281b3a3c7be3f71f393eab0650d5cdea408596ddf",
+      "anchorSessionHash": "180571251f8aa772f409bb20279c9e1b01181329afc66871b2084a011824d266",
+      "sessionHashes": [
+        "180571251f8aa772f409bb20279c9e1b01181329afc66871b2084a011824d266"
+      ],
+      "sessionCount": 1,
+      "included": false,
+      "subjectId": null,
+      "topic": null,
+      "stage": null,
+      "exclusionReason": "greeting-or-workspace-check"
+    },
+    {
+      "familyHash": "c625982b2e8b7ab317981f7afe89b2df067a3b8e2b3b3a2759e4e60702d9d05d",
+      "anchorSessionHash": "6265a20e3294f7e8bb0e59fce28cd47354a615061880e7998a7664a498bb6216",
+      "sessionHashes": [
+        "6265a20e3294f7e8bb0e59fce28cd47354a615061880e7998a7664a498bb6216"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "ai",
+      "topic": "Laguna language models",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "00473de8e47468954aa4fcb556547effbbdc542b4dada433c8c20abd5a39dca8",
+      "anchorSessionHash": "2411403b5fbc1f3f2ea811b6d7110a8a4b022957d92032d56b7d2c143e3b1d90",
+      "sessionHashes": [
+        "2411403b5fbc1f3f2ea811b6d7110a8a4b022957d92032d56b7d2c143e3b1d90"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "ai",
+      "topic": "SDPO and continual learning",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "9498280737b8691b0b3e61d1bd70da1cbe1f4557db8c66fc91a2c14f9791dc57",
+      "anchorSessionHash": "65ed0a027c56fda2035cbc6bd1cfb257979bf5c26bbdafea4b1c9f2de8c707ca",
+      "sessionHashes": [
+        "65ed0a027c56fda2035cbc6bd1cfb257979bf5c26bbdafea4b1c9f2de8c707ca"
+      ],
+      "sessionCount": 1,
+      "included": false,
+      "subjectId": null,
+      "topic": null,
+      "stage": null,
+      "exclusionReason": "generic-tool-demo-without-learner-selected-subject"
+    },
+    {
+      "familyHash": "80a11f8d5d488422fea698f5a9efe1bac23d6d6cacaba6f51697214819b9998f",
+      "anchorSessionHash": "5ae8323bb771e9e3a497c16ca811732856d8af833c199d3d6f2003a32127ba95",
+      "sessionHashes": [
+        "5ae8323bb771e9e3a497c16ca811732856d8af833c199d3d6f2003a32127ba95"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "software",
+      "topic": "Guile debugging quiz request",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "062a8a3f7c2d4f4a7380ab8cde961fc04f7f7208433f598351a8448260ed1c9f",
+      "anchorSessionHash": "aeb6b900688001351069650ea277b687433ac29f65a42850ddb3fc436ff4dd48",
+      "sessionHashes": [
+        "aeb6b900688001351069650ea277b687433ac29f65a42850ddb3fc436ff4dd48",
+        "7a369d88c3d18abf866cfdc7268f031d9863dd622279eaa10afcc64d8930d0a6"
+      ],
+      "sessionCount": 2,
+      "included": true,
+      "subjectId": "software",
+      "topic": "Guile REPL debugging",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "7420720e8ec71703ad2193b7a06d5f898e6485bd7b87338052ff8464e14f187d",
+      "anchorSessionHash": "414a79cc50277b39715e195440f50264e9bb10486c3db1d4d8127ea167e98c0d",
+      "sessionHashes": [
+        "414a79cc50277b39715e195440f50264e9bb10486c3db1d4d8127ea167e98c0d"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "ai",
+      "topic": "Static embeddings",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "59da80cbc688afa2561b17880d34db6df162584b93f4366414222587eac9976a",
+      "anchorSessionHash": "669c332ad78c8b41560702bda242eeea73c9e97bb45cc3b36bc1bb5511070207",
+      "sessionHashes": [
+        "669c332ad78c8b41560702bda242eeea73c9e97bb45cc3b36bc1bb5511070207"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "software",
+      "topic": "Guix packaging",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "b6fae2b3078b6b46e3a74fa5eac0579596270f9d12ddd507668b87f74f3dad23",
+      "anchorSessionHash": "cc1357d5cfb46f3222a5002967581679edaf314646bcaab92a97410edd57cf8a",
+      "sessionHashes": [
+        "cc1357d5cfb46f3222a5002967581679edaf314646bcaab92a97410edd57cf8a",
+        "f8a806cf4f4d6973ee30ef83676c528cc2fa5163e58e01553bb86158ab101c0f"
+      ],
+      "sessionCount": 2,
+      "included": true,
+      "subjectId": "business",
+      "topic": "Product discovery and scope",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "9d9f60ae02b0965d3bf68f4dcc0fe88df59ebfa0e96d60f5ddc330a2f0487985",
+      "anchorSessionHash": "919b86244b5cbc0b6011c21e74894c988905637e4dedcdea01204494480bc64e",
+      "sessionHashes": [
+        "919b86244b5cbc0b6011c21e74894c988905637e4dedcdea01204494480bc64e"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "ai",
+      "topic": "Bradley-Terry ranking",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "d7b3c0ab78c9c739a629dc89c52b609ed64447595995a694cb5e1ba1983fd11a",
+      "anchorSessionHash": "1331c5e512de85b3bccf223196b33c5d1e0f745fcde3e15294b409e8d4f2a7bc",
+      "sessionHashes": [
+        "1331c5e512de85b3bccf223196b33c5d1e0f745fcde3e15294b409e8d4f2a7bc"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "systems",
+      "topic": "Bluetooth microcontrollers in C",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "ee192b1b4b3c6f280b8f8599c4a76b5cf0d333a6d4a575adf4019fba233043a9",
+      "anchorSessionHash": "6e64b6c2f1e25a679c398cca5d715bdc8548f6cf5737da94d20d2ae5b4d299bf",
+      "sessionHashes": [
+        "6e64b6c2f1e25a679c398cca5d715bdc8548f6cf5737da94d20d2ae5b4d299bf"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "software",
+      "topic": "Verifying generated backend code",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "75e489b179b5283fe197a2a87661038836553a242a3656554c88365ef322cfcd",
+      "anchorSessionHash": "d4843513473e26c642e80f992480b627582784928bc8a7a05c77ece8387d8395",
+      "sessionHashes": [
+        "d4843513473e26c642e80f992480b627582784928bc8a7a05c77ece8387d8395"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "software",
+      "topic": "TypeScript quality-tool comparison",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "883fa6aae8af1856d934615f4a66077ea5166a273514473807c01b07a57b1cba",
+      "anchorSessionHash": "bd23e1caa4af9da2264839a049f1a5121c5695b177ebe5a76bb27205d7f0ee90",
+      "sessionHashes": [
+        "bd23e1caa4af9da2264839a049f1a5121c5695b177ebe5a76bb27205d7f0ee90"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "arts",
+      "topic": "3D rigging",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "742f8c30e78ecb2d0410718dd25fe6f08a7642104690b71789c40c7785ef8820",
+      "anchorSessionHash": "5d2fdad72fa6c2ccec6ecc969472d2caf1aeea755a1d5f2d9a966b596b2cb88b",
+      "sessionHashes": [
+        "5d2fdad72fa6c2ccec6ecc969472d2caf1aeea755a1d5f2d9a966b596b2cb88b"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "pedagogy",
+      "topic": "Keating teaching approach",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "5e0e98e8b3bf77a40bce83dd07b789c56d20d28af8ebba781d5e3e7a6ef44cca",
+      "anchorSessionHash": "4acd46ec6fed1ff721bf72f72aced36bcba15a7eeb7da9d3002761027d0bfef1",
+      "sessionHashes": [
+        "4acd46ec6fed1ff721bf72f72aced36bcba15a7eeb7da9d3002761027d0bfef1"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "software",
+      "topic": "Electron and Tauri",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "723dbdc951d23e2c10f53f1e4ac5bd131d482a70b6e3ab1e7d58f60add31abda",
+      "anchorSessionHash": "9ec260d991d59b7be2af3444124e57d4010858353d5c7e6d4bf041ec77cc5535",
+      "sessionHashes": [
+        "9ec260d991d59b7be2af3444124e57d4010858353d5c7e6d4bf041ec77cc5535"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "pedagogy",
+      "topic": "Socratic teaching and self-evaluation",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "9b687fb91c18d099f7b0f02f2481e07163340433e06df666b7be28f7befabb5a",
+      "anchorSessionHash": "d072bda409201e3858d0dc90b825cf9431f8110186e7fea033d074afa5d0a692",
+      "sessionHashes": [
+        "d072bda409201e3858d0dc90b825cf9431f8110186e7fea033d074afa5d0a692"
+      ],
+      "sessionCount": 1,
+      "included": false,
+      "subjectId": null,
+      "topic": null,
+      "stage": null,
+      "exclusionReason": "greeting-or-workspace-check"
+    },
+    {
+      "familyHash": "ce4dc32d94ef2fbc3121e232874175e6320b26e58fcbda897752ab0b53b54a0e",
+      "anchorSessionHash": "a5250c7d75ae7d1e778b2d2da8f8e6ded5a93d996d944888d6cc03ab44e5caeb",
+      "sessionHashes": [
+        "a5250c7d75ae7d1e778b2d2da8f8e6ded5a93d996d944888d6cc03ab44e5caeb"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "arts",
+      "topic": "New York slang",
+      "stage": "opening-only",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "077c72203e42e855686314777bcb70859d8bcf34e8d74c8404182e5f5a39fcce",
+      "anchorSessionHash": "cf5ff290c328846c781091e2509c93e4a2ecf61435b06fc0d3ec7b6f4fbe79f1",
+      "sessionHashes": [
+        "cf5ff290c328846c781091e2509c93e4a2ecf61435b06fc0d3ec7b6f4fbe79f1"
+      ],
+      "sessionCount": 1,
+      "included": false,
+      "subjectId": null,
+      "topic": null,
+      "stage": null,
+      "exclusionReason": "greeting-or-workspace-check"
+    },
+    {
+      "familyHash": "1ff6e98f94990760ffa7bc98afa1e6f4ed4e83a25a7697f5d8d153b091fa543c",
+      "anchorSessionHash": "e6c3af84a2e1b07a4edeb2321f974725b68df6d17813744e06518a740fef8205",
+      "sessionHashes": [
+        "e6c3af84a2e1b07a4edeb2321f974725b68df6d17813744e06518a740fef8205"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "software",
+      "topic": "AI coding and compiler history",
+      "stage": "discussed",
+      "exclusionReason": null
+    },
+    {
+      "familyHash": "ee1cc61917b307657f17e78627becf798d4e5af710bdd0ae4bae3dc0e66c1bae",
+      "anchorSessionHash": "d7aa2d48521d31e4eb0bcddb2c7856fd9daab6c125714bde6e3b197aa8a40b2c",
+      "sessionHashes": [
+        "d7aa2d48521d31e4eb0bcddb2c7856fd9daab6c125714bde6e3b197aa8a40b2c"
+      ],
+      "sessionCount": 1,
+      "included": true,
+      "subjectId": "software",
+      "topic": "Functional-language selection",
+      "stage": "discussed",
+      "exclusionReason": null
+    }
+  ],
+  "lineage": {
+    "parentLinks": [
+      {
+        "childSessionHash": "e17f4888c5394ff35b6c962d890ae638504560da636d9fb09f8a3cf1ee622a30",
+        "parentSessionHash": "747c4cb2b9cd03012a171b777ed958554df6604d78134e2869767f1ac9eb2701"
+      },
+      {
+        "childSessionHash": "5579fa5235173b2c99986a24e161030868fdc2764bc30188a9eb0ef956da2732",
+        "parentSessionHash": "e17f4888c5394ff35b6c962d890ae638504560da636d9fb09f8a3cf1ee622a30"
+      },
+      {
+        "childSessionHash": "5cd416d85f5f32fdc3d2abd16bd9890c8077b6d6edae014790a0f3cef8f9b3d7",
+        "parentSessionHash": "747c1212f41af09d5b759045aa87adaa124915f5fe322b527ef5670244b04378"
+      },
+      {
+        "childSessionHash": "747c1212f41af09d5b759045aa87adaa124915f5fe322b527ef5670244b04378",
+        "parentSessionHash": "ea127753c995d4c6ab2cb775ae132f7ec502330f62728e3ebbb441d5f162c583"
+      },
+      {
+        "childSessionHash": "826c56f55b364edf3ee0cbd16761101784ca6fe620b2497eda3d75a3d9a68581",
+        "parentSessionHash": "be5fe4c7f3255e7cafe89269f8d362e8dc69be0ad6addc2eea508714737165f6"
+      },
+      {
+        "childSessionHash": "c50339e0cb9eb64750536db2addeeb87823f2edd58f3704e7152bf90a412f961",
+        "parentSessionHash": "826c56f55b364edf3ee0cbd16761101784ca6fe620b2497eda3d75a3d9a68581"
+      },
+      {
+        "childSessionHash": "7ae1f52733ab45e138df762cfe56a781142f32d8fa21c5e832af9c92ab0d6290",
+        "parentSessionHash": "826c56f55b364edf3ee0cbd16761101784ca6fe620b2497eda3d75a3d9a68581"
+      },
+      {
+        "childSessionHash": "7ffec0bae095b661a369686f72ea833bd2ffb42c624e783303be32254957af3e",
+        "parentSessionHash": "826c56f55b364edf3ee0cbd16761101784ca6fe620b2497eda3d75a3d9a68581"
+      },
+      {
+        "childSessionHash": "d34746a39475b7abe0596d93957542128254bde07e925f05a2b6b51dc7e3db21",
+        "parentSessionHash": "be5fe4c7f3255e7cafe89269f8d362e8dc69be0ad6addc2eea508714737165f6"
+      },
+      {
+        "childSessionHash": "02fec53bf0d76c8c3da570945ab3d6035d31a72a284e75177a1ef289583720e5",
+        "parentSessionHash": "be5fe4c7f3255e7cafe89269f8d362e8dc69be0ad6addc2eea508714737165f6"
+      },
+      {
+        "childSessionHash": "1d30c22109d43339a9cc0aa7db6b1be1550d56aa403ce04f3821cefb74988839",
+        "parentSessionHash": "be5fe4c7f3255e7cafe89269f8d362e8dc69be0ad6addc2eea508714737165f6"
+      },
+      {
+        "childSessionHash": "ee4c63e01befeda86e00a1297d84c1de6c8495bce9bcffb59fc539c3254f06c7",
+        "parentSessionHash": "ce3708a9b0627ba098acc3c5e0a982bab6f59bcfbf7a15e42ff32ffde49bf6f6"
+      },
+      {
+        "childSessionHash": "51e661827460f10cd0fcf12f55d4148e6b66910110046512b8b16d0b2e3568f0",
+        "parentSessionHash": "472e251ae084702f827013e26b6843f1bdba712ff042e0f629f154c59ddf4a00"
+      },
+      {
+        "childSessionHash": "dab27c11978f18bce828d5d735becd8be9a35cad6509325a7f75a5febffba92c",
+        "parentSessionHash": "178a43bfdc780815586f0ba2b1b3bd80741475d93c61ac025ba11986cbdeb4c1"
+      },
+      {
+        "childSessionHash": "f474b80517c3072e416a63416ac86b41236fe78d1fbcdd225698ee993649d731",
+        "parentSessionHash": "6fef233327d63f64adc80e86490cbf762970ad598ef305742205617db9827c1f"
+      },
+      {
+        "childSessionHash": "0bc6db529d126e573541ddc829ae859fbc53edcf3b1b8025f7e2e2b2ef57aae2",
+        "parentSessionHash": "472e251ae084702f827013e26b6843f1bdba712ff042e0f629f154c59ddf4a00"
+      },
+      {
+        "childSessionHash": "7a369d88c3d18abf866cfdc7268f031d9863dd622279eaa10afcc64d8930d0a6",
+        "parentSessionHash": "aeb6b900688001351069650ea277b687433ac29f65a42850ddb3fc436ff4dd48"
+      },
+      {
+        "childSessionHash": "f8a806cf4f4d6973ee30ef83676c528cc2fa5163e58e01553bb86158ab101c0f",
+        "parentSessionHash": "cc1357d5cfb46f3222a5002967581679edaf314646bcaab92a97410edd57cf8a"
+      }
+    ],
+    "selfParentSessionHashes": [
+      "ce3708a9b0627ba098acc3c5e0a982bab6f59bcfbf7a15e42ff32ffde49bf6f6"
+    ],
+    "exactHistoryJoins": [
+      {
+        "sessionHash": "ffd65df0f48eaeea8a2a68969b1e10d7be3a77d4d004ef2fff1a9bf15c2606e6",
+        "matchedSessionHash": "826c56f55b364edf3ee0cbd16761101784ca6fe620b2497eda3d75a3d9a68581",
+        "rule": "shared-dated-visible-history",
+        "sharedVisibleEvents": 23
+      },
+      {
+        "sessionHash": "92eda056e51f4ee383c8b1fc12302a5bc09aef58b5012ce4bf11a54619b96c1c",
+        "matchedSessionHash": "826c56f55b364edf3ee0cbd16761101784ca6fe620b2497eda3d75a3d9a68581",
+        "rule": "shared-dated-visible-history",
+        "sharedVisibleEvents": 23
+      },
+      {
+        "sessionHash": "80e8977ae5376391c311f8d29b05c1f3c22b41a96622b0fa38a0b55301f405cf",
+        "matchedSessionHash": "826c56f55b364edf3ee0cbd16761101784ca6fe620b2497eda3d75a3d9a68581",
+        "rule": "shared-dated-visible-history",
+        "sharedVisibleEvents": 23
+      },
+      {
+        "sessionHash": "ec167b6b334bb637857f6425b5a22ca9065124c513629687930304ff7fdffbea",
+        "matchedSessionHash": "826c56f55b364edf3ee0cbd16761101784ca6fe620b2497eda3d75a3d9a68581",
+        "rule": "shared-dated-visible-history",
+        "sharedVisibleEvents": 23
+      },
+      {
+        "sessionHash": "b89885da14e97524a9ddbe6015719fa453632c5d3ea8040ab13928a6c0647b6c",
+        "matchedSessionHash": "826c56f55b364edf3ee0cbd16761101784ca6fe620b2497eda3d75a3d9a68581",
+        "rule": "shared-dated-visible-history",
+        "sharedVisibleEvents": 23
+      },
+      {
+        "sessionHash": "85368cb346afd86aa1d7b921e51481c32e34ee2ceb6e1e9bb63856aa71e28735",
+        "matchedSessionHash": "472e251ae084702f827013e26b6843f1bdba712ff042e0f629f154c59ddf4a00",
+        "rule": "shared-dated-visible-history",
+        "sharedVisibleEvents": 39
+      },
+      {
+        "sessionHash": "3f9646ae6b3c05a8f2b192b651256018302f66917f9a1f49a378da5e13bb4442",
+        "matchedSessionHash": "f1ff03f7727d12894a3ca3f5643bc3c56555ddb6609ecc77f3543c3a677df94f",
+        "rule": "exact-ordered-visible-history-with-missing-timestamps",
+        "sharedVisibleEvents": 23
+      }
+    ]
+  },
+  "verification": {
+    "inputHashMatchesAggregates": true,
+    "inputHashUnchangedAfterRead": true,
+    "everySessionAccountedForExactlyOnce": true,
+    "everyFamilyAssignedExactlyOnce": true,
+    "subjectCountsSumToIncludedFamilies": true,
+    "stageCountsSumToIncludedFamilies": true
+  }
+}

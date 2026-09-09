@@ -190,3 +190,13 @@ export const Submitted: Story = {
 export const FilesAndCourse: Story = {
   args: { node: { type: "task", kind: "assignment", id: "files-and-course", title: "Submit your investigation", brief: "Attach your report and the data behind it. Save this task to the demo course to see its course presentation.", criteria: ["Claims cite evidence", "The source data is attached"], submission: { format: "text", label: "Summary of your findings" } } },
 };
+
+export const MandarinAnimalRecall: Story = {
+  args: { node: { type: "task", kind: "practice", id: "mandarin-animal-recall", title: "Ten animals in Mandarin", brief: "Name ten different animals in Mandarin. Replay your attempt, identify one uncertain word, and use it in a sentence on your next attempt.", criteria: ["Ten distinct animal names", "Notice uncertainty and choose one improvement"], submission: { format: "text", label: "What will you improve?", capture: { kind: "audio", timeLimitSeconds: 30 } } } },
+};
+export const ASLSignRecall: Story = {
+  args: { node: { type: "task", kind: "practice", id: "asl-sign-recall", title: "Ten signs, twenty seconds", brief: "Sign ten ASL signs you have already practised. Keep your face and hands in view. Turn off the timer to work on clarity first; compare your replay with your course reference.", criteria: ["Visible handshape, movement and facial expression", "Choose one sign to practise again"], submission: { format: "text", label: "What did your replay reveal?", capture: { kind: "video", timeLimitSeconds: 20 } } } },
+};
+export const DemonstrateAndExplain: Story = {
+  args: { node: { type: "task", kind: "practice", id: "demonstrate-a-lever", title: "Show how a lever works", brief: "Use a ruler and an eraser to demonstrate a lever. Predict what changes when you move the pivot, then show the change. Include the microphone if you want to explain aloud.", criteria: ["Make a prediction", "Show the result", "Explain one real-world application"], submission: { format: "text", label: "How did your observation compare with your prediction?", capture: { kind: "video" } } } },
+};

@@ -66,6 +66,7 @@ describe("provider-native web search injection", () => {
 
 	test("respects the off setting", () => {
 		store.set("keating_ui_settings", JSON.stringify({ webSearch: "off" }));
+		expect(applyProviderWebSearch({}, model("openai-codex", "gpt-5.3-codex-spark", "openai-codex-responses" as Api), true)).toBeUndefined();
 		expect(applyProviderWebSearch({}, model("openai", "gpt-5.5", "openai-responses" as Api), true)).toBeUndefined();
 		expect(applyProviderWebSearch({}, model("anthropic", "claude-sonnet-4-6", "anthropic-messages" as Api), true)).toBeUndefined();
 	});

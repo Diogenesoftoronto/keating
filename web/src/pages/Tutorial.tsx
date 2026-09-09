@@ -9,6 +9,8 @@ import { TutorialShot } from "../components/TutorialShot";
 import { TutorialSurfaceAtlas } from "../components/TutorialSurfaceAtlas";
 import PenNib from "reicon-react/icons/PenNib";
 import { KeatingIcon } from "../components/KeatingIcon";
+import { KeatingBot } from "../components/KeatingBot";
+import "./tutorial-mascot.css";
 
 type TutorialTab = "browser" | "ollama" | "llamacpp" | "litellm" | "cloud" | "advanced";
 
@@ -350,6 +352,9 @@ export function Tutorial() {
           <div className={cx(paperCard(), styles.heroCard)}>
             <div className={styles.heroGrid}>
               <div>
+                <div className="tutorial-mascot-hello" aria-hidden="true">
+                  <KeatingBot variant="body" state="waving" size={128} label="" />
+                </div>
                 <h1 className={styles.h1}>Getting Started with Keating</h1>
                 <p className={cx("font-terminal", styles.muted)}>
                   How to learn, plan, assess, and choose the right room for the work.
@@ -361,25 +366,25 @@ export function Tutorial() {
                 aria-label="Real Keating classroom, review, terminal, and training-export screens."
               >
                 <img
-                  src="/tutorial/classroom-openui.png"
+                  src="/tutorial/classroom-openui.avif"
                   alt="Keating classroom showing an interactive question card."
                   className={styles.heroCollageImage}
                   decoding="async"
                 />
                 <img
-                  src="/tutorial/review-workspace.png"
+                  src="/tutorial/review-workspace.avif"
                   alt="Keating Review with its contents list and transcript visible while the margin is collapsed at the right edge."
                   className={styles.heroCollageImage}
                   decoding="async"
                 />
                 <img
-                  src="/tutorial/tui-startup-logo.png"
+                  src="/tutorial/tui-startup-logo.avif"
                   alt="Keating terminal first-run screen with the complete raster logo and profile-setup prompt."
                   className={styles.heroCollageImage}
                   decoding="async"
                 />
                 <img
-                  src="/tutorial/usage-training-export.png"
+                  src="/tutorial/usage-training-export.avif"
                   alt="Keating Usage screen configured to export review data for training."
                   className={styles.heroCollageImage}
                   decoding="async"
@@ -575,45 +580,52 @@ export function Tutorial() {
           </section>
 
           <section id="terminal-onboarding" className={cx(paperCard(), styles.section)}>
-            <h2 className={styles.h2}>Make the Terminal Yours</h2>
-            <p className={styles.paraSmallMb4}>
-              Run <code className={styles.inlineCode}>keating tui</code>. On a first launch, the
-              complete Keating lockup stays on screen until you are ready. Press <strong>Enter</strong>{" "}
-              to set up your profile, or type a real question to start immediately.
-            </p>
+            <div className="tutorial-mascot-heading">
+              <div>
+                <h2 className={styles.h2}>Make the Terminal Yours</h2>
+                <p className={styles.paraSmallMb4}>
+                  Run <code className={styles.inlineCode}>keating tui</code>. On a first launch, the
+                  complete Keating lockup stays on screen until you are ready. Press <strong>Enter</strong>{" "}
+                  to set up your profile, or type a real question to start immediately.
+                </p>
+              </div>
+              <span className="tutorial-mascot-companion" aria-hidden="true">
+                <KeatingBot variant="body" state="coding" size={104} label="" />
+              </span>
+            </div>
             <div className={styles.terminalShotGrid}>
               <TutorialShot
-                src="/tutorial/tui-startup-logo.png"
+                src="/tutorial/tui-startup-logo.avif"
                 slate="TUI · FIRST FRAME"
                 alt="Keating terminal startup with the complete green raster logo and a prompt to set a name and profile image."
                 caption="The full lockup is a deliberate first screen on terminals with room; smaller terminals use a compact KEATING mark instead of clipping it."
               />
               <TutorialShot
-                src="/tutorial/tui-startup-compact.png"
+                src="/tutorial/tui-startup-compact.avif"
                 slate="TUI · COMPACT"
                 alt="Narrow Keating terminal startup with a compact green KEATING mark and the complete first-run actions."
                 caption="At roughly 80 columns, the mark contracts while the two useful paths remain visible: Enter starts profile setup, or typing starts a lesson."
               />
               <TutorialShot
-                src="/tutorial/tui-onboarding-name.png"
+                src="/tutorial/tui-onboarding-name.avif"
                 slate="PROFILE · NAME"
                 alt="Opaque Keating terminal dialog asking for the learner name shown beside messages."
                 caption="Enter the name Keating should use beside your messages. The dialog points back to /setup so the choice is never permanent."
               />
               <TutorialShot
-                src="/tutorial/tui-onboarding-avatar.png"
+                src="/tutorial/tui-onboarding-avatar.avif"
                 slate="PROFILE · IMAGE"
                 alt="Opaque Keating terminal profile-image picker with built-in portrait, initials, local image, and keep-current options."
                 caption="Choose the built-in portrait, initials, a local image, or keep the current image. The highlighted row is both keyboard- and mouse-selectable."
               />
               <TutorialShot
-                src="/tutorial/tui-onboarding-custom-avatar.png"
+                src="/tutorial/tui-onboarding-custom-avatar.avif"
                 slate="PROFILE · LOCAL FILE"
                 alt="Opaque Keating terminal input for a local PNG, JPEG, GIF, BMP, or TIFF profile image path."
                 caption="Local images are read by the TUI, rasterized into its four-column portrait slot, and never uploaded by this flow."
               />
               <TutorialShot
-                src="/tutorial/tui-onboarding-complete.png"
+                src="/tutorial/tui-onboarding-complete.avif"
                 slate="TUI · READY"
                 alt="Completed Keating terminal setup showing Mina's saved portrait and the visible Profile action in the side panel."
                 caption="Change the name or image later with /setup, or open [S] PROFILE in the Ctrl+B side panel. Setup also continues through provider, model, thinking, and runtime choices."
@@ -663,7 +675,7 @@ export function Tutorial() {
                   microphone, and custom learning controls.
                 </p>
                 <TutorialShot
-                  src="/tutorial/settings-learning-about-you.png"
+                  src="/tutorial/settings-learning-about-you.avif"
                   slate="SETTINGS · LEARNING"
                   alt="Settings open to Learning and About You, with the optional learner-context field empty."
                   caption="About You is explicit, editable context. It persists locally, then travels with a hosted-model request when used."
@@ -805,7 +817,7 @@ export function Tutorial() {
                   privacy choice.
                 </p>
                 <TutorialShot
-                  src="/tutorial/settings-privacy-diagnostics.png"
+                  src="/tutorial/settings-privacy-diagnostics.avif"
                   slate="SETTINGS · PRIVACY"
                   alt="App privacy settings showing anonymous analytics enabled while session replay and Arize evaluation are unavailable."
                   caption="The visible state matters: analytics is on here, while replay and evaluation sharing are unavailable and off."
@@ -834,7 +846,7 @@ export function Tutorial() {
             </p>
 
             <TutorialShot
-              src="/tutorial/review-index.png"
+              src="/tutorial/review-index.avif"
               slate="START · INDEX"
               alt="The live Review index with local-session search and the cross-review pattern panel."
               caption="A clean browser starts empty; completed teaching sessions appear here without being uploaded."
@@ -848,7 +860,7 @@ export function Tutorial() {
             </p>
 
             <TutorialShot
-              src="/tutorial/review-reading.png"
+              src="/tutorial/review-reading.avif"
               slate="READ · FOCUS"
               alt="A focused Review transcript showing a learner message, tutor response, and tool result."
               caption="The focused reading view keeps the original teaching record intact before you add judgement."
@@ -863,7 +875,7 @@ export function Tutorial() {
             </p>
 
             <TutorialShot
-              src="/tutorial/review-workspace.png"
+              src="/tutorial/review-workspace.avif"
               slate="NAVIGATE"
               alt="The review workspace with its turn list on the left, transcript in the middle, and collapsed margin control at the right edge."
               caption="Select a turn in Contents to mark it; this capture keeps the Margin folded away so the transcript has more room."
@@ -894,7 +906,7 @@ export function Tutorial() {
             </ol>
 
             <TutorialShot
-              src="/tutorial/review-selection-menu.png"
+              src="/tutorial/review-selection-menu.avif"
               slate="SELECT TEXT"
               ratio="1062 / 300"
               alt="Highlighted transcript text with the Problem, Strength, Suggestion, and Rewrite action bar."
@@ -902,7 +914,7 @@ export function Tutorial() {
             />
 
             <TutorialShot
-              src="/tutorial/review-annotation.png"
+              src="/tutorial/review-annotation.avif"
               slate="WRITE NOTE"
               alt="The Margin showing a new whole-turn annotation with signal choices, the required rationale field, and optional category, severity, impact, and alternative controls."
               caption="This capture is a whole-turn draft: choose a signal and explain why it matters, then add optional detail only when it helps."
@@ -946,7 +958,7 @@ export function Tutorial() {
             </div>
 
             <TutorialShot
-              src="/tutorial/review-socratic-pass.png"
+              src="/tutorial/review-socratic-pass.avif"
               slate="RUN A PASS"
               alt="The Socratic pass menu with controls to read the session and score the rubric."
               caption="Choose the pass deliberately: read the session for anchored notes, or score the rubric for six cited dimensions."
@@ -961,7 +973,7 @@ export function Tutorial() {
             </p>
 
             <TutorialShot
-              src="/tutorial/review-rubric.png"
+              src="/tutorial/review-rubric.avif"
               slate="ASSESS"
               alt="The Assess tab in Draft status with an Undecided verdict, zero of six rubric dimensions completed, and one-to-five score controls."
               caption="The captured rubric is still Draft at 0/6; scoring each dimension is what moves it toward a finished review."
@@ -976,7 +988,7 @@ export function Tutorial() {
             </p>
 
             <TutorialShot
-              src="/tutorial/review-raw-tools.png"
+              src="/tutorial/review-raw-tools.avif"
               slate="INSPECT"
               alt="A tutor response with Raw selected and a visible Tool call: Question header marked Failed."
               caption="This frame exposes the raw Markdown and the failed call header in place; it does not show an expanded tool result."
@@ -991,21 +1003,21 @@ export function Tutorial() {
             </p>
 
             <TutorialShot
-              src="/tutorial/review-model-pools.png"
+              src="/tutorial/review-model-pools.avif"
               slate="CONFIGURE"
               alt="The Model pools editor with pool name, candidate count, temperature, token limit, and generation tasks."
               caption="A pool is an explicit comparison recipe: choose candidates, sampling limits, and the teaching tasks each model should attempt."
             />
 
             <TutorialShot
-              src="/tutorial/review-model-results-empty.png"
+              src="/tutorial/review-model-results-empty.avif"
               slate="GENERATE"
               alt="The Model results tab before generation, with a pool selector and Generate button."
               caption="The empty state says exactly what will be sent and waits for you to start the comparison."
             />
 
             <TutorialShot
-              src="/tutorial/review-model-results.png"
+              src="/tutorial/review-model-results.avif"
               slate="COMPARE"
               alt="Three MiniMax-M2.7 candidate rows all marked Running while tutor-response generation is in progress."
               caption="This pool is a three-candidate MiniMax run in progress; each row exposes its own Running state before any response is available to choose."
@@ -1019,7 +1031,7 @@ export function Tutorial() {
             </p>
 
             <TutorialShot
-              src="/tutorial/review-export.png"
+              src="/tutorial/review-export.avif"
               slate="EXPORT"
               alt="Review after exporting its archive, with the browser download confirmation visible."
               caption="Export preserves the transcript, annotations, rubric, and selected model work as a portable review archive."
@@ -1099,6 +1111,15 @@ export function Tutorial() {
             className={cx(paperCard(), styles.tabsShell)}
             style={{ opacity: isTabPending ? 0.72 : 1, transition: "opacity 120ms ease-out" }}
           >
+            <div className="tutorial-mascot-heading tutorial-mascot-model-heading">
+              <div>
+                <h2 className={styles.h2Tight}>Choose Your Model Setup</h2>
+                <p className={styles.mutedSmall}>Start in the browser, connect a local runner, or use a cloud provider.</p>
+              </div>
+              <span className="tutorial-mascot-companion" aria-hidden="true">
+                <KeatingBot variant="body" state={activeTab === "browser" || activeTab === "cloud" ? "reading" : "coding"} size={104} label="" />
+              </span>
+            </div>
             <div
               className={styles.tabList}
               role="tablist"
@@ -1556,7 +1577,7 @@ export function Tutorial() {
                     <p className={styles.textCream}>Open Training data → Prepare dataset → Download dataset ZIP</p>
                   </div>
                   <TutorialShot
-                    src="/tutorial/usage-training-export.png"
+                    src="/tutorial/usage-training-export.avif"
                     slate="DIRECT CAPTURE"
                     alt="The Usage page Training data export panel with Both formats, All sources, minimum assistant length 80, secret redaction on, and judge scoring off."
                     caption="This is the training ZIP exporter, not the usage dashboard: choose format, source, length threshold, and redaction before exporting."

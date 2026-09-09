@@ -19,10 +19,6 @@ const sectionTitleClass = css({
 	color: "var(--foreground)",
 });
 const sectionDescriptionClass = css({
-	borderRadius: "0.375rem",
-	border: "1px solid var(--border)",
-	backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)",
-	padding: "0.75rem",
 	fontSize: "0.875rem",
 	lineHeight: "1.5rem",
 	color: "var(--muted-foreground)",

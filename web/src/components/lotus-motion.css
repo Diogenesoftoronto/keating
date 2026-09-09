@@ -1,0 +1,8 @@
+/* Motion comes from the eight generated lotus poses in KeatingBot. */
+.landing-teacher-scene__lotus { width: 270px; height: 270px; max-width: 90%; }
+.journey-lotus-sprite { width: min(100%, 320px); aspect-ratio: 1; margin-inline: auto; position: relative; }
+.landing-teacher-scene__lotus > .keating-bot,
+.journey-lotus-sprite > .keating-bot { width: 100%; height: 100%; }
+@media (max-width: 600px) {
+  .landing-teacher-scene__lotus { width: 225px; height: 225px; }
+}

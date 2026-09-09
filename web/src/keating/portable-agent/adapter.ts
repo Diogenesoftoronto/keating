@@ -2,6 +2,7 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import {
   assertJsonValue,
   cloneJson,
+  PORTABLE_TOOL_NAMES,
   type AgentRenderResult,
   type DataEvent,
   type JsonValue,
@@ -151,7 +152,7 @@ export class BrowserPortableAgentAdapter {
   private createActivateSkillTool(skills: readonly SkillDefinition[]): AgentTool {
     const byName = new Map(skills.map((skill) => [skill.name, skill]));
     return createPiTool(
-      "activate_skill",
+      PORTABLE_TOOL_NAMES.activateSkill,
       "Load one available skill's complete instructions before using it.",
       {
         type: "object",
@@ -180,7 +181,7 @@ export class BrowserPortableAgentAdapter {
   private createReadSkillResourceTool(skills: readonly SkillDefinition[]): AgentTool {
     const byName = new Map(skills.map((skill) => [skill.name, skill]));
     return createPiTool(
-      "read_skill_resource",
+      PORTABLE_TOOL_NAMES.readSkillResource,
       "Read one resource from an already activated portable skill.",
       {
         type: "object",
@@ -208,7 +209,7 @@ export class BrowserPortableAgentAdapter {
   private createDelegationTool(frame: AgentRenderResult): AgentTool {
     const byName = new Map(frame.subagents.map((subagent) => [subagent.name, subagent]));
     return createPiTool(
-      "task",
+      PORTABLE_TOOL_NAMES.task,
       "Delegate a focused task to a portable subagent running in a fresh context.",
       {
         type: "object",
@@ -337,13 +338,13 @@ function composeSystemPrompt(frame: AgentRenderResult, connections: readonly Res
   const sections = [frame.system];
   if (frame.skills.length) {
     sections.push([
-      "Available portable skills (load one with activate_skill only when needed):",
+      `Available portable skills (load one with ${PORTABLE_TOOL_NAMES.activateSkill} only when needed):`,
       ...frame.skills.map((skill) => `- ${skill.name}: ${skill.description}`),
     ].join("\n"));
   }
   if (frame.subagents.length) {
     sections.push([
-      "Available fresh-context delegates (invoke through task):",
+      `Available fresh-context delegates (invoke through ${PORTABLE_TOOL_NAMES.task}):`,
       ...frame.subagents.map((subagent) => `- ${subagent.name}: ${subagent.description}`),
     ].join("\n"));
   }

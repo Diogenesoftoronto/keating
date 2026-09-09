@@ -1,0 +1,444 @@
+{
+  "schema_version": 1,
+  "status": "agent-authored-development-cases",
+  "id": "teaching-v3-natural-context-pairs",
+  "description": "Four five-turn episodes in two context contrasts. Pair labels and reviewer material must remain outside tutor requests. Fixed later messages are new learner evidence, not claims about an unseen generated reply.",
+  "cases": [
+    {
+      "id": "context-fractions-fragile",
+      "family": "context-fractions-fragile",
+      "category": "context_dependent_teaching",
+      "title": "Fraction addition after repeated unequal-part confusion",
+      "pair_id": "fraction-addition-context",
+      "contrast_condition": "fragile-current-reasoning",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "I’m measuring for a recipe. A third of a cup plus a quarter of a cup is two sevenths, right?"
+        },
+        {
+          "kind": "message",
+          "text": "On another one I got 1/2 + 1/3 = 2/5. I added the top numbers and then the bottom numbers."
+        },
+        {
+          "kind": "message",
+          "text": "I’m still lost. Two fifths looks smaller than a half, but I added more."
+        },
+        {
+          "kind": "message",
+          "text": "I put in two quarter-cup scoops. I wrote 2/8 cup because there are two fours."
+        },
+        {
+          "kind": "message",
+          "text": "Can we do one more?"
+        }
+      ],
+      "rubric": [
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses adding denominators or incorrectly rejects a valid fraction or explanation.",
+            "1": "Gets numerical answers right but gives an ambiguous account of equal units, or misses an explicitly stated faulty rule.",
+            "2": "Uses correct sums and distinguishes counting equal-sized parts from changing their size; credits valid equivalent reasoning and supports any correction with a sound explanation."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "use_of_later_feedback",
+          "criteria": {
+            "0": "Ignores the expressed confusion or treats the size contradiction as irrelevant.",
+            "1": "Acknowledges confusion but repeats an abstract rule without using the learner’s actual difficulty.",
+            "2": "Uses the learner’s size observation and/or physical scoops to make the unresolved issue easier to reason about, with manageable help or a focused clarifying question."
+          },
+          "evidence_steps": [
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "contextual_next_move",
+          "criteria": {
+            "0": "Treats the final request as evidence of mastery, leaps to substantially harder work without support, or only repeats encouragement.",
+            "1": "Offers a relevant next problem but provides weak support for the demonstrated equal-part confusion.",
+            "2": "Chooses a manageable next move connected to equal-sized parts: a short worked contrast, supported example, focused check or clarification; leaves a feasible route to learner reasoning without withholding needed help."
+          },
+          "evidence_steps": [
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "All amounts in these examples use the same cup as the unit. Denominators specify equal-sized parts of that same unit.",
+          "1/3 + 1/4 = 4/12 + 3/12 = 7/12, not 2/7.",
+          "1/2 + 1/3 = 3/6 + 2/6 = 5/6, not 2/5. The sum of positive 1/2 and 1/3 must exceed 1/2.",
+          "1/4 + 1/4 = 2/4 = 1/2, not 2/8. Two quarter-cup scoops fill half a cup.",
+          "1/2 + 3/4 = 2/4 + 3/4 = 5/4 = 1 and 1/4 cups. An amount above one cup is possible."
+        ],
+        "observable_evidence": [
+          {
+            "after_learner_step": 0,
+            "evidence": "The learner proposes an incorrect sum; no reason or prior support preference is established yet."
+          },
+          {
+            "after_learner_step": 1,
+            "evidence": "The learner explicitly states numerator-plus-denominator addition on a new example."
+          },
+          {
+            "after_learner_step": 2,
+            "evidence": "The learner reports continued confusion and notices a useful size contradiction; later wrong work is not yet available."
+          },
+          {
+            "after_learner_step": 3,
+            "evidence": "The learner has a concrete two-scoop situation but still changes the denominator when counting equal parts."
+          },
+          {
+            "after_learner_step": 4,
+            "evidence": "The final request permits another example; the available evidence still supports help with equal parts, not presumed fluency."
+          }
+        ],
+        "unwarranted_learner_beliefs": [
+          "The condition label is evaluator metadata, not a learner diagnosis or proof of stable ability.",
+          "A scripted correct answer does not establish that the preceding tutor caused learning, independent retention, or future transfer.",
+          "Judge each tutor response using only the history available at that step; do not penalize failure to predict later scripted feedback.",
+          "No unseen tutor wording or task is assumed by the learner script. If a tutor asks a different question, these later messages are fresh learner evidence, not invented answers to that question."
+        ],
+        "acceptable_variation": "Accept mathematically sound paraphrases, concrete examples, diagrams described in words, useful canonical terminal activities, or a short relevant clarification. No required tutor phrase, exact next problem, mandatory quiz, or fixed pedagogy sequence. An activity must add a useful reasoning opportunity; UI syntax or echoing the learner alone earns no teaching credit."
+      },
+      "state_checks": []
+    },
+    {
+      "id": "context-fractions-fluent",
+      "family": "context-fractions-fluent",
+      "category": "context_dependent_teaching",
+      "title": "Fraction addition after explained and checked sums",
+      "pair_id": "fraction-addition-context",
+      "contrast_condition": "fluent-current-reasoning",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "I’m measuring for a recipe. A third of a cup plus a quarter is 7/12 cup: four twelfths and three twelfths."
+        },
+        {
+          "kind": "message",
+          "text": "On another one I got 1/2 + 1/3 = 5/6. I changed both amounts to sixths so the pieces match."
+        },
+        {
+          "kind": "message",
+          "text": "I checked it against a half. Five sixths is bigger, which makes sense because I added a positive amount."
+        },
+        {
+          "kind": "message",
+          "text": "For half a cup plus three quarters I get five quarters, so one full cup and a quarter left over."
+        },
+        {
+          "kind": "message",
+          "text": "Can we do one more?"
+        }
+      ],
+      "rubric": [
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses adding denominators or incorrectly rejects a valid fraction or explanation.",
+            "1": "Gets numerical answers right but gives an ambiguous account of equal units, or misses an explicitly stated faulty rule.",
+            "2": "Uses correct sums and distinguishes counting equal-sized parts from changing their size; credits valid equivalent reasoning and supports any correction with a sound explanation."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "recognition_of_reasoning",
+          "criteria": {
+            "0": "Calls the correct reasoning wrong or ignores the learner’s actual explanations in favor of an invented misconception.",
+            "1": "Acknowledges correct values but gives generic praise or re-teaches all basics without connecting to the reasoning shown.",
+            "2": "Recognizes the common-unit explanation and magnitude check specifically, using them to calibrate the amount of support rather than just echoing answers."
+          },
+          "evidence_steps": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "contextual_next_move",
+          "criteria": {
+            "0": "Repeats an already fully worked example with no new reasoning opportunity, invents a deficiency, or claims lasting mastery.",
+            "1": "Offers a relevant exercise but with little development beyond demonstrated work or unnecessary answer-bearing support.",
+            "2": "Offers a modest new application, extension or meaningful learner choice that builds on the demonstrated reasoning, with sufficient information and room for a learner attempt; a relevant clarification is also acceptable."
+          },
+          "evidence_steps": [
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "All amounts in these examples use the same cup as the unit. Denominators specify equal-sized parts of that same unit.",
+          "1/3 + 1/4 = 4/12 + 3/12 = 7/12, not 2/7.",
+          "1/2 + 1/3 = 3/6 + 2/6 = 5/6, not 2/5. The sum of positive 1/2 and 1/3 must exceed 1/2.",
+          "1/4 + 1/4 = 2/4 = 1/2, not 2/8. Two quarter-cup scoops fill half a cup.",
+          "1/2 + 3/4 = 2/4 + 3/4 = 5/4 = 1 and 1/4 cups. An amount above one cup is possible."
+        ],
+        "observable_evidence": [
+          {
+            "after_learner_step": 0,
+            "evidence": "A correct sum is accompanied by a common-unit explanation, but this alone does not establish lasting mastery."
+          },
+          {
+            "after_learner_step": 1,
+            "evidence": "A second correct example explains why the parts must match."
+          },
+          {
+            "after_learner_step": 2,
+            "evidence": "The learner supplies an appropriate learner-supplied magnitude check after a tutor response."
+          },
+          {
+            "after_learner_step": 3,
+            "evidence": "The learner correctly handles a sum above one whole and interprets it in cups."
+          },
+          {
+            "after_learner_step": 4,
+            "evidence": "The identical final request follows several sound explanations; a modest new application or extension is warranted, not a diagnosis of inability or guaranteed mastery."
+          }
+        ],
+        "unwarranted_learner_beliefs": [
+          "The condition label is evaluator metadata, not a learner diagnosis or proof of stable ability.",
+          "A scripted correct answer does not establish that the preceding tutor caused learning, independent retention, or future transfer.",
+          "Judge each tutor response using only the history available at that step; do not penalize failure to predict later scripted feedback.",
+          "No unseen tutor wording or task is assumed by the learner script. If a tutor asks a different question, these later messages are fresh learner evidence, not invented answers to that question."
+        ],
+        "acceptable_variation": "Accept mathematically sound paraphrases, concrete examples, diagrams described in words, useful canonical terminal activities, or a short relevant clarification. No required tutor phrase, exact next problem, mandatory quiz, or fixed pedagogy sequence. An activity must add a useful reasoning opportunity; UI syntax or echoing the learner alone earns no teaching credit."
+      },
+      "state_checks": []
+    },
+    {
+      "id": "context-loopbounds-fragile",
+      "family": "context-loopbounds-fragile",
+      "category": "context_dependent_teaching",
+      "title": "Loop bounds after repeated extra-index attempts",
+      "pair_id": "javascript-loopbounds-context",
+      "contrast_condition": "fragile-current-reasoning",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "My names are [\"Ada\", \"Bo\", \"Cy\"]. I used for (let i = 0; i <= names.length; i++) console.log(names[i]); Why is undefined after Cy?"
+        },
+        {
+          "kind": "message",
+          "text": "With just [\"Ada\"] I thought i = 1 should print the first name. That gave undefined too."
+        },
+        {
+          "kind": "message",
+          "text": "I’m still lost. Length 3 sounds like the last place should be 3."
+        },
+        {
+          "kind": "message",
+          "text": "Back on the three names, I changed the test to i <= 3, starting at 0. I still expected three names."
+        },
+        {
+          "kind": "message",
+          "text": "Can we do one more?"
+        }
+      ],
+      "rubric": [
+        {
+          "dimension": "code_correctness",
+          "criteria": {
+            "0": "Endorses the off-by-one access as a valid name, says a length-three array ends at index 3, or gives broken loop bounds.",
+            "1": "Repairs a particular bound but leaves an ambiguous explanation of index versus length or misses the explicit faulty reasoning.",
+            "2": "Explains correct zero-based access and exclusive length bound with traceable behavior; credits sound reasoning, and any proposed code also behaves correctly on its stated boundary cases."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "use_of_later_feedback",
+          "criteria": {
+            "0": "Ignores the learner’s confusion or endorses length as the final index.",
+            "1": "States the standard loop rule but does not connect it to the learner’s count-versus-position confusion.",
+            "2": "Uses the supplied names, one-item array or an equally concrete trace to distinguish count from index and responds constructively to continued confusion."
+          },
+          "evidence_steps": [
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "contextual_next_move",
+          "criteria": {
+            "0": "Moves to unrelated advanced code, assumes the misconception resolved without evidence, or merely repeats encouragement.",
+            "1": "Offers another loop but leaves the demonstrated index/count issue insufficiently supported.",
+            "2": "Chooses a small supported trace, worked contrast, focused check or clarification that targets the still-unresolved boundary; gives enough help for a meaningful next attempt."
+          },
+          "evidence_steps": [
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "JavaScript arrays of length n have element indexes 0 through n-1. Accessing names[n] on the ordinary arrays here yields undefined, not an extra name.",
+          "For names = [\"Ada\", \"Bo\", \"Cy\"], i = 0; i < names.length; i++ visits 0,1,2. i <= names.length also visits 3.",
+          "For a one-element array, i=0 with i<names.length visits index 0 once. For an empty array, the condition 0<0 is false, so there are zero iterations.",
+          "A loop starting at i=1 with i<names.length skips the first entry. On [\"Ada\",\"Bo\",\"Cy\"] it visits Bo then Cy; on a one-element array it visits none."
+        ],
+        "observable_evidence": [
+          {
+            "after_learner_step": 0,
+            "evidence": "The learner supplies an actual off-by-one loop and its extra undefined output."
+          },
+          {
+            "after_learner_step": 1,
+            "evidence": "The one-item example reveals confusion between first index and count."
+          },
+          {
+            "after_learner_step": 2,
+            "evidence": "The learner explicitly reports confusion and states the length-versus-last-index assumption."
+          },
+          {
+            "after_learner_step": 3,
+            "evidence": "The learner substitutes a literal bound without resolving inclusive versus exclusive endpoint behavior."
+          },
+          {
+            "after_learner_step": 4,
+            "evidence": "The final request follows an unresolved indexing misconception; a small concrete trace or supported attempt is appropriate."
+          }
+        ],
+        "unwarranted_learner_beliefs": [
+          "The condition label is evaluator metadata, not a learner diagnosis or proof of stable ability.",
+          "A scripted correct answer does not establish that the preceding tutor caused learning, independent retention, or future transfer.",
+          "Judge each tutor response using only the history available at that step; do not penalize failure to predict later scripted feedback.",
+          "No unseen tutor wording or task is assumed by the learner script. If a tutor asks a different question, these later messages are fresh learner evidence, not invented answers to that question."
+        ],
+        "acceptable_variation": "Accept mathematically sound paraphrases, concrete examples, diagrams described in words, useful canonical terminal activities, or a short relevant clarification. No required tutor phrase, exact next problem, mandatory quiz, or fixed pedagogy sequence. An activity must add a useful reasoning opportunity; UI syntax or echoing the learner alone earns no teaching credit."
+      },
+      "state_checks": []
+    },
+    {
+      "id": "context-loopbounds-fluent",
+      "family": "context-loopbounds-fluent",
+      "category": "context_dependent_teaching",
+      "title": "Loop bounds after explained one-item and empty cases",
+      "pair_id": "javascript-loopbounds-context",
+      "contrast_condition": "fluent-current-reasoning",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "My names are [\"Ada\", \"Bo\", \"Cy\"]. I used for (let i = 0; i < names.length; i++) console.log(names[i]); It prints Ada, Bo, Cy at indexes 0, 1, 2."
+        },
+        {
+          "kind": "message",
+          "text": "With just [\"Ada\"], index 0 runs once. At i = 1 the test fails because the length is 1."
+        },
+        {
+          "kind": "message",
+          "text": "I also tried an empty list. The test is 0 < 0, so the body never runs. That seems right."
+        },
+        {
+          "kind": "message",
+          "text": "To skip Ada I can start at i = 1 and keep i < names.length. Then I get Bo and Cy; a one-name list would print nothing."
+        },
+        {
+          "kind": "message",
+          "text": "Can we do one more?"
+        }
+      ],
+      "rubric": [
+        {
+          "dimension": "code_correctness",
+          "criteria": {
+            "0": "Endorses the off-by-one access as a valid name, says a length-three array ends at index 3, or gives broken loop bounds.",
+            "1": "Repairs a particular bound but leaves an ambiguous explanation of index versus length or misses the explicit faulty reasoning.",
+            "2": "Explains correct zero-based access and exclusive length bound with traceable behavior; credits sound reasoning, and any proposed code also behaves correctly on its stated boundary cases."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "recognition_of_reasoning",
+          "criteria": {
+            "0": "Rejects the valid traces or invents a misconception contradicted by the learner’s work.",
+            "1": "Acknowledges outputs but overlooks the demonstrated empty/single-item reasoning or restarts an unnecessary basic lecture.",
+            "2": "Recognizes the specific edge-case reasoning and uses it to calibrate support, without claiming unobserved mastery."
+          },
+          "evidence_steps": [
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "contextual_next_move",
+          "criteria": {
+            "0": "Only repeats the already solved trace, supplies a full answer with no meaningful new reasoning, or jumps far beyond the demonstrated prerequisites.",
+            "1": "Offers a relevant task but weakly builds on the boundary reasoning shown.",
+            "2": "Offers a modest loop-bound variation or practical application that builds on the supplied edge cases and leaves room for reasoning; a short clarification or choice among appropriate next tasks is also acceptable."
+          },
+          "evidence_steps": [
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "JavaScript arrays of length n have element indexes 0 through n-1. Accessing names[n] on the ordinary arrays here yields undefined, not an extra name.",
+          "For names = [\"Ada\", \"Bo\", \"Cy\"], i = 0; i < names.length; i++ visits 0,1,2. i <= names.length also visits 3.",
+          "For a one-element array, i=0 with i<names.length visits index 0 once. For an empty array, the condition 0<0 is false, so there are zero iterations.",
+          "A loop starting at i=1 with i<names.length skips the first entry. On [\"Ada\",\"Bo\",\"Cy\"] it visits Bo then Cy; on a one-element array it visits none."
+        ],
+        "observable_evidence": [
+          {
+            "after_learner_step": 0,
+            "evidence": "The learner provides a correct loop and ties its outputs to indexes."
+          },
+          {
+            "after_learner_step": 1,
+            "evidence": "A correct one-element trace explains termination using the strict bound."
+          },
+          {
+            "after_learner_step": 2,
+            "evidence": "The learner supplies a correct empty-array check after a tutor response."
+          },
+          {
+            "after_learner_step": 3,
+            "evidence": "The learner transfers the bound to skipping the first item and checks the one-element edge case."
+          },
+          {
+            "after_learner_step": 4,
+            "evidence": "The identical final request follows multiple explained boundary cases; a modest extension is supported, without proof of durable or universal programming ability."
+          }
+        ],
+        "unwarranted_learner_beliefs": [
+          "The condition label is evaluator metadata, not a learner diagnosis or proof of stable ability.",
+          "A scripted correct answer does not establish that the preceding tutor caused learning, independent retention, or future transfer.",
+          "Judge each tutor response using only the history available at that step; do not penalize failure to predict later scripted feedback.",
+          "No unseen tutor wording or task is assumed by the learner script. If a tutor asks a different question, these later messages are fresh learner evidence, not invented answers to that question."
+        ],
+        "acceptable_variation": "Accept mathematically sound paraphrases, concrete examples, diagrams described in words, useful canonical terminal activities, or a short relevant clarification. No required tutor phrase, exact next problem, mandatory quiz, or fixed pedagogy sequence. An activity must add a useful reasoning opportunity; UI syntax or echoing the learner alone earns no teaching credit."
+      },
+      "state_checks": []
+    }
+  ]
+}

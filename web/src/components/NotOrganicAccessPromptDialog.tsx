@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { KeyRound, X } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
 import { iconButton, primaryButton } from "../../styled-system/recipes";
@@ -15,12 +15,14 @@ import {
 import {
 	DEFAULT_NOTORGANIC_PACK_ID,
 	getNotOrganicPack,
+	type NotOrganicPack,
 	type NotOrganicPackId,
 } from "../notorganic-provider/packs";
 
 type NotOrganicPromptRequest = {
 	id: string;
 	packId?: NotOrganicPackId;
+	allowSignIn?: boolean;
 	resolve: (success: boolean) => void;
 };
 
@@ -35,9 +37,10 @@ function emitPromptChange() {
 }
 
 export async function hasNotOrganicProductSession(): Promise<boolean> {
-	if (!isNotOrganicFeatureEnabled()) return false;
-	if (notOrganicPublicClient()) return notOrganicPublicClient()?.getSession() !== null;
 	try {
+		const client = notOrganicPublicClient();
+		if (client) return client.getSession() !== null;
+		if (!isNotOrganicFeatureEnabled()) return false;
 		await getNotOrganicAccount();
 		return true;
 	} catch {
@@ -46,9 +49,10 @@ export async function hasNotOrganicProductSession(): Promise<boolean> {
 }
 
 export async function promptNotOrganicAccess(
-	options: { packId?: NotOrganicPackId; force?: boolean } = {},
+	options: { packId?: NotOrganicPackId; force?: boolean; allowSignIn?: boolean } = {},
 ): Promise<boolean> {
-	if (typeof window === "undefined" || !isNotOrganicFeatureEnabled()) return false;
+	if (typeof window === "undefined") return false;
+	if (!isNotOrganicFeatureEnabled() && !(options.allowSignIn && !options.packId)) return false;
 	if (!options.force && !options.packId && await hasNotOrganicProductSession()) return true;
 
 	activePrompt?.resolve(false);
@@ -56,6 +60,7 @@ export async function promptNotOrganicAccess(
 		activePrompt = {
 			id: crypto.randomUUID(),
 			packId: options.packId,
+			allowSignIn: options.allowSignIn,
 			resolve,
 		};
 		emitPromptChange();
@@ -76,6 +81,61 @@ function accountSummary(account: NotOrganicAccount, wallet: NotOrganicWallet): s
 		? `$${(wallet.balance_microusd / 1_000_000).toFixed(2)} available`
 		: "wallet connected";
 	return `${identity} · ${balance}`;
+}
+
+export interface NotOrganicAccessPanelProps {
+	loading?: boolean;
+	error?: string;
+	summary?: string;
+	connected?: boolean;
+	pack?: NotOrganicPack;
+	onConnect(): void;
+	onDismiss(): void;
+	onCheckout?(): void;
+}
+
+/** Native modal semantics keep keyboard focus here and make the page behind it inert. */
+export function NotOrganicAccessPanel({ loading = false, error, summary, connected = false, pack, onConnect, onDismiss, onCheckout }: NotOrganicAccessPanelProps) {
+	const dialog = useRef<HTMLDialogElement>(null);
+	const titleId = useId();
+	const descriptionId = useId();
+	// Capture before React mounts the autofocus button, not after it steals focus.
+	const [priorFocus] = useState(() => typeof document !== "undefined" && document.activeElement instanceof HTMLElement ? document.activeElement : null);
+	useEffect(() => {
+		const element = dialog.current;
+		element?.showModal();
+		return () => {
+			element?.close();
+			if (priorFocus?.isConnected) priorFocus.focus();
+		};
+	}, [priorFocus]);
+
+	return <dialog ref={dialog} aria-labelledby={titleId} aria-describedby={descriptionId}
+		onCancel={event => { event.preventDefault(); onDismiss(); }}
+		onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); onDismiss(); } }}
+		className={css({ width: "calc(100% - 2rem)", maxWidth: "28rem", maxHeight: "calc(100dvh - 2rem)", margin: "auto", padding: 0, borderRadius: "0.5rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", color: "var(--foreground)", boxShadow: "var(--shadow-xl)", overflowY: "auto", "&::backdrop": { backgroundColor: "color-mix(in srgb, var(--background) 70%, transparent)", backdropFilter: "blur(4px)" } })}>
+		<header className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", padding: "1rem", borderBottom: "1px solid var(--border)" })}>
+			<div className={css({ display: "flex", alignItems: "center", gap: "0.625rem" })}>
+				<KeyRound size={20} aria-hidden="true" className={css({ color: "var(--primary)" })} />
+				<h2 id={titleId} className={css({ fontSize: "1.125rem", fontWeight: 600 })}>{pack ? "Add Keating credits" : "Use Keating’s model"}</h2>
+			</div>
+			<button type="button" onClick={onDismiss} aria-label="Close account sign-in" className={cx(iconButton({ size: "md", tone: "ghost" }), css({ minWidth: "2.75rem", minHeight: "2.75rem" }))}><X size={18} aria-hidden="true" /></button>
+		</header>
+		<div className={css({ display: "flex", flexDirection: "column", gap: "1rem", padding: "1.25rem" })}>
+			<p id={descriptionId} className={css({ fontSize: "0.9375rem", lineHeight: 1.6 })}>{pack
+				? <>Add <strong>${pack.priceUsd}</strong> in Keating credits with your Not Organic account.</>
+				: <>Sign up or sign in to use <strong>Inkling Small</strong>, Keating’s default model. Your account is managed by Not Organic.</>}</p>
+			{summary && <p role="status" className={css({ fontSize: "0.875rem", overflowWrap: "anywhere" })}>{summary}</p>}
+			{error && <p role="alert" className={css({ fontSize: "0.875rem", color: "var(--destructive)", overflowWrap: "anywhere" })}>{error}</p>}
+			<div className={css({ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "0.75rem" })}>
+				<button type="button" onClick={onDismiss} className={css({ minHeight: "2.75rem", paddingInline: "1rem", borderRadius: "0.375rem", border: "1px solid var(--border)", fontSize: "0.875rem", cursor: "pointer", _hover: { backgroundColor: "var(--secondary)" } })}>Not now</button>
+				<button type="button" autoFocus className={cx(primaryButton(), css({ minHeight: "2.75rem", paddingInline: "1rem" }))} onClick={onConnect} disabled={loading}>
+					{loading ? "Connecting…" : connected ? (pack ? "Refresh wallet" : "Continue") : "Sign up / Sign in"}
+				</button>
+				{pack && onCheckout && <button type="button" className={cx(primaryButton(), css({ minHeight: "2.75rem", paddingInline: "1rem" }))} onClick={onCheckout} disabled={loading}>Continue to checkout</button>}
+			</div>
+		</div>
+	</dialog>;
 }
 
 export function NotOrganicAccessPromptDialog() {
@@ -102,27 +162,36 @@ export function NotOrganicAccessPromptDialog() {
 		setLoading(true);
 		setError("");
 		try {
-			if (notOrganicPublicClient() && !notOrganicPublicClient()?.getSession()) {
+			const client = notOrganicPublicClient();
+			if ((client && !client.getSession()) || (!client && request.allowSignIn)) {
 				await beginNotOrganicAuthorization(window.location.pathname);
+				return;
+			}
+			if (client && !request.packId) {
+				closeNotOrganicPrompt(true);
 				return;
 			}
 			const [account, wallet] = await Promise.all([
 				getNotOrganicAccount(),
 				getNotOrganicWallet(),
 			]);
-			setSummary(accountSummary(account, wallet));
-			if (!request.packId) closeNotOrganicPrompt(true);
+			if (activePrompt?.id === request.id) {
+				setSummary(accountSummary(account, wallet));
+				if (!request.packId) closeNotOrganicPrompt(true);
+			}
 		} catch (cause) {
-			setSummary("");
-			setError(cause instanceof Error ? cause.message : "Not Organic product session is unavailable.");
+			if (activePrompt?.id === request.id) {
+				setSummary("");
+				setError(cause instanceof Error ? cause.message : "Sign-in could not open. Please try again.");
+			}
 		} finally {
-			setLoading(false);
+			if (activePrompt?.id === request.id) setLoading(false);
 		}
 	};
 
 	const openCheckout = async () => {
 		if (!pack) return;
-		if (import.meta.env.VITE_NOTORGANIC_CHECKOUT_ENABLED !== "true") {
+		if (import.meta.env?.VITE_NOTORGANIC_CHECKOUT_ENABLED !== "true") {
 			window.location.assign(`/pricing?pack=${pack.id}`);
 			return;
 		}
@@ -139,63 +208,16 @@ export function NotOrganicAccessPromptDialog() {
 			if (!checkoutUrl || new URL(checkoutUrl).protocol !== "https:") throw new Error("Checkout could not be opened.");
 			window.location.assign(checkoutUrl);
 		} catch (cause) {
-			setError(cause instanceof Error ? cause.message : "Could not open Not Organic checkout.");
+			if (activePrompt?.id === request.id) setError(cause instanceof Error ? cause.message : "Could not open Not Organic checkout.");
 		} finally {
-			setLoading(false);
+			if (activePrompt?.id === request.id) setLoading(false);
 		}
 	};
 
-	return (
-		<div className={css({ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "color-mix(in srgb, var(--background) 70%, transparent)", padding: "1rem", backdropFilter: "blur(4px)" })}>
-			<div className={css({ width: "100%", maxWidth: "28rem", borderRadius: "0.5rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", boxShadow: "var(--shadow-xl)" })}>
-				<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border)", paddingInline: "1rem", paddingBlock: "0.75rem" })}>
-					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
-						<KeyRound size={16} className={css({ color: "var(--primary)" })} />
-						<h2 className={css({ fontSize: "0.875rem", fontWeight: 600 })}>Not Organic access</h2>
-					</div>
-					<button
-						type="button"
-						className={cx(iconButton({ size: "md", tone: "ghost" }), css({ _hover: { color: "var(--foreground)" } }))}
-						onClick={() => closeNotOrganicPrompt(false)}
-						aria-label="Close"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className={css({ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem" })}>
-					<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
-						Not Organic uses a short-lived, device-bound capability and shared wallet.
-						Its non-extractable signing key stays in this browser.
-					</p>
-					{pack && request.packId && (
-						<p className={css({ fontSize: "0.875rem" })}>
-							Add <strong>${pack.priceUsd}</strong> in hosted inference credits.
-						</p>
-					)}
-					{summary && <p className={css({ fontSize: "0.75rem" })}>{summary}</p>}
-					{error && <p className={css({ fontSize: "0.75rem", color: "var(--destructive)" })}>{error}</p>}
-					<div className={css({ display: "flex", justifyContent: "flex-end", gap: "0.5rem" })}>
-						<button
-							type="button"
-							className={css({ display: "inline-flex", height: "2.25rem", alignItems: "center", borderRadius: "0.375rem", backgroundColor: "var(--secondary)", paddingInline: "0.75rem", fontSize: "0.875rem", fontWeight: 500, _disabled: { opacity: 0.5 } })}
-							onClick={() => void refreshSession()}
-							disabled={loading}
-						>
-							{loading ? "Checking…" : notOrganicPublicClient()?.getSession() ? "Refresh wallet" : "Connect account"}
-						</button>
-						{request.packId && (
-							<button
-								type="button"
-								className={cx(primaryButton(), css({ paddingInline: "0.75rem" }))}
-								onClick={() => void openCheckout()}
-								disabled={loading}
-							>
-								{loading ? "Opening…" : "Continue to checkout"}
-							</button>
-						)}
-					</div>
-				</div>
-			</div>
-		</div>
-	);
+	let connected = false;
+	try { connected = !!notOrganicPublicClient()?.getSession(); } catch { /* Unavailable storage is signed out. */ }
+	return <NotOrganicAccessPanel key={request.id} pack={request.packId ? pack : undefined}
+		connected={connected} loading={loading} summary={summary} error={error}
+		onConnect={() => void refreshSession()} onCheckout={() => void openCheckout()}
+		onDismiss={() => closeNotOrganicPrompt(false)} />;
 }

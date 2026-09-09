@@ -57,7 +57,7 @@ import {
   verificationStatus
 } from "./verification.js";
 import { type VerificationResult } from "./types.js";
-import { loadLearnerState } from "./learner-state.js";
+import { ensureNamedLearnerState, loadLearnerState } from "./learner-state.js";
 import {
   generateImprovementArtifact,
   loadImprovementArchive,
@@ -116,6 +116,7 @@ async function observeEvaluation(
 
 export async function ensureProjectScaffold(cwd: string): Promise<void> {
   await ensureKeatingDirs(cwd);
+  await ensureNamedLearnerState(learnerStatePath(cwd));
   await ensureConfig(cwd);
   const policy = await loadPolicy(currentPolicyPath(cwd));
   await savePolicy(currentPolicyPath(cwd), policy ?? DEFAULT_POLICY);

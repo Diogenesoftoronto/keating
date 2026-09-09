@@ -4,7 +4,7 @@ import { useOutsideClick } from "../hooks/useOutsideClick";
 
 /**
  * Standard anchor + popup menu pattern. Replaces ~6 inline implementations
- * (SessionCard, ForkMapCard, SessionBrowserDesktop, Chat mobile menu,
+ * (SessionCard, SessionBrowserDesktop, Chat mobile menu,
  * CustomProvidersSection Add Provider dropdown, …) that each replicated
  * the same outside-click useEffect and menu DOM.
  *

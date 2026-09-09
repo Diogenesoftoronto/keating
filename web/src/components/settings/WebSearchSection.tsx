@@ -21,7 +21,7 @@ export function WebSearchSection({
 			<div>
 				<h3 className={sectionTitleClass}>Web Search</h3>
 				<p className={sectionDescriptionClass}>
-					Use Google Search grounding on Gemini, hosted <code>web_search</code> on OpenAI Responses models, and server-side search on Claude. When the active model has no search, Keating can use a configured OpenAI, Gemini, or Anthropic key as an auxiliary search provider.
+					Use native search with your Codex login, Google Search grounding on Gemini, hosted search on OpenAI Responses models, and server-side search on Claude. When the active model has no search, Keating can use a configured OpenAI, Gemini, or Anthropic key as an auxiliary search provider.
 				</p>
 			</div>
 			<div className={settingsCard({ tone: "subtle" })}>

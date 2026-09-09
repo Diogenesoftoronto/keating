@@ -8,7 +8,7 @@ export function taskToCourseAssignment(task: UiTaskNode, id: string, lessonId?: 
     taskItems: task.items?.map(({ id, title, detail }) => ({ id, title, detail })),
     dueAt: task.dueAt, availableFrom: task.availableFrom,
     estimatedHours: task.estimatedMinutes ? task.estimatedMinutes / 60 : undefined,
-    targetWords: task.submission?.targetWords, round: task.round, lessonId,
+    responseCapture: task.submission?.capture, targetWords: task.submission?.targetWords, round: task.round, lessonId,
   });
 }
 
@@ -20,6 +20,6 @@ export function courseAssignmentToTask(assignment: CourseAssignment): UiTaskNode
     dueAt: assignment.dueAt, availableFrom: assignment.availableFrom,
     estimatedMinutes: assignment.estimatedHours === undefined ? undefined : assignment.estimatedHours * 60,
     round: assignment.round,
-    submission: { format: "text", targetWords: assignment.targetWords },
+    submission: { format: "text", targetWords: assignment.targetWords, capture: assignment.responseCapture },
   };
 }

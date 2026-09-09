@@ -102,12 +102,14 @@ async function manifest(
 function requester(
 	handler: (path: string, init?: RequestInit) => Response | Promise<Response>,
 ): {
+	getSession: () => { scope: string } | null;
 	request: (path: string, init?: RequestInit) => Promise<Response>;
 	calls: Array<{ path: string; init?: RequestInit }>;
 } {
 	const calls: Array<{ path: string; init?: RequestInit }> = [];
 	return {
 		calls,
+		getSession: () => ({ scope: "evolution:read" }),
 		async request(path, init) {
 			calls.push({ path, init });
 			return handler(path, init);
@@ -163,6 +165,21 @@ function activeRequester(
 }
 
 describe("browser account-evolution transport", () => {
+	it("does not send evolution reads without the exact granted scope", async () => {
+		const signed = requester(() => Response.json({ ok: true }));
+		const transport = new AuthenticatedAccountEvolutionTransport(signed);
+		for (const scope of [null, "", "wallet:read usage:read", "evolution:read-all", "evolution:write"]) {
+			signed.getSession = () => scope === null ? null : { scope };
+			await expect(transport.json("/v1/evolution/active-revision?project_id=keating-account"))
+				.rejects.toMatchObject({ code: "missing-scope", status: 403 });
+		}
+		expect(signed.calls).toHaveLength(0);
+		signed.getSession = () => ({ scope: "wallet:read evolution:read usage:read" });
+		await expect(transport.json("/v1/evolution/active-revision?project_id=keating-account"))
+			.resolves.toEqual({ ok: true });
+		expect(signed.calls).toHaveLength(1);
+	});
+
 	it("confines every request to the authenticated Not Organic evolution surface", async () => {
 		const signed = requester(() => Response.json({ ok: true }));
 		const transport = new AuthenticatedAccountEvolutionTransport(signed);

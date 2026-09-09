@@ -83,11 +83,6 @@ function sanitizeOptionalString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
-function normalizeProvider(value: string | undefined): string | undefined {
-  if (value === "google-gemini-cli") return "google";
-  return value;
-}
-
 function sanitizeStringArray(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const seen = new Set<string>();
@@ -111,7 +106,7 @@ export async function loadKeatingConfig(cwd: string): Promise<KeatingConfig> {
     return {
       pi: {
         runtimePreference: sanitizeRuntimePreference(parsed.pi?.runtimePreference),
-        defaultProvider: normalizeProvider(sanitizeOptionalString(parsed.pi?.defaultProvider)) ?? DEFAULT_KEATING_CONFIG.pi.defaultProvider,
+        defaultProvider: sanitizeOptionalString(parsed.pi?.defaultProvider) ?? DEFAULT_KEATING_CONFIG.pi.defaultProvider,
         defaultModel: sanitizeOptionalString(parsed.pi?.defaultModel) ?? DEFAULT_KEATING_CONFIG.pi.defaultModel,
         defaultThinking: sanitizeOptionalString(parsed.pi?.defaultThinking) ?? DEFAULT_KEATING_CONFIG.pi.defaultThinking,
         ...(packages === undefined ? {} : { packages })

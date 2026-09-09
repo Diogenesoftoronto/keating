@@ -10,7 +10,7 @@ let wasmReady: Promise<void> | null = null;
 let fontBuffer: Uint8Array | null = null;
 
 async function readAsset(key: string): Promise<Uint8Array> {
-	const raw = (await useStorage("assets:server").getItemRaw(key)) as
+	const raw = (await useStorage("assets:keating-og").getItemRaw(key)) as
 		| ArrayBuffer
 		| Uint8Array
 		| null;

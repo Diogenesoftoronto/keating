@@ -1,3 +1,4 @@
+import { desktopNativeResponse, isDesktopNativeRuntime } from "../../lib/desktop-native";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { shouldRouteExecutionToNodePod, type KeatingAgentRuntimeConfig } from "../agent-runtime";
 import {
@@ -150,7 +151,9 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 					return unavailableRemoteRuntimeMessage(runtime);
 				}
 
-				const response = await fetch(`${runtime.executionEndpoint}/execute`, {
+				const response = isDesktopNativeRuntime(runtime)
+					? await desktopNativeResponse(operation, params.payload, signal)
+					: await fetch(`${runtime.executionEndpoint}/execute`, {
 					method: "POST",
 					signal,
 					headers: {
@@ -430,12 +433,15 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 				const relPath = String(params.path ?? "").replace(/^\/+/, "");
 				const url = `${runtime.projectFilesEndpoint}/${relPath}`;
 				try {
-					const res = await fetch(url, { headers: { accept: "application/json" } });
+					const res = isDesktopNativeRuntime(runtime)
+						? await desktopNativeResponse("fs.list", { path: relPath })
+						: await fetch(url, { headers: { accept: "application/json" } });
 					if (!res.ok) {
 						const text = await res.text().catch(() => "");
 						return `# List Failed\n\n- status: ${res.status}\n- error: ${text || res.statusText}`;
 					}
-					const data = await res.json() as { entries: Array<{ path: string; isDir: boolean }> };
+					const body = await res.json();
+					const data = (Array.isArray(body) ? { entries: body } : body) as { entries: Array<{ path: string; isDir: boolean }> };
 					const lines = [
 						`# Project Files: ${relPath || "/"}`,
 						"",
@@ -467,7 +473,9 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 				if (!relPath) return "Error: path is required.";
 				const url = `${runtime.projectFilesEndpoint}/${relPath}`;
 				try {
-					const res = await fetch(url, { headers: { accept: "application/json" } });
+					const res = isDesktopNativeRuntime(runtime)
+						? await desktopNativeResponse("fs.read", { path: relPath })
+						: await fetch(url, { headers: { accept: "application/json" } });
 					if (!res.ok) {
 						const text = await res.text().catch(() => "");
 						return `# Read Failed\n\n- status: ${res.status}\n- error: ${text || res.statusText}`;
@@ -475,7 +483,7 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 					const data = await res.json() as { path: string; content: string; size: number };
 					return [
 						`# ${data.path}`,
-						`(${data.size} bytes)`,
+						`(${data.size ?? new TextEncoder().encode(data.content).length} bytes)`,
 						"",
 						data.content,
 					].join("\n");
@@ -504,14 +512,17 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 					cwd: { type: "string", description: "Directory relative to the project root (defaults to the root)." },
 					timeoutMs: { type: "number", description: "Optional timeout in ms (default 30000, max 120000)." },
 				},
-				async (params) => {
+				async (params, signal) => {
 					const command = typeof params.command === "string" ? params.command.trim() : "";
 					if (!command) return "Error: command is required.";
 					const args = Array.isArray(params.args) ? params.args.map(String) : [];
 					const cwd = typeof params.cwd === "string" ? params.cwd : "";
 					const timeoutMs = typeof params.timeoutMs === "number" ? params.timeoutMs : undefined;
 					try {
-						const res = await fetch(`${localExecEndpoint}/exec`, {
+						const res = isDesktopNativeRuntime(options.agentRuntime)
+							? await desktopNativeResponse("shell.exec", { command, args, cwd, timeoutMs }, signal)
+							: await fetch(`${localExecEndpoint}/exec`, {
+							signal,
 							method: "POST",
 							headers: { accept: "application/json", "content-type": "application/json" },
 							body: JSON.stringify({ command, args, cwd, timeoutMs }),
@@ -563,7 +574,9 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 					if (!relPath) return "Error: path is required.";
 					const content = typeof params.content === "string" ? params.content : "";
 					try {
-						const res = await fetch(`${localExecEndpoint}/write`, {
+						const res = isDesktopNativeRuntime(options.agentRuntime)
+							? await desktopNativeResponse("fs.write", { path: relPath, content })
+							: await fetch(`${localExecEndpoint}/write`, {
 							method: "POST",
 							headers: { accept: "application/json", "content-type": "application/json" },
 							body: JSON.stringify({ path: relPath, content }),
@@ -599,6 +612,10 @@ export function createWorkspaceTools(options: KeatingToolsOptions): AgentTool[] 
 						const replace = typeof params.replace === "string" ? params.replace : "";
 						if (!search) return "Error: search is required.";
 						try {
+							if (isDesktopNativeRuntime(options.agentRuntime)) {
+								const result = await desktopNativeResponse("fs.edit", { path: relPath, search, replace }, signal);
+								return result.ok ? `# Edited ${relPath}` : `# Edit Failed\n\n${await result.text()}`;
+							}
 							const readRes = await fetch(`${projectFilesEndpoint}/${relPath}`, {
 								headers: { accept: "application/json" },
 								signal,
@@ -687,7 +704,7 @@ export function createWorkspaceCapabilityTools(registry: ToolRegistry, options: 
 								path,
 								...(nodePod && operation === "read" ? { encoding: "utf8" } : {}),
 							},
-						}));
+						}, signal));
 					} else {
 						sections.push(await registry.invoke(toolName, { path: item.path }));
 					}
@@ -715,7 +732,7 @@ export function createWorkspaceCapabilityTools(registry: ToolRegistry, options: 
 					},
 				},
 			},
-			async (params) => {
+			async (params, signal) => {
 				const commands = Array.isArray(params.commands) ? params.commands : [];
 				const sections: string[] = [];
 				for (const command of commands) {
@@ -726,13 +743,13 @@ export function createWorkspaceCapabilityTools(registry: ToolRegistry, options: 
 					const args = Array.isArray(item.args) ? item.args.map(String) : [];
 					const localTool = registry.has("bash");
 					const output = localTool
-						? await registry.invoke( "bash", { command: commandName, args, cwd: item.cwd, timeoutMs: item.timeout_ms })
+						? await registry.invoke( "bash", { command: commandName, args, cwd: item.cwd, timeoutMs: item.timeout_ms }, signal)
 						: await registry.invoke( "remote_execute", {
 							operation: "shell.exec",
 							payload: { command: commandName, args, cwd: item.cwd, timeoutMs: item.timeout_ms },
-						});
+						}, signal);
 					sections.push(output);
-					if (/failed|exit code:\s*[1-9]/i.test(output)) break;
+					if (/failed|exit code:\s*(?:-?[1-9]|signal)|\(timed out\)/i.test(output)) break;
 				}
 				return sections.join("\n\n---\n\n") || "No valid commands were supplied.";
 			},

@@ -4,7 +4,16 @@ import { AccountEvolutionClientError } from "./errors";
 export type AuthenticatedNotOrganicRequester = Pick<
 	NotOrganicPublicClient,
 	"request"
->;
+> & {
+	getSession(): { scope: string } | null;
+};
+
+export function canReadAccountEvolution(
+	requester: Pick<AuthenticatedNotOrganicRequester, "getSession">,
+): boolean {
+	const scope = requester.getSession()?.scope;
+	return typeof scope === "string" && scope.split(/\s+/).includes("evolution:read");
+}
 
 function evolutionPath(path: string): string {
 	let parsed: URL;
@@ -46,7 +55,16 @@ export class AuthenticatedAccountEvolutionTransport {
 	constructor(private readonly requester: AuthenticatedNotOrganicRequester) {}
 
 	async request(path: string, init: RequestInit = {}): Promise<Response> {
-		return this.requester.request(evolutionPath(path), init);
+		const target = evolutionPath(path);
+		const method = (init.method ?? "GET").toUpperCase();
+		if ((method === "GET" || method === "HEAD") && !canReadAccountEvolution(this.requester)) {
+			throw new AccountEvolutionClientError(
+				"missing-scope",
+				"Account evolution is unavailable because this session has not granted evolution:read permission.",
+				403,
+			);
+		}
+		return this.requester.request(target, init);
 	}
 
 	async json(path: string, init: RequestInit = {}): Promise<unknown> {

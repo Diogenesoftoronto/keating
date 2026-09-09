@@ -28,7 +28,12 @@ export function applyGoogleSearchGrounding(payload: unknown, model: Model<Api>, 
 	return { ...params, config: { ...(params?.config ?? {}), tools: [...existingTools, { googleSearch: {} }] } };
 }
 
+export function isCodexSearchModel(model: Model<Api>): boolean {
+	return model.provider === "openai-codex" && model.api === "openai-codex-responses";
+}
+
 function isOpenAiModel(model: Model<Api>): boolean {
+	if (isCodexSearchModel(model)) return true;
 	return model.provider === "openai"
 		&& model.api === "openai-responses"
 		&& !/codex/.test(model.id)
@@ -49,7 +54,7 @@ export function applyOpenAiWebSearch(payload: unknown, model: Model<Api>, hasApi
 	const params = payload as any;
 	if (hasHostedSearch(params)) return undefined;
 	const tools = Array.isArray(params?.tools) ? params.tools : [];
-	return { ...params, tools: [...tools, { type: openAiToolType(model) }] };
+	return { ...params, tools: [...tools, isCodexSearchModel(model) ? { type: "web_search", external_web_access: true } : { type: openAiToolType(model) }] };
 }
 
 function isAnthropicModel(model: Model<Api>): boolean {

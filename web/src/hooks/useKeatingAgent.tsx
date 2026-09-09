@@ -18,11 +18,12 @@ import { PortableAgentInstance } from "@keating/agent-runtime";
 import {
   BROWSER_DECLARATIVE_ARTIFACT_KINDS,
   browserSystemPromptFromRevision,
+  canReadAccountEvolution,
   createBrowserAccountEvolutionClient,
 } from "../keating/account-evolution";
 import { useDialogState } from "./useDialogState";
 import { type Model, type Api, type Context } from "@earendil-works/pi-ai";
-import { defaultConvertToLlm } from "@earendil-works/pi-web-ui";
+import { toModelMessages } from "../keating/flue/model-messages";
 import { SettingsDialog } from "../components/SettingsDialog";
 import {
   MODELS_TAB_ALL_SECTION_IDS,
@@ -50,7 +51,8 @@ import {
   resolveAvailableChatModel,
 } from "../lib/provider-models";
 import { recordDiagnostic } from "../lib/diagnostics";
-import { NOTORGANIC_DEFAULT_MODEL, notOrganicPublicClient } from "../notorganic-provider";
+import { NOTORGANIC_DEFAULT_MODEL, isNotOrganicProvider, notOrganicPublicClient } from "../notorganic-provider";
+import { hasNotOrganicProductSession, promptNotOrganicAccess } from "../components/NotOrganicAccessPromptDialog";
 import { addRecentModel, getRecentModels } from "../keating/model-prefs";
 import { modelKey } from "../lib/model-catalog";
 import {
@@ -123,6 +125,8 @@ import {
   type DelegationRequest,
 } from "../keating/portable-agent";
 import {
+  loadWebSpeechSettings,
+  subscribeWebSpeechSettings,
   type LiveSpeechBridge,
   type WebSpeechSettings,
 } from "../keating/speech";
@@ -240,7 +244,7 @@ async function runPortableBrowserDelegate(
       tools: [],
       systemPrompt: frame.system,
     },
-    convertToLlm: defaultConvertToLlm,
+    convertToLlm: toModelMessages,
     streamFn: hybridStreamFn,
     sessionId: `delegate-${crypto.randomUUID()}`,
   }, flueRuntimeUrl);
@@ -369,7 +373,7 @@ const BROWSER_EVOLUTION_COMPATIBILITY = Object.freeze({
 
 async function resolveConnectedAccountPrompt(localPrompt: string): Promise<string> {
   const publicClient = notOrganicPublicClient();
-  if (!publicClient?.getSession()) return localPrompt;
+  if (!publicClient || !canReadAccountEvolution(publicClient)) return localPrompt;
   try {
     const revision = await createBrowserAccountEvolutionClient(
       publicClient,
@@ -533,9 +537,14 @@ export function useKeatingAgent(
   const speechSettings = useKeatingAgentStore((state) => state.speechSettings);
   const speechEnabledRef = useRef(speechSettings.enabled);
   speechEnabledRef.current = speechSettings.enabled;
-  const setSpeechSettings = useKeatingAgentStore(
-    (state) => state.setSpeechSettings,
+  const syncSpeechSettings = useKeatingAgentStore(
+    (state) => state.syncSpeechSettings,
   );
+  useEffect(() => {
+    const unsubscribe = subscribeWebSpeechSettings(syncSpeechSettings);
+    syncSpeechSettings(loadWebSpeechSettings());
+    return unsubscribe;
+  }, [syncSpeechSettings]);
   const toggleSpeech = useKeatingAgentStore((state) => state.toggleSpeech);
   const persistentStorageStatus = useKeatingAgentStore(
     (state) => state.persistentStorageStatus,
@@ -1004,7 +1013,7 @@ export function useKeatingAgent(
           model,
           streamFn: hybridStreamFn,
           getApiKey: getProviderApiKey,
-          convertToLlm: defaultConvertToLlm,
+          convertToLlm: toModelMessages,
           thinkingLevel: agentRef.current?.context.thinkingLevel,
         }, { ...options, basePrompt: composeKeatingSystemPrompt(loadPersona()) });
       },
@@ -1357,7 +1366,7 @@ export function useKeatingAgent(
         || getActiveKeatingPrompt(keatingStorage, "learn", undefined, composeKeatingSystemPrompt(persona))
           .then((prompt) => isDefaultPersona(persona) ? resolveConnectedAccountPrompt(prompt) : prompt),
       loadAgentRuntimeConfig(),
-      resolveAvailableChatModel(requestedModel, { allowFallback: !preserveSelectedModel && !explicitModelSelectionRef.current }),
+      resolveAvailableChatModel(requestedModel, { allowFallback: !preserveSelectedModel && !explicitModelSelectionRef.current && !isNotOrganicProvider(requestedModel.provider) }),
     ]);
     const tools = filterAvailableKeatingTools(await createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime)), {
       runtime: agentRuntime, speechEnabled: speechSettings.enabled, clientWebSearch: shouldExposeClientWebSearch(resolvedModel),
@@ -1435,7 +1444,7 @@ export function useKeatingAgent(
       if (!isCurrent()) return;
       const agent = new FlueConversation({
         initialState: nextState,
-        convertToLlm: defaultConvertToLlm,
+        convertToLlm: toModelMessages,
         streamFn: hybridStreamFn,
         sessionId: agentSessionId,
       }, flueRuntimeUrl);
@@ -2445,7 +2454,7 @@ export function useKeatingAgent(
         {
           id: "learning",
           label: "Learning",
-          component: <LearningTab onSpeechSettingsChange={setSpeechSettings} />,
+          component: <LearningTab />,
         },
         { id: "app", label: "App", component: <KeatingUiSettingsTab /> },
         { id: "diagnostics", label: "Diagnostics", component: <DiagnosticsTab /> },
@@ -2489,6 +2498,12 @@ export function useKeatingAgent(
         model,
         messages: [...current.messages],
       }, { preserveSelectedModel: true });
+    }
+    if (isNotOrganicProvider(model.provider) && !(await hasNotOrganicProductSession())
+      && isNotOrganicProvider(selectedModelRef.current.provider)) {
+      // Keep the chosen model. Account setup should be visible, with sending
+      // still gated by onApiKeyRequired if the learner dismisses the popup.
+      void promptNotOrganicAccess({ allowSignIn: true });
     }
   }, [createAgent, posthog, selectModel]);
 

@@ -563,11 +563,6 @@ const POSTS: Post[] = [
           This release also strengthens the browser-side operating surface: safer local-execution and project-file routes for the agent runtime, richer per-model benchmark and reward attribution, hardened Hyperframes iframe controls, and repaired OAuth callback and token paths for OpenAI Codex.
         </p>
 
-        <h3 id="last-commit" className={styles.sectionHeading}>What the previous commit changed</h3>
-        <p className={styles.paragraph}>
-          The commit immediately before this release, <Code>fix(web): isolate Gemini CLI OAuth on gemini branch</Code>, separated Gemini CLI OAuth handling from the ordinary Google provider flow. It moved Gemini-specific configuration and token handling onto their own path, refreshed provider selection, and kept standard Google sign-in from inheriting CLI-only assumptions. That work is included here alongside the broader browser and learning-state improvements.
-        </p>
-
         <h3 id="verification-22" className={styles.sectionHeading}>Verification</h3>
         <p className={styles.paragraph}>
           Keating 2.2 ships with focused learner-profile, diagnostic, OAuth, agent-runtime, project-file, benchmark, and Hyperframes coverage, plus the normal root and web type/build checks used for release preparation.
@@ -2089,11 +2084,6 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
           falls back to OpenAI or Anthropic if Google is unavailable. If no
           provider is configured, it prints recovery commands instead of a
           generic error.
-        </p>
-        <p className={styles.smallMutedText}>
-          Legacy configs referencing the removed{" "}
-          <Code>google-gemini-cli</Code> provider are automatically normalized to{" "}
-          <Code>google</Code> on read.
         </p>
       </>
     ),

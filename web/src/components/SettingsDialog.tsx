@@ -121,14 +121,22 @@ const mobileTablistClass = css({
 	lg: { display: "none" },
 });
 const mobileTabBaseClass = css({
+	display: "inline-flex",
+	alignItems: "center",
+	justifyContent: "center",
 	whiteSpace: "nowrap",
 	borderRadius: "0.375rem",
-	paddingInline: "0.75rem",
+	paddingInline: "0.625rem",
 	paddingBlock: "0.375rem",
 	fontSize: "0.875rem",
 	minHeight: "2.25rem",
 	transitionProperty: "color, background-color",
 	transitionDuration: "150ms",
+	md: { paddingInline: "0.75rem" },
+});
+const mobileTabLabelClass = css({
+	display: "none",
+	md: { display: "inline" },
 });
 const mobileTabActiveClass = css({
 	backgroundColor: "color-mix(in srgb, var(--primary) 10%, transparent)",
@@ -174,8 +182,12 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 	const dialogRef = useRef<HTMLDivElement>(null);
 	const mobileTabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
+	const previousRequest = useRef({ open: false, defaultTabId });
 	useEffect(() => {
-		if (!open) return;
+		const previous = previousRequest.current;
+		previousRequest.current = { open, defaultTabId };
+		if (!open || (previous.open && (defaultTabId === undefined || previous.defaultTabId === defaultTabId))) return;
+		// A new tabs array from the chat parent is not a navigation request.
 		const idx = defaultTabId
 			? tabs.findIndex((t) => t.id === defaultTabId)
 			: activeTab < tabs.length
@@ -275,6 +287,8 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 									role="tab"
 									aria-selected={i === activeTab}
 									aria-controls="settings-tabpanel"
+									aria-label={tab.label}
+									title={tab.label}
 									tabIndex={i === activeTab ? 0 : -1}
 									onClick={() => selectTab(i)}
 									onKeyDown={(event) => {
@@ -297,10 +311,8 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 									}}
 									className={cx(mobileTabBaseClass, i === activeTab ? mobileTabActiveClass : mobileTabIdleClass)}
 								>
-									<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.375rem" })}>
-										{iconForTab(tab.id)}
-										{tab.label}
-									</span>
+									{iconForTab(tab.id)}
+									<span className={mobileTabLabelClass}>{tab.label}</span>
 								</button>
 							))}
 						</div>

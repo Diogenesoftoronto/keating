@@ -1,5 +1,5 @@
 import { getModels, getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
-import { getAppStorage, type CustomProvider } from "@earendil-works/pi-web-ui";
+import { getAppStorage, type CustomProvider } from "../keating/app-storage";
 import { proxiedProviderRequestUrl } from "./provider-proxy";
 import {
 	isNotOrganicFeatureEnabled,

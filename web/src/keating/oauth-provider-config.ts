@@ -33,7 +33,8 @@ const AUTHORIZATION_CODE_OAUTH_PROVIDERS: Record<
 			"user:mcp_servers",
 			"user:file_upload",
 		],
-		// `code=true` makes the callback page display the authorization code for copy-paste.
+		// Keep Claude's authorization flag for both manual and loopback flows.
+		// The redirect URI selects the handoff; this flag does not force copy-paste.
 		extraAuthParams: {
 			code: "true",
 		},
@@ -45,7 +46,7 @@ const AUTHORIZATION_CODE_OAUTH_PROVIDERS: Record<
 		authorizeUrl: "https://auth.openai.com/oauth/authorize",
 		tokenUrl: "https://auth.openai.com/oauth/token",
 		// This public Codex client registers only the CLI loopback callback. The
-		// Electron shell receives it locally; browser users paste the final URL.
+		// Electron shell receives it locally; browsers use device authorization.
 		redirectUri: "http://localhost:1455/auth/callback",
 		scopes: ["openid", "profile", "email", "offline_access"],
 		extraAuthParams: {

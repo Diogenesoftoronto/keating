@@ -90,7 +90,9 @@ describe("CredentialVault", () => {
 			},
 		});
 		await expect(vault.set("provider.openai", "secret")).rejects.toThrow("unavailable");
-		await expect(vault.keys()).rejects.toThrow("unavailable");
+		expect(await vault.keys()).toEqual([]);
+		expect(await vault.get("provider.openai")).toBeNull();
+		expect(await vault.status()).toEqual({ persistence: "session" });
 		expect(await Bun.file(path).exists()).toBe(false);
 	});
 

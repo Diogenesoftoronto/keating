@@ -4,6 +4,7 @@ import { chmodSync, mkdtempSync, rmSync } from "node:fs";
 import { createServer, type Socket } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { assertDefaultProfileSessionPath, assertProfileSessionPath } from "../core/learner-profile-selection.js";
 
 interface RpcTransport {
   onData(listener: (data: string) => void): Disposable;
@@ -25,6 +26,9 @@ export interface KeatingPtyRpcClientOptions {
   requestTimeoutMs?: number;
   readyTimeoutMs?: number;
   spawnTransport?: SpawnTransport;
+  /** Named learner sessions cannot be resumed from another profile's directory. */
+  sessionDirectory?: string;
+  profilesDirectory?: string;
 }
 
 export interface KeatingPtyRpcRestartOptions {
@@ -96,6 +100,11 @@ export class KeatingPtyRpcClient {
 
   constructor(options: KeatingPtyRpcClientOptions) {
     this.options = options;
+  }
+
+  private validateSessionSelection(path: string): void {
+    if (this.options.sessionDirectory) assertProfileSessionPath(this.options.sessionDirectory, path);
+    else if (this.options.profilesDirectory) assertDefaultProfileSessionPath(this.options.profilesDirectory, path);
   }
 
   async start(): Promise<void> {
@@ -190,6 +199,7 @@ export class KeatingPtyRpcClient {
 
   /** Restart Pi without discarding host event subscriptions. */
   async restart(options: KeatingPtyRpcRestartOptions = {}): Promise<void> {
+    if (options.sessionPath) this.validateSessionSelection(options.sessionPath);
     await this.stop();
     if (options.sessionPath !== undefined) {
       const args: string[] = [];
@@ -226,7 +236,10 @@ export class KeatingPtyRpcClient {
   async steer(message: string, images?: unknown[]): Promise<void> { await this.send({ type: "steer", message, images }); }
   async followUp(message: string, images?: unknown[]): Promise<void> { await this.send({ type: "follow_up", message, images }); }
   async abort(): Promise<void> { await this.send({ type: "abort" }); }
-  async newSession(parentSession?: string): Promise<{ cancelled: boolean }> { return this.data(await this.send({ type: "new_session", parentSession })); }
+  async newSession(parentSession?: string): Promise<{ cancelled: boolean }> {
+    if (parentSession) this.validateSessionSelection(parentSession);
+    return this.data(await this.send({ type: "new_session", parentSession }));
+  }
   async getState(): Promise<Record<string, unknown>> { return this.data(await this.send({ type: "get_state" })); }
   async setModel(provider: string, modelId: string): Promise<{ provider: string; id: string }> { return this.data(await this.send({ type: "set_model", provider, modelId })); }
   async cycleModel(): Promise<{ model: { provider: string; id: string }; thinkingLevel?: string } | null> { return this.data(await this.send({ type: "cycle_model" })); }
@@ -245,7 +258,10 @@ export class KeatingPtyRpcClient {
   async abortBash(): Promise<void> { await this.send({ type: "abort_bash" }); }
   async getSessionStats(): Promise<unknown> { return this.data(await this.send({ type: "get_session_stats" })); }
   async exportHtml(outputPath?: string): Promise<{ path: string }> { return this.data(await this.send({ type: "export_html", outputPath })); }
-  async switchSession(sessionPath: string): Promise<{ cancelled: boolean }> { return this.data(await this.send({ type: "switch_session", sessionPath })); }
+  async switchSession(sessionPath: string): Promise<{ cancelled: boolean }> {
+    this.validateSessionSelection(sessionPath);
+    return this.data(await this.send({ type: "switch_session", sessionPath }));
+  }
   async fork(entryId: string): Promise<{ text: string; cancelled: boolean }> { return this.data(await this.send({ type: "fork", entryId })); }
   async clone(): Promise<{ cancelled: boolean }> { return this.data(await this.send({ type: "clone" })); }
   async getForkMessages(): Promise<Array<{ entryId: string; text: string }>> {

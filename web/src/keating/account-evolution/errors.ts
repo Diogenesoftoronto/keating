@@ -1,4 +1,5 @@
 export type AccountEvolutionErrorCode =
+	| "missing-scope"
 	| "invalid-request"
 	| "http-error"
 	| "invalid-response"
