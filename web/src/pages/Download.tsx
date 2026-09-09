@@ -134,6 +134,11 @@ export function Download() {
                     </>
                   )}
                 </div>
+                {platform === "linux" && <div className="downloads-primary-action">
+                  <a className="downloads-button" href="https://diogenesoftoronto.github.io/keating/flatpak/help.keating.desktop.flatpakref"><ArrowDownToLine size={18} aria-hidden="true" /> Install sandboxed Flatpak</a>
+                  <p>Signed Keating repository · x64 and ARM64 · updates through Flatpak</p>
+                  <a className="downloads-browser-link" href="https://diogenesoftoronto.github.io/keating/flatpak/keating-release-key.asc">Release signing public key</a>
+                </div>}
                 {(recommended || needsArchitecture) && <Link className="downloads-browser-link" to="/chat" onClick={captureBrowser}><Globe size={16} aria-hidden="true" /> Or start in your browser<ArrowRight size={15} aria-hidden="true" /></Link>}
               </div>
               <a href="#all-downloads" className="downloads-all-link">See all downloads <ArrowDown size={15} aria-hidden="true" /></a>
