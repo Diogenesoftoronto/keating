@@ -1,6 +1,6 @@
 {
   "name": "@keating/desktop",
-  "version": "3.14.0",
+  "version": "3.14.1",
   "type": "module",
   "private": true,
   "description": "Keating desktop (Electron) app — P2P, local-first teaching client.",
@@ -23,7 +23,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "electron": "^33.0.0",
+    "electron": "33.4.11",
     "electron-builder": "^25.0.0",
     "typescript": "^5.7.0"
   },

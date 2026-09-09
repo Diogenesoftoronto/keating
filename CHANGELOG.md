@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.14.1] - 2026-09-09
+
+### Fixed
+- Pin Electron to the tested 33.4.11 runtime so Linux installer builds resolve its version when dependencies are hoisted outside the staged application.
+- Complete the 3.14 feature release after the initial installer workflow failed before publication.
+
 ## [3.14.0] - 2026-09-09
 
 ### Added
