@@ -36,12 +36,18 @@ Both shipped exports do.
 
 | Model | Repo | dtype | Download |
 |---|---|---|---|
+| MiniCPM5 2B (default) | `RASMUS/MiniCPM5-2B-ONNX` | q4f16 | ~1.84 GB |
 | LFM 2.5 2.6B | `LiquidAI/LFM2.5-2.6B-ONNX` | q4f16 | 1.55 GB |
 | Gemma 4 E4B | `onnx-community/gemma-4-E4B-it-ONNX` | q4f16 | ~5.2 GB |
 | Gemma 4 E2B | `onnx-community/gemma-4-E2B-it-ONNX` | q4f16 | ~3.4 GB |
 
-LFM 2.5 2.6B is the best quality per byte available: LiquidAI's own export, and
-the only LFM2.5 published as ONNX. The Gemma pair carry the multimodal path.
+MiniCPM5 2B is the default browser model. Its export includes the Transformers.js
+external-data and fp16 KV-cache configuration, plus a compatible chat template.
+The graph and weights total 1,834,210,185 bytes before tokenizer/config files.
+The publisher reports WebGPU generation with Transformers.js 4.2.0; this is
+publisher evidence, not a Keating browser smoke test. Requires `shader-f16`.
+LFM 2.5 remains a smaller-download alternative. All entries are exposed as
+text-only because Keating's current browser generation path sends text only.
 
 ## Queued — verified loadable, not shipped
 
@@ -56,6 +62,20 @@ a registry entry and nothing more.
 | Bonsai 1.7B | `onnx-community/Bonsai-1.7B-ONNX` | q4 | 1.13 GB | No f16 4-bit export in the repo. q4 is the one entry that would run on a GPU **without** `shader-f16`. |
 
 ## Ruled out
+
+### MiniCPM5-2B LiteRT — browser runtime support pending
+
+Checked September 10, 2026: [MiniCPM5-2B-LiteRT](https://huggingface.co/mlboydaisuke/MiniCPM5-2B-LiteRT)
+is a text-generation export with int4 and int8 `.litertlm` bundles, not the
+ONNX format used by this loader. We use the separate
+[`RASMUS/MiniCPM5-2B-ONNX`](https://huggingface.co/RASMUS/MiniCPM5-2B-ONNX)
+export of the same base checkpoint as the default instead.
+The [LiteRT-LM JavaScript runtime](https://github.com/google-ai-edge/LiteRT-LM/blob/main/js/packages/core/README.md)
+currently documents support only for the web-specific Gemma 4 E2B/E4B bundles;
+general `.litertlm` files are not yet supported. Native CPU/GPU results in the
+model card do not establish browser compatibility. Revisit the LiteRT option
+after a compatible runtime is available. Treat this model as text-only: images need a vision model,
+and audio needs an audio model or a successfully generated transcript.
 
 ### Sub-4-bit — blocked by the ORT kernel
 

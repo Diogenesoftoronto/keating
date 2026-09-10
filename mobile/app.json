@@ -30,6 +30,7 @@
     },
     "plugins": [
       "expo-router",
+      "./modules/keating-litert/app.plugin.js",
       [
         "expo-dev-client",
         {

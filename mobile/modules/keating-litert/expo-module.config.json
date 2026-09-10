@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["KeatingLiteRTModule"] },
+  "android": { "modules": ["com.diogenesoftoronto.keating.litert.KeatingLiteRTModule"] }
+}

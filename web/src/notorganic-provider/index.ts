@@ -1,4 +1,6 @@
+import { checkoutSelection, subscriptionAvailable, subscriptionCheckoutEnabled } from "./plans";
 import type { Model } from "@earendil-works/pi-ai";
+import { availableCreditPacks, normalizeCreditWallet } from "./credit-wallet";
 import { isNotOrganicDesktop, prepareNotOrganicDesktopAuthorization } from "../keating/notorganic-desktop";
 import {
 	NotOrganicPublicClient,
@@ -117,13 +119,19 @@ export function getNotOrganicUsage(
 	return providerJson(`usage${query.size ? `?${query}` : ""}`, undefined, fetcher);
 }
 
-export function createNotOrganicCheckout(
+export async function createNotOrganicCheckout(
 	packId: string,
 	returnUrl: string,
 	fetcher?: typeof fetch,
 ): Promise<NotOrganicCheckout> {
 	if (!fetcher && import.meta.env?.VITE_NOTORGANIC_CHECKOUT_ENABLED !== "true") {
-		return Promise.reject(new Error("Hosted credit purchases are not available yet."));
+		throw new Error("Hosted credit purchases are not available yet.");
+	}
+	const returnDestination = new URL(returnUrl);
+	if (returnDestination.protocol !== "https:" || returnDestination.username || returnDestination.password) throw new Error("Checkout requires a secure return address.");
+	const wallet = normalizeCreditWallet(await getNotOrganicWallet(fetcher));
+	if (!availableCreditPacks(wallet, true).some(pack => pack.id === packId)) {
+		throw new Error("This credit pack is not available for checkout yet.");
 	}
 	return providerJson(
 		"checkout",
@@ -134,6 +142,24 @@ export function createNotOrganicCheckout(
 		},
 		fetcher,
 	);
+}
+
+export async function createNotOrganicSubscriptionCheckout(
+  planId: string,
+  returnUrl: string,
+  fetcher?: typeof fetch,
+  env: Record<string, string | undefined> = import.meta.env,
+): Promise<NotOrganicCheckout> {
+  const selection = checkoutSelection({ plan_id: planId }, subscriptionCheckoutEnabled(env));
+  const destination = new URL(returnUrl);
+  if (destination.protocol !== "https:" || destination.username || destination.password) throw new Error("Checkout requires a secure return address.");
+  const wallet = normalizeCreditWallet(await getNotOrganicWallet(fetcher));
+  if (!subscriptionAvailable(wallet, true)) throw new Error("This subscription is not available for checkout yet.");
+  return providerJson("checkout", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...selection, return_url: destination.toString() }),
+  }, fetcher);
 }
 
 export function isNotOrganicProvider(provider: string): boolean {

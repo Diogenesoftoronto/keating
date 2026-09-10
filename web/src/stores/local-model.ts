@@ -44,13 +44,21 @@ export interface BrowserModelSpec {
  */
 export const BROWSER_MODELS: readonly BrowserModelSpec[] = [
 	{
+		id: "RASMUS/MiniCPM5-2B-ONNX",
+		name: "MiniCPM5 2B (Browser)",
+		downloadLabel: "~1.84 GB",
+		kind: "text",
+		dtype: "q4f16",
+		blurb: "Default browser model. Text-only English and Chinese tutoring, running on your device.",
+	},
+	{
 		// LiquidAI's own export, and the only LFM2.5 published as ONNX.
 		id: "LiquidAI/LFM2.5-2.6B-ONNX",
 		name: "LFM 2.5 2.6B (Browser)",
 		downloadLabel: "~1.6 GB",
 		kind: "text",
 		dtype: "q4f16",
-		blurb: "Best quality per byte here: 2.6B parameters in a download smaller than every other option.",
+		blurb: "Smaller download: a text-only alternative for on-device tutoring.",
 	},
 	{
 		id: "onnx-community/gemma-4-E4B-it-ONNX",
@@ -75,10 +83,10 @@ export const BROWSER_MODELS: readonly BrowserModelSpec[] = [
 ];
 
 /**
- * Smallest download of the three by a wide margin, so first run is cheap. Text
- * only — the Gemma entries stay for anyone who needs the multimodal path.
+ * MiniCPM5's Transformers.js-compatible ONNX export. The native LiteRT bundle
+ * cannot be used by this loader. Browser chat currently accepts text only.
  */
-export const DEFAULT_BROWSER_MODEL_ID = "LiquidAI/LFM2.5-2.6B-ONNX";
+export const DEFAULT_BROWSER_MODEL_ID = "RASMUS/MiniCPM5-2B-ONNX";
 
 export function getBrowserModel(id: string): BrowserModelSpec | undefined {
 	return BROWSER_MODELS.find((entry) => entry.id === id);

@@ -3,6 +3,7 @@ import Constants from "expo-constants";
 import { Alert, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { T, Num } from "gt-react-native";
 import { Button } from "@/components/Buttons";
+import { OfflineTutorSettings } from "@/components/OfflineTutorSettings";
 import { Screen } from "@/components/Screen";
 import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import { MAX_LEARNER_CONTEXT_LENGTH } from "@/lib/learner-context";
@@ -45,6 +46,7 @@ export default function SettingsScreen() {
     supportsReasoning,
     reasoningLevels,
     supportsTemperature,
+    isGenerating,
   } = useKeating();
   const { settings: uiSettings, updateSettings } = useUiSettings();
   const [apiKey, setApiKey] = useState("");
@@ -129,6 +131,9 @@ export default function SettingsScreen() {
 
   return (
     <Screen title="Settings" subtitle="Appearance, provider, teaching style, and on-device data">
+      <Section title="Offline tutor" body="Keep a tutor on this device.">
+        <OfflineTutorSettings selected={settings.provider === "litert"} onUse={() => setProvider("litert")} disabled={isGenerating} />
+      </Section>
       <Section title="Appearance" body="How Keating looks on this device.">
         <FieldLabel>Theme</FieldLabel>
         <ChoiceRow
@@ -250,7 +255,7 @@ export default function SettingsScreen() {
         </Text>
       </Section>
 
-      <Section title="Model provider" body="Requests go directly from this device to the selected provider.">
+      <Section title="Model provider" body="Use the offline tutor on this device, or send requests directly to an online provider.">
         <View style={styles.providerList}>
           {PROVIDERS.map((provider) => {
             const selected = provider.id === settings.provider;
@@ -273,6 +278,7 @@ export default function SettingsScreen() {
           })}
         </View>
 
+        {settings.provider !== "litert" ? <>
         <FieldLabel>Model ID</FieldLabel>
         <TextInput
           accessibilityLabel="Model ID"
@@ -282,6 +288,7 @@ export default function SettingsScreen() {
           onChangeText={(model) => updateProviderSettings({ model })}
           style={styles.input}
         />
+        </> : null}
 
         {settings.provider === "custom" ? (
           <>
@@ -300,7 +307,7 @@ export default function SettingsScreen() {
         ) : null}
       </Section>
 
-      <Section
+      {settings.provider !== "litert" ? <Section
         title="API key"
         body={hasKey ? `${definition.label} is connected on this device.` : definition.requiresKey ? `Add a ${definition.label} key to start tutoring.` : "A key is optional for this custom endpoint."}
       >
@@ -323,7 +330,7 @@ export default function SettingsScreen() {
           {hasKey ? <Button compact variant="danger" onPress={confirmRemoveKey}>Remove key</Button> : null}
         </View>
         <Text style={styles.secureNote}>Stored with Expo SecureStore, backed by Android Keystore. Keys are never written to AsyncStorage.</Text>
-      </Section>
+      </Section> : null}
 
       <Section
         title="Teacher persona"

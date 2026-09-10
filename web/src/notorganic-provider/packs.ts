@@ -37,7 +37,7 @@ export const NOTORGANIC_PACKS: NotOrganicPack[] = [
 	},
 ];
 
-export const DEFAULT_NOTORGANIC_PACK_ID: NotOrganicPackId = "keating_pack_10";
+export const DEFAULT_NOTORGANIC_PACK_ID: NotOrganicPackId = "keating_pack_25";
 
 export function getNotOrganicPack(id: string): NotOrganicPack | undefined {
 	return NOTORGANIC_PACKS.find((pack) => pack.id === id);

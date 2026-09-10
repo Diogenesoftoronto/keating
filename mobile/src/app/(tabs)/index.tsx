@@ -17,6 +17,7 @@ import { Button } from "@/components/Buttons";
 import { Composer } from "@/components/Composer";
 import { MessageBubble } from "@/components/MessageBubble";
 import { ModelSelectorSheet } from "@/components/ModelSelectorSheet";
+import { OfflineTutorSettings } from "@/components/OfflineTutorSettings";
 import { Screen } from "@/components/Screen";
 import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import { providerDefinition } from "@/lib/provider-config";
@@ -73,6 +74,7 @@ export default function TutorScreen() {
     forkSession,
     selectSession,
     selectProviderModel,
+    setProvider,
     setMessageFeedback,
     saveArtifact,
   } = useKeating();
@@ -299,6 +301,7 @@ export default function TutorScreen() {
                   <Text style={styles.setupTitle}>Connect {provider.label} to begin</Text>
                   <Text style={styles.setupBody}>Your key stays in Android Keystore and requests go directly to the provider.</Text>
                   <Button onPress={() => router.push("/settings")}>Configure provider</Button>
+                  <OfflineTutorSettings selected={false} onUse={() => setProvider("litert")} disabled={isGenerating} />
                 </View>
               ) : null}
               <ScrollView
