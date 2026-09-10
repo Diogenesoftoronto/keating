@@ -97,7 +97,8 @@ jobs:
         run: |
           $installer = Join-Path $PWD "desktop/release/Keating-$env:RELEASE_VERSION-windows-x64-setup.exe"
           if (!(Test-Path $installer) -or (Get-Item $installer).Length -eq 0) { throw 'Missing Windows installer' }
-          $installDir = Join-Path $env:RUNNER_TEMP 'Keating installed'
+          $installDir = Join-Path $env:RUNNER_TEMP 'KeatingInstalled'
+          if (Test-Path $installDir) { Remove-Item -Recurse -Force $installDir }
           $install = Start-Process -FilePath $installer -ArgumentList @('/S', "/D=$installDir") -Wait -PassThru
           if ($install.ExitCode -ne 0) { throw "Installer failed: $($install.ExitCode)" }
           $exe = Join-Path $installDir 'Keating.exe'
