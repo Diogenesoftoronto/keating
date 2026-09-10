@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.15.0] - 2026-09-10
+
+### Added
+- Native MiniCPM5 offline tutoring on desktop and React Native, with bundled LiteRT runtimes and an optional verified model download that can be paused, resumed, and removed.
+- Separate full offline Linux desktop installers containing the model weights, alongside the standard smaller installers.
+- Offline setup controls and clear recovery messages for unsupported devices, missing models, interrupted downloads, and text-only input.
+
+### Changed
+- Make MiniCPM5 the primary browser model through Hugging Face Transformers.js and its ONNX export.
+- Use the same pinned MiniCPM5 int4 LiteRT artifact on desktop and mobile, with native Android build support for the SDK's Java 21 requirement.
+
+### Fixed
+- Prevent text-only models from silently dropping audio attachments when nearby text is not a transcript of that recording.
+- Preserve structured conversation history and cancellation when running native offline inference.
+
 ## [3.14.1] - 2026-09-09
 
 ### Fixed
