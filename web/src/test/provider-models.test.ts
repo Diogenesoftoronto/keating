@@ -159,7 +159,7 @@ describe("chat model fallback selection", () => {
 			});
 
 			expect(selected.provider).toBe("browser");
-			expect(selected.id).toBe("LiquidAI/LFM2.5-2.6B-ONNX");
+			expect(selected.id).toBe("RASMUS/MiniCPM5-2B-ONNX");
 		} finally {
 			Object.defineProperty(globalThis, "navigator", {
 				configurable: true,

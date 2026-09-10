@@ -21,6 +21,7 @@ import { ChatMascotMenu } from "./ChatMascotMenu";
 import "./chat-mascot.css";
 import { RecordingWaveform } from "./RecordingWaveform";
 import { prepareAudioAttachment } from "../lib/audio-attachment";
+import { rememberRecordingTranscript, recordingHasTranscript } from "../lib/recording-transcripts";
 import type { FlueConversation } from "../keating/flue/conversation";
 import {
   createContext,
@@ -951,6 +952,7 @@ function SpeechComposerControl({
       return;
     }
     appendToComposer(text);
+    rememberRecordingTranscript(blob, text);
     retryAudioRef.current = null;
     setAudioError("");
     onExpandedChange(false);
@@ -974,10 +976,11 @@ function SpeechComposerControl({
     try {
       const recorder = recorderRef.current ?? (await pending);
       const blob = await recorder.stop();
-      await composer.addAttachment(new File([blob], `Recording-${Date.now()}.webm`, {type: blob.type || "audio/webm"}));
+      const file = new File([blob], `Recording-${Date.now()}.webm`, {type: blob.type || "audio/webm"});
+      await composer.addAttachment(file);
       attached = true;
-      retryAudioRef.current = blob;
-      await transcribeRecording(blob);
+      retryAudioRef.current = file;
+      await transcribeRecording(file);
     } catch (error) {
       setAudioError(attached ? transcriptionErrorMessage(error) : "Could not attach the recording. Check microphone access and try recording again.");
     } finally {
@@ -2898,7 +2901,9 @@ function contentFromAppendMessage(message: AppendMessage): PromptContent[] {
         const image = dataUrlToImageContent(part.image);
         if (image) content.push(image);
       } else if (part.type === "file" && part.mimeType.startsWith("audio/")) {
-        content.push({type: "audio", mimeType: part.mimeType, data: part.data.replace(/^data:[^,]+,/, ""), filename: part.filename});
+        const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n");
+        content.push({type: "audio", mimeType: part.mimeType, data: part.data.replace(/^data:[^,]+,/, ""), filename: part.filename,
+          sendToModel: recordingHasTranscript(attachment.file, text) ? false : undefined});
       } else if (part.type === "file") {
         content.push({
           type: "text",
@@ -4190,14 +4195,15 @@ function AssistantThread({
       const content = (userMessage as any).content;
       const audioParts = Array.isArray(content) ? content.filter((part: any) => part?.type === "audio") : [];
       if (audioParts.length && !modelSupportsAudio(agent.context.model)) {
-        if (!content.some((part: any) => part.type === "text" && part.text.trim())) {
+        if (audioParts.some((part: KeatingAudioContent) => part.sendToModel !== false)) {
           agent.context.messages.push(userMessage, makeAttachmentErrorMessage(agent,
-            "This model does not accept audio. Choose an audio-capable model, or add a transcript. Your recording is kept here."));
+            `${modelDisplayName(agent.context.model)} cannot listen to audio. Choose an audio-capable model, or configure transcription in Settings → Speech and transcribe the recording. To send a transcript you typed yourself, remove the audio attachment first. Your recording is kept here.`));
           setLocalVersion(current => current + 1);
           await callbacks.onLocalMessagesChanged?.();
           return true;
         }
-        for (const part of audioParts) part.sendToModel = false;
+      } else if (audioParts.length) {
+        for (const part of audioParts) part.sendToModel = true;
       }
       const hasImage =
         Array.isArray(content) &&

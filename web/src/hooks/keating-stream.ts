@@ -41,6 +41,8 @@ import {
 export { applyGoogleSearchGrounding, applyProviderWebSearch };
 import { getProviderApiKey } from "../lib/provider-models";
 import { localModel, DEFAULT_BROWSER_MODEL_ID } from "../stores/local-model";
+import { DESKTOP_OFFLINE_PROVIDER } from "../lib/desktop-offline";
+import { desktopOfflineStream } from "../keating/desktop-offline-stream";
 
 export const DEFAULT_MODEL = NOTORGANIC_DEFAULT_MODEL;
 
@@ -353,6 +355,7 @@ export function normalizeProviderStreamOptions(
 }
 
 export async function hybridStreamFn(model: Model<Api>, context: Context, options?: KeatingStreamOptions) {
+	if (model.provider === DESKTOP_OFFLINE_PROVIDER) return desktopOfflineStream(context, options);
 	const { hostedWebSearch = true, ...requestOptions } = options ?? {};
 	const cleanOptions = normalizeProviderStreamOptions(model, requestOptions);
 	captureSessionModelContext(model, context);

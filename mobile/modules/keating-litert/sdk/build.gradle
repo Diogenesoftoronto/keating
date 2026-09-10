@@ -1,0 +1,23 @@
+plugins { id 'com.android.library' }
+
+// LiteRT-LM 0.16 ships Java 21 bytecode. Compile with JDK 21 while
+// retaining Android's Java 17 output target and the existing Expo toolchain.
+java { toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+
+android {
+  namespace 'com.diogenesoftoronto.keating.litert.sdk'
+  compileSdk rootProject.ext.compileSdkVersion
+  defaultConfig { minSdk 26 }
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+}
+
+dependencies {
+  // Runtime transitively packaged, but its Kotlin 2.3 metadata does not leak
+  // into the Expo module's Kotlin 2.1 compile classpath.
+  implementation('com.google.ai.edge.litertlm:litertlm-android:0.16.0') {
+    version { strictly '0.16.0' }
+  }
+}

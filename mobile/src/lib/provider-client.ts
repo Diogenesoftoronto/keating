@@ -334,6 +334,7 @@ export function buildProviderRequest(
   messages: ChatMessage[],
   options: ProviderRequestOptions = {},
 ): ProviderRequest {
+  if (settings.provider === "litert") throw new Error("Offline tutoring uses the native LiteRT runtime, not an HTTP endpoint.");
   const {
     signal,
     stream = false,
@@ -737,6 +738,7 @@ export function continueProviderTurn(
 }
 
 function extractProviderRound(settings: ProviderSettings, payload: unknown): ProviderRound {
+  if (settings.provider === "litert") throw new Error("Offline tutoring does not parse hosted provider responses.");
   if (typeof payload !== "object" || payload === null) {
     throw new Error("The provider returned an invalid response.");
   }
@@ -1204,6 +1206,10 @@ export async function streamCompletion(
   messages: ChatMessage[],
   options: StreamCompletionOptions = {},
 ): Promise<string> {
+  if (settings.provider === "litert") {
+    const { requestOfflineRound } = await import("./offline-inference");
+    return (await requestOfflineRound(settings, messages, { ...options, onTextDelta: options.onDelta })).text;
+  }
   const { onDelta, onReasoningDelta, onToolCall, onUsage, fetchImpl = fetch, ...requestOptions } = options;
   const request = buildProviderRequest(settings, apiKey, messages, { ...requestOptions, stream: true });
   const response = await fetchImpl(request.url, request.init);
@@ -1290,6 +1296,10 @@ export async function requestProviderRound(
   messages: ChatMessage[],
   options: ProviderRoundRequestOptions = {},
 ): Promise<ProviderRound> {
+  if (settings.provider === "litert") {
+    const { requestOfflineRound } = await import("./offline-inference");
+    return requestOfflineRound(settings, messages, options);
+  }
   if (options.stream) return requestStreamingProviderRound(settings, apiKey, messages, options);
   const { fetchImpl = fetch, ...requestOptions } = options;
   const request = buildProviderRequest(settings, apiKey, messages, requestOptions);

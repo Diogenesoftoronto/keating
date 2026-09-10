@@ -1,4 +1,5 @@
 import type { ProviderId, ProviderSettings } from "./types";
+import { OFFLINE_MODEL } from "./offline-model-contract";
 
 export interface ProviderDefinition {
   id: ProviderId;
@@ -10,6 +11,14 @@ export interface ProviderDefinition {
 }
 
 export const PROVIDERS: readonly ProviderDefinition[] = [
+  {
+    id: "litert",
+    label: "On this device",
+    description: "MiniCPM5 2B, text only. Optional 1.55 GB download in Offline tutor settings.",
+    defaultModel: OFFLINE_MODEL.id,
+    defaultBaseUrl: "",
+    requiresKey: false,
+  },
   {
     id: "openai",
     label: "OpenAI",

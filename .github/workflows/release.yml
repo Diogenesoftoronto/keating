@@ -129,11 +129,25 @@ jobs:
       matrix:
         include:
           - arch: x64
+            edition: standard
             runner: ubuntu-latest
             deb_arch: amd64
             rpm_arch: x86_64
             appimage_arch: x86_64
           - arch: arm64
+            edition: standard
+            runner: ubuntu-24.04-arm
+            deb_arch: arm64
+            rpm_arch: aarch64
+            appimage_arch: arm64
+          - arch: x64
+            edition: offline
+            runner: ubuntu-latest
+            deb_arch: amd64
+            rpm_arch: x86_64
+            appimage_arch: x86_64
+          - arch: arm64
+            edition: offline
             runner: ubuntu-24.04-arm
             deb_arch: arm64
             rpm_arch: aarch64
@@ -156,7 +170,7 @@ jobs:
       - name: Install Linux packaging tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm ruby-dev build-essential
+          sudo apt-get install -y rpm ruby-dev build-essential cmake libvulkan1
           sudo gem install --no-document fpm -v 1.16.0
 
       - name: Install dependencies
@@ -172,12 +186,20 @@ jobs:
           bun run --cwd desktop build:main
 
       - name: Package Linux desktop
-        run: bun run --cwd desktop dist:linux --${{ matrix.arch }} --publish never
+        run: |
+          if [ "${{ matrix.edition }}" = offline ]; then
+            bun run --cwd desktop dist:offline --linux AppImage deb rpm --${{ matrix.arch }} --publish never
+          else
+            bun run --cwd desktop dist:linux --${{ matrix.arch }} --publish never
+          fi
 
       - name: Verify package outputs
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           PREFIX="desktop/release/Keating-${VERSION}-linux"
+          if [ "${{ matrix.edition }}" = offline ]; then
+            PREFIX="desktop/release-offline/Keating-${VERSION}-offline-linux"
+          fi
           test -s "${PREFIX}-${{ matrix.appimage_arch }}.AppImage"
           test -s "${PREFIX}-${{ matrix.deb_arch }}.deb"
           test -s "${PREFIX}-${{ matrix.rpm_arch }}.rpm"
@@ -187,12 +209,15 @@ jobs:
       - name: Upload Linux desktop installers
         uses: actions/upload-artifact@v4
         with:
-          name: keating-desktop-linux-${{ matrix.arch }}
+          name: keating-desktop-linux-${{ matrix.arch }}-${{ matrix.edition }}
           if-no-files-found: error
           path: |
             desktop/release/*.AppImage
             desktop/release/*.deb
             desktop/release/*.rpm
+            desktop/release-offline/*.AppImage
+            desktop/release-offline/*.deb
+            desktop/release-offline/*.rpm
 
   release:
     needs: [build, build-desktop-linux]
