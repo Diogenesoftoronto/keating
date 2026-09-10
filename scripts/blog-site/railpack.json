@@ -1,0 +1,6 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "provider": "node",
+  "packages": { "bun": "1.3.13" },
+  "deploy": { "startCommand": "bun server.js" }
+}

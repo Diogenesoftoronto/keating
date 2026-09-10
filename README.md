@@ -488,6 +488,9 @@ keating trace derivative
 
 ## Documentation
 
+- User guides and setup: [docs.keating.help](https://docs.keating.help)
+- Developer handbook: [dev.keating.help](https://dev.keating.help)
+- Standard.site blog: [blog.keating.help](https://blog.keating.help)
 - Architecture overview: `docs/ARCHITECTURE.md`
 - Development environment and task reference: `docs/DEVELOPMENT.md`
 - Visual system architecture: `docs/VISUAL-ARCHITECTURE.md`

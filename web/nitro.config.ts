@@ -52,6 +52,13 @@ export default defineNitroConfig({
   // Ensure that /assets/* requests return 404 if not found, 
   // rather than falling back to index.html (SPA fallback).
   routeRules: {
+    // Only the retired page redirects; /tutorial/* screenshots remain assets.
+    "/tutorial": { static: false, headers: { "Cache-Control": "no-store" } },
+    "/tutorial/": { static: false, headers: { "Cache-Control": "no-store" } },
+    // The standalone blog owns page rendering and Standard.site verification.
+    "/blog": { static: false, headers: { "Cache-Control": "no-store" } },
+    "/blog/**": { static: false, headers: { "Cache-Control": "no-store" } },
+    "/.well-known/site.standard.publication": { static: false, headers: { "Cache-Control": "no-store" } },
     // Worker scripts must revalidate across deployments, including the NodePod
     // script imported by the single production PWA worker.
     "/sw.js": staticAssetRule({ ...crossOriginIsolationHeaders, "Cache-Control": "no-cache, no-transform" }),
@@ -106,6 +113,8 @@ export default defineNitroConfig({
   // Nitro reserves "server" for its automatically mounted assets directory.
   serverAssets: [{ baseName: "keating-og", dir: "server/assets" }],
   handlers: [
+    { route: "/tutorial", handler: "server/routes/tutorial.ts" },
+    { route: "/tutorial/", handler: "server/routes/tutorial.ts" },
     // Nitro serves existing static files before these handlers. A missing image
     // or worker must be a real 404, never a cacheable copy of the SPA HTML.
     ...[

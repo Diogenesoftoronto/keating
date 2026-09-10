@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { detectDownloadArchitecture, detectPlatform } from "../lib/detect-platform";
-import { parseDownloadRelease, recommendedDownload, RELEASES_URL, VERIFIED_DOWNLOAD_RELEASE } from "../lib/download-release";
+import { downloadButtonLabel, parseDownloadRelease, recommendedDownload, RELEASES_URL, VERIFIED_DOWNLOAD_RELEASE } from "../lib/download-release";
 
 const nav = (userAgent: string, platform = "", maxTouchPoints = 0, userAgentData?: object) => ({ userAgent, platform, maxTouchPoints, userAgentData }) as unknown as Navigator;
 
@@ -48,11 +48,13 @@ const release = (assets: unknown[]) => ({ tag_name: "v3.12.0", draft: false, pre
 describe("published download assets", () => {
 	it("links to the exact platform and CPU file", () => {
 		for (const asset of VERIFIED_DOWNLOAD_RELEASE.assets) {
-			expect(recommendedDownload(VERIFIED_DOWNLOAD_RELEASE, asset.platform, asset.architecture as "arm64" | "x64")?.url).toBe(asset.url);
+			const selected = recommendedDownload({ ...VERIFIED_DOWNLOAD_RELEASE, assets: [asset] }, asset.platform, asset.architecture === "universal" ? "unknown" : asset.architecture);
+			expect(selected?.url).toBe(asset.url);
 		}
 	});
 	it.each(["ios", "android", "windows", "unknown"] as const)("does not send %s visitors a Mac archive", (platform) => {
-		expect(recommendedDownload(VERIFIED_DOWNLOAD_RELEASE, platform, "arm64")).toBeUndefined();
+		const terminalRelease = { ...VERIFIED_DOWNLOAD_RELEASE, assets: VERIFIED_DOWNLOAD_RELEASE.assets.filter((asset) => asset.kind === "terminal") };
+		expect(recommendedDownload(terminalRelease, platform, "arm64")).toBeUndefined();
 	});
 	it("requires a CPU choice when architecture is hidden", () => {
 		expect(recommendedDownload(VERIFIED_DOWNLOAD_RELEASE, "macos", "unknown")).toBeUndefined();
@@ -84,7 +86,30 @@ describe("published download assets", () => {
 		}
 		expect(recommendedDownload(parsed, "linux", "unknown", ".deb")).toBeUndefined();
 		expect(recommendedDownload(parsed, "linux", "x64", ".dmg")).toBeUndefined();
-		expect(recommendedDownload(VERIFIED_DOWNLOAD_RELEASE, "linux", "x64", ".deb")).toBeUndefined();
+		expect(recommendedDownload(VERIFIED_DOWNLOAD_RELEASE, "linux", "x64", ".deb")?.format).toBe(".deb");
+	});
+	it("selects the release workflow EXE and universal APK, independent of asset order", () => {
+		const windows = uploaded("Keating-3.12.0-windows-x64-setup.exe");
+		const android = uploaded("Keating-3.12.0-android-universal.apk");
+		for (const assets of [[windows, android], [android, windows]]) {
+			const parsed = parseDownloadRelease(release(assets))!;
+			const exe = recommendedDownload(parsed, "windows", "x64")!;
+			const apk = recommendedDownload(parsed, "android", "unknown")!;
+			expect(exe.url).toBe(windows.browser_download_url);
+			expect(downloadButtonLabel(exe)).toBe("Download Windows EXE");
+			expect(apk.url).toBe(android.browser_download_url);
+			expect(downloadButtonLabel(apk)).toBe("Download Android APK");
+			expect(recommendedDownload(parsed, "windows", "arm64")).toBeUndefined();
+		}
+	});
+	it("prefers a standard EXE to MSI and the larger offline edition", () => {
+		const parsed = parseDownloadRelease(release([
+			uploaded("Keating-3.12.0-offline-windows-x64-setup.exe"),
+			uploaded("Keating-3.12.0-windows-x64.msi"),
+			uploaded("Keating-3.12.0-windows-x64-setup.exe"),
+		]))!;
+		expect(parsed.assets[0]?.edition).toBe("offline");
+		expect(recommendedDownload(parsed, "windows", "x64")?.name).toBe("Keating-3.12.0-windows-x64-setup.exe");
 	});
 	it("ignores foreign links, incomplete files, ambiguous CPU names, debug builds, and mismatched versions", () => {
 		const parsed = parseDownloadRelease(release([
@@ -92,6 +117,8 @@ describe("published download assets", () => {
 			uploaded("keating-3.12.0-linux-arm64.tar.gz", { state: "new" }),
 			uploaded("Keating-3.12.0.dmg"), uploaded("keating-3.12.0-arm64-debug.apk"),
 			uploaded("keating-3.11.0-linux-x64.tar.gz"), uploaded("../keating-x64.exe"),
+			uploaded("Keating-3.11.0-windows-x64-setup.exe"), uploaded("Keating-3.11.0-android-universal.apk"),
+			uploaded("Keating-3.12.0-cli-windows-x64.exe"), uploaded("Keating-3.12.0-terminal-windows-x64.exe"),
 			uploaded("Keating-x64.exe", { size: 0 }), uploaded("unrelated-x64.exe"),
 		]))!;
 		expect(parsed.assets).toEqual([]);

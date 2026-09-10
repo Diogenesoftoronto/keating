@@ -8,7 +8,7 @@ import { TerminalInstall } from "../components/TerminalInstall";
 import { AndroidLogo, AppleLogo, IosLogo, LinuxLogo, WindowsLogo } from "../components/platform-logos";
 import { useSeo } from "../hooks/useSeo";
 import { detectDownloadArchitecture, detectPlatform, type DetectedPlatform, type DownloadArchitecture } from "../lib/detect-platform";
-import { downloadArchitectureLabel, downloadFormatLabel, downloadSize, fetchDownloadRelease, recommendedDownload, VERIFIED_DOWNLOAD_RELEASE, type DownloadAsset } from "../lib/download-release";
+import { downloadArchitectureLabel, downloadButtonLabel, downloadFormatLabel, downloadSize, fetchDownloadRelease, recommendedDownload, VERIFIED_DOWNLOAD_RELEASE, type DownloadAsset } from "../lib/download-release";
 import "./download.css";
 
 const PLATFORMS = [
@@ -121,9 +121,10 @@ export function Download() {
                   {recommended ? (
                     <>
                       <a className="downloads-button downloads-button-primary" href={recommended.url} onClick={() => captureDownload(recommended, "hero")}>
-                        <PlatformIcon size={20} aria-hidden="true" /> Download for {selectedPlatform?.label}<ArrowDownToLine size={18} aria-hidden="true" />
+                        <PlatformIcon size={20} aria-hidden="true" /> {downloadButtonLabel(recommended)}<ArrowDownToLine size={18} aria-hidden="true" />
                       </a>
-                      <p>{recommended.kind === "terminal" ? "Terminal app" : "App installer"} · {downloadArchitectureLabel(platform, recommended.architecture)} · {recommended.format} · {downloadSize(recommended.size)}</p>
+                      <p>{recommended.edition === "offline" ? "Offline app installer" : recommended.kind === "terminal" ? "Terminal app" : downloadFormatLabel(recommended.format)} · {downloadArchitectureLabel(platform, recommended.architecture)} · {downloadSize(recommended.size)}</p>
+                      {platform === "android" && <p>Android 8 or later. Open the downloaded APK to install Keating.</p>}
                     </>
                   ) : needsArchitecture ? (
                     <p className="downloads-choice-hint">Choose your {platform === "macos" ? "Mac’s chip" : "processor"} above to get the right file.{platform === "macos" && <span>Find it in Apple menu → About This Mac.</span>}</p>
@@ -176,14 +177,14 @@ export function Download() {
                     <div className="downloads-file-platform"><Logo size={30} aria-hidden="true" /><div><h3>{label}</h3><p>{terminalOnly ? "Terminal app" : assets.length ? "App installer" : "Native app"}</p></div>{id === detected && <span className="downloads-detected">Your device</span>}</div>
                     {assets.length ? (
                       <ul aria-label={`${label} downloads`} className="downloads-files">
-                        {assets.map((asset) => <li key={asset.name}><a href={asset.url} aria-label={`Download Keating ${asset.kind === "terminal" ? "terminal" : "app"} for ${label}, ${downloadArchitectureLabel(id, asset.architecture)}, ${asset.format}, ${downloadSize(asset.size)}`} onClick={() => captureDownload(asset, "platform_card")}><span>{downloadArchitectureLabel(id, asset.architecture)}<small>{asset.format} · {downloadSize(asset.size)}</small></span><ArrowDownToLine size={18} aria-hidden="true" /></a></li>)}
+                        {assets.map((asset) => <li key={asset.name}><a href={asset.url} aria-label={`Download Keating ${asset.edition === "offline" ? "offline app" : asset.kind === "terminal" ? "terminal" : "app"} for ${label}, ${downloadArchitectureLabel(id, asset.architecture)}, ${asset.format}, ${downloadSize(asset.size)}`} onClick={() => captureDownload(asset, "platform_card")}><span>{asset.edition === "offline" ? "Offline · " : ""}{id === "android" ? "Android APK" : id === "windows" ? `Windows ${asset.format.slice(1).toUpperCase()} · ` : ""}{id !== "android" && downloadArchitectureLabel(id, asset.architecture)}<small>{asset.format} · {downloadSize(asset.size)}</small></span><ArrowDownToLine size={18} aria-hidden="true" /></a></li>)}
                       </ul>
                     ) : <div className="downloads-unavailable"><span>Not published yet</span><Link to="/chat" onClick={captureBrowser}>Use the browser app <ArrowRight size={15} aria-hidden="true" /></Link></div>}
                   </article>
                 );
               })}
             </div>
-            <p className="downloads-catalog-note" role="status">{releaseCheck === "unavailable" ? `Showing verified ${release.tag} files. The latest release check is temporarily unavailable.` : releaseCheck === "checking" ? `Showing verified ${release.tag} files. Checking for a newer release…` : "Files from the latest published release."} Desktop installers appear when published.</p>
+            <p className="downloads-catalog-note" role="status">{releaseCheck === "unavailable" ? `Showing verified ${release.tag} files. The latest release check is temporarily unavailable.` : releaseCheck === "checking" ? `Showing verified ${release.tag} files. Checking for a newer release…` : "Files from the latest published release."}</p>
             <details className="downloads-install-help"><summary><Terminal size={18} aria-hidden="true" /> Installing the terminal app</summary><div><p>The macOS and Linux <code>.tar.gz</code> files contain Keating’s terminal app and its runtime. Extract the archive, open a terminal in the extracted folder, and run <code>./install.sh</code>. Then start a lesson with <code>keating shell</code>.</p><p>For the visual workspace shown above, <Link to="/chat">open the browser app</Link>. Developers can also <a href="https://github.com/Diogenesoftoronto/keating/tree/main/desktop" target="_blank" rel="noreferrer">build the desktop app from source</a>.</p></div></details>
           </div>
         </section>

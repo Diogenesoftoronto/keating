@@ -17,18 +17,6 @@ import {
 import { Landing } from "./pages/Landing";
 // Every other route is code-split into its own chunk, fetched on navigation, so
 // the entry bundle no longer ships Chat, the assistant panel, markdown/KaTeX, etc.
-const Tutorial = lazyRouteComponent(
-  () => loadRouteChunk(() => import("./pages/Tutorial")),
-  "Tutorial",
-);
-const AtprotoBlog = lazyRouteComponent(
-  () => loadRouteChunk(() => import("./pages/AtprotoBlog")),
-  "AtprotoBlog",
-);
-const AtprotoBlogPost = lazyRouteComponent(
-  () => loadRouteChunk(() => import("./pages/AtprotoBlog")),
-  "AtprotoBlogPost",
-);
 const Chat = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/Chat")),
   "Chat",
@@ -120,6 +108,8 @@ import {
 } from "./keating/ui-settings";
 import { loadRouteChunk } from "./lib/stale-build-recovery";
 import { desktopMarketingUrl, isDesktopShell } from "./lib/desktop-navigation";
+import { tutorialRedirectBeforeLoad } from "./lib/tutorial-redirect";
+import { blogRedirectBeforeLoad } from "./lib/blog-redirect";
 import { AppStatusScreen, RouteLoadingScreen, RouteNotFoundScreen } from "./components/AppStatusScreen";
 
 const rootRoute = createRootRoute({
@@ -211,19 +201,19 @@ const sharedSessionRoute = createRoute({
 const tutorialRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/tutorial",
-  component: Tutorial,
+  beforeLoad: tutorialRedirectBeforeLoad,
 });
 
 const blogRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/blog",
-  component: AtprotoBlog,
+  beforeLoad: blogRedirectBeforeLoad,
 });
 
 const blogPostRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/blog/$slug",
-  component: AtprotoBlogPost,
+  beforeLoad: blogRedirectBeforeLoad,
 });
 
 const paperRoute = createRoute({

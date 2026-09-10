@@ -1,0 +1,397 @@
+[
+  {
+    "slug": "learning-with-keating",
+    "title": "Learn with Keating",
+    "description": "Turn a topic into a lesson, explain your thinking, and decide what to practice next.",
+    "group": "Learning",
+    "sections": [
+      {
+        "heading": "Start with something you want to be able to do",
+        "paragraphs": [
+          "Open chat and describe your goal, what you already know, and where you get stuck. A concrete goal gives Keating more to work with than a subject name alone. You can ask for an explanation, a lesson plan, a concept map, a quiz, or flashcards in ordinary language.",
+          "For example: I understand fractions, but I get lost when solving equations. Help me solve a simple equation, then give me a new one to try without showing the answer."
+        ],
+        "links": [{ "label": "Open Keating chat", "href": "https://keating.help/chat" }]
+      },
+      {
+        "heading": "Choose a useful first prompt",
+        "paragraphs": ["Copy one of these examples into chat and replace the subject with your own. They are starting points for a conversation; the response depends on your selected model."],
+        "bullets": [
+          "Learn: Teach me supply and demand using a familiar example. Ask me to predict what happens before explaining it.",
+          "Plan: Plan four weeks of beginner machine learning study. Ask about my available time and maths background first.",
+          "Map: Show me how probability, statistics, and linear algebra connect in data science.",
+          "Explain back: Ask me to explain async/await from scratch, then help me find gaps in my explanation.",
+          "Create practice: Make flashcards for the Spanish verb forms I keep confusing."
+        ]
+      },
+      {
+        "heading": "Work through the question before moving on",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/classroom-openui.png",
+            "alt": "An interactive thinking question asks how a piano sound felt, with a text answer field and a Submit answers button.",
+            "caption": "A real lesson from the earlier tutorial asks the learner to describe what they heard before continuing. This older activity says Submit answers; current single questions use Send answer and grouped checks use Finish check.",
+            "width": 1920,
+            "height": 1048
+          }
+        ],
+        "paragraphs": [
+          "When Keating presents an interactive question, answer in that activity. A single question uses Send answer; a grouped check ends with Finish check. Explain the step you are unsure about instead of guessing what the tutor wants to hear.",
+          "If the explanation moves too quickly, ask for one smaller step, a different example, or a hint. If it feels familiar, ask for a new case that changes an assumption. Finish by explaining the idea without looking back, then compare your explanation with the lesson."
+        ],
+        "links": [{ "label": "Use quizzes and practice", "href": "/quizzes-and-practice/" }]
+      },
+      {
+        "heading": "Tell Keating what helps you learn",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/settings-learning-about-you.png",
+            "alt": "Settings is open to Learning and About You, with an empty field for goals, prior knowledge, interests, languages, and accessibility needs.",
+            "caption": "About You in the earlier tutorial, before learner context has been entered. The save control is outside this capture. Saved context stays in this browser and can accompany requests to a remote tutor when used.",
+            "width": 1920,
+            "height": 1048
+          }
+        ],
+        "paragraphs": [
+          "Open Settings, choose Learning, and find About You. Add useful context such as your goals, prior knowledge, preferred examples, languages, or accessibility needs, then choose Save about you. The saved setting lives in this browser and applies to the current conversation on your next message and to new sessions.",
+          "Learning also contains Teacher Persona and Speech & Voice. You can still steer any lesson directly in chat: ask for shorter explanations, less jargon, a visual example, or more time to work through a problem."
+        ],
+        "links": [{ "label": "Use voice and attachments", "href": "/voice-and-attachments/" }]
+      },
+      {
+        "heading": "Check what the feedback actually establishes",
+        "paragraphs": [
+          "A tutor explanation or model verdict is feedback to examine. Ask which step supports the conclusion and try the problem yourself. A generated answer key, a model review, and an independently computed mathematical result provide different kinds of evidence.",
+          "Some structured arithmetic and linear-equation answers can be checked by a separate exact calculator. Other mathematics can continue through the lesson and receive model feedback with the label Not independently checked. That label means the independent checker did not establish the result; it does not by itself mean your answer is wrong.",
+          "After a useful session, return later and try a fresh problem without the explanation in front of you. An encouraging response or a high quiz score alone does not establish that you will retain the idea or apply it elsewhere."
+        ],
+        "links": [{ "label": "Return to sessions and review", "href": "/sessions-and-review/" }]
+      }
+    ]
+  },
+  {
+    "slug": "quizzes-and-practice",
+    "title": "Use quizzes and practice",
+    "description": "Answer interactive questions, interpret grading, and use flashcards for honest recall practice.",
+    "group": "Learning",
+    "sections": [
+      {
+        "heading": "Ask for practice that targets a gap",
+        "paragraphs": [
+          "Tell Keating the topic and what you want to test. For example: Quiz me on the Krebs cycle. Ask questions that test deeper understanding, then help me revisit the parts I miss. For a shorter check, ask one question at a time and explain your reasoning.",
+          "Questions may ask you to choose an answer, choose several answers, fill blanks, arrange items, or write an explanation. Follow the instructions on the current activity; a text explanation needs different review from a choice with a supplied answer key."
+        ]
+      },
+      {
+        "heading": "Answer, flag, and review before submitting",
+        "paragraphs": [
+          "In an interactive chat quiz, use Next to move forward and Previous question to return. Flag for review marks a question you want to revisit. Skip records that you are leaving it unanswered. Review opens the answer list, where you can return to a question before choosing Submit quiz.",
+          "Answer or skip every question to submit. If the quiz has a timer, running out of time advances to the next question and keeps the answer already entered. You can return and answer the timed-out question. A Quick marker describes timing; accuracy is scored separately."
+        ]
+      },
+      {
+        "heading": "Read the score and the grading status together",
+        "paragraphs": [
+          "Questions with a usable objective check can be scored immediately. Open-ended answers wait for the tutor model to grade them. Awaiting your teacher's review and awaiting grading refer to this pending model feedback; they do not mean a human teacher has reviewed your work.",
+          "The summary counts answers that have been scored and keeps pending answers separate until a grade arrives. Open Your answers to revisit what you submitted. If feedback is unclear, ask Keating to explain the specific step behind its correct, partial, or incorrect verdict."
+        ]
+      },
+      {
+        "heading": "Understand independently checked maths",
+        "paragraphs": [
+          "For supported structured arithmetic and single-variable linear equations, Keating can compute an exact result separately from the model and compare your numeric answer with it. This checks the represented problem and final answer; it does not independently verify every explanation or proof in the conversation.",
+          "If a problem or answer format is outside the checker's supported range, continue answering normally. Unsupported maths may receive a model verdict while keeping Not independently checked beside it. An unsupported check is not an automatic incorrect answer.",
+          "For a supported numeric problem, try a plain number or fraction if your answer was not understood. For a proof, a more general equation, or another unsupported problem, include your reasoning and ask for model review. Keep the distinction between that feedback and independent verification visible."
+        ]
+      },
+      {
+        "heading": "Rate flashcards by what you recalled",
+        "paragraphs": [
+          "Try to recall the answer before choosing Reveal answer or turning the card over. Then choose Again if you missed it, Hard if recall was strained, Good if you recalled it, or Easy if it was immediate. Your rating helps schedule the card's next review.",
+          "Use Coming up to find cards that are due. Start due review works through due cards, while Review this deck focuses on one deck. Rate the recall you actually managed, rather than how familiar the answer looks after revealing it."
+        ],
+        "links": [{ "label": "Plan your next review", "href": "/sessions-and-review/" }]
+      },
+      {
+        "heading": "Recover a quiz or answer that did not save",
+        "paragraphs": [
+          "If completion could not be delivered, the activity may offer Retry save quiz, Retry save answers, or Retry save deck. Use the retry control after restoring the connection or provider access. Keep the activity open while recovering the saved attempt.",
+          "If the activity itself cannot be displayed, use Retry interaction when offered. You can also tell Keating which question failed and ask for a simpler presentation. A broken activity display or a pending grade does not establish that your answer was incorrect."
+        ],
+        "links": [{ "label": "Troubleshoot connection and saving problems", "href": "/troubleshooting/" }]
+      }
+    ]
+  },
+  {
+    "slug": "courses-and-sharing",
+    "title": "Work with courses and sharing",
+    "description": "Find course work, save submissions, invite collaborators, and understand what a shared session reveals.",
+    "group": "Learning",
+    "sections": [
+      {
+        "heading": "Open a course workspace",
+        "paragraphs": [
+          "Courses brings lessons, source material, practice, notes, and assignments together. Open an existing course or follow the invitation link supplied by its organiser. Which editing and collaboration controls you see depends on your course role and permissions.",
+          "If an access screen appears, read its message. Retry course access checks a failed connection again; Check account is shown when account access is needed. Hosted course workspaces may be unavailable in the running deployment. These controls do not establish that a hosted subscription is available to buy."
+        ],
+        "links": [{ "label": "Open Courses", "href": "https://keating.help/courses" }]
+      },
+      {
+        "heading": "Use a course to organise repeated study",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/surface-course-builder.png",
+            "alt": "An earlier course builder has title and purpose fields beside saved plans, flashcard decks, and an artifact tray containing generated interactions.",
+            "caption": "Earlier course assembly screen with saved lesson material alongside the course fields. The current guide refers to New course; this capture uses the older Create blank course label and does not show an assignment submission or delivery confirmation.",
+            "width": 1920,
+            "height": 1048
+          }
+        ],
+        "paragraphs": [
+          "Select a lesson in the course workspace to read its material and work with the practice or assignments attached to it. Check the task instructions, deliverables, and any opening or due dates before beginning. Keep a question tied to the lesson specific: ask about the passage or step that is blocking you.",
+          "When creating a course, give it a concrete learning goal and a manageable scope. The New course builder is a starting point for assembling material you can return to. Review generated lessons and questions for accuracy and fit before inviting other people to rely on them."
+        ]
+      },
+      {
+        "heading": "Save a draft, then submit deliberately",
+        "paragraphs": [
+          "In an assignment, write your response and attach any required files. Save draft keeps a working revision; Submit records a submission. The attachment control allows up to 10 files of 25 MB each. Wait for files to finish saving before submitting.",
+          "Saved on this device confirms local saving. Delivered to course confirms that the course received the work. If delivery is queued or fails, keep your local copy and use Retry delivery after reconnecting. A local save is useful protection, but it is not confirmation that a teacher can see the submission.",
+          "Check Share submission with peers only when you want peer sharing for that submission. Review that choice before sending, especially when your response or attachments contain personal material."
+        ],
+        "links": [{ "label": "Recover a queued submission", "href": "/troubleshooting/" }]
+      },
+      {
+        "heading": "Invite people with the right role",
+        "paragraphs": [
+          "If your course permissions include inviting members, choose Invite. In Invite to this course, choose a role and use Create link and QR code, then Copy link. The dialog states the invitation's expiry and use limit.",
+          "Students work through lessons and control teacher access. Peers can co-work and comment, with deck editing governed by course settings. Teachers can edit lessons, invite members, and request fuller learner visibility. Choose the role that matches the work the person should be able to do."
+        ]
+      },
+      {
+        "heading": "Share a tutoring session as a snapshot",
+        "paragraphs": [
+          "Use Share session from chat to share a conversation. Settings, App, Share Links controls how the link carries its snapshot. Public modes upload or embed the visible conversation, supported session artifacts, and finalized review feedback so anyone with the link can read them. Local links work only from that browser's cache.",
+          "Review the visible conversation and any finalized feedback before confirming public sharing. The snapshot excludes drafts and hidden tool traffic, and unsupported or oversized artifacts may be omitted. Read the sharing result and any omission notice instead of assuming every attachment or artifact travelled with the link."
+        ]
+      },
+      {
+        "heading": "Continue from a shared lesson",
+        "paragraphs": [
+          "A shared session opens as a read-only view. Choose Start from this to create your own chat from the shared conversation. This gives you a place to ask follow-up questions without editing the shared snapshot.",
+          "If someone cannot open your link, check whether you selected a local link. For a portable link, copy the complete URL and ask the recipient to try it again. A missing session snapshot may require a fresh share link."
+        ],
+        "links": [{ "label": "Manage sessions and review feedback", "href": "/sessions-and-review/" }]
+      }
+    ]
+  },
+  {
+    "slug": "sessions-and-review",
+    "title": "Return to sessions and review",
+    "description": "Find an earlier lesson, revisit due practice, and record evidence about what helped or hindered your learning.",
+    "group": "Learning",
+    "sections": [
+      {
+        "heading": "Find a conversation you want to continue",
+        "paragraphs": [
+          "Open the session browser and use Search sessions to find a saved conversation. Select a session to reopen it. In its actions, Rename lets you give it a useful title, such as Linear equations: balancing both sides.",
+          "Use New session for a fresh topic. Use Fork session when you want a separate continuation of an existing conversation, or Fork session from here on a response to explore a different direction from that point."
+        ]
+      },
+      {
+        "heading": "Pick the next useful review",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/surface-coming-up.png",
+            "alt": "Coming up shows zero cards due, a clear review runway, a disabled Start due review button, and the top of the Priority board.",
+            "caption": "Coming up in the earlier tutorial with no cards due. Start due review is disabled in this state. The Priority board below is separate from the schedule that determines when cards become due.",
+            "width": 1440,
+            "height": 900
+          }
+        ],
+        "paragraphs": [
+          "Coming up combines due flashcards with topics and open checks that may need attention. Start due review begins the cards currently due. Review this deck selects one deck; Practice in chat returns a topic to the tutor.",
+          "Changing Learning priority changes what receives attention without changing a card's review date. Recall ratings determine when cards are due. Use this distinction to focus on an upcoming need while keeping an honest record of what you can remember."
+        ],
+        "links": [{ "label": "Use flashcards and quiz feedback", "href": "/quizzes-and-practice/" }]
+      },
+      {
+        "heading": "Read the original lesson before judging it",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/review-workspace.png",
+            "alt": "A review of Understanding Synths vs Samples has a Contents list on the left, the original learner and tutor messages in the centre, and a collapsed margin on the right.",
+            "caption": "Earlier tutorial capture of a saved lesson in Review. Contents keeps learner messages, tutor responses, and tool results together; the margin is folded away. The failed tool entries are part of the original record.",
+            "width": 1920,
+            "height": 1048
+          }
+        ],
+        "paragraphs": [
+          "Choose Review session in chat to inspect the teaching record. Use Contents to move between turns and read the learner's question alongside the tutor response. Tool calls and their results help you distinguish what the tutor said it checked from what actually ran.",
+          "Use Rendered for normal reading and Raw when you need the exact source text. A useful review points to a concrete moment: an unexplained step, a misleading example, a helpful question, or an answer the tutor accepted too quickly."
+        ]
+      },
+      {
+        "heading": "Leave an anchored note",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/review-selection-menu.png",
+            "alt": "Selected transcript text has a Mark as toolbar offering Problem, Strength, Suggestion, and Rewrite.",
+            "caption": "Earlier tutorial capture of selecting a passage to annotate. Choose the kind of note that fits the highlighted evidence, or draft a rewrite.",
+            "width": 1062,
+            "height": 300
+          },
+          {
+            "src": "/assets/screenshots/review-annotation.png",
+            "alt": "The Margin contains a new whole-turn annotation with Problem selected, an empty Why does this matter field, optional details, and Draft status.",
+            "caption": "A separate whole-turn note from the earlier tutorial, still in Draft. The rationale is empty and Add annotation is disabled; this frame shows a note being prepared, not a saved assessment.",
+            "width": 1920,
+            "height": 1048
+          }
+        ],
+        "paragraphs": [
+          "Select text in the transcript or an artifact, then choose Problem, Strength, or Suggestion. Explain Why does this matter? and save the note. Add detail such as severity or an alternative only when it helps explain your judgement.",
+          "Choose Rewrite to draft an alternative while retaining the original text. In Assess, record the rubric ratings, summary, and verdict you can support with evidence. Set the review status to Final when you have finished; use Export to keep a copy of the review."
+        ]
+      },
+      {
+        "heading": "Treat model-assisted review as a proposal",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/review-socratic-pass.png",
+            "alt": "The Socratic pass panel has a model-pool selector and separate Read the session and Score the rubric actions.",
+            "caption": "Earlier tutorial capture of the two model-assisted review actions before a pass runs. The menu offers a proposal workflow; no generated notes or completed rubric are shown here.",
+            "width": 1920,
+            "height": 1048
+          }
+        ],
+        "paragraphs": [
+          "The review tools include Read the session, Score the rubric, and Finish this note. These ask a model to propose notes or ratings. Inspect the cited passage, accept the notes you agree with, dismiss the others, and use Apply only when you agree with a proposed rubric assessment.",
+          "A model judging another model's lesson is still model review. It does not independently verify all facts or demonstrate that a learner retained the material. Running a model-assisted pass sends review material to the selected model; check the provider you have chosen before starting it.",
+          "Use the review to decide what to try next: a clearer explanation, a smaller step, or a new problem that tests whether the idea carries over."
+        ]
+      },
+      {
+        "heading": "Protect work stored in your browser",
+        "paragraphs": [
+          "Use the same browser profile and app address when returning to local sessions. Another browser, a private window, or another device may not have those records. Clearing site data can remove local work.",
+          "If chat warns that storage persistence is not enabled, choose Try again to request it again. The browser may still decline, and local records may be removed under storage pressure. Keep separate copies of work you cannot afford to lose; a local share link is not a backup outside the browser."
+        ],
+        "links": [{ "label": "Troubleshoot local storage", "href": "/troubleshooting/" }, { "label": "Understand session sharing", "href": "/courses-and-sharing/" }]
+      }
+    ]
+  },
+  {
+    "slug": "voice-and-attachments",
+    "title": "Use voice and attachments",
+    "description": "Bring a document, image, or recording into a lesson and recover when speech or file handling fails.",
+    "group": "Learning",
+    "sections": [
+      {
+        "heading": "Attach material with a question",
+        "paragraphs": [
+          "In chat, open More actions and choose Attach files. Add your file, then say what you want to do with it: explain a passage, examine a diagram, compare two approaches, or make practice from a section. Check the attachment chips before sending and use Remove attachment if you selected the wrong file.",
+          "Chat accepts images, audio, readable text files, and PDFs. The selected model must support the input you send. For an image, choose a model that accepts images; a model that only accepts text cannot inspect the picture just because it is attached."
+        ]
+      },
+      {
+        "heading": "Use PDFs with readable text",
+        "paragraphs": [
+          "Keating extracts text from PDFs for the conversation. A scanned PDF with no readable text needs optical character recognition before attaching. PDF text extraction is not a guarantee that every diagram, layout detail, or equation was preserved.",
+          "If a file fails or the model says the conversation is too large, try a smaller excerpt or remove the newest attachment. For a diagram, attach an image with an image-capable model and identify the part you want to discuss. Keep the original file available so you can check the response against it."
+        ]
+      },
+      {
+        "heading": "Record a message and check the transcript",
+        "paragraphs": [
+          "Choose Record an audio message to open the recording controls. Use Hold to speak, allow microphone access when your browser requests it, and release when finished. Keating attaches the recording and attempts transcription when speech credentials are available.",
+          "Read the transcript in the composer before sending and correct names, numbers, or technical terms. Switch to keyboard returns to text input. If transcription fails, the recording can remain attached; the notice says Your audio is still attached when that is the case."
+        ]
+      },
+      {
+        "heading": "Set up speech or a live conversation",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/surface-live.png",
+            "alt": "The earlier Live with Keating setup page says Google key needed and offers Add a key above its model selector.",
+            "caption": "The earlier Google Live setup stops at a missing-key prompt. This is a setup state, not a connected conversation. Provider choices and model names can differ in your build; use the current configuration described above.",
+            "width": 1440,
+            "height": 900
+          }
+        ],
+        "paragraphs": [
+          "Open Settings, Learning, Speech & Voice to choose speech options. The speech provider can differ from the main chat model and may need its own credentials. Live conversation requires a compatible live provider and browser microphone access; speech output alone does not establish live conversation support.",
+          "Use Start a live conversation when your configuration supports it. Start with a short exchange to check that you can hear the tutor and that it can hear you. Available visual inputs depend on the live provider and model, so use the options shown for your current configuration."
+        ]
+      },
+      {
+        "heading": "Recover without losing your recording",
+        "paragraphs": [
+          "For Transcript unavailable, check the speech provider credentials and use the offered transcription retry. You may instead send the recording to an audio-capable model. If you want to send only a transcript you typed yourself, remove the audio attachment first.",
+          "For a microphone error, check the site's microphone permission and your selected input device, then try recording again. If the optional speech layer fails, turn speech off and continue with text; the main chat model may still work.",
+          "An attached recording, a completed transcript, and a successful model response are separate steps. Check which one failed before recording again or removing the attachment."
+        ],
+        "links": [{ "label": "Troubleshoot provider and connection errors", "href": "/troubleshooting/" }]
+      }
+    ]
+  },
+  {
+    "slug": "troubleshooting",
+    "title": "Troubleshoot a learning session",
+    "description": "Recover provider access, interrupted responses, local saves, course delivery, and offline readiness.",
+    "group": "Help",
+    "sections": [
+      {
+        "heading": "Provider sign-in failed",
+        "paragraphs": [
+          "Open Settings, Models & Providers and check the credentials for the provider used by the selected chat model. Re-enter an invalid or expired key, or complete the provider's sign-in flow where offered, then retry the failed turn. Check that the selected model belongs to the provider you configured.",
+          "Model access is not allowed means the provider account may lack access to that model. Choose a model available to the account or correct its permissions. Provider credits unavailable needs attention in that provider account, or another configured model; repeatedly retrying the same request will not restore credits.",
+          "If the error is Voice sign-in failed, check the speech provider separately in Learning, Speech & Voice. You can turn speech off and continue with text."
+        ]
+      },
+      {
+        "heading": "The reply stalls or cannot reach the provider",
+        "paragraphs": [
+          "Keating retries brief network interruptions, timeouts, and temporary provider failures before showing an error. If the error remains, check your connection and any VPN or proxy. If you chose a local model server, confirm that it is running and reachable from the browser.",
+          "Use Stop generating to stop a response that is still running before changing direction. Retry after the connection recovers, or choose another configured model if the provider remains unavailable. Respect a rate-limit wait message instead of repeatedly sending the same prompt.",
+          "For Conversation is too large for this model, start a focused chat, remove large attachments, or choose a model with a larger context window. Preserve any unsent work before reloading the page."
+        ]
+      },
+      {
+        "heading": "Sessions are missing or local saving fails",
+        "paragraphs": [
+          "Return to the same browser profile and https://keating.help/chat, then use Search sessions. A new browser profile or private window may have an empty local history. Do not clear site data as the first troubleshooting step: it can remove the records you are trying to recover.",
+          "If the storage persistence warning appears, choose Try again. Browser settings determine whether persistence is granted. If saving fails because storage is full, keep copies of important text and files, free device space without deleting Keating's site data, and retry the save.",
+          "For a file attachment failure, read the message and use the offered Retry file or Retry files control. Check the file size and type. Scanned PDFs need readable text, and course submission attachments have a limit of 10 files and 25 MB per file."
+        ],
+        "links": [{ "label": "Find and protect saved sessions", "href": "/sessions-and-review/" }]
+      },
+      {
+        "heading": "Check offline readiness before relying on it",
+        "paragraphs": [
+          "A page opening from cache or a conversation being saved locally does not mean the selected tutor can answer offline. Hosted providers need a connection. A local model also needs its runtime and model files available on the device where it runs.",
+          "If your installed desktop build shows Offline tutor under Models & Providers, inspect its status. Resume download continues a paused download; Ready offline tells you to choose MiniCPM5 2B (Offline) in the model selector. Offline runtime unavailable in this build means that build cannot provide the offline runtime.",
+          "Before depending on offline tutoring, finish setup while connected, select the local model, disconnect, and try a short text conversation. This is a readiness check for your installation, not a promise that an offline installer is currently available. In the desktop offline tutor, images need a vision model and recordings need a transcript."
+        ],
+        "links": [{ "label": "Developer setup documentation", "href": "https://dev.keating.help" }]
+      },
+      {
+        "heading": "Course work is saved but not delivered",
+        "paragraphs": [
+          "Saved on this device means a local copy exists. Wait for Delivered to course before assuming the course has received it. If delivery is queued, restore the connection and use Retry delivery. Keep the browser's local data and original files until you have confirmed delivery.",
+          "If the course itself cannot open, follow the access screen's recovery: Retry course access for a failed check or Check account when account access is required. An unavailable hosted workspace cannot be fixed by repeatedly submitting your work. A course invite that no longer works may need a fresh invitation from the organiser."
+        ],
+        "links": [{ "label": "Course submissions and invitations", "href": "/courses-and-sharing/" }]
+      },
+      {
+        "heading": "An activity is broken or an answer is still awaiting review",
+        "paragraphs": [
+          "Use Retry interaction when an activity cannot display and the control is offered. For a completed activity that could not save, use its specific retry control, such as Retry save quiz. Tell Keating which question failed if you need a simpler version.",
+          "Awaiting grading means a model verdict has not arrived. After restoring provider access, ask Keating to review the submitted answers. Not independently checked is different: the mathematical checker did not establish the result, but the lesson can continue and a model can still give a labelled verdict. Neither state alone means you answered incorrectly.",
+          "When reporting a persistent problem, include the visible error title, selected provider and model, the action that failed, and whether the problem affects text, voice, an attachment, or course delivery. Remove credentials and private content from any details you share."
+        ],
+        "links": [{ "label": "Understand quiz grading", "href": "/quizzes-and-practice/" }, { "label": "Recover voice and attachment problems", "href": "/voice-and-attachments/" }]
+      }
+    ]
+  }
+]

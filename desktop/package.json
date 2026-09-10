@@ -18,7 +18,8 @@
     "dist": "electron-builder",
     "stage:offline": "node scripts/stage-offline.mjs",
     "dist:offline": "node scripts/build-offline-edition.mjs",
-    "dist:linux": "electron-builder --linux AppImage deb rpm"
+    "dist:linux": "electron-builder --linux AppImage deb rpm",
+    "dist:windows": "electron-builder --win nsis --x64"
   },
   "dependencies": {
     "@keating/p2p-core": "workspace:*"
@@ -33,6 +34,18 @@
     "appId": "help.keating.desktop",
     "productName": "Keating",
     "beforePack": "scripts/offline-before-pack.cjs",
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "artifactName": "Keating-${version}-windows-${arch}-setup.${ext}",
+      "icon": "../web/public/brand/logo-badge.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "runAfterFinish": false,
+      "shortcutName": "Keating"
+    },
     "linux": {
       "target": ["AppImage", "deb", "rpm"],
       "artifactName": "Keating-${version}-linux-${arch}.${ext}",

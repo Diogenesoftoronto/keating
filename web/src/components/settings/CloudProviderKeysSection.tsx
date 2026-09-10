@@ -574,6 +574,8 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 							<label className={labelClass}>{provider} API Key</label>
 							<a
 								href={tutorialApiKeyHref(provider)}
+								target="_blank"
+								rel="noopener noreferrer"
 								onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(provider))}
 								className={linkClass}
 							>

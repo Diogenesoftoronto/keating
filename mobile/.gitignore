@@ -4,3 +4,6 @@
 
 expo-env.d.ts
 # @end expo-cli
+
+# Signed APK staging belongs in release assets, never in source control.
+release/

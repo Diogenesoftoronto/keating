@@ -1,0 +1,2 @@
+# Keep the original tutorial captures addable despite the repository PNG rule.
+!*.png

@@ -12,6 +12,7 @@ import { LandingClosing } from "../components/LandingClosing";
 import { LandingLearning } from "../components/LandingLearning";
 import { useLandingAnalytics } from "../hooks/useLandingAnalytics";
 import { useSeo } from "../hooks/useSeo";
+import { DOCUMENTATION_URL } from "../lib/tutorial-links";
 import "./landing-page.css";
 
 export function Landing() {
@@ -54,7 +55,7 @@ export function Landing() {
               <p>A teacher that starts with your goals and builds on what you know.</p>
               <LandingTeacherScene />
               <div className="landing-deeper">
-                <details><summary>Make it your own</summary><p>Choose your model, shape your teacher, and take your data with you. It’s open source—build as deeply as you want.</p><div><Link to="/tutorial">Setup guide</Link><a href="https://github.com/Diogenesoftoronto/keating" target="_blank" rel="noreferrer">Explore the source</a></div></details>
+                <details><summary>Make it your own</summary><p>Choose your model, shape your teacher, and take your data with you. It’s open source—build as deeply as you want.</p><div><a href={`${DOCUMENTATION_URL}start-here/`}>Setup guide</a><a href="https://github.com/Diogenesoftoronto/keating" target="_blank" rel="noreferrer">Explore the source</a></div></details>
               </div>
             </div>
             <div className="landing-response-example"><div className="landing-example-picker" role="group" aria-label="Choose a lesson subject">{LANDING_EXAMPLES.map(example => <button type="button" key={example.id} data-example={example.id} aria-pressed={exampleId === example.id} onClick={() => selectExample(example.id)}>{example.label}</button>)}</div><LandingPractice key={exampleId} exampleId={exampleId} /></div>

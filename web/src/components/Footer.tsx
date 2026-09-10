@@ -1,5 +1,7 @@
 import { AppLink as Link } from "./AppLink";
 import { isDesktopShell } from "../lib/desktop-navigation";
+import { DOCUMENTATION_URL } from "../lib/tutorial-links";
+import { BLOG_URL } from "../lib/blog-links";
 import { T } from "gt-react";
 import { css, cx } from "../../styled-system/css";
 
@@ -21,9 +23,6 @@ export function Footer() {
                 <Link to="/download"><T>Download</T></Link>
               </li>
               <li>
-                <Link to="/tutorial"><T>Tutorial</T></Link>
-              </li>
-              <li>
                 <Link to="/chat"><T>Open Keating</T></Link>
               </li>
               <li>
@@ -38,10 +37,13 @@ export function Footer() {
             <h5><T>Resources</T></h5>
             <ul>
               <li>
+                <Link to={DOCUMENTATION_URL}><T>Documentation</T></Link>
+              </li>
+              <li>
                 <Link to="/paper"><T>Paper</T></Link>
               </li>
               <li>
-                <Link to="/blog"><T>Blog</T></Link>
+                <Link to={BLOG_URL}><T>Blog</T></Link>
               </li>
               <li>
                 <Link to="/usage"><T>Usage</T></Link>

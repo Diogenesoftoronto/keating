@@ -15,6 +15,7 @@
     "android:prebuild": "expo prebuild --platform android",
     "android:prebuild:clean": "expo prebuild --clean --platform android",
     "android:apk": "expo prebuild --platform android --no-install && node scripts/pin-gradle-wrapper.mjs && cd android && ./gradlew assembleDebug",
+    "android:apk:release": "expo prebuild --platform android --no-install && node scripts/pin-gradle-wrapper.mjs && node scripts/prepare-android-release.mjs && cd android && ./gradlew :app:assembleRelease --no-daemon",
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
     "test": "bun test ./test/*.test.ts",

@@ -5387,6 +5387,8 @@ function AssistantMessage({
                       </button>
                       <a
                         href={tutorialApiKeyHref(authError.provider)}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         onClick={(event) =>
                           handleTutorialLinkClick(
                             event.nativeEvent,
