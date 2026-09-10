@@ -95,19 +95,18 @@ jobs:
         env:
           RELEASE_VERSION: ${{ needs.validate-native-version.outputs.version }}
         run: |
+          $unpacked = Join-Path $PWD 'desktop/release/win-unpacked'
+          if (!(Test-Path $unpacked)) { throw 'Missing unpacked Windows build output' }
           $installer = Join-Path $PWD "desktop/release/Keating-$env:RELEASE_VERSION-windows-x64-setup.exe"
           if (!(Test-Path $installer) -or (Get-Item $installer).Length -eq 0) { throw 'Missing Windows installer' }
-          $installDir = Join-Path $env:RUNNER_TEMP 'Keating installed'
-          $install = Start-Process -FilePath $installer -ArgumentList @('/S', "/D=$installDir") -Wait -PassThru
-          if ($install.ExitCode -ne 0) { throw "Installer failed: $($install.ExitCode)" }
-          $exe = Join-Path $installDir 'Keating.exe'
-          $asar = Join-Path $installDir 'resources/app.asar'
-          if (!(Test-Path $exe) -or !(Test-Path (Join-Path $installDir 'resources/nitro/server/index.mjs'))) { throw 'Missing installed application/runtime' }
+          $exe = Join-Path $unpacked 'Keating.exe'
+          $asar = Join-Path $unpacked 'resources/app.asar'
+          if (!(Test-Path $exe) -or !(Test-Path (Join-Path $unpacked 'resources/nitro/server/index.mjs'))) { throw 'Missing packaged application/runtime' }
           $env:ELECTRON_RUN_AS_NODE = '1'
           $smoke = Start-Process -FilePath $exe -ArgumentList @('desktop/scripts/verify-windows-runtime.cjs', "`"$asar`"") -NoNewWindow -PassThru
           if (!$smoke.WaitForExit(60000)) { Stop-Process -Id $smoke.Id -Force; throw 'Packaged native runtime verification timed out' }
           if ($smoke.ExitCode -ne 0) { throw 'Packaged native runtime verification failed' }
-          $offline = Join-Path $installDir 'resources/offline/keating-offline.exe'
+          $offline = Join-Path $unpacked 'resources/offline/keating-offline.exe'
           & $offline --probe
           if ($LASTEXITCODE -ne 0) { throw 'Installed offline runtime verification failed' }
       - uses: actions/upload-artifact@v4
@@ -156,6 +155,8 @@ jobs:
       - name: Build release APK with bundled JavaScript
         env:
           NODE_ENV: production
+          GRADLE_OPTS: -Xmx6g
+          JAVA_TOOL_OPTIONS: -Xmx6g
         run: |
           unset CPATH CPLUS_INCLUDE_PATH C_INCLUDE_PATH LIBRARY_PATH
           bun run --cwd mobile android:apk:release
