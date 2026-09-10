@@ -24,7 +24,7 @@ interface SessionResponse {
 }
 
 const DEFAULT_OUTPUT = resolve(import.meta.dir, "../../.keating/outputs/standard-site-blog.json");
-const CANONICAL_URL = process.env.KEATING_BLOG_CANONICAL_URL?.trim() || "https://keating.help";
+const CANONICAL_URL = process.env.KEATING_BLOG_CANONICAL_URL?.trim() || "https://blog.keating.help";
 
 function decodeHtmlEntities(value: string): string {
 	const named: Record<string, string> = {

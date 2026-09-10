@@ -1,0 +1,104 @@
+{
+  "verified_at": "2026-09-10T12:43:21.545Z",
+  "tag_name": "v3.15.0",
+  "draft": false,
+  "prerelease": false,
+  "assets": [
+    {
+      "name": "keating-3.15.0-darwin-arm64.tar.gz",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/keating-3.15.0-darwin-arm64.tar.gz",
+      "size": 893111975,
+      "state": "uploaded"
+    },
+    {
+      "name": "keating-3.15.0-darwin-x64.tar.gz",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/keating-3.15.0-darwin-x64.tar.gz",
+      "size": 916661349,
+      "state": "uploaded"
+    },
+    {
+      "name": "Keating-3.15.0-linux-aarch64.rpm",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/Keating-3.15.0-linux-aarch64.rpm",
+      "size": 191133317,
+      "state": "uploaded"
+    },
+    {
+      "name": "Keating-3.15.0-linux-amd64.deb",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/Keating-3.15.0-linux-amd64.deb",
+      "size": 237205728,
+      "state": "uploaded"
+    },
+    {
+      "name": "Keating-3.15.0-linux-arm64.AppImage",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/Keating-3.15.0-linux-arm64.AppImage",
+      "size": 302056258,
+      "state": "uploaded"
+    },
+    {
+      "name": "Keating-3.15.0-linux-arm64.deb",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/Keating-3.15.0-linux-arm64.deb",
+      "size": 233841272,
+      "state": "uploaded"
+    },
+    {
+      "name": "keating-3.15.0-linux-arm64.tar.gz",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/keating-3.15.0-linux-arm64.tar.gz",
+      "size": 744702511,
+      "state": "uploaded"
+    },
+    {
+      "name": "keating-3.15.0-linux-x64.tar.gz",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/keating-3.15.0-linux-x64.tar.gz",
+      "size": 759436707,
+      "state": "uploaded"
+    },
+    {
+      "name": "Keating-3.15.0-linux-x86_64.AppImage",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/Keating-3.15.0-linux-x86_64.AppImage",
+      "size": 302305898,
+      "state": "uploaded"
+    },
+    {
+      "name": "Keating-3.15.0-linux-x86_64.rpm",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/Keating-3.15.0-linux-x86_64.rpm",
+      "size": 198507237,
+      "state": "uploaded"
+    },
+    {
+      "name": "Keating-3.15.0-offline-linux-aarch64.rpm",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/Keating-3.15.0-offline-linux-aarch64.rpm",
+      "size": 1543441081,
+      "state": "uploaded"
+    },
+    {
+      "name": "Keating-3.15.0-offline-linux-amd64.deb",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/Keating-3.15.0-offline-linux-amd64.deb",
+      "size": 1616013972,
+      "state": "uploaded"
+    },
+    {
+      "name": "Keating-3.15.0-offline-linux-arm64.AppImage",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/Keating-3.15.0-offline-linux-arm64.AppImage",
+      "size": 1664087639,
+      "state": "uploaded"
+    },
+    {
+      "name": "Keating-3.15.0-offline-linux-arm64.deb",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/Keating-3.15.0-offline-linux-arm64.deb",
+      "size": 1612649856,
+      "state": "uploaded"
+    },
+    {
+      "name": "Keating-3.15.0-offline-linux-x86_64.AppImage",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/Keating-3.15.0-offline-linux-x86_64.AppImage",
+      "size": 1664337110,
+      "state": "uploaded"
+    },
+    {
+      "name": "Keating-3.15.0-offline-linux-x86_64.rpm",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/v3.15.0/Keating-3.15.0-offline-linux-x86_64.rpm",
+      "size": 1550848037,
+      "state": "uploaded"
+    }
+  ]
+}

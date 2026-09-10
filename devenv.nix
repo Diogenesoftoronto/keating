@@ -66,12 +66,21 @@ in
   process.manager.implementation = "process-compose";
   process.managers.process-compose.tui.enable = true;
 
-  # The developer handbook uses Devenv's native Caddy service locally.
+  # The developer handbook and user docs use the native Caddy service locally.
   services.caddy = {
     enable = true;
     ca = null;
     virtualHosts."http://localhost:4190".extraConfig = ''
       root * ${config.env.DEVENV_ROOT}/scripts/dev-site/public
+      encode zstd gzip
+      file_server
+      handle_errors {
+        rewrite * /404.html
+        file_server
+      }
+    '';
+    virtualHosts."http://localhost:4191".extraConfig = ''
+      root * ${config.env.DEVENV_ROOT}/scripts/docs-site/public
       encode zstd gzip
       file_server
       handle_errors {
@@ -85,8 +94,25 @@ in
     exec = "bun scripts/dev-site/build.ts";
     before = [ "devenv:processes:caddy" ];
   };
+  tasks."keating:docs-site-build" = {
+    description = "Build the public Keating user documentation";
+    exec = "bun scripts/docs-site/build.ts";
+    before = [ "devenv:processes:caddy" ];
+  };
+  tasks."keating:blog-site-install" = {
+    description = "Install the standalone blog dependencies";
+    exec = "bun install --cwd scripts/blog-site --frozen-lockfile";
+    before = [ "keating:blog-site-build" ];
+  };
+  tasks."keating:blog-site-build" = {
+    description = "Bundle the independent Standard.site blog";
+    exec = "bun scripts/blog-site/build.ts";
+    before = [ "devenv:processes:blog-site" ];
+  };
 
   processes = {
+    blog-site.exec = "bun scripts/blog-site/dist/server.js";
+
     terminal-shell = {
       exec = "bun src/cli/main.ts shell";
       process-compose.is_interactive = true;

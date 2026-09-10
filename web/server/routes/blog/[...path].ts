@@ -1,32 +1,8 @@
-// Serve the SPA shell for blog URLs with the canonical Standard.site record in
-// the initial HTML. Indexers can verify the document without executing React;
-// the browser still boots the same client-side reader.
-import { readFile } from "node:fs/promises";
-import { defineEventHandler, getRequestURL, setResponseHeader } from "h3";
+// Legacy pages redirect to the standalone blog. Retain the metadata helper for
+// existing reader consumers while Standard.site document paths stay unchanged.
+import { defineEventHandler, getRequestURL, sendRedirect, setResponseHeader } from "h3";
 import type { AtprotoBlogPost } from "../../../src/keating/standard-site";
-import { loadAtprotoBlogFeed } from "../../utils/atproto-blog";
-
-let cachedShell: string | null = null;
-
-const SHELL_CANDIDATES = [
-	"./dist/index.html",
-	"dist/index.html",
-	"./.output/public/index.html",
-	"./public/index.html",
-];
-
-async function loadShell(): Promise<string | null> {
-	if (cachedShell) return cachedShell;
-	for (const path of SHELL_CANDIDATES) {
-		try {
-			cachedShell = await readFile(path, "utf8");
-			return cachedShell;
-		} catch {
-			// Try the next production/dev shell location.
-		}
-	}
-	return null;
-}
+import { BLOG_URL, legacyBlogHref } from "../../../src/lib/blog-links";
 
 function escapeAttr(value: string): string {
 	return value
@@ -74,29 +50,8 @@ export function injectBlogDocumentMeta(html: string, origin: string, post: Atpro
 	return next;
 }
 
-export default defineEventHandler(async (event) => {
-	const shell = await loadShell();
-	if (!shell) return;
-
+export default defineEventHandler((event) => {
 	const url = getRequestURL(event);
-	const slug = decodeURIComponent(url.pathname.replace(/^\/blog\/?/, "").split("/")[0] ?? "");
-	let html = shell;
-	try {
-		const feed = await loadAtprotoBlogFeed();
-		if (slug) {
-			const post = feed.posts.find((entry) => entry.slug === slug);
-			if (post) html = injectBlogDocumentMeta(html, url.origin, post);
-		} else {
-			const title = `${feed.publication.name} · Keating`;
-			html = html.replace(/<title>[^<]*<\/title>/i, `<title>${escapeAttr(title)}</title>`);
-			html = setLink(html, "canonical", `${url.origin}/blog`);
-			html = setMeta(html, "name", "description", feed.publication.description ?? "Writing from Keating.");
-		}
-	} catch {
-		// The SPA renders a truthful retry/error state. Serving the shell keeps the
-		// blog reachable while its PDS is unconfigured or temporarily unavailable.
-	}
-
-	setResponseHeader(event, "Content-Type", "text/html; charset=utf-8");
-	return html;
+	setResponseHeader(event, "Cache-Control", "no-store");
+	return sendRedirect(event, legacyBlogHref(`${url.pathname}${url.search}`) ?? BLOG_URL, 308);
 });

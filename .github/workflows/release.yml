@@ -113,8 +113,8 @@ jobs:
           grep -Fx "${BUNDLE_NAME}/dist/shared/evolution/loop.js" bundle-files.txt
           grep -Fx "${BUNDLE_NAME}/SYSTEM.md" bundle-files.txt
           grep -Fx "${BUNDLE_NAME}/runtime/bun" bundle-files.txt
-          ! grep -F "${BUNDLE_NAME}/bin/.keating/" bundle-files.txt
-          ! grep -F "${BUNDLE_NAME}/bin/keating.config.json" bundle-files.txt
+          if grep -F "${BUNDLE_NAME}/bin/.keating/" bundle-files.txt; then exit 1; fi
+          if grep -F "${BUNDLE_NAME}/bin/keating.config.json" bundle-files.txt; then exit 1; fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -219,8 +219,15 @@ jobs:
             desktop/release-offline/*.deb
             desktop/release-offline/*.rpm
 
+  build-native:
+    needs: validate
+    uses: ./.github/workflows/native-downloads.yml
+    with:
+      release_tag: ${{ github.ref_name }}
+    secrets: inherit
+
   release:
-    needs: [build, build-desktop-linux]
+    needs: [build, build-desktop-linux, build-native]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -238,6 +245,8 @@ jobs:
             artifacts/**/*.AppImage
             artifacts/**/*.deb
             artifacts/**/*.rpm
+            artifacts/**/*.exe
+            artifacts/**/*.apk
             web/public/keating-metaharness.pdf
           generate_release_notes: true
 

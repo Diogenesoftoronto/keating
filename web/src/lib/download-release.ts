@@ -1,4 +1,5 @@
 import type { DetectedPlatform, DownloadArchitecture } from "./detect-platform";
+import verifiedRelease from "./download-release-snapshot.json";
 
 export const RELEASES_URL = "https://github.com/Diogenesoftoronto/keating/releases";
 export const RELEASE_API_URL = "https://api.github.com/repos/Diogenesoftoronto/keating/releases/latest";
@@ -11,6 +12,7 @@ export interface DownloadAsset {
 	architecture: Exclude<DownloadArchitecture, "unknown"> | "universal";
 	kind: "terminal" | "desktop" | "android";
 	format: string;
+	edition?: "offline";
 }
 
 export interface DownloadRelease {
@@ -19,26 +21,9 @@ export interface DownloadRelease {
 	assets: DownloadAsset[];
 }
 
-// Verified against the published GitHub release on 2026-09-06. Kept separately
-// from APP_VERSION: an unreleased source version must never produce dead links.
-// The page refreshes public release metadata; this snapshot survives API outages.
-export const VERIFIED_DOWNLOAD_RELEASE: DownloadRelease = {
-	tag: "v3.11.0",
-	url: `${RELEASES_URL}/tag/v3.11.0`,
-	assets: [
-		["darwin", "arm64", 894555661],
-		["darwin", "x64", 918143702],
-		["linux", "arm64", 746269733],
-		["linux", "x64", 760974416],
-	].map(([os, arch, size]) => {
-		const name = `keating-3.11.0-${os}-${arch}.tar.gz`;
-		return {
-			name, url: `${RELEASES_URL}/download/v3.11.0/${name}`, size: Number(size),
-			platform: os === "darwin" ? "macos" : "linux",
-			architecture: arch as "arm64" | "x64", kind: "terminal", format: ".tar.gz",
-		};
-	}),
-};
+// Refresh after publication with web/scripts/refresh-download-release.ts.
+// This API-outage fallback contains only published assets, independent of APP_VERSION.
+export const VERIFIED_DOWNLOAD_RELEASE: DownloadRelease = parseDownloadRelease(verifiedRelease)!;
 
 /** Only offer actual uploaded assets from this repository, never inferred URLs. */
 export function parseDownloadRelease(value: unknown): DownloadRelease | null {
@@ -62,9 +47,10 @@ export function parseDownloadRelease(value: unknown): DownloadRelease | null {
 			assets.push({ name, url: expectedUrl, size: asset.size, platform: terminal[2] === "darwin" ? "macos" : "linux", architecture: terminal[3] as "arm64" | "x64", kind: "terminal", format: ".tar.gz" });
 			continue;
 		}
-		// Future installers become available only when uploaded. Require explicit
-		// architecture in their names, rather than guessing from a .dmg or .exe.
-		if (!/^keating[-_. ]/i.test(name)) continue;
+		// Installer names must identify this release and the CPU. In particular,
+		// never present a CLI executable, stale installer, or debug APK as the app.
+		const installerVersion = /^keating[-_. ](\d+\.\d+\.\d+)(?=[-_. ])/i.exec(name)?.[1];
+		if (`v${installerVersion}` !== tag) continue;
 		const arch = /(?:^|[-_. ])(arm64|aarch64|x64|x86_64|amd64|universal)(?=[-_. ]|$)/i.exec(name)?.[1]?.toLowerCase();
 		const architecture = arch === "aarch64" ? "arm64" : arch === "amd64" || arch === "x86_64" ? "x64" : arch;
 		if (architecture !== "arm64" && architecture !== "x64" && architecture !== "universal") continue;
@@ -72,7 +58,9 @@ export function parseDownloadRelease(value: unknown): DownloadRelease | null {
 		if (!format || /(?:debug|unsigned|blockmap)/i.test(name)) continue;
 		const ext = format.toLowerCase();
 		const platform = ext === ".dmg" ? "macos" : ext === ".exe" || ext === ".msi" ? "windows" : ext === ".apk" ? "android" : "linux";
-		assets.push({ name, url: expectedUrl, size: asset.size, platform, architecture, kind: platform === "android" ? "android" : "desktop", format });
+		if (platform === "windows" && /(?:^|[-_. ])(?:cli|terminal)(?=[-_. ]|$)/i.test(name)) continue;
+		const edition = /(?:^|[-_. ])offline(?=[-_. ]|$)/i.test(name) ? "offline" as const : undefined;
+		assets.push({ name, url: expectedUrl, size: asset.size, platform, architecture, kind: platform === "android" ? "android" : "desktop", format, ...(edition ? { edition } : {}) });
 	}
 	return { tag, url: `${RELEASES_URL}/tag/${tag}`, assets };
 }
@@ -89,12 +77,20 @@ export function recommendedDownload(release: DownloadRelease, platform: Detected
 		&& (!format || asset.format.toLowerCase() === format.toLowerCase())
 		&& (asset.architecture === architecture || asset.architecture === "universal"))
 		.sort((a, b) => Number(a.kind === "terminal") - Number(b.kind === "terminal")
+			|| Number(a.edition === "offline") - Number(b.edition === "offline")
+			|| Number(b.format.toLowerCase() === ".exe") - Number(a.format.toLowerCase() === ".exe")
 			|| Number(b.format.toLowerCase() === ".appimage") - Number(a.format.toLowerCase() === ".appimage")
 			|| Number(a.architecture === "universal") - Number(b.architecture === "universal"))[0];
 }
 
 export function downloadFormatLabel(format: string): string {
-	return ({ ".deb": "DEB · Ubuntu / Debian", ".rpm": "RPM · Fedora / openSUSE", ".appimage": "AppImage · Portable", ".tar.gz": "Terminal archive" } as Record<string, string>)[format.toLowerCase()] ?? format;
+	return ({ ".exe": "Windows installer (.exe)", ".msi": "Windows installer (.msi)", ".apk": "Android APK", ".deb": "DEB · Ubuntu / Debian", ".rpm": "RPM · Fedora / openSUSE", ".appimage": "AppImage · Portable", ".tar.gz": "Terminal archive" } as Record<string, string>)[format.toLowerCase()] ?? format;
+}
+
+export function downloadButtonLabel(asset: DownloadAsset): string {
+	if (asset.platform === "android") return "Download Android APK";
+	if (asset.platform === "windows") return `Download Windows ${asset.format.slice(1).toUpperCase()}`;
+	return `Download for ${asset.platform === "macos" ? "macOS" : asset.platform === "linux" ? "Linux" : "iOS"}`;
 }
 
 export function downloadArchitectureLabel(platform: DetectedPlatform, architecture: DownloadAsset["architecture"]): string {

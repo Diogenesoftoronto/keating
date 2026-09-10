@@ -3419,9 +3419,9 @@ function FeaturedDocs({ onJump }: { onJump: (post: Post) => void }) {
 function ResourceLibrary() {
   const resources = [
     {
-      label: "Tutorial settings guide",
-      detail: "Provider keys, persona, speech, interface, sharing, and proxy setup.",
-      href: "/tutorial#settings",
+      label: "Keating documentation",
+      detail: "Model setup, learning, sessions, voice, and sharing guides.",
+      href: "https://docs.keating.help/",
     },
     {
       label: "Architecture notes",

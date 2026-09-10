@@ -1,0 +1,4 @@
+public/
+.public-build-*/
+!assets/*.png
+!assets/*.ttf

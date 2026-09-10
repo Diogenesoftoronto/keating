@@ -1,0 +1,522 @@
+[
+  {
+    "slug": "start-here",
+    "title": "Start your first lesson",
+    "description": "Open Keating, connect a model, and turn one question into a conversation you can return to.",
+    "group": "Getting started",
+    "sections": [
+      {
+        "heading": "1. Open your learning space",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/surface-classroom.png",
+            "alt": "Keating's empty chat with the Sessions panel on the left, suggested starting points, and the message box below.",
+            "caption": "Earlier tutorial capture of the chat workspace. Sessions sit on the left and the message box is at the bottom. The first-visit walkthrough and header labels have since changed; follow the steps in this guide.",
+            "width": 1440,
+            "height": 900
+          }
+        ],
+        "paragraphs": [
+          "Open Keating in your browser. You can begin on a phone, tablet, or computer without installing an app. Use the browser profile where you want to keep your lessons: browser sessions and settings are saved locally.",
+          "On your first visit, Welcome to Keating walks you through model access, setup, and a starting point. Choose Next to continue. Go straight to chat skips the walkthrough; you can still connect a model from the chat header or Settings."
+        ],
+        "links": [
+          { "label": "Open Keating", "href": "https://keating.help/chat" }
+        ]
+      },
+      {
+        "heading": "2. Connect a model",
+        "paragraphs": [
+          "A model generates Keating's responses. Choose one way to connect before sending your first question. You can change the model later by selecting its name in the chat header."
+        ],
+        "bullets": [
+          "Use Keating selects Inkling Small. Choose Connect or create an account, then Sign up / Sign in to connect through Not Organic. Hosted responses depend on account access and available credit; completing sign-in alone does not confirm either.",
+          "Bring your own key lets you use a model provider without a Not Organic account. Choose Choose a model and provider. Add the provider's API key in Settings → Models & Providers → Cloud Providers, or use Save key when API key required appears. The provider bills this usage separately.",
+          "For a model that runs on your device, follow the offline tutor guide. Browser models need a compatible browser and a substantial initial download. Use an offline tutor appears in supported desktop builds."
+        ],
+        "links": [
+          { "label": "Choose a model", "href": "/choose-a-model/" },
+          { "label": "Set up an offline tutor", "href": "/offline-tutor/" }
+        ]
+      },
+      {
+        "heading": "3. Give Keating a starting point",
+        "paragraphs": [
+          "In Your starting point, describe what you want to understand and what you already know. This is optional. Start chatting puts your starting point into the message box for you to review; it does not send it automatically.",
+          "Try: I can write a Python loop, but recursion confuses me. Help me trace a small example, then ask me to predict the next step.",
+          "Edit the message if needed and send it. You can also start with a question from a lesson, a concept you keep forgetting, or an explanation you want to test. A concrete starting point gives the conversation something useful to work toward."
+        ]
+      },
+      {
+        "heading": "4. Work through the question",
+        "paragraphs": [
+          "Answer in your own words, including the part you are unsure about. If an explanation moves too quickly, ask for a smaller example or one question at a time. If you understand it, ask for a new problem that uses the same idea.",
+          "For example: I think the function stops when the input reaches zero. Give me an input where that stopping rule fails, and let me work out why.",
+          "If a response stops because of a key, account, or credit error, follow the action shown with the error. Check the saved message before sending another copy. The accounts guide explains Refresh balance and Retry response."
+        ],
+        "links": [
+          { "label": "Resolve account and credit prompts", "href": "/accounts-and-credits/" }
+        ]
+      },
+      {
+        "heading": "5. Return to a lesson or begin another",
+        "paragraphs": [
+          "Use the sessions panel to reopen a previous conversation. On a narrow screen, Open sessions panel reveals it. Choose New session when you want to start a separate topic.",
+          "Settings lets you adjust the app and your learning preferences. The Models & Providers tab controls model connections, Learning contains teaching preferences, and App contains interface and privacy controls. On small screens, some controls appear as icons."
+        ]
+      },
+      {
+        "heading": "6. Keep a copy of your work",
+        "paragraphs": [
+          "Your browser's saved lessons are not an account backup. Another browser or device can have a different session library even when you connect the same Not Organic account.",
+          "Open Learning usage, find Portable data, and choose Export portable JSON to download a copy. Do this before clearing site data, moving browsers, or removing an app. The privacy and data guide explains what the export includes and how to restore it."
+        ],
+        "links": [
+          { "label": "Open Learning usage", "href": "https://keating.help/usage" },
+          { "label": "Save and move your learning data", "href": "/privacy-and-data/" }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "choose-a-model",
+    "title": "Choose and connect a model",
+    "description": "Find a model for your task, connect your own provider, or choose a model that runs on your device.",
+    "group": "Getting started",
+    "sections": [
+      {
+        "heading": "Open the model picker",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/surface-models.png",
+            "alt": "An earlier Select Model dialog with search and provider filters, cloud model entries, and a warning that no WebGPU adapter was found.",
+            "caption": "The earlier picker was called Select Model and used Use Selected Model. The current guide describes Find a model. This capture also shows browser models unavailable because no WebGPU adapter was found; the visible cloud entries are not downloaded local models.",
+            "width": 1440,
+            "height": 900
+          }
+        ],
+        "paragraphs": [
+          "Select the current model's name in the chat header to open Find a model. Search by name, narrow the list with Provider, or use Use it for to find models for Step-by-step reasoning or Understanding images.",
+          "Open Model details to inspect a choice. Select a model to use it in the conversation. Wait for the current response to finish before changing models."
+        ]
+      },
+      {
+        "heading": "Use your own provider key",
+        "paragraphs": [
+          "Bring your own key means your provider account supplies model access. You do not need a Not Organic account for this route. Create an API key with your chosen provider and check that the provider account has access to the model you select.",
+          "Open Settings → Models & Providers → Cloud Providers. For a provider with an API Key field, paste the key there and click outside the field to save it. If Keating instead opens API key required when you use a model, paste the key into that dialog and choose Save key.",
+          "Keys entered in the browser are stored in that browser's local settings. Enter keys in credential fields, not in the lesson conversation. Provider usage and charges remain with your provider account. Some provider entries offer their own sign-in flow; follow the controls shown for that provider."
+        ]
+      },
+      {
+        "heading": "Use Keating's hosted model",
+        "paragraphs": [
+          "Inkling Small is the default offered by Use Keating in onboarding. Its account access is managed by Not Organic. Connect or create an account from onboarding, or find Not Organic Hosted under Cloud Providers and choose Connect Not Organic.",
+          "A hosted model needs a connection, permission to use the service, and sufficient account credit. If sign-in succeeds but a response does not, read the account or credit message before retrying."
+        ],
+        "links": [
+          { "label": "Understand accounts and credits", "href": "/accounts-and-credits/" }
+        ]
+      },
+      {
+        "heading": "Run a model on your device",
+        "paragraphs": [
+          "Models with (Browser) in their name download into browser storage and generate responses on your device. MiniCPM5 2B (Browser) is the default browser-model option, with an approximately 1.84 GB download. Browser availability depends on compatible WebGPU support and enough device resources.",
+          "Selecting a browser model starts loading it. Wait for loading to finish before chatting. Model details shows download progress and cached files; Cancel stops an active download, and Delete download removes cached model files.",
+          "MiniCPM5 2B (Offline) is a separate choice in supported native apps. It uses the native offline tutor download, rather than the browser's model cache."
+        ],
+        "links": [
+          { "label": "Prepare a model for offline tutoring", "href": "/offline-tutor/" },
+          { "label": "Connect Ollama, llama.cpp, or LiteLLM", "href": "/connect-local-models/" }
+        ]
+      },
+      {
+        "heading": "Match the model to your material",
+        "paragraphs": [
+          "Use a model marked Understands images when you want it to inspect an image. Keating's current browser-model chat and native MiniCPM5 offline tutor accept text; a model family's name does not make those paths image-capable.",
+          "A recording needs an audio-capable model or a successful transcript of that recording. If you are preparing to work offline, transcribe the material while the required service is available and keep the text with your notes."
+        ]
+      },
+      {
+        "heading": "If a model is missing or will not respond",
+        "bullets": [
+          "Clear the search and reset Provider and Use it for. Check model and provider visibility in Settings → Models & Providers if a choice is still missing.",
+          "For a key error, check the selected provider and replace its saved key if needed. A key for one provider does not connect every model in the picker.",
+          "For a hosted credit error, use the account recovery controls or Choose another model to use a provider you have connected.",
+          "For a browser loading error, read Models that run on this device in the picker. If the device is incompatible or cannot fit the model, choose another available model."
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "accounts-and-credits",
+    "title": "Manage accounts and credits",
+    "description": "Understand when an account is needed, check hosted credit, and resume a lesson after an account or balance error.",
+    "group": "Getting started",
+    "sections": [
+      {
+        "heading": "Decide whether you need an account",
+        "paragraphs": [
+          "Use a Not Organic account for Keating's hosted model and account credit. You can use your own provider key or a compatible on-device model without a Not Organic account.",
+          "Your own provider bills requests made through your provider connection. Keating credits apply to hosted services through Not Organic. Connecting one route does not pay for usage on the other."
+        ],
+        "links": [
+          { "label": "Compare model access options", "href": "/choose-a-model/" }
+        ]
+      },
+      {
+        "heading": "Connect or reconnect your account",
+        "paragraphs": [
+          "In onboarding, choose Use Keating, then Connect or create an account. Choose Sign up / Sign in in the account dialog and complete the Not Organic sign-in or account-creation steps it opens.",
+          "From chat, you can also open Settings → Models & Providers → Cloud Providers and choose Connect Not Organic under Not Organic Hosted. Once connected, this area can show your account and available balance, with Refresh account and Sign out controls.",
+          "If Keating asks you to connect again, return to this flow. Sign-in can expire. A connected account does not by itself guarantee that hosted inference or purchases are available."
+        ]
+      },
+      {
+        "heading": "Check your balance before adding credit",
+        "paragraphs": [
+          "The credit panel shows the amount available after checking your wallet. Choose Refresh balance to update it. If it says the balance has not been verified, check your connection and refresh again before treating the displayed state as a confirmed balance.",
+          "Starter credit appears only when the wallet confirms it was granted. Hosted usage varies with the model and conversation length, so a credit amount is not a fixed number of lessons."
+        ]
+      },
+      {
+        "heading": "Resume after a credit error",
+        "bullets": [
+          "Choose Refresh balance to check whether enough credit is available.",
+          "If purchases are offered, choose Add credits, select one of the displayed one-time packs, and continue to checkout. Review the amount before completing payment.",
+          "Return to Keating after checkout and choose Refresh balance. The wallet confirms the balance; returning from a payment page is not itself confirmation.",
+          "When Retry response appears, use it to resume the saved message. Choose another model is available if you would rather use another connected provider."
+        ],
+        "paragraphs": [
+          "When the credit panel says Your message is safe, Keating has kept the message for recovery. You do not need to type it again.",
+          "If the account is restricted, adding credit may not resolve the restriction. Follow the account message before trying another payment."
+        ]
+      },
+      {
+        "heading": "Read purchase availability in the app",
+        "paragraphs": [
+          "Credit packs are one-time top-ups. A subscription is a separate offer. Check the current pricing page and the options actually enabled for your account before choosing either.",
+          "If the app says Credit purchases aren't available right now, a pricing description is not an active checkout. You can refresh your balance, use any confirmed starter credit, or choose another model."
+        ],
+        "links": [
+          { "label": "View current pricing and availability", "href": "https://keating.help/pricing" }
+        ]
+      },
+      {
+        "heading": "Use the same account on another device",
+        "paragraphs": [
+          "Your credit balance belongs to your account. Connect the same account on each device where you want to use it.",
+          "Your local lesson library and provider-key settings are separate. Signing in on a new browser does not automatically restore them. Export your learning data from the original browser and import it on the new one, then reconnect the providers you need."
+        ],
+        "links": [
+          { "label": "Move your learning data", "href": "/privacy-and-data/" }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "install-keating",
+    "title": "Use Keating on your device",
+    "description": "Start in the browser, find a published download for your device, or install the terminal app.",
+    "group": "Getting started",
+    "sections": [
+      {
+        "heading": "Start with the browser",
+        "paragraphs": [
+          "Open Keating in your browser to use the learning workspace without installing an app. This is also the way to begin when a native installer is not offered for your device.",
+          "Opening the website still requires a connection. Using a browser model for local generation is a separate setup step; visiting the site does not install an offline tutor."
+        ],
+        "links": [
+          { "label": "Open Keating in your browser", "href": "https://keating.help/chat" },
+          { "label": "Follow the first-lesson walkthrough", "href": "/start-here/" }
+        ]
+      },
+      {
+        "heading": "Choose a published download",
+        "paragraphs": [
+          "Open the download page and check the selected platform. Choose the processor architecture and package format when the page asks for them. On macOS, the choices are Apple Silicon and Intel; other platforms may offer ARM64 and x64.",
+          "Read the download's type as well as its platform. A Terminal archive opens a command-line learning environment. An app installer is a different package. Follow the link displayed for your combination rather than changing an installer URL yourself.",
+          "If the page says Not published yet, use the browser app. Availability can differ by platform, architecture, and release."
+        ],
+        "links": [
+          { "label": "Check Keating downloads", "href": "https://keating.help/download" }
+        ]
+      },
+      {
+        "heading": "Install a terminal archive",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/tui-startup-logo.png",
+            "alt": "Keating's terminal first-run screen with its green logo, profile-setup prompt, and Message Keating input.",
+            "caption": "Terminal startup from the earlier tutorial, showing the first-run prompt and message input. The model name in this saved capture is an example from that session, not a model included with the archive.",
+            "width": 1440,
+            "height": 900
+          }
+        ],
+        "paragraphs": [
+          "The macOS and Linux terminal .tar.gz downloads contain Keating's terminal app and its runtime. Extract the archive, open a terminal inside the extracted folder, and run the installer. Then start Keating's shell."
+        ],
+        "code": "./install.sh\nkeating shell",
+        "language": "sh"
+      },
+      {
+        "heading": "Install the terminal app with Bun",
+        "paragraphs": [
+          "If Bun is already installed, you can install the Keating package globally. Run setup to choose your provider and model, then use doctor to check the local setup before opening the shell."
+        ],
+        "code": "bun add -g keating\nkeating setup\nkeating doctor\nkeating shell",
+        "language": "sh",
+        "links": [
+          { "label": "Developer and self-hosting documentation", "href": "https://dev.keating.help" }
+        ]
+      },
+      {
+        "heading": "Reconnect models and bring your lessons",
+        "paragraphs": [
+          "A new installation has its own local storage. Connect the provider or account you plan to use. Before changing browsers or removing an old installation, export the lessons you want to keep.",
+          "For supported native apps, the offline tutor is an additional model download. Check for Offline tutor in the installed app and follow that guide. An ordinary installer does not include the tutor's model weights. A separate full offline edition is available only if a release explicitly offers it."
+        ],
+        "links": [
+          { "label": "Save and restore your learning data", "href": "/privacy-and-data/" },
+          { "label": "Prepare the offline tutor", "href": "/offline-tutor/" }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "offline-tutor",
+    "title": "Prepare an offline tutor",
+    "description": "Download a local text model, manage its storage, and check what will work before you lose your connection.",
+    "group": "Getting started",
+    "sections": [
+      {
+        "heading": "Check which version you are using",
+        "paragraphs": [
+          "Supported native builds offer MiniCPM5 2B (Offline), a text tutor that runs on your device without provider credentials. Its optional model download is about 1.55 GB and is kept across app updates.",
+          "In the desktop app, look for Offline tutor in Settings → Models & Providers. If the panel is absent or says Offline runtime unavailable in this build, check the download page for a package that supports your device. If none is offered, use the browser app and check whether a browser model is available."
+        ],
+        "links": [
+          { "label": "Choose a Keating download", "href": "/install-keating/" }
+        ]
+      },
+      {
+        "heading": "Download and select the desktop tutor",
+        "bullets": [
+          "Connect to the internet and open Settings → Models & Providers → Offline tutor. Allow room for the approximately 1.55 GB download as well as your app and learning data.",
+          "Choose Download offline tutor · 1.55 GB. Keep the app open while it downloads.",
+          "Wait for Ready offline. A completed download is checked before the model becomes available.",
+          "Open the model selector and choose MiniCPM5 2B (Offline). Send a short text question to check that it responds on your device."
+        ],
+        "paragraphs": [
+          "Downloading a model does not replace a model you have explicitly selected. Check the name in the chat header before starting your offline lesson."
+        ]
+      },
+      {
+        "heading": "Pause, resume, or reclaim space",
+        "paragraphs": [
+          "Use Pause download if you need to stop transferring the model. Resume download continues the saved download later. If a download or model check fails, read the error in the Offline tutor panel and retry when the connection and storage are ready.",
+          "Remove download deletes an optional model download. Stop any running response before removing it. You will need a connection to download the model again. A model bundled into an offline edition is part of that app instead of a removable optional download."
+        ]
+      },
+      {
+        "heading": "Use the controls in a native mobile build",
+        "paragraphs": [
+          "If your native mobile build includes the offline runtime, open Settings → Offline tutor to download and manage the model. Downloading pauses when the app goes into the background; return to the app and resume it explicitly.",
+          "Support depends on the build and device. A mobile browser is using the browser path below. Development previews such as Expo Go do not include the native offline runtime."
+        ]
+      },
+      {
+        "heading": "Run a browser model locally",
+        "paragraphs": [
+          "In the website's model picker, MiniCPM5 2B (Browser) uses a separate download of approximately 1.84 GB. Select it while connected and let loading finish. It requires compatible WebGPU support; the picker explains device limitations under Models that run on this device.",
+          "Browser model files are cached in that browser. Model details shows the cached size and Delete download controls. Clearing browser data can remove the download. Keep your work exported, and check that the page and model still work in the conditions you plan to use: cached weights alone do not guarantee that the website can reopen without a connection."
+        ],
+        "links": [
+          { "label": "Find and manage browser models", "href": "/choose-a-model/" }
+        ]
+      },
+      {
+        "heading": "Try your lesson before going offline",
+        "paragraphs": [
+          "Disconnect briefly and try a fresh text question with the local model selected. Reopen the app if that is how you will use it later. This checks your device and installed build before you rely on them away from a connection.",
+          "Local tutoring does not make online features available offline. Account sign-in, credit purchases, remote model requests, and downloading new material still need a connection. Images need a vision model, and recordings need an audio-capable model or a successful transcript.",
+          "If you switch from an online model while it has unfinished tool work, start a new lesson or return to that model. The native offline tutor cannot continue the online model's outstanding tool call."
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "connect-local-models",
+    "title": "Connect Ollama, llama.cpp, or LiteLLM",
+    "description": "Add a model server or gateway, choose the right address, and troubleshoot model discovery.",
+    "group": "Getting started",
+    "sections": [
+      {
+        "heading": "Choose a connection Keating can reach",
+        "paragraphs": [
+          "A custom provider connects Keating to a separate model server. Ollama and llama.cpp can run models on your computer; LiteLLM is a gateway that can route requests to local or remote models. These are separate from models labeled (Browser) or (Offline).",
+          "The hosted app routes custom-provider requests through its server, which rejects local and private network addresses. Entering localhost in the hosted website does not connect it to your computer. Use a reachable HTTPS gateway supplied by your administrator, or a locally configured Keating environment that supports local targets.",
+          "The localhost addresses below describe each runner's local setup. For a hosted connection, use the HTTPS address provided for that service. If you want local generation in the hosted website without running a separate server, choose a compatible browser model."
+        ],
+        "links": [
+          { "label": "Set up a browser or native offline model", "href": "/offline-tutor/" },
+          { "label": "Local hosting and developer setup", "href": "https://dev.keating.help" }
+        ]
+      },
+      {
+        "heading": "Add the provider in Settings",
+        "bullets": [
+          "Open Settings → Models & Providers → Custom Providers and choose Add Provider.",
+          "Choose the provider type, enter a Provider Name you will recognize, and check Base URL. For LiteLLM, choose AI Gateway as the provider type and LiteLLM as Gateway Kind.",
+          "Use API Key (Optional) if your server or gateway requires a key. For a shared gateway, use the access key its administrator gives you.",
+          "Choose Save provider. Keating attempts to discover models. Close Settings, open Find a model from the chat header, and select a model under your provider's name."
+        ],
+        "paragraphs": [
+          "Saving a provider can succeed even when model discovery fails. Read the notice, check the connection, and try a short text conversation before relying on it for a lesson."
+        ]
+      },
+      {
+        "heading": "Ollama",
+        "paragraphs": [
+          "Install Ollama for your operating system and start its app or service. If you run it manually, use ollama serve in a terminal and keep it running. In another terminal, download a model with tool support, such as qwen3:4b, then try it in Ollama before connecting Keating.",
+          "Choose Ollama in Add Provider. Its local Base URL is http://localhost:11434, without /v1. A standard local Ollama service does not require an API key. Keating's Ollama discovery only lists models that report tool support; a model working in Ollama alone does not guarantee it will appear in this list."
+        ],
+        "code": "ollama pull qwen3:4b\nollama run qwen3:4b",
+        "language": "sh",
+        "links": [
+          { "label": "Ollama installation and server settings", "href": "https://docs.ollama.com/faq" },
+          { "label": "Ollama qwen3:4b model details", "href": "https://ollama.com/library/qwen3:4b" }
+        ]
+      },
+      {
+        "heading": "llama.cpp",
+        "paragraphs": [
+          "Install or build llama.cpp using its current server documentation, and download a GGUF model supported by that version. Start llama-server with the file you downloaded. Replace /path/to/model.gguf below with your actual file path; the alias gives it the model name tutor.",
+          "Choose llama.cpp in Add Provider. Its local Base URL is http://localhost:8080, without /v1. Save the provider and select the discovered tutor model. If the server uses authentication, enter its key in API Key (Optional)."
+        ],
+        "code": "llama-server -m /path/to/model.gguf --alias tutor --host 127.0.0.1 --port 8080",
+        "language": "sh",
+        "links": [
+          { "label": "llama.cpp server installation and options", "href": "https://github.com/ggml-org/llama.cpp/tree/master/tools/server" }
+        ]
+      },
+      {
+        "heading": "LiteLLM",
+        "paragraphs": [
+          "If someone manages a LiteLLM gateway for you, ask for its HTTPS base address, access key, and model names. Choose AI Gateway in Add Provider, set Gateway Kind to LiteLLM, and enter those connection details. A gateway's location does not tell you whether its models run locally or in the cloud.",
+          "For a local example with uv installed, install LiteLLM's proxy package and start it with an Ollama model you have already downloaded. Keep Ollama running. The local LiteLLM Base URL is http://localhost:4000.",
+          "When a gateway routes to a cloud provider, configure that provider's credentials on the gateway and give Keating the gateway access key. The upstream provider's charges and data handling still apply."
+        ],
+        "code": "uv tool install 'litellm[proxy]'\nlitellm --model ollama/qwen3:4b --host 127.0.0.1 --port 4000",
+        "language": "sh",
+        "links": [
+          { "label": "LiteLLM proxy setup", "href": "https://docs.litellm.ai/docs/proxy/quick_start" }
+        ]
+      },
+      {
+        "heading": "When discovery or a response fails",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/surface-models.png",
+            "alt": "The earlier model picker reports that browser models are unavailable while still listing built-in cloud models.",
+            "caption": "Earlier tutorial capture: the WebGPU warning applies to models running inside the browser. It does not diagnose an Ollama, llama.cpp, or LiteLLM connection. No custom-server model is selected here; check your server and provider setup using the steps above.",
+            "width": 1440,
+            "height": 900
+          }
+        ],
+        "bullets": [
+          "Check that the model server is running and can answer a prompt through its own interface. A saved address does not start the server or download a model.",
+          "Check the address from the environment making the connection. A hosted server cannot reach a service that exists only on your laptop's localhost. HTTP or private-target errors need a supported connection, not repeated retries.",
+          "Use the service's base address rather than its chat page or a full chat/completions URL. Keep /v1 off the Ollama and llama.cpp Base URL fields; Keating adds the paths it needs.",
+          "If discovery returns no models, check that a model is loaded and allowed for your access key. For Ollama, check tool support. Where automatic discovery is unavailable, My Models → Add Model lets you add the exact model ID and assign it to your custom provider.",
+          "Keep an authenticated HTTPS gateway's credentials in API Key (Optional). The current app handles its browser proxy automatically; there is no separate CORS proxy URL setting."
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "privacy-and-data",
+    "title": "Keep control of your learning data",
+    "description": "Understand local storage, choose what leaves your device, and export or restore your lessons.",
+    "group": "Getting started",
+    "sections": [
+      {
+        "heading": "Know where your work is saved",
+        "paragraphs": [
+          "Keating keeps browser conversations, learning artifacts, and settings in browser storage. Provider keys you enter in the website are stored locally too. Another browser profile or device has separate storage.",
+          "A Not Organic account manages hosted access and account credit; signing in is not an automatic backup of your browser's lesson library. Native mobile learning storage is also local to the device. Desktop peer-to-peer sync is a separate device-connection feature, not a promise of account-based cloud backup.",
+          "Clearing site data or losing a device can remove local work. Export a copy before changing browsers, deleting app data, or uninstalling."
+        ]
+      },
+      {
+        "heading": "Understand what leaves the device",
+        "paragraphs": [
+          "When you use a remote model, the prompt and relevant conversation material are sent through the configured connection to the service providing the response. Attachments and speech may also be sent to the services used for those features. Review your chosen provider's data practices before submitting private material.",
+          "A browser or native offline model generates locally. Other features you choose, such as sharing, online speech, or optional evaluation sharing, can still send data out. Local generation does not turn those features off.",
+          "Keep API keys in credential fields. A key pasted into a conversation becomes conversation content and can be included in a model request, share, or export."
+        ]
+      },
+      {
+        "heading": "Choose analytics and evaluation settings",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/settings-privacy-diagnostics.png",
+            "alt": "Settings, App, Privacy shows anonymous product analytics on, session replay off and unavailable, and Arize evaluation off and unavailable.",
+            "caption": "In this earlier tutorial capture, analytics is on while replay and Arize evaluation are unavailable and off. These are the captured browser's settings, not a statement of your preferences or the options enabled in your build.",
+            "width": 1920,
+            "height": 1048
+          }
+        ],
+        "paragraphs": [
+          "Open Settings → App → Privacy. These preferences apply to the browser where you change them. Controls that are unavailable in the current build explain that in their description."
+        ],
+        "bullets": [
+          "Anonymous product analytics controls future product events, such as feature use and response timing. Keating excludes prompts, replies, file contents, provider keys, and full share links from these PostHog events.",
+          "Privacy-masked session replay controls interaction recordings where the deployment offers them. Text, inputs, and other sensitive page details are masked. Replay also depends on product analytics being enabled.",
+          "Share future turns for Arize evaluation is separate and off by default. Where enabled, it may send the current visible prompt and final visible reply for future turns. Read its description: some deployments permit metadata only. Turn it off to stop future submissions."
+        ]
+      },
+      {
+        "heading": "Export a copy of your lessons",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/usage-training-export.png",
+            "alt": "The Portable data panel has Export portable JSON and Import portable JSON controls above a separate Training data export panel.",
+            "caption": "Earlier tutorial capture: use Export portable JSON in the upper Portable data panel to move your lessons. The lower panel prepares a separate training dataset; its older Export training ZIP label is not the backup action.",
+            "width": 1920,
+            "height": 1048
+          }
+        ],
+        "paragraphs": [
+          "Open Learning usage and find Portable data. Choose whether to keep Include sandbox code history selected, then choose Export portable JSON. Save the downloaded keating-portable-data.json somewhere you can find from your next device.",
+          "The portable export includes saved sessions, learner state, learning artifacts, goals, quizzes, flashcards, and review records. Sandbox code history is optional. It does not transfer provider sign-ins, API-key settings, or downloaded model files.",
+          "Wait for the export confirmation and check that the file downloaded before clearing any data. The JSON contains your learning content as readable text; store it as carefully as the original notes."
+        ],
+        "links": [
+          { "label": "Open Portable data on Learning usage", "href": "https://keating.help/usage" }
+        ]
+      },
+      {
+        "heading": "Restore in another browser",
+        "paragraphs": [
+          "Open Keating in the destination browser, visit Learning usage → Portable data, and choose Import portable JSON. Select your saved export and wait for the import summary. Open a session to check its contents before discarding the original copy.",
+          "Export any existing work in the destination browser first. An import writes sessions and records with their saved identifiers, so importing an older copy can replace a matching saved record.",
+          "Reconnect model providers on the destination device and download any local models again. A successful data import does not sign you in to those services or restore model downloads."
+        ],
+        "links": [
+          { "label": "Reconnect a model", "href": "/choose-a-model/" }
+        ]
+      },
+      {
+        "heading": "Share and remove data deliberately",
+        "paragraphs": [
+          "A Share session link makes the shared conversation, supported artifacts, and finalized review feedback readable by anyone with that link. Review the content before confirming a share. A share link is useful for showing someone a lesson; use a portable export to move your learning data.",
+          "Use browser site-data controls to remove the website's local data after exporting anything you want to keep. Removing a local copy does not remove shared copies or information already sent to a model provider. Sign out of connected accounts and remove saved credentials when retiring a device."
+        ],
+        "links": [
+          { "label": "Keating privacy policy", "href": "https://keating.help/privacy" }
+        ]
+      }
+    ]
+  }
+]

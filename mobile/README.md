@@ -34,6 +34,42 @@ devenv tasks run keating:mobile-apk
 
 Expo SDK 56 currently generates a Gradle 9 wrapper while React Native 0.85's bundled Foojay resolver still targets Gradle 8. The APK task pins the generated, gitignored wrapper to Gradle 8.14.3 after every prebuild so clean builds remain reproducible.
 
+For the downloadable app, `rtk bun run --cwd mobile android:apk:release` builds
+`mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk` with
+bundled JavaScript and no development server requirement. It requires a full
+JDK 21 for LiteRT. The preparation script replaces Expo's default debug signing
+for the release variant and derives an increasing Android versionCode from the
+package version. The APK must then be aligned and signed before installation.
+
+The [Native downloads workflow](../.github/workflows/native-downloads.yml)
+performs those steps using four repository secrets:
+`KEATING_ANDROID_KEYSTORE_BASE64`, `KEATING_ANDROID_KEYSTORE_PASSWORD`,
+`KEATING_ANDROID_KEY_ALIAS`, and `KEATING_ANDROID_KEY_PASSWORD`. Keep the same
+release keystore backed up and reuse it so future APKs can update existing
+installations. The workflow never generates a throwaway signing identity.
+
+Tag releases invoke that workflow before publication. To build missing native
+installers for an existing release, select the reviewed source branch and run:
+
+```bash
+rtk gh workflow run native-downloads.yml --ref main -f release_tag=v3.15.0 -f platform=all -f publish=false
+```
+
+`platform` can also be `windows` or `android`. With `publish=false`, outputs stay
+in Actions artifacts for review. `publish=true` attaches the verified files to
+the existing release, refusing to overwrite existing assets or move tags. The
+source version must match the requested release tag; the Actions run records
+the source commit. Outputs are `Keating-<version>-windows-x64-setup.exe` and
+`Keating-<version>-android-universal.apk`. Windows uses NSIS and verifies a
+silent installation plus packaged native storage; Android verifies signing,
+alignment, app identity, non-debuggability, bundled JavaScript, and all four
+ABIs. Windows Authenticode signing and real-device/GUI acceptance are separate
+from these checks.
+
+After publishing, run `rtk bun web/scripts/refresh-download-release.ts` to
+verify the public download URLs and refresh the web page's API-outage snapshot.
+Include that snapshot in the next web deployment.
+
 ## Reused Keating logic
 
 The native UI is purpose-built with React Native. It does not embed the web app. The adapter in `src/lib/keating-core.ts` reuses the web app's dependency-free pedagogy engine directly, so offline study plans, concept maps, quizzes, topic fallbacks, and domain-specific lesson phases stay aligned across both clients.

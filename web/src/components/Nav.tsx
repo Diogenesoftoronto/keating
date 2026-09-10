@@ -1,6 +1,8 @@
 import { useEffect, useReducer, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { AppLink as Link } from "./AppLink";
+import { DOCUMENTATION_URL } from "../lib/tutorial-links";
+import { BLOG_URL } from "../lib/blog-links";
 import { desktopMarketingUrl, isDesktopShell } from "../lib/desktop-navigation";
 import { T, useGT } from "gt-react";
 import { ThemeToggle } from "./ThemeToggle";
@@ -142,7 +144,7 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
           <Link to="/coming-up" className="nav-link glitch-hover font-terminal nav-desktop-link">
             <T>[COMING UP]</T>
           </Link>
-          <Link to="/blog" className="nav-link glitch-hover font-terminal nav-desktop-link">
+          <Link to={BLOG_URL} className="nav-link glitch-hover font-terminal nav-desktop-link">
             <T>[BLOG]</T>
           </Link>
           <Link to="/live" className="nav-link glitch-hover font-terminal nav-desktop-link">
@@ -182,7 +184,7 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
                 })}
               >
                 {primaryAction !== "download" && <Link to="/download" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[DOWNLOAD]</T></Link>}
-                <Link to="/tutorial" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[TUTORIAL]</T></Link>
+                <Link to={DOCUMENTATION_URL} className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[DOCS]</T></Link>
                 <Link to="/paper" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[PAPER]</T></Link>
                 <Link to="/usage" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[USAGE]</T></Link>
                 <Link to="/training-data" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[TRAINING DATA]</T></Link>
@@ -300,15 +302,15 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
               <T>[COMING UP]</T>
             </Link>
             <Link
-              to="/tutorial"
+              to={DOCUMENTATION_URL}
               className="nav-link glitch-hover"
               style={{ padding: "0.75rem 0.5rem" }}
               onClick={closeMenus}
             >
-              <T>[TUTORIAL]</T>
+              <T>[DOCS]</T>
             </Link>
             <Link
-              to="/blog"
+              to={BLOG_URL}
               className="nav-link glitch-hover"
               style={{ padding: "0.75rem 0.5rem" }}
               onClick={closeMenus}

@@ -24,6 +24,8 @@ import {
   X,
 } from "lucide-react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { DOCUMENTATION_URL } from "../lib/tutorial-links";
+import { BLOG_URL } from "../lib/blog-links";
 import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
@@ -1353,20 +1355,24 @@ function ChatContent() {
               >
                 Home
               </Link>
-              <Link
-                to="/tutorial"
+              <a
+                href={DOCUMENTATION_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className={menuItemClass}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Tutorial
-              </Link>
-              <Link
-                to="/blog"
+                Documentation
+              </a>
+              <a
+                href={BLOG_URL}
+                target="_blank"
+                rel="noopener noreferrer"
                 className={menuItemClass}
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Blog
-              </Link>
+              </a>
               <Link
                 to="/paper"
                 className={menuItemClass}

@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { usePostHog } from "@posthog/react";
 import { ArrowRight, ArrowUp, Check, MessageSquare } from "lucide-react";
 import { KeatingBot } from "./KeatingBot";
+import { DOCUMENTATION_URL } from "../lib/tutorial-links";
 import "./landing-learning.css";
 
 const FOUNDATION = ["Hear what an oscillator does", "Shape a sound with filters"];
@@ -66,7 +67,7 @@ export function LandingLearning() {
           <div className="landing-learning__answer">
             <h3>Pick up with a teacher that has your history.</h3>
             <p>Keating carries your goals and practice history into the next session. You can inspect and edit that context, shape the teaching instructions, and choose your model.</p>
-            <Link to="/tutorial" className="landing-learning__link" onClick={() => posthog?.capture("landing_cta_clicked", { section: "continuity", action: "setup_guide", destination: "tutorial" })}>See how to make it yours <ArrowRight size={18} aria-hidden="true" /></Link>
+            <a href={`${DOCUMENTATION_URL}learning-with-keating/`} className="landing-learning__link" onClick={() => posthog?.capture("landing_cta_clicked", { section: "continuity", action: "setup_guide", destination: "docs" })}>See how to make it yours <ArrowRight size={18} aria-hidden="true" /></a>
           </div>
         </div>
         <figure className="landing-memory__example">

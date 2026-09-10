@@ -160,10 +160,12 @@ export function KeatingApiKeyPromptDialog() {
 					<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
 						<a
 							href={tutorialApiKeyHref(request.provider)}
+							target="_blank"
+							rel="noopener noreferrer"
 							className={css({ fontSize: "0.75rem", color: "var(--primary)", textDecorationLine: "underline", textUnderlineOffset: "2px" })}
 							onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(request.provider))}
 						>
-							Need a key? Follow the tutorial
+							Need a key? Read the setup guide
 						</a>
 						<button
 							type="button"
