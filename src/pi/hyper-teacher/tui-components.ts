@@ -104,6 +104,7 @@ export function renderQuizCard(theme: Theme, quiz: Quiz, state: QuizCardState = 
     lines.push(`${QUESTION_STATUS_GLYPH[status]} [${q.level}] ${q.question}`);
     const answer = state.answers?.get(q.id);
     if (answer) lines.push(`   your answer: ${answer}`);
+    if (answer && q.mathProblem && state.objectiveResults?.get(q.id) === undefined) lines.push("   Not independently checked");
     const note = state.openEndedGrades?.get(q.id)?.note;
     if (note) lines.push(`   feedback: ${note}`);
   }

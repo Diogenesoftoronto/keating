@@ -1,11 +1,12 @@
 import { relative } from "node:path";
+import { mathQuestionCredit } from "../../../../packages/learner-contracts/src/index.js";
 import {
   animateTopicArtifact,
   mapTopicArtifact,
   planTopicArtifact,
   verifyTopicArtifact
 } from "../../../core/project.js";
-import { generateQuiz, quizToMarkdown, quizAnswerKeyToMarkdown, type Quiz } from "../../../core/quiz.js";
+import { generateQuiz, quizToMarkdown, quizAnswerKeyToMarkdown, type Quiz, type AuthoredQuestion } from "../../../core/quiz.js";
 import { learnerStatePath } from "../../../core/paths.js";
 import { loadLearnerState, recordQuizResult, saveLearnerState } from "../../../core/learner-state.js";
 import { renderQuizCard, AnswerFormComponent, type AnswerFormQuestion } from "../tui-components.js";
@@ -89,11 +90,19 @@ export const teachingTools = [
     "quiz",
     "quiz",
     "Generate retrieval practice questions for a topic. Creates recall, comprehension, application, and transfer questions with answer keys.",
-    { topic: { type: "string", description: "The topic to generate quiz questions for" } },
+    {
+      topic: { type: "string", description: "The topic to generate quiz questions for" },
+      questions: { type: "array", description: "Authored questions with question, correctAnswer, explanation, and optional mathProblem (arithmetic expression or linear-equation left, right, variable x).", items: { type: "object", properties: { question: { type: "string" }, correctAnswer: { type: "string" }, explanation: { type: "string" }, type: { type: "string" }, mathProblem: { type: "object", properties: { kind: { type: "string" }, expression: { type: "string" }, left: { type: "string" }, right: { type: "string" }, variable: { type: "string" } }, required: ["kind"] } }, required: ["question", "correctAnswer", "explanation"] } },
+    },
     async (params, ctx) => {
       const topic = (params.topic as string) || "";
       if (!topic) return { content: [{ type: "text", text: "Topic required." }] };
-      const quiz = generateQuiz(topic);
+      let quiz: Quiz;
+      try {
+        quiz = generateQuiz(topic, 42, { authored: Array.isArray(params.questions) ? params.questions as AuthoredQuestion[] : undefined });
+      } catch (error) {
+        return { isError: true, content: [{ type: "text", text: error instanceof Error ? error.message : "Invalid quiz questions." }] };
+      }
 
       if (typeof ctx?.ui?.custom === "function" && ctx.hasUI) {
         const formQuestions: AnswerFormQuestion[] = quiz.questions.map((q) => ({
@@ -121,7 +130,14 @@ export const teachingTools = [
 
         const objectiveResults: Record<string, boolean> = {};
         const openEndedIds: string[] = [];
+        const pendingMathIds: string[] = [];
         for (const q of quiz.questions) {
+          if (q.mathProblem) {
+            const credit = mathQuestionCredit(q, rawAnswers[q.id] ?? "");
+            if (credit === undefined) { pendingMathIds.push(q.id); openEndedIds.push(q.id); }
+            else objectiveResults[q.id] = credit === 1;
+            continue;
+          }
           const isObjective = q.type === "multiple_choice" || q.type === "true_false" || q.type === "fill_in";
           if (isObjective) {
             const expected = (quiz.answerKey.get(q.id) ?? "").trim().toLowerCase();
@@ -135,6 +151,7 @@ export const teachingTools = [
         const objectiveTotal = Object.keys(objectiveResults).length;
 
         let text = `Objective score: ${correctCount}/${objectiveTotal}.`;
+        if (pendingMathIds.length) text += ` Math answers not independently checked: ${pendingMathIds.join(", ")}. Continue normally; you may model-grade these answers, clearly labeling the verdict as not independently checked.`;
         let resultId: string | undefined;
         if (openEndedIds.length === 0) {
           await persistQuizResult(quiz.slug, correctCount, objectiveTotal);
@@ -150,7 +167,7 @@ export const teachingTools = [
 
         return {
           content: [{ type: "text", text }],
-          details: { quiz, topic, answers: rawAnswers, objectiveResults, resultId }
+          details: { quiz, topic, answers: rawAnswers, objectiveResults, pendingMathIds, resultId }
         };
       }
 
@@ -203,9 +220,13 @@ export const teachingTools = [
         if (!g || typeof g !== "object") continue;
         const questionId = (g as Record<string, unknown>).question_id;
         const verdict = (g as Record<string, unknown>).verdict;
+        const question = pending.quiz.questions.find(q => q.id === questionId);
+        if (!question || Object.prototype.hasOwnProperty.call(pending.objectiveResults, String(questionId))) {
+          return { isError: true, content: [{ type: "text", text: "Only pending questions may be model-graded; exact results cannot be overridden." }] };
+        }
         if (typeof questionId !== "string" || (verdict !== "correct" && verdict !== "incorrect" && verdict !== "partial")) continue;
         const note = (g as Record<string, unknown>).note;
-        openEndedGrades[questionId] = { verdict, note: typeof note === "string" ? note : undefined };
+        openEndedGrades[questionId] = { verdict, note: question.mathProblem ? `Not independently checked. ${typeof note === "string" ? note : "Model-generated verdict."}` : typeof note === "string" ? note : undefined };
       }
 
       const objectiveCorrect = Object.values(pending.objectiveResults).filter(Boolean).length;

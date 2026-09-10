@@ -3,6 +3,7 @@
  * Ports src/core/*.ts for browser use without Node.js dependencies
  */
 
+import { checkedMathQuestion } from "@keating/learner-contracts";
 import {
 	MIN_REAL_OUTCOMES,
 	blendRealSyntheticScore,
@@ -2003,6 +2004,7 @@ export function dueTopicsToMarkdown(topics: TopicEngagement[]): string {
 export type QuestionType = "multiple_choice" | "short_answer" | "true_false" | "fill_in" | "transfer" | "slider" | "dropdown" | "multi_select";
 
 export interface QuizQuestion {
+	mathProblem?: import("@keating/learner-contracts").MathProblem;
 	id: string;
 	type: QuestionType;
 	level: "recall" | "comprehension" | "application" | "analysis" | "transfer";
@@ -2278,6 +2280,7 @@ function makeTransferQ(topic: TopicDefinition, prng: Prng, idx: number): QuizQue
  * they replace the templated questions entirely.
  */
 export interface AuthoredQuestion {
+	mathProblem?: import("@keating/learner-contracts").MathProblem;
 	type?: QuestionType;
 	level?: QuizQuestion["level"];
 	question: string;
@@ -2325,7 +2328,8 @@ export function buildAuthoredQuestions(
 ): QuizQuestion[] {
 	const out: QuizQuestion[] = [];
 	authored.forEach((raw, i) => {
-		const question = (raw.question ?? "").trim();
+		const math = raw.mathProblem !== undefined ? checkedMathQuestion(raw.mathProblem, raw.correctAnswer) : undefined;
+		const question = math?.question ?? (raw.question ?? "").trim();
 		const correctAnswer = (raw.correctAnswer ?? "").trim();
 		const explanation = (raw.explanation ?? "").trim();
 		if (!question || !correctAnswer || !explanation) return;
@@ -2365,6 +2369,7 @@ export function buildAuthoredQuestions(
 				: undefined;
 
 		out.push({
+			...(math ? { mathProblem: math.mathProblem } : {}),
 			id: `${topic.slug}-q${out.length + 1}`,
 			type,
 			level,

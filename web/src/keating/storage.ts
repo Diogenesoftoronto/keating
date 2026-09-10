@@ -266,6 +266,7 @@ export interface LearnerProfileBelief {
 }
 
 export interface QuizResultRecord {
+	mathVerification?: Record<string, import("@keating/learner-contracts").MathVerification & { verifier: string; problem: import("@keating/learner-contracts").MathProblem }>;
 	id: string;
 	topic: string;
 	createdAt: number;
@@ -302,9 +303,10 @@ export interface QuizResultDetails {
 
 /** Convert persisted answer evidence into a normalized 0..1 learner signal. */
 export function quizEvidenceScore(result: QuizResultRecord): number {
-	const openEndedPoints = (result.openEndedGrades ?? []).reduce((sum, grade) =>
+	const grades = (result.openEndedGrades ?? []).filter(grade => !Object.prototype.hasOwnProperty.call(result.mathVerification ?? {}, grade.questionId));
+	const openEndedPoints = grades.reduce((sum, grade) =>
 		sum + (grade.verdict === "correct" ? 1 : grade.verdict === "partial" ? 0.5 : 0), 0);
-	const totalQuestions = result.totalQuestions + (result.openEndedGrades?.length ?? 0);
+	const totalQuestions = result.totalQuestions + grades.length;
 	const objectivePoints = typeof result.partialCreditPoints === "number"
 		? result.partialCreditPoints
 		: result.score;

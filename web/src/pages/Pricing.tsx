@@ -48,7 +48,7 @@ const REQUIRED_PUBLIC_SCOPES = [
 
 export function isPublicCheckoutConfigured(
 	env: Record<string, string | undefined>,
-	origin = typeof window !== "undefined" ? window.location.origin : undefined,
+	origin = typeof window !== "undefined" ? window.location?.origin : undefined,
 ): boolean {
 	const config = publicClientConfig(env, origin);
 	const scopes = new Set(config?.scope?.trim().split(/\s+/) ?? []);

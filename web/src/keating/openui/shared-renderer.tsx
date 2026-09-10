@@ -681,6 +681,7 @@ function QuizResults({ node, answers, skipped, flagged, timedOut = [], timing }:
 					<div><p>{questionIndex + 1}. {question.header ?? question.prompt}</p>
 						<div className="shared-quiz-result__meta">
 							<span>{outcomeLabel(outcome)}</span>
+							{question.mathProblem && objectiveCredit(question, answers[question.id] ?? "") === undefined ? <span>Not independently checked</span> : null}
 							{timeMs !== undefined ? <span aria-label={`Time spent: ${formatQuizDuration(timeMs)}`}><Clock size={13} aria-hidden="true" /><time dateTime={`PT${timeMs / 1000}S`}>{formatQuizDuration(timeMs)}</time></span> : null}
 							{quick ? <span data-speed="quick" title="Answered within the first quarter of the question's time limit."><Zap size={13} aria-hidden="true" />Quick</span> : null}
 							{timedOut.includes(question.id) ? <span data-timeout>Timed out</span> : null}

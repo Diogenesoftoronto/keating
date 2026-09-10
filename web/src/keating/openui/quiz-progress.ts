@@ -1,4 +1,5 @@
 import type { UiQuestion } from "@keating/learner-contracts";
+import { mathQuestionCredit } from "@keating/learner-contracts";
 
 /** The teacher's judgement on an open-ended answer, delivered by `grade_quiz`. */
 export type QuizVerdict = "correct" | "partial" | "incorrect";
@@ -31,6 +32,7 @@ export function isOpenEndedQuestion(question: UiQuestion): boolean {
 
 /** Auto-scored credit, or undefined when only the teacher can decide. */
 export function objectiveCredit(question: UiQuestion, answer: string): number | undefined {
+	if (question.mathProblem) return mathQuestionCredit(question, answer);
 	if (isOpenEndedQuestion(question) || (!question.correctAnswer && !question.correctAnswers?.length)) return undefined;
 	// An arrangement is right as a whole or not at all: a near-miss ordering is
 	// still a wrong sequence, and partial credit here would be arbitrary.
@@ -60,6 +62,10 @@ export function quizOutcome(
 ): QuizOutcome {
 	if (options.skipped) return { kind: "skipped" };
 	if (answer === undefined || !answer.trim()) return { kind: "unanswered" };
+	if (question.mathProblem) {
+		const credit = objectiveCredit(question, answer);
+		if (credit !== undefined) return { kind: "objective", correct: credit === 1 };
+	}
 	const grade = options.grades?.find((candidate) => candidate.questionId === question.id);
 	if (grade) return { kind: "graded", verdict: grade.verdict, ...(grade.note ? { note: grade.note } : {}) };
 	const credit = objectiveCredit(question, answer);

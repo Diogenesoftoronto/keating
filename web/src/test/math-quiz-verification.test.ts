@@ -18,7 +18,7 @@ test("question construction rejects bad keys and binds the prompt to verified ma
 test("equivalent answers use exact verification and ignore contradictory model verdicts", () => {
   expect(quizOutcome(question, "8/2", { grades: [{ questionId: "q1", verdict: "incorrect" }] })).toEqual({ kind: "objective", correct: true });
   expect(quizOutcome(question, "5", { grades: [{ questionId: "q1", verdict: "correct" }] })).toEqual({ kind: "objective", correct: false });
-  expect(quizOutcome(question, "four", { grades: [{ questionId: "q1", verdict: "incorrect" }] })).toEqual({ kind: "pending" });
+  expect(quizOutcome(question, "four", { grades: [{ questionId: "q1", verdict: "incorrect" }] })).toEqual({ kind: "graded", verdict: "incorrect" });
   expect(summarizeQuiz([question], { q1: "four" }).decided).toBe(0);
   expect(quizOutcome({ ...question, correctAnswer: "5" }, "5")).toEqual({ kind: "pending" });
 });
