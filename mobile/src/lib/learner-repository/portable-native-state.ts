@@ -20,7 +20,7 @@ import { durableAgentEvents } from "../durable-agent-events";
 import { convertLegacyPersistedState } from "./legacy-migration";
 import type { LocalAttachmentLocation } from "./records";
 
-const NATIVE_PROVIDERS = new Set<ProviderId>(["openai", "anthropic", "google", "openrouter", "custom"]);
+const NATIVE_PROVIDERS = new Set<ProviderId>(["openai", "anthropic", "google", "openrouter", "custom", "litert"]);
 type PortableMessage = LearnerSession["messages"][number];
 type NativeMessage = Omit<PortableMessage, "role"> & { role: "user" | "assistant" };
 

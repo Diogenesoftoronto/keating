@@ -36,6 +36,8 @@ const PATTERNS: ReadonlyArray<{ test: RegExp; message: string }> = [
 ];
 
 export function friendlyErrorMessage(raw: string): string {
+  // Local capability/setup errors are already actionable; do not hide them behind raw-errors settings.
+  if (/^(MiniCPM5 |Download the offline tutor |Offline tutoring |Offline tutor |Offline MiniCPM5 |The offline |Choose MiniCPM5 |Stop the current offline )/.test(raw)) return raw;
   const matched = PATTERNS.find((pattern) => pattern.test.test(raw));
   if (matched) return matched.message;
   return "The model request failed. Turn on raw provider errors in Settings to see the full message.";

@@ -17,6 +17,7 @@ devenv.lock
 # Build outputs
 dist/
 desktop/release/
+desktop/release-offline/
 *.tsbuildinfo
 *.pdf
 *.png

@@ -54,6 +54,7 @@ import {
   type CommittedMobileToolCall,
 } from "@/lib/provider-tool-loop";
 import { clearComposerAttachmentFiles, hydrateMessageAttachments } from "@/lib/composer-attachments";
+import { assertOfflineMedia } from "@/lib/offline-model-contract";
 import { clearAllComposerDrafts } from "@/lib/composer-draft-storage";
 import { DEFAULT_TEACHER_PERSONA } from "@/lib/persona";
 import { loadPersona, resetPersona, savePersona } from "@/lib/persona-storage";
@@ -201,6 +202,7 @@ function contractId(value: string, fallbackPrefix: string): string {
 }
 
 const emptyKeyStatus: KeyStatus = {
+  litert: false,
   openai: false,
   anthropic: false,
   google: false,
@@ -589,7 +591,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
 
     let apiKey: string | null;
     try {
-      apiKey = await getProviderKey(settings.provider);
+      apiKey = settings.provider === "litert" ? null : await getProviderKey(settings.provider);
     } catch (error) {
       finishBeforeStream();
       setRawGenerationError(error instanceof Error ? error.message : "Could not read the provider credential.");
@@ -649,6 +651,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
     const flushTimer = setInterval(flush, STREAM_FLUSH_INTERVAL_MS);
 
     try {
+      if (settings.provider === "litert") assertOfflineMedia(messages.slice(-40));
       const providerMessages = await Promise.all(messages.slice(-40).map(async (message) => (
         message.attachments?.length
           ? { ...message, attachments: await hydrateMessageAttachments(message.attachments) }

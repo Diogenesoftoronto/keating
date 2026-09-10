@@ -38,7 +38,9 @@ export async function transcribeAudioUri(
   } = {},
 ): Promise<string> {
   const credential = await resolveTranscriptionCredential(activeProvider, options.readKey);
-  if (!credential) throw new Error("Add an OpenAI or Google API key in Settings to dictate a message.");
+  if (!credential) throw new Error(activeProvider === "litert"
+    ? "MiniCPM5 is text only and cannot hear audio. Add an OpenAI or Google API key in Settings for online transcription, or type your message to stay offline. Your recording is available to retry."
+    : "Add an OpenAI or Google API key in Settings to dictate a message.");
   if (credential.provider === "openai") {
     return transcribeOpenAi(uri, mimeType, credential.apiKey, options.fetchImpl ?? fetch);
   }

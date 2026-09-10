@@ -9,6 +9,7 @@ import {
 } from "../notorganic-provider";
 import { getOAuthAccessToken, providerToOAuthId } from "../keating/oauth";
 import { withApiRetry } from "../keating/api-retry";
+import { desktopOfflineBridge, DESKTOP_OFFLINE_PROVIDER, installedDesktopOfflineModel } from "./desktop-offline";
 import {
 	checkWebGpuAvailable,
 	DEFAULT_BROWSER_MODEL_ID,
@@ -368,6 +369,9 @@ export async function syncCustomProviderKeys(): Promise<void> {
 }
 
 export async function getProviderApiKey(providerName: string): Promise<string | undefined> {
+	// Satisfy legacy credential preflight locally. hybridStreamFn routes this
+	// provider directly to IPC, so this non-secret marker is never sent anywhere.
+	if (providerName === DESKTOP_OFFLINE_PROVIDER) return desktopOfflineBridge() ? "desktop-local-runtime" : undefined;
 	if (providerName === NOTORGANIC_PROVIDER_ID && isNotOrganicFeatureEnabled()) {
 		// Pi requires a non-empty key before constructing its OpenAI-compatible
 		// client. The real Authorization header is replaced with the browser's
@@ -397,7 +401,7 @@ const FALLBACK_CHAT_MODEL_IDS: Record<string, string[]> = {
 };
 
 function providerNeedsKey(provider: string): boolean {
-	return provider !== "browser";
+	return provider !== "browser" && provider !== DESKTOP_OFFLINE_PROVIDER;
 }
 
 function preferredModelForProvider(models: Array<Model<Api>>, provider: string): Model<Api> | undefined {
@@ -420,6 +424,8 @@ export async function resolveAvailableChatModel(
 	options: { allowFallback?: boolean } = {},
 ): Promise<Model<Api>> {
 	if (options.allowFallback === false) return current;
+	const offline = await installedDesktopOfflineModel();
+	if (offline) return offline;
 	if (!providerNeedsKey(current.provider) || await getProviderApiKey(current.provider)) {
 		return current;
 	}
@@ -495,6 +501,10 @@ export async function getSelectableModels(
 	filter?: (provider: string) => boolean,
 ): Promise<Array<Model<Api>>> {
 	const models: Array<Model<Api>> = [];
+	if (!filter || filter(DESKTOP_OFFLINE_PROVIDER)) {
+		const offline = await installedDesktopOfflineModel();
+		if (offline) models.push(offline);
+	}
 
 	if (isNotOrganicFeatureEnabled() && (!filter || filter(NOTORGANIC_PROVIDER_ID))) {
 		models.push(NOTORGANIC_DEFAULT_MODEL);

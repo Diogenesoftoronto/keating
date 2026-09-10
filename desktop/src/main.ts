@@ -20,6 +20,9 @@ import {
 } from "./nitro-runtime.js";
 import { startNativeRuntime, type NativeRuntime } from "./native-runtime.js";
 import { registerNativeIpc } from "./native-ipc.js";
+import { registerOfflineIpc } from "./offline-ipc.js";
+import { OfflineRuntime } from "./offline-runtime.js";
+import { OFFLINE_MODEL } from "./offline-contract.js";
 import { DesktopLifecycle } from "./lifecycle.js";
 import { installDesktopPermissionPolicy } from "./permissions.js";
 import { resolveDesktopRuntimePaths } from "./runtime-paths.js";
@@ -192,6 +195,11 @@ async function createWindow(): Promise<void> {
 			registerP2PIpc(window, bridge, { appOrigin: renderer.origin }),
 			await registerNativeIpc(window, workspaceRuntime, renderer.origin),
 			await registerOAuthIpc(window, oauthLifecycle, renderer.origin),
+			await registerOfflineIpc(window, new OfflineRuntime({
+				directory: join(app.getPath("userData"), "offline-tutor"),
+				executable: join(app.isPackaged ? process.resourcesPath : __dirname, "offline", process.platform === "win32" ? "keating-offline.exe" : "keating-offline"),
+				bundledModel: join(app.isPackaged ? process.resourcesPath : __dirname, "offline", OFFLINE_MODEL.file),
+			}), renderer.origin),
 		];
 		credentialService ??= new DesktopCredentialService(new CredentialVault({
 			path: join(app.getPath("userData"), "credentials.v1.json"),

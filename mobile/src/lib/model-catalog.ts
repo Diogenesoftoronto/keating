@@ -1,6 +1,7 @@
 import { providerDefinition } from "./provider-config";
 import type { ProviderId, ProviderSettings } from "./types";
 import type { ReasoningLevel } from "./ui-settings";
+import { OFFLINE_MODEL } from "./offline-model-contract";
 
 export const MODELS_DEV_CATALOG_URL = "https://models.dev/api.json";
 export const LONG_CONTEXT_THRESHOLD = 256_000;
@@ -14,12 +15,14 @@ export const MODEL_CAPABILITY_FILTERS = [
 export type ModelCapabilityFilter = (typeof MODEL_CAPABILITY_FILTERS)[number]["value"];
 
 export type NativeModelTransport =
+  | "native-litert"
   | "openai-responses"
   | "anthropic-messages"
   | "google-generative-ai"
   | "openai-chat-completions";
 
 export const NATIVE_PROVIDER_TRANSPORT: Readonly<Record<ProviderId, NativeModelTransport>> = {
+  litert: "native-litert",
   openai: "openai-responses",
   anthropic: "anthropic-messages",
   google: "google-generative-ai",
@@ -56,15 +59,16 @@ export interface CatalogModel {
 }
 
 export interface CatalogSections {
+  local: CatalogModel[];
   recent: CatalogModel[];
   cloud: CatalogModel[];
   custom: CatalogModel[];
 }
 
-type ModelsDevProviderId = Exclude<ProviderId, "custom">;
+type ModelsDevProviderId = Exclude<ProviderId, "custom" | "litert">;
 
 const MODELS_DEV_PROVIDERS = new Set<ModelsDevProviderId>(["openai", "anthropic", "google", "openrouter"]);
-const PROVIDER_IDS = new Set<ProviderId>(["openai", "anthropic", "google", "openrouter", "custom"]);
+const PROVIDER_IDS = new Set<ProviderId>(["openai", "anthropic", "google", "openrouter", "custom", "litert"]);
 const MODEL_SOURCES = new Set<CatalogModel["source"]>(["models.dev", "built-in", "custom"]);
 const REASONING_LEVELS = new Set<ReasoningLevel>(["off", "minimal", "low", "medium", "high", "xhigh"]);
 const REASONING_ORDER: readonly ReasoningLevel[] = ["off", "minimal", "low", "medium", "high", "xhigh"];
@@ -311,7 +315,8 @@ export function catalogSections(
   const recentSet = new Set(includeRecents ? recentKeys : []);
   return {
     recent: models.filter((model) => model.callable && recentSet.has(model.key)),
-    cloud: models.filter((model) => model.source !== "custom" && (!model.callable || !recentSet.has(model.key))),
+    local: models.filter((model) => model.nativeProvider === "litert" && !recentSet.has(model.key)),
+    cloud: models.filter((model) => model.nativeProvider !== "litert" && model.source !== "custom" && (!model.callable || !recentSet.has(model.key))),
     custom: models.filter((model) => model.source === "custom" && !recentSet.has(model.key)),
   };
 }
@@ -418,6 +423,14 @@ function compareModels(left: CatalogModel, right: CatalogModel): number {
 }
 
 export const BUILT_IN_MODEL_CATALOG: readonly CatalogModel[] = [
+  {
+    key: `litert::${OFFLINE_MODEL.id}`, provider: "litert", providerLabel: "On this device",
+    id: OFFLINE_MODEL.id, name: OFFLINE_MODEL.name,
+    description: "Offline text tutor. Download 1.55 GB in Settings → Offline tutor. Images need a vision model; dictation needs configured transcription.",
+    reasoning: false, reasoningLevels: ["off"], temperature: true, toolCall: false, vision: false,
+    contextWindow: 4096, maxOutputTokens: 1024, nativeProvider: "litert", transport: "native-litert",
+    callable: true, unavailabilityReason: null, recoveryHint: null, source: "built-in",
+  },
   {
     key: "openai::gpt-5.4",
     provider: "openai",

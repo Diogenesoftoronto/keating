@@ -2,7 +2,7 @@
   "expo": {
     "name": "Keating",
     "slug": "keating",
-    "version": "3.14.1",
+    "version": "3.15.0",
     "orientation": "portrait",
     "scheme": "keating",
     "userInterfaceStyle": "automatic",
@@ -30,6 +30,7 @@
     },
     "plugins": [
       "expo-router",
+      "./modules/keating-litert/app.plugin.js",
       [
         "expo-dev-client",
         {

@@ -11,7 +11,7 @@ function loadVersion(): string {
 	} catch {
 		// fall through to fallback
 	}
-	return "3.14.1";
+	return "3.15.0";
 }
 
 /**

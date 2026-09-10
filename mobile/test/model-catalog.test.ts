@@ -118,6 +118,7 @@ describe("models.dev mobile catalog", () => {
 
   test("uses an explicit native transport gate for specialized non-chat endpoints", () => {
     expect(NATIVE_PROVIDER_TRANSPORT).toEqual({
+      litert: "native-litert",
       openai: "openai-responses",
       anthropic: "anthropic-messages",
       google: "google-generative-ai",

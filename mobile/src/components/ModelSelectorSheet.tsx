@@ -133,6 +133,7 @@ export function ModelSelectorSheet({
     const grouped = catalogSections(filtered, recentKeys, search.trim() === "");
     return [
       { title: "Recent", data: grouped.recent },
+      { title: "On this device", data: grouped.local },
       { title: "Cloud", data: grouped.cloud },
       { title: "Custom provider", data: grouped.custom },
     ].filter((section) => section.data.length > 0);

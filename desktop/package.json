@@ -1,6 +1,6 @@
 {
   "name": "@keating/desktop",
-  "version": "3.14.1",
+  "version": "3.15.0",
   "type": "module",
   "private": true,
   "description": "Keating desktop (Electron) app — P2P, local-first teaching client.",
@@ -16,6 +16,8 @@
     "test": "bun test ./test/*.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "dist": "electron-builder",
+    "stage:offline": "node scripts/stage-offline.mjs",
+    "dist:offline": "node scripts/build-offline-edition.mjs",
     "dist:linux": "electron-builder --linux AppImage deb rpm"
   },
   "dependencies": {
@@ -30,6 +32,7 @@
   "build": {
     "appId": "help.keating.desktop",
     "productName": "Keating",
+    "beforePack": "scripts/offline-before-pack.cjs",
     "linux": {
       "target": ["AppImage", "deb", "rpm"],
       "artifactName": "Keating-${version}-linux-${arch}.${ext}",
@@ -38,10 +41,11 @@
       "category": "Education",
       "icon": "../web/public/brand/logo-badge.png"
     },
-    "deb": { "packageName": "keating-desktop" },
-    "rpm": { "packageName": "keating-desktop" },
+    "deb": { "packageName": "keating-desktop", "depends": ["libgtk-3-0", "libnotify4", "libnss3", "libxss1", "libxtst6", "xdg-utils", "libatspi2.0-0", "libuuid1", "libsecret-1-0", "libvulkan1"] },
+    "rpm": { "packageName": "keating-desktop", "depends": ["gtk3", "libnotify", "nss", "libXScrnSaver", "libXtst", "xdg-utils", "at-spi2-core", "libuuid", "libsecret", "vulkan-loader"] },
     "files": ["**/*"],
     "extraResources": [
+      { "from": "dist/offline", "to": "offline", "filter": ["**/*"] },
       {
         "from": "dist/nitro",
         "to": "nitro",

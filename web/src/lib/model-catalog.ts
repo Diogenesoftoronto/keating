@@ -43,6 +43,7 @@ export function compareModelProviders(left: string, right: string): number {
 
 export function displayModelProvider(provider: string): string {
 	const labels: Record<string, string> = {
+		"desktop-offline": "On this device",
 		"amazon-bedrock": "Amazon Bedrock",
 		"openai-codex": "OpenAI Codex",
 		openai: "OpenAI",
