@@ -105,11 +105,12 @@ describe("Not Organic SDK-compatible fetch adapter", () => {
 });
 
 describe("Not Organic browser resource client", () => {
-	it("calls usage and checkout through same-origin product routes", async () => {
+	it("allows a free account to buy standalone credit through same-origin product routes", async () => {
 		const calls: string[] = [];
 		const fetcher = (async (input, init) => {
 			calls.push(`${init?.method ?? "GET"} ${String(input)}`);
-			if (String(input).endsWith("/checkout")) expect(JSON.parse(String(init?.body))).toMatchObject({ pack_id: "keating_pack_25" });
+			if (String(input).endsWith("/wallet")) return Response.json({ availableMicros: 0, subscriptions: [], checkout: { available: true, packIds: ["keating_pack_25"], planIds: [] } });
+			if (String(input).endsWith("/checkout")) expect(JSON.parse(String(init?.body))).toEqual({ pack_id: "keating_pack_25", return_url: "https://keating.test/settings" });
 			return Response.json({ object: "list", data: [] });
 		}) as typeof fetch;
 
@@ -122,6 +123,7 @@ describe("Not Organic browser resource client", () => {
 
 		expect(calls).toEqual([
 			"GET /api/notorganic/provider/usage?after=cursor&limit=10",
+			"GET /api/notorganic/provider/wallet",
 			"POST /api/notorganic/provider/checkout",
 		]);
 	});

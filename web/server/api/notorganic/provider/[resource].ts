@@ -12,7 +12,7 @@ import {
 	getNotOrganicServerConfig,
 	NotOrganicOperationalError,
 } from "../../../../src/notorganic-provider/server";
-import { isNotOrganicPackId } from "../../../../src/notorganic-provider/packs";
+import { checkoutSelection, subscriptionAvailable } from "../../../../src/notorganic-provider/plans";
 
 const RESOURCE_ROUTES = {
 	account: { method: "GET", path: "/v1/account", feature: "keating:account" },
@@ -53,19 +53,27 @@ export default defineEventHandler(async (event) => {
 			if (typeof query.limit === "string") parameters.set("limit", query.limit);
 			if (parameters.size) path += `?${parameters}`;
 		} else if (resource === "checkout") {
-			const input = await readBody<{ pack_id?: unknown; return_url?: unknown }>(event);
+			const input = await readBody<{ pack_id?: unknown; plan_id?: unknown; return_url?: unknown }>(event);
 			if (typeof input?.return_url !== "string") {
 				throw createError({ statusCode: 400, statusMessage: "return_url is required" });
 			}
-			if (typeof input?.pack_id !== "string" || !isNotOrganicPackId(input.pack_id)) {
-				throw createError({ statusCode: 400, statusMessage: "A valid Keating pack_id is required" });
+			let selection: ReturnType<typeof checkoutSelection>;
+			try {
+				selection = checkoutSelection(input, process.env.NOTORGANIC_SUBSCRIPTION_CATALOG === "keating_v2");
+			} catch (error) {
+				throw createError({ statusCode: 400, statusMessage: error instanceof Error ? error.message : "Invalid checkout selection" });
+			}
+			if ("plan_id" in selection) {
+				const response = await client.request("/v1/wallet", { method: "GET" });
+				const wallet = await response.json().catch(() => null);
+				if (!response.ok || !subscriptionAvailable(wallet, true)) throw createError({ statusCode: 503, statusMessage: "Subscription checkout is not available yet" });
 			}
 			const returnUrl = new URL(input.return_url);
-			if (returnUrl.protocol !== "https:") {
+			if (returnUrl.protocol !== "https:" || returnUrl.username || returnUrl.password) {
 				throw createError({ statusCode: 400, statusMessage: "return_url must use HTTPS" });
 			}
 			body = JSON.stringify({
-				pack_id: input.pack_id,
+				...selection,
 				return_url: returnUrl.toString(),
 			});
 		}

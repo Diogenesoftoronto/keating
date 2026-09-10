@@ -1667,15 +1667,17 @@ export function useKeatingAgent(
         if (agent.context.isStreaming) return;
         const retryMessages = prepareMessagesForRetry(agent.context.messages);
         if (!retryMessages) return;
-        await ensureSessionStartContext();
         untrustedSearchProvenanceRef.current = false;
         agent.context.messages = retryMessages;
-        await persistSnapshot();
         analyticsTurnIndexRef.current = Math.max(
           0,
           retryMessages.filter((message) => message.role === "user").length - 1,
         );
-        await agent.resume();
+        await agent.resume(async signal => {
+          await ensureSessionStartContext();
+          signal.throwIfAborted();
+          await persistSnapshot();
+        });
       };
 
       const setupCallbacks = {
@@ -2607,16 +2609,18 @@ export function useKeatingAgent(
               existingAgent.context.messages,
             );
             if (!retryMessages) return;
-            await ensureSessionStartContextRef.current();
             untrustedSearchProvenanceRef.current = false;
             existingAgent.context.messages = retryMessages;
-            await persistCurrentSnapshotRef.current();
             analyticsTurnIndexRef.current = Math.max(
               0,
               retryMessages.filter((message) => message.role === "user")
                 .length - 1,
             );
-            await existingAgent.resume();
+            await existingAgent.resume(async signal => {
+              await ensureSessionStartContextRef.current();
+              signal.throwIfAborted();
+              await persistCurrentSnapshotRef.current();
+            });
           };
           const setupCallbacks = {
 			sessionId: sessionIdRef.current,

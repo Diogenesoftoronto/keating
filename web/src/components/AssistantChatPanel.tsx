@@ -4,6 +4,7 @@ import {
   makeAttachmentErrorMessage,
   makePromptErrorMessage,
   textFromContent,
+  mergeConsecutiveAssistantMessages,
 } from "./assistant-chat-messages";
 import {
   generatedImageTagPattern,
@@ -21,6 +22,7 @@ import { ChatMascotMenu } from "./ChatMascotMenu";
 import "./chat-mascot.css";
 import { RecordingWaveform } from "./RecordingWaveform";
 import { prepareAudioAttachment } from "../lib/audio-attachment";
+import { rememberRecordingTranscript, recordingHasTranscript } from "../lib/recording-transcripts";
 import type { FlueConversation } from "../keating/flue/conversation";
 import {
   createContext,
@@ -175,6 +177,7 @@ import { JsonCrackBlock } from "./JsonCrackBlock";
 import { WebSearchPart } from "./WebSearchPart";
 import { isWebSearchToolName, splitSearchSources } from "./web-search-result";
 import { FailedResponseRecovery } from "./FailedResponseRecovery";
+import { NotOrganicCreditRecovery } from "./NotOrganicCreditRecovery";
 import { FlashcardRenderer } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
 import { MermaidRenderer } from "./MermaidRenderer";
@@ -951,6 +954,7 @@ function SpeechComposerControl({
       return;
     }
     appendToComposer(text);
+    rememberRecordingTranscript(blob, text);
     retryAudioRef.current = null;
     setAudioError("");
     onExpandedChange(false);
@@ -974,10 +978,11 @@ function SpeechComposerControl({
     try {
       const recorder = recorderRef.current ?? (await pending);
       const blob = await recorder.stop();
-      await composer.addAttachment(new File([blob], `Recording-${Date.now()}.webm`, {type: blob.type || "audio/webm"}));
+      const file = new File([blob], `Recording-${Date.now()}.webm`, {type: blob.type || "audio/webm"});
+      await composer.addAttachment(file);
       attached = true;
-      retryAudioRef.current = blob;
-      await transcribeRecording(blob);
+      retryAudioRef.current = file;
+      await transcribeRecording(file);
     } catch (error) {
       setAudioError(attached ? transcriptionErrorMessage(error) : "Could not attach the recording. Check microphone access and try recording again.");
     } finally {
@@ -2898,7 +2903,9 @@ function contentFromAppendMessage(message: AppendMessage): PromptContent[] {
         const image = dataUrlToImageContent(part.image);
         if (image) content.push(image);
       } else if (part.type === "file" && part.mimeType.startsWith("audio/")) {
-        content.push({type: "audio", mimeType: part.mimeType, data: part.data.replace(/^data:[^,]+,/, ""), filename: part.filename});
+        const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n");
+        content.push({type: "audio", mimeType: part.mimeType, data: part.data.replace(/^data:[^,]+,/, ""), filename: part.filename,
+          sendToModel: recordingHasTranscript(attachment.file, text) ? false : undefined});
       } else if (part.type === "file") {
         content.push({
           type: "text",
@@ -2996,37 +3003,6 @@ function filterSpeechMessages(
     .filter((message): message is AgentMessage => message !== null);
 }
 
-function mergeConsecutiveAssistantMessages(
-  messages: AgentMessage[],
-): AgentMessage[] {
-  const merged: AgentMessage[] = [];
-  for (const message of messages) {
-    const msg = message as any;
-    if (msg.role === "assistant" && merged.length > 0) {
-      const last = merged[merged.length - 1] as any;
-      if (last.role === "assistant") {
-        const left = Array.isArray(last.content)
-          ? last.content.map((p: any) => ({ ...p }))
-          : [{ type: "text", text: textFromContent(last.content) }];
-        const right = Array.isArray(msg.content)
-          ? msg.content.map((p: any) => ({ ...p }))
-          : [{ type: "text", text: textFromContent(msg.content) }];
-        last.content = [...left, ...right];
-        if (msg.timestamp) last.timestamp = msg.timestamp;
-        if (msg.stopReason !== undefined) last.stopReason = msg.stopReason;
-        if (msg.errorMessage) {
-          last.errorMessage = msg.errorMessage;
-          last.stopReason = msg.stopReason ?? last.stopReason;
-        }
-        if (msg.__keatingStreaming)
-          last.__keatingStreaming = msg.__keatingStreaming;
-        continue;
-      }
-    }
-    merged.push(message);
-  }
-  return merged;
-}
 
 function hasRenderableAssistantContent(content: unknown): boolean {
   if (!Array.isArray(content))
@@ -3285,6 +3261,9 @@ function toAssistantMessage(
               custom: {
                 keatingAuthError: authError,
                 keatingLlmFailure: llmFailure,
+                keatingProvider: msg.provider ?? fallbackProvider,
+                keatingFailureMessage: msg.errorMessage,
+                keatingFailedLastTurn: isLastMessage && status.type === "incomplete",
                 keatingRetryAttempts: retryAttempts,
                 keatingRetryExhausted: msg.__keatingRetryExhausted === true,
                 keatingRetryable: retryable,
@@ -4144,11 +4123,17 @@ function AssistantThread({
     if (!native) return messages.map((message, index) => toAssistantMessage(message, index, messages.length, isRunning, modelRef.current?.provider));
     const legacy = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent!.legacyMessages, speechEnabled)));
     const local = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent!.localMessages, speechEnabled)));
+    // Native history replaces the legacy projection, but preparation and
+    // provider latency still need the same immediate assistant activity cue.
+    const pendingStatus = messages.at(-1) as (AgentMessage & { __keatingPrefillStatus?: boolean }) | undefined;
+    if (pendingStatus?.__keatingPrefillStatus) local.push(pendingStatus);
     const localError = local.some(message => message.role === "assistant" && ["error", "aborted"].includes(message.stopReason));
+    const visibleNative = native.messages.filter(message => (message.display === "visible" || !!message.settlement) && !(localError && message.settlement));
+    const totalMessages = legacy.length + visibleNative.length + local.length;
     return [
-      ...legacy.map((message, index) => toAssistantMessage(message, index, legacy.length, false, modelRef.current?.provider)),
-      ...native.messages.filter(message => (message.display === "visible" || !!message.settlement) && !(localError && message.settlement)).map(message => flueThreadMessage(message, isRunning)),
-      ...local.map((message, index) => toAssistantMessage(message, legacy.length + index, legacy.length + local.length, false, modelRef.current?.provider)),
+      ...legacy.map((message, index) => toAssistantMessage(message, index, totalMessages, false, modelRef.current?.provider)),
+      ...visibleNative.map(message => flueThreadMessage(message, isRunning)),
+      ...local.map((message, index) => toAssistantMessage(message, legacy.length + visibleNative.length + index, totalMessages, false, modelRef.current?.provider)),
     ].sort((left, right) => (left.createdAt?.getTime() ?? 0) - (right.createdAt?.getTime() ?? 0));
   }, [agent, version, localVersion, messages, isRunning, speechEnabled]);
   const mascotState = chatMascotState({ messages: threadMessages, running: isRunning, recording: micRecording });
@@ -4190,14 +4175,15 @@ function AssistantThread({
       const content = (userMessage as any).content;
       const audioParts = Array.isArray(content) ? content.filter((part: any) => part?.type === "audio") : [];
       if (audioParts.length && !modelSupportsAudio(agent.context.model)) {
-        if (!content.some((part: any) => part.type === "text" && part.text.trim())) {
+        if (audioParts.some((part: KeatingAudioContent) => part.sendToModel !== false)) {
           agent.context.messages.push(userMessage, makeAttachmentErrorMessage(agent,
-            "This model does not accept audio. Choose an audio-capable model, or add a transcript. Your recording is kept here."));
+            `${modelDisplayName(agent.context.model)} cannot listen to audio. Choose an audio-capable model, or configure transcription in Settings → Speech and transcribe the recording. To send a transcript you typed yourself, remove the audio attachment first. Your recording is kept here.`));
           setLocalVersion(current => current + 1);
           await callbacks.onLocalMessagesChanged?.();
           return true;
         }
-        for (const part of audioParts) part.sendToModel = false;
+      } else if (audioParts.length) {
+        for (const part of audioParts) part.sendToModel = true;
       }
       const hasImage =
         Array.isArray(content) &&
@@ -5207,6 +5193,10 @@ function AssistantMessage({
     (message) =>
       message.metadata.custom?.keatingLlmFailure as LlmErrorDetails | undefined,
   );
+  const provider = useMessage(message => message.metadata.custom?.keatingProvider as string | undefined);
+  const failureMessage = useMessage(message => message.metadata.custom?.keatingFailureMessage as string | undefined);
+  const failedLastTurn = useMessage(message => message.metadata.custom?.keatingFailedLastTurn === true);
+  const creditFailure = provider === "notorganic" && llmFailure?.category === "billing";
   const retryAttempts = useMessage(
     (message) =>
       message.metadata.custom?.keatingRetryAttempts as number | undefined,
@@ -5310,7 +5300,11 @@ function AssistantMessage({
               <b>KEATING</b>
             </div>
             <div className={cx("keating-bubble", foregroundTextClass)}>
-              <MessagePrimitive.Content components={components} />
+              {creditFailure ? failedLastTurn ? <NotOrganicCreditRecovery
+                onRetry={onRetry}
+                onModelSelect={onModelSelect}
+                details={failureMessage}
+              /> : <p>This response paused because credits were unavailable.</p> : <MessagePrimitive.Content components={components} />}
               {authError && (
                 <div
                   className={css({

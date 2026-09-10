@@ -307,8 +307,11 @@ export class FlueConversation {
     return this.run([message], prepare);
   }
   resume(prepare?: (signal: AbortSignal) => Promise<void>): Promise<void> {
-    const last = this.context.messages.at(-1);
-    if (!last || !["user", "toolResult"].includes(last.role))
+    // Context notices may follow the unfinished turn. They still belong in
+    // model context, but must not prevent retrying the learner's message.
+    const last = [...this.context.messages].reverse().find(message =>
+      ["user", "user-with-attachments", "toolResult", "assistant"].includes(message.role));
+    if (!last || !["user", "user-with-attachments", "toolResult"].includes(last.role))
       return Promise.reject(
         new Error("No unfinished user or tool message to continue."),
       );
@@ -626,7 +629,10 @@ export class FlueConversation {
           snapshot.type === "done" ? snapshot.message : snapshot.error;
         this.context.streamingMessage = undefined;
         this.context.messages = [...this.context.messages, message];
-        this.recorded.add(message);
+        // Keep failed model messages in the local projection. The native
+        // settlement lacks the provider error metadata needed by auth/retry UI.
+        if (!["error", "aborted"].includes(message.stopReason))
+          this.recorded.add(message);
         this.lastAssistant = message;
         if (message.errorMessage)
           this.context.errorMessage = message.errorMessage;

@@ -21,7 +21,7 @@ function isFiniteNumber(value: unknown): value is number {
 }
 
 function isProviderId(value: unknown): value is ProviderId {
-  return ["openai", "anthropic", "google", "openrouter", "custom"].includes(String(value));
+  return ["openai", "anthropic", "google", "openrouter", "custom", "litert"].includes(String(value));
 }
 
 function isChatAttachment(value: unknown): boolean {

@@ -39,7 +39,7 @@ describe("session interruption recovery", () => {
 		const prompt = user();
 		const retryMessages = prepareMessagesForRetry([prompt, assistant("error")]);
 		expect(retryMessages).toEqual([prompt]);
-		expect(retryMessages).not.toBe([prompt]);
+		expect(retryMessages?.[0]).toBe(prompt);
 	});
 
 	it("does not retry a completed or non-trailing failure", () => {

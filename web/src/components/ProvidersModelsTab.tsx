@@ -23,6 +23,8 @@ import { CloudProviderKeysSection } from "./settings/CloudProviderKeysSection";
 import { WebSearchSection } from "./settings/WebSearchSection";
 import { ProviderVisibilitySection } from "./settings/ProviderVisibilitySection";
 import { MyModelsSection } from "./settings/MyModelsSection";
+import { OfflineTutorSettings } from "./OfflineTutorSettings";
+import { desktopOfflineBridge } from "../lib/desktop-offline";
 import {
 	discoverCustomProviderModels,
 	type KeatingCustomProvider,
@@ -250,6 +252,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 		<div className={settingsSection()}>
 			<SettingsSectionNav
 				sections={[
+					...(desktopOfflineBridge() ? [{ id: "offline-tutor", label: "Offline tutor" }] : []),
 					{ id: "cloud-providers", label: "Cloud" },
 					{ id: "web-search", label: "Web Search" },
 					{ id: "provider-visibility", label: "Visibility" },
@@ -259,6 +262,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 				]}
 			/>
 
+			<OfflineTutorSettings />
 			<CloudProviderKeysSection providers={providers.filter((p) => !modelPrefs.hiddenProviders.includes(p))} />
 
 			<div className={dividerClass} />

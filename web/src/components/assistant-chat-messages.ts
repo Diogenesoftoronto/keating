@@ -154,3 +154,35 @@ export function recordCredentialBlockedSend(
     ),
   );
 }
+
+export function mergeConsecutiveAssistantMessages(
+  messages: AgentMessage[],
+): AgentMessage[] {
+  const merged: AgentMessage[] = [];
+  for (const message of messages) {
+    const msg = message as any;
+    if (msg.role === "assistant" && merged.length > 0) {
+      const last = merged[merged.length - 1] as any;
+      if (last.role === "assistant") {
+        const left = Array.isArray(last.content)
+          ? last.content.map((p: any) => ({ ...p }))
+          : [{ type: "text", text: textFromContent(last.content) }];
+        const right = Array.isArray(msg.content)
+          ? msg.content.map((p: any) => ({ ...p }))
+          : [{ type: "text", text: textFromContent(msg.content) }];
+        last.content = [...left, ...right];
+        if (msg.timestamp) last.timestamp = msg.timestamp;
+        if (msg.stopReason !== undefined) last.stopReason = msg.stopReason;
+        if (msg.errorMessage) {
+          last.errorMessage = msg.errorMessage;
+          last.stopReason = msg.stopReason ?? last.stopReason;
+        }
+        if (msg.__keatingStreaming)
+          last.__keatingStreaming = msg.__keatingStreaming;
+        continue;
+      }
+    }
+    merged.push({ ...msg, ...(Array.isArray(msg.content) ? { content: msg.content.map((part: any) => ({ ...part })) } : {}) });
+  }
+  return merged;
+}

@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import type { KeatingOfflineBridge } from "./offline-contract.js";
 import type {
   P2PRpcMethod,
   P2PRpcResponse,
@@ -158,3 +159,13 @@ const desktopBridge: KeatingDesktopBridge = {
 };
 
 contextBridge.exposeInMainWorld("keatingDesktop", desktopBridge);
+
+const offlineBridge: KeatingOfflineBridge = {
+  status: () => ipcRenderer.invoke("keating:offline:rpc", "status"),
+  download: () => ipcRenderer.invoke("keating:offline:rpc", "download"),
+  cancelDownload: () => ipcRenderer.invoke("keating:offline:rpc", "cancelDownload"),
+  remove: () => ipcRenderer.invoke("keating:offline:rpc", "remove"),
+  generate: (request) => ipcRenderer.invoke("keating:offline:rpc", "generate", request),
+  cancelGeneration: () => ipcRenderer.invoke("keating:offline:rpc", "cancelGeneration"),
+};
+contextBridge.exposeInMainWorld("keatingOffline", offlineBridge);

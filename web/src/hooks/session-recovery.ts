@@ -46,7 +46,9 @@ export function messagesForSessionSnapshot(
 
 export function prepareMessagesForRetry(messages: AgentMessage[]): AgentMessage[] | null {
 	if (!isRetryableAssistantMessage(messages.at(-1))) return null;
-	const remaining = messages.slice(0, -1).map(cloneMessage);
+	// Flue tracks admitted messages by object identity. Retrying removes the
+	// failure from the list; cloning retained turns makes them appear unsent.
+	const remaining = messages.slice(0, -1);
 	const hasUserTurn = remaining.some((message) => {
 		const role = (message as { role?: unknown }).role;
 		return role === "user" || role === "user-with-attachments";

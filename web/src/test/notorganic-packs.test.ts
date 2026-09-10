@@ -13,7 +13,7 @@ describe("Not Organic Keating pack catalog", () => {
 			["keating_pack_25", 25],
 			["keating_pack_50", 50],
 		]);
-		expect(DEFAULT_NOTORGANIC_PACK_ID).toBe("keating_pack_10");
+		expect(DEFAULT_NOTORGANIC_PACK_ID).toBe("keating_pack_25");
 		expect(getNotOrganicPack("keating_pack_25")?.popular).toBe(true);
 		expect(isNotOrganicPackId("keating_pack_50")).toBe(true);
 		expect(isNotOrganicPackId("starter")).toBe(false);

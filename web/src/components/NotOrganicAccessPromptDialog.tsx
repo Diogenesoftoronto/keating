@@ -1,10 +1,9 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { KeyRound, X } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
 import { iconButton, primaryButton } from "../../styled-system/recipes";
 import {
 	beginNotOrganicAuthorization,
-	createNotOrganicCheckout,
 	getNotOrganicAccount,
 	getNotOrganicWallet,
 	isNotOrganicFeatureEnabled,
@@ -12,6 +11,8 @@ import {
 	type NotOrganicAccount,
 	type NotOrganicWallet,
 } from "../notorganic-provider";
+import { formatCreditBalance, normalizeCreditWallet } from "../notorganic-provider/credit-wallet";
+import { NotOrganicCreditRecovery } from "./NotOrganicCreditRecovery";
 import {
 	DEFAULT_NOTORGANIC_PACK_ID,
 	getNotOrganicPack,
@@ -77,9 +78,7 @@ export function closeNotOrganicPrompt(success: boolean) {
 
 function accountSummary(account: NotOrganicAccount, wallet: NotOrganicWallet): string {
 	const identity = account.did ?? account.id;
-	const balance = typeof wallet.balance_microusd === "number"
-		? `$${(wallet.balance_microusd / 1_000_000).toFixed(2)} available`
-		: "wallet connected";
+	const balance = `${formatCreditBalance(normalizeCreditWallet(wallet).availableMicros)} available`;
 	return `${identity} · ${balance}`;
 }
 
@@ -92,10 +91,11 @@ export interface NotOrganicAccessPanelProps {
 	onConnect(): void;
 	onDismiss(): void;
 	onCheckout?(): void;
+	creditContent?: ReactNode;
 }
 
 /** Native modal semantics keep keyboard focus here and make the page behind it inert. */
-export function NotOrganicAccessPanel({ loading = false, error, summary, connected = false, pack, onConnect, onDismiss, onCheckout }: NotOrganicAccessPanelProps) {
+export function NotOrganicAccessPanel({ loading = false, error, summary, connected = false, pack, onConnect, onDismiss, onCheckout, creditContent }: NotOrganicAccessPanelProps) {
 	const dialog = useRef<HTMLDialogElement>(null);
 	const titleId = useId();
 	const descriptionId = useId();
@@ -121,7 +121,7 @@ export function NotOrganicAccessPanel({ loading = false, error, summary, connect
 			</div>
 			<button type="button" onClick={onDismiss} aria-label="Close account sign-in" className={cx(iconButton({ size: "md", tone: "ghost" }), css({ minWidth: "2.75rem", minHeight: "2.75rem" }))}><X size={18} aria-hidden="true" /></button>
 		</header>
-		<div className={css({ display: "flex", flexDirection: "column", gap: "1rem", padding: "1.25rem" })}>
+		{creditContent ? <div id={descriptionId} className={css({ padding: "0.75rem" })}>{creditContent}</div> : <div className={css({ display: "flex", flexDirection: "column", gap: "1rem", padding: "1.25rem" })}>
 			<p id={descriptionId} className={css({ fontSize: "0.9375rem", lineHeight: 1.6 })}>{pack
 				? <>Add <strong>${pack.priceUsd}</strong> in Keating credits with your Not Organic account.</>
 				: <>Sign up or sign in to use <strong>Inkling Small</strong>, Keating’s default model. Your account is managed by Not Organic.</>}</p>
@@ -134,7 +134,7 @@ export function NotOrganicAccessPanel({ loading = false, error, summary, connect
 				</button>
 				{pack && onCheckout && <button type="button" className={cx(primaryButton(), css({ minHeight: "2.75rem", paddingInline: "1rem" }))} onClick={onCheckout} disabled={loading}>Continue to checkout</button>}
 			</div>
-		</div>
+		</div>}
 	</dialog>;
 }
 
@@ -189,35 +189,11 @@ export function NotOrganicAccessPromptDialog() {
 		}
 	};
 
-	const openCheckout = async () => {
-		if (!pack) return;
-		if (import.meta.env?.VITE_NOTORGANIC_CHECKOUT_ENABLED !== "true") {
-			window.location.assign(`/pricing?pack=${pack.id}`);
-			return;
-		}
-		setLoading(true);
-		setError("");
-		try {
-			if (notOrganicPublicClient() && !notOrganicPublicClient()?.getSession()) {
-				await beginNotOrganicAuthorization("/pricing");
-				return;
-			}
-			const returnUrl = new URL("/pricing?checkout=returned", window.location.origin);
-			const checkout = await createNotOrganicCheckout(pack.id, returnUrl.toString());
-			const checkoutUrl = checkout.url ?? checkout.checkout_url;
-			if (!checkoutUrl || new URL(checkoutUrl).protocol !== "https:") throw new Error("Checkout could not be opened.");
-			window.location.assign(checkoutUrl);
-		} catch (cause) {
-			if (activePrompt?.id === request.id) setError(cause instanceof Error ? cause.message : "Could not open Not Organic checkout.");
-		} finally {
-			if (activePrompt?.id === request.id) setLoading(false);
-		}
-	};
-
 	let connected = false;
 	try { connected = !!notOrganicPublicClient()?.getSession(); } catch { /* Unavailable storage is signed out. */ }
 	return <NotOrganicAccessPanel key={request.id} pack={request.packId ? pack : undefined}
 		connected={connected} loading={loading} summary={summary} error={error}
-		onConnect={() => void refreshSession()} onCheckout={() => void openCheckout()}
+		creditContent={connected && request.packId ? <NotOrganicCreditRecovery initialPackId={request.packId} preserveMessage={false} onRetry={() => closeNotOrganicPrompt(true)} /> : undefined}
+		onConnect={() => void refreshSession()}
 		onDismiss={() => closeNotOrganicPrompt(false)} />;
 }

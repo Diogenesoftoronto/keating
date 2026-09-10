@@ -1,0 +1,7 @@
+{
+  "name": "keating-litert",
+  "version": "1.0.0",
+  "description": "Keating native offline LiteRT-LM inference",
+  "license": "Apache-2.0",
+  "main": "src/index.ts"
+}
