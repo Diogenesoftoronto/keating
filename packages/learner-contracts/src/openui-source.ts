@@ -1,3 +1,4 @@
+import { checkedMathQuestion } from "./math-question.js";
 import {
   UI_CONTRACT_VERSION,
   MIN_EXAM_QUESTIONS,
@@ -495,9 +496,11 @@ function question(parent: string, value: unknown, index: number, quiz = false): 
   const rawCorrectMatches = textArray(item.correctMatches);
   const rawCorrectAnswers = textArray(item.correctAnswers);
   const rawCorrectAnswer = optionalText(item.correctAnswer);
+  const math = item.mathProblem !== undefined ? checkedMathQuestion(item.mathProblem, rawCorrectAnswer ?? "") : undefined;
   return {
     id,
-    prompt: text(item.question, "Question"),
+    prompt: math?.question ?? text(item.question, "Question"),
+    ...(math ? { mathProblem: math.mathProblem } : {}),
     kind: rawKind,
     ...(optionalText(item.header) !== undefined ? { header: text(item.header) } : {}),
     ...(mappedChoices ? { choices: mappedChoices } : {}),
@@ -513,7 +516,7 @@ function question(parent: string, value: unknown, index: number, quiz = false): 
     ...(booleanValue(item.uniqueMatches) !== undefined ? { uniqueMatches: booleanValue(item.uniqueMatches) } : {}),
     ...(rawCorrectMatches ? { correctMatches: rawCorrectMatches.map((answer) => normalizeChoiceAnswer(answer, mappedChoices, "correctMatches")) } : {}),
     ...(optionalText(item.level) !== undefined ? { level: text(item.level) as UiQuestionLevel } : {}),
-    ...(rawCorrectAnswer !== undefined ? { correctAnswer: normalizeChoiceAnswer(rawCorrectAnswer, mappedChoices, "correctAnswer") } : {}),
+    ...(rawCorrectAnswer !== undefined ? { correctAnswer: math ? rawCorrectAnswer : normalizeChoiceAnswer(rawCorrectAnswer, mappedChoices, "correctAnswer") } : {}),
     ...(rawCorrectAnswers ? { correctAnswers: rawCorrectAnswers.map((answer) => normalizeChoiceAnswer(answer, mappedChoices, "correctAnswers")) } : {}),
     ...(optionalText(item.explanation) !== undefined ? { explanation: text(item.explanation) } : {}),
     ...(optionalText(item.rubric) !== undefined ? { rubric: text(item.rubric) } : {}),

@@ -1,4 +1,5 @@
 import { isValidSimulationExpression } from "./simulation-expression.js";
+import { checkedMathQuestion } from "./math-question.js";
 import { codePointCompare, compareContractTimestamps, hasOnlyKeys, isBoundedJsonValue, isContractId, isContractTimestamp, isRecord } from "./validation.js";
 
 export const UI_CONTRACT_VERSION = 1 as const;
@@ -67,6 +68,7 @@ export interface UiDeckCompletionSummary {
 }
 
 export interface UiQuestion {
+  mathProblem?: import("./math-verification.js").MathProblem;
   id: string;
   prompt: string;
   kind?: UiQuestionType;
@@ -451,7 +453,7 @@ const RECEIPT_STATES = new Set<UiActionReceipt["state"]>(["pending", "accepted",
 const DOCUMENT_KEYS = new Set(["schemaVersion", "id", "revision", "lifecycle", "retention", "supportedSurfaces", "title", "description", "nodes", "createdAt", "updatedAt"]);
 const OPTION_KEYS = new Set(["id", "label"]);
 const ROW_ANSWER_KEYS = new Set(["item", "optionId", "reason"]);
-const QUESTION_FIELD_KEYS = ["id", "prompt", "kind", "header", "choices", "items", "blanks", "hint", "allowText", "multiSelect", "requireReasons", "itemLabel", "choiceLabel", "reasonLabel", "uniqueMatches", "correctMatches", "level", "correctAnswer", "correctAnswers", "explanation", "rubric", "timeLimit", "min", "max", "step"];
+const QUESTION_FIELD_KEYS = ["id", "prompt", "kind", "header", "choices", "items", "blanks", "hint", "allowText", "multiSelect", "requireReasons", "itemLabel", "choiceLabel", "reasonLabel", "uniqueMatches", "correctMatches", "level", "correctAnswer", "correctAnswers", "explanation", "rubric", "timeLimit", "min", "max", "step", "mathProblem"];
 const QUESTION_KEYS = new Set(["type", ...QUESTION_FIELD_KEYS]);
 const NESTED_QUESTION_KEYS = new Set(QUESTION_FIELD_KEYS);
 const QUESTION_GROUP_KEYS = new Set(["type", "id", "title", "intro", "topic", "questions"]);
@@ -554,6 +556,12 @@ function validateUiRowAnswer(value: unknown): value is UiRowAnswer {
 }
 
 function validateQuestionFields(value: Record<string, unknown>): boolean {
+  if (value.mathProblem !== undefined) {
+    try {
+      const checked = checkedMathQuestion(value.mathProblem, typeof value.correctAnswer === "string" ? value.correctAnswer : "");
+      if (value.prompt !== checked.question) return false;
+    } catch { return false; }
+  }
   const choices = value.choices;
   const items = value.items;
   const blanks = value.blanks;

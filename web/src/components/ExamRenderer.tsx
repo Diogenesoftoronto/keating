@@ -11,7 +11,7 @@ import {
   type SharedUiActionEvent,
 } from "../keating/openui/shared-renderer";
 import { QuizGradesContext } from "./quiz-grades-context";
-import { quizOutcome, summarizeQuiz } from "../keating/openui/quiz-progress";
+import { objectiveCredit, quizOutcome, summarizeQuiz } from "../keating/openui/quiz-progress";
 import { formatQuizDuration } from "./quiz/game";
 import { MarkdownBlock } from "./MarkdownBlock";
 import {
@@ -598,6 +598,7 @@ function ExamResults({
                   <span className="exam-results__question-title">
                     {question.header ?? question.prompt}
                     <small>{verdict}</small>
+                    {question.mathProblem && objectiveCredit(question, answers[question.id] ?? "") === undefined ? <small>Not independently checked</small> : null}
                   </span>
                   <time>
                     {completion.timing.perQuestionMs[question.id] !== undefined

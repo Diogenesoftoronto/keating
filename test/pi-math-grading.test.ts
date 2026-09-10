@@ -36,5 +36,11 @@ test("native quiz excludes unsupported math and refuses model overrides", async 
     ] }, undefined, undefined, {});
     expect(override.isError).toBe(true);
     expect(pendingQuizResults.has(details.resultId)).toBe(true);
+    const reviewed = await gradeTool.execute("grade", { result_id: details.resultId, grades: [
+      { question_id: mathId, verdict: "correct" }, { question_id: openId, verdict: "correct" },
+    ] }, undefined, undefined, {});
+    expect(reviewed.isError).toBeUndefined();
+    expect((reviewed.details as any).openEndedGrades[mathId].note).toContain("Not independently checked");
+    expect(pendingQuizResults.has(details.resultId)).toBe(false);
   } finally { pendingQuizResults.delete(details.resultId); }
 });

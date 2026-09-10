@@ -4,6 +4,8 @@ export * from "./envelope.js";
 export * from "./evaluation.js";
 export * from "./feedback.js";
 export * from "./learning.js";
+export * from "./math-verification.js";
+export * from "./math-question.js";
 export * from "./mobile-workspace.js";
 export * from "./openui-source.js";
 export * from "./simulation-expression.js";

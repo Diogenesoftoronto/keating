@@ -5,12 +5,14 @@
 import type { QuizLimits, QuizReview } from "../../shared/pedagogy/types.js";
 import { TopicDefinition, resolveTopic } from "./topics.js";
 import { Prng } from "./random.js";
+import { checkedMathQuestion, type MathProblem } from "../../packages/learner-contracts/src/index.js";
 
 export type { QuizLimits, QuizReview } from "../../shared/pedagogy/types.js";
 
 export type QuestionType = "multiple_choice" | "short_answer" | "true_false" | "fill_in" | "transfer";
 
 export interface QuizQuestion {
+  mathProblem?: MathProblem;
   id: string;
   type: QuestionType;
   level: "recall" | "comprehension" | "application" | "analysis" | "transfer";
@@ -52,6 +54,7 @@ export type QuizLimitOverrides = Partial<QuizLimits>;
  * inferred. When authored questions are supplied they replace the templated set.
  */
 export interface AuthoredQuestion {
+  mathProblem?: MathProblem;
   type?: QuestionType;
   level?: QuizQuestion["level"];
   question: string;
@@ -92,7 +95,8 @@ const QUIZ_LEVEL_CYCLE: QuizQuestion["level"][] = [
 export function buildAuthoredQuestions(topic: TopicDefinition, authored: AuthoredQuestion[]): QuizQuestion[] {
   const out: QuizQuestion[] = [];
   authored.forEach((raw, i) => {
-    const question = (raw.question ?? "").trim();
+    const math = raw.mathProblem !== undefined ? checkedMathQuestion(raw.mathProblem, raw.correctAnswer) : undefined;
+    const question = math?.question ?? (raw.question ?? "").trim();
     const correctAnswer = (raw.correctAnswer ?? "").trim();
     const explanation = (raw.explanation ?? "").trim();
     if (!question || !correctAnswer || !explanation) return;
@@ -123,6 +127,7 @@ export function buildAuthoredQuestions(topic: TopicDefinition, authored: Authore
         : undefined;
 
     out.push({
+      ...(math ? { mathProblem: math.mathProblem } : {}),
       id: `${topic.slug}-q${out.length + 1}`,
       type,
       level,
