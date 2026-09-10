@@ -166,6 +166,9 @@ in
     # "false" the hosted UI stays hidden instead of rendering dead controls.
     VITE_NOTORGANIC_ENABLED = "true";
     VITE_NOTORGANIC_CHECKOUT_ENABLED = "false";
+    # Enable keating_v2 only after verifying the provider payment mapping.
+    VITE_NOTORGANIC_SUBSCRIPTION_CATALOG = "";
+    NOTORGANIC_SUBSCRIPTION_CATALOG = "";
 
     # Public PKCE/DPoP sign-in is independent of the legacy server adapter.
     # Client id and callback derive from the current browser origin; checkout

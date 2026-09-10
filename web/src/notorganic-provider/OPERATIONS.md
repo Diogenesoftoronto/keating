@@ -31,6 +31,12 @@ to all three in the same commit.
 
 Browser gate:
 
+- `VITE_NOTORGANIC_SUBSCRIPTION_CATALOG` — defaults to an empty string, disabling
+  subscription checkout. Set to `keating_v2` only after verifying the provider's
+  `keating_personal_v2` payment mapping. Also requires
+  `VITE_NOTORGANIC_CHECKOUT_ENABLED=true` and a wallet response advertising that
+  plan as available; the catalog flag alone does not enable purchases.
+
 - `VITE_NOTORGANIC_CHECKOUT_ENABLED` — separate purchase gate, default `false`.
   Enable only after live payment credentials, approved prices and signed credit
   delivery have been verified. Account signup may be enabled independently.
@@ -60,6 +66,12 @@ URL, resolved client ID and redirect URI, scope, and max-cost ceiling are presen
 an incomplete contract it truthfully retains the credit-waitlist flow.
 
 Nitro server:
+
+- `NOTORGANIC_SUBSCRIPTION_CATALOG` — defaults to an empty string. Set to
+  `keating_v2` to accept `keating_personal_v2` subscription selections through
+  the authenticated server checkout fallback after verifying the provider
+  payment mapping. This is separate from the browser flag and does not bypass
+  the server route's authentication or hosted-provider gate.
 
 - `NOTORGANIC_ENABLED` — gate for routes under `web/server/api/notorganic/**`.
 - `NOTORGANIC_ISSUER` — HTTPS gateway origin, without `/v1` (normally
