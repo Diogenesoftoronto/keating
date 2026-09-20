@@ -216,7 +216,7 @@ describe("realtime capability cascade", () => {
 		expect(legacy.capabilities.realtimeVideo).toBe("none");
 	});
 
-	test("a duplex model that cannot call tools is not a teaching session", () => {
+	test("a duplex model without tools retains audio and explains its limits", () => {
 		const rules: CapabilityRule[] = [{
 			id: "toolless-voice",
 			provider: "voice-only",
@@ -231,7 +231,18 @@ describe("realtime capability cascade", () => {
 			},
 		}];
 		const descriptor = resolveRealtimeTier({ provider: "voice-only", id: "chatty" }, rules);
-		expect(descriptor.tier).toBe(0);
+		expect(descriptor.tier).toBe(1);
 		expect(descriptor.capReason).toContain("tools");
+	});
+
+	test("Not Organic GPT Live does not claim tools, search, or visual input", () => {
+		const result = negotiateProviderCapabilities(
+			{ provider: "notorganic", id: "gpt-live-1", api: "gpt-live" },
+			{ realtimeAudio: true, realtimeVideo: true, realtimeImage: true, toolCalls: true, webSearch: true, citations: true },
+		);
+		expect(result.realtimeAudio).toBe("native");
+		expect(result.transport).toBe("websocket");
+		expect(result.missing).toEqual(["realtimeVideo", "realtimeImage", "webSearch", "toolCalls", "citations"]);
+		expect(result.usesFallback).toBe(false);
 	});
 });

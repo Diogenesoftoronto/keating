@@ -1,0 +1,106 @@
+/* Learner-declared accessibility preferences.
+ *
+ * `learner-accessibility.ts` mirrors the saved profile onto <html>; these rules
+ * are what actually change the interface. Selectors are attribute-qualified
+ * (specificity 0,1,1) so they win over Panda's `:root` token block without
+ * depending on stylesheet order.
+ */
+
+/* Motion ------------------------------------------------------------------ */
+
+/* Near-zero rather than zero: transitionend/animationend still fire, so any
+   code that waits for them keeps working. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Text size --------------------------------------------------------------- */
+
+/* Panda sizes in rem, so scaling the root scales type and spacing together the
+   way browser zoom does. base.css pins body to 16px, so it is scaled in step. */
+html[data-text-scale="large"] {
+  font-size: 115%;
+}
+
+html[data-text-scale="larger"] {
+  font-size: 130%;
+}
+
+html[data-text-scale="large"] body {
+  font-size: 18.4px;
+}
+
+html[data-text-scale="larger"] body {
+  font-size: 20.8px;
+}
+
+/* Contrast ---------------------------------------------------------------- */
+
+/* Derived from --foreground so one rule serves both the light and dark themes
+   instead of hard-coding a second palette that could drift from the tokens. */
+html[data-high-contrast="true"] {
+  --border: color-mix(in srgb, var(--foreground) 55%, transparent);
+  --line: color-mix(in srgb, var(--foreground) 55%, transparent);
+  --line-soft: color-mix(in srgb, var(--foreground) 34%, transparent);
+  --muted-foreground: color-mix(in srgb, var(--foreground) 88%, transparent);
+  --ink-soft: color-mix(in srgb, var(--foreground) 88%, transparent);
+}
+
+/* Underlining inline links keeps them distinguishable without relying on hue. */
+html[data-high-contrast="true"] a {
+  text-decoration-line: underline;
+  text-underline-offset: 2px;
+}
+
+html[data-high-contrast="true"] :focus-visible {
+  outline: 3px solid var(--foreground);
+  outline-offset: 2px;
+}
+
+/* Typography -------------------------------------------------------------- */
+
+/* No dyslexia-specific webfont ships with the app, so this leans on widely
+   installed faces with distinguishable glyphs plus the spacing changes that
+   carry most of the readability benefit. */
+html[data-dyslexia-font="true"] body {
+  font-family: "Atkinson Hyperlegible", Verdana, Tahoma, "DejaVu Sans", "Segoe UI", sans-serif;
+  letter-spacing: 0.035em;
+  word-spacing: 0.12em;
+  line-height: 1.7;
+}
+
+/* Long-form reading benefits most; leave code and math to their own metrics. */
+html[data-dyslexia-font="true"] p,
+html[data-dyslexia-font="true"] li,
+html[data-dyslexia-font="true"] label,
+html[data-dyslexia-font="true"] button,
+html[data-dyslexia-font="true"] input,
+html[data-dyslexia-font="true"] textarea {
+  font-family: inherit;
+  letter-spacing: inherit;
+}
+
+html[data-dyslexia-font="true"] code,
+html[data-dyslexia-font="true"] pre,
+html[data-dyslexia-font="true"] kbd,
+html[data-dyslexia-font="true"] .katex {
+  font-family: var(--font-mono);
+  letter-spacing: normal;
+  word-spacing: normal;
+}

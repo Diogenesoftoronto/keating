@@ -17,6 +17,10 @@ export type UiFontFamily = "system" | "space-mono" | "jetbrains-mono" | "roboto"
 export type ReasoningLevel = "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
 
 export interface KeatingUiSettings {
+  /** Explicit network consent, independent of local judgement and the tutor provider. */
+  judgementHosted: boolean;
+  judgementLocalModel: "off" | "minicpm5-2b-int4";
+  judgementMemory: boolean;
   theme: ThemePreference;
   fontFamily: UiFontFamily;
   /** Render interactive quiz/question/goal cards instead of the raw tag text. */
@@ -33,6 +37,9 @@ export interface KeatingUiSettings {
 }
 
 export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
+  judgementHosted: false,
+  judgementLocalModel: "off",
+  judgementMemory: false,
   theme: "system",
   fontFamily: "jetbrains-mono",
   showToolUi: true,
@@ -80,6 +87,9 @@ const REASONING_VALUES = new Set<ReasoningLevel>(["off", "minimal", "low", "medi
 export function normalizeUiSettings(value: unknown): KeatingUiSettings {
   const record = (typeof value === "object" && value !== null ? value : {}) as Partial<KeatingUiSettings>;
   return {
+    judgementHosted: record.judgementHosted === true,
+    judgementLocalModel: record.judgementLocalModel === "minicpm5-2b-int4" ? "minicpm5-2b-int4" : "off",
+    judgementMemory: record.judgementMemory === true,
     theme: THEME_VALUES.has(record.theme as ThemePreference) ? record.theme as ThemePreference : DEFAULT_UI_SETTINGS.theme,
     fontFamily: FONT_VALUES.has(record.fontFamily as UiFontFamily)
       ? record.fontFamily as UiFontFamily

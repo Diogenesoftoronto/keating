@@ -2,6 +2,9 @@ import { describe, expect, test } from "bun:test";
 import {
   createPortableLearnerEnvelope,
   UI_CONTRACT_VERSION,
+  validateUiActionJournal,
+  validateUiActionResult,
+  validateUiDocument,
   type PortableLearnerData,
   type UiAction,
   type UiActionJournal,
@@ -14,6 +17,7 @@ import {
   type AsyncSqlExecutor,
   type SqlBindValue,
 } from "../src/lib/learner-repository";
+import { applyLocalUiAction } from "../src/lib/ui-action-mutations";
 
 interface StoredRow {
   kind: string;
@@ -413,6 +417,91 @@ describe("mobile learner record store", () => {
 
     await expect(uiActions.dispatch({ ...action, answer: "A different action" }, document, apply))
       .rejects.toThrow("different action");
+  });
+
+  test.each([
+    {
+      name: "createdAt ahead of the receiver clock",
+      createdAt: "2026-08-11T00:00:00.000Z",
+      updatedAt: "2026-08-11T00:00:00.000Z",
+      now: AT,
+      expectedUpdatedAt: "2026-08-11T00:00:00.000Z",
+    },
+    {
+      name: "updatedAt independently ahead of the receiver clock",
+      createdAt: AT,
+      updatedAt: "2026-08-12T00:00:00.000Z",
+      now: "2026-08-11T00:00:00.000Z",
+      expectedUpdatedAt: "2026-08-12T00:00:00.000Z",
+    },
+    {
+      name: "a later receiver clock",
+      createdAt: AT,
+      updatedAt: AT,
+      now: "2026-08-11T00:00:00.000Z",
+      expectedUpdatedAt: "2026-08-11T00:00:00.000Z",
+    },
+    {
+      name: "later receiver milliseconds than a seconds-only document",
+      createdAt: AT,
+      updatedAt: "2026-08-10T00:00:00Z",
+      now: "2026-08-10T00:00:00.001Z",
+      expectedUpdatedAt: "2026-08-10T00:00:00.001Z",
+    },
+    {
+      name: "document milliseconds ahead of a seconds-only receiver",
+      createdAt: AT,
+      updatedAt: "2026-08-10T00:00:00.001Z",
+      now: "2026-08-10T00:00:00Z",
+      expectedUpdatedAt: "2026-08-10T00:00:00.001Z",
+    },
+    {
+      name: "equal timestamps with mixed precision",
+      createdAt: AT,
+      updatedAt: "2026-08-10T00:00:00Z",
+      now: AT,
+      expectedUpdatedAt: AT,
+    },
+  ])("keeps OpenUI timestamps monotonic with $name and replays the saved result", async ({ createdAt, updatedAt, now, expectedUpdatedAt }) => {
+    const database = new MemoryDatabase();
+    const records = new LearnerRecordStore(database, () => now);
+    const uiActions = new UiActionStore(database, () => now);
+    await records.replace(fixture());
+    const { document, action } = uiFixture();
+    const source = { ...document, createdAt, updatedAt };
+    const original = structuredClone(source);
+    expect(validateUiDocument(source)).toBe(true);
+    let mutations = 0;
+    const apply = (current: PortableLearnerData, receivedAt: string) => {
+      mutations += 1;
+      return applyLocalUiAction(current, action, source, receivedAt);
+    };
+
+    const first = await uiActions.dispatch(action, source, apply);
+    expect(validateUiActionResult(first)).toBe(true);
+    expect(validateUiDocument(first.resultingDocument)).toBe(true);
+    expect(first.resultingDocument).toEqual({ ...original, revision: 1, updatedAt: expectedUpdatedAt });
+    expect(source).toEqual(original);
+    expect(first.resultingDocument?.nodes).not.toBe(source.nodes);
+    const saved = await records.snapshot();
+    expect(saved.generatedAt).toBe(now);
+    expect(saved.questionChecks).toHaveLength(1);
+    expect(saved.questionChecks[0]?.createdAt).toBe(now);
+    const journal = await uiActions.getJournal(source.id);
+    expect(validateUiActionJournal(journal)).toBe(true);
+    expect(journal.receipts).toHaveLength(1);
+    expect(journal.receipts[0]).toMatchObject({ createdAt: now, updatedAt: now, state: "completed", result: first });
+    const storedJournal = structuredClone(database.uiActionJournals.get(source.id));
+    expect(storedJournal?.updated_at).toBe(now);
+
+    const reopened = new UiActionStore(database, () => "2026-08-13T00:00:00.000Z");
+    const replay = await reopened.dispatch(structuredClone(action), structuredClone(source), apply);
+    expect(replay).toEqual(first);
+    expect(mutations).toBe(1);
+    expect(await reopened.getJournal(source.id)).toEqual(journal);
+    expect(database.uiActionJournals.get(source.id)).toEqual(storedJournal);
+    expect(await records.snapshot()).toEqual(saved);
+    expect(source).toEqual(original);
   });
 
   test("rolls back OpenUI state when its completion document is invalid", async () => {

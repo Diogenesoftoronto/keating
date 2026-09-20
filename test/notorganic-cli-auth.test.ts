@@ -7,15 +7,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { AuthStorage } from "@earendil-works/pi-coding-agent";
+import { Type } from "typebox";
 
 import { DEFAULT_KEATING_CONFIG } from "../src/core/config.js";
 import { providerIsConfigured } from "../src/core/provider-auth.js";
+import { createCliJudgementBackend } from "../src/judgement/transport.js";
 import {
   createNotOrganicDpopProof,
   loginNotOrganic,
   logoutNotOrganic,
   NOTORGANIC_AUTH_ENV,
   NOTORGANIC_CAPABILITY_SECONDS,
+  NOTORGANIC_JUDGEMENT_LOGIN_SCOPE,
   NOTORGANIC_MODEL_ID,
   NOTORGANIC_PROVIDER_ID,
   NOTORGANIC_SCOPE,
@@ -95,6 +98,81 @@ async function privateJwk(): Promise<Record<string, unknown>> {
 }
 
 describe("Not Organic CLI public-client login", () => {
+  test.each([NOTORGANIC_JUDGEMENT_LOGIN_SCOPE, "judgement:evaluate infer:balanced"])(
+    "explicit judgement login preserves inference and normalizes returned scope %s", async (scope) => {
+      const cwd = await temporaryProject();
+      let authorizationUrl = "";
+      const now = Date.now();
+      const result = await loginNotOrganic(cwd, { onAuth: ({ url }) => { authorizationUrl = url; } }, {
+        judgement: true,
+        issuer: "https://gateway.test",
+        callbackListenerFactory: listenerFactory(),
+        now: () => now,
+        fetch: (async () => Response.json({
+          access_token: "capability-token-long-enough", token_type: "DPoP", expires_in: 300, scope
+        })) as typeof fetch
+      });
+      expect(new URL(authorizationUrl).searchParams.get("scope")).toBe(NOTORGANIC_JUDGEMENT_LOGIN_SCOPE);
+      expect(result.scope).toBe(NOTORGANIC_JUDGEMENT_LOGIN_SCOPE);
+      expect(result.message).toContain("keating login --judgement");
+      expect(notOrganicAuthStatus(cwd, () => now)).toMatchObject({ configured: true, scope: NOTORGANIC_JUDGEMENT_LOGIN_SCOPE });
+      expect(providerIsConfigured(cwd, {}, "notorganic")).toBe(true);
+      const credential = AuthStorage.create(notOrganicAuthPath(cwd)).get("notorganic");
+      if (credential?.type !== "api_key") throw new Error("Missing saved capability");
+      const headers = await createNotOrganicRequestHeaders({
+        accessToken: credential.key, env: credential.env,
+        url: "https://gateway.test/v1/chat/completions", now: () => now
+      });
+      expect(headers.authorization).toBe("DPoP capability-token-long-enough");
+      expect(headers.dpop.split(".")).toHaveLength(3);
+      await expect(createNotOrganicRequestHeaders({
+        accessToken: credential.key, env: credential.env,
+        url: "https://gateway.test/v1/chat/completions", now: () => now + 300_000
+      })).rejects.toThrow("keating login --judgement");
+      // Load the credential written by login, rather than injecting a synthetic
+      // transport credential: this proves the two production boundaries join.
+      let sent = 0;
+      const backend = createCliJudgementBackend({ cwd, env: {}, now: () => now,
+        fetch: async (url, init) => {
+          sent++;
+          expect(url).toBe("https://gateway.test/v1/judgement");
+          expect(init.headers.authorization).toBe(`DPoP ${credential.key}`);
+          const payload = decodeJwtPart(init.headers.dpop.split(".")[1]!);
+          expect(payload.htu).toBe(url);
+          expect(payload.htm).toBe("POST");
+          expect(JSON.parse(init.body).model).toBe("judgement");
+          return { ok: true, status: 200, json: async () => ({ model: "jev-1.13", answers: { correct: { noul: 0.9 } } }) };
+        }
+      });
+      expect(backend).not.toBeNull();
+      const outcome = await backend!.call({ state: "2x", questions: {
+        correct: { type: "noul", instructions: "The learner result is the derivative of x squared." }
+      } });
+      expect(outcome.ok).toBe(true);
+      if (outcome.ok) expect(outcome.response.backend).toEqual({ backend: "system-one", model: "jev-1.13", calibrationSha256: null });
+      expect(sent).toBe(1);
+    }
+  );
+
+  test.each([
+    { judgement: true, scope: NOTORGANIC_SCOPE },
+    { judgement: true, scope: "judgement:evaluate" },
+    { judgement: true, scope: `${NOTORGANIC_JUDGEMENT_LOGIN_SCOPE} raw-model` },
+    { judgement: true, scope: `${NOTORGANIC_JUDGEMENT_LOGIN_SCOPE} judgement:evaluate` },
+    { judgement: false, scope: NOTORGANIC_JUDGEMENT_LOGIN_SCOPE }
+  ])("rejects a changed grant and preserves the old credential: %j", async ({ judgement, scope }) => {
+    const cwd = await temporaryProject();
+    AuthStorage.create(notOrganicAuthPath(cwd)).set("notorganic", { type: "api_key", key: "previous-capability" });
+    await expect(loginNotOrganic(cwd, { onAuth: () => undefined }, {
+      judgement,
+      callbackListenerFactory: listenerFactory(),
+      fetch: (async () => Response.json({
+        access_token: "capability-token-long-enough", token_type: "DPoP", expires_in: 300, scope
+      })) as typeof fetch
+    })).rejects.toThrow("invalid or over-broad capability");
+    expect(AuthStorage.create(notOrganicAuthPath(cwd)).get("notorganic")).toEqual({ type: "api_key", key: "previous-capability" });
+  });
+
   test("uses loopback PKCE S256, exact narrow scope, and a JSON public-token exchange", async () => {
     const cwd = await temporaryProject();
     let authorizationUrl = "";
@@ -370,14 +448,16 @@ describe("Not Organic DPoP and provider contract", () => {
     })).rejects.toThrow("five-minute Not Organic capability expired");
   });
 
-  test("preserves the registered Not Organic API on streamed response messages", async () => {
+  test("serializes supported system and tool roles and preserves Not Organic API and protected headers", async () => {
     const originalFetch = globalThis.fetch;
     let requestHeaders: Headers | undefined;
     let requestUrl = "";
+    let requestBody: Record<string, any> | undefined;
     globalThis.fetch = (async (input, init) => {
       const request = new Request(input, init);
       requestUrl = request.url;
       requestHeaders = request.headers;
+      requestBody = await request.json();
       const chunks = [
         {
           id: "cmpl_keating_1",
@@ -406,7 +486,15 @@ describe("Not Organic DPoP and provider contract", () => {
         baseUrl: provider.baseUrl!
       };
       const stream = streamNotOrganic(registeredModel as never, {
-        messages: [{ role: "user", content: "Explain the hinge.", timestamp: now }]
+        systemPrompt: "Guide the learner through one step at a time.",
+        tools: [{ name: "lookup", description: "Look up a learning concept", parameters: Type.Object({ topic: Type.String() }) }],
+        messages: [
+          { role: "user", content: "Explain the hinge.", timestamp: now },
+          { role: "assistant", content: [{ type: "toolCall", id: "call_lookup", name: "lookup", arguments: { topic: "hinge" } }],
+            api: NOTORGANIC_PI_API, provider: NOTORGANIC_PROVIDER_ID, model: NOTORGANIC_MODEL_ID, timestamp: now, stopReason: "toolUse",
+            usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } },
+          { role: "toolResult", toolCallId: "call_lookup", toolName: "lookup", content: [{ type: "text", text: "A pivot point." }], isError: false, timestamp: now },
+        ]
       }, {
         apiKey: "capability-token",
         env: {
@@ -427,6 +515,11 @@ describe("Not Organic DPoP and provider contract", () => {
       expect(requestHeaders?.get("dpop")?.split(".")).toHaveLength(3);
       expect(requestHeaders?.get("idempotency-key")).toMatch(/^keating_/);
       expect(requestHeaders?.get("x-notorganic-max-cost-microusd")).toBe("100000");
+      expect(requestBody?.messages.map((message: { role: string }) => message.role)).toEqual(["system", "user", "assistant", "tool"]);
+      expect(requestBody?.messages[0].content).toBe("Guide the learner through one step at a time.");
+      expect(requestBody?.messages[2].tool_calls[0]).toMatchObject({ id: "call_lookup", type: "function", function: { name: "lookup", arguments: '{"topic":"hinge"}' } });
+      expect(requestBody?.messages[3]).toMatchObject({ tool_call_id: "call_lookup", content: "A pivot point." });
+      expect(requestBody?.tools[0].function).toMatchObject({ name: "lookup", parameters: { type: "object", properties: { topic: { type: "string" } } } });
       expect(done?.type === "done" ? done.message.api : undefined).toBe(NOTORGANIC_PI_API);
       expect(events.every((event) => !("partial" in event) || event.partial.api === NOTORGANIC_PI_API)).toBe(true);
     } finally {
@@ -515,8 +608,31 @@ describe("Not Organic CLI argument safety", () => {
 
     expect(loginHelp.status).toBe(0);
     expect(loginHelp.stdout).toContain("Usage: keating login");
+    expect(loginHelp.stdout).toContain("--judgement");
     expect(logoutHelp.status).toBe(0);
     expect(logoutHelp.stdout).toContain("Usage: keating logout");
+    expect(existsSync(notOrganicAuthPath(cwd))).toBe(false);
+  });
+
+  test("status cannot silently ignore a judgement authorization request", async () => {
+    const cwd = await temporaryProject();
+    const result = runCli(cwd, "login", "--status", "--judgement");
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("status cannot be combined");
+    expect(existsSync(notOrganicAuthPath(cwd))).toBe(false);
+  });
+
+  test("the CLI judgement flag reaches the authorization URL before any exchange", async () => {
+    const cwd = await temporaryProject();
+    const result = spawnSync(process.execPath, [cliEntry, "login", "--manual", "--judgement"], {
+      cwd, encoding: "utf8", input: "not-a-callback", timeout: 15_000,
+      env: { ...process.env, NO_COLOR: "1" }
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(1);
+    const authorization = result.stdout.match(/https:\/\/id\.notorganic\.info\/authorize\?[^\s]+/u)?.[0];
+    expect(authorization).toBeDefined();
+    expect(new URL(authorization!).searchParams.get("scope")).toBe(NOTORGANIC_JUDGEMENT_LOGIN_SCOPE);
     expect(existsSync(notOrganicAuthPath(cwd))).toBe(false);
   });
 

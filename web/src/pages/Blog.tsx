@@ -2533,45 +2533,40 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
         </p>
         <h3 id="recorded-workflows" className={styles.sectionHeading}>Recorded Workflows</h3>
         <p className={styles.smallParagraph}>
-          Four new <Code>vhs</Code> tapes live in <Code>docs/</Code> and record
-          the workflows we actually demo. The rendered videos:
+          This release included <Code>vhs</Code> recordings of the workflows below.
+          The original recordings have since been retired; their descriptions remain
+          here as part of the release history.
         </p>
         <div className={styles.stack5}>
           <figure>
             <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>intro.tape</Code> — boot the Keating shell, show the refreshed logo, list commands.
             </figcaption>
-            <video src="/tapes/intro.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
           <figure>
             <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>learning-flow.tape</Code> — <Code>plan → map → animate → verify → trace</Code>.
             </figcaption>
-            <video src="/tapes/learning-flow.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
           <figure>
             <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>improve-flow.tape</Code> — <Code>bench → evolve → prompt-evolve → improve</Code>.
             </figcaption>
-            <video src="/tapes/improve-flow.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
           <figure>
             <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>feedback-flow.tape</Code> — record signals, then <Code>due</Code> and <Code>timeline</Code>.
             </figcaption>
-            <video src="/tapes/feedback-flow.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
           <figure>
             <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>teacher-flow.tape</Code> — generate a plan, inspect it, then verify the output.
             </figcaption>
-            <video src="/tapes/teacher-flow.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
           <figure>
             <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>session-flow.tape</Code> — launch the shell, check policy, browse outputs, send feedback.
             </figcaption>
-            <video src="/tapes/session-flow.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
         </div>
         <h3 id="quality-checks" className={styles.sectionHeading}>Quality Checks</h3>
@@ -2580,17 +2575,13 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
             <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>doctor.tape</Code> — the original recording ran <Code>just doctor</Code> to check your setup.
             </figcaption>
-            <video src="/tapes/doctor.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
           <figure>
             <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>tests.tape</Code> — the original recording ran <Code>just test</Code> to exercise the suite.
             </figcaption>
-            <video src="/tapes/tests.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
         </div>
-        <p className={css({ mb: "0.5rem", fontSize: "0.875rem" })}>Render any of them yourself with:</p>
-        <CodeBlock>{`vhs docs/learning-flow.tape`}</CodeBlock>
         <h3 id="plumbing" className={styles.sectionHeading}>Plumbing</h3>
         <ul className={styles.unorderedList}>
           <li><strong>Command Spec Registry</strong> — <Code>core/commands.ts</Code> is now the single source of truth for CLI/shell command surfaces.</li>
@@ -2717,7 +2708,6 @@ exec node "$INSTALL_APP_DIR/$bundle_name/bin/keating.js" "$@"`}</CodeBlock>
             <figcaption className={css({ mb: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
               <Code>teacher-flow.tape</Code> — generate a plan, then verify the output.
             </figcaption>
-            <video src="/tapes/teacher-flow.mp4" controls muted loop playsInline className={css({ w: "100%", borderRadius: "0.25rem", border: "1px solid var(--border)" })} />
           </figure>
         </div>
         <p className={styles.italicMutedNote}>

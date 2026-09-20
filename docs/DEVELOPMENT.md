@@ -60,6 +60,144 @@ See the [devenv tasks documentation](https://devenv.sh/tasks/) for how tasks wor
 | `keating:test-web` | Run the web test suite |
 | `keating:test-e2e` | Real Pi RPC + tool-loop smoke test (requires `KEATING_E2E=1` and secrets) |
 | `keating:mutate` | Mutation testing with Stryker against `src/core/` |
+| `keating:test-python` | Run the Python suites in `scripts/training` and `scripts/report-site`. Tests needing `torch` or `tinker_cookbook` report as skipped, not errored. |
+| `keating:test-native-learning` | Native Pi/controller tests, source and training-export contracts, plus the separately pinned CPU observer/probe suites |
+| `keating:research-preflight` | Read-only Tinker and Runpod capability checks using the named Skate entries |
+
+### Notebooks
+
+Marimo notebooks in `analysis/` explain the Python pipeline interactively — move a
+slider, watch the chart move.
+
+| Task | Description |
+|------|-------------|
+| `keating:notebooks` | Open `analysis/` in marimo's sandbox editor |
+| `keating:python` | Python shell with pandas, matplotlib, NumPy, marimo, typer and httpx |
+| `keating:tutormoments` | Fetch and checksum the untouched 520-moment vanilla release |
+
+Each notebook is self-contained: a PEP-723 header names its own dependencies, and
+uv builds a throwaway environment per notebook on first open. There is no shared
+virtualenv to maintain and no `pip install` step. Every notebook explicitly includes
+pandas, matplotlib and NumPy for experimentation. First use may download packages
+and a uv-managed Python interpreter; subsequent runs reuse the cache.
+
+See [benchmark datasets](benchmark-datasets.md) for the vanilla TutorMoments arm,
+the separate synthetic Keating episodes, and complementary datasets. Open
+`analysis/tutormoments_comparison.py` to inspect original versus adapted events.
+Open `analysis/benchmark_sources.py` to browse all six pinned source resources.
+Open `analysis/native_scenarios.py` to compare admitted starting states with the
+original records, their private review material, and rejection counts. Open
+`analysis/native_learning.py` for actual runtime event timelines, or
+`analysis/observer_features.py` for the observer/probe workbench.
+`analysis/native_pilot.py` compares paired conditions while retaining unattempted,
+failed and unassessed episodes in its denominators.
+`analysis/observer_capture.py` inspects actual frozen-observer measurements;
+`analysis/native_update.py` compares the original and updated checkpoints using
+preserved responses, independent reviews and completion-only probability graphs.
+`analysis/user_model_evaluation.py` explores finite profiles, separate answer
+holdouts and paired panel estimates using explicitly authored data. It contains
+zero real respondents; see the [measurement contract](user-model-evaluation.md).
+`analysis/profile_information.py` connects profile evidence to posterior updates,
+predictive uncertainty and the value/cost of a next question using authored data.
+`analysis/feature_hindsight_math.py` calls the real CPU loss kernel to compare
+feature feedback, hindsight, ratio clipping and a logged-target reference term.
+Its editable scores are authored; it also shows masked context tokens and the
+effect of averaging each action's completion before averaging the batch.
+`analysis/combined_reward_results.py` shows the [actual three-arm updates](native-combined-results.md)
+on two native teaching actions, using a shipped numerical summary. Its offline
+sliders expose feature, hindsight and anchor derivatives without dispatching work.
+`analysis/checkpoint_behavior.py` shows the [fresh blinded comparison](checkpoint-behavior-results.md)
+of all four saved samplers: 64 actual responses, category filters and paired
+verdicts. The shipped report shows no observed improvement from these small updates.
+`analysis/controlled_generation.py` compares saved SAE interventions with their baseline,
+including exact text, token divergence, cutoff reasons and both blinded reviews.
+It reads `docs/research-story/generation-examples.json`; until that reviewed export
+exists, it displays the missing-input message without substituting synthetic results.
+`analysis/source_supervision.py` reads the local TutorMoments aggregate manifests
+and shows known labels, usable temporal targets, and group coverage by partition.
+It checks the split digest and preserves empty calibration/test coverage. See the
+[SAR importer](tutormoments-supervision.md) to build its input bundle.
+Run `rtk python scripts/training/benchmark_sources.py fetch` inside the development
+shell to populate its original-data cache, or use `verify` to check existing files.
+The catalog distinguishes imported original data, authored adaptations, and
+StudentSim's software documentation; it does not combine their evaluation scores.
+
+**Notebooks never spend.** Planning notebooks import the real lightweight planning
+and validation functions. The feature/hindsight math notebook uses CPU Torch for
+local derivatives, without model weights or hosted inference. No notebook
+dispatches training or reads credentials. Dataset fetching is a separate explicit task.
+`analysis/pilot_costs.py` prices a synthetic in-memory ledger; it never opens the
+budget file and never calls `PilotBudget.reserve()`. Model execution is an explicit
+CLI operation, with the cost boundaries described below.
+
+### Native research workflow
+
+The [durable pilot executor](native-pilot-executor.md) records selected slots
+before dispatch and preserves interrupted attempts without silently rerunning
+them. Its deterministic tests run under `keating:test-native-learning`, alongside
+the [source SAR importer](tutormoments-supervision.md) and panel measurements.
+The [MathDial importer](mathdial-supervision.md) preserves exact teacher-move
+labels and grouped source splits. The [candidate-move comparison](native-action-search.md)
+executes each alternative in its own Pi session while preserving the learner's
+starting evidence. [Hindsight preparation](native-hindsight.md),
+[feature-return construction](native-feature-rewards.md), and
+[observer layer/intervention experiments](observer-experiment.md) have separate
+interfaces so a successful mechanics check does not become a quality claim.
+The [combined-loss contract](native-combined-loss.md) keeps action-feature and
+hindsight terms separate and documents exactly what its reference term measures.
+The [custom update consumer](native-custom-update.md) binds those objectives to
+the pinned Tinker callback while rebuilding admission from original captures.
+Its CPU sandbox tests exercise the real SDK's derivative transport with local
+doubles; hosted updates remain a separate execution step.
+The [bounded observer job](observer-experiment-job.md) runs exact layer/pooling
+matrices and preserves partial results when a job ends early.
+The [continual-learning contract](native-continual-learning.md) records actual
+checkpoint ancestry, bounded replay selections and missing retention evidence.
+The science tests use managed Python 3.13 for the pinned NumPy/scikit-learn
+environments; `rtk uv python install 3.13` installs it if local uv policy requires
+an explicit interpreter download.
+
+The [stage-zero implementation map](plans/native-learning-stage-zero.md) records
+what has run and what still needs model or human evidence. The
+[first research cycle](native-research-run.md) connects the actual episode,
+observer measurements, optimizer result and unchanged paired rubric scores. The
+[scenario adapter guide](native-scenario-adapters.md) documents all five sources,
+family exclusions, vanilla/reference comparisons and ignored raw-data artifacts.
+
+```bash
+# Inspect/admit source evidence; no models are called.
+rtk proxy env -u PYTHONHOME -u PYTHONPATH python3 scripts/training/native_scenarios.py inspect
+rtk proxy env -u PYTHONHOME -u PYTHONPATH python3 scripts/training/native_scenarios.py build --output .keating/native-learning/scenarios/my-development-run
+
+# Verify named Skate credentials and account capabilities; no billable work.
+rtk proxy env -u PYTHONHOME -u PYTHONPATH UV_MANAGED_PYTHON=1 uv run --script scripts/training/research_access.py
+
+# Run production Pi plumbing with authored policies, then inspect/export receipts.
+rtk proxy bun scripts/training/native_plumbing.ts ADMITTED_SCENARIOS.json NEW_OUTPUT_DIRECTORY 20
+rtk proxy env -u PYTHONHOME -u PYTHONPATH python3 scripts/training/native_observer.py EPISODE.json --output NEW_OBSERVER_INPUT.json
+rtk proxy env -u PYTHONHOME -u PYTHONPATH UV_MANAGED_PYTHON=1 uv run --script scripts/training/native_report.py EPISODE.json NEW_REPORT_DIRECTORY
+```
+
+The credential preflight loads `thinking_machines_api_key@default` and
+`runpod_api_key@secrets` directly into memory. It emits names and sanitized account
+metadata, never values. Use `skate list --keys-only` to inspect names; plain
+`skate list` also prints values.
+
+The [observer guide](observer-pipeline.md) supplies pinned model/dictionary
+revisions and separate CPU-test/GPU-run commands. The
+[Runpod job guide](observer-runpod.md) describes bounded extraction jobs,
+local supervision, output collection and resource cleanup. The
+[training export guide](native-training-exports.md) defines the original-token
+capture and independent-review requirements. The
+[Tinker update guide](native-tinker-update.md) documents dry planning and a single
+reserved SFT, PPO or SDPO update. The [checkpoint comparison report](native-update-report.md)
+explains the local plots and their evaluation limits. The [paired pilot guide](native-pilot.md) specifies
+30 situations × two formats × three learner replicates and independent review.
+No notebook dispatches these runs.
+The approved research budget is one shared $100 cap across Tinker and Runpod,
+with separately reserved suballocations for each bounded operation. The existing Inkling
+pilot ledger is not reset or transferred to another experiment. The generic native
+episode CLI enforces call/turn bounds but is not itself a provider-dollar ledger.
 
 ### Mobile (Expo / React Native)
 

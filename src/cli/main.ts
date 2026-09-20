@@ -95,6 +95,10 @@ function teachingCommandHelp(command: "teaching-bench" | "auto-improve"): string
       : "Propose one teaching skill, execute paired validation and a sealed holdout, and activate only if both gates pass.",
     "--cases accepts a JSON array of independent TeachingCase records (at most 60).",
     "Evidence covers executed teaching behavior on synthetic cases; human learning remains unmeasured.",
+    "Independent typed judge: first run keating login --judgement in this project.",
+    "Set KEATING_EVOLUTION_JUDGE=notorganic-exploratory and KEATING_JUDGEMENT_MODEL=jev-1.13.0.",
+    "Exploratory judgements are uncalibrated estimates; both activation gates remain required. Unset keeps the legacy judge.",
+    "Measured calibration: use KEATING_EVOLUTION_JUDGE=notorganic with KEATING_EVOLUTION_CALIBRATION_FILE and KEATING_JUDGEMENT_CALIBRATION_SHA256.",
     ...(command === "auto-improve" ? ["--force overrides the 30-minute cooldown only. Consumed holdout evidence cannot be reused."] : []),
   ].join("\n");
 }
@@ -205,10 +209,11 @@ function validateNotOrganicProvider(provider: string, command: "login" | "logout
 
 function printNotOrganicLoginUsage(): void {
   console.log([
-    "Usage: keating login [notorganic] [--manual|--headless|--status]",
+    "Usage: keating login [notorganic] [--manual|--headless] [--judgement] | --status",
     "",
     "Connect a five-minute Not Organic infer:balanced capability.",
     "  --manual, --headless  Print the URL and read the callback from stdin",
+    "  --judgement           Also request judgement:evaluate access",
     "  --status              Show the current capability status",
     "  --help, -h            Show this help without starting login"
   ].join("\n"));
@@ -301,7 +306,8 @@ function printNotOrganicStatus(cwd: string): void {
   const status = notOrganicAuthStatus(cwd);
   if (status.expired) {
     console.log(`${color.sepia}Not Organic is not configured: the stored five-minute capability expired.${color.reset}`);
-    console.log(`Run ${color.primary}keating login${color.reset} to reconnect infer:balanced.`);
+    const judgement = status.scope?.split(" ").includes("judgement:evaluate");
+    console.log(`Run ${color.primary}keating login${judgement ? " --judgement" : ""}${color.reset} to reconnect.`);
     return;
   }
   if (!status.configured) {
@@ -309,7 +315,7 @@ function printNotOrganicStatus(cwd: string): void {
     console.log(`Run ${color.primary}keating login${color.reset} to enable infer:balanced.`);
     return;
   }
-  console.log(`${color.ok}Not Organic is connected.${color.reset} infer:balanced · ${status.secondsRemaining ?? 0}s remaining`);
+  console.log(`${color.ok}Not Organic is connected.${color.reset} ${status.scope} · ${status.secondsRemaining ?? 0}s remaining`);
 }
 
 async function runLoginCommand(cwd: string, args: string[]): Promise<void> {
@@ -317,7 +323,7 @@ async function runLoginCommand(cwd: string, args: string[]): Promise<void> {
     printNotOrganicLoginUsage();
     return;
   }
-  const knownFlags = new Set(["--manual", "--headless", "--status"]);
+  const knownFlags = new Set(["--manual", "--headless", "--status", "--judgement"]);
   const unknownFlag = args.find((arg) => arg.startsWith("-") && !knownFlags.has(arg));
   if (unknownFlag) throw unknownNotOrganicOption("login", unknownFlag);
   const positionals = args.filter((arg) => !arg.startsWith("-"));
@@ -331,8 +337,8 @@ async function runLoginCommand(cwd: string, args: string[]): Promise<void> {
     ? NOTORGANIC_PROVIDER_ID
     : positionals[0] ?? NOTORGANIC_PROVIDER_ID;
   validateNotOrganicProvider(provider, "login");
-  if (status && (args.includes("--manual") || args.includes("--headless"))) {
-    throw new Error("Not Organic login status cannot be combined with --manual or --headless.");
+  if (status && (args.includes("--manual") || args.includes("--headless") || args.includes("--judgement"))) {
+    throw new Error("Not Organic login status cannot be combined with --manual, --headless, or --judgement.");
   }
   if (status) {
     printNotOrganicStatus(cwd);
@@ -347,7 +353,7 @@ async function runLoginCommand(cwd: string, args: string[]): Promise<void> {
     },
     onProgress: (message) => console.error(`${color.sepia}${message}${color.reset}`),
     ...(manual ? { onManualCodeInput: readManualCallback } : {})
-  });
+  }, { judgement: args.includes("--judgement") });
 
   const config = await loadKeatingConfig(cwd);
   await writeKeatingConfig(cwd, {
@@ -864,6 +870,7 @@ async function runSelectedCommand(rawArgs: string[]): Promise<void> {
       if (!topic) throw commandUsage("plan", "keating plan derivative");
       const artifact = await planTopicArtifact(cwd, topic);
       console.log(relative(cwd, artifact.planPath));
+      console.log(artifact.reviewPath ? `Lesson plan review (${artifact.reviewStatus}): ${relative(cwd, artifact.reviewPath)}` : `Lesson plan review: ${artifact.reviewStatus}. Opt in with KEATING_LESSON_PLAN_JUDGE=notorganic.`);
       return;
     }
     case "map": {
@@ -912,7 +919,8 @@ async function runSelectedCommand(rawArgs: string[]): Promise<void> {
     case "teaching-bench": {
       if (args.includes("--help") || args.includes("-h")) { console.log(teachingCommandHelp("teaching-bench")); return; }
       const options = await teachingCommandOptions(cwd, args, "teaching-bench");
-      const { report, reportPath } = await teachingBenchmarkArtifact(cwd, options);
+      const { report, reportPath, judgement } = await teachingBenchmarkArtifact(cwd, options);
+      if (judgement) console.log(`Judge: ${judgement.backend.model}; ${judgement.calibration} proxy estimates.`);
       console.log(`Training behavior score: ${report.meanScore === null ? "unavailable" : `${(report.meanScore * 100).toFixed(2)}%`}; execution errors: ${report.errorCount}.`);
       console.log("Evidence: synthetic cases and executed tutor behavior. Human learning: unmeasured. This command cannot promote a revision.");
       console.log(relative(cwd, reportPath));
@@ -976,6 +984,7 @@ async function runSelectedCommand(rawArgs: string[]): Promise<void> {
       const result = await autoImproveArtifact(cwd, undefined, options);
       const score = (value: number | null) => value === null ? "unavailable" : value.toFixed(2);
       console.log(`Teaching experiment: ${result.status.toUpperCase()}.`);
+      if (result.judgement) console.log(`Judge: ${result.judgement.backend.model}; ${result.judgement.calibration} proxy estimates.`);
       console.log(`Behavior scores: ${score(result.baselineScore)} → ${score(result.afterScore)}; delta: ${score(result.delta)}.`);
       console.log(result.status === "accepted" ? "Both independent gates passed; the candidate applies to subsequent sessions."
         : "The active teaching revision is unchanged.");
@@ -1040,7 +1049,8 @@ async function runSelectedCommand(rawArgs: string[]): Promise<void> {
       return;
     }
     case "due": {
-      const { markdown } = await dueTopicsArtifact(cwd);
+      if (args.some(arg => arg !== "--readiness")) throw new Error("Usage: keating due [--readiness]");
+      const { markdown } = await dueTopicsArtifact(cwd, { readiness: args.includes("--readiness") });
       console.log(markdown);
       return;
     }

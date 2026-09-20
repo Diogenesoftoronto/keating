@@ -1,3 +1,4 @@
+import { createHash, randomUUID } from "node:crypto";
 import { toolResultCardLines } from "../core/cards.js";
 import type { KeatingPiModel } from "../runtime/pty-rpc-client.js";
 import {
@@ -9,6 +10,7 @@ import {
 } from "./view-model.js";
 import {
   UI_CONTRACT_VERSION,
+  objectiveCredit,
   validateUiActionCorrelation,
   type UiAction,
   type UiActionDispatcher,
@@ -70,7 +72,27 @@ export interface UiDocumentControl {
   run(): Promise<void>;
 }
 
+/** Optional evidence collection never owns answer delivery. */
+export interface TuiQuizPerformanceController {
+  estimate(): Promise<{ ok: true; expectedCorrect: number; itemCount: number; estimateMethod?: "shallow-tree" | "boosting"; rawExpectedCorrect?: number; fitSha256?: string } | { ok: false; reason: string }>;
+  touch(): void;
+  hint(questionId: string): void;
+  prepareSubmission(action: UiAction): Promise<unknown> | unknown;
+  collectCommitted(action: UiAction, document: UiDocument): Promise<unknown>;
+  dispose(): void;
+}
+
+interface TuiQuizAttempt {
+  controller?: TuiQuizPerformanceController;
+  touched: boolean;
+  estimated: boolean;
+  busy: boolean;
+}
+
 export interface HostControllerOptions {
+  createQuizPerformance?: (document: UiDocument, nodeId: string, isCurrent: () => boolean) => TuiQuizPerformanceController;
+  exportQuizPerformanceEvidence?: (documentId: string) => Promise<{ path: string }>;
+
   /**
    * Persistence, exact-once receipts, and transport remain outside the TUI.
    * The injected dispatcher can be a UiActionJournalStore-backed adapter.
@@ -140,6 +162,12 @@ export class HostController {
   private uiQueue: Promise<void> = Promise.resolve();
   private entrySequence = 0;
   private actionSequence = 0;
+  private readonly actionNonce = randomUUID();
+  private quizSource: string | undefined;
+  private readonly quizAttempts = new Map<string, TuiQuizAttempt>();
+  private readonly exposedQuizSources = new Set<string>();
+  private readonly knownQuizDocuments = new Set<string>();
+  private readonly quizOptions: Pick<HostControllerOptions, "createQuizPerformance" | "exportQuizPerformanceEvidence">;
   private activeDocument: UiDocument | null = null;
   private lastUndeliveredAction: UiAction | null = null;
   private currentSessionPath: string | undefined;
@@ -151,6 +179,7 @@ export class HostController {
     this.surface = surface;
     this.uiActionDispatcher = options.uiActionDispatcher;
     this.restoreUiDocument = options.restoreUiDocument;
+    this.quizOptions = options;
   }
 
   /** Allows a host to expose the currently focused canonical document. */
@@ -181,11 +210,18 @@ export class HostController {
       this.surface.hydrateEntries(transcriptEntriesFromMessages(messages.value));
       const latest = messages.value.flatMap(documentsFromMessage).at(-1);
       if (latest) {
+        this.rememberQuizDocument(latest);
         try {
           const restored = await this.restoreUiDocument?.(latest) ?? latest;
           const adapted = adaptUiDocument(restored);
           if (!adapted.ok) throw new Error("The saved learning document is invalid.");
           this.activeDocument = adapted.document;
+          this.reconcileQuizAttempts(adapted.document);
+          // Prior answer/hint exposure is unknown when restoring a session.
+          for (const node of adapted.document.nodes) if (node.type === "quiz") {
+            const attempt = this.quizAttempt(adapted.document, node.id);
+            this.touchQuiz(attempt);
+          }
           this.surface.setUiDocument(adapted.document, this.documentControls(adapted.document));
           if (restored.revision > latest.revision) {
             const presentation = uiDocumentPresentation(restored);
@@ -204,6 +240,7 @@ export class HostController {
   }
 
   private clearActiveDocument(): void {
+    this.dispose();
     this.activeDocument = null;
     this.lastUndeliveredAction = null;
     this.surface.setUiDocument(null, []);
@@ -515,7 +552,7 @@ export class HostController {
 
   private actionKey(document: UiDocument, nodeId: string, type: UiAction["type"]): string {
     this.actionSequence += 1;
-    return `tui-ui-${document.id}-${document.revision}-${nodeId}-${type}-${this.actionSequence}`;
+    return `tui-ui-${this.actionNonce}-${document.id}-${document.revision}-${nodeId}-${type}-${this.actionSequence}`;
   }
 
   private action(document: UiDocument, nodeId: string, type: UiAction["type"], fields: Record<string, unknown>): UiAction {
@@ -548,13 +585,21 @@ export class HostController {
       this.refreshDocumentControls();
       return;
     }
+    const prediction = action.type === "complete-quiz" ? this.quizAttempts.get(action.nodeId)?.controller : undefined;
     try {
       const result = await this.uiActionDispatcher.dispatch(action, document);
       if (!validateUiActionCorrelation(action, result, document)) {
         throw new Error("The action response did not correlate with the active document.");
       }
+      if (result.status === "completed" && action.type === "complete-quiz") {
+        try { await prediction?.collectCommitted(action, document); }
+        catch { this.append("notice", "Quiz evidence unavailable", "Your answer was delivered. Prediction evidence could not be saved."); }
+      }
+      // A delayed response must not replace a newly selected session/document.
+      if (this.activeDocument !== document) return;
       this.applyUiActionResult(action, result);
     } catch (error) {
+      if (this.activeDocument !== document) return;
       this.lastUndeliveredAction = action;
       this.appendError("Interactive action was not delivered", error);
       this.append("notice", "Entered work preserved", "Use “Retry last entered action” from document actions after the delivery issue is resolved.");
@@ -587,7 +632,14 @@ export class HostController {
   }
 
   private documentControls(document: UiDocument): UiDocumentControl[] {
+    this.reconcileQuizAttempts(document);
     const controls: UiDocumentControl[] = [];
+    if (this.quizOptions.exportQuizPerformanceEvidence && this.knownQuizDocuments.has(JSON.stringify([document.id, document.createdAt]))) controls.push(this.control("quiz-evidence-export", "Export quiz prediction evidence", async () => {
+      try {
+        const result = await this.quizOptions.exportQuizPerformanceEvidence!(document.id);
+        this.append("notice", "Quiz prediction evidence exported", result.path);
+      } catch { this.append("notice", "Export unavailable", "Quiz prediction evidence could not be exported."); }
+    }));
     if (document.lifecycle === "failed" || document.lifecycle === "cancelled") {
       controls.push(this.control(`retry-${document.id}`, "Retry document", async () => {
         await this.dispatchUiAction(this.action(document, document.nodes[0]?.id || document.id, "retry", {}));
@@ -615,12 +667,51 @@ export class HostController {
           const action = await this.questionGroupAction(document, node);
           if (action) await this.dispatchUiAction(action);
         }, node.title || "Answer every question, then submit once.")];
-      case "quiz":
+      case "quiz": {
         if (node.mode === "exam") return [];
-        return [this.control(`quiz-${node.id}`, `Take quiz: ${node.title}`, async () => {
-          const action = await this.quizAction(document, node);
-          if (action) await this.dispatchUiAction(action);
-        })];
+        const attempt = this.quizAttempt(document, node.id);
+        const current = () => this.activeDocument === document && JSON.stringify(document) === this.quizSource && this.quizAttempts.get(node.id) === attempt;
+        return [
+          ...(attempt.controller && !attempt.touched && !attempt.estimated ? [this.control(`quiz-estimate-${node.id}`, `Estimate before answering: ${node.title}`, async () => {
+            if (!current() || attempt.busy || attempt.touched || attempt.estimated) return;
+            attempt.busy = true;
+            try {
+              const result = await attempt.controller!.estimate();
+              if (!current() || attempt.touched) return;
+              if (result.ok) {
+                attempt.estimated = true;
+                const method = result.estimateMethod === "shallow-tree" ? "Fitted tree" : result.estimateMethod === "boosting" ? "Fitted ensemble" : "Model";
+                const raw = result.estimateMethod && typeof result.rawExpectedCorrect === "number" ? ` Raw model estimate: ${result.rawExpectedCorrect.toFixed(1)} of ${result.itemCount}.` : "";
+                this.append("notice", "Quiz prediction", `${method} estimate, correct without in-app hints: ${result.expectedCorrect.toFixed(1)} of ${result.itemCount}.${raw} This is an estimate, not a grade.`);
+              } else this.append("notice", "Prediction unavailable", result.reason);
+            } catch { this.append("notice", "Prediction unavailable", "You can continue answering the quiz."); }
+            finally { attempt.busy = false; this.refreshDocumentControls(); }
+          }, "Estimate from your learning history before opening answers or hints.")] : []),
+          this.control(`quiz-${node.id}`, `Take quiz: ${node.title}`, async () => {
+            if (!current() || attempt.busy) return;
+            attempt.busy = true;
+            this.touchQuiz(attempt);
+            this.refreshDocumentControls();
+            try {
+              const action = await this.quizAction(document, node);
+              if (!action || !current()) return;
+              try { await attempt.controller?.prepareSubmission(action); }
+              catch { this.disableQuizEvidence(attempt); this.append("notice", "Quiz evidence unavailable", "Your answer can still be submitted."); }
+              if (current()) await this.dispatchUiAction(action);
+            } finally { attempt.busy = false; this.refreshDocumentControls(); }
+          }),
+          ...node.questions.filter((question) => question.hint).map((question) => this.control(`quiz-hint-${node.id}-${question.id}`, `Reveal hint: ${question.prompt}`, async () => {
+            if (!current() || attempt.busy) return;
+            attempt.busy = true;
+            this.touchQuiz(attempt);
+            // Record use before exposing text, including if the dialog is cancelled.
+            try { attempt.controller?.hint(question.id); } catch { this.disableQuizEvidence(attempt); }
+            this.refreshDocumentControls();
+            try { await this.surface.presentConfirm(`Hint: ${question.prompt}`, question.hint!); }
+            finally { attempt.busy = false; this.refreshDocumentControls(); }
+          })),
+        ];
+      }
       case "goal":
         return node.steps.filter((step) => step.status !== "done").map((step) => this.control(`goal-${node.id}-${step.id}`, `Complete goal step: ${step.title}`, async () => {
           await this.dispatchUiAction(this.action(document, node.id, "complete-goal-step", { stepId: step.id }));
@@ -763,28 +854,86 @@ export class HostController {
     return this.action(document, node.id, "submit-question-group", { responses });
   }
 
+  /** Release predictions on shutdown or session replacement. */
+  dispose(): void {
+    for (const attempt of this.quizAttempts.values()) {
+      try { attempt.controller?.dispose(); } catch { /* Optional diagnostic teardown. */ }
+    }
+    this.quizAttempts.clear();
+    this.quizSource = undefined;
+  }
+
+  private rememberQuizDocument(document: UiDocument): void {
+    if (document.nodes.some((node) => node.type === "quiz")) this.knownQuizDocuments.add(JSON.stringify([document.id, document.createdAt]));
+  }
+
+  private reconcileQuizAttempts(document: UiDocument): void {
+    this.rememberQuizDocument(document);
+    const source = JSON.stringify(document);
+    if (source === this.quizSource) return;
+    this.dispose();
+    this.quizSource = source;
+  }
+
+  private quizAttempt(document: UiDocument, nodeId: string): TuiQuizAttempt {
+    this.reconcileQuizAttempts(document);
+    let attempt = this.quizAttempts.get(nodeId);
+    if (!attempt) {
+      attempt = { touched: false, estimated: false, busy: false };
+      this.quizAttempts.set(nodeId, attempt);
+      const source = this.quizSource;
+      const captured = attempt;
+      try { attempt.controller = this.quizOptions.createQuizPerformance?.(structuredClone(document), nodeId,
+        () => this.quizSource === source && !!this.activeDocument && JSON.stringify(this.activeDocument) === source && this.quizAttempts.get(nodeId) === captured); }
+      catch { /* Optional evidence must not prevent practice. */ }
+      if (source && this.exposedQuizSources.has(createHash("sha256").update(source).digest("hex"))) this.touchQuiz(attempt);
+    }
+    return attempt;
+  }
+
+  private disableQuizEvidence(attempt: TuiQuizAttempt): void {
+    try { attempt.controller?.dispose(); } catch { /* Optional diagnostic teardown. */ }
+    attempt.controller = undefined;
+  }
+
+  private touchQuiz(attempt: TuiQuizAttempt): void {
+    if (this.quizSource) this.exposedQuizSources.add(createHash("sha256").update(this.quizSource).digest("hex"));
+    // Any interaction with this document makes a later fresh estimate ineligible.
+    for (const target of new Set([attempt, ...this.quizAttempts.values()])) {
+      if (target.touched) continue;
+      target.touched = true;
+      try { target.controller?.touch(); }
+      catch { this.disableQuizEvidence(target); }
+    }
+  }
+
   private async quizAction(document: UiDocument, node: Extract<UiDocumentNode, { type: "quiz" }>): Promise<UiAction | undefined> {
     const answers: UiQuizResponse[] = [];
     const partialCredits: Record<string, number> = {};
     const perQuestionMs: Record<string, number> = {};
+    const pendingGradeQuestionIds: string[] = [];
+    const startedAt = Date.now();
     for (const question of node.questions) {
+      const questionStartedAt = Date.now();
       const answer = question.choices?.length
-        ? await this.selectQuestionChoices(question, question.prompt).then((selection) => selection?.join(", "))
+        ? await this.selectQuestionChoices(question, question.prompt).then((selection) => selection?.join(","))
         : await this.surface.presentEditor(question.prompt);
       if (answer === undefined) return undefined;
       answers.push({ questionId: question.id, answer });
-      partialCredits[question.id] = 0;
-      perQuestionMs[question.id] = 0;
+      const credit = question.mathProblem ? undefined : objectiveCredit(question, answer);
+      if (credit === undefined) pendingGradeQuestionIds.push(question.id);
+      partialCredits[question.id] = credit ?? 0;
+      perQuestionMs[question.id] = Math.max(0, Date.now() - questionStartedAt);
     }
     return this.action(document, node.id, "complete-quiz", {
-      resultId: `tui-quiz-${document.id}-${node.id}-${this.actionSequence + 1}`,
+      resultId: `tui-quiz-${this.actionNonce}-${document.id}-${node.id}-${this.actionSequence + 1}`,
       answers,
-      score: 0,
-      partialCreditPoints: 0,
+      score: Object.values(partialCredits).filter((credit) => credit === 1).length,
+      partialCreditPoints: Object.values(partialCredits).reduce((sum, credit) => sum + credit, 0),
       partialCredits,
-      timing: { totalMs: 0, perQuestionMs },
+      timing: { totalMs: Math.max(0, Date.now() - startedAt), perQuestionMs },
       flaggedQuestionIds: [],
-      pendingGradeQuestionIds: node.questions.map((question) => question.id),
+      pendingGradeQuestionIds,
       skippedQuestionIds: [],
     });
   }

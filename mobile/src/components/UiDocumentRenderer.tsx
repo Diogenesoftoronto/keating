@@ -3,6 +3,7 @@ import {
   UI_CONTRACT_VERSION,
   applyReview,
   initialSrsState,
+  objectiveCredit,
   type UiAction,
   type UiDocument,
   type UiDocumentNode,
@@ -24,6 +25,9 @@ import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import { safeMarkdownUri } from "@/lib/markdown-document";
 import { uiActionLearnerMessage } from "@/lib/ui-action-mutations";
 import { completedDeckAction, completedNodeAction, completedQuestionAction, completedQuestionGroupAction, completedQuizAction, completedUiActions, latestUiDocument, reviewedDeckCardIds } from "@/lib/ui-render-state";
+import { questionResponse, answerForQuizResponse, quizResponseForAnswer } from "@/lib/quiz-responses";
+import { useMobileQuizPerformance } from "./MobileQuizPerformanceEstimate";
+import { MobileJudgementEstimates } from "./MobileJudgementEstimates";
 import { useKeating } from "@/state/KeatingProvider";
 
 function hash(value: string): string {
@@ -76,6 +80,7 @@ export function UiDocumentRenderer({
   const styles = createStyles(theme);
   const { dispatchUiAction, getUiActionJournal } = useKeating();
   const [document, setDocument] = useState(sourceDocument);
+  const [restoredSource, setRestoredSource] = useState<UiDocument>();
   const [durableActions, setDurableActions] = useState<UiAction[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -84,11 +89,13 @@ export function UiDocumentRenderer({
   useEffect(() => {
     let active = true;
     setDocument(sourceDocument);
+    setRestoredSource(undefined);
     setDurableActions([]);
     void getUiActionJournal(sourceDocument.id).then((journal) => {
       if (!active) return;
       setDocument(latestUiDocument(journal, sourceDocument));
       setDurableActions(completedUiActions(journal));
+      setRestoredSource(sourceDocument);
     }).catch((cause) => {
       if (active) setError(cause instanceof Error ? cause.message : "Could not restore this interaction.");
     });
@@ -160,9 +167,11 @@ export function UiDocumentRenderer({
           disabled={!canInteract || busy !== null}
           busy={busy}
           durableActions={durableActions}
+          predictionReady={restoredSource === sourceDocument}
           run={run}
         />
       ))}
+      <MobileJudgementEstimates documentId={document.id} />
       {notice ? <Text accessibilityLiveRegion="polite" style={styles.notice}>{notice}</Text> : null}
       {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
     </View>
@@ -175,9 +184,11 @@ function UiNode({
   disabled,
   busy,
   durableActions,
+  predictionReady,
   run,
 }: {
   node: UiDocumentNode;
+  predictionReady: boolean;
   document: UiDocument;
   disabled: boolean;
   busy: string | null;
@@ -193,7 +204,7 @@ function UiNode({
   if (node.type === "question") return <QuestionNode question={node} document={document} disabled={disabled} busy={busy} completedAction={completedQuestionAction(durableActions, node.id)} run={run} />;
   if (node.type === "question-group") return <QuestionGroupNode node={node} document={document} disabled={disabled} busy={busy} durableActions={durableActions} run={run} />;
   if (node.type === "quiz" && node.mode === "exam") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text><Text style={styles.notice}>{node.questions.length} questions · {Math.ceil((node.examTimeLimit ?? 1800) / 60)} minutes</Text><Text style={styles.notice}>Open this exam in the web app to start its timed attempt.</Text></View>;
-  if (node.type === "quiz") return <QuizNode node={node} document={document} disabled={disabled} busy={busy} durableActions={durableActions} run={run} />;
+  if (node.type === "quiz") return <QuizNode predictionReady={predictionReady} node={node} document={document} disabled={disabled} busy={busy} durableActions={durableActions} run={run} />;
   if (node.type === "goal") return <GoalNode node={node} document={document} disabled={disabled} busy={busy} run={run} />;
   if (node.type === "study-plan") return <StudyPlanNode node={node} document={document} disabled={disabled} busy={busy} durableActions={durableActions} run={run} />;
   if (node.type === "deck") return <DeckNode node={node} document={document} disabled={disabled} busy={busy} durableActions={durableActions} run={run} />;
@@ -218,6 +229,8 @@ function QuestionNode({
   hideSubmit = false,
   aggregateCompleted = false,
   onResponseChange,
+  onInteraction,
+  onHint,
   run,
 }: {
   question: UiQuestion;
@@ -229,6 +242,8 @@ function QuestionNode({
   hideSubmit?: boolean;
   aggregateCompleted?: boolean;
   onResponseChange?: (response: UiQuestionGroupResponse, ready: boolean) => void;
+  onInteraction?: () => void;
+  onHint?: (questionId: string) => void;
   run: (action: UiAction) => Promise<boolean>;
 }) {
   const theme = useKeatingTheme();
@@ -249,14 +264,15 @@ function QuestionNode({
   const [order, setOrder] = useState<string[]>(() => (groupResponse?.type === "order" ? groupResponse.items : undefined)
     ?? (Array.isArray(savedAnswer) && savedAnswer.every((entry) => typeof entry === "string") ? [...savedAnswer] : [...(question.items ?? [])]));
   const [blankAnswers, setBlankAnswers] = useState<string[]>(() => initialBlanks ?? (Array.isArray(savedAnswer) && savedAnswer.every((entry) => typeof entry === "string") ? [...savedAnswer] : Array.from({ length: blankCount }, () => "")));
+  const [hintVisible, setHintVisible] = useState(false);
   const questionDisabled = disabled || completedAction !== undefined || aggregateCompleted;
   const isRowQuestion = question.kind === "classification" || question.kind === "matching";
   const isOrdering = question.kind === "ordering";
   const isBlankQuestion = question.kind === "blanks" || question.kind === "fill_in";
   const isMultiSelect = question.multiSelect || question.kind === "multi_select";
-  const toggle = (id: string) => setSelected((current) => isMultiSelect
+  const toggle = (id: string) => { onInteraction?.(); setSelected((current) => isMultiSelect
     ? current.includes(id) ? current.filter((candidate) => candidate !== id) : [...current, id]
-    : [id]);
+    : [id]); };
   const rowAnswers = (question.items ?? []).map((item, index) => ({
     item,
     optionId: rowSelections[index] ?? "",
@@ -282,13 +298,13 @@ function QuestionNode({
     answer: Array.isArray(payload) ? payload : answer,
     idempotencyKey: key,
   };
-  const ready = isRowQuestion
+  const ready = isOrdering ? order.length > 0 : isRowQuestion
     ? rowSelections.length > 0 && rowSelections.every(Boolean) && (!question.requireReasons || rowReasons.every((reason) => reason.trim().length > 0))
     : isBlankQuestion ? blankAnswers.length > 0 && blankAnswers.every((entry) => entry.trim().length > 0)
       : question.choices ? selected.length > 0 || (question.allowText === true && answer.trim().length > 0) : answer.trim().length > 0;
   useEffect(() => {
-    onResponseChange?.(questionResponse(question, answer, selected, blankAnswers, rowSelections, rowReasons), ready);
-  }, [answer, blankAnswers, onResponseChange, question, ready, rowReasons, rowSelections, selected]);
+    onResponseChange?.(questionResponse(question, answer, selected, blankAnswers, rowSelections, rowReasons, order), ready);
+  }, [answer, blankAnswers, onResponseChange, order, question, ready, rowReasons, rowSelections, selected]);
   return (
     <View style={styles.node}>
       {question.header ? <Text style={styles.nodeKicker}>{question.header}</Text> : null}
@@ -296,8 +312,8 @@ function QuestionNode({
       {isOrdering ? <View style={styles.options}>{order.map((item, index) => <View key={`${question.id}-order-${item}`} style={styles.rowQuestion}>
         <Text>{`${index + 1}. ${item}`}</Text>
         <View style={{ flexDirection: "row", gap: 8 }}>
-          <Button compact disabled={questionDisabled || index === 0} onPress={() => setOrder((current) => moveItem(current, index, index - 1))}>{"\u2191"}</Button>
-          <Button compact disabled={questionDisabled || index === order.length - 1} onPress={() => setOrder((current) => moveItem(current, index, index + 1))}>{"\u2193"}</Button>
+          <Button compact disabled={questionDisabled || index === 0} onPress={() => { onInteraction?.(); setOrder((current) => moveItem(current, index, index - 1)); }}>{"\u2191"}</Button>
+          <Button compact disabled={questionDisabled || index === order.length - 1} onPress={() => { onInteraction?.(); setOrder((current) => moveItem(current, index, index + 1)); }}>{"\u2193"}</Button>
         </View>
       </View>)}</View> : isRowQuestion ? <View style={styles.options}>{(question.items ?? []).map((item, rowIndex) => <View key={`${question.id}-${rowIndex}`} style={styles.rowQuestion}>
         <Text style={styles.stepTitle}>{item}</Text>
@@ -305,10 +321,10 @@ function QuestionNode({
           const active = rowSelections[rowIndex] === option.id;
           const unavailable = question.kind === "matching" && question.uniqueMatches !== false
             && rowSelections.some((selection, index) => index !== rowIndex && selection === option.id);
-          return <Pressable key={option.id} accessibilityRole="radio" accessibilityState={{ selected: active, disabled: questionDisabled || unavailable }} disabled={questionDisabled || unavailable} onPress={() => setRowSelections((current) => current.map((value, index) => index === rowIndex ? option.id : value))} style={({ pressed }) => [styles.rowChoice, active && styles.optionActive, unavailable && styles.optionUnavailable, pressed && styles.pressed]}><Text style={[styles.optionText, active && styles.optionTextActive]}>{option.label}</Text></Pressable>;
+          return <Pressable key={option.id} accessibilityRole="radio" accessibilityState={{ selected: active, disabled: questionDisabled || unavailable }} disabled={questionDisabled || unavailable} onPress={() => { onInteraction?.(); setRowSelections((current) => current.map((value, index) => index === rowIndex ? option.id : value)); }} style={({ pressed }) => [styles.rowChoice, active && styles.optionActive, unavailable && styles.optionUnavailable, pressed && styles.pressed]}><Text style={[styles.optionText, active && styles.optionTextActive]}>{option.label}</Text></Pressable>;
         })}</View>
-        {question.requireReasons ? <TextInput accessibilityLabel={`Reason for ${item}`} editable={!questionDisabled} value={rowReasons[rowIndex] ?? ""} onChangeText={(value) => setRowReasons((current) => current.map((reason, index) => index === rowIndex ? value : reason))} placeholder={question.reasonLabel ?? "Reason"} placeholderTextColor={theme.colors.textFaint} style={styles.compactInput} /> : null}
-      </View>)}</View> : isBlankQuestion ? <View style={styles.options}>{blankAnswers.map((value, index) => <TextInput key={`${question.id}-blank-${index}`} accessibilityLabel={`Blank ${index + 1}: ${question.prompt}`} editable={!questionDisabled} value={value} onChangeText={(next) => setBlankAnswers((current) => current.map((entry, entryIndex) => entryIndex === index ? next : entry))} placeholder={question.blanks?.[index]?.placeholder ?? `Blank ${index + 1}`} placeholderTextColor={theme.colors.textFaint} style={styles.compactInput} />)}</View> : question.choices ? <View style={styles.options}>{question.choices.map((option) => {
+        {question.requireReasons ? <TextInput accessibilityLabel={`Reason for ${item}`} editable={!questionDisabled} value={rowReasons[rowIndex] ?? ""} onChangeText={(value) => { onInteraction?.(); setRowReasons((current) => current.map((reason, index) => index === rowIndex ? value : reason)); }} placeholder={question.reasonLabel ?? "Reason"} placeholderTextColor={theme.colors.textFaint} style={styles.compactInput} /> : null}
+      </View>)}</View> : isBlankQuestion ? <View style={styles.options}>{blankAnswers.map((value, index) => <TextInput key={`${question.id}-blank-${index}`} accessibilityLabel={`Blank ${index + 1}: ${question.prompt}`} editable={!questionDisabled} value={value} onChangeText={(next) => { onInteraction?.(); setBlankAnswers((current) => current.map((entry, entryIndex) => entryIndex === index ? next : entry)); }} placeholder={question.blanks?.[index]?.placeholder ?? `Blank ${index + 1}`} placeholderTextColor={theme.colors.textFaint} style={styles.compactInput} />)}</View> : question.choices ? <View style={styles.options}>{question.choices.map((option) => {
         const active = selected.includes(option.id);
         return <Pressable
           key={option.id}
@@ -323,7 +339,7 @@ function QuestionNode({
         editable={!questionDisabled}
         multiline
         value={answer}
-        onChangeText={setAnswer}
+        onChangeText={(value) => { onInteraction?.(); setAnswer(value); }}
         placeholder="Or explain your own answer"
         placeholderTextColor={theme.colors.textFaint}
         style={styles.input}
@@ -333,13 +349,15 @@ function QuestionNode({
         multiline
         keyboardType={question.kind === "slider" ? "decimal-pad" : "default"}
         value={answer}
-        onChangeText={setAnswer}
+        onChangeText={(value) => { onInteraction?.(); setAnswer(value); }}
         placeholder="Type your answer"
         placeholderTextColor={theme.colors.textFaint}
         style={styles.input}
       />}
       {question.kind === "slider" ? <Text style={styles.criterion}>Range: {question.min ?? 0}–{question.max ?? 100}{question.step ? ` · step ${question.step}` : ""}</Text> : null}
-      {question.hint ? <Text style={styles.criterion}>{question.hint}</Text> : null}
+      {question.hint ? onHint && !hintVisible
+        ? <Button compact variant="quiet" disabled={questionDisabled} onPress={() => { onHint(question.id); setHintVisible(true); }}>Show hint</Button>
+        : <Text style={styles.criterion}>{question.hint}</Text> : null}
       {completedAction ? <Text accessibilityLiveRegion="polite" style={styles.savedAnswer}>
         Saved answer: {completedAnswerLabel(completedAction, question)}
       </Text> : null}
@@ -353,24 +371,6 @@ function QuestionNode({
   );
 }
 
-function questionResponse(
-  question: UiQuestion,
-  answer: string,
-  selected: string[],
-  blankAnswers: string[],
-  rowSelections: string[],
-  rowReasons: string[],
-): UiQuestionGroupResponse {
-  if (question.kind === "classification" || question.kind === "matching") return {
-    questionId: question.id,
-    type: "rows",
-    rows: (question.items ?? []).map((item, index) => ({ item, optionId: rowSelections[index] ?? "", ...(question.requireReasons ? { reason: rowReasons[index] ?? "" } : {}) })),
-  };
-  if (question.kind === "blanks" || question.kind === "fill_in") return { questionId: question.id, type: "blanks", answers: blankAnswers };
-  if (question.choices) return { questionId: question.id, type: "choice", optionIds: selected, ...(question.allowText ? { text: answer } : {}) };
-  return { questionId: question.id, type: "text", answer };
-}
-
 /** Reordering is by button on mobile: pointer dragging is unreliable here. */
 function moveItem(items: string[], from: number, to: number): string[] {
   if (from === to || to < 0 || to >= items.length) return items;
@@ -379,20 +379,6 @@ function moveItem(items: string[], from: number, to: number): string[] {
   if (moved === undefined) return items;
   next.splice(to, 0, moved);
   return next;
-}
-
-function answerForQuizResponse(response: UiQuestionGroupResponse): string {
-  if (response.type === "text") return response.answer;
-  if (response.type === "choice") return response.optionIds.join(",") || (response.text ?? "");
-  if (response.type === "blanks") return response.answers.join(",");
-  if (response.type === "order") return response.items.join(",");
-  return response.rows.map((row) => `${row.item}:${row.optionId}${row.reason ? ` (${row.reason})` : ""}`).join("; ");
-}
-
-function quizResponseForAnswer(question: UiQuestion, answer: string): UiQuestionGroupResponse {
-  if (question.kind === "blanks" || question.kind === "fill_in") return { questionId: question.id, type: "blanks", answers: answer ? answer.split(",") : [] };
-  if (question.choices) return { questionId: question.id, type: "choice", optionIds: answer ? answer.split(",") : [] };
-  return { questionId: question.id, type: "text", answer };
 }
 
 function QuestionGroupNode({ node, document, disabled, busy, durableActions, run }: NodeActionProps<Extract<UiDocumentNode, { type: "question-group" }>> & { durableActions: readonly UiAction[] }) {
@@ -434,26 +420,7 @@ function QuestionGroupNode({ node, document, disabled, busy, durableActions, run
   </View>;
 }
 
-function quizOpenEnded(question: UiQuestion): boolean {
-  return question.kind === "short_answer" || question.kind === "transfer" || (question.kind === "fill_in" && !question.blanks?.length);
-}
-
-function quizCredit(question: UiQuestion, answer: string): number | undefined {
-  if (quizOpenEnded(question) || (!question.correctAnswer && !question.correctAnswers?.length)) return undefined;
-  if (question.kind === "multi_select") {
-    const actual = answer.split(",").filter(Boolean).sort();
-    const expected = [...(question.correctAnswers ?? [])].sort();
-    return actual.length === expected.length && actual.every((value, index) => value === expected[index]) ? 1 : 0;
-  }
-  if (question.kind === "fill_in" && question.blanks?.length) {
-    const actual = answer.split(",").map((value) => value.trim().toLocaleLowerCase());
-    const expected = (question.correctAnswers ?? [question.correctAnswer ?? ""]).map((value) => value.trim().toLocaleLowerCase());
-    return actual.length === expected.length && actual.every((value, index) => value === expected[index]) ? 1 : 0;
-  }
-  return answer.trim().toLocaleLowerCase() === (question.correctAnswer ?? question.correctAnswers?.[0] ?? "").trim().toLocaleLowerCase() ? 1 : 0;
-}
-
-function QuizNode({ node, document, disabled, busy, durableActions, run }: NodeActionProps<Extract<UiDocumentNode, { type: "quiz" }>> & { durableActions: readonly UiAction[] }) {
+function QuizNode({ node, document, disabled, busy, durableActions, predictionReady, run }: NodeActionProps<Extract<UiDocumentNode, { type: "quiz" }>> & { durableActions: readonly UiAction[]; predictionReady: boolean }) {
   const styles = createStyles(useKeatingTheme());
   const savedAction = completedQuizAction(durableActions, node.id);
   const [responses, setResponses] = useState<Record<string, UiQuestionGroupResponse>>(() => Object.fromEntries((savedAction?.answers ?? []).flatMap((answer) => {
@@ -481,10 +448,11 @@ function QuizNode({ node, document, disabled, busy, durableActions, run }: NodeA
   const answers = node.questions.flatMap((question) => responses[question.id] ? [{ questionId: question.id, answer: answerForQuizResponse(responses[question.id]!) }] : []);
   const canSubmit = answers.length === node.questions.length && node.questions.every((question) => ready[question.id]);
   const completed = Boolean(savedAction) || delivered;
+  const prediction = useMobileQuizPerformance({ document, nodeId: node.id, disabled, ready: predictionReady, completed, completedActionId: savedAction?.idempotencyKey });
   const createAction = (): Extract<UiAction, { type: "complete-quiz" }> => {
     const partialCredits = Object.fromEntries(node.questions.flatMap((question) => {
       const answer = answers.find((candidate) => candidate.questionId === question.id)?.answer ?? "";
-      const credit = quizCredit(question, answer);
+      const credit = objectiveCredit(question, answer);
       return credit === undefined ? [] : [[question.id, credit] as const];
     }));
     const score = Object.values(partialCredits).filter((credit) => credit === 1).length;
@@ -497,13 +465,14 @@ function QuizNode({ node, document, disabled, busy, durableActions, run }: NodeA
       partialCredits,
       timing: { totalMs: Math.max(0, Date.now() - startedAt.current), perQuestionMs: Object.fromEntries(node.questions.map((question) => [question.id, firstAnswerAt.current[question.id] ?? 0])) },
       flaggedQuestionIds: [] as string[],
-      pendingGradeQuestionIds: node.questions.filter((question) => quizCredit(question, answers.find((candidate) => candidate.questionId === question.id)?.answer ?? "") === undefined).map((question) => question.id),
+      pendingGradeQuestionIds: node.questions.filter((question) => objectiveCredit(question, answers.find((candidate) => candidate.questionId === question.id)?.answer ?? "") === undefined).map((question) => question.id),
       skippedQuestionIds: [] as string[],
     };
     return buildQuizCompletionAction(document, node.id, payload);
   };
   const submit = async () => {
     const action = pendingAction ?? createAction();
+    prediction.prepareSubmission(action);
     if (!pendingAction) setPendingAction(action);
     if (await run(action)) {
       setPendingAction(undefined);
@@ -513,9 +482,10 @@ function QuizNode({ node, document, disabled, busy, durableActions, run }: NodeA
   return <View style={styles.node}>
     <Text style={styles.nodeKicker}>QUIZ</Text>
     <Text style={styles.nodeTitle}>{node.title}</Text>
+    {prediction.controls}
     {node.questions.map((question, index) => <View key={`${question.id}:${savedAction?.idempotencyKey ?? "draft"}`} style={styles.quizQuestion}>
       <Text style={styles.questionNumber}>{index + 1}</Text>
-      <QuestionNode question={question} document={document} disabled={disabled || Boolean(pendingAction)} busy={busy} groupResponse={responses[question.id]} hideSubmit aggregateCompleted={completed} onResponseChange={update} run={run} />
+      <QuestionNode question={question} document={document} disabled={disabled || Boolean(pendingAction)} busy={busy} groupResponse={responses[question.id]} hideSubmit aggregateCompleted={completed} onResponseChange={update} onInteraction={prediction.touch} onHint={prediction.hint} run={run} />
     </View>)}
     {completed ? <Text accessibilityLiveRegion="polite" style={styles.savedAnswer}>Quiz saved.</Text> : <Button compact disabled={disabled || (!pendingAction && !canSubmit)} loading={busy === pendingAction?.idempotencyKey} onPress={() => void submit()}>{pendingAction ? "Retry save quiz" : "Submit quiz"}</Button>}
   </View>;

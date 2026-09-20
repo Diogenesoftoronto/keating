@@ -3,7 +3,9 @@ import Constants from "expo-constants";
 import { Alert, Pressable, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { T, Num } from "gt-react-native";
 import { Button } from "@/components/Buttons";
+import { MobileJudgementSettings } from "@/components/MobileJudgementSettings";
 import { OfflineTutorSettings } from "@/components/OfflineTutorSettings";
+import { NeedleSettings } from "@/components/NeedleSettings";
 import { Screen } from "@/components/Screen";
 import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import { MAX_LEARNER_CONTEXT_LENGTH } from "@/lib/learner-context";
@@ -133,6 +135,12 @@ export default function SettingsScreen() {
     <Screen title="Settings" subtitle="Appearance, provider, teaching style, and on-device data">
       <Section title="Offline tutor" body="Keep a tutor on this device.">
         <OfflineTutorSettings selected={settings.provider === "litert"} onUse={() => setProvider("litert")} disabled={isGenerating} />
+      </Section>
+      <Section title="Judgement" body="Optional review of saved assessment answers.">
+        <MobileJudgementSettings />
+      </Section>
+      <Section title="Local recall" body="Find earlier work by meaning.">
+        <NeedleSettings />
       </Section>
       <Section title="Appearance" body="How Keating looks on this device.">
         <FieldLabel>Theme</FieldLabel>

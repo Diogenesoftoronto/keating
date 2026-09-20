@@ -1,0 +1,11 @@
+.revision-workbench,.reward-workbench{margin:32px 0;padding:24px 0;border-block:1px solid var(--green)}
+.revision-control{display:block;font-weight:700;font-size:.88rem}.revision-control select{display:block;width:100%;max-width:100%;margin-top:10px;padding:12px;background:#fffef8;color:var(--ink);border:1px solid var(--green);border-radius:3px;font-weight:400}
+.revision-case h4{font-size:1.1rem;margin:26px 0 4px}.revision-case td{width:46%;text-align:left;min-width:230px}.revision-case th[scope=row]{width:8%;border-top:0}.revision-case td:last-child{background:#e1eadb;padding-inline:14px}
+.reward-controls{display:flex;flex-wrap:wrap;gap:9px;margin:24px 0}.reward-controls button{min-height:44px;padding:10px 14px;background:transparent;border:1px solid var(--green);border-radius:3px;color:var(--green);font-size:.83rem}.reward-controls button[aria-pressed=true]{background:var(--green);color:white}.reward-controls button:hover{background:#e1eadb;color:var(--ink)}
+.reward-scene{display:grid;grid-template-columns:1fr 1fr;gap:26px;min-height:235px}.reward-scene p{font-size:.95rem}.reward-scene .small{font-size:.8rem}.reward-scene mark{background:#f1daa2;color:var(--ink)}
+.reward-path{display:flex;align-items:center;gap:20px;padding:22px;background:var(--terminal);color:var(--paper);margin:20px 0}.reward-path>div{flex:1}.reward-path span{font-size:.75rem}.reward-path strong{display:block;font:1.7rem/1.12 var(--display);color:var(--phosphor);margin-top:8px}
+.revision-link{background:#e1eadb;padding:18px 22px;margin:24px 0;font-size:.95rem}
+@media(max-width:720px){.reward-scene{grid-template-columns:1fr;min-height:0;gap:4px}.reward-path{padding:16px;gap:10px}.reward-path strong{font-size:1.4rem}.reward-path span{font-size:.7rem}.revision-control select{font-size:.86rem}.revision-case td{min-width:200px}}
+@media print{.revision-control,.reward-controls{display:none}.revision-case[data-revision-case="0"]{display:block!important}.revision-case:not([data-revision-case="0"]){display:none!important}.revision-case td{min-width:0}.reward-workbench{break-inside:avoid}.reward-scene{min-height:0}.reward-path{background:#eef5ee;color:var(--ink)}.reward-path strong{color:var(--green)}}
+.reward-controls button[aria-pressed=true]:hover{background:var(--green);color:white}
+@media print{.revision-workbench{break-inside:avoid}}

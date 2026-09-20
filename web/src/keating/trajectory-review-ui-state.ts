@@ -124,6 +124,7 @@ export function reviewWorkspaceUiReducer(
 					status: state.reviewDraft.status,
 					verdict: state.reviewDraft.verdict,
 					ratings: state.reviewDraft.ratings,
+					rubricJudgement: state.reviewDraft.rubricJudgement,
 					overallRating: state.reviewDraft.overallRating,
 					summary: state.reviewDraft.summary,
 					updatedAt: state.reviewDraft.updatedAt,

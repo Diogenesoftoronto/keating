@@ -5,6 +5,7 @@ import {
 	isRunnableCodeLanguage,
 	prepareRunnableCode,
 } from "../components/RunnableCodeBlock";
+import { isStrudelBlock, isStrudelPattern } from "../components/labs/strudel-detect";
 import { chooseCodeExecutor } from "../keating/execution-policy";
 
 describe("RunnableCodeBlock helpers", () => {
@@ -108,5 +109,40 @@ describe("inProgressFenceCode", () => {
 
 	test("returns an empty body right after the fence opens", () => {
 		expect(inProgressFenceCode("```js\n")).toBe("");
+	});
+});
+
+describe("Strudel fence detection", () => {
+	const chatSnippet = [
+		'note("c3 e3 g3").s("piano")               // sample — warm, real',
+		'note("c3 e3 g3").s("sawtooth")            // pure synth — buzzy, clean',
+		'note("c3 e3 g3").s("sawtooth").lpf(800)   // synth shaped toward piano',
+		's("bd*4, hh*8")                            // drum samples — the rhythm workhorse',
+		'stack(s("bd*4"), note("c2").s("sawtooth")) // layers — the real production model',
+	].join("\n");
+
+	test("claims Strudel patterns fenced as JavaScript", () => {
+		expect(isStrudelBlock("js", chatSnippet)).toBe(true);
+		expect(isStrudelBlock("javascript", 'note("c3 e3 g3").s("piano")')).toBe(true);
+		expect(isStrudelBlock("js", 's("bd*4, hh*8")')).toBe(true);
+		expect(isStrudelBlock("js", 's("bd hh")')).toBe(true);
+		expect(isStrudelBlock("js", 'note("c3")')).toBe(true);
+		expect(isStrudelBlock("js", 'setcpm(120 / 4)\nsound("bd")')).toBe(true);
+	});
+
+	test("leaves ordinary JavaScript to the Node runner", () => {
+		expect(isStrudelPattern("const x = 1;\nconsole.log(x);")).toBe(false);
+		expect(isStrudelPattern("function twoSum(nums, target) { return []; }")).toBe(false);
+		expect(isStrudelPattern("async function load() { return fetch('/api'); }")).toBe(false);
+		expect(isStrudelPattern("import { stack } from './stack.js';")).toBe(false);
+		// Ambiguous calls without any Strudel signal stay unhijacked.
+		expect(isStrudelPattern('s("hello world")')).toBe(false);
+		expect(isStrudelPattern("stack([1, 2, 3])")).toBe(false);
+	});
+
+	test("only routes JavaScript-shaped or explicit Strudel fences", () => {
+		expect(isStrudelBlock("python", chatSnippet)).toBe(false);
+		expect(isStrudelBlock("text", chatSnippet)).toBe(false);
+		expect(isStrudelBlock("strudel", 'note("c3")')).toBe(true);
 	});
 });

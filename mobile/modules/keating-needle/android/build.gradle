@@ -1,0 +1,26 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+group = 'com.diogenesoftoronto.keating'
+version = '1.0.0'
+
+def prepareNeedle = tasks.register('prepareNeedleNative', Exec) {
+  workingDir projectDir
+  commandLine 'node', '../../../scripts/prepare-needle.mjs', '--platform', 'android-arm64'
+}
+android {
+  namespace 'com.diogenesoftoronto.keating.needle'
+  ndkVersion rootProject.ext.ndkVersion
+  defaultConfig {
+    minSdkVersion 26
+    versionCode 1
+    versionName '1.0.0'
+    externalNativeBuild { cmake { cppFlags '-std=c++17' } }
+  }
+  externalNativeBuild { cmake { path 'CMakeLists.txt' } }
+}
+// CMake configuration can run before preBuild. Verify assets before either path.
+tasks.configureEach { task ->
+  if (task.name == 'preBuild' || task.name.startsWith('configureCMake') || task.name.startsWith('buildCMake')) task.dependsOn(prepareNeedle)
+}

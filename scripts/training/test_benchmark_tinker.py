@@ -1,6 +1,7 @@
 """Native benchmark dispatch invariants; all sampling and reservations are injected."""
 from contextlib import contextmanager
 import copy
+import importlib.util
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -36,6 +37,7 @@ class Renderer:
         return {"content": "A useful response.", "tool_calls": []}, True
 
 
+@unittest.skipUnless(importlib.util.find_spec("tinker_cookbook"), "tinker_cookbook is not installed")
 class NativeBenchmarkTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()

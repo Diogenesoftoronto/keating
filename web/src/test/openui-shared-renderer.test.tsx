@@ -167,3 +167,16 @@ describe("shared web OpenUI renderer", () => {
 		expect(retried.pending).toBeUndefined();
 	});
 });
+
+// The optional estimate belongs to canonical quizzes, without replacing answer controls.
+test("canonical quizzes expose a pre-answer estimate without hiding the question", () => {
+  const source: UiDocument = { ...document("ready"), nodes: [{ type: "quiz", id: "prediction-quiz", title: "Recall", questions: [
+    { id: "q1", kind: "choice", prompt: "Which is evidence?", choices: [{ id: "a", label: "Observation" }, { id: "b", label: "Guess" }], correctAnswer: "a", hint: "Look for something measured." },
+  ] }] };
+  const html = renderToStaticMarkup(<SharedUiDocumentRenderer document={source} />);
+  expect(html).toContain("Estimate before answering");
+  expect(html).toContain("Which is evidence?");
+  expect(html).toContain("Observation");
+  expect(html).toContain("Hint");
+  expect(html).not.toContain("Download estimate records");
+});

@@ -9,6 +9,11 @@ import { loadActiveTeachingRevision, loadEvaluatedTeachingRevision, readEvolutio
 import type { EpisodeJudge, EpisodeRunner, SkillProposer, TeachingCase, TeachingRevision } from "../../shared/evolution/contracts.js";
 import { createPiCompletionRunner, createPiEpisodeRunner } from "./teaching-episode-runner.js";
 import { FileEvolutionStore } from "./teaching-evolution-store.js";
+import { createCliEvolutionSpendReviewer, createCliEvolutionJudgement, type CliEvolutionJudgementOptions, type CliEvolutionJudgementReceipt } from "../judgement/cli-evolution.js";
+import { exportEvaluationObservation } from "../observability/arize.js";
+import { readArizeConfig } from "../observability/config.js";
+import { EVALUATION_OBSERVATION_VERSION, type EvaluationObservationV1 } from "../observability/types.js";
+import { KEATING_VERSION } from "./version.js";
 import { benchmarksDir } from "./paths.js";
 
 export async function teachingBasePrompt(): Promise<string> {
@@ -44,19 +49,55 @@ export interface TeachingEvolutionOptions {
   cases?: readonly TeachingCase[];
   runner?: EpisodeRunner;
   judge?: EpisodeJudge;
+  /** Independent account-backed judge preference; never the tutor model selection. */
+  judgement?: CliEvolutionJudgementOptions;
+  spendReviewer?: import("../../shared/evolution/spend-review.js").EvolutionSpendReviewer;
   proposer?: SkillProposer;
   maintainer?: WikiMaintainer;
   signal?: AbortSignal;
   onProgress?: (stage: string) => void;
+  surface?: EvaluationObservationV1["surface"];
+}
+
+/** Export only aggregate synthetic evaluation metadata, after durable artifacts exist. */
+async function observeTypedTeachingEvaluation(
+  receipt: CliEvolutionJudgementReceipt | undefined,
+  startedAt: number,
+  surface: EvaluationObservationV1["surface"],
+  fields: Pick<EvaluationObservationV1, "operation" | "status" | "suite" | "outcome_count" | "candidate_count" | "score" | "before_score" | "after_score">,
+): Promise<void> {
+  try {
+    if (!receipt || !readArizeConfig().enabled) return;
+    await exportEvaluationObservation({
+      schemaVersion: EVALUATION_OBSERVATION_VERSION,
+      ...fields,
+      engine: "typed-judgement",
+      duration_ms: Math.max(0, Date.now() - startedAt),
+      backend: receipt.backend.backend,
+      model: receipt.backend.model,
+      ...(receipt.backend.calibrationSha256 ? { calibration_sha256: receipt.backend.calibrationSha256 } : {}),
+      app_version: KEATING_VERSION,
+      surface,
+    });
+  } catch {
+    // Observability cannot change the saved result or disclose exporter errors.
+  }
 }
 
 export async function teachingEvolutionArtifact(cwd: string, options: TeachingEvolutionOptions = {}) {
-  const complete = options.judge && options.proposer ? null : await createPiCompletionRunner(cwd);
+  const startedAt = Date.now();
+  const cases = options.cases ?? TEACHING_CASES;
+  const runner = options.runner ?? await createPiEpisodeRunner(cwd);
+  const typed = options.judge ? null : await createCliEvolutionJudgement({ cwd, runner, cases, options: options.judgement });
+  const complete = (options.judge || typed) && options.proposer ? null : await createPiCompletionRunner(cwd);
+  if (typed) options.onProgress?.(`judge:${typed.receipt.backend.model}:${typed.receipt.calibration}`);
   const report = await runTeachingEvolution({
-    store: new FileEvolutionStore(cwd), cases: options.cases ?? TEACHING_CASES,
-    basePrompt: await teachingBasePrompt(), runner: options.runner ?? await createPiEpisodeRunner(cwd),
-    judge: options.judge ?? createEpisodeJudge(complete!), proposer: options.proposer ?? createSkillProposer(complete!),
+    store: new FileEvolutionStore(cwd), cases,
+    basePrompt: await teachingBasePrompt(), runner: typed?.runner ?? runner,
+    judge: options.judge ?? typed?.judge ?? createEpisodeJudge(complete!), proposer: options.proposer ?? createSkillProposer(complete!),
     maintainer: options.maintainer ?? (complete ? createWikiMaintainer(complete) : undefined),
+    frontierReviewer: typed ? { call: typed.frontierCall } : undefined,
+    spendReviewer: options.spendReviewer ?? await createCliEvolutionSpendReviewer(cwd, options.judgement),
     force: options.force, signal: options.signal, onProgress: options.onProgress,
   });
   const dir = join(benchmarksDir(cwd), "teaching-experiments");
@@ -64,31 +105,52 @@ export async function teachingEvolutionArtifact(cwd: string, options: TeachingEv
   const reportPath = join(dir, `${report.id}.md`);
   const observabilityPath = join(dir, `${report.id}.json`);
   const diagramPath = join(dir, `${report.id}.mmd`);
-  await writeFile(reportPath, teachingExperimentMarkdown(report), { mode: 0o600 });
-  await writeFile(observabilityPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 });
-  await writeFile(diagramPath, "flowchart TD\n  A[Fresh training episodes] --> B[Skill proposal]\n  B --> C[Paired validation]\n  C --> D[Sealed holdout]\n  D --> E[Independent activation gate]\n", { mode: 0o600 });
+  await writeFile(reportPath, teachingExperimentMarkdown(report) + (typed
+    ? `\nJudge: ${typed.receipt.backend.model}; ${typed.receipt.calibration} proxy estimates. Human learning remains unmeasured.\n` : ""), { mode: 0o600 });
+  await writeFile(observabilityPath, `${JSON.stringify({ ...report, ...(typed ? { judgement: typed.receipt } : {}) }, null, 2)}\n`, { mode: 0o600 });
+  await writeFile(diagramPath, "flowchart TD\n  A[Fresh training episodes] --> B[Durable candidate frontier]\n  B --> C[Rank or explore one candidate]\n  C --> T[Candidate training and saved outcome]\n  T --> V[Paired validation]\n  V --> H[Sealed holdout]\n  H --> E[Independent activation gate]\n  T --> B\n", { mode: 0o600 });
   const comparison = report.holdout ?? report.validation;
   const baselineScore = comparison?.baseline.meanScore == null ? null : comparison.baseline.meanScore * 100;
   const afterScore = comparison?.candidate.meanScore == null ? null : comparison.candidate.meanScore * 100;
+  const benchmarks = [report.training, report.candidateTraining, report.validation?.baseline, report.validation?.candidate, report.holdout?.baseline, report.holdout?.candidate];
+  await observeTypedTeachingEvaluation(typed?.receipt, startedAt, options.surface ?? "cli", {
+    operation: "auto_improve", suite: "synthetic-teaching-evolution",
+    status: report.status === "accepted" ? "success" : report.status === "failed" ? "error" : "rejected",
+    outcome_count: benchmarks.reduce((count, benchmark) => count + (benchmark?.results.length ?? 0), 0),
+    candidate_count: report.candidateRevisionId ? 1 : 0,
+    ...(baselineScore === null ? {} : { before_score: baselineScore }),
+    ...(afterScore === null ? {} : { after_score: afterScore }),
+  });
   return {
     baselineScore, afterScore, delta: baselineScore === null || afterScore === null ? null : afterScore - baselineScore,
     status: report.status, reportPath, observabilityPath, diagramPath, experiment: report,
+    ...(typed ? { judgement: typed.receipt } : {}),
   };
 }
 
-export async function teachingBenchmarkArtifact(cwd: string, options: Pick<TeachingEvolutionOptions, "runner" | "judge" | "cases" | "signal"> = {}) {
+export async function teachingBenchmarkArtifact(cwd: string, options: Pick<TeachingEvolutionOptions, "runner" | "judge" | "judgement" | "cases" | "signal" | "surface"> = {}) {
+  const startedAt = Date.now();
   const store = new FileEvolutionStore(cwd);
   const active = await activeTeachingPrompt(cwd);
   const revision = await store.read<TeachingRevision>(revisionKey(active.revisionId));
   if (!revision) throw new Error("teaching_benchmark_revision_missing");
-  const judge = options.judge ?? createEpisodeJudge(await createPiCompletionRunner(cwd));
+  const cases = options.cases ?? TEACHING_CASES;
+  const runner = options.runner ?? await createPiEpisodeRunner(cwd);
+  const typed = options.judge ? null : await createCliEvolutionJudgement({ cwd, runner, cases, options: options.judgement });
+  const judge = options.judge ?? typed?.judge ?? createEpisodeJudge(await createPiCompletionRunner(cwd));
   const report = await runEpisodeBenchmark({
-    cases: options.cases ?? TEACHING_CASES, split: "train", revision,
-    runner: options.runner ?? await createPiEpisodeRunner(cwd), judge, signal: options.signal,
+    cases, split: "train", revision,
+    runner: typed?.runner ?? runner, judge, signal: options.signal,
   });
   const dir = join(benchmarksDir(cwd), "teaching-episodes");
   await mkdir(dir, { recursive: true });
   const reportPath = join(dir, `${globalThis.crypto.randomUUID()}.json`);
-  await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`, { mode: 0o600 });
-  return { report, reportPath };
+  await writeFile(reportPath, `${JSON.stringify({ ...report, ...(typed ? { judgement: typed.receipt } : {}) }, null, 2)}\n`, { mode: 0o600 });
+  await observeTypedTeachingEvaluation(typed?.receipt, startedAt, options.surface ?? "cli", {
+    operation: "benchmark", suite: "synthetic-teaching-episodes",
+    status: report.errorCount > 0 || report.meanScore === null ? "error" : "success",
+    outcome_count: report.results.length,
+    ...(report.meanScore === null ? {} : { score: report.meanScore * 100 }),
+  });
+  return { report, reportPath, ...(typed ? { judgement: typed.receipt } : {}) };
 }

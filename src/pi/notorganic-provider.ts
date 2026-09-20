@@ -17,7 +17,8 @@ import {
   NOTORGANIC_DEFAULT_MAX_COST_MICROUSD,
   NOTORGANIC_MODEL_ID,
   NOTORGANIC_PROVIDER_ID,
-  NOTORGANIC_SCOPE,
+  NOTORGANIC_JUDGEMENT_LOGIN_SCOPE,
+  parseNotOrganicLoginScope,
   parseNotOrganicPrivateJwk,
   resolveNotOrganicIssuer
 } from "../core/notorganic-auth.js";
@@ -33,7 +34,8 @@ export const NOTORGANIC_BALANCED_MODEL = {
   contextWindow: 256_000,
   maxTokens: 16_384,
   compat: {
-    supportsDeveloperRole: true,
+    // The account gateway accepts system/user/assistant/tool, not developer.
+    supportsDeveloperRole: false,
     supportsReasoningEffort: true,
     supportsUsageInStreaming: true,
     supportsStore: false
@@ -63,7 +65,7 @@ function assertCapability(env: Record<string, string> | undefined, now: () => nu
   privateJwk: string;
   maxCostMicrousd: number;
 } {
-  if (env?.[NOTORGANIC_AUTH_ENV.scope] !== NOTORGANIC_SCOPE) {
+  if (!env || !parseNotOrganicLoginScope(env[NOTORGANIC_AUTH_ENV.scope])) {
     throw new Error("Not Organic is missing the infer:balanced capability. Run `keating login` again.");
   }
   if (env[NOTORGANIC_AUTH_ENV.tokenType] !== "DPoP") {
@@ -71,8 +73,10 @@ function assertCapability(env: Record<string, string> | undefined, now: () => nu
   }
   const expiresAt = Number(env[NOTORGANIC_AUTH_ENV.expiresAt]);
   if (!Number.isFinite(expiresAt) || expiresAt <= now()) {
+    const login = parseNotOrganicLoginScope(env[NOTORGANIC_AUTH_ENV.scope]) === NOTORGANIC_JUDGEMENT_LOGIN_SCOPE
+      ? "keating login --judgement" : "keating login";
     throw new Error(
-      "Your five-minute Not Organic capability expired. Run `keating login` again; this CLI does not invent a refresh token."
+      `Your five-minute Not Organic capability expired. Run \`${login}\` again; this CLI does not invent a refresh token.`
     );
   }
   const privateJwk = env[NOTORGANIC_AUTH_ENV.privateJwk];

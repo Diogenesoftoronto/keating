@@ -16,6 +16,8 @@ import {
 } from "../keating/speech";
 import { useKeatingSetting } from "../hooks/use-keating-setting";
 import { css, cx } from "../../styled-system/css";
+import { gptLiveMaxCostMicrousd } from "../keating/speech-providers/gpt-live";
+import { GptLiveConsentSettings } from "./GptLiveConsentSettings";
 
 interface SpeechSettingsTabProps {
 	hideNav?: boolean;
@@ -223,7 +225,7 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 				<div>
 					<h3 className={sectionTitleClass}>Provider</h3>
 					<p className={sectionDescriptionClass}>
-						Choose which speech engine generates audio. Tavus is configured on the Keating server; browser-connected providers use Providers & Models.
+						Choose which speech engine generates audio. GPT Live and Tavus use your Not Organic account; other hosted providers use API keys in Providers & Models.
 					</p>
 				</div>
 				<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
@@ -293,6 +295,18 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 					))}
 				</div>
 			</div>
+
+			{settings.providerId === "gpt-live" ? (
+				<><SettingRow
+					title="GPT Live account access"
+					description={`Connect Not Organic under Providers & Models and review live consent below. Each session has a $${(gptLiveMaxCostMicrousd() / 1_000_000).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USD spending ceiling. This provider supports voice conversation without live tools or visual input.`}
+				>
+					<button type="button" className={inputClass} onClick={() => window.dispatchEvent(new CustomEvent("keating:open-settings", { detail: { tab: "models" } }))}>
+						Account settings
+					</button>
+				</SettingRow>
+				<GptLiveConsentSettings /></>
+			) : null}
 
 			{(activeProvider || activeCustom) && (
 				<div id="settings-section-speech-voice" className={sectionClass}>

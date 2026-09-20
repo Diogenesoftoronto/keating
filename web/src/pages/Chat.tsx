@@ -28,8 +28,11 @@ import { DOCUMENTATION_URL } from "../lib/tutorial-links";
 import { BLOG_URL } from "../lib/blog-links";
 import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
+import { JudgementDiagnostics } from "../components/JudgementDiagnostics";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import { ChatOnboarding, hasCompletedChatOnboarding } from "../components/ChatOnboarding";
+import { TourSpotlight } from "../components/tour/TourSpotlight";
+import { hasSeenInterfaceTour, subscribeInterfaceTourRequests } from "../keating/interface-tour";
 import { promptNotOrganicAccess } from "../components/NotOrganicAccessPromptDialog";
 import { useSeo } from "../hooks/useSeo";
 import { useMediaQuery } from "../hooks/use-media-query";
@@ -786,6 +789,10 @@ function ChatContent() {
   const [onboardingGoal, setOnboardingGoal] = useState<string>();
   const pendingPrompt = search.ask?.trim() || onboardingGoal;
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showTour, setShowTour] = useState(false);
+  // Replaying the tour from Settings arrives as a request, because Settings has
+  // to close before there is anything to point at.
+  useEffect(() => subscribeInterfaceTourRequests(() => setShowTour(true)), []);
   useEffect(() => {
     if (hasCompletedChatOnboarding() || search.ask || search.course) return;
     let cancelled = false;
@@ -828,6 +835,7 @@ function ChatContent() {
     mobileSidebarOpen,
     toggleMobileSidebar,
     activeSessionId,
+    teachingAdjustment,
     responseComparison,
     chooseResponse,
   } = useKeatingAgent({ courseContext });
@@ -1581,6 +1589,7 @@ function ChatContent() {
         </div>
       )}
 
+      <JudgementDiagnostics sessionId={activeSessionId} teachingAdjustment={teachingAdjustment} />
       {showOnboarding && <div className={css({ flex: 1, minHeight: 0, overflowY: "auto", paddingInline: "1rem" })}>
         <ChatOnboarding
           onUseKeating={chooseKeatingModel}
@@ -1588,6 +1597,7 @@ function ChatContent() {
           onChooseModel={openModelSelector}
           onSkip={() => setShowOnboarding(false)}
           onComplete={goal => { setOnboardingGoal(goal); setShowOnboarding(false); }}
+          {...(hasSeenInterfaceTour() ? {} : { onStartTour: () => setShowTour(true) })}
         />
       </div>}
       <div
@@ -1629,11 +1639,11 @@ function ChatContent() {
         />
         {canvasEnabled && isWideViewport && artifactBrowserOpen && (
           <div
-            className={css({
+            className={cx("artifact-side-panel", css({
               height: "100%",
               flexShrink: 0,
               borderLeft: "1px solid var(--border)",
-            })}
+            }))}
           >
             <ArtifactSidePanel
               open={artifactBrowserOpen}
@@ -1646,6 +1656,15 @@ function ChatContent() {
           </div>
         )}
       </div>
+
+      {/* Rendered only once the chat is actually on screen, so the tour has real
+          elements to point at rather than the hidden panel behind onboarding. */}
+      {showTour && !showOnboarding && (
+        <TourSpotlight
+          onFinish={() => setShowTour(false)}
+          onSkip={() => setShowTour(false)}
+        />
+      )}
 
       {canvasEnabled && inlineArtifacts.length > 0 && (
         <InlineArtifacts

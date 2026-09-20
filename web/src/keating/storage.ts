@@ -3,16 +3,21 @@
  * Replaces Node.js filesystem operations from src/core/
  */
 
+import { collectCommittedQuizPerformance } from "./judgement/quiz-performance";
 import type { LearnerGoal } from "./goals";
 import { inferBrowserLearnerTurnSignal, type QuizQuestionGrade } from "./core";
 import { deriveLearnerProfile, type LearnerTopicProfile } from "./learner-profile";
 import type { Flashcard, FlashcardDeck, FlashcardSrsState } from "./flashcard-types";
 import { applyReview, initialSrsState } from "./srs";
+import { browserQuestionGradeInput, isSemanticAssessmentQuestion, reviewBrowserQuestionChecks,
+	type BrowserQuestionJudgement } from "./judgement/browser-grading";
+import { createWebJudgementRuntime, type WebJudgementRuntime } from "./judgement/runtime";
 import {
 	UI_ACTION_JOURNAL_KIND,
 	UI_CONTRACT_VERSION,
 	UiActionReplayConflictError,
 	canonicalUiAction,
+	compareContractTimestamps,
 	receiptForUiAction,
 	validateUiActionAgainstDocument,
 	validateUiActionJournal,
@@ -28,6 +33,7 @@ import {
 	type UiQuestionGroupResponse,
 	type UiRowAnswer,
 	type UiStudyPlanItem,
+	type OpenResponseGradeInput,
 } from "@keating/learner-contracts";
 export type { Flashcard, FlashcardDeck, FlashcardSrsState } from "./flashcard-types";
 
@@ -36,6 +42,7 @@ const DB_VERSION = 7;
 const LEARNER_STATE_SCHEMA_VERSION = 3;
 const META_STORE = "_meta";
 const OPENUI_ACTION_JOURNAL_PREFIX = "openui-action-journal:v1:";
+export const QUESTION_JUDGEMENT_CHANGED_EVENT = "keating:question-judgement-changed";
 
 // Store names
 const STORES = {
@@ -368,6 +375,8 @@ export interface QuestionCheckRecord {
 	score?: number;
 	grading: "auto" | "model" | "pending";
 	misconception?: string;
+	/** Separate estimate/provenance; an uncalibrated proposal never changes score or grading. */
+	judgement?: BrowserQuestionJudgement;
 	createdAt: number;
 	sessionId?: string;
 }
@@ -399,6 +408,15 @@ function emptyOpenUiJournal(documentId: string): UiActionJournal {
 
 function stableOpenUiRecordId(kind: string, documentId: string, value: string): string {
 	return `openui:${kind}:${documentId}:${value}`;
+}
+
+/** Exact record identities; never join reviews to another attempt by question text. */
+export function questionCheckIdsForUiAction(action: UiAction): string[] {
+	const id = (value: string) => stableOpenUiRecordId("question-check", action.documentId, value);
+	if (action.type === "submit-answer" || action.type === "choose-option") return [id(action.idempotencyKey)];
+	if (action.type === "submit-question-group") return action.responses.map(response => id(`${action.idempotencyKey}:${response.questionId}`));
+	if (action.type === "complete-quiz") return action.answers.map(answer => id(`${action.idempotencyKey}:${answer.questionId}`));
+	return [];
 }
 
 function openUiTimestamp(now: string): number {
@@ -472,14 +490,18 @@ function automaticallyGradeValues(
 	actual: readonly string[],
 	rows?: readonly UiRowAnswer[],
 ): { grading: "auto"; score: number } | { grading: "pending"; score?: undefined } {
+	const semantic = isSemanticAssessmentQuestion(question);
+	if (semantic && actual.every(value => !value.trim())) return { grading: "auto", score: 0 };
 	const expected = question.correctAnswers ?? (question.correctAnswer === undefined ? undefined : [question.correctAnswer]);
 	if (expected && expected.length > 0) {
 		const normalize = (value: string) => value.trim().toLocaleLowerCase();
 		const actualSet = new Set(actual.map(normalize));
 		const expectedSet = new Set(expected.map(normalize));
+		const exact = actualSet.size === expectedSet.size && [...actualSet].every(value => expectedSet.has(value));
+		if (semantic && !exact) return { grading: "pending" };
 		return {
 			grading: "auto",
-			 score: actualSet.size === expectedSet.size && [...actualSet].every((value) => expectedSet.has(value)) ? 1 : 0,
+			 score: exact ? 1 : 0,
 		};
 	}
 	if (question.correctMatches && rows) {
@@ -576,7 +598,8 @@ function documentAfterOpenUiAction(source: UiDocument, action: UiAction, now: st
 		revision: source.revision + 1,
 		lifecycle: action.type === "retry" ? "ready" : source.lifecycle,
 		nodes,
-		updatedAt: now,
+		// Receipt time stays on the local clock; document updates cannot move backwards.
+		updatedAt: compareContractTimestamps(now, source.updatedAt) < 0 ? source.updatedAt : now,
 	};
 	if (!validateUiDocument(document)) throw new Error("OpenUI action produced an invalid resulting document.");
 	return document;
@@ -647,6 +670,7 @@ export class KeatingStorage {
 	private db: IDBDatabase | null = null;
 	private dbPromise: Promise<IDBDatabase> | null = null;
 	private learnerStateWriteQueue: Promise<void> = Promise.resolve();
+	private readonly questionJudgements = new Set<Promise<void>>();
 	currentSessionId: string | null = null;
 
 	setCurrentSessionId(id: string | null): void {
@@ -941,6 +965,7 @@ export class KeatingStorage {
 		action: UiAction,
 		sourceDocument: UiDocument,
 		now = new Date().toISOString(),
+		judgementRuntime?: WebJudgementRuntime,
 	): Promise<OpenUiLearnerRecordMaterialization> {
 		if (!validateUiDocument(sourceDocument) || !validateUiActionAgainstDocument(action, sourceDocument)) {
 			throw new Error("OpenUI action does not apply to its source document.");
@@ -970,6 +995,12 @@ export class KeatingStorage {
 		const transaction = this.db.transaction(stores, "readwrite");
 		const complete = transactionCompletion(transaction);
 		let materialization: OpenUiLearnerRecordMaterialization | null = null;
+		const reviewInputs: OpenResponseGradeInput[] = [];
+		const queueReview = (check: QuestionCheckRecord, question: UiQuestion) => {
+			if (check.grading === "pending" && isSemanticAssessmentQuestion(question)) {
+				reviewInputs.push(browserQuestionGradeInput(check.id, question, check.answer));
+			}
+		};
 
 		try {
 			const metaStore = transaction.objectStore(META_STORE);
@@ -1003,6 +1034,7 @@ export class KeatingStorage {
 						sessionId: this.currentSessionId ?? undefined,
 					};
 					await requestValue(transaction.objectStore(STORES.QUESTION_CHECKS).put(check));
+					queueReview(check, question);
 				}
 				if (action.type === "submit-question-group") {
 					if (!target || target.node.type !== "question-group") throw new Error("OpenUI group action has no question group target.");
@@ -1022,7 +1054,10 @@ export class KeatingStorage {
 						} satisfies QuestionCheckRecord;
 					});
 					const questionChecks = transaction.objectStore(STORES.QUESTION_CHECKS);
-					for (const check of checks) await requestValue(questionChecks.put(check));
+					for (const [index, check] of checks.entries()) {
+						await requestValue(questionChecks.put(check));
+						queueReview(check, questionById.get(action.responses[index].questionId)!);
+					}
 				}
 				if (action.type === "complete-quiz") {
 					if (!target || target.node.type !== "quiz") throw new Error("OpenUI quiz action has no quiz target.");
@@ -1051,6 +1086,7 @@ export class KeatingStorage {
 							sessionId: this.currentSessionId ?? undefined,
 						};
 						await requestValue(questionChecks.put(check));
+						queueReview(check, question);
 					}
 				}
 				if (action.type === "complete-goal-step") {
@@ -1231,7 +1267,56 @@ export class KeatingStorage {
 		}
 		await complete;
 		if (!materialization) throw new Error("OpenUI action materialization did not produce a result.");
+		// Evidence is linked only after the learner records and receipt committed.
+		// Optional local evidence failure must never fail the answer acknowledgement.
+		void collectCommittedQuizPerformance(action, sourceDocument, materialization.receipt).catch(() => undefined);
+		if (reviewInputs.length && !materialization.replayed) {
+			// The durable answer and receipt already committed. Model latency cannot
+			// delay the saved acknowledgement or keep an IndexedDB transaction alive.
+			const runtime = judgementRuntime ?? createWebJudgementRuntime();
+			const review = reviewBrowserQuestionChecks(reviewInputs, runtime).then(async results => {
+				for (const result of results) {
+					const input = reviewInputs.find(item => item.id === result.final.id);
+					if (input) await this.applyQuestionJudgement(input, result);
+				}
+			}).catch(() => { /* Preserve pending saved answers on unavailable review. */ });
+			this.questionJudgements.add(review);
+			void review.finally(() => this.questionJudgements.delete(review));
+		}
 		return materialization;
+	}
+
+	/** Await outstanding reviews when exporting, disposing, or verifying this storage instance. */
+	async waitForQuestionJudgements(): Promise<void> {
+		await Promise.all([...this.questionJudgements]);
+	}
+
+	private async applyQuestionJudgement(input: OpenResponseGradeInput, judgement: BrowserQuestionJudgement): Promise<void> {
+		if (this.destroyed) return;
+		await this.init();
+		if (!this.db || this.destroyed) return;
+		const transaction = this.db.transaction([STORES.QUESTION_CHECKS], "readwrite");
+		const complete = transactionCompletion(transaction);
+		const store = transaction.objectStore(STORES.QUESTION_CHECKS);
+		try {
+			const current = await requestValue(store.get(input.id)) as QuestionCheckRecord | undefined;
+			// Compare and update in one transaction. A late model cannot replace a
+			// teacher grade, a changed answer, or a different question.
+			if (current?.grading === "pending" && current.answer === input.learnerAnswer && current.question === input.question) {
+				const decided = judgement.final.grading !== "pending" && judgement.final.credit !== null;
+				await requestValue(store.put({ ...current, judgement,
+					...(decided ? { grading: judgement.final.grading, score: judgement.final.credit } : {}) }));
+			}
+		} catch (error) {
+			try { transaction.abort(); } catch { /* transaction already ended */ }
+			await complete.catch(() => undefined);
+			throw error;
+		}
+		await complete;
+		await this.refreshDerivedLearnerProfile();
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent(QUESTION_JUDGEMENT_CHANGED_EVENT, { detail: { id: input.id } }));
+		}
 	}
 
 	// Learner Goals — long-horizon curricula, tracked across sessions

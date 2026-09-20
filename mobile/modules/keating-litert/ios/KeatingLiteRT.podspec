@@ -11,5 +11,7 @@ Pod::Spec.new do |s|
   s.static_framework = true
   s.dependency 'ExpoModulesCore'
   s.dependency 'KeatingLiteRTBinary', '= 0.16.0'
-  s.source_files = '*.swift'
+  s.source_files = '*.swift', '../cpp/*.{h,cpp}'
+  s.public_header_files = '../cpp/label-scorer.h'
+  s.pod_target_xcconfig = { 'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17', 'DEFINES_MODULE' => 'YES' }
 end

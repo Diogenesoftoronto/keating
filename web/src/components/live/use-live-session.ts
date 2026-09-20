@@ -38,6 +38,7 @@ import {
 import type { ConversationEvent } from "../../keating/protocol";
 import { prepareLiveImage } from "../../keating/live-image";
 import { getProviderApiKey } from "../../lib/provider-models";
+import { createLiveTranscriptJudgementObserver } from "../../keating/judgement/live-review";
 
 /**
  * The whole runtime of a live conversation, minus the pixels.
@@ -84,6 +85,7 @@ export interface LiveSessionController {
 	dismissNotice: () => void;
 
 	transcript: LiveTranscriptState;
+	judgementSessionId?: string;
 	tools: LiveToolActivity[];
 
 	providerId: string;
@@ -137,6 +139,7 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 	const [failure, setFailure] = useState<LiveFailure | null>(null);
 	const [notice, setNotice] = useState<LiveFailure | null>(null);
 	const [transcript, setTranscript] = useState<LiveTranscriptState>(emptyLiveTranscript);
+	const [judgementSessionId, setJudgementSessionId] = useState<string>();
 	const [tools, setTools] = useState<LiveToolActivity[]>([]);
 	const [micMuted, setMicMuted] = useState(false);
 	const [videoSource, setVideoSource] = useState<VideoSource | null>(null);
@@ -180,11 +183,10 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 	const tierLabel = useMemo(() => resolveSpeechRealtimeTier(settings).label, [settings]);
 
 	const receiveTranscript = useCallback((role: "user" | "assistant", text: string, final: boolean) => {
-		setTranscript((current) => {
-			const next = appendLiveTranscript(current, role, text, final);
-			transcriptRef.current = next;
-			return next;
-		});
+		const next = appendLiveTranscript(transcriptRef.current, role, text, final);
+		transcriptRef.current = next;
+		setTranscript(next);
+		return next;
 	}, []);
 
 	/** Point the preview element and the live session at a capture handle. */
@@ -237,6 +239,7 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 	// transcript, camera, and mute state deliberately live outside it.
 	useEffect(() => {
 		let active = true;
+		let review: ReturnType<typeof createLiveTranscriptJudgementObserver> | undefined;
 		const abort = new AbortController();
 		abortRef.current = abort;
 		setPhase("connecting");
@@ -258,6 +261,10 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 				const context = await bridge?.loadContext?.();
 				const conversationDetail: { ids?: { sessionId: string } } = {};
 				window.dispatchEvent(new CustomEvent("keating:conversation-ids", { detail: conversationDetail }));
+				if (!active || abort.signal.aborted) return;
+				const reviewSessionId = conversationDetail.ids?.sessionId ?? `live-${crypto.randomUUID()}`;
+				setJudgementSessionId(reviewSessionId);
+				review = createLiveTranscriptJudgementObserver(reviewSessionId, { signal: abort.signal });
 
 				// A handle from a previous attempt (or from the opening click) keeps
 				// the camera alive across a reconnect.
@@ -280,18 +287,19 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 					instructions: bridge?.instructions,
 					history: bridge?.history,
 					context,
-					tools: bridge?.tools,
+					tools: settings.providerId === "gpt-live" ? undefined : bridge?.tools,
 					video,
-					onToolCall: bridge ? (call) => bridge.execute(call, abort.signal) : undefined,
+					onToolCall: bridge && settings.providerId !== "gpt-live" ? (call) => bridge.execute(call, abort.signal) : undefined,
 					onConversationEvent,
 					conversationIds: conversationDetail.ids,
 					onState: (next) => {
 						if (!active) return;
 						setSpeechState(next);
+						if (next === "closed") review?.dispose();
 						if (next !== "closed") setPhase("live");
 					},
-					onUserTranscript: (text, final) => { if (active) receiveTranscript("user", text, final); },
-					onAssistantTranscript: (text, final) => { if (active) receiveTranscript("assistant", text, final); },
+					onUserTranscript: (text, final) => { if (active && !abort.signal.aborted) review?.update(receiveTranscript("user", text, final)); },
+					onAssistantTranscript: (text, final) => { if (active && !abort.signal.aborted) review?.update(receiveTranscript("assistant", text, final)); },
 					onError: (error) => {
 						// Mid-session provider errors are reported but do not by
 						// themselves end the conversation; the transport decides that.
@@ -312,6 +320,7 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 				// Re-apply choices the learner made before this connection existed.
 				if (micMutedRef.current) session.setMicrophoneMuted?.(true);
 			} catch (error) {
+				review?.dispose();
 				if (!active) return;
 				sessionRef.current = null;
 				setFailure(classifyLiveFailure(error, { providerId: settings.providerId, model: settings.model }));
@@ -321,6 +330,7 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 
 		return () => {
 			active = false;
+			review?.dispose();
 			abort.abort();
 			void sessionRef.current?.stop().catch(() => {});
 			sessionRef.current = null;
@@ -495,6 +505,7 @@ export function useLiveSession(options: UseLiveSessionOptions): LiveSessionContr
 		notice,
 		dismissNotice: useCallback(() => setNotice(null), []),
 		transcript,
+		judgementSessionId,
 		tools,
 		providerId: settings.providerId,
 		model,

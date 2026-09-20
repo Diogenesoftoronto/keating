@@ -186,7 +186,7 @@ describe("learner repository foundation", () => {
       INSERT INTO learner_records VALUES ('artifact', 'artifact-before-v5', '2026-08-10T00:00:00.000Z', '{"id":"artifact-before-v5"}');
     `);
     await initializeRepositorySchema(database);
-    expect((await database.getFirstAsync<{ value: string }>("SELECT value FROM repository_meta WHERE key = 'schema_version';"))?.value).toBe("5");
+    expect((await database.getFirstAsync<{ value: string }>("SELECT value FROM repository_meta WHERE key = 'schema_version';"))?.value).toBe("6");
     expect((await database.getFirstAsync<{ id: string }>("SELECT id FROM learner_records WHERE kind = 'artifact';"))?.id).toBe("artifact-before-v5");
     await database.runAsync(
       "INSERT INTO learner_records (kind, id, sort_timestamp, payload_json) VALUES (?, ?, ?, ?);",
@@ -207,7 +207,7 @@ describe("learner repository foundation", () => {
     expect(driver.openedNames).toEqual(["keating-learner.sqlite", "keating-learner.sqlite"]);
     expect(database.calls[0]).toContain("PRAGMA foreign_keys = ON");
     expect(database.calls[1]).toContain("PRAGMA journal_mode = WAL");
-    expect(database.meta.get("schema_version")).toBe("5");
+    expect(database.meta.get("schema_version")).toBe("6");
     expect(database.exclusiveTransactions).toBe(2);
     expect(database.closeCalls).toBe(1);
     expect(database.calls.some((call) => call.includes("CHECK (phase IN ('prepared', 'copied', 'verified', 'completed'))"))).toBe(true);
@@ -223,11 +223,11 @@ describe("learner repository foundation", () => {
     const legacyDatabase = new FakeDatabase();
     legacyDatabase.meta.set("schema_version", "1");
     await openLearnerRepository(new FakeDriver(legacyDatabase));
-    expect(legacyDatabase.meta.get("schema_version")).toBe("5");
+    expect(legacyDatabase.meta.get("schema_version")).toBe("6");
 
     for (const [stored, message] of [
       ["not-a-version", "metadata is invalid"],
-      ["6", "newer app version"],
+      ["7", "newer app version"],
       ["0", "migration is required"],
     ] as const) {
       const database = new FakeDatabase();

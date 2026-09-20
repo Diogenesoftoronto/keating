@@ -4,6 +4,7 @@
  */
 
 import { checkedMathQuestion } from "@keating/learner-contracts";
+import { classifyLearnerTurnSignal } from "../../../shared/pedagogy/learner-turn-signal";
 import {
 	MIN_REAL_OUTCOMES,
 	blendRealSyntheticScore,
@@ -636,13 +637,7 @@ export type BrowserLearnerTurnSignal = LearnerTurnSignal;
 
 export function inferBrowserLearnerTurnSignal(text: string, fallbackTopic = "general"): BrowserLearnerTurnSignal | null {
 	const compact = text.replace(/\s+/g, " ").trim();
-	if (compact.length < 4) return null;
-	const lowered = compact.toLowerCase();
-	const signal =
-		/\b(wrong|incorrect|not helpful|bad explanation|no,? that's not|still wrong)\b/i.test(lowered) ? "thumbs-down" :
-		/\b(confused|lost|stuck|unclear|not sure|don't understand|dont understand|doesn't make sense|doesnt make sense|can you explain|what do you mean|why is|how does)\b/i.test(lowered) ? "confused" :
-		/\b(got it|makes sense|i understand|that helps|clear now|yes exactly|correct)\b/i.test(lowered) ? "thumbs-up" :
-		null;
+	const signal = classifyLearnerTurnSignal(compact);
 	if (!signal) return null;
 	const resolved = resolveTopic(fallbackTopic);
 	return {
@@ -1557,6 +1552,33 @@ export function evolvePromptTemplate(
 		exploredCandidates: candidates,
 		acceptedCandidates: candidates.filter((c) => c.accepted),
 	};
+}
+
+/** Async scoring companion; retains the synchronous API's proposals and preference/acceptance rules. */
+export async function evolvePromptTemplateWithEvaluator(
+	basePrompt: string,
+	promptName: string,
+	evaluate: (prompt: string) => Promise<PromptEvaluationResult>,
+	signal?: AbortSignal,
+): Promise<PromptEvolutionRun> {
+	signal?.throwIfAborted();
+	const baseline = await evaluate(basePrompt);
+	const candidates: PromptEvolutionCandidate[] = [];
+	let currentPrompt = basePrompt;
+	for (let iteration = 1; iteration <= 4; iteration += 1) {
+		signal?.throwIfAborted();
+		// Proposal generation stays deterministic and independent of model feedback prose.
+		const prompt = heuristicEvolvePrompt(currentPrompt, heuristicPromptEvaluation(currentPrompt));
+		const evaluation = await evaluate(prompt);
+		candidates.push({ iteration, label: `${promptName}-candidate-${iteration}`, prompt,
+			...evaluation, parentLabel: promptName, accepted: false, preferenceScore: 0 });
+		currentPrompt = prompt;
+	}
+	signal?.throwIfAborted();
+	const best = prosperStyleWinner(candidates);
+	for (const candidate of candidates) candidate.accepted = candidate.label === best.label && candidate.score >= baseline.score;
+	return { promptName, baselineScore: baseline.score, baselineObjectives: baseline.objectives,
+		best, exploredCandidates: candidates, acceptedCandidates: candidates.filter(candidate => candidate.accepted) };
 }
 
 export function promptEvolutionToMarkdown(run: PromptEvolutionRun): string {

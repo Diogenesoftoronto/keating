@@ -111,7 +111,8 @@ function loadRootVersion(): string {
 
 function applySync(
   rootVersion: string,
-  target: Target
+  target: Target,
+  checkOnly: boolean
 ): { changed: boolean; current: string | null; error?: string } {
   const fullPath = join(process.cwd(), target.path);
   let content: string;
@@ -134,7 +135,7 @@ function applySync(
     return { changed: false, current: match?.[0] ?? null };
   }
 
-  writeFileSync(fullPath, nextContent, "utf8");
+  if (!checkOnly) writeFileSync(fullPath, nextContent, "utf8");
   const match = content.match(target.matcher);
   return { changed: true, current: match?.[0] ?? null };
 }
@@ -154,7 +155,7 @@ let ok = 0;
 console.log(`Canonical version: ${rootVersion}\n`);
 
 for (const target of targets) {
-  const result = applySync(rootVersion, target);
+  const result = applySync(rootVersion, target, checkMode);
 
   if (result.error) {
     errors += 1;

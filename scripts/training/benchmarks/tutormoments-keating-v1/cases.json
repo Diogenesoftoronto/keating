@@ -1,0 +1,1178 @@
+{
+  "benchmark_id": "keating-tutormoments-synthetic-v1",
+  "version": "1.0.0",
+  "cases": [
+    {
+      "id": "tm-fraction-visual-guess-conversation",
+      "title": "Fraction visual guess / conversation",
+      "family": "tm-b09cc93d-7bbf-5d3d-b22f-eb3efc51e344",
+      "category": "productive_struggle_scaffolding",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "I picked 3/8 because that picture looked more shaded. The two pictures are different sizes. How can I tell which fraction is bigger?"
+        },
+        {
+          "kind": "message",
+          "text": "Could we use two same-size rectangles? I keep mixing up the size of the picture and the fraction."
+        },
+        {
+          "kind": "message",
+          "text": "For equal rectangles, three of eight pieces is more than two of eight pieces. Give me a small question I can try without the answer showing."
+        },
+        {
+          "kind": "message",
+          "text": "If the rectangles are different sizes, can I still say which shaded area is bigger just from 3/8 and 2/8?"
+        }
+      ],
+      "state_checks": [],
+      "rubric": [
+        {
+          "dimension": "support_calibration",
+          "criteria": {
+            "0": "Overrides the visible learner need with answers or unsupported challenge.",
+            "1": "Partially fits the current need but fails to adjust across turns.",
+            "2": "Diagnose the whole-size confusion; offer a same-whole comparison, then fade help when the learner explains it."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses the misconception or gives incorrect mathematics.",
+            "1": "Mostly correct but leaves the key distinction unresolved.",
+            "2": "Uses correct reasoning and checks learner reasoning against the supplied facts."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "learner_agency",
+          "criteria": {
+            "0": "Does the requested independent work for the learner or claims unobserved success.",
+            "1": "Leaves an attempt but gives away a requested challenge or assumes mastery.",
+            "2": "Leaves meaningful learner work; treats scripted claims as claims, not proof of learning."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "For the same whole, 3/8 > 2/8.",
+          "Absolute shaded area across different wholes cannot be ordered from these fractions alone."
+        ],
+        "adaptation_goal": "Diagnose the whole-size confusion; offer a same-whole comparison, then fade help when the learner explains it.",
+        "feedback_timing": "Score each reply only against learner events visible through that step. Later scripted replies are not caused by the model response.",
+        "contextual_inference_limit": "Agent-authored fixed learner script, not an oracle-student replay or human learning measurement."
+      },
+      "source": {
+        "dataset": "allenai/tutormoments-preview",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "moment_id": "balanced_520:056dd847-9f7b-5cda-9370-269452f8d083_c425fbf6-427c-50e6-876b-36191e9e18bf_b09cc93d-7bbf-5d3d-b22f-eb3efc51e344__hum_244_258",
+        "source_dimension": "scaffolding",
+        "source_cut_turn": 244,
+        "license": "CC-BY-4.0",
+        "adaptation": "Agent-authored synthetic Keating episode; source math situation rewritten with explicit observable cues and new follow-up attempts. No human continuation copied.",
+        "variant": "conversation",
+        "status": "development-pilot-not-human-validated"
+      }
+    },
+    {
+      "id": "tm-fraction-visual-guess-resume",
+      "title": "Fraction visual guess / resume",
+      "family": "tm-b09cc93d-7bbf-5d3d-b22f-eb3efc51e344",
+      "category": "productive_struggle_scaffolding",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "I picked 3/8 because that picture looked more shaded. The two pictures are different sizes. How can I tell which fraction is bigger?"
+        },
+        {
+          "kind": "message",
+          "text": "Could we use two same-size rectangles? I keep mixing up the size of the picture and the fraction. Please record what I am working on so we can continue after I reopen this session."
+        },
+        {
+          "kind": "reopen"
+        },
+        {
+          "kind": "message",
+          "text": "For equal rectangles, three of eight pieces is more than two of eight pieces. Give me a small question I can try without the answer showing."
+        },
+        {
+          "kind": "message",
+          "text": "If the rectangles are different sizes, can I still say which shaded area is bigger just from 3/8 and 2/8?"
+        }
+      ],
+      "state_checks": [],
+      "rubric": [
+        {
+          "dimension": "support_calibration",
+          "criteria": {
+            "0": "Overrides the visible learner need with answers or unsupported challenge.",
+            "1": "Partially fits the current need but fails to adjust across turns.",
+            "2": "Diagnose the whole-size confusion; offer a same-whole comparison, then fade help when the learner explains it."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses the misconception or gives incorrect mathematics.",
+            "1": "Mostly correct but leaves the key distinction unresolved.",
+            "2": "Uses correct reasoning and checks learner reasoning against the supplied facts."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "learner_agency",
+          "criteria": {
+            "0": "Does the requested independent work for the learner or claims unobserved success.",
+            "1": "Leaves an attempt but gives away a requested challenge or assumes mastery.",
+            "2": "Leaves meaningful learner work; treats scripted claims as claims, not proof of learning."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "continuity",
+          "criteria": {
+            "0": "Invents saved state or forgets the working task.",
+            "1": "Continues loosely but cannot distinguish saved state from chat claims.",
+            "2": "Uses real session or tool evidence to continue the task; does not invent persistence receipts."
+          },
+          "evidence_steps": [
+            1,
+            3,
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "For the same whole, 3/8 > 2/8.",
+          "Absolute shaded area across different wholes cannot be ordered from these fractions alone."
+        ],
+        "adaptation_goal": "Diagnose the whole-size confusion; offer a same-whole comparison, then fade help when the learner explains it.",
+        "feedback_timing": "Score each reply only against learner events visible through that step. Later scripted replies are not caused by the model response.",
+        "contextual_inference_limit": "Agent-authored fixed learner script, not an oracle-student replay or human learning measurement."
+      },
+      "source": {
+        "dataset": "allenai/tutormoments-preview",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "moment_id": "balanced_520:056dd847-9f7b-5cda-9370-269452f8d083_c425fbf6-427c-50e6-876b-36191e9e18bf_b09cc93d-7bbf-5d3d-b22f-eb3efc51e344__hum_244_258",
+        "source_dimension": "scaffolding",
+        "source_cut_turn": 244,
+        "license": "CC-BY-4.0",
+        "adaptation": "Agent-authored synthetic Keating episode; source math situation rewritten with explicit observable cues and new follow-up attempts. No human continuation copied.",
+        "variant": "resume",
+        "status": "development-pilot-not-human-validated"
+      }
+    },
+    {
+      "id": "tm-fraction-multiply-rule-conversation",
+      "title": "Fraction multiply rule / conversation",
+      "family": "tm-ffa4bb37-6dd8-5c9a-a2ae-4c6f746ff82c",
+      "category": "productive_struggle_scaffolding",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "For 3/4 times 3, I multiplied the top and bottom by 3 and got 9/12. That keeps the fraction the same, right?"
+        },
+        {
+          "kind": "message",
+          "text": "I know 3 is 3/1, but why is this different from making equivalent fractions? I need one small example."
+        },
+        {
+          "kind": "message",
+          "text": "Three groups of 3/4 means 9/4, not 9/12. Let me try a similar problem before you solve it."
+        },
+        {
+          "kind": "message",
+          "text": "For 2/5 times 2 I get 4/5. Is my reasoning about two groups sound?"
+        }
+      ],
+      "state_checks": [],
+      "rubric": [
+        {
+          "dimension": "support_calibration",
+          "criteria": {
+            "0": "Overrides the visible learner need with answers or unsupported challenge.",
+            "1": "Partially fits the current need but fails to adjust across turns.",
+            "2": "Distinguish equivalent fractions from multiplying a quantity; supply targeted help and leave a real attempt."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses the misconception or gives incorrect mathematics.",
+            "1": "Mostly correct but leaves the key distinction unresolved.",
+            "2": "Uses correct reasoning and checks learner reasoning against the supplied facts."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "learner_agency",
+          "criteria": {
+            "0": "Does the requested independent work for the learner or claims unobserved success.",
+            "1": "Leaves an attempt but gives away a requested challenge or assumes mastery.",
+            "2": "Leaves meaningful learner work; treats scripted claims as claims, not proof of learning."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "Multiplying numerator and denominator by the same nonzero number preserves a fraction.",
+          "3/4 multiplied by 3 is 9/4.",
+          "2/5 multiplied by 2 is 4/5."
+        ],
+        "adaptation_goal": "Distinguish equivalent fractions from multiplying a quantity; supply targeted help and leave a real attempt.",
+        "feedback_timing": "Score each reply only against learner events visible through that step. Later scripted replies are not caused by the model response.",
+        "contextual_inference_limit": "Agent-authored fixed learner script, not an oracle-student replay or human learning measurement."
+      },
+      "source": {
+        "dataset": "allenai/tutormoments-preview",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "moment_id": "balanced_520:09264613-5009-5557-87c6-d590c3d6c391_02020d06-7b55-5b35-b27f-18b334d8c8c3_ffa4bb37-6dd8-5c9a-a2ae-4c6f746ff82c__hum_171_174",
+        "source_dimension": "scaffolding",
+        "source_cut_turn": 173,
+        "license": "CC-BY-4.0",
+        "adaptation": "Agent-authored synthetic Keating episode; source math situation rewritten with explicit observable cues and new follow-up attempts. No human continuation copied.",
+        "variant": "conversation",
+        "status": "development-pilot-not-human-validated"
+      }
+    },
+    {
+      "id": "tm-fraction-multiply-rule-resume",
+      "title": "Fraction multiply rule / resume",
+      "family": "tm-ffa4bb37-6dd8-5c9a-a2ae-4c6f746ff82c",
+      "category": "productive_struggle_scaffolding",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "For 3/4 times 3, I multiplied the top and bottom by 3 and got 9/12. That keeps the fraction the same, right?"
+        },
+        {
+          "kind": "message",
+          "text": "I know 3 is 3/1, but why is this different from making equivalent fractions? I need one small example. Please record what I am working on so we can continue after I reopen this session."
+        },
+        {
+          "kind": "reopen"
+        },
+        {
+          "kind": "message",
+          "text": "Three groups of 3/4 means 9/4, not 9/12. Let me try a similar problem before you solve it."
+        },
+        {
+          "kind": "message",
+          "text": "For 2/5 times 2 I get 4/5. Is my reasoning about two groups sound?"
+        }
+      ],
+      "state_checks": [],
+      "rubric": [
+        {
+          "dimension": "support_calibration",
+          "criteria": {
+            "0": "Overrides the visible learner need with answers or unsupported challenge.",
+            "1": "Partially fits the current need but fails to adjust across turns.",
+            "2": "Distinguish equivalent fractions from multiplying a quantity; supply targeted help and leave a real attempt."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses the misconception or gives incorrect mathematics.",
+            "1": "Mostly correct but leaves the key distinction unresolved.",
+            "2": "Uses correct reasoning and checks learner reasoning against the supplied facts."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "learner_agency",
+          "criteria": {
+            "0": "Does the requested independent work for the learner or claims unobserved success.",
+            "1": "Leaves an attempt but gives away a requested challenge or assumes mastery.",
+            "2": "Leaves meaningful learner work; treats scripted claims as claims, not proof of learning."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "continuity",
+          "criteria": {
+            "0": "Invents saved state or forgets the working task.",
+            "1": "Continues loosely but cannot distinguish saved state from chat claims.",
+            "2": "Uses real session or tool evidence to continue the task; does not invent persistence receipts."
+          },
+          "evidence_steps": [
+            1,
+            3,
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "Multiplying numerator and denominator by the same nonzero number preserves a fraction.",
+          "3/4 multiplied by 3 is 9/4.",
+          "2/5 multiplied by 2 is 4/5."
+        ],
+        "adaptation_goal": "Distinguish equivalent fractions from multiplying a quantity; supply targeted help and leave a real attempt.",
+        "feedback_timing": "Score each reply only against learner events visible through that step. Later scripted replies are not caused by the model response.",
+        "contextual_inference_limit": "Agent-authored fixed learner script, not an oracle-student replay or human learning measurement."
+      },
+      "source": {
+        "dataset": "allenai/tutormoments-preview",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "moment_id": "balanced_520:09264613-5009-5557-87c6-d590c3d6c391_02020d06-7b55-5b35-b27f-18b334d8c8c3_ffa4bb37-6dd8-5c9a-a2ae-4c6f746ff82c__hum_171_174",
+        "source_dimension": "scaffolding",
+        "source_cut_turn": 173,
+        "license": "CC-BY-4.0",
+        "adaptation": "Agent-authored synthetic Keating episode; source math situation rewritten with explicit observable cues and new follow-up attempts. No human continuation copied.",
+        "variant": "resume",
+        "status": "development-pilot-not-human-validated"
+      }
+    },
+    {
+      "id": "tm-apples-total-equation-conversation",
+      "title": "Apples total equation / conversation",
+      "family": "tm-bdf53111-1eda-5887-ba3f-4751d6dc3a14",
+      "category": "productive_struggle_scaffolding",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "There are 13 green apples and 37 red apples. I chose 37 + ? = 13 to find all the apples. I thought we start with the total."
+        },
+        {
+          "kind": "message",
+          "text": "Could you show which numbers are the parts? I am mixing up the total and the two groups."
+        },
+        {
+          "kind": "message",
+          "text": "So 13 and 37 are the groups and the unknown is the total. I think 13 + 37 = ? fits. Let me calculate it."
+        },
+        {
+          "kind": "message",
+          "text": "I get 50 apples. If there are 50 altogether and 13 are green, how would I write the equation for red apples?"
+        }
+      ],
+      "state_checks": [],
+      "rubric": [
+        {
+          "dimension": "support_calibration",
+          "criteria": {
+            "0": "Overrides the visible learner need with answers or unsupported challenge.",
+            "1": "Partially fits the current need but fails to adjust across turns.",
+            "2": "Repair parts-versus-whole confusion without mechanically endorsing start-with-total advice."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses the misconception or gives incorrect mathematics.",
+            "1": "Mostly correct but leaves the key distinction unresolved.",
+            "2": "Uses correct reasoning and checks learner reasoning against the supplied facts."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "learner_agency",
+          "criteria": {
+            "0": "Does the requested independent work for the learner or claims unobserved success.",
+            "1": "Leaves an attempt but gives away a requested challenge or assumes mastery.",
+            "2": "Leaves meaningful learner work; treats scripted claims as claims, not proof of learning."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "13 + 37 = 50.",
+          "50 - 13 = 37, equivalently 13 + r = 50."
+        ],
+        "adaptation_goal": "Repair parts-versus-whole confusion without mechanically endorsing start-with-total advice.",
+        "feedback_timing": "Score each reply only against learner events visible through that step. Later scripted replies are not caused by the model response.",
+        "contextual_inference_limit": "Agent-authored fixed learner script, not an oracle-student replay or human learning measurement."
+      },
+      "source": {
+        "dataset": "allenai/tutormoments-preview",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "moment_id": "balanced_520:1789ab1a-d177-547f-9b1f-1674e5700baf_5fc5a091-b96b-53d8-9755-dec4ae394f64_bdf53111-1eda-5887-ba3f-4751d6dc3a14__hum_45_52",
+        "source_dimension": "scaffolding",
+        "source_cut_turn": 47,
+        "license": "CC-BY-4.0",
+        "adaptation": "Agent-authored synthetic Keating episode; source math situation rewritten with explicit observable cues and new follow-up attempts. No human continuation copied.",
+        "variant": "conversation",
+        "status": "development-pilot-not-human-validated"
+      }
+    },
+    {
+      "id": "tm-apples-total-equation-resume",
+      "title": "Apples total equation / resume",
+      "family": "tm-bdf53111-1eda-5887-ba3f-4751d6dc3a14",
+      "category": "productive_struggle_scaffolding",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "There are 13 green apples and 37 red apples. I chose 37 + ? = 13 to find all the apples. I thought we start with the total."
+        },
+        {
+          "kind": "message",
+          "text": "Could you show which numbers are the parts? I am mixing up the total and the two groups. Please record what I am working on so we can continue after I reopen this session."
+        },
+        {
+          "kind": "reopen"
+        },
+        {
+          "kind": "message",
+          "text": "So 13 and 37 are the groups and the unknown is the total. I think 13 + 37 = ? fits. Let me calculate it."
+        },
+        {
+          "kind": "message",
+          "text": "I get 50 apples. If there are 50 altogether and 13 are green, how would I write the equation for red apples?"
+        }
+      ],
+      "state_checks": [],
+      "rubric": [
+        {
+          "dimension": "support_calibration",
+          "criteria": {
+            "0": "Overrides the visible learner need with answers or unsupported challenge.",
+            "1": "Partially fits the current need but fails to adjust across turns.",
+            "2": "Repair parts-versus-whole confusion without mechanically endorsing start-with-total advice."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses the misconception or gives incorrect mathematics.",
+            "1": "Mostly correct but leaves the key distinction unresolved.",
+            "2": "Uses correct reasoning and checks learner reasoning against the supplied facts."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "learner_agency",
+          "criteria": {
+            "0": "Does the requested independent work for the learner or claims unobserved success.",
+            "1": "Leaves an attempt but gives away a requested challenge or assumes mastery.",
+            "2": "Leaves meaningful learner work; treats scripted claims as claims, not proof of learning."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "continuity",
+          "criteria": {
+            "0": "Invents saved state or forgets the working task.",
+            "1": "Continues loosely but cannot distinguish saved state from chat claims.",
+            "2": "Uses real session or tool evidence to continue the task; does not invent persistence receipts."
+          },
+          "evidence_steps": [
+            1,
+            3,
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "13 + 37 = 50.",
+          "50 - 13 = 37, equivalently 13 + r = 50."
+        ],
+        "adaptation_goal": "Repair parts-versus-whole confusion without mechanically endorsing start-with-total advice.",
+        "feedback_timing": "Score each reply only against learner events visible through that step. Later scripted replies are not caused by the model response.",
+        "contextual_inference_limit": "Agent-authored fixed learner script, not an oracle-student replay or human learning measurement."
+      },
+      "source": {
+        "dataset": "allenai/tutormoments-preview",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "moment_id": "balanced_520:1789ab1a-d177-547f-9b1f-1674e5700baf_5fc5a091-b96b-53d8-9755-dec4ae394f64_bdf53111-1eda-5887-ba3f-4751d6dc3a14__hum_45_52",
+        "source_dimension": "scaffolding",
+        "source_cut_turn": 47,
+        "license": "CC-BY-4.0",
+        "adaptation": "Agent-authored synthetic Keating episode; source math situation rewritten with explicit observable cues and new follow-up attempts. No human continuation copied.",
+        "variant": "resume",
+        "status": "development-pilot-not-human-validated"
+      }
+    },
+    {
+      "id": "tm-place-value-wait-conversation",
+      "title": "Place value wait / conversation",
+      "family": "tm-ffa4bb37-6dd8-5c9a-a2ae-4c6f746ff82c",
+      "category": "productive_struggle_rigor",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "I am working on 103 times 10. Wait a moment, I am thinking; please do not tell me the answer yet."
+        },
+        {
+          "kind": "message",
+          "text": "I get 1030. I pictured each digit moving one place. Ask me something to check that idea."
+        },
+        {
+          "kind": "message",
+          "text": "For 10.3 times 10 I get 103. Adding a zero to the end would not explain that, would it?"
+        },
+        {
+          "kind": "message",
+          "text": "I would like a harder one to try myself. Can you give a problem that tests place value without solving it?"
+        }
+      ],
+      "state_checks": [],
+      "rubric": [
+        {
+          "dimension": "support_calibration",
+          "criteria": {
+            "0": "Overrides the visible learner need with answers or unsupported challenge.",
+            "1": "Partially fits the current need but fails to adjust across turns.",
+            "2": "Respect requested thinking time, elicit reasoning and increase challenge without giving the result prematurely."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses the misconception or gives incorrect mathematics.",
+            "1": "Mostly correct but leaves the key distinction unresolved.",
+            "2": "Uses correct reasoning and checks learner reasoning against the supplied facts."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "learner_agency",
+          "criteria": {
+            "0": "Does the requested independent work for the learner or claims unobserved success.",
+            "1": "Leaves an attempt but gives away a requested challenge or assumes mastery.",
+            "2": "Leaves meaningful learner work; treats scripted claims as claims, not proof of learning."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "103 times 10 is 1030.",
+          "10.3 times 10 is 103.",
+          "Multiplying by ten increases each digit contribution tenfold."
+        ],
+        "adaptation_goal": "Respect requested thinking time, elicit reasoning and increase challenge without giving the result prematurely.",
+        "feedback_timing": "Score each reply only against learner events visible through that step. Later scripted replies are not caused by the model response.",
+        "contextual_inference_limit": "Agent-authored fixed learner script, not an oracle-student replay or human learning measurement."
+      },
+      "source": {
+        "dataset": "allenai/tutormoments-preview",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "moment_id": "balanced_520:09264613-5009-5557-87c6-d590c3d6c391_02020d06-7b55-5b35-b27f-18b334d8c8c3_ffa4bb37-6dd8-5c9a-a2ae-4c6f746ff82c__hum_95_103",
+        "source_dimension": "rigor",
+        "source_cut_turn": 96,
+        "license": "CC-BY-4.0",
+        "adaptation": "Agent-authored synthetic Keating episode; source math situation rewritten with explicit observable cues and new follow-up attempts. No human continuation copied.",
+        "variant": "conversation",
+        "status": "development-pilot-not-human-validated"
+      }
+    },
+    {
+      "id": "tm-place-value-wait-resume",
+      "title": "Place value wait / resume",
+      "family": "tm-ffa4bb37-6dd8-5c9a-a2ae-4c6f746ff82c",
+      "category": "productive_struggle_rigor",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "I am working on 103 times 10. Wait a moment, I am thinking; please do not tell me the answer yet."
+        },
+        {
+          "kind": "message",
+          "text": "I get 1030. I pictured each digit moving one place. Ask me something to check that idea. Please record what I am working on so we can continue after I reopen this session."
+        },
+        {
+          "kind": "reopen"
+        },
+        {
+          "kind": "message",
+          "text": "For 10.3 times 10 I get 103. Adding a zero to the end would not explain that, would it?"
+        },
+        {
+          "kind": "message",
+          "text": "I would like a harder one to try myself. Can you give a problem that tests place value without solving it?"
+        }
+      ],
+      "state_checks": [],
+      "rubric": [
+        {
+          "dimension": "support_calibration",
+          "criteria": {
+            "0": "Overrides the visible learner need with answers or unsupported challenge.",
+            "1": "Partially fits the current need but fails to adjust across turns.",
+            "2": "Respect requested thinking time, elicit reasoning and increase challenge without giving the result prematurely."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses the misconception or gives incorrect mathematics.",
+            "1": "Mostly correct but leaves the key distinction unresolved.",
+            "2": "Uses correct reasoning and checks learner reasoning against the supplied facts."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "learner_agency",
+          "criteria": {
+            "0": "Does the requested independent work for the learner or claims unobserved success.",
+            "1": "Leaves an attempt but gives away a requested challenge or assumes mastery.",
+            "2": "Leaves meaningful learner work; treats scripted claims as claims, not proof of learning."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "continuity",
+          "criteria": {
+            "0": "Invents saved state or forgets the working task.",
+            "1": "Continues loosely but cannot distinguish saved state from chat claims.",
+            "2": "Uses real session or tool evidence to continue the task; does not invent persistence receipts."
+          },
+          "evidence_steps": [
+            1,
+            3,
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "103 times 10 is 1030.",
+          "10.3 times 10 is 103.",
+          "Multiplying by ten increases each digit contribution tenfold."
+        ],
+        "adaptation_goal": "Respect requested thinking time, elicit reasoning and increase challenge without giving the result prematurely.",
+        "feedback_timing": "Score each reply only against learner events visible through that step. Later scripted replies are not caused by the model response.",
+        "contextual_inference_limit": "Agent-authored fixed learner script, not an oracle-student replay or human learning measurement."
+      },
+      "source": {
+        "dataset": "allenai/tutormoments-preview",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "moment_id": "balanced_520:09264613-5009-5557-87c6-d590c3d6c391_02020d06-7b55-5b35-b27f-18b334d8c8c3_ffa4bb37-6dd8-5c9a-a2ae-4c6f746ff82c__hum_95_103",
+        "source_dimension": "rigor",
+        "source_cut_turn": 96,
+        "license": "CC-BY-4.0",
+        "adaptation": "Agent-authored synthetic Keating episode; source math situation rewritten with explicit observable cues and new follow-up attempts. No human continuation copied.",
+        "variant": "resume",
+        "status": "development-pilot-not-human-validated"
+      }
+    },
+    {
+      "id": "tm-sequence-rule-transfer-conversation",
+      "title": "Sequence rule transfer / conversation",
+      "family": "tm-30e294b8-d5ab-5a47-80cb-7a7f3e9618db",
+      "category": "productive_struggle_rigor",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "The rule is triple the previous number: 2, 6, 18. I chose 18 because 6 times 3 is 18."
+        },
+        {
+          "kind": "message",
+          "text": "I think the next one is 54. Ask me to explain rather than just confirm it."
+        },
+        {
+          "kind": "message",
+          "text": "Each term is three times the one before. What changes if we start at 5? Let me work it out."
+        },
+        {
+          "kind": "message",
+          "text": "Starting at 5 gives 5, 15, 45, 135. Can you ask me to compare that with adding 3 each time?"
+        }
+      ],
+      "state_checks": [],
+      "rubric": [
+        {
+          "dimension": "support_calibration",
+          "criteria": {
+            "0": "Overrides the visible learner need with answers or unsupported challenge.",
+            "1": "Partially fits the current need but fails to adjust across turns.",
+            "2": "Recognize demonstrated reasoning and push transfer or justification instead of repeating a solved procedure."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses the misconception or gives incorrect mathematics.",
+            "1": "Mostly correct but leaves the key distinction unresolved.",
+            "2": "Uses correct reasoning and checks learner reasoning against the supplied facts."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "learner_agency",
+          "criteria": {
+            "0": "Does the requested independent work for the learner or claims unobserved success.",
+            "1": "Leaves an attempt but gives away a requested challenge or assumes mastery.",
+            "2": "Leaves meaningful learner work; treats scripted claims as claims, not proof of learning."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "The sequence starting at 2 and tripling is 2,6,18,54.",
+          "Starting at 5 gives 5,15,45,135.",
+          "Adding three and multiplying by three define different rules."
+        ],
+        "adaptation_goal": "Recognize demonstrated reasoning and push transfer or justification instead of repeating a solved procedure.",
+        "feedback_timing": "Score each reply only against learner events visible through that step. Later scripted replies are not caused by the model response.",
+        "contextual_inference_limit": "Agent-authored fixed learner script, not an oracle-student replay or human learning measurement."
+      },
+      "source": {
+        "dataset": "allenai/tutormoments-preview",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "moment_id": "balanced_520:0f01be53-9998-5223-b931-9ff6ed42ad20_c0f67d80-f8de-5977-8c5e-50a273e69cd4_30e294b8-d5ab-5a47-80cb-7a7f3e9618db__hum_120_122",
+        "source_dimension": "rigor",
+        "source_cut_turn": 121,
+        "license": "CC-BY-4.0",
+        "adaptation": "Agent-authored synthetic Keating episode; source math situation rewritten with explicit observable cues and new follow-up attempts. No human continuation copied.",
+        "variant": "conversation",
+        "status": "development-pilot-not-human-validated"
+      }
+    },
+    {
+      "id": "tm-sequence-rule-transfer-resume",
+      "title": "Sequence rule transfer / resume",
+      "family": "tm-30e294b8-d5ab-5a47-80cb-7a7f3e9618db",
+      "category": "productive_struggle_rigor",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "The rule is triple the previous number: 2, 6, 18. I chose 18 because 6 times 3 is 18."
+        },
+        {
+          "kind": "message",
+          "text": "I think the next one is 54. Ask me to explain rather than just confirm it. Please record what I am working on so we can continue after I reopen this session."
+        },
+        {
+          "kind": "reopen"
+        },
+        {
+          "kind": "message",
+          "text": "Each term is three times the one before. What changes if we start at 5? Let me work it out."
+        },
+        {
+          "kind": "message",
+          "text": "Starting at 5 gives 5, 15, 45, 135. Can you ask me to compare that with adding 3 each time?"
+        }
+      ],
+      "state_checks": [],
+      "rubric": [
+        {
+          "dimension": "support_calibration",
+          "criteria": {
+            "0": "Overrides the visible learner need with answers or unsupported challenge.",
+            "1": "Partially fits the current need but fails to adjust across turns.",
+            "2": "Recognize demonstrated reasoning and push transfer or justification instead of repeating a solved procedure."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses the misconception or gives incorrect mathematics.",
+            "1": "Mostly correct but leaves the key distinction unresolved.",
+            "2": "Uses correct reasoning and checks learner reasoning against the supplied facts."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "learner_agency",
+          "criteria": {
+            "0": "Does the requested independent work for the learner or claims unobserved success.",
+            "1": "Leaves an attempt but gives away a requested challenge or assumes mastery.",
+            "2": "Leaves meaningful learner work; treats scripted claims as claims, not proof of learning."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "continuity",
+          "criteria": {
+            "0": "Invents saved state or forgets the working task.",
+            "1": "Continues loosely but cannot distinguish saved state from chat claims.",
+            "2": "Uses real session or tool evidence to continue the task; does not invent persistence receipts."
+          },
+          "evidence_steps": [
+            1,
+            3,
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "The sequence starting at 2 and tripling is 2,6,18,54.",
+          "Starting at 5 gives 5,15,45,135.",
+          "Adding three and multiplying by three define different rules."
+        ],
+        "adaptation_goal": "Recognize demonstrated reasoning and push transfer or justification instead of repeating a solved procedure.",
+        "feedback_timing": "Score each reply only against learner events visible through that step. Later scripted replies are not caused by the model response.",
+        "contextual_inference_limit": "Agent-authored fixed learner script, not an oracle-student replay or human learning measurement."
+      },
+      "source": {
+        "dataset": "allenai/tutormoments-preview",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "moment_id": "balanced_520:0f01be53-9998-5223-b931-9ff6ed42ad20_c0f67d80-f8de-5977-8c5e-50a273e69cd4_30e294b8-d5ab-5a47-80cb-7a7f3e9618db__hum_120_122",
+        "source_dimension": "rigor",
+        "source_cut_turn": 121,
+        "license": "CC-BY-4.0",
+        "adaptation": "Agent-authored synthetic Keating episode; source math situation rewritten with explicit observable cues and new follow-up attempts. No human continuation copied.",
+        "variant": "resume",
+        "status": "development-pilot-not-human-validated"
+      }
+    },
+    {
+      "id": "tm-equation-justify-step-conversation",
+      "title": "Equation justify step / conversation",
+      "family": "tm-569a0a00-9d3b-51fe-ae60-f9d37ec9c048",
+      "category": "productive_struggle_rigor",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "I solved x/3 + 8 = 12 and got x = 12."
+        },
+        {
+          "kind": "message",
+          "text": "I subtracted 8 to get x/3 = 4, then multiplied by 3. Ask me why those steps are allowed."
+        },
+        {
+          "kind": "message",
+          "text": "Both sides stay equal when I do the same operation to each. Give me a variation to test that."
+        },
+        {
+          "kind": "message",
+          "text": "For x/3 + 8 = 14, I get x = 18. Substituting gives 6 + 8 = 14. What could I check in a harder equation?"
+        }
+      ],
+      "state_checks": [],
+      "rubric": [
+        {
+          "dimension": "support_calibration",
+          "criteria": {
+            "0": "Overrides the visible learner need with answers or unsupported challenge.",
+            "1": "Partially fits the current need but fails to adjust across turns.",
+            "2": "Move from a correct answer to justification and transfer, preserving opportunities for learner work."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses the misconception or gives incorrect mathematics.",
+            "1": "Mostly correct but leaves the key distinction unresolved.",
+            "2": "Uses correct reasoning and checks learner reasoning against the supplied facts."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "dimension": "learner_agency",
+          "criteria": {
+            "0": "Does the requested independent work for the learner or claims unobserved success.",
+            "1": "Leaves an attempt but gives away a requested challenge or assumes mastery.",
+            "2": "Leaves meaningful learner work; treats scripted claims as claims, not proof of learning."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "x/3 + 8 = 12 has solution x = 12.",
+          "x/3 + 8 = 14 has solution x = 18.",
+          "Equal operations on both sides preserve these equations."
+        ],
+        "adaptation_goal": "Move from a correct answer to justification and transfer, preserving opportunities for learner work.",
+        "feedback_timing": "Score each reply only against learner events visible through that step. Later scripted replies are not caused by the model response.",
+        "contextual_inference_limit": "Agent-authored fixed learner script, not an oracle-student replay or human learning measurement."
+      },
+      "source": {
+        "dataset": "allenai/tutormoments-preview",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "moment_id": "balanced_520:25acdad9-1263-5d75-bbc7-0cb316e7f15e_010c8c6e-a380-5740-aa53-a29a61adf7af_569a0a00-9d3b-51fe-ae60-f9d37ec9c048__hum_256_267",
+        "source_dimension": "rigor",
+        "source_cut_turn": 266,
+        "license": "CC-BY-4.0",
+        "adaptation": "Agent-authored synthetic Keating episode; source math situation rewritten with explicit observable cues and new follow-up attempts. No human continuation copied.",
+        "variant": "conversation",
+        "status": "development-pilot-not-human-validated"
+      }
+    },
+    {
+      "id": "tm-equation-justify-step-resume",
+      "title": "Equation justify step / resume",
+      "family": "tm-569a0a00-9d3b-51fe-ae60-f9d37ec9c048",
+      "category": "productive_struggle_rigor",
+      "steps": [
+        {
+          "kind": "message",
+          "text": "I solved x/3 + 8 = 12 and got x = 12."
+        },
+        {
+          "kind": "message",
+          "text": "I subtracted 8 to get x/3 = 4, then multiplied by 3. Ask me why those steps are allowed. Please record what I am working on so we can continue after I reopen this session."
+        },
+        {
+          "kind": "reopen"
+        },
+        {
+          "kind": "message",
+          "text": "Both sides stay equal when I do the same operation to each. Give me a variation to test that."
+        },
+        {
+          "kind": "message",
+          "text": "For x/3 + 8 = 14, I get x = 18. Substituting gives 6 + 8 = 14. What could I check in a harder equation?"
+        }
+      ],
+      "state_checks": [],
+      "rubric": [
+        {
+          "dimension": "support_calibration",
+          "criteria": {
+            "0": "Overrides the visible learner need with answers or unsupported challenge.",
+            "1": "Partially fits the current need but fails to adjust across turns.",
+            "2": "Move from a correct answer to justification and transfer, preserving opportunities for learner work."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "mathematical_correctness",
+          "criteria": {
+            "0": "Endorses the misconception or gives incorrect mathematics.",
+            "1": "Mostly correct but leaves the key distinction unresolved.",
+            "2": "Uses correct reasoning and checks learner reasoning against the supplied facts."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "learner_agency",
+          "criteria": {
+            "0": "Does the requested independent work for the learner or claims unobserved success.",
+            "1": "Leaves an attempt but gives away a requested challenge or assumes mastery.",
+            "2": "Leaves meaningful learner work; treats scripted claims as claims, not proof of learning."
+          },
+          "evidence_steps": [
+            0,
+            1,
+            3,
+            4
+          ]
+        },
+        {
+          "dimension": "continuity",
+          "criteria": {
+            "0": "Invents saved state or forgets the working task.",
+            "1": "Continues loosely but cannot distinguish saved state from chat claims.",
+            "2": "Uses real session or tool evidence to continue the task; does not invent persistence receipts."
+          },
+          "evidence_steps": [
+            1,
+            3,
+            4
+          ]
+        }
+      ],
+      "reference": {
+        "facts": [
+          "x/3 + 8 = 12 has solution x = 12.",
+          "x/3 + 8 = 14 has solution x = 18.",
+          "Equal operations on both sides preserve these equations."
+        ],
+        "adaptation_goal": "Move from a correct answer to justification and transfer, preserving opportunities for learner work.",
+        "feedback_timing": "Score each reply only against learner events visible through that step. Later scripted replies are not caused by the model response.",
+        "contextual_inference_limit": "Agent-authored fixed learner script, not an oracle-student replay or human learning measurement."
+      },
+      "source": {
+        "dataset": "allenai/tutormoments-preview",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "moment_id": "balanced_520:25acdad9-1263-5d75-bbc7-0cb316e7f15e_010c8c6e-a380-5740-aa53-a29a61adf7af_569a0a00-9d3b-51fe-ae60-f9d37ec9c048__hum_256_267",
+        "source_dimension": "rigor",
+        "source_cut_turn": 266,
+        "license": "CC-BY-4.0",
+        "adaptation": "Agent-authored synthetic Keating episode; source math situation rewritten with explicit observable cues and new follow-up attempts. No human continuation copied.",
+        "variant": "resume",
+        "status": "development-pilot-not-human-validated"
+      }
+    }
+  ]
+}

@@ -6,13 +6,25 @@ plugins {
 group = 'com.diogenesoftoronto.keating'
 version = '1.0.0'
 
+def prepareScoring = tasks.register('prepareLiteRTScoring', Exec) {
+  workingDir projectDir
+  commandLine 'node', '../../../scripts/prepare-litert-scoring.mjs'
+}
+
 android {
   namespace 'com.diogenesoftoronto.keating.litert'
+  ndkVersion rootProject.ext.ndkVersion
   defaultConfig {
     minSdkVersion 26
     versionCode 1
     versionName '1.0.0'
+    externalNativeBuild { cmake { abiFilters 'arm64-v8a', 'x86_64'; cppFlags '-std=c++17' } }
   }
+  externalNativeBuild { cmake { path 'CMakeLists.txt' } }
+}
+
+tasks.configureEach { task ->
+  if (task.name == 'preBuild' || task.name.startsWith('configureCMake') || task.name.startsWith('buildCMake')) task.dependsOn(prepareScoring)
 }
 
 dependencies {

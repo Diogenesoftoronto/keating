@@ -118,6 +118,11 @@ export type SkillProposer = (input: {
   incumbent: TeachingRevision;
   training: EpisodeBenchmark;
   hypotheses: TeachingHypothesis[];
+  /** Training-only diversity context; prior protected evaluation results are excluded. */
+  exploration?: { slot: number; alternatives: Array<{ title: string; instructions: string }>;
+    priorTrials?: Array<{ title: string; instructions: string; trainingDelta: number }>;
+    /** Best actual training score per failure descriptor, under the same parent/cases/execution pin. */
+    elites?: Array<{ title: string; instructions: string; cell: string; score: number; trainingDelta: number }> };
   wiki?: import("./wiki.js").WikiAccess;
   signal: AbortSignal;
 }) => Promise<SkillProposal>;

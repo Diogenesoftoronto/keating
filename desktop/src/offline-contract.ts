@@ -9,6 +9,16 @@ export interface OfflineStatus {
   error?: string;
 }
 export interface OfflineRequest { prompt: string; maxTokens?: number; temperature?: number }
+/** Identity of the verified native weights, selected independently of the tutor. */
+export const OFFLINE_JUDGEMENT_MODEL_ID = "mlboydaisuke/MiniCPM5-2B-LiteRT";
+export interface OfflineLabelRequest {
+  requestId: string;
+  modelId: string;
+  prompt: string;
+  /** Candidate continuations are the decimal indices 0 through labelCount - 1. */
+  labelCount: number;
+}
+export interface OfflineLabelScores { modelId: string; negativeLogLikelihoods: readonly number[] }
 export interface KeatingOfflineBridge {
   status(): Promise<OfflineStatus>;
   download(): Promise<void>;
@@ -16,6 +26,8 @@ export interface KeatingOfflineBridge {
   remove(): Promise<void>;
   generate(request: OfflineRequest): Promise<string>;
   cancelGeneration(): Promise<void>;
+  scoreLabels(request: OfflineLabelRequest): Promise<OfflineLabelScores | null>;
+  cancelScoring(requestId: string): Promise<void>;
 }
 export const OFFLINE_MODEL = {
   file: "MiniCPM5-2B_int4.litertlm",
@@ -23,6 +35,19 @@ export const OFFLINE_MODEL = {
   bytes: 1553670064,
   sha256: "9858563beafbc6d5e0d25fcee3827541515296a9302ed3d088b16a58d4fbe7b8",
 };
+
+export function offlineLabelRequest(value: unknown): OfflineLabelRequest {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid offline scoring request.");
+  const input = value as Record<string, unknown>;
+  if (Object.keys(input).some(key => !["requestId", "modelId", "prompt", "labelCount"].includes(key))
+    || typeof input.requestId !== "string" || !/^[a-zA-Z0-9-]{1,80}$/.test(input.requestId)
+    || input.modelId !== OFFLINE_JUDGEMENT_MODEL_ID
+    || typeof input.prompt !== "string" || !input.prompt.trim() || input.prompt.includes("\0") || Buffer.byteLength(input.prompt) > 24000
+    || typeof input.labelCount !== "number" || !Number.isInteger(input.labelCount) || input.labelCount < 2 || input.labelCount > 64) {
+    throw new Error("Invalid offline scoring request.");
+  }
+  return { requestId: input.requestId, modelId: input.modelId, prompt: input.prompt, labelCount: input.labelCount };
+}
 
 export function offlineRequest(value: unknown): Required<OfflineRequest> {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Invalid offline tutor request.");

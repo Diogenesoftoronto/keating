@@ -19,6 +19,18 @@ function cellKey(descriptors: readonly number[], resolution: number): string {
     .join(",");
 }
 
+/** Best measured quality in each descriptor cell. Predictions never enter this primitive. */
+export function placeMeasuredElite<T extends { score: number }>(
+  cells: Map<string, T | null>, key: string, measured: T,
+): "inserted" | "replaced" | "retained" {
+  if (!key || !Number.isFinite(measured.score)) throw new Error("invalid_measured_elite");
+  const existing = cells.get(key);
+  if (existing && !Number.isFinite(existing.score)) throw new Error("invalid_measured_elite");
+  if (existing && measured.score <= existing.score) return "retained";
+  cells.set(key, measured);
+  return existing ? "replaced" : "inserted";
+}
+
 export function placeInMapElitesGrid(
   grid: MapElitesGrid,
   policy: TeacherPolicy,
@@ -28,12 +40,7 @@ export function placeInMapElitesGrid(
   iteration: number,
 ): boolean {
   const key = cellKey(descriptorValues(policy, grid.descriptors), grid.resolution);
-  const existing = grid.cells.get(key);
-  if (!existing || score > existing.score) {
-    grid.cells.set(key, { policy, weights, score, benchmark, iteration });
-    return !existing;
-  }
-  return false;
+  return placeMeasuredElite(grid.cells, key, { policy, weights, score, benchmark, iteration }) === "inserted";
 }
 
 export function formatMapElitesRun(

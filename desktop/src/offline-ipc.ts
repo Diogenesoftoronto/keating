@@ -16,6 +16,8 @@ export async function registerOfflineIpc(window: BrowserWindow, runtime: Offline
       case "remove": return runtime.remove();
       case "generate": return runtime.generate(request);
       case "cancelGeneration": return runtime.cancelGeneration();
+      case "scoreLabels": return runtime.scoreLabels(request);
+      case "cancelScoring": return runtime.cancelScoring(typeof request === "string" ? request : "");
       default: throw new Error("Unknown offline tutor operation.");
     }
   });

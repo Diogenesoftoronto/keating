@@ -1,5 +1,7 @@
 import { CheckCircle2 } from "lucide-react";
 import { css } from "../../styled-system/css";
+import { questionCheckIdsForUiAction } from "../keating/storage";
+import { QuestionJudgementReview } from "./QuestionJudgementReview";
 import {
 	resolvedLearnerResponseReview,
 	type LearnerResponseEnvelope,
@@ -54,6 +56,9 @@ export function LearnerResponseReview({ response }: { response: LearnerResponseE
 					))}
 				</dl>
 			) : null}
+			{response.kind === "openui-action" && response.payload.kind === "canonical" && (
+				<QuestionJudgementReview recordIds={questionCheckIdsForUiAction(response.payload.action)} />
+			)}
 		</section>
 	);
 }

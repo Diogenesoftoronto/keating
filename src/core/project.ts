@@ -1,3 +1,5 @@
+import { reviewCliDueTopics, readinessReviewMarkdown, type CliReadinessOptions, type CliReadinessReceipt } from "../judgement/cli-readiness.js";
+import { reviewCliLessonPlan, type CliLessonPlanReviewOptions } from "../judgement/cli-lesson-plan.js";
 import { copyFile, readdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 
@@ -17,7 +19,7 @@ import { evolutionToMarkdown, evolvePolicy } from "./evolution.js";
 import { mapElitesEvolve, mapElitesToMarkdown, mapElitesToEvolutionRun } from "./map-elites.js";
 import { buildLessonPlan, lessonPlanToMarkdown } from "./lesson-plan.js";
 import { writeLessonMap } from "./map.js";
-import { evaluatePromptContent, type PromptObjectiveVector, writePromptEvolutionArtifacts } from "./prompt-evolution.js";
+import { writePromptEvolutionArtifacts } from "./prompt-evolution.js";
 import {
   animationsDir,
   benchmarksDir,
@@ -109,6 +111,8 @@ async function observeEvaluation(
     ...(typeof fields.outcome_count === "number" ? { outcome_count: fields.outcome_count } : {}),
     ...(typeof fields.candidate_count === "number" ? { candidate_count: fields.candidate_count } : {}),
     ...(typeof fields.error_category === "string" ? { error_category: fields.error_category } : {}),
+    ...(typeof fields.backend === "string" ? { backend: fields.backend } : {}),
+    ...(typeof fields.calibration_sha256 === "string" ? { calibration_sha256: fields.calibration_sha256 } : {}),
     app_version: OBSERVABILITY_APP_VERSION,
     surface,
   });
@@ -122,13 +126,14 @@ export async function ensureProjectScaffold(cwd: string): Promise<void> {
   await savePolicy(currentPolicyPath(cwd), policy ?? DEFAULT_POLICY);
 }
 
-export async function planTopicArtifact(cwd: string, topicName: string): Promise<{ planPath: string }> {
+export async function planTopicArtifact(cwd: string, topicName: string, reviewOptions?: CliLessonPlanReviewOptions): Promise<{ planPath: string; reviewStatus: string; reviewPath?: string; reviewReceiptPath?: string }> {
   await ensureProjectScaffold(cwd);
   const policy = await loadPolicy(currentPolicyPath(cwd));
   const plan = buildLessonPlan(topicName, policy);
   const planPath = join(plansDir(cwd), `${slugify(topicName)}.md`);
   await writeFile(planPath, lessonPlanToMarkdown(plan), "utf8");
-  return { planPath };
+  try { return { planPath, ...await reviewCliLessonPlan(cwd, planPath, topicName, reviewOptions) }; }
+  catch { return { planPath, reviewStatus: "unavailable" }; }
 }
 
 export async function mapTopicArtifact(
@@ -311,21 +316,40 @@ export async function evolvePromptArtifact(
   cwd: string,
   promptName = "learn",
   surface: EvaluationObservationV1["surface"] = "cli",
-): Promise<{ reportPath: string; evolvedPromptPath: string; bestScore: number; promptPath: string; accepted: boolean }> {
+  options: import("../judgement/cli-prompt-evolution.js").CliPromptEvolutionOptions = {},
+) {
   const startedAt = Date.now();
   await ensureProjectScaffold(cwd);
+  const { createCliPromptEvolutionEvaluator } = await import("../judgement/cli-prompt-evolution.js");
+  const evaluation = createCliPromptEvolutionEvaluator(cwd, options);
+  const receiptPath = join(promptEvolutionDir(cwd), `evolution-${crypto.randomUUID()}-judgement.json`);
+  const saveReceipt = () => writeFile(receiptPath, `${JSON.stringify(evaluation.receipt(), null, 2)}\n`, { mode: 0o600 });
   try {
-    const result = await writePromptEvolutionArtifacts(cwd, promptName);
-    await observeEvaluation("prompt_evolution", "heuristic", "prompt-template", startedAt, surface, {
+    const result = await writePromptEvolutionArtifacts(cwd, promptName, { iterations: options.iterations, generator: options.generator, evaluator: evaluation.evaluator });
+    await saveReceipt();
+    const receipt = evaluation.receipt();
+    const provenance = receipt.source === "proxy"
+      ? `Uncalibrated model estimates of prompt wording (${receipt.backend!.model}).`
+      : `Heuristic keyword baseline throughout this comparison; typed baseline ${receipt.evaluations[0]?.review.judgement.status ?? "not-requested"} (${receipt.evaluations[0]?.review.judgement.reason ?? "disabled"}).`;
+    await writeFile(result.reportPath, `${await readFile(result.reportPath, "utf8")}\n## Judgement provenance\n\n${provenance}\nHuman learning remains unmeasured. This proposal does not activate a teaching revision or replace the source prompt.\nRaw receipt: ${receiptPath}\n`, "utf8");
+    await exportEvaluationObservation({
+      schemaVersion: EVALUATION_OBSERVATION_VERSION, operation: "prompt_evolution", engine: receipt.source === "proxy" ? "typed-judgement" : "heuristic",
+      status: "success", suite: "prompt-template", duration_ms: Math.max(0, Date.now() - startedAt), app_version: OBSERVABILITY_APP_VERSION, surface,
       score: result.bestScore,
-      candidate_count: 1,
+      candidate_count: Math.max(0, receipt.evaluations.length - 1),
+      ...(receipt.source === "proxy" ? { backend: receipt.backend!.backend, model: receipt.backend!.model } : {}),
     });
-    return result;
+    return { ...result, receiptPath, source: receipt.source };
   } catch (error) {
-    await observeEvaluation("prompt_evolution", "heuristic", "prompt-template", startedAt, surface, {
-      status: "error",
+    await saveReceipt();
+    const receipt = evaluation.receipt();
+    await exportEvaluationObservation({
+      schemaVersion: EVALUATION_OBSERVATION_VERSION, operation: "prompt_evolution", engine: receipt.source === "proxy" ? "typed-judgement" : "heuristic",
+      status: "error", suite: "prompt-template", duration_ms: Math.max(0, Date.now() - startedAt), app_version: OBSERVABILITY_APP_VERSION, surface,
       error_category: classifyObservationError(error),
+      ...(receipt.source === "proxy" ? { backend: receipt.backend!.backend, model: receipt.backend!.model } : {}),
     });
+    if (receipt.aborted) throw new Error(`Prompt evolution stopped (${receipt.reason}); no comparison winner was saved. Raw receipt: ${receiptPath}`);
     throw error;
   }
 }
@@ -416,35 +440,33 @@ export async function promptEvalArtifact(
   cwd: string,
   promptContent: string,
   surface: EvaluationObservationV1["surface"] = "cli",
-): Promise<{ reportPath: string; score: number; objectives: PromptObjectiveVector; feedback: string[] }> {
+  options: import("../judgement/cli-prompt-evaluation.js").CliPromptEvaluationOptions = {},
+) {
   const startedAt = Date.now();
   await ensureProjectScaffold(cwd);
-  const slug = `eval-${Date.now().toString(36)}`;
+  const slug = `eval-${Date.now().toString(36)}-${crypto.randomUUID()}`;
   const tmpPath = join(promptEvolutionDir(cwd), `${slug}.md`);
-  await writeFile(tmpPath, promptContent, "utf8");
+  await writeFile(tmpPath, promptContent, { mode: 0o600 });
 
-  const result = await evaluatePromptContent(cwd, tmpPath, promptContent);
-
-  const lines = [
-    `# Prompt Evaluation`,
-    ``,
-    `**Score:** ${result.score.toFixed(2)}/100`,
-    ``,
-    `## Objectives`,
-    ...Object.entries(result.objectives).map(([k, v]) => `- ${k}: ${v.toFixed(2)}`),
-    ``,
-    `## Feedback`,
-    ...(result.feedback.length > 0 ? result.feedback.map((f) => `- ${f}`) : ["- No major issues detected."]),
-  ];
+  const { evaluateCliPrompt } = await import("../judgement/cli-prompt-evaluation.js");
+  const { promptEvaluationMarkdown } = await import("../../shared/pedagogy/prompt-judgement.js");
+  const result = await evaluateCliPrompt(cwd, promptContent, options);
   const reportPath = join(promptEvolutionDir(cwd), `${slug}-eval.md`);
-  await writeFile(reportPath, lines.join("\n"), "utf8");
+  const receiptPath = join(promptEvolutionDir(cwd), `${slug}-judgement.json`);
+  await writeFile(reportPath, promptEvaluationMarkdown(result), { mode: 0o600 });
+  await writeFile(receiptPath, `${JSON.stringify(result, null, 2)}\n`, { mode: 0o600 });
 
-  await observeEvaluation("prompt_eval", "heuristic", "prompt-template", startedAt, surface, {
+  await exportEvaluationObservation({
+    schemaVersion: EVALUATION_OBSERVATION_VERSION,
+    operation: "prompt_eval", engine: result.source === "proxy" ? "typed-judgement" : "heuristic",
+    status: "success", suite: "prompt-template", duration_ms: Math.max(0, Date.now() - startedAt),
+    app_version: OBSERVABILITY_APP_VERSION, surface,
     score: result.score,
-    outcome_count: result.feedback.length,
+    outcome_count: result.source === "proxy" ? 6 : 0,
+    ...(result.source === "proxy" ? { backend: result.judgement.backend!.backend, model: result.judgement.backend!.model } : {}),
   });
 
-  return { reportPath, score: result.score, objectives: result.objectives, feedback: result.feedback };
+  return { ...result, reportPath, receiptPath };
 }
 
 async function loadEngagementContext(cwd: string) {
@@ -506,14 +528,22 @@ export async function timelineArtifact(
 }
 
 export async function dueTopicsArtifact(
-  cwd: string
-): Promise<{ reportPath: string; markdown: string; count: number }> {
+  cwd: string,
+  options: { readiness?: boolean; judgement?: CliReadinessOptions } = {},
+): Promise<{ reportPath: string; markdown: string; count: number; readiness?: CliReadinessReceipt }> {
   const { state, policy } = await loadEngagementContext(cwd);
   const due = dueTopics(state, policy);
-  const markdown = dueTopicsToMarkdown(due);
+  let markdown = dueTopicsToMarkdown(due);
   const reportPath = join(timelineDir(cwd), "due.md");
+  // Ordinary due/session-start calls remain entirely deterministic.
   await writeFile(reportPath, markdown, "utf8");
-  return { reportPath, markdown, count: due.length };
+  if (!options.readiness) return { reportPath, markdown, count: due.length };
+  const readiness = await reviewCliDueTopics(cwd, due, options.judgement);
+  markdown += readinessReviewMarkdown(readiness);
+  // Keep predictions in a separate report; canonical due.md is the baseline.
+  const reviewPath = join(timelineDir(cwd), "due-readiness.md");
+  await writeFile(reviewPath, markdown, { encoding: "utf8", mode: 0o600 });
+  return { reportPath: reviewPath, markdown, count: due.length, readiness };
 }
 
 export async function exportKeatingData(

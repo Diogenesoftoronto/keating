@@ -1,0 +1,125 @@
+{
+  "sourceEpisode": ".keating/native-learning/model-stage-zero/interactive-json-v8/execution/episode/episode.json",
+  "document": {
+    "schemaVersion": 1,
+    "id": "fraction-physical-model",
+    "revision": 0,
+    "lifecycle": "ready",
+    "retention": "ephemeral",
+    "supportedSurfaces": [
+      "web",
+      "desktop",
+      "mobile",
+      "terminal"
+    ],
+    "nodes": [
+      {
+        "type": "question",
+        "id": "compare-slices",
+        "prompt": "You have one chocolate bar divided into 3 equal chunks and another divided into 4 equal chunks. Which single chunk is physically bigger: the one from the 3-piece bar or the one from the 4-piece bar?",
+        "kind": "choice",
+        "choices": [
+          {
+            "id": "3-piece-bigger",
+            "label": "The chunk from the 3-piece bar is bigger"
+          },
+          {
+            "id": "4-piece-bigger",
+            "label": "The chunk from the 4-piece bar is bigger"
+          },
+          {
+            "id": "same-size",
+            "label": "They are the same size"
+          }
+        ],
+        "allowText": true,
+        "hint": "If you keep taking away slices from a whole, do the remaining pieces get smaller or bigger?"
+      }
+    ],
+    "createdAt": "2026-09-14T23:09:20.000Z",
+    "updatedAt": "2026-09-14T23:09:20.000Z"
+  },
+  "invalidDocument": {
+    "schemaVersion": 1,
+    "id": "fraction-intuition-check",
+    "revision": 0,
+    "lifecycle": "ready",
+    "retention": "ephemeral",
+    "supportedSurfaces": [
+      "web",
+      "desktop",
+      "mobile",
+      "terminal"
+    ],
+    "nodes": [
+      {
+        "type": "question",
+        "id": "equal-parts",
+        "prompt": "Imagine a single pizza. If you cut it into 3 equal slices and take 1 third, how does the size of that slice compare to a slice from a pizza cut into 4 equal parts (1 fourth)?",
+        "kind": "choice",
+        "choices": [
+          {
+            "id": "third-larger",
+            "label": "A third is a larger piece than a fourth"
+          },
+          {
+            "id": "fourth-larger",
+            "label": "A fourth is a larger piece than a third"
+          },
+          {
+            "id": "same-size",
+            "label": "They are the same size",
+            "allowText": true,
+            "hint": "Think about which pizza needs to be cut more times to make the pieces."
+          }
+        ]
+      }
+    ],
+    "createdAt": "2026-09-14T23:08:56.923Z",
+    "updatedAt": "2026-09-14T23:08:56.923Z"
+  },
+  "intent": {
+    "kind": "ui_action",
+    "actionId": "fraction-physical-model:0:compare-slices:choose-option",
+    "payload": {
+      "optionIds": [
+        "3-piece-bigger"
+      ]
+    }
+  },
+  "retryableJournal": {
+    "kind": "keating-ui-action-journal",
+    "schemaVersion": 1,
+    "documentId": "fraction-physical-model",
+    "receipts": [
+      {
+        "schemaVersion": 1,
+        "action": {
+          "schemaVersion": 1,
+          "type": "choose-option",
+          "documentId": "fraction-physical-model",
+          "documentRevision": 0,
+          "nodeId": "compare-slices",
+          "idempotencyKey": "authored-fractions-interactive-json-v8-authored-fractions-interactive-json-v8-decision-1",
+          "optionIds": [
+            "3-piece-bigger"
+          ]
+        },
+        "actionFingerprint": "{\"documentId\":\"fraction-physical-model\",\"documentRevision\":0,\"idempotencyKey\":\"authored-fractions-interactive-json-v8-authored-fractions-interactive-json-v8-decision-1\",\"nodeId\":\"compare-slices\",\"optionIds\":[\"3-piece-bigger\"],\"schemaVersion\":1,\"type\":\"choose-option\"}",
+        "state": "retryable",
+        "createdAt": "2026-09-14T23:09:17.497Z",
+        "updatedAt": "2026-09-14T23:09:17.515Z",
+        "result": {
+          "schemaVersion": 1,
+          "documentId": "fraction-physical-model",
+          "sourceRevision": 0,
+          "actionIdempotencyKey": "authored-fractions-interactive-json-v8-authored-fractions-interactive-json-v8-decision-1",
+          "status": "retryable",
+          "documentLifecycle": "ready",
+          "message": "The action response could not be verified. Your entered work is preserved for retry.",
+          "retryAfterMs": 0
+        }
+      }
+    ]
+  }
+}

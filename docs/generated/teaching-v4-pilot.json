@@ -1,0 +1,60 @@
+{
+  "benchmark_id": "keating-teaching-v4",
+  "manifest_sha256": "0633813d1e7369de0853f0377146d5edc8c93735b2b11d97a40ca741d50653fc",
+  "plan_hash": "2f9dbe33b5c5e288179ff6d79f1a8a51d9922ee00e2c9cf8138003cc8b945787",
+  "case_count": 2,
+  "family_count": 1,
+  "checkpoints": 2,
+  "rows": [
+    {
+      "case_id": "help-hint-then-flip",
+      "arm": "F-only",
+      "completed_learner_turns": 1,
+      "planned_learner_turns": 6,
+      "runtime_status": "failed",
+      "error_code": "harness_provider_failure",
+      "result_sha256": "930c5b4f5dbb75f98af740df1ba76d748a58c32a6b5ba6437abdff412b4bb7e1",
+      "quality": null,
+      "quality_status": "independent_review_separate"
+    },
+    {
+      "case_id": "help-hint-then-flip",
+      "arm": "F+S",
+      "completed_learner_turns": 6,
+      "planned_learner_turns": 6,
+      "runtime_status": "completed",
+      "error_code": null,
+      "result_sha256": "21606eb62114c864914ca1beeb88ef464227f6197713a675d5704f40a329959e",
+      "quality": null,
+      "quality_status": "independent_review_separate"
+    },
+    {
+      "case_id": "help-worked-then-flip",
+      "arm": "F+S",
+      "completed_learner_turns": 0,
+      "planned_learner_turns": 6,
+      "runtime_status": "failed",
+      "error_code": "harness_provider_call_limit",
+      "result_sha256": "3e8e01bce4739832dfd4aac898aeed407224a58d71bde43c38f87413fc767942",
+      "quality": null,
+      "quality_status": "independent_review_separate"
+    },
+    {
+      "case_id": "help-worked-then-flip",
+      "arm": "F-only",
+      "completed_learner_turns": 0,
+      "planned_learner_turns": 6,
+      "runtime_status": "failed",
+      "error_code": "harness_provider_failure",
+      "result_sha256": "b0f4ce5bc69cbb0149860893b103ded55e9e556a31af4aa31a1825ea4b3a1a16",
+      "quality": null,
+      "quality_status": "independent_review_separate"
+    }
+  ],
+  "scope": "One context-flip family, one run per case/checkpoint, no fixed sampler seed.",
+  "no_paired_quality_estimate": true,
+  "failure_diagnosis": {
+    "F-only": "Malformed generated completion halted the bridge; the later case made no new Tinker sample.",
+    "F+S": "Hint-first completed; worked-first exhausted the 8-call limit in tool handling."
+  }
+}

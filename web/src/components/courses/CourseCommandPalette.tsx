@@ -15,12 +15,13 @@ import {
 import { css, cx } from "../../../styled-system/css";
 import {
   COURSE_SEARCH_KIND_LABEL,
-  searchCourse,
   type CourseSearchKind,
   type CourseSearchResult,
 } from "../../courses/course-search";
 import { allCourseLessons, type Course } from "../../courses/contracts";
 import { courseLabelClass } from "./course-ui";
+import { prepareCourseSearch, createCourseSearchJudgementSession, courseSearchSettingsKey, COURSE_RERANK_LIMIT, type CourseSearchView } from "../../courses/course-search-judgement";
+import { loadJudgementModelSettings, subscribeJudgementModelSettings } from "../../keating/judgement-model";
 
 const KIND_ICON: Record<CourseSearchKind, typeof BookOpen> = {
   lesson: BookOpen,
@@ -70,10 +71,22 @@ export function CourseCommandPalette({
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
+  const [judgementSettings, setJudgementSettings] = useState(loadJudgementModelSettings);
+  const [judgementView, setJudgementView] = useState<CourseSearchView | null>(null);
+  const judgementSession = useMemo(() => createCourseSearchJudgementSession(setJudgementView), []);
+  const searchInput = useMemo(() => prepareCourseSearch(course, query), [course, query]);
+  const currentJudgement = judgementView?.inputKey === searchInput.key
+    && judgementView.settingsKey === courseSearchSettingsKey(judgementSettings) ? judgementView : null;
+
+  useEffect(() => subscribeJudgementModelSettings(setJudgementSettings), []);
+  useEffect(() => {
+    judgementSession.update(searchInput, judgementSettings);
+    return () => judgementSession.cancel();
+  }, [judgementSession, searchInput, judgementSettings]);
 
   const results = useMemo(() => {
     const trimmed = query.trim();
-    if (trimmed) return searchCourse(course, trimmed, { limit: 24 });
+    if (trimmed) return currentJudgement?.review?.results ?? searchInput.results;
     return allCourseLessons(course)
       .slice(0, 8)
       .map<CourseSearchResult>((lesson) => ({
@@ -85,14 +98,14 @@ export function CourseCommandPalette({
         lessonId: lesson.id,
         score: 0,
       }));
-  }, [course, query]);
+  }, [course, query, searchInput, currentJudgement]);
 
   const askIndex = results.length;
   const optionCount = results.length + (query.trim() ? 1 : 0);
 
   useEffect(() => {
     setActive(0);
-  }, [query]);
+  }, [query, currentJudgement?.review]);
 
   useEffect(() => {
     listRef.current
@@ -198,6 +211,31 @@ export function CourseCommandPalette({
             ESC
           </kbd>
         </div>
+        {query.trim() && searchInput.results.length > 1 ? (
+          <div className={css({ px: "0.85rem", py: "0.5rem", borderBottom: "1px solid var(--ink-soft)", fontSize: "0.75rem" })}>
+            <div className={css({ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" })}>
+              <button type="button"
+                disabled={judgementSettings.backend === "off" || currentJudgement?.pending === true || !searchInput.request}
+                className={css({ textDecoration: "underline", cursor: "pointer", _disabled: { opacity: 0.5, cursor: "default" } })}
+                onClick={() => { judgementSession.update(searchInput, judgementSettings); void judgementSession.suggest(); }}>
+                {currentJudgement?.pending ? "Checking relevance…" : "Suggest relevance order"}
+              </button>
+              {currentJudgement?.review?.status === "suggested" ? (
+                <button type="button" className={css({ textDecoration: "underline", cursor: "pointer" })}
+                  onClick={() => judgementSession.update(searchInput, judgementSettings)}>Use keyword order</button>
+              ) : null}
+            </div>
+            <p role="status" className={css({ mt: "0.3rem", color: "var(--ink-soft)" })}>
+              {currentJudgement?.review?.status === "suggested"
+                ? `Uncalibrated suggestion from ${currentJudgement.review.backend?.model}. `
+                : currentJudgement?.pending ? "Keyword results stay available. "
+                  : currentJudgement?.review?.status === "baseline" ? "No suggestion available; keyword order retained. "
+                    : judgementSettings.backend === "off" ? "Judgement is off in Settings. "
+                      : !searchInput.request ? "Keyword order retained for this shortlist. " : "Optional model suggestion. "}
+              {searchInput.candidates.length} of the first {Math.min(COURSE_RERANK_LIMIT, searchInput.results.length)} matches eligible for review, using course excerpts. Other matches keep their keyword positions. Linked documents are not fetched.
+            </p>
+          </div>
+        ) : null}
         <div ref={listRef} className={css({ overflowY: "auto" })}>
           <p className={cx(courseLabelClass, css({ px: "0.85rem", pt: "0.7rem" }))}>
             {query.trim()

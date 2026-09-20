@@ -16,6 +16,7 @@ import {
 	type SessionDebugEvent,
 } from "../../lib/session-debug";
 import { Toggle } from "../Toggle";
+import { JudgementDiagnostics } from "../JudgementDiagnostics";
 import { CopyDiagnosticButton } from "./CopyDiagnosticButton";
 
 const stackClass = css({ display: "flex", flexDirection: "column", gap: "1.5rem" });
@@ -254,5 +255,5 @@ function SanitizedDiagnostics() {
 }
 
 export function DiagnosticsTab() {
-	return <div className={stackClass}><SessionInspector /><SanitizedDiagnostics /></div>;
+	return <div className={stackClass}><JudgementDiagnostics controls /><SessionInspector /><SanitizedDiagnostics /></div>;
 }

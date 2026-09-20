@@ -183,13 +183,17 @@ export function RubricProposal({ proposal, onApply, onDismiss, busy }: RubricPro
 			<div className={groupHead}>
 				<span className={eyebrow()}>Proposed scoring</span>
 				<div className={proposalActions}>
-					<button type="button" className={textButton} disabled={busy} onClick={() => onApply(proposal)}>Apply</button>
+					<button type="button" className={textButton} disabled={busy || proposal.ratings.length === 0} onClick={() => onApply(proposal)}>Apply</button>
 					<button type="button" className={ghostButton} aria-label="Dismiss proposed scoring" onClick={onDismiss}>
 						<KeatingIcon icon={reviewIcon.dismiss} size={14} />
 					</button>
 				</div>
 			</div>
 
+			{proposal.judgement ? <p className={quiet}>
+				{proposal.judgement.calibrated ? "Calibrated model estimate" : "Uncalibrated model estimate"}
+				{` · ${proposal.judgement.backend.backend}/${proposal.judgement.backend.model}. Review the cited evidence before applying.`}
+			</p> : null}
 			<dl className={css({ display: "grid", gap: "0.3rem" })}>
 				{PEDAGOGY_RUBRIC_KEYS.map((key) => {
 					const rating = byKey.get(key);

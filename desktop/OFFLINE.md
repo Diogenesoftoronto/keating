@@ -36,8 +36,9 @@ remove rejects: install the standard edition to reclaim bundled-weight storage.
 Downloaded weights are removable while inference is idle.
 
 Build requirements: CMake >=3.20 and a native C compiler on a matching runner.
-Verified archive targets: Linux x64/arm64, macOS arm64, Windows x64. macOS Intel,
-Windows arm64, universal and cross-platform builds fail explicitly. Windows uses
+Verified archive targets: Linux x64/arm64, macOS arm64, Windows x64. Linux x64 can
+also cross-build the Windows x64 installer as described below. macOS Intel,
+Windows arm64, universal and other cross-platform builds fail explicitly. Windows uses
 the static compiler runtime; the official DLL imports Windows system libraries.
 macOS uses system frameworks and ships the SDK's advertised install-name filename
 `liblitert-lm.so` despite its source `.dylib` extension. Linux needs the Vulkan loader
@@ -46,12 +47,43 @@ The SDK requires glibc >=2.27; the final helper's minimum follows the compiler
 runner (the local Fedora smoke binary requires glibc 2.34). Build release helpers
 on the oldest supported distribution. SDK license notices are bundled.
 
+### Build Windows x64 from Linux x64
+
+After the existing desktop main/web build, install Zig and Wine with Windows x64
+support on the build host and put both on `PATH`. CMake is still required to
+extract the pinned SDK archive. This path was packaged with Zig 0.16.0 and Wine
+11.0. From the repository root:
+
+```sh
+rtk proxy env WINEPREFIX="$PWD/.keating/tmp/wine-windows-release" CSC_IDENTITY_AUTO_DISCOVERY=false bun run --cwd desktop dist:windows --publish never
+```
+
+The packaging hook compiles `runner.c` and `label-scorer.c` for
+`x86_64-windows-gnu`, links the official SDK's Windows import library, and stages
+`keating-offline.exe` with its pinned `litert-lm.dll`. It runs the helper's
+`--probe` through Wine and fails packaging if the DLL cannot load. The standard
+installer keeps tutor model weights as an optional download. Native Windows
+builds continue to use CMake and the native compiler.
+
+`KEATING_ZIG` selects the Zig executable for cross-compilation; `KEATING_WINE`
+selects the Wine executable for the helper probe. Each accepts an executable
+path, not a shell command or extra arguments, and defaults to `zig` or `wine`.
+Wine must also remain on `PATH` for electron-builder's Windows packaging tools.
+`WINEPREFIX` can isolate their state from a personal Wine installation.
+
+The output is `desktop/release/Keating-<version>-windows-x64-setup.exe`. Without a
+configured signing identity it is unsigned. Packaging and the Wine dependency
+probe do not establish native Windows installation or UI behavior; those remain
+separate checks. Staging replaces `desktop/dist/offline/` for the selected target,
+so restage before packaging another platform; existing release artifacts remain
+untouched.
+
 Local evidence: official SDK archive SHA-256 checked, Linux x64 build/probe passed,
 actual MiniCPM arithmetic and multi-turn name recall passed, cancellation followed
 by generation passed, full offline resources staged. The first arithmetic turn
 took 14.67 seconds including engine initialization. Twelve lifecycle/contract tests
 and fifteen existing native runtime tests passed; desktop TypeScript passed.
-macOS/Windows execution, signed installer installation, and packaged Electron UI
+Native macOS/Windows execution, signed installer installation, and packaged Electron UI
 interaction have not been verified here. Staging is not an installer release.
 
 Reproduce after compiling desktop sources and staging the helper:

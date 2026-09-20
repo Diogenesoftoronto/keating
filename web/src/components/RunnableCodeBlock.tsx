@@ -16,6 +16,9 @@ import {
 	type HostedNotebookRun,
 } from "../notorganic-provider/notebook";
 import { browserExecutionSignals, chooseCodeExecutor } from "../keating/execution-policy";
+import { isStrudelBlock } from "./labs/strudel-detect";
+import { MusicLab } from "./MusicLab";
+import type { UiMusicLabNode } from "@keating/learner-contracts";
 
 const RUNNABLE_LANGUAGES = new Set([
 	"js",
@@ -130,6 +133,17 @@ export function RunnableCodeBlock({
 	const streamingCode = useContext(StreamingCodeContext);
 	const streaming = streamingCode !== null && streamingCode === code;
 
+	// Strudel patterns are JavaScript-shaped but have no Node runtime. Route them
+	// to the isolated audio sandbox instead of failing inside NodePod.
+	const strudel = !streaming && isStrudelBlock(language, editableCode);
+	const musicNode = useMemo<UiMusicLabNode>(() => ({
+		type: "music-lab",
+		id: "chat-strudel-snippet",
+		title: "Strudel",
+		code: editableCode,
+		visualization: "pianoroll",
+	}), [editableCode]);
+
 	// While the model writes, the code prop grows every token; mirror it into the
 	// editor buffer so the learner sees the finished file when it settles. Once
 	// they start editing (dirty), their text wins.
@@ -140,6 +154,7 @@ export function RunnableCodeBlock({
 
 	const status = useMemo(() => {
 		if (streaming) return "writing…";
+		if (strudel) return "Runs in the Strudel sandbox";
 		if (running) return hosted ? "Running in Cloudflare" : "Running on this device";
 		if (error) return "Run failed";
 		if (hostedResult) return hostedResult.status === "succeeded" ? "Finished" : hostedResult.status;
@@ -152,7 +167,7 @@ export function RunnableCodeBlock({
 				: "Hosted runs unavailable";
 		}
 		return runnable ? (hosted ? "Runs in Cloudflare" : "Runs on this device") : "Not runnable";
-	}, [error, executor, hosted, hostedResult, language, result, runnable, running, streaming]);
+	}, [error, executor, hosted, hostedResult, language, result, runnable, running, streaming, strudel]);
 
 	const run = useCallback(async () => {
 		if (!runnable || running) return;
@@ -217,7 +232,7 @@ export function RunnableCodeBlock({
 				<div className={css({ display: "flex", minWidth: 0, alignItems: "center", gap: "0.5rem" })}>
 					<Terminal size={12} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
 					<span className={css({ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)" })}>
-						{language || "text"}
+						{strudel ? "Strudel" : language || "text"}
 					</span>
 					<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "11px", color: "var(--muted-foreground)" })}>
 						{streaming && <span className={css({ animation: "pulse 1.4s ease-in-out infinite", color: "var(--primary)" })}>●</span>}
@@ -245,16 +260,18 @@ export function RunnableCodeBlock({
 						{copied ? <Check size={11} /> : <Copy size={11} />}
 						{copied ? "Copied" : "Copy"}
 					</button>
-					<button
-						type="button"
-						onClick={run}
-						disabled={!runnable || running || streaming}
-						title={runnable ? (hosted ? "Run in the Cloudflare CPU sandbox" : "Run code on this device") : isRunnableCodeLanguage(language) ? "This language needs a network connection" : "Only JavaScript, TypeScript, and Python blocks can run here"}
-						className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid var(--primary)", backgroundColor: "var(--primary)", paddingInline: "0.5rem", paddingBlock: "0.25rem", fontSize: "11px", fontWeight: 500, color: "var(--primary-foreground)", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, black)" }, _disabled: { cursor: "not-allowed", borderColor: "var(--border)", backgroundColor: "var(--muted)", color: "var(--muted-foreground)" } })}
-					>
-						{running ? <Spinner size={11} /> : <Play size={11} />}
-						Run
-					</button>
+					{!strudel && (
+						<button
+							type="button"
+							onClick={run}
+							disabled={!runnable || running || streaming}
+							title={runnable ? (hosted ? "Run in the Cloudflare CPU sandbox" : "Run code on this device") : isRunnableCodeLanguage(language) ? "This language needs a network connection" : "Only JavaScript, TypeScript, and Python blocks can run here"}
+							className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid var(--primary)", backgroundColor: "var(--primary)", paddingInline: "0.5rem", paddingBlock: "0.25rem", fontSize: "11px", fontWeight: 500, color: "var(--primary-foreground)", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, black)" }, _disabled: { cursor: "not-allowed", borderColor: "var(--border)", backgroundColor: "var(--muted)", color: "var(--muted-foreground)" } })}
+						>
+							{running ? <Spinner size={11} /> : <Play size={11} />}
+							Run
+						</button>
+					)}
 				</div>
 			</div>
 
@@ -296,6 +313,8 @@ export function RunnableCodeBlock({
 					)}
 				</div>
 			)}
+
+			{strudel && !editing && <MusicLab node={musicNode} />}
 
 			{(result || hostedResult || error) && (
 				<div className={css({ display: "grid", gap: "0.375rem", borderTop: "1px solid var(--border)", paddingTop: "0.5rem" })}>

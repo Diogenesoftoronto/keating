@@ -1,6 +1,7 @@
 import {
 	TRAJECTORY_REVIEW_SCHEMA_VERSION,
 	createReviewRecord,
+	isRubricJudgementRecord,
 	type ReviewGenerationCandidate,
 	type ReviewModelPool,
 	type ReviewArtifactSnapshot,
@@ -89,6 +90,9 @@ export class TrajectoryReviewStore {
 	}
 
 	async saveReview(review: TrajectoryReview, now = Date.now()): Promise<TrajectoryReview> {
+		if (review.rubricJudgement !== undefined && !isRubricJudgementRecord(review.rubricJudgement)) {
+			throw new Error("Invalid rubric judgement provenance.");
+		}
 		const database = await this.database();
 		const transaction = database.transaction(STORES.REVIEWS, "readwrite");
 		const done = transactionDone(transaction);

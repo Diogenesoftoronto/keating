@@ -1,3 +1,4 @@
+import { isSha256Hex, type JudgementBackendKey } from "@keating/learner-contracts";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { Api, Model } from "@earendil-works/pi-ai/compat";
 
@@ -168,6 +169,59 @@ export interface TrajectoryAnnotation {
 	updatedAt: number;
 }
 
+/** Historical model proposal accepted by a reviewer; never observed learner evidence.
+ * Later manual edits to review.ratings do not rewrite this original estimate. */
+export interface RubricJudgementRecord {
+	source: "proxy";
+	backend: JudgementBackendKey;
+	calibrated: boolean;
+	questionDigests: Record<string, string>;
+	transcriptFingerprint: string;
+	generatedAt: number;
+	ratings: Array<{ key: PedagogyRubricKey; rating: ReviewRating; confidence: number;
+		evidenceConfidence: number; messageId: string; anchor: TextAnchor }>;
+	abstentions: Array<{ key: PedagogyRubricKey; reason: string }>;
+}
+
+export function isRubricJudgementRecord(value: unknown): value is RubricJudgementRecord {
+	if (!value || typeof value !== "object") return false;
+	const record = value as RubricJudgementRecord;
+	const backend = record.backend;
+	const probability = (n: unknown) => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 1;
+	if (record.source !== "proxy" || !backend || !["local", "system-one", "fixture"].includes(backend.backend)
+		|| typeof backend.model !== "string" || !backend.model.trim() || backend.model === "judgement" || backend.model.endsWith("-latest")
+		|| (backend.calibrationSha256 !== null && !isSha256Hex(backend.calibrationSha256))
+		|| record.calibrated !== (backend.calibrationSha256 !== null)
+		|| typeof record.transcriptFingerprint !== "string" || !record.transcriptFingerprint
+		|| !Number.isFinite(record.generatedAt) || record.generatedAt < 0
+		|| !record.questionDigests || typeof record.questionDigests !== "object" || Array.isArray(record.questionDigests)
+		|| !Array.isArray(record.ratings) || record.ratings.length < 1 || record.ratings.length > 6
+		|| !Array.isArray(record.abstentions) || record.abstentions.length > 6) return false;
+	const keys = new Set<string>();
+	for (const rating of record.ratings) {
+		if (!rating || !PEDAGOGY_RUBRIC_KEYS.includes(rating.key) || keys.has(rating.key)
+			|| !Number.isInteger(rating.rating) || rating.rating < 1 || rating.rating > 5
+			|| !probability(rating.confidence) || !probability(rating.evidenceConfidence)
+			|| typeof rating.messageId !== "string" || !rating.messageId) return false;
+		keys.add(rating.key);
+		const anchor = rating.anchor;
+		if (!anchor || !Number.isInteger(anchor.start) || anchor.start < 0 || !Number.isInteger(anchor.end)
+			|| typeof anchor.quote !== "string" || !anchor.quote || anchor.end - anchor.start !== anchor.quote.length
+			|| typeof anchor.prefix !== "string" || typeof anchor.suffix !== "string"
+			|| typeof anchor.contentFingerprint !== "string" || !anchor.contentFingerprint) return false;
+		for (const prefix of ["rubric.", "evidence."]) {
+			if (typeof record.questionDigests[prefix + rating.key] !== "string" || !record.questionDigests[prefix + rating.key]) return false;
+		}
+	}
+	for (const entry of record.abstentions) {
+		if (!entry || !PEDAGOGY_RUBRIC_KEYS.includes(entry.key) || keys.has(entry.key) || typeof entry.reason !== "string" || !entry.reason) return false;
+		keys.add(entry.key);
+	}
+	return keys.size === PEDAGOGY_RUBRIC_KEYS.length
+		&& Object.entries(record.questionDigests).length === 14
+		&& Object.values(record.questionDigests).every(value => typeof value === "string" && value.length > 0);
+}
+
 export interface TrajectoryReview {
 	schemaVersion: typeof TRAJECTORY_REVIEW_SCHEMA_VERSION;
 	id: string;
@@ -175,6 +229,7 @@ export interface TrajectoryReview {
 	status: ReviewStatus;
 	verdict: ReviewVerdict;
 	ratings: Partial<Record<PedagogyRubricKey, ReviewRating>>;
+	rubricJudgement?: RubricJudgementRecord;
 	overallRating?: ReviewRating;
 	summary?: string;
 	selectedCandidateIds: Record<string, string>;

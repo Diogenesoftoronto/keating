@@ -40,10 +40,10 @@ export const selfEvaluationTools = [
   keatingToolMaker(
     "due",
     "due",
-    "Show topics that are due for review based on spaced repetition. Use at session start to proactively suggest review.",
-    {},
-    async () => {
-      const artifact = await dueTopicsArtifact(getCwd());
+    "Show topics due for spaced review. Optional readiness review sends bounded saved quiz work only when KEATING_READINESS_JUDGE=notorganic is configured; model estimates do not change due dates or mastery.",
+    { readiness: { type: "boolean", description: "Explicitly request an independent prerequisite/readiness review; default false" } },
+    async (params, _ctx, signal) => {
+      const artifact = await dueTopicsArtifact(getCwd(), { readiness: params.readiness === true, judgement: { signal } });
       return {
         content: [{ type: "text", text: artifact.markdown }],
         details: artifact

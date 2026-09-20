@@ -153,6 +153,8 @@ describe("session-start hooks", () => {
 		expect(context).toContain("card-unreviewed");
 		expect(context).toContain('"priority":"focus"');
 		expect(context).toContain("Never change or misrepresent the evidence-based flashcard due dates");
+		expect(context).toContain("Stored goals are standing plans from earlier work, not the subject of this session");
+		expect(context).toContain("Follow what the learner raises now");
 		expect(context).toContain('"ungradedQuizQuestionIds":["quiz-oldest:quiz-open-ended"]');
 		expect(context).toContain('"ungradedQuestionCheckIds":["check-pending"]');
 		expect(context).toContain('"cardsWithoutReviewEvidence":["deck-1:card-unreviewed"]');

@@ -42,8 +42,19 @@ function attributesFor(observation: EvaluationObservationV1): Record<string, str
   }
   if (observation.provider) attributes["llm.provider"] = observation.provider;
   if (observation.model) attributes["llm.model_name"] = observation.model;
+  if (observation.backend) attributes["keating.evidence.backend"] = observation.backend;
+  if (observation.calibration_sha256) {
+    attributes["keating.evidence.calibration_sha256"] = observation.calibration_sha256;
+  }
   if (observation.error_category) attributes["keating.error.category"] = observation.error_category;
   return attributes;
+}
+
+/** Span attributes for one evaluation observation; exported so unit tests can pin the EVALUATOR contract. */
+export function evaluationSpanAttributes(
+  observation: EvaluationObservationV1,
+): Record<string, string | number | boolean> {
+  return attributesFor(observation);
 }
 
 interface OtlpSpanSpec {

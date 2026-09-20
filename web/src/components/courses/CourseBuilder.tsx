@@ -1,5 +1,6 @@
 import { Select } from "../Select";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { CourseJudgementPanel } from "./CourseJudgementPanel";
 import {
   ArrowDown,
   ArrowUp,
@@ -2440,6 +2441,7 @@ export function CourseBuilder({
           );
         })}
       </nav>
+      {canEdit && <CourseJudgementPanel snapshot={snapshot} />}
       {section === "details" && canEdit ? (
         <DetailsSection snapshot={snapshot} saving={saving} mutate={mutate} />
       ) : null}

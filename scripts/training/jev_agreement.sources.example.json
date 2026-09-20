@@ -1,0 +1,8 @@
+{
+  "sources": [
+    {"suite": "teaching-v1", "path": ".keating/outputs/training/benchmark-v1-core-20260907/base.json"},
+    {"suite": "teaching-v2", "path": ".keating/outputs/training/benchmark-v2-full-20260907/gpt-5-6-luna/results.json"},
+    {"suite": "teaching-v3", "path": ".keating/outputs/training/benchmark-v3-neural-pilot-frozen"},
+    {"suite": "teaching-v4", "path": ".keating/native-learning/v4-offline-run-v1"}
+  ]
+}

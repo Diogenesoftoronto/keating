@@ -1,0 +1,29 @@
+{
+  "buildFiles": [
+    "/home/diogenes/Projects/keating/mobile/modules/keating-litert/android/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/nix/store/gq4cp3va00dlcdmvc6pg7djbkfaz0hz7-androidsdk/libexec/android-sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/home/diogenes/Projects/keating/mobile/modules/keating-litert/android/.cxx/RelWithDebInfo/4o271mt2/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/nix/store/gq4cp3va00dlcdmvc6pg7djbkfaz0hz7-androidsdk/libexec/android-sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/home/diogenes/Projects/keating/mobile/modules/keating-litert/android/.cxx/RelWithDebInfo/4o271mt2/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "keating_label_scorer::@6890427a1f51a3e7e1df": {
+      "artifactName": "keating_label_scorer",
+      "abi": "x86_64",
+      "output": "/home/diogenes/Projects/keating/mobile/modules/keating-litert/android/build/intermediates/cxx/RelWithDebInfo/4o271mt2/obj/x86_64/libkeating_label_scorer.so",
+      "runtimeFiles": [
+        "/home/diogenes/Projects/keating/mobile/modules/keating-litert/.generated/0.16.0/lib/android_x86_64/liblitert-lm.so"
+      ]
+    }
+  }
+}

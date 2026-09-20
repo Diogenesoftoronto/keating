@@ -47,7 +47,7 @@
 .pricing-page .pricing-faq details p { margin: 0 0 20px; font-size: 12px; line-height: 1.85; color: var(--ink-soft); }
 .pricing-page .pricing-main :is(a, button, summary):focus-visible { outline: 3px solid var(--accent-dim); outline-offset: 4px; }
 @media (max-width: 800px) {
-  .pricing-page .pricing-main { width: calc(100% - 48px); padding-block: 40px 56px; }
+  .pricing-page.retro-page .pricing-main { width: min(640px, calc(100% - 48px)); padding-block: 40px 56px; }
   .pricing-page .pricing-own-key { grid-template-columns: minmax(0, 1fr) auto; gap: 24px; padding: 24px; }
   .pricing-page .pricing-own-key > .pricing-button { grid-column: 1 / -1; justify-self: start; }
   .pricing-page .pricing-section-heading { display: block; }
@@ -57,7 +57,7 @@
   .pricing-page .pricing-faq { grid-template-columns: 1fr; gap: 24px; }
 }
 @media (max-width: 580px) {
-  .pricing-page .pricing-main { width: calc(100% - 40px); }
+  .pricing-page.retro-page .pricing-main { width: calc(100% - 40px); }
   .pricing-page .pricing-heading { margin-bottom: 28px; }
   .pricing-page .pricing-own-key { padding: 20px; gap: 20px; }
   .pricing-page .pricing-own-key h2 { font-size: 22px; }

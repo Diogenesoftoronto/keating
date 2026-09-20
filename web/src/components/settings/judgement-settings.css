@@ -1,0 +1,16 @@
+.judgement-settings { display: flex; flex-direction: column; gap: .875rem; scroll-margin-top: 5rem; color: var(--foreground); font-size: .875rem; }
+.judgement-settings h3 { font-size: .875rem; font-weight: 600; margin: 0 0 .5rem; }
+.judgement-settings p { margin: 0; max-width: 65ch; line-height: 1.5; }
+.judgement-settings__field { display: flex; flex-direction: column; gap: .375rem; max-width: 30rem; font-weight: 500; }
+.judgement-settings select, .judgement-settings input { width: 100%; min-width: 0; min-height: 2.75rem; padding: .5rem .625rem; border: 1px solid var(--border); border-radius: .375rem; font: inherit; color: var(--foreground); background: var(--background); }
+.judgement-settings__account { display: flex; flex-direction: column; align-items: flex-start; gap: .75rem; }
+.judgement-settings button { min-height: 2.75rem; padding: .5rem .875rem; border: 1px solid var(--border); border-radius: .375rem; color: var(--foreground); background: var(--background); font: inherit; cursor: pointer; }
+.judgement-settings button:hover:not(:disabled) { background: var(--accent); color: var(--accent-foreground); }
+.judgement-settings :is(button, select, input):focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.judgement-settings :is(button, select, input):disabled { opacity: .6; cursor: default; }
+.judgement-settings [role="alert"] { font-weight: 500; }
+
+.judgement-settings summary { cursor: pointer; font-weight: 500; min-height: 2.75rem; display: list-item; align-content: center; }
+.judgement-settings summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+
+.judgement-settings__hash { overflow-wrap: anywhere; word-break: break-word; user-select: text; }

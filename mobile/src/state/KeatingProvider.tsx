@@ -1,4 +1,5 @@
 import * as Haptics from "expo-haptics";
+import { createMobileNeedleRecall } from "@/lib/needle-retrieval";
 import type {
   AgentStreamEvent,
   CardReviewRecord,
@@ -84,6 +85,13 @@ import {
 } from "@/lib/learner-mutations";
 import { createDeckWithCards as createDeckWithCardsData } from "@/lib/learner-decks";
 import { extractUiDocuments, scopeUiDocument } from "@/lib/ui-document-wire";
+import { mobileQuestionReviewInputs, reviewMobileQuestionChecks, type MobileQuestionReviewInput } from "@/lib/judgement/grading";
+import { MobileQuizPerformanceSession, type MobileQuizPerformanceAttempt } from "@/lib/judgement/quiz-performance";
+import { createMobileMemoryAdmission } from "@/lib/judgement/memory-admission";
+import { mobileJudgementCalibrationStore, mobileLocalJudgementCalibrationStore } from "@/lib/judgement/calibration";
+import type { NeedleSearchResult } from "@keating/learner-contracts";
+import { MobileQuizPerformanceStore, type MobileQuizPerformanceExport } from "@/lib/learner-repository/quiz-performance";
+import { MobileJudgementReviewStore, type MobileJudgementReviewRecord } from "@/lib/learner-repository/judgement-reviews";
 import { applyLocalUiAction } from "@/lib/ui-action-mutations";
 import { bootstrapLearnerRepository } from "@/lib/learner-repository/bootstrap";
 import { resumePendingLearningDataClear } from "@/lib/learner-repository/clear-recovery";
@@ -120,6 +128,7 @@ interface KeatingContextValue {
   /** Latest validated SQLite/portable snapshot; null while repository bootstrap is pending. */
   learnerData: PortableLearnerData | null;
   learnerRepositoryReady: boolean;
+  judgementReviews: readonly MobileJudgementReviewRecord[];
   generationError: string | null;
   isGenerating: boolean;
   /** Id of the assistant message currently receiving streamed tokens. */
@@ -188,6 +197,9 @@ interface KeatingContextValue {
     targetId: string,
     priority: StudyPriority,
   ) => Promise<void>;
+  createQuizPerformanceAttempt: (document: UiDocument, nodeId: string) => MobileQuizPerformanceAttempt;
+  exportQuizPerformanceEvidence: (documentId: string, nodeId: string) => Promise<MobileQuizPerformanceExport>;
+  isQuizPerformanceEvidenceCurrent: (evidence: MobileQuizPerformanceExport) => boolean;
   dispatchUiAction: (action: UiAction, document: UiDocument, sessionId?: string) => Promise<UiActionResult>;
   getUiActionJournal: (documentId: string) => Promise<UiActionJournal>;
   clearLearningData: () => Promise<void>;
@@ -256,12 +268,14 @@ const KeatingContext = createContext<KeatingContextValue | null>(null);
 
 export function KeatingProvider({ children }: PropsWithChildren) {
   const mobileWorkspace = useMobileWorkspace();
-  const { activePedagogy } = useNotOrganicAccount();
+  const { activePedagogy, session: accountSession, account, status: accountStatus } = useNotOrganicAccount();
   const { settings: uiSettings } = useUiSettings();
   const [state, setState] = useState<PersistedAppState>(initialState);
   const [hydrated, setHydrated] = useState(false);
   const [persistenceReady, setPersistenceReady] = useState(false);
   const [repositoryReady, setRepositoryReady] = useState(false);
+  const [judgementReviews, setJudgementReviews] = useState<MobileJudgementReviewRecord[]>([]);
+  const pendingJudgements = useRef(new Set<string>());
   const [learnerData, setLearnerData] = useState<PortableLearnerData | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
   // Kept raw so the "show raw errors" preference can be flipped after the
@@ -285,6 +299,68 @@ export function KeatingProvider({ children }: PropsWithChildren) {
   const learnerRepositoryRef = useRef<LearnerRepository | null>(null);
   const learnerRepositoryWriteTailRef = useRef<Promise<void>>(Promise.resolve());
   const learnerRepositoryClearingRef = useRef(false);
+  const quizEvidenceChangingRef = useRef(false);
+  const quizIdentity = `${accountStatus}:${accountSession?.issuer ?? ""}:${accountSession?.accountId ?? account?.id ?? account?.did ?? ""}`;
+  const quizIdentityRef = useRef(quizIdentity);
+  quizIdentityRef.current = quizIdentity;
+  const quizPerformanceRef = useRef<{ repository: LearnerRepository; identity: string; session: MobileQuizPerformanceSession } | null>(null);
+  const needleRecallRef = useRef<ReturnType<typeof createMobileNeedleRecall> | null>(null);
+  needleRecallRef.current ??= createMobileNeedleRecall();
+  const memoryScopeRef = useRef<string | null>(null);
+  const memoryAccountId = accountSession?.accountId ?? account?.id ?? account?.did;
+  memoryScopeRef.current = accountStatus === "signed-in" && accountSession?.issuer && memoryAccountId
+    ? JSON.stringify(["notorganic", accountSession.issuer, memoryAccountId]) : accountStatus === "signed-out" ? "device-local" : null;
+  const memoryAdmissionRef = useRef<ReturnType<typeof createMobileMemoryAdmission> | null>(null);
+  memoryAdmissionRef.current ??= createMobileMemoryAdmission({
+    sessions: () => stateRef.current.sessions,
+    scope: () => memoryScopeRef.current,
+    enabled: () => uiSettingsRef.current.judgementMemory,
+    current: () => !!learnerRepositoryRef.current && !learnerRepositoryClearingRef.current && !quizEvidenceChangingRef.current,
+    requestIdentity: () => JSON.stringify([quizIdentityRef.current, uiSettingsRef.current.judgementMemory,
+      uiSettingsRef.current.judgementHosted, uiSettingsRef.current.judgementLocalModel,
+      mobileJudgementCalibrationStore.getRevision(), mobileLocalJudgementCalibrationStore.getRevision()]),
+  });
+  useEffect(() => {
+    const cancel = () => memoryAdmissionRef.current?.cancel();
+    const hosted = mobileJudgementCalibrationStore.subscribe(cancel);
+    const local = mobileLocalJudgementCalibrationStore.subscribe(cancel);
+    return () => { cancel(); hosted(); local(); };
+  }, []);
+  useEffect(() => {
+    memoryAdmissionRef.current?.cancel();
+    return () => memoryAdmissionRef.current?.cancel();
+  }, [quizIdentity, uiSettings.judgementMemory, uiSettings.judgementHosted, uiSettings.judgementLocalModel, state.activeSessionId]);
+  useEffect(() => {
+    needleRecallRef.current?.clear();
+    return () => needleRecallRef.current?.clear();
+  }, [quizIdentity]);
+  useEffect(() => {
+    quizPerformanceRef.current?.session.invalidate();
+    return () => quizPerformanceRef.current?.session.invalidate();
+  }, [quizIdentity, uiSettings.judgementHosted, uiSettings.judgementLocalModel]);
+  const quizPerformanceSession = useCallback(() => {
+    const repository = learnerRepositoryRef.current;
+    if (!repository || learnerRepositoryClearingRef.current || quizEvidenceChangingRef.current) throw new Error("Learning data is still loading or changing. Try again shortly.");
+    const identity = quizIdentityRef.current;
+    let stored = quizPerformanceRef.current;
+    if (!stored || stored.repository !== repository || stored.identity !== identity) {
+      stored?.session.invalidate();
+      const session = new MobileQuizPerformanceSession({
+        store: new MobileQuizPerformanceStore(repository.database),
+        history: () => repository.records.snapshot(),
+        id: () => createId("prediction"),
+        current: () => learnerRepositoryRef.current === repository && !learnerRepositoryClearingRef.current && !quizEvidenceChangingRef.current
+          && quizIdentityRef.current === identity,
+        hostedAllowed: () => uiSettingsRef.current.judgementHosted || uiSettingsRef.current.judgementLocalModel === "minicpm5-2b-int4",
+      });
+      stored = { repository, identity, session };
+      quizPerformanceRef.current = stored;
+    }
+    return stored.session;
+  }, []);
+  const createQuizPerformanceAttempt = useCallback((document: UiDocument, nodeId: string) => quizPerformanceSession().create(document, nodeId), [quizPerformanceSession]);
+  const exportQuizPerformanceEvidence = useCallback((documentId: string, nodeId: string) => quizPerformanceSession().export(documentId, nodeId), [quizPerformanceSession]);
+  const isQuizPerformanceEvidenceCurrent = useCallback((evidence: MobileQuizPerformanceExport) => quizPerformanceRef.current?.session.isExportCurrent(evidence) ?? false, []);
 
   personaRef.current = persona;
   learnerContextRef.current = learnerContext;
@@ -353,6 +429,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
         stateRef.current = next;
         setState(next);
         setLearnerData(snapshot);
+        setJudgementReviews(await new MobileJudgementReviewStore(repository.database).list());
         learnerContextRef.current = storedLearnerContext;
         setLearnerContextState(storedLearnerContext);
         setPersistenceReady(true);
@@ -441,6 +518,30 @@ export function KeatingProvider({ children }: PropsWithChildren) {
     }
     if (result === undefined) throw new Error("The learner update did not produce a result.");
     return result;
+  }, []);
+
+  const queueQuestionReviews = useCallback((inputs: readonly MobileQuestionReviewInput[]) => {
+    const repository = learnerRepositoryRef.current;
+    if (!repository || learnerRepositoryClearingRef.current) return;
+    for (const source of inputs) {
+      const key = JSON.stringify(source);
+      if (pendingJudgements.current.has(key)) continue;
+      pendingJudgements.current.add(key);
+      void (async () => {
+        const [judgement] = await reviewMobileQuestionChecks([source.input]);
+        if (!judgement || learnerRepositoryRef.current !== repository || learnerRepositoryClearingRef.current) return;
+        const write = learnerRepositoryWriteTailRef.current.catch(() => undefined).then(async () => {
+          if (learnerRepositoryRef.current !== repository || learnerRepositoryClearingRef.current) return;
+          const reviews = new MobileJudgementReviewStore(repository.database);
+          if (!await reviews.saveIfCurrent(source, judgement)) return;
+          setLearnerData(await repository.records.snapshot());
+          setJudgementReviews(await reviews.list());
+        });
+        learnerRepositoryWriteTailRef.current = write;
+        await write;
+      })().catch(() => { /* Saved answers remain authoritative; never expose provider bodies. */ })
+        .finally(() => pendingJudgements.current.delete(key));
+    }
   }, []);
 
   const queueLearnerState = useCallback((next: PersistedAppState) => {
@@ -649,6 +750,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
       writeContent(rendered);
     };
     const flushTimer = setInterval(flush, STREAM_FLUSH_INTERVAL_MS);
+    let recalledMemory: { result: NeedleSearchResult; current: () => boolean } | null = null;
 
     try {
       if (settings.provider === "litert") assertOfflineMedia(messages.slice(-40));
@@ -673,6 +775,20 @@ export function KeatingProvider({ children }: PropsWithChildren) {
       const accountPolicyPrompt = accountPedagogy?.teacherPolicy
         ? `\n\nAccount pedagogy policy (verified revision ${accountPedagogy.revisionId}):\n${accountPedagogy.teacherPolicy}`
         : "";
+      const recallIdentity = quizIdentityRef.current;
+      memoryAdmissionRef.current?.cancel();
+      const memoryCapture = memoryAdmissionRef.current!.captureRequest();
+      const savedMemory = await memoryAdmissionRef.current!.prompt();
+      const localRecall = await needleRecallRef.current!.prompt(stateRef.current.sessions, {
+        sessionId, messageId: triggeringMessage.id, createdAt: triggeringMessage.createdAt, query: triggeringMessage.content,
+      }, {
+        signal: controller.signal,
+        currentSessions: () => stateRef.current.sessions,
+        current: () => quizIdentityRef.current === recallIdentity && !quizEvidenceChangingRef.current
+          && !learnerRepositoryClearingRef.current && stateRef.current.activeSessionId === sessionId,
+        onResult: (result, current) => { recalledMemory = { result, current }; },
+      });
+      controller.signal.throwIfAborted();
       const toolLoop = await runMobileToolLoop(settings, apiKey, providerMessages, {
         sessionId,
         triggeringMessageId: triggeringMessage.id,
@@ -681,7 +797,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
         createdAt: triggeringMessage.createdAt,
         advertiseTools: settings.provider !== "custom" && modelSupportsToolCalls(catalogRef.current, settings),
         signal: controller.signal,
-        systemPrompt: `${evolvedSystemPrompt}${accountPolicyPrompt}\n\nNative capability limits (do not claim these as available):\n${unavailableMobileCapabilityPrompt()}`,
+        systemPrompt: `${evolvedSystemPrompt}${accountPolicyPrompt}${localRecall}${memoryAdmissionRef.current!.requestCurrent(memoryCapture) ? savedMemory : ""}\n\nNative capability limits (do not claim these as available):\n${unavailableMobileCapabilityPrompt()}`,
         reasoningLevel: resolveModelReasoningLevel(
           catalogRef.current,
           settings,
@@ -779,6 +895,12 @@ export function KeatingProvider({ children }: PropsWithChildren) {
       if (abortControllerRef.current === controller) abortControllerRef.current = null;
       generationBusyRef.current = false;
       setIsGenerating(false);
+      // Optional local review must not take the native inference lease ahead of
+      // the learner's tutor reply. The callback is source-bound and unawaited.
+      if (recalledMemory && !controller.signal.aborted) {
+        const recalled = recalledMemory as { result: NeedleSearchResult; current: () => boolean };
+        memoryAdmissionRef.current?.review(recalled.result, recalled.current);
+      }
     }
   }, [mobileWorkspace.executeAgentTool, mobileWorkspace.hasOverlay, persistLearnerState, updateSession]);
 
@@ -838,6 +960,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
   }, [persistLearnerState, runCompletion, trackCompletion, updateSession]);
 
   const stopGeneration = useCallback(() => {
+    memoryAdmissionRef.current?.cancel();
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
   }, []);
@@ -1142,11 +1265,15 @@ export function KeatingProvider({ children }: PropsWithChildren) {
   }, []);
 
   const importLearnerData = useCallback(async (candidate: unknown) => {
+    quizEvidenceChangingRef.current = true;
+    memoryAdmissionRef.current?.cancel();
+    needleRecallRef.current?.clear();
+    quizPerformanceRef.current?.session.invalidate();
     stopGeneration();
     const activeCompletion = generationPromiseRef.current;
     if (activeCompletion) await activeCompletion.catch(() => undefined);
     const repository = learnerRepositoryRef.current;
-    if (!repository) throw new Error("Learning data is still loading. Wait a moment and try importing again.");
+    if (!repository) { quizEvidenceChangingRef.current = false; throw new Error("Learning data is still loading. Wait a moment and try importing again."); }
     learnerRepositoryClearingRef.current = true;
     let result: { data: PortableLearnerData; unprojected: UnprojectedNativeRecords } | undefined;
     try {
@@ -1181,6 +1308,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
       return result;
     } finally {
       learnerRepositoryClearingRef.current = false;
+      quizEvidenceChangingRef.current = false;
     }
   }, [stopGeneration]);
 
@@ -1291,14 +1419,22 @@ export function KeatingProvider({ children }: PropsWithChildren) {
   ): Promise<UiActionResult> => {
     const repository = learnerRepositoryRef.current;
     if (!repository) throw new Error("Learning data is still loading. Wait a moment and try again.");
+    const committedAction = structuredClone(action);
+    const committedDocument = structuredClone(document);
     let result: UiActionResult | undefined;
+    let reviewInputs: MobileQuestionReviewInput[] = [];
     const write = learnerRepositoryWriteTailRef.current
       .catch(() => undefined)
       .then(async () => {
         result = await repository.uiActions.dispatch(
           action,
           document,
-          (current, now) => applyLocalUiAction(current, action, document, now, sessionId),
+          (current, now) => {
+            const applied = applyLocalUiAction(current, action, document, now, sessionId);
+            const existing = new Set(current.questionChecks.map(check => check.id));
+            reviewInputs = mobileQuestionReviewInputs(applied.data.questionChecks.filter(check => !existing.has(check.id)), document);
+            return applied;
+          },
         );
         const snapshot = await repository.records.snapshot();
         const locations = await repository.records.getLocalAttachments();
@@ -1322,8 +1458,19 @@ export function KeatingProvider({ children }: PropsWithChildren) {
     learnerRepositoryWriteTailRef.current = write;
     await write;
     if (!result) throw new Error("OpenUI action did not produce a durable result.");
+    if (result.status === "completed") {
+      queueQuestionReviews(reviewInputs);
+      // The answer and its journal already committed. Serialize optional local evidence with
+      // later repository writes, while returning this acknowledgement without waiting for it.
+      const evidenceSession = quizPerformanceRef.current;
+      if (evidenceSession?.repository === repository) {
+        const evidenceWrite = learnerRepositoryWriteTailRef.current.catch(() => undefined)
+          .then(() => evidenceSession.session.collectCommitted(committedAction, committedDocument)).catch(() => undefined);
+        learnerRepositoryWriteTailRef.current = evidenceWrite;
+      }
+    }
     return result;
-  }, []);
+  }, [queueQuestionReviews]);
 
   const getUiActionJournal = useCallback(async (documentId: string): Promise<UiActionJournal> => {
     const repository = learnerRepositoryRef.current;
@@ -1353,11 +1500,15 @@ export function KeatingProvider({ children }: PropsWithChildren) {
   }, []);
 
   const clearLearningData = useCallback(async () => {
+    quizEvidenceChangingRef.current = true;
+    memoryAdmissionRef.current?.cancel();
+    needleRecallRef.current?.clear();
+    quizPerformanceRef.current?.session.invalidate();
     stopGeneration();
     const activeCompletion = generationPromiseRef.current;
     if (activeCompletion) await activeCompletion.catch(() => undefined);
     const repository = learnerRepositoryRef.current;
-    if (!repository) throw new Error("Learning data is still loading. Wait a moment and try clearing again.");
+    if (!repository) { quizEvidenceChangingRef.current = false; throw new Error("Learning data is still loading. Wait a moment and try clearing again."); }
     learnerRepositoryClearingRef.current = true;
     try {
       await learnerRepositoryWriteTailRef.current.catch(() => undefined);
@@ -1377,6 +1528,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
       learnerContextRef.current = "";
       setLearnerContextState("");
       setLearnerData(await repository.records.snapshot());
+      setJudgementReviews([]);
       setPersistenceReady(true);
       setStorageError(null);
       try {
@@ -1386,6 +1538,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
       }
     } finally {
       learnerRepositoryClearingRef.current = false;
+      quizEvidenceChangingRef.current = false;
     }
   }, [stopGeneration]);
 
@@ -1422,6 +1575,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
     storageError,
     learnerData,
     learnerRepositoryReady: repositoryReady,
+    judgementReviews,
     generationError,
     isGenerating,
     streamingMessageId,
@@ -1465,11 +1619,14 @@ export function KeatingProvider({ children }: PropsWithChildren) {
     updateLearnerGoalStep,
     recordLearnerCardReview,
     setLearnerStudyPriority,
+    createQuizPerformanceAttempt,
+    exportQuizPerformanceEvidence,
+    isQuizPerformanceEvidenceCurrent,
     dispatchUiAction,
     getUiActionJournal,
     clearLearningData,
   }), [
-    state, activeSession, hydrated, storageError, learnerData, repositoryReady, generationError, isGenerating, streamingMessageId,
+    state, activeSession, hydrated, storageError, learnerData, repositoryReady, judgementReviews, generationError, isGenerating, streamingMessageId,
     keyStatus, isProviderConfigured, supportsReasoning, reasoningLevels, supportsTemperature,
     persona, setPersona, restoreDefaultPersona,
     learnerContext, setLearnerContext,
@@ -1478,7 +1635,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
     setProvider, selectProviderModel, updateProviderSettings, saveApiKey, removeApiKey,
     exportLearnerData, importLearnerData, saveLearnerGoal, saveLearnerGoalStep, saveLearnerQuizResult, saveLearnerQuestionChecks, createLearnerDeck,
     updateLearnerGoalStep, recordLearnerCardReview,
-    setLearnerStudyPriority, dispatchUiAction, getUiActionJournal, clearLearningData,
+    setLearnerStudyPriority, createQuizPerformanceAttempt, exportQuizPerformanceEvidence, isQuizPerformanceEvidenceCurrent, dispatchUiAction, getUiActionJournal, clearLearningData,
   ]);
 
   return <KeatingContext.Provider value={value}>{children}</KeatingContext.Provider>;

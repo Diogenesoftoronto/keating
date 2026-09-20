@@ -111,6 +111,7 @@ import { desktopMarketingUrl, isDesktopShell } from "./lib/desktop-navigation";
 import { tutorialRedirectBeforeLoad } from "./lib/tutorial-redirect";
 import { blogRedirectBeforeLoad } from "./lib/blog-redirect";
 import { AppStatusScreen, RouteLoadingScreen, RouteNotFoundScreen } from "./components/AppStatusScreen";
+import { BrowserModelDownloadStatus } from "./components/ModelDownloadBar";
 
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
@@ -385,6 +386,7 @@ export function App() {
     <>
       <KeatingUiPreferencesSync />
       <RouterProvider router={router} />
+      <BrowserModelDownloadStatus />
     </>
   );
 }

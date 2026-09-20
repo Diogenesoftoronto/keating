@@ -11,6 +11,8 @@ import { configDir } from "./paths.js";
 export const NOTORGANIC_PROVIDER_ID = "notorganic";
 export const NOTORGANIC_MODEL_ID = "balanced";
 export const NOTORGANIC_SCOPE = "infer:balanced";
+export const NOTORGANIC_JUDGEMENT_LOGIN_SCOPE = "infer:balanced judgement:evaluate";
+export type NotOrganicLoginScope = typeof NOTORGANIC_SCOPE | typeof NOTORGANIC_JUDGEMENT_LOGIN_SCOPE;
 export const NOTORGANIC_DEFAULT_ISSUER = "https://api.notorganic.info";
 export const NOTORGANIC_DEFAULT_AUTHORIZATION_URL = "https://id.notorganic.info/authorize";
 export const NOTORGANIC_CAPABILITY_SECONDS = 300;
@@ -55,6 +57,7 @@ export type NotOrganicCallbackListenerFactory = (
 ) => Promise<NotOrganicCallbackListener>;
 
 export interface NotOrganicLoginOptions {
+  judgement?: boolean;
   issuer?: string;
   authorizationUrl?: string;
   fetch?: typeof globalThis.fetch;
@@ -67,7 +70,7 @@ export interface NotOrganicLoginOptions {
 export interface NotOrganicLoginResult {
   provider: typeof NOTORGANIC_PROVIDER_ID;
   model: typeof NOTORGANIC_MODEL_ID;
-  scope: typeof NOTORGANIC_SCOPE;
+  scope: NotOrganicLoginScope;
   expiresAt: number;
   expiresInSeconds: typeof NOTORGANIC_CAPABILITY_SECONDS;
   authPath: string;
@@ -86,7 +89,7 @@ interface NotOrganicTokenResponse {
   access_token: string;
   token_type: "DPoP";
   expires_in: typeof NOTORGANIC_CAPABILITY_SECONDS;
-  scope: typeof NOTORGANIC_SCOPE;
+  scope: NotOrganicLoginScope;
 }
 
 interface P256PrivateJwk extends webcrypto.JsonWebKey {
@@ -418,7 +421,16 @@ async function safeTokenError(response: Response): Promise<Error> {
   return new Error(message);
 }
 
-function parseTokenResponse(value: unknown): NotOrganicTokenResponse {
+/** Recognize only the two supported CLI grants, without expanding authority. */
+export function parseNotOrganicLoginScope(value: unknown): NotOrganicLoginScope | undefined {
+  if (value === NOTORGANIC_SCOPE) return NOTORGANIC_SCOPE;
+  if (value === NOTORGANIC_JUDGEMENT_LOGIN_SCOPE || value === "judgement:evaluate infer:balanced") {
+    return NOTORGANIC_JUDGEMENT_LOGIN_SCOPE;
+  }
+  return undefined;
+}
+
+function parseTokenResponse(value: unknown, requestedScope: NotOrganicLoginScope): NotOrganicTokenResponse {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("Not Organic returned an invalid token response.");
   }
@@ -429,11 +441,11 @@ function parseTokenResponse(value: unknown): NotOrganicTokenResponse {
     || token.access_token.length > 16_384
     || token.token_type !== "DPoP"
     || token.expires_in !== NOTORGANIC_CAPABILITY_SECONDS
-    || token.scope !== NOTORGANIC_SCOPE
+    || parseNotOrganicLoginScope(token.scope) !== requestedScope
   ) {
     throw new Error("Not Organic returned an invalid or over-broad capability.");
   }
-  return token as NotOrganicTokenResponse;
+  return { ...token, scope: requestedScope } as NotOrganicTokenResponse;
 }
 
 function credentialFor(input: {
@@ -469,6 +481,7 @@ export async function loginNotOrganic(
   const authorizationUrl = resolveNotOrganicAuthorizationUrl(options.authorizationUrl);
   const fetcher = options.fetch ?? globalThis.fetch;
   const now = options.now ?? Date.now;
+  const requestedScope = options.judgement ? NOTORGANIC_JUDGEMENT_LOGIN_SCOPE : NOTORGANIC_SCOPE;
   const maxCostMicrousd = validateMaxCost(
     options.maxCostMicrousd ?? NOTORGANIC_DEFAULT_MAX_COST_MICROUSD
   );
@@ -496,12 +509,12 @@ export async function loginNotOrganic(
     authorization.searchParams.set("redirect_uri", redirect.toString());
     authorization.searchParams.set("code_challenge", codeChallenge);
     authorization.searchParams.set("code_challenge_method", "S256");
-    authorization.searchParams.set("scope", NOTORGANIC_SCOPE);
+    authorization.searchParams.set("scope", requestedScope);
     authorization.searchParams.set("state", state);
 
     callbacks.onAuth({
       url: authorization.toString(),
-      instructions: "Approve the five-minute infer:balanced capability. If this terminal is remote, paste the complete callback URL here."
+      instructions: `Approve the five-minute ${requestedScope} capability. If this terminal is remote, paste the complete callback URL here.`
     });
     callbacks.onProgress?.("Waiting for Not Organic approval…");
 
@@ -536,7 +549,7 @@ export async function loginNotOrganic(
       signal: callbacks.signal
     });
     if (!response.ok) throw await safeTokenError(response);
-    const token = parseTokenResponse(await response.json());
+    const token = parseTokenResponse(await response.json(), requestedScope);
     const expiresAt = now() + token.expires_in * 1_000;
 
     // Pi's API-key credential envelope is intentional here. The public-client
@@ -563,11 +576,11 @@ export async function loginNotOrganic(
     return {
       provider: NOTORGANIC_PROVIDER_ID,
       model: NOTORGANIC_MODEL_ID,
-      scope: NOTORGANIC_SCOPE,
+      scope: requestedScope,
       expiresAt,
       expiresInSeconds: NOTORGANIC_CAPABILITY_SECONDS,
       authPath: notOrganicAuthPath(cwd),
-      message: "Not Organic inference is ready for this session. The DPoP-bound capability expires in 300 seconds; run `keating login` again after it expires."
+      message: `Not Organic ${options.judgement ? "inference and judgement are" : "inference is"} ready for this session. The DPoP-bound capability expires in 300 seconds; run \`keating login${options.judgement ? " --judgement" : ""}\` again after it expires.`
     };
   } finally {
     callbacks.signal?.removeEventListener("abort", abortManualInput);
@@ -592,7 +605,7 @@ export function notOrganicAuthStatus(
   }
   const privateJwk = credential.env?.[NOTORGANIC_AUTH_ENV.privateJwk];
   if (
-    scope !== NOTORGANIC_SCOPE
+    !parseNotOrganicLoginScope(scope)
     || credential.env?.[NOTORGANIC_AUTH_ENV.tokenType] !== "DPoP"
     || !privateJwk
   ) {

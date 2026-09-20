@@ -9,7 +9,9 @@ import { AssistantChatPanel } from "../components/AssistantChatPanel";
 import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { loadWebSpeechSettings, primeSpeechAudio, resolveSpeechRealtimeTier, saveWebSpeechSettings, usesProviderHostedLiveSurface } from "../keating/speech";
-import { describeLiveModel, liveModelsFor, recommendedLiveModel } from "../keating/live-models";
+import { describeLiveModel, isLiveProviderId, liveModelsFor, recommendedLiveModel } from "../keating/live-models";
+import { gptLiveMaxCostMicrousd } from "../keating/speech-providers/gpt-live";
+import { GptLiveConsentSettings } from "../components/GptLiveConsentSettings";
 import { getProviderApiKey } from "../lib/provider-models";
 import { liveCredentialProvider } from "../components/live/use-live-session";
 import { useSeo } from "../hooks/useSeo";
@@ -43,6 +45,7 @@ export function Live() {
 	const [settings, setSettings] = useState(() => loadWebSpeechSettings());
 	const [hasKey, setHasKey] = useState<boolean | null>(null);
 	const [started, setStarted] = useState(false);
+	const [gptLiveConsentGranted, setGptLiveConsentGranted] = useState(false);
 
 	const model = useMemo(
 		() => describeLiveModel(settings.providerId, settings.model),
@@ -52,14 +55,15 @@ export function Live() {
 	const credentialProvider = liveCredentialProvider(settings.providerId);
 	const liveTier = useMemo(() => resolveSpeechRealtimeTier(settings), [settings]);
 	const providerHostedLive = usesProviderHostedLiveSurface(settings);
-	const tavusSelected = settings.providerId === "tavus";
-	const tavusConfigured = tavusSelected && isNotOrganicFeatureEnabled() && Boolean(notOrganicPublicClient());
+	const accountLiveSelected = settings.providerId === "tavus" || settings.providerId === "gpt-live";
+	const accountLiveConfigured = accountLiveSelected && isNotOrganicFeatureEnabled() && Boolean(notOrganicPublicClient());
+	const accountLiveName = settings.providerId === "gpt-live" ? "GPT Live" : "Tavus Live";
 
 	useEffect(() => {
 		let cancelled = false;
 		const check = () => {
 			setHasKey(null);
-			if (settings.providerId === "tavus") {
+			if (settings.providerId === "tavus" || settings.providerId === "gpt-live") {
 				const client = isNotOrganicFeatureEnabled() ? notOrganicPublicClient() : null;
 				const session = client?.getSession();
 				setHasKey(Boolean(session?.scope.split(/\s+/).includes("realtime:connect")));
@@ -100,6 +104,8 @@ export function Live() {
 
 	const providerName = settings.providerId === "tavus"
 		? "Tavus"
+		: settings.providerId === "gpt-live"
+			? "Not Organic"
 		: settings.providerId === "openai-realtime"
 			? "OpenAI"
 			: "Google";
@@ -152,23 +158,23 @@ export function Live() {
 						})}
 					>
 						<p className={css({ fontWeight: 600, fontSize: "0.9375rem" })}>
-							{tavusSelected
-								? tavusConfigured ? "Not Organic account needed" : "Tavus Live is unavailable"
+							{accountLiveSelected
+								? accountLiveConfigured ? "Not Organic account needed" : `${accountLiveName} is unavailable`
 								: credentialProvider ? `${providerName} key needed` : "No live provider selected"}
 						</p>
 						<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)", marginTop: "0.25rem" })}>
-							{tavusSelected
-								? tavusConfigured
-									? "Connect your Not Organic account before starting KeatingBot. The call uses your device-bound account capability."
-									: "This deployment has not enabled the Not Organic account service required by Tavus Live."
+							{accountLiveSelected
+								? accountLiveConfigured
+									? `Connect your Not Organic account before starting ${accountLiveName}. The call uses your device-bound live access.`
+									: `This deployment has not enabled the Not Organic account service required by ${accountLiveName}.`
 								: credentialProvider
 								? `Live mode talks to ${providerName} straight from this browser, and there is no key stored for it yet.`
 								: "The current speech provider only synthesizes speech; it cannot hold a conversation."}
 						</p>
-						{!tavusSelected || tavusConfigured ? <button
+						{!accountLiveSelected || accountLiveConfigured ? <button
 							type="button"
 							onClick={() => {
-								if (tavusSelected) {
+								if (accountLiveSelected) {
 									void beginNotOrganicAuthorization("/live");
 									return;
 								}
@@ -190,7 +196,7 @@ export function Live() {
 								_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
 							}))}
 						>
-							<Settings2 size={14} /> {tavusSelected ? "Connect Not Organic" : credentialProvider ? "Add a key" : "Choose a live model"}
+							<Settings2 size={14} /> {accountLiveSelected ? "Connect Not Organic" : credentialProvider ? "Add a key" : "Choose a live model"}
 						</button> : null}
 					</div>
 				) : null}
@@ -211,10 +217,12 @@ export function Live() {
 						<Select aria-label="Live provider"
 							value={settings.providerId}
 							onValueChange={(value) => {
-								const providerId = value as "tavus" | "gemini-live" | "openai-realtime";
+								if (!isLiveProviderId(value)) return;
+								const providerId = value;
 								update({
 									providerId,
 									model: recommendedLiveModel(providerId)?.value ?? "",
+									...(providerId === "gpt-live" ? { voiceName: "marin", videoEnabled: false } : {}),
 								});
 							}}
 							className={css({
@@ -229,6 +237,7 @@ export function Live() {
 							})}
 						>
 							<option value="tavus">Tavus KeatingBot</option>
+							<option value="gpt-live">GPT Live (Not Organic)</option>
 							<option value="gemini-live">Gemini Live</option>
 							<option value="openai-realtime">OpenAI Realtime</option>
 						</Select>
@@ -261,7 +270,14 @@ export function Live() {
 						{model.note ? (
 							<span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{model.note}</span>
 						) : null}
+						{settings.providerId === "gpt-live" ? (
+							<span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
+								Session spending ceiling: ${(gptLiveMaxCostMicrousd() / 1_000_000).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USD. Live audio uses your Not Organic balance and requires your account's live consent.
+							</span>
+						) : null}
 					</label>
+
+					{settings.providerId === "gpt-live" ? <GptLiveConsentSettings onGrantedChange={setGptLiveConsentGranted} /> : null}
 
 					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
 						<span className={css({ fontSize: "0.8125rem", fontWeight: 600 })}>Start with</span>
@@ -313,7 +329,7 @@ export function Live() {
 								? "You can turn camera or screen sharing on or off at any point during the conversation."
 								: liveTier.image
 									? "This model accepts still images, but it does not receive live video."
-									: `Pick a model with visual input — ${recommendedLiveModel(settings.providerId)?.label ?? "a newer live model"} can see your work.`}
+									: "This session uses audio only. Choose a provider with visual input to share images or video."}
 						</p>
 					</div>
 				</div>
@@ -321,7 +337,7 @@ export function Live() {
 				<button
 					type="button"
 					onClick={start}
-					disabled={started || hasKey !== true}
+					disabled={started || hasKey !== true || (settings.providerId === "gpt-live" && !gptLiveConsentGranted)}
 					className={cx("dialog-compact-button", css({
 						display: "inline-flex",
 						alignItems: "center",

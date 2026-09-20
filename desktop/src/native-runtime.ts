@@ -1,3 +1,4 @@
+import type { DesktopNeedleRuntime } from "./needle-runtime.js";
 import { StringDecoder } from "node:string_decoder";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { createServer, type IncomingMessage } from "node:http";
@@ -165,7 +166,12 @@ export class NativeWorkspaceService {
 	private readonly jobs = new Map<string, Job>();
 	private stopped = false;
 	private starting = 0;
-	constructor(readonly projectRoot: string) {}
+	private needle: Promise<DesktopNeedleRuntime> | undefined;
+	constructor(readonly projectRoot: string, private readonly needleFactory?: () => Promise<DesktopNeedleRuntime>) {}
+	private needleRuntime(): Promise<DesktopNeedleRuntime> {
+		return this.needle ??= this.needleFactory ? this.needleFactory() : import("./needle-runtime.js")
+			.then(({ DesktopNeedleRuntime }) => new DesktopNeedleRuntime(this.projectRoot));
+	}
 	private job(payload: Record<string, unknown>): Job {
 		const job = this.jobs.get(string(payload.processId, "Process id", 128));
 		if (!job) throw new Error("Native process no longer exists.");
@@ -317,6 +323,25 @@ export class NativeWorkspaceService {
 		if (this.stopped) throw new Error("Native runtime is shutting down.");
 		const payload = object(value);
 		switch (operation) {
+			case "needle.status":
+			case "needle.install":
+			case "needle.cancelDownload":
+			case "needle.remove":
+			case "needle.embed": {
+				let needle: DesktopNeedleRuntime;
+				try { needle = await this.needleRuntime(); }
+				catch {
+					if (operation !== "needle.status" && operation !== "needle.embed") throw new Error("needle_runtime_unavailable");
+					return operation === "needle.status" ? { available: false, model: null } : null;
+				}
+				if (this.stopped) { needle.stop(); return operation === "needle.status" ? { available: false, model: null } : null; }
+				if (operation === "needle.status") return needle.status(payload);
+				if (operation === "needle.embed") return needle.embed(payload);
+				if (operation === "needle.install") await needle.install(payload);
+				else if (operation === "needle.remove") await needle.remove(payload);
+				else needle.cancelDownload(payload);
+				return { ok: true };
+			}
 			case "runtime.ping":
 				return {
 					ok: true,
@@ -490,6 +515,7 @@ export class NativeWorkspaceService {
 	}
 	async stop(): Promise<void> {
 		this.stopped = true;
+		void this.needle?.then(runtime => runtime.stop()).catch(() => {});
 		const jobs = [...this.jobs.values()];
 		for (const job of jobs) if (job.running) killTree(job);
 		let deadline: ReturnType<typeof setTimeout> | undefined;

@@ -34,8 +34,9 @@ function run(command, args, cwd = root) {
 }
 export async function stageOffline(platform = process.platform, arch = process.arch) {
   const target = `${platform}-${arch}`;
+  const windowsCrossBuild = platform === "win32" && arch === "x64" && process.platform === "linux" && process.arch === "x64";
   if (!targets[target]) throw new Error(`Official LiteRT 0.16.0 has no desktop prebuilt for ${target}. Supported: ${Object.keys(targets).join(", ")}`);
-  if (platform !== process.platform || arch !== process.arch) throw new Error(`Build ${target} on a matching native runner; cross compilation is not configured.`);
+  if (!windowsCrossBuild && (platform !== process.platform || arch !== process.arch)) throw new Error(`Build ${target} on a matching native runner; cross compilation is not configured.`);
   const cache = join(root, "dist/offline-cache");
   const sdk = join(cache, "sdk");
   const output = join(root, "dist/offline");
@@ -47,15 +48,26 @@ export async function stageOffline(platform = process.platform, arch = process.a
   await rm(output, { recursive: true, force: true });
   await mkdir(output, { recursive: true });
   const build = join(cache, target);
-  run("cmake", ["-S", join(root, "native"), "-B", build, `-DLITERT_SDK=${sdk}`, `-DLITERT_LIBRARY=${join(sdk, "lib", targets[target])}`, "-DCMAKE_BUILD_TYPE=Release"]);
-  run("cmake", ["--build", build, "--config", "Release"]);
-  run("cmake", ["--install", build, "--config", "Release", "--prefix", output]);
+  if (windowsCrossBuild) {
+    // Zig supplies the Windows CRT; the pinned SDK supplies the official DLL
+    // import library. Never copy the host Linux executable into a Windows app.
+    run(process.env.KEATING_ZIG || "zig", ["cc", "-target", "x86_64-windows-gnu", "-O2",
+      join(root, "native/runner.c"), join(root, "native/label-scorer.c"),
+      `-I${join(sdk, "include")}`, join(sdk, "lib", targets[target]),
+      "-o", join(output, "keating-offline.exe")]);
+  } else {
+    run("cmake", ["-S", join(root, "native"), "-B", build, `-DLITERT_SDK=${sdk}`, `-DLITERT_LIBRARY=${join(sdk, "lib", targets[target])}`, "-DCMAKE_BUILD_TYPE=Release"]);
+    run("cmake", ["--build", build, "--config", "Release"]);
+    run("cmake", ["--install", build, "--config", "Release", "--prefix", output]);
+  }
   const library = platform === "win32" ? "windows_x86_64/bin/litert-lm.dll" : targets[target];
   // The official Mach-O dylib's LC_ID_DYLIB is @rpath/liblitert-lm.so.
   await cp(join(sdk, "lib", library), join(output, platform === "darwin" ? "liblitert-lm.so" : library.split("/").at(-1)));
   await cp(join(sdk, "licenses"), join(output, "licenses"), { recursive: true });
   // Fail the installer build if the native runtime cannot load its dependencies.
-  run(join(output, platform === "win32" ? "keating-offline.exe" : "keating-offline"), ["--probe"]);
+  const executable = join(output, platform === "win32" ? "keating-offline.exe" : "keating-offline");
+  if (windowsCrossBuild) run(process.env.KEATING_WINE || "wine", [executable, "--probe"]);
+  else run(executable, ["--probe"]);
   if (process.env.KEATING_OFFLINE_EDITION === "1") {
     const { OFFLINE_MODEL } = await import("../dist/offline-contract.js");
     const model = join(cache, OFFLINE_MODEL.file);

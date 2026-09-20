@@ -22,7 +22,39 @@ The publication is verified at:
 https://blog.keating.help/.well-known/site.standard.publication
 ```
 
-## Prepare the historical posts
+## Publish or edit a Markdown post
+
+Write a `.md` file with a `# Title` followed by the article body. From the
+repository root, preview its Standard.site payload without credentials or any
+network requests:
+
+```bash
+rtk devenv tasks run keating:blog-preview --input file=docs/blog/keating-4-0-0.md --input slug=keating-4-0-0
+```
+
+Inspect `.keating/outputs/blog/keating-4-0-0.json`. To publish, inject
+`KEATING_BLOG_APP_PASSWORD` from the secret store into the task environment,
+then run:
+
+```bash
+rtk devenv tasks run keating:blog-publish --input file=docs/blog/keating-4-0-0.md --input slug=keating-4-0-0
+```
+
+The task defaults to the dedicated Keating blog DID and `https://pds.notorganic.info`.
+Optional `KEATING_BLOG_IDENTIFIER` and `KEATING_BLOG_PDS_URL` support account login
+and PDS migration; the authenticated DID must still match the blog account.
+Credential key names appear under **Publisher account** below.
+
+To edit, change the Markdown file and run the publish task again with the **same
+slug**. The task preserves the existing publication date and additional metadata
+(including tags), and refuses to overwrite a concurrent edit. A different slug
+creates a different post. Optional `--input 'title=Your title'` and
+`--input 'description=Your summary'` override the heading and first-paragraph
+summary. Preview dates describe a new post; edits retain the remote date at
+publish time. The blog refreshes its feed cache within roughly 60 seconds; no
+site deployment is required. Neither task runs tests or builds the application.
+
+## Historical archive importer
 
 The publisher is dry-run by default. It renders the retired JSX archive to GFM
 and writes the exact publication/document payloads under `.keating/outputs/`:

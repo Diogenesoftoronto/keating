@@ -1,0 +1,27 @@
+{
+  "revision": "b274efcb211a9eef48c9a88da4b43bd569696a39",
+  "repository": "Cactus-Compute/needle3",
+  "header": {
+    "bytes": 1187,
+    "sha256": "3aa713942528d944598458cecb4a262f2cc49349bec63355f91df0b159964e55"
+  },
+  "weights": {
+    "file": "needle3.cact",
+    "bytes": 35335380,
+    "sha256": "c9d915eca282ed42d1a09b143b592adb4cc6744ffe2d294adf5cfc5548170c38"
+  },
+  "platforms": {
+    "android-arm64": {
+      "bytes": 1663992,
+      "sha256": "5e0a5daaadca1fbe1c518110bee6bbb1cc97a5e53a16a1e964d0af0186eac60a"
+    },
+    "ios-arm64": {
+      "bytes": 1137096,
+      "sha256": "236aae1ab238d815217a59c5ba4ce513a2b60aba10356499893dfdbbf6b4341b"
+    },
+    "ios-sim-arm64": {
+      "bytes": 1154848,
+      "sha256": "02f0e6ab33ccc0addc0997f66fb5c8490d023d87516d65dd256031e097004c2c"
+    }
+  }
+}

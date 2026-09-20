@@ -19,7 +19,7 @@ export class OfflineDownload {
   private checking: Promise<void> | null = null;
   private deleting = false;
   constructor(private files: OfflineFiles, private fetcher: typeof fetch, private total = OFFLINE_MODEL.bytes as number,
-    private chunkBytes = 4 * 1024 * 1024) {}
+    private chunkBytes = 4 * 1024 * 1024, private url: string = OFFLINE_MODEL.url) {}
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   snapshot = () => this.state;
   private publish(patch: Partial<OfflineState>) {
@@ -75,7 +75,7 @@ export class OfflineDownload {
       while (offset < this.total) {
         if (signal.aborted) break;
         const end = Math.min(offset + this.chunkBytes, this.total) - 1;
-        const response = await this.fetcher(OFFLINE_MODEL.url, {
+        const response = await this.fetcher(this.url, {
           signal, headers: { Range: `bytes=${offset}-${end}`, "Accept-Encoding": "identity" },
         });
         try { validateRangeResponse(response.status, response.headers.get("content-range"), offset, end, this.total); }

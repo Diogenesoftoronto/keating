@@ -138,6 +138,16 @@ describe("DownloadTracker", () => {
 		expect(describeDownload(progress)).toBe("2 MB of 10 MB · 1 MB/s · less than a minute left");
 	});
 
+	it("reports file progress when a model has multiple files", () => {
+		const tracker = new DownloadTracker(0, clock().now);
+		tracker.update({ status: "initiate", name: "r", file: "weights-1" });
+		tracker.update({ status: "initiate", name: "r", file: "weights-2" });
+		tracker.update({ status: "progress", name: "r", file: "weights-1", loaded: 100, total: 100 });
+		const progress = tracker.update({ status: "done", name: "r", file: "weights-1" });
+
+		expect(describeDownload(progress)).toContain("1 of 2 files");
+	});
+
 	it("decays the rate while a transfer is stalled", () => {
 		const time = clock();
 		const tracker = new DownloadTracker(0, time.now);

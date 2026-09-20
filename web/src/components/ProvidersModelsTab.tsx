@@ -24,6 +24,7 @@ import { WebSearchSection } from "./settings/WebSearchSection";
 import { ProviderVisibilitySection } from "./settings/ProviderVisibilitySection";
 import { MyModelsSection } from "./settings/MyModelsSection";
 import { OfflineTutorSettings } from "./OfflineTutorSettings";
+import { JudgementSettings } from "./settings/JudgementSettings";
 import { desktopOfflineBridge } from "../lib/desktop-offline";
 import {
 	discoverCustomProviderModels,
@@ -254,6 +255,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 				sections={[
 					...(desktopOfflineBridge() ? [{ id: "offline-tutor", label: "Offline tutor" }] : []),
 					{ id: "cloud-providers", label: "Cloud" },
+					{ id: "judgement", label: "Judgement" },
 					{ id: "web-search", label: "Web Search" },
 					{ id: "provider-visibility", label: "Visibility" },
 					{ id: "my-models", label: "My Models" },
@@ -264,6 +266,9 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 
 			<OfflineTutorSettings />
 			<CloudProviderKeysSection providers={providers.filter((p) => !modelPrefs.hiddenProviders.includes(p))} />
+
+			<div className={dividerClass} />
+			<JudgementSettings />
 
 			<div className={dividerClass} />
 

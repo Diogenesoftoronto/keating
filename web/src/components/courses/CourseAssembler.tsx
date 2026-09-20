@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePostHog } from "@posthog/react";
+import { queueCourseReview } from "../../courses/course-judgement";
 import {
   BookOpen,
   Check,
@@ -80,6 +81,7 @@ export function CourseAssembler({
     new Set(),
   );
   const [creating, setCreating] = useState(false);
+  const [reviewAfterSave, setReviewAfterSave] = useState(false);
   const [error, setError] = useState("");
   const [ankiNotice, setAnkiNotice] = useState("");
   const [ankiDecks, setAnkiDecks] = useState<FlashcardDeck[]>([]);
@@ -232,6 +234,7 @@ export function CourseAssembler({
         ...input,
         displayName: account.displayName,
       });
+      if (reviewAfterSave) queueCourseReview(snapshot);
       posthog?.capture("course_creation_completed", analyticsProperties);
       onCreated(snapshot.course.id);
     } catch (cause) {
@@ -369,6 +372,11 @@ export function CourseAssembler({
               rows={3}
               placeholder="Optional. You can change this later."
             />
+          </label>
+          <label className={css({ mt: "0.8rem", display: "block", fontSize: "0.75rem", lineHeight: 1.5 })}>
+            <input type="checkbox" checked={reviewAfterSave} onChange={event => setReviewAfterSave(event.target.checked)} />{" "}
+            Review course design after saving
+            <span className={css({ display: "block", color: "var(--ink-soft)" })}>Optional suggestions in the builder. Uses your independent judgement setting; hosted mode may send saved course text to that service. Creating the course does not wait for review.</span>
           </label>
           <button
             type="button"

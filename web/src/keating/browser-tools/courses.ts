@@ -1,4 +1,5 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
+import { queueCourseReview } from "../../courses/course-judgement";
 import {
   applyCourseOperation,
   createCourse,
@@ -539,6 +540,7 @@ export function createCourseTools(
       "Create the first durable version of a course after the learner has agreed on its audience, outcomes, pace, and outline. Do not use this as the first response to a vague request. Modules and lessons are optional, so an agreed empty course is valid and can be assembled together afterward.",
       {
         title: { type: "string", description: "Agreed course title." },
+        review_draft: { type: "boolean", description: "Optional. True only when the learner explicitly requests an authored-course judgement review after saving. Uses their independent judgement settings; hosted mode may send course text to the configured service. Never delays saving, publishes, or grades. Default false." },
         description: {
           type: "string",
           description:
@@ -603,9 +605,10 @@ export function createCourseTools(
         const snapshot = normalizeCourseViewerSnapshot(
           await createCourse(input),
         );
+        if (params.review_draft === true) queueCourseReview(snapshot);
         return announceCourseChange(
           snapshot,
-          `Created “${snapshot.course.title}” with ${snapshot.course.modules.length} modules and ${snapshot.course.modules.reduce((total, module) => total + module.lessons.length, 0)} lessons.`,
+          `Created “${snapshot.course.title}” with ${snapshot.course.modules.length} modules and ${snapshot.course.modules.reduce((total, module) => total + module.lessons.length, 0)} lessons.${params.review_draft === true ? " Optional course review requested; open the builder for its status. The saved draft is ready now." : ""}`,
         );
       },
       ["title"],

@@ -1,6 +1,6 @@
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { EmptyState } from "@/components/EmptyState";
 import { MarkdownText } from "@/components/MarkdownText";
@@ -8,6 +8,10 @@ import { Screen } from "@/components/Screen";
 import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import type { GeneratedArtifactKind, StudyArtifact } from "@/lib/types";
 import { useKeating } from "@/state/KeatingProvider";
+import { Button } from "@/components/Buttons";
+import { createMobileNeedleSearch, mobileNeedleArtifactSources } from "@/lib/needle-retrieval";
+import { needleDownload } from "@/lib/needle-model";
+import { needleQueryText } from "@keating/learner-contracts";
 
 const KIND_LABEL: Record<StudyArtifact["kind"], string> = {
   note: "Study note",
@@ -25,10 +29,41 @@ export default function ArtifactsScreen() {
   const [topic, setTopic] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { state, createLearningArtifact, deleteArtifact } = useKeating();
+  const localModel = useSyncExternalStore(needleDownload.subscribe, needleDownload.snapshot);
+  const search = useMemo(() => createMobileNeedleSearch(), []);
+  const pending = useRef<AbortController | null>(null);
+  const sourceRef = useRef({ query, artifacts: state.artifacts });
+  sourceRef.current = { query, artifacts: state.artifacts };
+  const [searching, setSearching] = useState(false);
+  const [searchNotice, setSearchNotice] = useState("");
+  const [semantic, setSemantic] = useState<{ query: string; source: StudyArtifact[]; ids: string[]; considered: number } | null>(null);
+  useEffect(() => { void needleDownload.refresh(); }, []);
+  useEffect(() => {
+    pending.current?.abort();
+    setSearching(false); setSearchNotice(""); setSemantic(null);
+    return () => { pending.current?.abort(); search.clear(); };
+  }, [query, state.artifacts, localModel.phase, search]);
   const artifacts = useMemo(() => {
     const normalized = query.trim().toLowerCase();
-    return state.artifacts.filter((artifact) => !normalized || `${artifact.title} ${artifact.content}`.toLowerCase().includes(normalized));
-  }, [query, state.artifacts]);
+    const lexical = state.artifacts.filter((artifact) => !normalized || `${artifact.title} ${artifact.content}`.toLowerCase().includes(normalized));
+    if (!semantic || semantic.query !== query || semantic.source !== state.artifacts || localModel.phase !== "ready") return lexical;
+    const selected = semantic.ids.flatMap(id => { const item = state.artifacts.find(item => item.id === id); return item ? [item] : []; });
+    return [...selected, ...lexical.filter(item => !semantic.ids.includes(item.id))];
+  }, [query, state.artifacts, semantic, localModel.phase]);
+  const searchMeaning = async () => {
+    pending.current?.abort();
+    const controller = new AbortController(); pending.current = controller;
+    const source = state.artifacts, input = query;
+    const current = () => pending.current === controller && sourceRef.current.query === input && sourceRef.current.artifacts === source;
+    setSearching(true); setSearchNotice("");
+    const candidates = mobileNeedleArtifactSources(source);
+    const result = await search.search(needleQueryText(input), candidates, { signal: controller.signal, current, limit: 8 });
+    if (!current() || controller.signal.aborted) return;
+    setSearching(false);
+    if (!result) { setSearchNotice("Local search is unavailable. Text matches are still shown."); return; }
+    const ids = [...new Set(result.matches.flatMap(row => row.source.artifactId ? [row.source.artifactId] : []))];
+    setSemantic({ query: input, source, ids, considered: new Set(candidates.map(row => row.artifactId)).size });
+  };
 
   const copy = async (artifact: StudyArtifact) => {
     await Clipboard.setStringAsync(artifact.content);
@@ -102,6 +137,19 @@ export default function ArtifactsScreen() {
           onChangeText={setQuery}
           style={styles.search}
         />
+      ) : null}
+      {state.artifacts.length > 0 && query.trim() ? (
+        <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
+          <Button compact variant="secondary" disabled={searching || localModel.phase !== "ready"} onPress={() => void searchMeaning()}>
+            {searching ? "Searching on this device…" : "Search by meaning"}
+          </Button>
+          <Text accessibilityLiveRegion="polite" style={styles.creatorBody}>
+            {searchNotice || (localModel.phase !== "ready" ? "Download Local recall in Settings to search by meaning."
+              : semantic?.query === query && semantic.source === state.artifacts
+                ? `Related passages from ${semantic.considered} recent notes, followed by text matches. Similarity is not a relevance guarantee.`
+                : "Search recent saved notes on this device. No account or network is needed.")}
+          </Text>
+        </View>
       ) : null}
       <View style={styles.list}>
         {artifacts.map((artifact) => {

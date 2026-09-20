@@ -48,7 +48,7 @@ const PASS_OPTIONS: SocraticPassOption[] = [
 	{
 		kind: "rubric-score",
 		label: "Score the rubric",
-		blurb: "Proposes a score for all six dimensions with a reason and a citation for each.",
+		blurb: "Uses Judgement settings to estimate supported dimensions with citations; uncertain dimensions stay unscored.",
 		icon: "measure",
 	},
 ];
@@ -499,6 +499,13 @@ export function ReviewDesk({
 					hidden={openMovement !== "assessment"}
 					className={PANEL}
 				>
+					<p className={css({ fontSize: "0.72rem", color: "var(--ink-soft)", marginBottom: "0.65rem" })}>
+						Rubric scoring uses your independent <a href="/chat?settings=judgement" target="_blank" rel="noopener noreferrer">Judgement settings</a>.
+					</p>
+					{review.rubricJudgement ? <p className={css({ fontSize: "0.72rem", color: "var(--ink-soft)", marginBottom: "0.65rem" })}>
+						{review.rubricJudgement.calibrated ? "Applied model estimate" : "Applied uncalibrated estimate"}
+						{` · ${review.rubricJudgement.backend.backend}/${review.rubricJudgement.backend.model}. Original evidence is retained; your edits remain separate from that estimate.`}
+					</p> : null}
 					{passes?.rubric && passCallbacks ? (
 						<div className={css({ marginBottom: "0.85rem" })}>
 							<RubricProposal

@@ -235,6 +235,24 @@ export function searchCourse(
   return results.slice(0, options.limit ?? 25);
 }
 
+/** Supplied course text only: linked documents are never fetched for search. */
+export function courseSearchEvidence(course: Course, keys: readonly string[], query = "") {
+  if (!keys.length) return [];
+  const selected = new Set(keys);
+  return courseCandidates(course).filter(candidate => selected.has(`${candidate.kind}:${candidate.id}`)).map(candidate => {
+    const positions = tokenize(query).map(token => candidate.body.toLowerCase().indexOf(token)).filter(index => index >= 0);
+    const start = Math.max(0, (positions.length ? Math.min(...positions) : 0) - 400);
+    return {
+      key: `${candidate.kind}:${candidate.id}`,
+      title: candidate.title,
+      kind: candidate.kind,
+      sourceExcerpt: candidate.body.slice(start, start + 1_600),
+      sourceStart: start,
+      sourceTruncated: candidate.body.length > 1_600 || (candidate.kind === "artifact" && course.artifacts.some(artifact => artifact.id === candidate.id && artifact.content.length > 4_000)),
+    };
+  });
+}
+
 export const COURSE_SEARCH_KIND_LABEL: Record<CourseSearchKind, string> = {
   lesson: "Lesson",
   module: "Module",

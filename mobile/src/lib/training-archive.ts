@@ -100,7 +100,7 @@ export function buildNativeTrainingArchive(result: NativeFineTuneExportResult): 
   addJsonl(files, "data/keating.training.jsonl", "Canonical provenance-rich records; start here.", result.canonicalJsonl);
   addJsonl(files, "data/sft/train.chatml.jsonl", "ChatML compatibility data for supervised fine-tuning.", result.chatmlJsonl);
   addJsonl(files, "data/sft/train.alpaca.jsonl", "Alpaca compatibility data for supervised fine-tuning.", result.alpacaJsonl);
-  addJsonl(files, "data/rewards/train.rewarded.jsonl", "Explicitly scored per-turn rewards.", result.rewardedJsonl);
+  addJsonl(files, "data/rewards/train.rewarded.jsonl", "Per-turn proxy rewards with source provenance.", result.rewardedJsonl);
   addJsonl(files, "data/preferences/train.kto.jsonl", "Explicit desirable and undesirable KTO examples.", result.ktoJsonl);
   addJsonl(files, "data/preferences/train.dpo.chat.jsonl", "Explicit chosen/rejected chat preference pairs.", result.preferenceJsonl);
   addJsonl(files, "data/preferences/train.dpo.text.jsonl", "Text-prompt DPO compatibility pairs.", result.dpoTextJsonl);

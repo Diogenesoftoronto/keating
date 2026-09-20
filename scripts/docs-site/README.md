@@ -44,6 +44,7 @@ type Section = {
   language?: string;
   links?: { label: string; href: string }[];
   screenshots?: Screenshot[];
+  videos?: Video[];
 };
 type Screenshot = {
   src: string;
@@ -51,6 +52,12 @@ type Screenshot = {
   caption: string;
   width: number;
   height: number;
+};
+type Video = {
+  src: string;
+  poster?: string;
+  title?: string;
+  caption: string;
 };
 ```
 
@@ -150,6 +157,25 @@ Eighteen inspected source PNGs are deliberately not copied:
   `tui-onboarding-custom-avatar`, and `tui-onboarding-complete`: detailed profile
   setup variants are outside the installation walkthrough. One terminal startup
   capture shows what the archive opens without duplicating that sequence.
+
+## Video walkthrough contract
+
+Place video walkthroughs in sections where they demonstrate interactive flows, terminal sessions, or artifact compilation. An optional `videos` array contains one or more video objects:
+
+```json
+{
+  "src": "/assets/tapes/keating-surface-tour.mp4",
+  "poster": "/assets/tapes/posters/keating-surface-tour.jpg",
+  "title": "The whole room in 32 seconds",
+  "caption": "A 32-second end-to-end tour covering model routing, live media, review workspace, return runway, courses, and publishing."
+}
+```
+
+`src` must use `/assets/tapes/lowercase-name.mp4`. When provided, `poster` must use `/assets/tapes/posters/lowercase-name.jpg` (or `.png` / `.webp`). External video URLs and unvalidated paths are rejected. `caption` is required nonempty plain text; `title` is an optional heading label.
+
+Videos render in semantic `<figure class="app-video">` elements with native controls, metadata preloading, and responsive 16:9 aspect ratio preservation. They do not autoplay, respecting user preferences and reduced motion settings. Each figure includes an accessible **Watch or download raw video** link to the original MP4. Captions and titles are included in the search index.
+
+The MP4s and poster JPGs live in `assets/tapes/` and `assets/tapes/posters/`. The build stages and validates all referenced video and poster assets, ensuring non-zero byte size before replacing generated output.
 
 ## Design and implementation
 

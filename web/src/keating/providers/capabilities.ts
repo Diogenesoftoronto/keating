@@ -114,6 +114,21 @@ const OPENAI_TEXT: ProviderCapabilities = {
  */
 export const PROVIDER_CAPABILITY_RULES: readonly CapabilityRule[] = [
 	{
+		id: "notorganic-gpt-live",
+		provider: "notorganic",
+		model: /^gpt-live-1$/,
+		api: "gpt-live",
+		capabilities: {
+			realtimeAudio: "native",
+			realtimeTransports: ["websocket"],
+			realtimeVideo: "none",
+			realtimeImage: "none",
+			webSearch: "none",
+			toolCalls: "none",
+			citations: "none",
+		},
+	},
+	{
 		id: "tavus-cvi",
 		provider: "tavus",
 		capabilities: {
@@ -307,7 +322,7 @@ export function negotiateProviderCapabilities(
  *
  *   3 — audio duplex + a native provider video lane + tools
  *   2 — audio duplex + tools + deliberate still-image input
- *   1 — audio duplex + tools, no vision at all
+ *   1 — audio duplex, no visual input; tool support is negotiated separately
  *   0 — no duplex session; push-to-talk STT plus one-shot TTS
  */
 export type RealtimeTier = 0 | 1 | 2 | 3;
@@ -336,9 +351,8 @@ const TIER_LABELS: Record<RealtimeTier, string> = {
 
 /**
  * Collapse a model's capabilities into the tier Keating can actually drive.
- * Tool calling is required above tier 0: a live session that cannot reach the
- * Keating tool catalog is not a teaching session, so it is treated as
- * half-duplex regardless of how good its audio is.
+ * Audio duplex is independent of tool calling. Providers without tools keep
+ * their voice lane, with that limitation shown explicitly in the UI.
  */
 export function resolveRealtimeTier(
 	model: ProviderModelDescriptor,
@@ -361,12 +375,12 @@ export function resolveRealtimeTier(
 	}
 	if (capabilities.toolCalls !== "native") {
 		return {
-			tier: 0,
-			label: TIER_LABELS[0],
+			tier: 1,
+			label: TIER_LABELS[1],
 			video: false,
 			image: false,
 			videoRoute: "none",
-			capReason: "This model cannot call tools in a live session.",
+			capReason: "Audio only. Live tools and visual input are unavailable in this session.",
 		};
 	}
 	if (capabilities.realtimeVideo === "native") {

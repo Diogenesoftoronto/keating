@@ -250,8 +250,6 @@ devenv tasks run keating:web
 
 The full task reference lives in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the [devenv tasks documentation](https://devenv.sh/tasks/) covers how tasks work, arguments, and dependencies.
 
-<video src="docs/assets/doctor.mp4" autoplay loop muted width="100%"></video>
-
 ```bash
 devenv tasks run keating:build
 devenv tasks run keating:doctor
@@ -429,8 +427,6 @@ The system deliberately separates:
 That split keeps the interactive shell flexible while making the improvement loop testable without an LLM in the loop.
 
 ## Testing
-
-<video src="docs/assets/tests.mp4" autoplay loop muted width="100%"></video>
 
 ```bash
 devenv tasks run keating:test

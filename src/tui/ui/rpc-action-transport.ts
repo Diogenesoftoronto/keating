@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   applyReview,
   canonicalUiAction,
+  compareContractTimestamps,
   initialSrsState,
   UI_CONTRACT_VERSION,
   validateUiAction,
@@ -272,7 +273,10 @@ async function materializeUiAction(action: UiAction, sourceDocument: UiDocument,
 
   if (changed) {
     resultingDocument.revision += 1;
-    resultingDocument.updatedAt = new Date().toISOString();
+    const now = new Date().toISOString();
+    // Authored timestamps may be ahead of the receiver clock. Keep document
+    // updates monotonic so a valid submission cannot invalidate its receipt.
+    resultingDocument.updatedAt = compareContractTimestamps(now, sourceDocument.updatedAt) < 0 ? sourceDocument.updatedAt : now;
     return {
       schemaVersion: UI_CONTRACT_VERSION,
       documentId: action.documentId,

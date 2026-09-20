@@ -1,0 +1,20 @@
+{
+  "status": "metadata-pinned; extraction-and-probe-fitting-pending",
+  "profile": "qwen3.5-27b",
+  "observer_model": "Qwen/Qwen3.5-27B",
+  "observer_revision": "fc05daec18b0a78c049392ed2e771dde82bdf654",
+  "tokenizer_model": "Qwen/Qwen3.5-27B",
+  "tokenizer_revision": "fc05daec18b0a78c049392ed2e771dde82bdf654",
+  "sae_model": "Qwen/SAE-Res-Qwen3.5-27B-W80K-L0_50",
+  "sae_revision": "13d4221569f7ca5d3c1e605e3e3dc95117e4807c",
+  "sae_file": "layer31.sae.pt",
+  "sae_sha256": "5d0d9628059f55bf643c435409b62ac726737a5413492bb475545fd696a19053",
+  "download_bytes": 3355793787,
+  "layer": 31,
+  "module": "language_model.layers.31",
+  "dimensions": {"hidden": 5120, "width": 81920, "top_k": 50},
+  "selection": "Mid-depth engineering candidate; no held-out performance-based layer selection has occurred.",
+  "pin_evidence": "Public Hugging Face model API revision and LFS metadata, checked 2026-09-14. No tensor bytes downloaded.",
+  "model_card": "https://huggingface.co/Qwen/SAE-Res-Qwen3.5-27B-W80K-L0_50",
+  "probe_compatibility": "Existing 9B probe is incompatible; extract, fit, calibrate and evaluate new 27B readouts."
+}

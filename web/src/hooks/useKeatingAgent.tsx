@@ -51,6 +51,10 @@ import {
   resolveAvailableChatModel,
 } from "../lib/provider-models";
 import { recordDiagnostic } from "../lib/diagnostics";
+import { createReplyJudgementObserver } from "../keating/judgement/reply-review";
+import { createTeachingAdjustmentController, withTeachingAdjustment, type TeachingAdjustmentController } from "../keating/judgement/teaching-adjustment";
+import { createDesktopNeedleRecall, withDesktopNeedleRecall } from "../keating/needle-retrieval";
+import { createWebMemoryAdmission, withWebMemoryBank } from "../keating/judgement/memory-admission";
 import { NOTORGANIC_DEFAULT_MODEL, isNotOrganicProvider, notOrganicPublicClient } from "../notorganic-provider";
 import { hasNotOrganicProductSession, promptNotOrganicAccess } from "../components/NotOrganicAccessPromptDialog";
 import { rememberChatTurn, clearPendingChatTurn, claimPendingChatTurn, pendingChatTurn } from "../notorganic-provider/pending-chat-turn";
@@ -108,6 +112,9 @@ import {
   loadLearnerContext,
   subscribeLearnerContext,
 } from "../keating/learner-context";
+import type { DeclaredLearnerProfile } from "@keating/learner-contracts";
+import { loadDeclaredProfile, subscribeDeclaredProfile } from "../keating/learner-profile-store";
+import { requestInterfaceTour } from "../keating/interface-tour";
 import {
   composeSessionStartSystemPrompt,
   runSessionStartHooks,
@@ -207,11 +214,13 @@ function buildAgentSystemPrompt(
   sessionStartContext = "",
   agentRuntime?: KeatingAgentRuntimeConfig,
   course?: KeatingToolsOptions["course"],
+  declaredProfile: DeclaredLearnerProfile = loadDeclaredProfile(),
 ): string {
   const prompt = buildKeatingSystemPrompt(
     speechEnabled,
     basePrompt,
     learnerContext,
+    declaredProfile,
   );
   const promptWithOpenUi = basePrompt.includes(keatingOpenUIPrompt)
     ? prompt
@@ -411,6 +420,7 @@ async function resolveConnectedAccountPrompt(localPrompt: string): Promise<strin
 
 // ─── Hook ───────────────────────────────────────────────────────────────────
 export interface UseKeatingAgentReturn {
+  teachingAdjustment: TeachingAdjustmentController | null;
   title: string;
   isPending: boolean;
   // Rendered nodes
@@ -471,6 +481,7 @@ export function useKeatingAgent(
   const sessionSnapshotsRef = useRef(new SessionSnapshotTracker());
   const learnerBookkeepingRef = useRef(Promise.resolve());
   const panelRef = useRef<ChatPanelHandle | null>(null);
+  const [teachingAdjustment, setTeachingAdjustment] = useState<TeachingAdjustmentController | null>(null);
   const sessionIdRef = useRef<string>(createSessionId());
   const toolExecutorRef = useRef(new AuthorizedToolExecutor());
   const untrustedSearchProvenanceRef = useRef(false);
@@ -1443,12 +1454,43 @@ export function useKeatingAgent(
 
       if (agentRef.current instanceof FlueConversation) await agentRef.current.dispose();
       if (!isCurrent()) return;
+      const adjustment = createTeachingAdjustmentController({
+        sessionId: agentSessionId,
+        source: () => ({ messages: agent.context.messages,
+          current: agentRef.current === agent && sessionIdRef.current === agentSessionId,
+          streaming: agent.context.isStreaming,
+          model: `${agent.context.model.provider}/${agent.context.model.id}` }),
+      });
+      const memory = createWebMemoryAdmission({
+        sessions,
+        current: () => agentRef.current === agent && sessionIdRef.current === agentSessionId,
+        requestIdentity: () => JSON.stringify({ model: [agent.context.model.provider, agent.context.model.id],
+          profile: agent.context.systemPrompt,
+          learner: [...agent.context.messages].reverse().find(message => message.role === "user" || message.role === "user-with-attachments") }),
+      });
+      const recall = createDesktopNeedleRecall({
+        store: sessions,
+        onRetrieved: (result, current) => {
+          // The desktop judge and tutor share a native inference lease. Start
+          // optional admission only after the reply releases that lease.
+          void agent.whenIdle().then(() => { if (current()) memory.review(result, current); }).catch(() => {});
+        },
+        current: () => agentRef.current === agent && sessionIdRef.current === agentSessionId,
+        // Only compared in this volatile closure; no token enters the recall
+        // corpus, model payload, persisted index, logs or provider prompt.
+        identity: () => { try { return notOrganicPublicClient()?.getSession()?.accessToken ?? "local"; } catch { return "unavailable"; } },
+        requestIdentity: () => JSON.stringify({
+          model: [agent.context.model.provider, agent.context.model.id],
+          learner: [...agent.context.messages].reverse().find(message => message.role === "user" || message.role === "user-with-attachments"),
+        }),
+      });
       const agent = new FlueConversation({
         initialState: nextState,
         convertToLlm: toModelMessages,
-        streamFn: hybridStreamFn,
+        streamFn: withDesktopNeedleRecall(withWebMemoryBank(withTeachingAdjustment(hybridStreamFn, adjustment), memory), recall),
         sessionId: agentSessionId,
       }, flueRuntimeUrl);
+      setTeachingAdjustment(adjustment);
       agent.getApiKey = (provider: string) => getProviderApiKey(provider);
       agent.context.tools = [...authored.tools];
       agentRef.current = agent;
@@ -1609,7 +1651,29 @@ export function useKeatingAgent(
         }, 400);
       };
       persistCurrentSnapshotRef.current = persistSnapshot;
+      const judgementObserver = createReplyJudgementObserver(agentSessionId, undefined, {
+        captureSourceValidity: () => {
+          const reviewedModel = `${agent.context.model.provider}/${agent.context.model.id}`;
+          return () => agentRef.current === agent && sessionIdRef.current === agentSessionId
+            && `${agent.context.model.provider}/${agent.context.model.id}` === reviewedModel;
+        },
+        onReview: (response, messages, replyId, calibration, current) => {
+          // agent_end observers run before Flue clears its streaming flag. Even
+          // an immediate local judgement must wait for idle before offering it.
+          void agent.whenIdle().then(() => {
+            if (current()) adjustment.offer(response, messages, replyId, calibration);
+          });
+        },
+      });
       const unsubscribePersistence = agent.observeExecution((ev) => {
+        if (ev.type === "agent_start") {
+          adjustment.startRun(agent.context.messages);
+          judgementObserver.start(agent.context.messages.length);
+        }
+        if (ev.type === "agent_end") {
+          adjustment.finishRun();
+          judgementObserver.finish(agent.context.messages);
+        }
         if (ev.type === "message_update" || ev.type === "message_end" || ev.type === "message_start") sessionSnapshotsRef.current.changed(agent);
         recordSessionDebugAgentEvent(agent, ev);
         const canonicalRuntime = conversationRuntime(agentSessionId);
@@ -1656,6 +1720,10 @@ export function useKeatingAgent(
         }
       });
       persistUnsubRef.current = () => {
+        judgementObserver.dispose();
+        adjustment.dispose();
+        recall.dispose();
+        memory.dispose();
         unsubscribePersistence();
         if (snapshotTimer !== null) window.clearTimeout(snapshotTimer);
         if (persistCurrentSnapshotRef.current === persistSnapshot) {
@@ -2014,6 +2082,24 @@ export function useKeatingAgent(
           sessionStartContextRef.current.context,
           agentRuntimeRef.current,
           courseContext,
+        ));
+      }
+    });
+  }, [speechSettings.enabled]);
+
+  // Declared profile edits in Settings reach the live conversation the same way
+  // free-text context edits already do.
+  useEffect(() => {
+    return subscribeDeclaredProfile((profile) => {
+      if (agentRef.current) {
+        agentRef.current.context.systemPrompt = appendKeatingPortableCatalog(buildAgentSystemPrompt(
+          speechSettings.enabled,
+          systemPromptBaseRef.current,
+          loadLearnerContext(),
+          sessionStartContextRef.current.context,
+          agentRuntimeRef.current,
+          courseContext,
+          profile,
         ));
       }
     });
@@ -2483,7 +2569,16 @@ export function useKeatingAgent(
         {
           id: "learning",
           label: "Learning",
-          component: <LearningTab />,
+          component: (
+            <LearningTab
+              onStartTour={() => {
+                // Settings sits above the chat, so close it before the tour
+                // starts pointing at elements underneath.
+                settingsDialog.onClose();
+                requestInterfaceTour();
+              }}
+            />
+          ),
         },
         { id: "app", label: "App", component: <KeatingUiSettingsTab /> },
         { id: "diagnostics", label: "Diagnostics", component: <DiagnosticsTab /> },
@@ -2868,6 +2963,7 @@ export function useKeatingAgent(
       : persistentStorageStatus;
 
   return {
+    teachingAdjustment,
     title,
     isPending,
     // Rendered nodes
