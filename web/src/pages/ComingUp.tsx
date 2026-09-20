@@ -16,6 +16,7 @@ import {
 
 import { css, cx } from "../../styled-system/css";
 import { FlashcardRenderer } from "../components/FlashcardRenderer";
+import { ComingUpReadiness } from "../components/ComingUpReadiness";
 import { LearningInsightsHeader, LearningMetric } from "../components/LearningInsightsHeader";
 import { Nav } from "../components/Nav";
 import { Select } from "../components/Select";
@@ -26,6 +27,11 @@ import { buildComingUpQueue, type ComingUpItem, type ComingUpQueue } from "../ke
 import { formatDueIn } from "../keating/srs";
 import type { FlashcardDeck, LearnerState, StudyPriority, Verification } from "../keating/storage";
 import { downloadFile, downloadTextFile } from "../lib/browser-download";
+import { estimateStudyDeck, loadStudySnapshot, type StudyEstimateReceipt, type StudyEstimateResult } from "../keating/judgement/study-estimates";
+import { StudyEstimateStore } from "../keating/judgement/study-estimate-store";
+import { loadJudgementModelSettings, subscribeJudgementModelSettings } from "../keating/judgement-model";
+import { judgementAccountStatus } from "../keating/judgement/public-account";
+import { WebDecisionPolicyStore, projectWebDecisionPolicies, subscribeWebDecisionPolicies, type WebDecisionPolicies, type WebDecisionEvidence } from "../keating/judgement/decision-policies";
 
 const PRIORITIES: Array<{ id: StudyPriority; label: string; note: string }> = [
 	{ id: "focus", label: "Focus", note: "What matters most now" },
@@ -128,6 +134,11 @@ function QueueCard({
 	onReview,
 	onCompleteCheck,
 	onOpenTopic,
+	onEstimate,
+	estimate,
+	estimateBusy,
+	estimateStatus,
+	estimateFronts,
 }: {
 	item: ComingUpItem;
 	now: number;
@@ -138,6 +149,11 @@ function QueueCard({
 	onReview: () => void;
 	onCompleteCheck: () => void;
 	onOpenTopic: () => void;
+	onEstimate: () => void;
+	estimate?: StudyEstimateReceipt;
+	estimateBusy: boolean;
+	estimateStatus?: string;
+	estimateFronts: Record<string, string>;
 }) {
 	return (
 		<article
@@ -166,6 +182,12 @@ function QueueCard({
 			{item.weakConcepts.length > 0 ? (
 				<div className={styles.weakList}>Needs attention: {item.weakConcepts.slice(0, 2).join(" · ")}</div>
 			) : null}
+			{item.decisionEstimates && Object.keys(item.decisionEstimates).length > 0 ? <div className={styles.stripCopy} aria-label="Fitted learning estimates">
+				{Object.entries(item.decisionEstimates).map(([target, estimate]) => <p key={target} title={`${estimate.evidenceLabel}. ${estimate.domain}. File ${estimate.fileSha256}. Fit ${estimate.fitSha256}.`}>
+					{target === "mastery" ? "Independent-answer prediction" : target === "retention" ? "Mean card recall prediction" : "Due-deck lapse prediction"}: {Math.round(estimate.value * 100)}% · {estimate.evidenceLabel}
+				</p>)}
+				{item.decisionExploration ? <p>Usual queue position retained for comparison.</p> : null}
+			</div> : null}
 			<div className={styles.cardFooter}>
 				<label className={styles.selectLabel}>
 					<span>Learning priority</span>
@@ -174,11 +196,38 @@ function QueueCard({
 					</Select>
 				</label>
 				{item.targetType === "deck" && item.dueCount > 0 ? <button type="button" className={styles.cardAction} onClick={onReview}>Review this deck</button> : null}
+				{item.targetType === "deck" && item.dueCount > 0 ? <>
+					<button type="button" className={cx(styles.button, styles.quietButton)} disabled={estimateBusy} onClick={onEstimate} aria-label={`Estimate study effort for ${item.title}`}>{estimateBusy ? "Estimating…" : "Estimate study effort"}</button>
+					<p className={styles.stripCopy}>Uses your <a href="/chat?settings=judgement" style={{ textDecoration: "underline" }}>judgement settings</a>. Hosted review sends this deck and recent assessed work.</p>
+					{estimateStatus ? <p className={styles.stripCopy} role="status">{estimateStatus}</p> : null}
+					{estimate ? <StudyEstimateDetails receipt={estimate} fronts={estimateFronts} /> : null}
+				</> : null}
 				{item.targetType === "verification" ? <button type="button" className={styles.cardAction} onClick={onCompleteCheck}>Mark checklist complete</button> : null}
 				{item.targetType === "topic" ? <button type="button" className={styles.cardAction} onClick={onOpenTopic}>Practice in chat</button> : null}
 			</div>
 		</article>
 	);
+}
+
+export function StudyEstimateDetails({ receipt, fronts = {} }: { receipt: StudyEstimateReceipt; fronts?: Record<string, string> }) {
+	return <div className={styles.stripCopy} aria-label="Study estimates" aria-live="polite">
+		<strong style={{ color: "var(--ink)" }}>Uncalibrated study estimates</strong>
+		<p>Expected unaided recall: {receipt.expectedCorrect === null ? "unknown" : `${receipt.expectedCorrect.toFixed(1)} of ${receipt.cards.length} cards`}.</p>
+		<p>Readiness: {receipt.readinessProbability === null ? "unknown" : `${Math.round(receipt.readinessProbability * 100)}% model probability`}.</p>
+		<p>Planning time: {receipt.estimatedSeconds === null ? "unknown" : `about ${Math.max(1, Math.ceil(receipt.estimatedSeconds / 60))} min`}.</p>
+		<p>Reviewed by {receipt.backend.model}. Planning time uses generic effort bands. These estimates have not been validated for your learning.</p>
+		<details><summary style={{ cursor: "pointer", padding: "0.4rem 0" }}>Per-card estimates ({receipt.cards.length})</summary>
+			<ol style={{ paddingLeft: "1rem", overflowWrap: "anywhere" }}>{receipt.cards.map((card, index) => <li key={card.id}>
+				<strong>{fronts[card.id] ?? `Card ${index + 1}`}</strong>: {card.successProbability === null ? "recall unknown" : `${Math.round(card.successProbability * 100)}% predicted unaided recall`}. {card.difficulty ?? "Difficulty unknown."} Effort: {card.effort?.replaceAll("-", " ") ?? "unknown"}.
+			</li>)}</ol>
+		</details>
+	</div>;
+}
+
+function studyEstimateStatus(result: Extract<StudyEstimateResult, { ok: false }>): string {
+	return ({ "no-due-cards": "No due cards to estimate.", "too-many-cards": "This deck has more than 20 due cards. A whole-deck estimate is unavailable; you can still start reviewing.",
+		"no-history": "Estimate unknown. Review cards or complete assessed topic work first.", "too-much-evidence": "This deck has too much text for a complete estimate. You can still start reviewing.",
+		unavailable: "Estimate unavailable. Check judgement settings or account access; review is still available.", stale: "Your study evidence changed. Request a fresh estimate when ready.", cancelled: "Estimate cancelled. Review is still available." })[result.reason];
 }
 
 function emptyQueue(): ComingUpQueue {
@@ -273,15 +322,98 @@ export function ComingUp() {
 	const busy = pageState.transferBusy;
 	const [mobileLane, setMobileLane] = useState<StudyPriority>("focus");
 	const [now, setNow] = useState(() => Date.now());
+	const policyStore = useMemo(() => new WebDecisionPolicyStore(), []);
+	const [decisionPolicies, setDecisionPolicies] = useState<WebDecisionPolicies>({});
+	const [decisionEvidence, setDecisionEvidence] = useState<Omit<WebDecisionEvidence, "decks">>({ checks: [], reviews: [] });
+	useEffect(() => {
+		let active = true, generation = 0;
+		const load = async () => {
+			const revision = ++generation;
+			const targets = ["mastery", "retention", "urgency"] as const;
+			const policies = await Promise.all(targets.map(async target => [target, await policyStore.load(target)] as const));
+			if (active && generation === revision) setDecisionPolicies(Object.fromEntries(policies.filter(([, policy]) => policy)));
+		};
+		void load(); const unsubscribe = subscribeWebDecisionPolicies(() => { void load(); });
+		return () => { active = false; unsubscribe(); };
+	}, [policyStore]);
 	const importRef = useRef<HTMLInputElement>(null);
+	const estimateStore = useMemo(() => new StudyEstimateStore(), []);
+	const [estimates, setEstimates] = useState<Record<string, StudyEstimateReceipt>>({});
+	const [estimateStatuses, setEstimateStatuses] = useState<Record<string, string>>({});
+	const [estimating, setEstimating] = useState<Set<string>>(new Set());
+	const estimateRuns = useRef(new Map<string, AbortController>());
+	const estimatesRef = useRef(estimates);
+	estimatesRef.current = estimates;
+
+	useEffect(() => {
+		let active = true;
+		let checking = false;
+		let generation = 0;
+		const clear = () => {
+			generation++;
+			for (const controller of estimateRuns.current.values()) controller.abort();
+			estimateStore.clear(); setEstimates({});
+		};
+		const unsubscribe = subscribeJudgementModelSettings(() => clear());
+		const refresh = async () => {
+			if (checking) return;
+			const settings = loadJudgementModelSettings();
+			if (settings.backend === "off") { clear(); return; }
+			if (!judgementAccountStatus().judgementAuthorized) {
+				for (const id of estimateStore.deckIds()) {
+					if (estimatesRef.current[id]?.backend.backend === "system-one") { clear(); return; }
+				}
+			}
+			checking = true;
+			const startedGeneration = generation;
+			try {
+				const restored: Record<string, StudyEstimateReceipt> = {};
+				for (const id of estimateStore.deckIds()) {
+					const snapshot = await loadStudySnapshot(keatingStorage, id);
+					const receipt = estimateStore.current(snapshot);
+					if (receipt && (receipt.backend.backend !== "system-one" || judgementAccountStatus().judgementAuthorized)) restored[id] = receipt;
+					else estimateStore.remove(id);
+				}
+				if (active && generation === startedGeneration) setEstimates(restored);
+			} catch { if (active) clear(); } finally { checking = false; }
+		};
+		void getInitPromise().then(refresh);
+		const timer = window.setInterval(() => { void refresh(); }, 2_000);
+		window.addEventListener("focus", refresh);
+		return () => { active = false; unsubscribe(); window.clearInterval(timer); window.removeEventListener("focus", refresh);
+			for (const controller of estimateRuns.current.values()) controller.abort(); };
+	}, [estimateStore]);
+
+	const estimateDeck = useCallback(async (deckId: string) => {
+		if (estimateRuns.current.has(deckId)) return;
+		const controller = new AbortController(); estimateRuns.current.set(deckId, controller);
+		setEstimating(current => new Set([...current, deckId]));
+		setEstimateStatuses(current => ({ ...current, [deckId]: "" }));
+		try {
+			const result = await estimateStudyDeck({ source: keatingStorage, deckId, signal: controller.signal });
+			if (controller.signal.aborted) return;
+			if (result.ok) {
+				estimateStore.save(result.receipt);
+				setEstimates(current => ({ ...current, [deckId]: result.receipt }));
+			} else {
+				estimateStore.remove(deckId);
+				setEstimates(current => { const next = { ...current }; delete next[deckId]; return next; });
+				setEstimateStatuses(current => ({ ...current, [deckId]: studyEstimateStatus(result) }));
+			}
+		} catch { setEstimateStatuses(current => ({ ...current, [deckId]: "Estimate unavailable. Your review is ready to start." })); }
+		finally { estimateRuns.current.delete(deckId); setEstimating(current => { const next = new Set(current); next.delete(deckId); return next; }); }
+	}, [estimateStore]);
 
 	const loadData = useCallback(async () => {
 		await getInitPromise();
-		const [nextDecks, nextVerifications, nextLearnerState] = await Promise.all([
+		const [nextDecks, nextVerifications, nextLearnerState, checks, reviews] = await Promise.all([
 			keatingStorage.getDecks(),
 			keatingStorage.getVerifications(),
 			keatingStorage.getLearnerState(),
+			keatingStorage.getQuestionChecks(),
+			keatingStorage.getCardReviews(),
 		]);
+		setDecisionEvidence({ checks, reviews });
 		dispatch({ type: "data.loaded", decks: nextDecks, verifications: nextVerifications, learnerState: nextLearnerState });
 	}, []);
 
@@ -301,7 +433,8 @@ export function ComingUp() {
 		};
 	}, []);
 
-	const queue = useMemo(() => learnerState ? buildComingUpQueue({ decks, verifications, learnerState, now }) : emptyQueue(), [decks, learnerState, now, verifications]);
+	const queue = useMemo(() => learnerState ? projectWebDecisionPolicies(buildComingUpQueue({ decks, verifications, learnerState, now }),
+		{ ...decisionEvidence, decks }, decisionPolicies, now) : emptyQueue(), [decks, learnerState, now, verifications, decisionEvidence, decisionPolicies]);
 	const currentReviewDeck = reviewDeckIds.length > 0 ? decks.find((deck) => deck.id === reviewDeckIds[reviewIndex]) ?? null : null;
 	const dueCardIds = currentReviewDeck?.cards.filter((card) => card.srs.dueAt <= now).map((card) => card.id) ?? [];
 
@@ -320,9 +453,11 @@ export function ComingUp() {
 
 	const startReview = useCallback((deckIds: string[] = queue.dueDeckIds) => {
 		if (deckIds.length === 0) return;
+		for (const id of deckIds) { estimateRuns.current.get(id)?.abort(); estimateStore.remove(id); }
+		setEstimates(current => Object.fromEntries(Object.entries(current).filter(([id]) => !deckIds.includes(id))));
 		dispatch({ type: "review.started", deckIds });
 		requestAnimationFrame(() => document.getElementById("coming-up-review")?.scrollIntoView({ behavior: "smooth", block: "start" }));
-	}, [queue.dueDeckIds]);
+	}, [queue.dueDeckIds, estimateStore]);
 
 	const handleReviewComplete = useCallback(() => {
 		if (reviewIndex + 1 < reviewDeckIds.length) {
@@ -424,6 +559,9 @@ export function ComingUp() {
 					<button type="button" className={cx(styles.button, styles.accentButton)} disabled={queue.dueCardCount === 0} onClick={() => startReview()}><Play size={15} />Start due review</button>
 				</section>
 
+				<ComingUpReadiness source={keatingStorage} contextVersion={JSON.stringify({ queue, decks, verifications, learnerState, reviewDeckIds })}
+					hasDueDecks={queue.dueDeckIds.length > 0} onStart={(deckId) => startReview([deckId])} />
+
 				{currentReviewDeck ? (
 					<section id="coming-up-review" className={styles.reviewer} aria-labelledby="review-title">
 						<div className={styles.reviewerHead}>
@@ -487,6 +625,11 @@ export function ComingUp() {
 											onReview={() => startReview([item.targetId])}
 											onCompleteCheck={() => void completeVerification(item)}
 											onOpenTopic={() => navigate({ to: "/chat" })}
+											onEstimate={() => void estimateDeck(item.targetId)}
+											estimate={estimates[item.targetId]}
+											estimateBusy={estimating.has(item.targetId)}
+											estimateStatus={estimateStatuses[item.targetId]}
+											estimateFronts={Object.fromEntries((decks.find(deck => deck.id === item.targetId)?.cards ?? []).map(card => [card.id, card.front]))}
 										/>
 									))}
 								</div>

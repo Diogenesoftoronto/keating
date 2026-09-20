@@ -18,6 +18,11 @@ export interface DesktopOfflineBridge {
 	remove(): Promise<void>;
 	generate(input: { prompt: string; maxTokens?: number; temperature?: number }): Promise<string>;
 	cancelGeneration(): Promise<void>;
+	/** Optional for older desktop builds. Scores decimal candidate indices. */
+	scoreLabels?(input: { requestId: string; modelId: string; prompt: string; labelCount: number }): Promise<{
+		modelId: string; negativeLogLikelihoods: readonly number[];
+	} | null>;
+	cancelScoring?(requestId: string): Promise<void>;
 }
 declare global { interface Window { keatingOffline?: DesktopOfflineBridge } }
 

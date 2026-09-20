@@ -1,0 +1,8 @@
+.question-judgement-review { display: flex; flex-direction: column; gap: .875rem; margin-top: .875rem; border-top: 1px solid var(--border); padding-top: .875rem; color: var(--foreground); font-size: .8125rem; line-height: 1.5; }
+.question-judgement-review section { display: flex; flex-direction: column; gap: .375rem; min-width: 0; }
+.question-judgement-review h4, .question-judgement-review p { margin: 0; }
+.question-judgement-review h4 { font-size: .875rem; font-weight: 700; }
+.question-judgement-review__question, .question-judgement-review__grade { font-weight: 600; }
+.question-judgement-review blockquote { margin: .25rem 0; border-left: 2px solid var(--primary); padding-left: .75rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.question-judgement-review blockquote footer { margin-top: .25rem; font-size: .75rem; }
+.question-judgement-review__model { overflow-wrap: anywhere; font-size: .75rem; }

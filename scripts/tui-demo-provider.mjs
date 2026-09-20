@@ -17,6 +17,12 @@ const exampleReply = [
   "Therefore √2 is irrational.",
 ].join(" ");
 
+const raftReply = [
+  "In Raft, if two entries in different logs have the same index and term, they store the identical command and their logs are identical up to that point.",
+  "Now imagine two candidates timeout at the exact same millisecond in term 3 and both request votes.",
+  "What condition prevents both candidates from acquiring a majority quorum simultaneously in the same term?",
+].join(" ");
+
 function replyFor(messages) {
   const latest = [...messages].reverse().find((message) => message && message.role === "user");
   const content = Array.isArray(latest?.content)
@@ -34,6 +40,7 @@ function replyFor(messages) {
     : typeof latest?.content === "string"
       ? latest.content
       : "";
+  if (content.toLowerCase().includes("raft") || content.toLowerCase().includes("consensus")) return raftReply;
   return content.toLowerCase().includes("numerical example") ? exampleReply : contradictionReply;
 }
 

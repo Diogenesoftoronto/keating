@@ -1,0 +1,105 @@
+{
+  "$schema": "https://nono.sh/schemas/profile.schema.json",
+  "meta": {
+    "name": "keating",
+    "version": "1.0.0",
+    "description": "Secure capability profile for the Keating hyperteacher repository (CLI, TUI, web UI, mobile contracts)",
+    "author": "Diogenes of Toronto"
+  },
+  "extends": "bun-dev",
+  "groups": {
+    "include": [
+      "node_runtime",
+      "nix_runtime",
+      "git_config",
+      "python_runtime",
+      "user_tools"
+    ]
+  },
+  "workdir": {
+    "access": "readwrite"
+  },
+  "filesystem": {
+    "allow": [
+      "$WORKDIR"
+    ],
+    "suppress_save_prompt": [
+      "$WORKDIR/.env",
+      "$WORKDIR/.env.local",
+      "$WORKDIR/.env.*"
+    ]
+  },
+  "platform_overrides": {
+    "macos": {
+      "filesystem": {
+        "deny": [
+          "$WORKDIR/.env",
+          "$WORKDIR/.env.local",
+          "$WORKDIR/web/.env",
+          "$WORKDIR/web/.env.local",
+          "$WORKDIR/desktop/.env"
+        ]
+      }
+    }
+  },
+  "network": {
+    "network_profile": "developer",
+    "allow_domain": [
+      "generativelanguage.googleapis.com",
+      "api.openai.com",
+      "api.anthropic.com",
+      "api.groq.com",
+      "openrouter.ai",
+      "api.minimax.chat",
+      "api.minimaxi.chat",
+      "registry.npmjs.org",
+      "us.i.posthog.com",
+      "eu.i.posthog.com",
+      "keating.help",
+      "*.keating.help",
+      "api.radicle.xyz"
+    ],
+    "open_port": [
+      3000,
+      4190,
+      4191,
+      4500,
+      6006,
+      8080,
+      8776,
+      8787,
+      11434,
+      1234,
+      58173
+    ],
+    "open_port_range": [
+      [
+        49152,
+        59152
+      ]
+    ]
+  },
+  "environment": {
+    "deny_vars": [
+      "AWS_*",
+      "AZURE_*",
+      "GCLOUD_*",
+      "GOOGLE_APPLICATION_CREDENTIALS",
+      "GITHUB_TOKEN",
+      "GH_TOKEN",
+      "SSH_*",
+      "VAULT_*",
+      "NOTORGANIC_*"
+    ]
+  },
+  "rollback": {
+    "exclude_patterns": [
+      ".git",
+      "node_modules",
+      "dist",
+      ".output",
+      ".keating/outputs",
+      "storybook-static"
+    ]
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://keating.help/schemas/native-scenarios/v1",
+  "title": "Native scenario starting state",
+  "description": "The complete object is private. Project actor/learner separately before execution. Source sha256 hashes canonical JSON of the complete original record, not the asset file.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "family", "source", "actor", "learner", "evaluation_only"],
+  "properties": {
+    "initial_document": {
+      "type": "object",
+      "description": "Optional unanswered source-screen OpenUI document. native_source_activities validates exact reconstruction from the reviewed pre-cut mapping; runtime validates the canonical learner contract. Never an actor completion or source assessment receipt.",
+      "required": ["schemaVersion", "id", "revision", "lifecycle", "retention", "supportedSurfaces", "nodes", "createdAt", "updatedAt"],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": {"const": 1}, "id": {"type": "string"},
+        "revision": {"const": 0}, "lifecycle": {"const": "ready"},
+        "retention": {"const": "ephemeral"},
+        "supportedSurfaces": {"const": ["web", "desktop", "mobile", "terminal"]},
+        "createdAt": {"type": "string"}, "updatedAt": {"type": "string"},
+        "nodes": {"type": "array", "minItems": 1, "maxItems": 1,
+          "items": {"type": "object", "additionalProperties": false,
+            "required": ["type", "id", "kind", "prompt"],
+            "properties": {
+              "type": {"const": "question"}, "id": {"const": "source-question"},
+              "kind": {"enum": ["choice", "text"]}, "prompt": {"type": "string", "minLength": 1},
+              "allowText": {"const": false},
+              "choices": {"type": "array", "minItems": 2, "items": {
+                "type": "object", "additionalProperties": false, "required": ["id", "label"],
+                "properties": {"id": {"type": "string", "pattern": "^[A-Z]$"}, "label": {"type": "string", "minLength": 1}}
+              }}
+            }
+          }
+        }
+      }
+    },
+    "schema_version": {"const": 1, "type": "integer"},
+    "id": {"type": "string", "minLength": 1},
+    "family": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["dataset", "revision", "record_id", "sha256", "license", "original_split", "transformations"],
+      "properties": {
+        "dataset": {"enum": ["mathdial", "bridge", "mrbench", "mathtutorbench", "tutormoments"]},
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "record_id": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "license": {"type": "string", "minLength": 1},
+        "original_split": {"enum": ["train", "dev", "test", "validation", "benchmark"]},
+        "transformations": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+      }
+    },
+    "actor": {
+      "type": "object", "additionalProperties": false, "required": ["opening_message"],
+      "properties": {"opening_message": {"type": "string", "minLength": 1}}
+    },
+    "learner": {
+      "type": "object", "additionalProperties": false,
+      "required": ["profile_evidence", "assumptions"],
+      "properties": {
+        "profile_evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+        "assumptions": {"type": "array", "items": {"$ref": "#/$defs/evidence"}}
+      }
+    },
+    "evaluation_only": {
+      "type": "object",
+      "required": ["original", "asset", "cut", "origin", "admission", "context_review", "native_assessment"],
+      "properties": {
+        "original": {"type": "object"},
+        "asset": {
+          "type": "object", "additionalProperties": false, "required": ["path", "sha256"],
+          "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}
+        },
+        "cut": {"type": "object"},
+        "origin": {
+          "type": "object", "required": ["aliases", "method"],
+          "properties": {"aliases": {"type": "array", "minItems": 1, "items": {"type": "string"}}, "method": {"type": "string"}}
+        },
+        "admission": {
+          "type": "object", "required": ["purpose", "exposure", "source_splits", "protected"],
+          "properties": {"purpose": {"enum": ["development", "reference"]}, "exposure": {"type": "string"},
+            "source_splits": {"type": "array", "items": {"type": "string"}}, "protected": {"type": "boolean"}}
+        },
+        "context_review": {"const": "heuristic-pass-independent-review-required"},
+        "native_assessment": {"const": {"status": "unassessed", "outcome": null}}
+      }
+    }
+  },
+  "$defs": {
+    "evidence": {"type": "object", "additionalProperties": false, "required": ["kind", "text"],
+      "properties": {"kind": {"type": "string", "minLength": 1}, "text": {"type": "string", "minLength": 1}}}
+  }
+}

@@ -6,6 +6,7 @@ import type {
 	StudyPriorityTarget,
 	Verification,
 } from "./storage";
+import type { WebDecisionEstimates } from "./judgement/decision-policies";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -25,6 +26,8 @@ export interface ComingUpItem {
 	weakConcepts: string[];
 	cardCount: number;
 	createdAt: number;
+	decisionEstimates?: WebDecisionEstimates;
+	decisionExploration?: boolean;
 }
 
 export interface ComingUpQueue {

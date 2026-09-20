@@ -8,6 +8,12 @@ type Screenshot = {
   width: number;
   height: number;
 };
+type Video = {
+  src: string;
+  poster?: string;
+  title?: string;
+  caption: string;
+};
 type Section = {
   heading: string;
   paragraphs?: string[];
@@ -16,6 +22,18 @@ type Section = {
   language?: string;
   links?: { label: string; href: string }[];
   screenshots?: Screenshot[];
+  videos?: Video[];
+  surfaceTabs?: SurfaceTab[];
+};
+type SurfaceTab = {
+  surface: "web" | "tui" | "cli";
+  label: string;
+  summary?: string;
+  code?: string;
+  language?: string;
+  bullets?: string[];
+  shortcut?: string;
+  video?: Video;
 };
 type Page = { slug: string; title: string; description: string; group: string; sections: Section[] };
 type Article = Omit<Page, "sections"> & { sections: (Section & { id: string })[] };
@@ -50,6 +68,41 @@ function validateScreenshot(value: unknown, location: string): asserts value is 
     }
   }
 }
+function validateVideo(value: unknown, location: string): asserts value is Video {
+  requireRecord(value, location);
+  for (const key of ["src", "caption"]) requireText(value[key], `${location}.${key}`);
+  if (!/^\/assets\/tapes\/[a-z0-9]+(?:-[a-z0-9]+)*\.mp4$/.test(value.src as string)) {
+    throw Error(`${location}.src: expected /assets/tapes/lowercase-name.mp4`);
+  }
+  if (value.poster !== undefined) {
+    requireText(value.poster, `${location}.poster`);
+    if (!/^\/assets\/tapes\/(?:posters\/)?[a-z0-9]+(?:-[a-z0-9]+)*\.(?:jpg|png|webp)$/.test(value.poster as string)) {
+      throw Error(`${location}.poster: expected /assets/tapes/posters/lowercase-name.jpg`);
+    }
+  }
+  if (value.title !== undefined) {
+    requireText(value.title, `${location}.title`);
+  }
+}
+function validateSurfaceTab(value: unknown, location: string): asserts value is SurfaceTab {
+  requireRecord(value, location);
+  requireText(value.surface, `${location}.surface`);
+  if (!["web", "tui", "cli"].includes(value.surface as string)) {
+    throw Error(`${location}.surface: expected one of web, tui, cli`);
+  }
+  requireText(value.label, `${location}.label`);
+  if (value.summary !== undefined) requireText(value.summary, `${location}.summary`);
+  if (value.code !== undefined) requireText(value.code, `${location}.code`);
+  if (value.language !== undefined) requireText(value.language, `${location}.language`);
+  if (value.shortcut !== undefined) requireText(value.shortcut, `${location}.shortcut`);
+  if (value.bullets !== undefined) {
+    if (!Array.isArray(value.bullets)) throw Error(`${location}.bullets: expected an array`);
+    value.bullets.forEach((b: unknown, i: number) => requireText(b, `${location}.bullets[${i}]`));
+  }
+  if (value.video !== undefined) {
+    validateVideo(value.video, `${location}.video`);
+  }
+}
 function validatePage(value: unknown, location: string): asserts value is Page {
   requireRecord(value, location);
   for (const key of ["slug", "title", "description", "group"]) requireText(value[key], `${location}.${key}`);
@@ -73,6 +126,18 @@ function validatePage(value: unknown, location: string): asserts value is Page {
         throw Error(`${at}.screenshots: expected a nonempty array`);
       }
       section.screenshots.forEach((shot: unknown, i: number) => validateScreenshot(shot, `${at}.screenshots[${i}]`));
+    }
+    if (section.videos !== undefined) {
+      if (!Array.isArray(section.videos) || !section.videos.length) {
+        throw Error(`${at}.videos: expected a nonempty array`);
+      }
+      section.videos.forEach((vid: unknown, i: number) => validateVideo(vid, `${at}.videos[${i}]`));
+    }
+    if (section.surfaceTabs !== undefined) {
+      if (!Array.isArray(section.surfaceTabs) || !section.surfaceTabs.length) {
+        throw Error(`${at}.surfaceTabs: expected a nonempty array`);
+      }
+      section.surfaceTabs.forEach((tab: unknown, i: number) => validateSurfaceTab(tab, `${at}.surfaceTabs[${i}]`));
     }
     if (section.links !== undefined) {
       if (!Array.isArray(section.links)) throw Error(`${at}.links: expected an array`);
@@ -175,12 +240,39 @@ ${body}
 </body></html>`;
 }
 
+function renderSurfaceTabs(tabs: SurfaceTab[] | undefined, sectionId: string): string {
+  if (!tabs || !tabs.length) return "";
+  const tabButtons = tabs.map((tab, index) => {
+    const active = index === 0;
+    const tabId = `tab-${sectionId}-${tab.surface}`;
+    const panelId = `panel-${sectionId}-${tab.surface}`;
+    const badgeLabel = tab.surface.toUpperCase();
+    return `<button type="button" role="tab" class="surface-tab-button${active ? " is-active" : ""}" id="${tabId}" aria-selected="${active ? "true" : "false"}" aria-controls="${panelId}" data-surface="${tab.surface}"><span class="surface-tab-badge">${badgeLabel}</span><span class="surface-tab-label">${escape(tab.label)}</span>${tab.shortcut ? `<kbd class="surface-tab-kbd">${escape(tab.shortcut)}</kbd>` : ""}</button>`;
+  }).join("");
+
+  const tabPanels = tabs.map((tab, index) => {
+    const active = index === 0;
+    const tabId = `tab-${sectionId}-${tab.surface}`;
+    const panelId = `panel-${sectionId}-${tab.surface}`;
+    return `<div role="tabpanel" id="${panelId}" class="surface-tab-panel${active ? " is-active" : ""}" aria-labelledby="${tabId}" data-surface="${tab.surface}"${active ? "" : " hidden"}>
+${tab.summary ? `<p class="surface-tab-summary">${escape(tab.summary)}</p>` : ""}
+${tab.bullets?.length ? `<ul class="surface-tab-bullets">${tab.bullets.map(bullet => `<li>${escape(bullet)}</li>`).join("")}</ul>` : ""}
+${tab.code ? `<figure class="code-block"><figcaption>${escape(tab.language || (tab.surface === "cli" ? "Terminal command" : "Command / navigation"))}</figcaption><pre tabindex="0" aria-label="${escape(tab.label)} code example"><code>${escape(tab.code)}</code></pre></figure>` : ""}
+${tab.video ? `<figure class="app-video"><video src="${escape(tab.video.src)}"${tab.video.poster ? ` poster="${escape(tab.video.poster)}"` : ""} controls preload="metadata" playsinline></video><figcaption>${tab.video.title ? `<strong>${escape(tab.video.title)}:</strong> ` : ""}${escape(tab.video.caption)} <a href="${escape(tab.video.src)}" aria-label="${escape(`Watch or download raw video: ${tab.video.title || tab.video.caption}`)}">Watch or download raw video <span aria-hidden="true">↗</span></a></figcaption></figure>` : ""}
+</div>`;
+  }).join("");
+
+  return `<div class="surface-tabs-container" data-surface-tabs><div class="surface-tab-bar" role="tablist" aria-label="Available surface options">${tabButtons}</div><div class="surface-tab-panels">${tabPanels}</div></div>`;
+}
+
 function renderSection(section: Article["sections"][number]): string {
   return `<section class="article-section" id="${section.id}"><h2><a class="heading-anchor" href="#${section.id}">${escape(section.heading)}<span aria-hidden="true">#</span></a></h2>
 ${(section.paragraphs ?? []).map(text => `<p>${escape(text)}</p>`).join("")}
+${renderSurfaceTabs(section.surfaceTabs, section.id)}
 ${section.bullets?.length ? `<ul>${section.bullets.map(text => `<li>${escape(text)}</li>`).join("")}</ul>` : ""}
 ${section.code ? `<figure class="code-block"><figcaption>${escape(section.language || "Example")}</figcaption><pre tabindex="0" aria-label="${escape(section.heading)} code example"><code>${escape(section.code)}</code></pre></figure>` : ""}
 ${(section.screenshots ?? []).map(shot => `<figure class="app-screenshot"><img src="${escape(shot.src)}" alt="${escape(shot.alt)}" width="${shot.width}" height="${shot.height}" loading="lazy" decoding="async"><figcaption>${escape(shot.caption)} <a href="${escape(shot.src)}" aria-label="${escape(`View full-size screenshot: ${shot.alt}`)}">View full-size screenshot <span aria-hidden="true">↗</span></a></figcaption></figure>`).join("")}
+${(section.videos ?? []).map(video => `<figure class="app-video"><video src="${escape(video.src)}"${video.poster ? ` poster="${escape(video.poster)}"` : ""} controls preload="metadata" playsinline></video><figcaption>${video.title ? `<strong>${escape(video.title)}:</strong> ` : ""}${escape(video.caption)} <a href="${escape(video.src)}" aria-label="${escape(`Watch or download raw video: ${video.title || video.caption}`)}">Watch or download raw video <span aria-hidden="true">↗</span></a></figcaption></figure>`).join("")}
 ${section.links?.length ? `<ul class="section-links">${section.links.map(link => `<li><a href="${escape(link.href)}">${escape(link.label)}<span aria-hidden="true"> ${link.href.startsWith("https://") ? "↗" : "→"}</span></a></li>`).join("")}</ul>` : ""}</section>`;
 }
 function adjacent(page: Article | undefined, direction: "Previous" | "Next"): string {
@@ -205,7 +297,7 @@ outputs.set("404.html", shell("Page not found", "Find a guide in the Keating doc
 // Check the generated shell as well as authored links, including fragment targets.
 const referencedAssets = new Set<string>();
 for (const [file, html] of outputs) {
-  for (const [, asset] of html.matchAll(/\s(?:src|href)="(\/assets\/[^\"]+)"/g)) {
+  for (const [, asset] of html.matchAll(/\s(?:src|href|poster)="(\/assets\/[^\"]+)"/g)) {
     if (!/^\/assets\/(?:[a-z0-9-]+\/)*[a-z0-9][a-z0-9.-]*$/.test(asset!)) throw Error(`Unsafe asset path in ${file}: ${asset}`);
     referencedAssets.add(asset!);
   }
@@ -224,7 +316,9 @@ outputs.set("search.json", JSON.stringify(ordered.map(page => ({
   sections: page.sections.map(section => ({ heading: section.heading, url: `${route(page.slug)}#${section.id}`, text: [
     ...(section.paragraphs ?? []), ...(section.bullets ?? []), section.code ?? "", ...(section.links ?? []).map(link => link.label),
     ...(section.screenshots ?? []).flatMap(shot => [shot.alt, shot.caption]),
-  ].join(" ") })),
+    ...(section.videos ?? []).flatMap(vid => [vid.title ?? "", vid.caption]),
+    ...(section.surfaceTabs ?? []).flatMap(tab => [tab.label, tab.summary ?? "", ...(tab.bullets ?? []), tab.code ?? "", tab.video?.title ?? "", tab.video?.caption ?? ""]),
+  ].filter(Boolean).join(" ") })),
 }))));
 outputs.set("robots.txt", `User-agent: *\nAllow: /\nSitemap: ${origin}/sitemap.xml\n`);
 outputs.set("sitemap.xml", `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${["", ...ordered.map(page => page.slug)].map(slug => `<url><loc>${origin}${route(slug)}</loc></url>`).join("")}</urlset>\n`);
@@ -236,6 +330,18 @@ try {
   for (const asset of ["site.css", "site.js", "keatingbot.png", "space-mono-regular.ttf", "jetbrains-mono-regular.ttf"]) {
     if (!await Bun.file(join(stage, "assets", asset)).exists()) throw Error(`Missing asset: ${asset}`);
   }
+
+  // Ensure video tapes and posters are staged from repository source directories if present
+  const sourceTapes = join(root, "../../web/public/tapes");
+  const stageTapes = join(stage, "assets", "tapes");
+  const localTapes = join(root, "assets", "tapes");
+  await mkdir(join(stageTapes, "posters"), { recursive: true });
+  await mkdir(join(localTapes, "posters"), { recursive: true });
+  if (await Bun.file(join(sourceTapes, "web-classroom.mp4")).exists()) {
+    await cp(sourceTapes, stageTapes, { recursive: true });
+    await cp(sourceTapes, localTapes, { recursive: true });
+  }
+
   for (const asset of referencedAssets) {
     const info = await lstat(join(stage, asset.slice(1))).catch(() => null);
     if (!info?.isFile() || !info.size) throw Error(`Missing or invalid asset: ${asset}`);
@@ -261,4 +367,5 @@ try {
   await rm(stage, { recursive: true, force: true });
 }
 const screenshotCount = pages.flatMap(page => page.sections.flatMap(section => section.screenshots ?? [])).length;
-console.log(`Built ${ordered.length + 1} pages, a 404 page, ${screenshotCount} inline screenshots, search index, sitemap, and robots.txt for ${origin}.`);
+const videoCount = pages.flatMap(page => page.sections.flatMap(section => section.videos ?? [])).length;
+console.log(`Built ${ordered.length + 1} pages, a 404 page, ${screenshotCount} inline screenshots, ${videoCount} video walkthroughs, search index, sitemap, and robots.txt for ${origin}.`);

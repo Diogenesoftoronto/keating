@@ -11,14 +11,14 @@ import {
 
 describe("live model catalog", () => {
 	test("every provider offers exactly one recommendation", () => {
-		for (const providerId of ["gemini-live", "openai-realtime"] as const) {
+		for (const providerId of ["tavus", "gpt-live", "gemini-live", "openai-realtime"] as const) {
 			const recommended = liveModelsFor(providerId).filter((model) => model.grade === "recommended");
 			expect(recommended).toHaveLength(1);
 		}
 	});
 
 	test("the recommendation is the first entry, so the fallback chain starts at the best model", () => {
-		for (const providerId of ["gemini-live", "openai-realtime"] as const) {
+		for (const providerId of ["tavus", "gpt-live", "gemini-live", "openai-realtime"] as const) {
 			expect(liveModelsFor(providerId)[0]).toBe(recommendedLiveModel(providerId)!);
 		}
 	});
@@ -28,10 +28,18 @@ describe("live model catalog", () => {
 		expect(new Set(ids).size).toBe(ids.length);
 	});
 
-	test("only legacy models are allowed to lack both video and image input", () => {
+	test("direct OpenAI models without visual input are legacy models", () => {
 		for (const model of LIVE_MODELS) {
-			if (model.video === "none" && !model.image) expect(model.grade).toBe("legacy");
+			if (model.providerId === "openai-realtime" && model.video === "none" && !model.image) expect(model.grade).toBe("legacy");
 		}
+	});
+
+	test("GPT Live is an audio-only account-backed model with no cross-provider fallback", () => {
+		expect(isLiveProviderId("gpt-live")).toBe(true);
+		expect(liveModelsFor("gpt-live")).toHaveLength(1);
+		expect(recommendedLiveModel("gpt-live")).toMatchObject({ value: "gpt-live-1", video: "none", image: false });
+		expect(nextBestLiveModel("gpt-live", "gpt-live-1")).toBeUndefined();
+		expect(describeLiveModel("gpt-live", "unknown")).toMatchObject({ video: "none", image: false });
 	});
 
 	test("a model without video or image input explains itself", () => {

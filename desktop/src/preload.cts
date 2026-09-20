@@ -167,5 +167,7 @@ const offlineBridge: KeatingOfflineBridge = {
   remove: () => ipcRenderer.invoke("keating:offline:rpc", "remove"),
   generate: (request) => ipcRenderer.invoke("keating:offline:rpc", "generate", request),
   cancelGeneration: () => ipcRenderer.invoke("keating:offline:rpc", "cancelGeneration"),
+  scoreLabels: (request) => ipcRenderer.invoke("keating:offline:rpc", "scoreLabels", request),
+  cancelScoring: (requestId) => ipcRenderer.invoke("keating:offline:rpc", "cancelScoring", requestId),
 };
 contextBridge.exposeInMainWorld("keatingOffline", offlineBridge);

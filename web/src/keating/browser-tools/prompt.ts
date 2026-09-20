@@ -1,6 +1,7 @@
 import type { KeatingStorage } from "../storage";
 import { DEFAULT_TEACHER_PERSONA } from "../persona";
 import { learnerContextPrompt } from "../learner-context";
+import type { DeclaredLearnerProfile } from "@keating/learner-contracts";
 import operationalProtocolMarkdown from "../prompts/operational-protocol.md?raw";
 import speechSystemPromptMarkdown from "../prompts/speech-system-prompt.md?raw";
 import { loadActiveTeachingRevision, type EvolutionStore } from "../../../../shared/evolution/loop";
@@ -28,8 +29,8 @@ export function refreshKeatingOperationalProtocol(prompt: string): string {
 	return composeKeatingSystemPrompt(persona);
 }
 
-export function buildKeatingSystemPrompt(speechEnabled = false, basePrompt = KEATING_SYSTEM_PROMPT, learnerContext = ""): string {
-	const personalized = `${basePrompt}${learnerContextPrompt(learnerContext)}`;
+export function buildKeatingSystemPrompt(speechEnabled = false, basePrompt = KEATING_SYSTEM_PROMPT, learnerContext = "", declaredProfile?: DeclaredLearnerProfile): string {
+	const personalized = `${basePrompt}${learnerContextPrompt(learnerContext, declaredProfile)}`;
 	return speechEnabled ? `${personalized}${SPEECH_SYSTEM_PROMPT}` : personalized;
 }
 

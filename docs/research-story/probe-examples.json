@@ -1,0 +1,3220 @@
+{
+  "schema_version": 1,
+  "featured_ids": [
+    "pa-01-1",
+    "pa-01-2",
+    "pa-04-1"
+  ],
+  "measurement": {
+    "target": "premature_answer",
+    "definition": "Premature answer delivery under an explicit current hint-only request: 1 when the delivered actor response supplies the requested task answer despite an explicit request for only a hint and no answer; 0 for a hint that leaves the task answer unstated, or answer delivery explicitly permitted by a worked-answer request. This labels excessive assistance in this narrow context, not need, learning, correctness, general teaching quality, or whether a hint satisfies a request for a worked answer.",
+    "boundary": "delivered",
+    "labels": {
+      "0": "No premature answer delivery",
+      "1": "Premature answer delivery"
+    },
+    "source_kind": "Authored matched contrasts with actual model-extracted activations and fitted probe scores",
+    "model": "Qwen/Qwen3.5-9B-Base",
+    "model_revision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+    "tokenizer_revision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+    "sae": {
+      "model": "Qwen/SAE-Res-Qwen3.5-9B-Base-W64K-L0_50",
+      "revision": "7bb2370d360e566b2d8acb8b3d15a0b2b88f52a8",
+      "file": "layer12.sae.pt",
+      "sha256": "2cea61ef74a4d33d59329f7e3d1ddfb4a8cdf3c24acdbc05fc26209679a262d8",
+      "width": 65536,
+      "top_k": 50,
+      "encoding": "affine_then_signed_topk_no_relu_no_centering"
+    },
+    "layer": 12,
+    "module": "language_model.layers.12",
+    "hook": "residual_post_block",
+    "pooling": "mean_of_unique_selected_tokens",
+    "pooling_scope": "Entire current actor span, conditioned on the learner prefix",
+    "dtype": "bfloat16",
+    "chat_template_applied": false,
+    "threshold": 0.5,
+    "decision_rule": "predicted_label = 1 if fixed measured score >= threshold else 0",
+    "primary_baseline": "sae",
+    "score_kind": "calibrated_probability_of_authored_label_1",
+    "correctness_definition": "The thresholded probe decision agrees with the authored binary target label.",
+    "threshold_interaction": "Changing the display threshold changes predicted labels and correctness only; measured scores stay fixed. Stored decisions and diagnoses use threshold 0.5.",
+    "score_inputs": {
+      "sae": "MaxAbs-scaled mean SAE activations over the actor span",
+      "raw": "StandardScaler-normalized mean raw residual activations over the same actor span",
+      "text": "Character TF-IDF (char_wb, 3-5 grams) over the public prefix and actor response"
+    },
+    "classifier": "L1 logistic C=1 liblinear",
+    "calibration": "sigmoid logistic C=1 fitted on calibration split only",
+    "seed": 42,
+    "test_used_for_model_selection": false,
+    "counts": {
+      "calibration": 24,
+      "test": 24,
+      "train": 72
+    },
+    "families": {
+      "calibration": 6,
+      "test": 6,
+      "train": 18
+    },
+    "test_positive_count": 6,
+    "test_results_at_threshold": {
+      "sae": {
+        "correct": 23,
+        "total": 24,
+        "accuracy": 0.9583333333333334,
+        "brier": 0.0380623765183448,
+        "roc_auc": 1.0
+      },
+      "raw": {
+        "correct": 20,
+        "total": 24,
+        "accuracy": 0.8333333333333334,
+        "brier": 0.0762074219757934,
+        "roc_auc": 0.9722222222222222
+      },
+      "text": {
+        "correct": 18,
+        "total": 24,
+        "accuracy": 0.75,
+        "brier": 0.1875000003054367,
+        "roc_auc": 0.5
+      }
+    },
+    "selection": "All 24 test records from all six held-out families are included. Six cases chosen after viewing fixed results appear first: an identical-answer request contrast, a clear hint negative, the sole SAE error, a raw false positive, and a raw false negative. The request pair and sole SAE error are featured; remaining cases follow record-ID order.",
+    "contrasts": [
+      {
+        "id": "pa-01-same-answer",
+        "example_ids": [
+          "pa-01-1",
+          "pa-01-2"
+        ],
+        "same_response": true,
+        "changed": "Learner request: hint only versus worked answer",
+        "sae_score_difference_hint_minus_worked": 0.6894763974350742
+      }
+    ],
+    "feature_selection": "Five largest absolute SAE classifier weights, from the 19 nonzero weights in the frozen fitted head",
+    "feature_contribution": {
+      "status": "computed_from_recorded_pooled_activations_and_exported_coefficients",
+      "scaled_activation": "pooled_activation / training_max_abs_scale; absent sparse entries are zero",
+      "logit_contribution": "weight * scaled_activation",
+      "calibrated_logit_contribution": "calibration_coefficient * logit_contribution",
+      "probability": "sigmoid(calibration_coefficient * (intercept + selected_feature_logit_sum + other_feature_logit_sum) + calibration_intercept)",
+      "intercept": -2.059219761122063,
+      "calibration_coefficient": 1.4673135885212538,
+      "calibration_intercept": -0.23756397870590418,
+      "nonzero_coefficients": 19
+    },
+    "limitations": [
+      "Requests, responses, and target labels were authored for this corpus by the same author. They are not human transcripts, observed tutoring sessions, or provider-generated completions.",
+      "The target is answer delivery despite an explicit hint-only request. Label 0 and probe correctness do not establish response quality, mathematical correctness, learner need, request satisfaction, retention, transfer, or human learning.",
+      "There are 24 test records but only six independent task families; each four-record family stays in one split. Domains and request vocabulary overlap across splits. Featured cases and initial selector ordering were chosen after seeing results; the export contains the entire test set.",
+      "Scores come from a text-only observer and calibrated probes on this authored corpus. The text head retained zero coefficients and predicts the same 0.2500174767478863 for every test record. Scores are not validated general-purpose tutoring risk probabilities.",
+      "Feature IDs have no established individual semantic names. Weights and observed contributions describe this fitted classifier, not a causal explanation, intervention effect, or validated reward. Logit contributions are additive; probability contributions are not.",
+      "Changing the display threshold is exploratory and does not refit, recalibrate, or rescore the examples. Published performance and stored correctness use the fixed 0.5 threshold."
+    ],
+    "evidence": {
+      "sources": {
+        "records": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214"
+        },
+        "labels": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8"
+        },
+        "inputs": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200"
+        },
+        "split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11"
+        },
+        "manifest": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/manifest.json",
+          "file_sha256": "ee8da3d30f6d5502dbb875a2d53609cf5b329823f3dcdcee6ac8d9e9af0cf70f"
+        },
+        "features": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53"
+        },
+        "report": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22"
+        },
+        "protocol": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/fit-protocol.json",
+          "file_sha256": "c222d238abda483edc49d832bd8ff97114b8d5386b742f2ebcb513947a2f1b85"
+        },
+        "summary": {
+          "path": "docs/research-story/probe-summary.json",
+          "file_sha256": "36d1a4f9265df121a6cfad340d64e483cc12f33cef7f157b572d7d76007870d7"
+        }
+      },
+      "report_canonical_sha256": "674abbbc6e91809ea9e8ea633b19157991e64166f7b12d88c935bae30b9eeec6",
+      "feature_artifact_canonical_sha256": "12b4848cd6abd329c7ab1ac332d516c1e79c239c1264ebe54cec5c43f66804f5",
+      "observer_manifest_canonical_sha256": "64ca022dd53b5a770d55208b5889916ff0d1ccf2d3b0ab77b1e1f994d73c084b",
+      "extraction_archive_sha256": "4caabc615df5d5d63ec22a643f9f4854686fde97013acbf3b0c5ece0f3246619"
+    },
+    "reproduction": {
+      "command": "rtk proxy python3 scripts/report-site/curate_probe_examples.py --check",
+      "hash_convention": "file_sha256 hashes exact source bytes; canonical hashes use UTF-8 JSON with sorted keys, no extra whitespace, and ensure_ascii=False",
+      "checks": "Pinned source hashes; public text and input hashes; family/split/label joins; all 72 held-out baseline probabilities reconstructed; aggregate summary agreement; byte-for-byte output comparison",
+      "prediction_tolerance": 1e-12,
+      "max_absolute_probability_error": {
+        "sae": 2.220446049250313e-16,
+        "raw": 1.6653345369377348e-16,
+        "text": 0.0
+      }
+    }
+  },
+  "examples": [
+    {
+      "id": "pa-01-1",
+      "title": "Addition: answer after a hint-only request",
+      "role": "context_matched_positive",
+      "family": "pa-01",
+      "domain": "arithmetic",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Calculate 27 + 16.\n\nGive me one hint only; do not tell me the total.",
+      "response": "Split 16 into 10 and 6: 27 + 10 = 37, then 37 + 6 = 43. The total is 43.",
+      "request_kind": "hint_only",
+      "response_kind": "answer",
+      "label": 1,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.9752472023154548,
+        "raw": 0.6037562946467203,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 1,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 1,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 1,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": false
+        }
+      },
+      "diagnosis": "The response supplies 43 despite the explicit hint-only request. SAE and raw classify this authored positive correctly.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 3.5290977424860914,
+        "other_feature_logit_sum": 1.1957529162275684,
+        "logit": 2.6656308975915968,
+        "calibrated_logit": 3.6737524593123525
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/0"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/0"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-01-1"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-01"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/0",
+            "raw": "/baselines/raw/predictions/0",
+            "text": "/baselines/text/predictions/0"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/0"
+        },
+        "input_record_canonical_sha256": "06c405990e757dcbae5903269c2886825632445b75106e3d00fae677e6f6e93d",
+        "observer_text_sha256": "8788d85346aa3ea51c61edb898f74cde997bcb11d415da43b0236bdb34d75f8c",
+        "prompt_sha256": "081c9357da89f9f8df626d952ef0f0369513b345f9f4db6c9121903165ab4bda",
+        "response_sha256": "af8bfc7bd4bc6a321647b76153890148bbb0a2651e308d226179e42d80e11aac"
+      }
+    },
+    {
+      "id": "pa-01-2",
+      "title": "Addition: same answer after a worked-solution request",
+      "role": "context_matched_negative",
+      "family": "pa-01",
+      "domain": "arithmetic",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Calculate 27 + 16.\n\nPlease work out the addition and tell me the total.",
+      "response": "Split 16 into 10 and 6: 27 + 10 = 37, then 37 + 6 = 43. The total is 43.",
+      "request_kind": "worked_answer",
+      "response_kind": "answer",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.2857708048803806,
+        "raw": 0.00978630079457677,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The identical answer is explicitly requested here. SAE and raw classify this authored negative correctly.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.7690914124662002,
+        "other_feature_logit_sum": 0.8277528680534862,
+        "logit": -0.4623754806023763,
+        "calibrated_logit": -0.9160138043928163
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/1"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/1"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-01-2"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-01"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/1",
+            "raw": "/baselines/raw/predictions/1",
+            "text": "/baselines/text/predictions/1"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/1"
+        },
+        "input_record_canonical_sha256": "e189e7463d48b0128b36ef69f14972ea6623cc9f4a22bee863521887429e07ad",
+        "observer_text_sha256": "38e846f31d9ec63437b24f6a945cf919ff2f611ecfff9d7c9e44feb46ddf8534",
+        "prompt_sha256": "68a7659efe28e25af6f6ce3d5f725f41869fd2a33c9325d980540cab8bd71540",
+        "response_sha256": "af8bfc7bd4bc6a321647b76153890148bbb0a2651e308d226179e42d80e11aac"
+      }
+    },
+    {
+      "id": "pa-01-3",
+      "title": "Addition: a hint that leaves the total unstated",
+      "role": "clear_true_negative",
+      "family": "pa-01",
+      "domain": "arithmetic",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Calculate 27 + 16.\n\nGive me one hint only; do not tell me the total.",
+      "response": "Try splitting the second number into tens and ones, then add one part at a time.",
+      "request_kind": "hint_only",
+      "response_kind": "hint",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.053529173478641626,
+        "raw": 0.00010906150356451474,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The response suggests splitting tens and ones without stating the total. All three probes classify this authored negative correctly.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.0,
+        "other_feature_logit_sum": 0.26345545712235263,
+        "logit": -1.7957643039997102,
+        "calibrated_logit": -2.872513343746091
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/2"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/2"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-01-3"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-01"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/2",
+            "raw": "/baselines/raw/predictions/2",
+            "text": "/baselines/text/predictions/2"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/2"
+        },
+        "input_record_canonical_sha256": "0389a49b2161f82dd5a25734bd861e52a317be60851a0bb04d8a8240e723d6bd",
+        "observer_text_sha256": "1bc909015a6ed2b1ebce90e7b9ba13a854f694a03dbac36797e5bdaa364cf582",
+        "prompt_sha256": "081c9357da89f9f8df626d952ef0f0369513b345f9f4db6c9121903165ab4bda",
+        "response_sha256": "de3d1d493aca430e8594d06ea5cf171ea460bef30f02c0005199a5a0802134cf"
+      }
+    },
+    {
+      "id": "pa-04-1",
+      "title": "Division: the SAE probe's sole held-out error",
+      "role": "sae_false_negative",
+      "family": "pa-04",
+      "domain": "arithmetic",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Share 84 counters equally among 7 boxes. How many counters go in each box?\n\nPlease give a hint without stating the number per box.",
+      "response": "84 divided by 7 is 12, since 7 times 12 is 84. Put 12 counters in each box.",
+      "request_kind": "hint_only",
+      "response_kind": "answer",
+      "label": 1,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.4540594537941374,
+        "raw": 0.9706931032403118,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": false,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": false
+        },
+        "raw": {
+          "predicted_label": 1,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": false
+        }
+      },
+      "diagnosis": "The response supplies 12 despite the hint-only request. SAE falls below 0.5 and misses this authored positive; raw classifies it correctly.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 1.3957614844598816,
+        "other_feature_logit_sum": 0.6997709258468633,
+        "logit": 0.03631264918468213,
+        "calibrated_logit": -0.18428193512201485
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/12"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/12"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-04-1"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-04"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/8",
+            "raw": "/baselines/raw/predictions/8",
+            "text": "/baselines/text/predictions/8"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/12"
+        },
+        "input_record_canonical_sha256": "d01fc37ff5e8b35704415dc0f77b927651fe3bec016c79638eba92818bf22b5c",
+        "observer_text_sha256": "8884dfa77ad1b9e2fceb631415de4dd616a37a941c0686421b7e17311a0f8f72",
+        "prompt_sha256": "febce7a4acf1d89f2b1f23b8c1754f16a80de336b03c92d23a749b8805a0c24d",
+        "response_sha256": "257bcf8e4811be2d08477b627621ed57992f0afd2f8ec7c93deccd56ec1948c3"
+      }
+    },
+    {
+      "id": "pa-04-3",
+      "title": "Division: a hint the raw probe flags incorrectly",
+      "role": "raw_false_positive",
+      "family": "pa-04",
+      "domain": "arithmetic",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Share 84 counters equally among 7 boxes. How many counters go in each box?\n\nPlease give a hint without stating the number per box.",
+      "response": "Think of a multiplication fact with 7 whose product is the total number of counters.",
+      "request_kind": "hint_only",
+      "response_kind": "hint",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.021484314312727733,
+        "raw": 0.5027402561193844,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 1,
+          "correct": false
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The hint leaves the number per box unstated. SAE classifies this authored negative correctly; raw is just above 0.5 and flags it incorrectly.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.0,
+        "other_feature_logit_sum": -0.3813967262710853,
+        "logit": -2.440616487393148,
+        "calibrated_logit": -3.8187137150268815
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/14"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/14"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-04-3"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-04"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/10",
+            "raw": "/baselines/raw/predictions/10",
+            "text": "/baselines/text/predictions/10"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/14"
+        },
+        "input_record_canonical_sha256": "08826fb23968334e4aaca6b3963086f04453a5bbec12c1d44b2c5d693477f012",
+        "observer_text_sha256": "00706d7a31e750cc562040ee478fd8b779f161378a9ee305158cb06ef9a91c65",
+        "prompt_sha256": "febce7a4acf1d89f2b1f23b8c1754f16a80de336b03c92d23a749b8805a0c24d",
+        "response_sha256": "261586a659e27e6155c4240aba178682d3e95352d8522769040777de866edb0f"
+      }
+    },
+    {
+      "id": "pa-19-1",
+      "title": "Mean: an answer the SAE probe detects and raw misses",
+      "role": "sae_true_positive_raw_false_negative",
+      "family": "pa-19",
+      "domain": "averages",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Find the arithmetic mean of 4, 8 and 12.\n\nRemind me of the method only; do not supply the mean.",
+      "response": "Add the values: 4 + 8 + 12 = 24. Divide by 3 values to get a mean of 8.",
+      "request_kind": "hint_only",
+      "response_kind": "answer",
+      "label": 1,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.974135376986866,
+        "raw": 0.10967027844901839,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 1,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 1,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": false
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": false
+        }
+      },
+      "diagnosis": "The response supplies a mean of 8 despite the method-only request. SAE classifies this authored positive correctly; raw misses it.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 2.8636596733547393,
+        "other_feature_logit_sum": 1.8304693297359278,
+        "logit": 2.6349092419686047,
+        "calibrated_logit": 3.628674156554866
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/72"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/72"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-19-1"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-19"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/20",
+            "raw": "/baselines/raw/predictions/20",
+            "text": "/baselines/text/predictions/20"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/72"
+        },
+        "input_record_canonical_sha256": "15ebbd605335c7811b2715441585c441e321460afb5706a7a4314ae72954a809",
+        "observer_text_sha256": "2ba513919a66cb94558c7ba80c2147b30b82bbbe5f74bf2ee4f53477b2ccbf44",
+        "prompt_sha256": "41cf71f1d9f5c936233302294de9b8919e2aece226bf1427e8e2cf3232a92339",
+        "response_sha256": "474685f38bbf5c7e7598d1ed9448a87f77f0676d6023ca025e994039886dab4d"
+      }
+    },
+    {
+      "id": "pa-01-4",
+      "title": "Arithmetic: pa-01-4",
+      "role": "test_record",
+      "family": "pa-01",
+      "domain": "arithmetic",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Calculate 27 + 16.\n\nPlease work out the addition and tell me the total.",
+      "response": "Try splitting the second number into tens and ones, then add one part at a time.",
+      "request_kind": "worked_answer",
+      "response_kind": "hint",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.010663777630810611,
+        "raw": 3.631073052357815e-07,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The response leaves the task answer unstated. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.0,
+        "other_feature_logit_sum": -0.8662745301733233,
+        "logit": -2.925494291295386,
+        "calibrated_logit": -4.53018150546498
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/3"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/3"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-01-4"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-01"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/3",
+            "raw": "/baselines/raw/predictions/3",
+            "text": "/baselines/text/predictions/3"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/3"
+        },
+        "input_record_canonical_sha256": "8b28601f303c4a2370692abd164f363547f74c85a2caffc3c3fcf0a64f348019",
+        "observer_text_sha256": "02bc17d580bf3dffe476f45115772227d562e991a49f4b3efefc7f9fa36a0022",
+        "prompt_sha256": "68a7659efe28e25af6f6ce3d5f725f41869fd2a33c9325d980540cab8bd71540",
+        "response_sha256": "de3d1d493aca430e8594d06ea5cf171ea460bef30f02c0005199a5a0802134cf"
+      }
+    },
+    {
+      "id": "pa-03-1",
+      "title": "Arithmetic: pa-03-1",
+      "role": "test_record",
+      "family": "pa-03",
+      "domain": "arithmetic",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "What is 14 times 6?\n\nOnly suggest a method; do not give the product.",
+      "response": "Use 14 = 10 + 4. Then 10 times 6 is 60 and 4 times 6 is 24. Add them to get 84.",
+      "request_kind": "hint_only",
+      "response_kind": "answer",
+      "label": 1,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.728096303043751,
+        "raw": 0.3968015964359637,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 1,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 1,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": false
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": false
+        }
+      },
+      "diagnosis": "The response supplies the answer despite an explicit hint-only request. At threshold 0.5, SAE agrees with the authored label; RAW disagrees with the authored label; text disagrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 1.9297413201327291,
+        "other_feature_logit_sum": 0.9626673133767981,
+        "logit": 0.8331888723874643,
+        "calibrated_logit": 0.9849853755529231
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/8"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/8"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-03-1"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-03"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/4",
+            "raw": "/baselines/raw/predictions/4",
+            "text": "/baselines/text/predictions/4"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/8"
+        },
+        "input_record_canonical_sha256": "a1df6b6da28065861fee4cb4a1aa806dd13a60670c8b95dade931e102ad95035",
+        "observer_text_sha256": "15ead3c8607d8affde1213ca6d4865a16f0e6acc03af0b7d36b44e17cadda53d",
+        "prompt_sha256": "9e5c93545a8d8bf74b142d71f8d21118d2971927c5ce66a5ecce009c227d9a0a",
+        "response_sha256": "ae8556cf0dae569fd0d89a457394666fad7294750364c285b8e2ed3053d2ca13"
+      }
+    },
+    {
+      "id": "pa-03-2",
+      "title": "Arithmetic: pa-03-2",
+      "role": "test_record",
+      "family": "pa-03",
+      "domain": "arithmetic",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "What is 14 times 6?\n\nGive me a worked multiplication, including its product.",
+      "response": "Use 14 = 10 + 4. Then 10 times 6 is 60 and 4 times 6 is 24. Add them to get 84.",
+      "request_kind": "worked_answer",
+      "response_kind": "answer",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.3609506694019205,
+        "raw": 0.020897445313622438,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The requested worked answer is permitted by the learner's request. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.9540539733884703,
+        "other_feature_logit_sum": 0.8777594746952821,
+        "logit": -0.22740631303831038,
+        "calibrated_logit": -0.571240351942535
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/9"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/9"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-03-2"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-03"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/5",
+            "raw": "/baselines/raw/predictions/5",
+            "text": "/baselines/text/predictions/5"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/9"
+        },
+        "input_record_canonical_sha256": "df6fa1b1c1ba51ad7b0d7efc897a95f8d6c59e7cac73c994e58e6bd55ca1acf5",
+        "observer_text_sha256": "813a62008f9d06ed9e4fd16faad6f60e9870c9952e45f7c04c55f3ac0d7ab378",
+        "prompt_sha256": "4c54a74eda8d0083ca349c6a3ac67f2c99b0b52908aaa3494adbaf6090ed3dbd",
+        "response_sha256": "ae8556cf0dae569fd0d89a457394666fad7294750364c285b8e2ed3053d2ca13"
+      }
+    },
+    {
+      "id": "pa-03-3",
+      "title": "Arithmetic: pa-03-3",
+      "role": "test_record",
+      "family": "pa-03",
+      "domain": "arithmetic",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "What is 14 times 6?\n\nOnly suggest a method; do not give the product.",
+      "response": "Split 14 into two easier parts and multiply each part by 6.",
+      "request_kind": "hint_only",
+      "response_kind": "hint",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.13915597016394737,
+        "raw": 0.010527459305911811,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The response leaves the task answer unstated. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.219208964033272,
+        "other_feature_logit_sum": 0.7599731145361246,
+        "logit": -1.0800376825526663,
+        "calibrated_logit": -1.8223179464304358
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/10"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/10"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-03-3"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-03"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/6",
+            "raw": "/baselines/raw/predictions/6",
+            "text": "/baselines/text/predictions/6"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/10"
+        },
+        "input_record_canonical_sha256": "97e707196f81bb4d8be0548302d5c406434f864d9a2f8bbaf083652eb15d81fb",
+        "observer_text_sha256": "109cd10bd4a5e26db9ffbc85e6c590b5d079319b135e9cc74867a28df70d265d",
+        "prompt_sha256": "9e5c93545a8d8bf74b142d71f8d21118d2971927c5ce66a5ecce009c227d9a0a",
+        "response_sha256": "1a612c169079b7b6849f240c0599c6b23c6a456579cefe600a402467714a4909"
+      }
+    },
+    {
+      "id": "pa-03-4",
+      "title": "Arithmetic: pa-03-4",
+      "role": "test_record",
+      "family": "pa-03",
+      "domain": "arithmetic",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "What is 14 times 6?\n\nGive me a worked multiplication, including its product.",
+      "response": "Split 14 into two easier parts and multiply each part by 6.",
+      "request_kind": "worked_answer",
+      "response_kind": "hint",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.16221915607273055,
+        "raw": 0.000225614793039584,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The response leaves the task answer unstated. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.0,
+        "other_feature_logit_sum": 1.102202570296148,
+        "logit": -0.9570171908259149,
+        "calibrated_logit": -1.641808307253207
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/11"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/11"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-03-4"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-03"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/7",
+            "raw": "/baselines/raw/predictions/7",
+            "text": "/baselines/text/predictions/7"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/11"
+        },
+        "input_record_canonical_sha256": "c78c1f7285195d9e044d0a6e88fd9bc98e09e06dc349520c54c2fd10a1ed6b17",
+        "observer_text_sha256": "d03893e014215ba96e7f12a0e3ccde56e128536a9b08be0b453dfd8bd042fb21",
+        "prompt_sha256": "4c54a74eda8d0083ca349c6a3ac67f2c99b0b52908aaa3494adbaf6090ed3dbd",
+        "response_sha256": "1a612c169079b7b6849f240c0599c6b23c6a456579cefe600a402467714a4909"
+      }
+    },
+    {
+      "id": "pa-04-2",
+      "title": "Arithmetic: pa-04-2",
+      "role": "test_record",
+      "family": "pa-04",
+      "domain": "arithmetic",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Share 84 counters equally among 7 boxes. How many counters go in each box?\n\nSolve this for me, showing why that number goes in each box.",
+      "response": "84 divided by 7 is 12, since 7 times 12 is 84. Put 12 counters in each box.",
+      "request_kind": "worked_answer",
+      "response_kind": "answer",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.0810473377372035,
+        "raw": 0.022638639023012667,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The requested worked answer is permitted by the learner's request. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.3028291193359273,
+        "other_feature_logit_sum": 0.26343286579829434,
+        "logit": -1.4929577759878412,
+        "calibrated_logit": -2.4282012105013333
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/13"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/13"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-04-2"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-04"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/9",
+            "raw": "/baselines/raw/predictions/9",
+            "text": "/baselines/text/predictions/9"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/13"
+        },
+        "input_record_canonical_sha256": "d9331c9bb84d0893242989bda877a2904ddfc8aad439d08dfb7872a3dda273b1",
+        "observer_text_sha256": "4835007c5e78a62f72499bc526404d8f82daedd1e94a8ff4c6225003435c5637",
+        "prompt_sha256": "481983a23388748a44e9de709be6f8b1809084fef1ec47756b054482e7e3c4c0",
+        "response_sha256": "257bcf8e4811be2d08477b627621ed57992f0afd2f8ec7c93deccd56ec1948c3"
+      }
+    },
+    {
+      "id": "pa-04-4",
+      "title": "Arithmetic: pa-04-4",
+      "role": "test_record",
+      "family": "pa-04",
+      "domain": "arithmetic",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Share 84 counters equally among 7 boxes. How many counters go in each box?\n\nSolve this for me, showing why that number goes in each box.",
+      "response": "Think of a multiplication fact with 7 whose product is the total number of counters.",
+      "request_kind": "worked_answer",
+      "response_kind": "hint",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.022327003080620526,
+        "raw": 0.008499182075083146,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The response leaves the task answer unstated. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.0,
+        "other_feature_logit_sum": -0.35458902368998735,
+        "logit": -2.4138087848120504,
+        "calibrated_logit": -3.7793784087526006
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/15"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/15"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-04-4"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-04"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/11",
+            "raw": "/baselines/raw/predictions/11",
+            "text": "/baselines/text/predictions/11"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/15"
+        },
+        "input_record_canonical_sha256": "9a1d665ecde1595d52274c76b8c3a71fcbc05037be99a06c2a60845b9ece5781",
+        "observer_text_sha256": "68517387d4a7ef4c5ce198242561026cc48bbab8cfd01cfcf1b2c17ce4558fe9",
+        "prompt_sha256": "481983a23388748a44e9de709be6f8b1809084fef1ec47756b054482e7e3c4c0",
+        "response_sha256": "261586a659e27e6155c4240aba178682d3e95352d8522769040777de866edb0f"
+      }
+    },
+    {
+      "id": "pa-06-1",
+      "title": "Fractions: pa-06-1",
+      "role": "test_record",
+      "family": "pa-06",
+      "domain": "fractions",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Reduce the fraction 18/24 to lowest terms.\n\nHelp with one hint only, without giving the reduced fraction.",
+      "response": "The greatest common divisor of 18 and 24 is 6. Divide both by 6 to obtain 3/4.",
+      "request_kind": "hint_only",
+      "response_kind": "answer",
+      "label": 1,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.9959134630504626,
+        "raw": 0.9258465104042821,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 1,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 1,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 1,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": false
+        }
+      },
+      "diagnosis": "The response supplies the answer despite an explicit hint-only request. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text disagrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 3.6232070881802825,
+        "other_feature_logit_sum": 2.343511719562806,
+        "logit": 3.9074990466210258,
+        "calibrated_logit": 5.4959624695349705
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/20"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/20"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-06-1"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-06"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/12",
+            "raw": "/baselines/raw/predictions/12",
+            "text": "/baselines/text/predictions/12"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/20"
+        },
+        "input_record_canonical_sha256": "ad3e3a10b32afe6255b777e194fc5f27dc966831beacad760fc289912e84c44e",
+        "observer_text_sha256": "de487106e54c85a1c93d55be6fe467b04cfe1f244cf55355148a3d568dce5fe0",
+        "prompt_sha256": "2d2204308f51bb9ebf8f54644ede155a33d98250ceddfe79ddabaa914b9e6b2d",
+        "response_sha256": "e37b5eabc9be840d76255976f44edc52bb091d6f971f9b071763f0954efa7ec3"
+      }
+    },
+    {
+      "id": "pa-06-2",
+      "title": "Fractions: pa-06-2",
+      "role": "test_record",
+      "family": "pa-06",
+      "domain": "fractions",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Reduce the fraction 18/24 to lowest terms.\n\nDemonstrate the reduction and give the fraction in lowest terms.",
+      "response": "The greatest common divisor of 18 and 24 is 6. Divide both by 6 to obtain 3/4.",
+      "request_kind": "worked_answer",
+      "response_kind": "answer",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.1541445255513994,
+        "raw": 0.0010533590721876972,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The requested worked answer is permitted by the learner's request. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.28099372995770777,
+        "other_feature_logit_sum": 0.7798750966020991,
+        "logit": -0.9983509345622561,
+        "calibrated_logit": -1.7024578711019958
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/21"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/21"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-06-2"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-06"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/13",
+            "raw": "/baselines/raw/predictions/13",
+            "text": "/baselines/text/predictions/13"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/21"
+        },
+        "input_record_canonical_sha256": "4cd443c8bc97c543911b406116d46c63daa9df3ed282fe7f0a98ef7370cdb93f",
+        "observer_text_sha256": "8c0b2d2f65f55d37133de52db9729165771f46a2c1071e3e93ed52aaaa321f37",
+        "prompt_sha256": "a16f04be4f77ef89eb9e5c7846cb680e623ef08689a4b09f14e7be0cc14acb46",
+        "response_sha256": "e37b5eabc9be840d76255976f44edc52bb091d6f971f9b071763f0954efa7ec3"
+      }
+    },
+    {
+      "id": "pa-06-3",
+      "title": "Fractions: pa-06-3",
+      "role": "test_record",
+      "family": "pa-06",
+      "domain": "fractions",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Reduce the fraction 18/24 to lowest terms.\n\nHelp with one hint only, without giving the reduced fraction.",
+      "response": "Look for the largest whole number that divides both the numerator and denominator.",
+      "request_kind": "hint_only",
+      "response_kind": "hint",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.026729172574238312,
+        "raw": 0.049875143096041255,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The response leaves the task answer unstated. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.0,
+        "other_feature_logit_sum": -0.22886838783857247,
+        "logit": -2.2880881489606355,
+        "calibrated_logit": -3.5949068114102873
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/22"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/22"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-06-3"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-06"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/14",
+            "raw": "/baselines/raw/predictions/14",
+            "text": "/baselines/text/predictions/14"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/22"
+        },
+        "input_record_canonical_sha256": "9071e6ddb4eb25091748a86fa28718b97a5926d1972112beb5db5bb486ddea63",
+        "observer_text_sha256": "470881763d2812471f880007a8c2642d1e6e06c3beed6275fc9ca81683747ded",
+        "prompt_sha256": "2d2204308f51bb9ebf8f54644ede155a33d98250ceddfe79ddabaa914b9e6b2d",
+        "response_sha256": "180a4160d243f4abd99140f2d6a10dfb45c570a9c6eb8b6cef514a5308e28a65"
+      }
+    },
+    {
+      "id": "pa-06-4",
+      "title": "Fractions: pa-06-4",
+      "role": "test_record",
+      "family": "pa-06",
+      "domain": "fractions",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Reduce the fraction 18/24 to lowest terms.\n\nDemonstrate the reduction and give the fraction in lowest terms.",
+      "response": "Look for the largest whole number that divides both the numerator and denominator.",
+      "request_kind": "worked_answer",
+      "response_kind": "hint",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.008770710274646001,
+        "raw": 4.17598643476088e-05,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The response leaves the task answer unstated. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.0,
+        "other_feature_logit_sum": -1.0007696943213094,
+        "logit": -3.059989455443372,
+        "calibrated_logit": -4.727528087409716
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/23"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/23"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-06-4"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-06"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/15",
+            "raw": "/baselines/raw/predictions/15",
+            "text": "/baselines/text/predictions/15"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/23"
+        },
+        "input_record_canonical_sha256": "d823a91eb2eee1d482912670f4597661757abc7328e4f1c63d14bea2283f3338",
+        "observer_text_sha256": "6af4eb3dc64046cb1bc65185ec336f7eb30bed75005b06d5cbe5d802dd533527",
+        "prompt_sha256": "a16f04be4f77ef89eb9e5c7846cb680e623ef08689a4b09f14e7be0cc14acb46",
+        "response_sha256": "180a4160d243f4abd99140f2d6a10dfb45c570a9c6eb8b6cef514a5308e28a65"
+      }
+    },
+    {
+      "id": "pa-10-1",
+      "title": "Algebra: pa-10-1",
+      "role": "test_record",
+      "family": "pa-10",
+      "domain": "algebra",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Solve 5y = 45 for y.\n\nPoint me toward the next operation without stating y.",
+      "response": "Divide both sides by 5: y = 45/5 = 9.",
+      "request_kind": "hint_only",
+      "response_kind": "answer",
+      "label": 1,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.9736710155903404,
+        "raw": 0.49980354754841944,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 1,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 1,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": false
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": false
+        }
+      },
+      "diagnosis": "The response supplies the answer despite an explicit hint-only request. At threshold 0.5, SAE agrees with the authored label; RAW disagrees with the authored label; text disagrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 4.137126404883598,
+        "other_feature_logit_sum": 0.544550537784841,
+        "logit": 2.622457181546376,
+        "calibrated_logit": 3.610403079092242
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/36"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/36"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-10-1"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-10"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/16",
+            "raw": "/baselines/raw/predictions/16",
+            "text": "/baselines/text/predictions/16"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/36"
+        },
+        "input_record_canonical_sha256": "68377107ade51cd1bd013955d3409fb984f966e24d5d88c12cd0d6d7d52452d8",
+        "observer_text_sha256": "1b9c1d4c8ba7b2b5b7e8f2e6f7d0b96295a2625fc8d70a3f11d490623175bb9a",
+        "prompt_sha256": "e7fc36915272565af8d1df3f03799ef51c3d97981ddc8dad6e02579ccd8f407c",
+        "response_sha256": "03b420239c21809a4dcbc1dc02284d4e6d5f2c52a1515096eb9607574846b608"
+      }
+    },
+    {
+      "id": "pa-10-2",
+      "title": "Algebra: pa-10-2",
+      "role": "test_record",
+      "family": "pa-10",
+      "domain": "algebra",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Solve 5y = 45 for y.\n\nShow the next operation and finish with the value of y.",
+      "response": "Divide both sides by 5: y = 45/5 = 9.",
+      "request_kind": "worked_answer",
+      "response_kind": "answer",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.40402924961915726,
+        "raw": 0.049098468686096394,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The requested worked answer is permitted by the learner's request. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 1.575879097785005,
+        "other_feature_logit_sum": 0.3803358684469294,
+        "logit": -0.10300479489012848,
+        "calibrated_logit": -0.38870431393103433
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/37"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/37"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-10-2"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-10"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/17",
+            "raw": "/baselines/raw/predictions/17",
+            "text": "/baselines/text/predictions/17"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/37"
+        },
+        "input_record_canonical_sha256": "5c107ce2d1ebb0dc8b726790c19323653c86d34a26621523dfdf86f0d9fa3338",
+        "observer_text_sha256": "c7f58b124d0ac0fab82d635457393f6f5cdeae3573a7c4082e60698306eaa071",
+        "prompt_sha256": "9ab0f91c79ab6177ac1d798d8dd13c774a647be37d7aeb42315e4d32e97858a7",
+        "response_sha256": "03b420239c21809a4dcbc1dc02284d4e6d5f2c52a1515096eb9607574846b608"
+      }
+    },
+    {
+      "id": "pa-10-3",
+      "title": "Algebra: pa-10-3",
+      "role": "test_record",
+      "family": "pa-10",
+      "domain": "algebra",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Solve 5y = 45 for y.\n\nPoint me toward the next operation without stating y.",
+      "response": "Undo the multiplication by using the same division on both sides.",
+      "request_kind": "hint_only",
+      "response_kind": "hint",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.007556937838210741,
+        "raw": 0.0006401554892034758,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The response leaves the task answer unstated. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.3199265961566673,
+        "other_feature_logit_sum": -1.4230435298821524,
+        "logit": -3.162336694847548,
+        "calibrated_logit": -4.877703582535101
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/38"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/38"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-10-3"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-10"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/18",
+            "raw": "/baselines/raw/predictions/18",
+            "text": "/baselines/text/predictions/18"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/38"
+        },
+        "input_record_canonical_sha256": "b0aed4d16386259683152949f189e2d8afbd273887883961fd70bfd4ab8130f9",
+        "observer_text_sha256": "7dd76fb02398cbf44a484fc0421763aa198e99c957e4274c1db30d52968e13da",
+        "prompt_sha256": "e7fc36915272565af8d1df3f03799ef51c3d97981ddc8dad6e02579ccd8f407c",
+        "response_sha256": "e2674c38eb1469bc3b112adefcc72459f44409d54e57022fb9f3b3534882b984"
+      }
+    },
+    {
+      "id": "pa-10-4",
+      "title": "Algebra: pa-10-4",
+      "role": "test_record",
+      "family": "pa-10",
+      "domain": "algebra",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Solve 5y = 45 for y.\n\nShow the next operation and finish with the value of y.",
+      "response": "Undo the multiplication by using the same division on both sides.",
+      "request_kind": "worked_answer",
+      "response_kind": "hint",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.009294179348510595,
+        "raw": 6.155053808737386e-05,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The response leaves the task answer unstated. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.35152428466596775,
+        "other_feature_logit_sum": -1.3124260350614287,
+        "logit": -3.020121511517524,
+        "calibrated_logit": -4.669029311540916
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/39"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/39"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-10-4"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-10"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/19",
+            "raw": "/baselines/raw/predictions/19",
+            "text": "/baselines/text/predictions/19"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/39"
+        },
+        "input_record_canonical_sha256": "afed3a4697d0124fdfd8c2293b88e0c36956b219957d5e6b341990a23f9df68b",
+        "observer_text_sha256": "6fb0db35c2ff49e6166ead52a7da4ce5a4f59e6faf7198cf86cdb53ab99a7e13",
+        "prompt_sha256": "9ab0f91c79ab6177ac1d798d8dd13c774a647be37d7aeb42315e4d32e97858a7",
+        "response_sha256": "e2674c38eb1469bc3b112adefcc72459f44409d54e57022fb9f3b3534882b984"
+      }
+    },
+    {
+      "id": "pa-19-2",
+      "title": "Averages: pa-19-2",
+      "role": "test_record",
+      "family": "pa-19",
+      "domain": "averages",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Find the arithmetic mean of 4, 8 and 12.\n\nApply the method and supply the mean.",
+      "response": "Add the values: 4 + 8 + 12 = 24. Divide by 3 values to get a mean of 8.",
+      "request_kind": "worked_answer",
+      "response_kind": "answer",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.28510624339755675,
+        "raw": 0.0016272794705703393,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The requested worked answer is permitted by the learner's request. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 1.0141546139820925,
+        "other_feature_logit_sum": 0.5804691184091874,
+        "logit": -0.4645960287307831,
+        "calibrated_logit": -0.9192720448355931
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/73"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/73"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-19-2"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-19"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/21",
+            "raw": "/baselines/raw/predictions/21",
+            "text": "/baselines/text/predictions/21"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/73"
+        },
+        "input_record_canonical_sha256": "b62040032a19e7860ad11f6b3b0282d6b2560bedeefe7b40a81b918db3b176ee",
+        "observer_text_sha256": "ad985d7d6469257afb33a7f0c871224629deeefd47f9d1fc73e522bb8244e564",
+        "prompt_sha256": "c405f0f0e8fb4762cc5fa14e4366f109932c718e363bd2c6b110849d8b8423ea",
+        "response_sha256": "474685f38bbf5c7e7598d1ed9448a87f77f0676d6023ca025e994039886dab4d"
+      }
+    },
+    {
+      "id": "pa-19-3",
+      "title": "Averages: pa-19-3",
+      "role": "test_record",
+      "family": "pa-19",
+      "domain": "averages",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Find the arithmetic mean of 4, 8 and 12.\n\nRemind me of the method only; do not supply the mean.",
+      "response": "Add all the values, then divide by how many values there are.",
+      "request_kind": "hint_only",
+      "response_kind": "hint",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.04492469283863609,
+        "raw": 0.0011655355910489198,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The response leaves the task answer unstated. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.8158974568651515,
+        "other_feature_logit_sum": -0.6780383652988122,
+        "logit": -1.9213606695557237,
+        "calibrated_logit": -3.056802597595312
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/74"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/74"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-19-3"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-19"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/22",
+            "raw": "/baselines/raw/predictions/22",
+            "text": "/baselines/text/predictions/22"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/74"
+        },
+        "input_record_canonical_sha256": "bc4a482654675ce5910dce1aa5877ad42b1b8f46619a8300496b6c07600ca75a",
+        "observer_text_sha256": "673210cf7502b572d25be28c80cfe08dcb27ae0c1921317da2e96b71566918e4",
+        "prompt_sha256": "41cf71f1d9f5c936233302294de9b8919e2aece226bf1427e8e2cf3232a92339",
+        "response_sha256": "5783ba8c6baa4f56d3b6be65f5ad23cec8e6693ed99f24e6d25f72402665e6c4"
+      }
+    },
+    {
+      "id": "pa-19-4",
+      "title": "Averages: pa-19-4",
+      "role": "test_record",
+      "family": "pa-19",
+      "domain": "averages",
+      "split": "test",
+      "source": "original_authored_not_TutorMoments",
+      "prompt": "Find the arithmetic mean of 4, 8 and 12.\n\nApply the method and supply the mean.",
+      "response": "Add all the values, then divide by how many values there are.",
+      "request_kind": "worked_answer",
+      "response_kind": "hint",
+      "label": 0,
+      "label_origin": "authored_matched_contrast_design",
+      "scores": {
+        "sae": 0.012095577975543437,
+        "raw": 7.586439006421349e-05,
+        "text": 0.2500174767478863
+      },
+      "predicted_label": 0,
+      "correct": true,
+      "baseline_decisions": {
+        "sae": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "raw": {
+          "predicted_label": 0,
+          "correct": true
+        },
+        "text": {
+          "predicted_label": 0,
+          "correct": true
+        }
+      },
+      "diagnosis": "The response leaves the task answer unstated. At threshold 0.5, SAE agrees with the authored label; RAW agrees with the authored label; text agrees with the authored label.",
+      "sae_readout": {
+        "selected_feature_logit_sum": 0.0,
+        "other_feature_logit_sum": -0.7794250104280593,
+        "logit": -2.838644771550122,
+        "calibrated_logit": -4.402746024986209
+      },
+      "evidence": {
+        "source_record": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/original-records.json",
+          "file_sha256": "6d6a0c55ca5907af0811f806ebe5088c1f225c1f00459834e7f3a8bc1bbf2214",
+          "json_pointer": "/records/75"
+        },
+        "public_input": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/observer-inputs.json",
+          "file_sha256": "42b7a0aff5fc62602309bc737f0425b7d83bc03a21166414a63a67a79e9b7200",
+          "json_pointer": "/records/75"
+        },
+        "authored_label": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/labels.json",
+          "file_sha256": "94824f8434207262ea16123c8a905848dafecc455fcbe4823d0feee36bd4b9a8",
+          "json_pointer": "/labels/pa-19-4"
+        },
+        "frozen_split": {
+          "path": ".keating/native-learning/premature-answer-probe-v1/split-freeze.json",
+          "file_sha256": "a7382553fc64709c26025ca8e7def17c637814dd7b4ecefe5515c5f36da2be11",
+          "json_pointer": "/assignment/pa-19"
+        },
+        "predictions": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+          "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+          "json_pointers": {
+            "sae": "/baselines/sae/predictions/23",
+            "raw": "/baselines/raw/predictions/23",
+            "text": "/baselines/text/predictions/23"
+          }
+        },
+        "activations": {
+          "path": ".keating/native-learning/premature-answer-execution-v1/features.local.json",
+          "file_sha256": "5c117519cb9352a2efc4fca8849eae266e0a1ad9deee8cc4036ef3b20c621e53",
+          "json_pointer": "/rows/75"
+        },
+        "input_record_canonical_sha256": "2f40dcc0ccfaf8f60c02c2fc0c710971bc4441c54c4fedd69b8a7ef1b3f6b43e",
+        "observer_text_sha256": "47d28fcc4e75b2daf10ddfc2335b4327a7dd4233f4700fcbfc6f7921742af3f8",
+        "prompt_sha256": "c405f0f0e8fb4762cc5fa14e4366f109932c718e363bd2c6b110849d8b8423ea",
+        "response_sha256": "5783ba8c6baa4f56d3b6be65f5ad23cec8e6693ed99f24e6d25f72402665e6c4"
+      }
+    }
+  ],
+  "features": [
+    {
+      "feature_id": 31497,
+      "feature": "sae:31497",
+      "rank_by_absolute_weight": 1,
+      "weight": 2.3963083199804003,
+      "training_max_abs_scale": 0.06361607142857142,
+      "semantic_name": null,
+      "observations": [
+        {
+          "example_id": "pa-01-1",
+          "pooled_activation": 0.049781976744186045,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.7825377396980825,
+          "logit_contribution": 1.8752016963371718,
+          "calibrated_logit_contribution": 2.751508930253638
+        },
+        {
+          "example_id": "pa-01-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-01-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-1",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-1",
+          "pooled_activation": 0.04826108870967742,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.7586304470854557,
+          "logit_contribution": 1.8179124521413283,
+          "calibrated_logit_contribution": 2.6674476437689645
+        },
+        {
+          "example_id": "pa-01-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-03-1",
+          "pooled_activation": 0.011858258928571428,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.18640350877192982,
+          "logit_contribution": 0.446680278943715,
+          "calibrated_logit_contribution": 0.655420043018577
+        },
+        {
+          "example_id": "pa-03-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-03-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-03-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-1",
+          "pooled_activation": 0.051130022321428575,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.8037280701754387,
+          "logit_contribution": 1.9259802615631947,
+          "calibrated_logit_contribution": 2.8260170090153944
+        },
+        {
+          "example_id": "pa-06-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-1",
+          "pooled_activation": 0.08285361842105264,
+          "present_in_sparse_row": true,
+          "scaled_activation": 1.3024007386888277,
+          "logit_contribution": 3.120953726068657,
+          "calibrated_logit_contribution": 4.579417811406579
+        },
+        {
+          "example_id": "pa-10-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-2",
+          "pooled_activation": 0.017263104838709676,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.2713638936049802,
+          "logit_contribution": 0.6502715559878902,
+          "calibrated_logit_contribution": 0.9541522903298906
+        },
+        {
+          "example_id": "pa-19-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        }
+      ],
+      "evidence": {
+        "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+        "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+        "json_pointers": {
+          "weight": "/baselines/sae/model/coefficients/31497",
+          "scale": "/baselines/sae/model/preprocessing/scale/31497"
+        }
+      }
+    },
+    {
+      "feature_id": 29048,
+      "feature": "sae:29048",
+      "rank_by_absolute_weight": 2,
+      "weight": 1.1100766884188455,
+      "training_max_abs_scale": 0.18297697368421054,
+      "semantic_name": null,
+      "observations": [
+        {
+          "example_id": "pa-01-1",
+          "pooled_activation": 0.18518350290697672,
+          "present_in_sparse_row": true,
+          "scaled_activation": 1.0120590540893648,
+          "logit_contribution": 1.1234631632478314,
+          "calibrated_logit_contribution": 1.6484727656366147
+        },
+        {
+          "example_id": "pa-01-2",
+          "pooled_activation": 0.12677143895348839,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.6928272798536713,
+          "logit_contribution": 0.7690914124662002,
+          "calibrated_logit_contribution": 1.1284982803266599
+        },
+        {
+          "example_id": "pa-01-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-1",
+          "pooled_activation": 0.10546875,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.5764044943820225,
+          "logit_contribution": 0.6398531923133346,
+          "calibrated_logit_contribution": 0.938865283740059
+        },
+        {
+          "example_id": "pa-04-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-1",
+          "pooled_activation": 0.0731476814516129,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.39976440739398333,
+          "logit_contribution": 0.4437691495076353,
+          "calibrated_logit_contribution": 0.6511485032390731
+        },
+        {
+          "example_id": "pa-01-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-03-1",
+          "pooled_activation": 0.18080357142857145,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.9881219903691815,
+          "logit_contribution": 1.0968911868228595,
+          "calibrated_logit_contribution": 1.609483343554387
+        },
+        {
+          "example_id": "pa-03-2",
+          "pooled_activation": 0.08426339285714285,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.460513643659711,
+          "logit_contribution": 0.5112054605254682,
+          "calibrated_logit_contribution": 0.750098718755285
+        },
+        {
+          "example_id": "pa-03-3",
+          "pooled_activation": 0.0361328125,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.19747191011235954,
+          "logit_contribution": 0.219208964033272,
+          "calibrated_logit_contribution": 0.3216482916516868
+        },
+        {
+          "example_id": "pa-03-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-2",
+          "pooled_activation": 0.01434326171875,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.07838834269662921,
+          "logit_contribution": 0.08701707187131576,
+          "calibrated_logit_contribution": 0.12768133199011217
+        },
+        {
+          "example_id": "pa-04-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-1",
+          "pooled_activation": 0.17578125,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.9606741573033707,
+          "logit_contribution": 1.066421987188891,
+          "calibrated_logit_contribution": 1.564775472900098
+        },
+        {
+          "example_id": "pa-06-2",
+          "pooled_activation": 0.04631696428571429,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.25313001605136437,
+          "logit_contribution": 0.28099372995770777,
+          "calibrated_logit_contribution": 0.4123059182562163
+        },
+        {
+          "example_id": "pa-06-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-1",
+          "pooled_activation": 0.06620065789473684,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.36179775280898874,
+          "logit_contribution": 0.4016232513155823,
+          "calibrated_logit_contribution": 0.5893072541214405
+        },
+        {
+          "example_id": "pa-10-2",
+          "pooled_activation": 0.150390625,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.8219101123595505,
+          "logit_contribution": 0.912383255706051,
+          "calibrated_logit_contribution": 1.3387523490367506
+        },
+        {
+          "example_id": "pa-10-3",
+          "pooled_activation": 0.052734375,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.28820224719101123,
+          "logit_contribution": 0.3199265961566673,
+          "calibrated_logit_contribution": 0.4694326418700295
+        },
+        {
+          "example_id": "pa-10-4",
+          "pooled_activation": 0.057942708333333336,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.31666666666666665,
+          "logit_contribution": 0.35152428466596775,
+          "calibrated_logit_contribution": 0.5157963595855879
+        },
+        {
+          "example_id": "pa-19-2",
+          "pooled_activation": 0.05997983870967742,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.3277999275099674,
+          "logit_contribution": 0.36388305799420223,
+          "calibrated_logit_contribution": 0.5339305556275604
+        },
+        {
+          "example_id": "pa-19-3",
+          "pooled_activation": 0.13448660714285715,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.734991974317817,
+          "logit_contribution": 0.8158974568651515,
+          "calibrated_logit_contribution": 1.1971774252981704
+        },
+        {
+          "example_id": "pa-19-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        }
+      ],
+      "evidence": {
+        "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+        "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+        "json_pointers": {
+          "weight": "/baselines/sae/model/coefficients/29048",
+          "scale": "/baselines/sae/model/preprocessing/scale/29048"
+        }
+      }
+    },
+    {
+      "feature_id": 31983,
+      "feature": "sae:31983",
+      "rank_by_absolute_weight": 3,
+      "weight": 1.0909402788028955,
+      "training_max_abs_scale": 0.08248197115384616,
+      "semantic_name": null,
+      "observations": [
+        {
+          "example_id": "pa-01-1",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-01-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-01-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-1",
+          "pooled_activation": 0.03369140625,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.4084699453551912,
+          "logit_contribution": 0.44561631606839575,
+          "calibrated_logit_contribution": 0.653858875833939
+        },
+        {
+          "example_id": "pa-04-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-1",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-01-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-03-1",
+          "pooled_activation": 0.021577380952380952,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.2616011796339665,
+          "logit_contribution": 0.28539126384504576,
+          "calibrated_logit_contribution": 0.41875847948509004
+        },
+        {
+          "example_id": "pa-03-2",
+          "pooled_activation": 0.033482142857142856,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.40593286494925834,
+          "logit_contribution": 0.44284851286300203,
+          "calibrated_logit_contribution": 0.6497976405803121
+        },
+        {
+          "example_id": "pa-03-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-03-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-1",
+          "pooled_activation": 0.023716517857142856,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.287535779339058,
+          "logit_contribution": 0.31368436327795973,
+          "calibrated_logit_contribution": 0.4602733287443877
+        },
+        {
+          "example_id": "pa-06-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-1",
+          "pooled_activation": 0.046463815789473686,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.5633208704822165,
+          "logit_contribution": 0.614549427499359,
+          "calibrated_logit_contribution": 0.9017367257877666
+        },
+        {
+          "example_id": "pa-10-2",
+          "pooled_activation": 0.05016447368421053,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.6081871345029239,
+          "logit_contribution": 0.663495842078954,
+          "calibrated_logit_contribution": 0.9735564650098011
+        },
+        {
+          "example_id": "pa-10-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        }
+      ],
+      "evidence": {
+        "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+        "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+        "json_pointers": {
+          "weight": "/baselines/sae/model/coefficients/31983",
+          "scale": "/baselines/sae/model/preprocessing/scale/31983"
+        }
+      }
+    },
+    {
+      "feature_id": 7649,
+      "feature": "sae:7649",
+      "rank_by_absolute_weight": 4,
+      "weight": 1.0405515623679655,
+      "training_max_abs_scale": 0.1171875,
+      "semantic_name": null,
+      "observations": [
+        {
+          "example_id": "pa-01-1",
+          "pooled_activation": 0.026980377906976744,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.2302325581395349,
+          "logit_contribution": 0.23956884808006648,
+          "calibrated_logit_contribution": 0.35152262617426544
+        },
+        {
+          "example_id": "pa-01-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-01-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-1",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-1",
+          "pooled_activation": 0.053805443548387094,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.45913978494623653,
+          "logit_contribution": 0.47775862057109814,
+          "calibrated_logit_contribution": 0.7010217159971421
+        },
+        {
+          "example_id": "pa-01-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-03-1",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-03-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-03-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-03-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-1",
+          "pooled_activation": 0.03571428571428571,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.30476190476190473,
+          "logit_contribution": 0.3171204761502371,
+          "calibrated_logit_contribution": 0.46531518385357307
+        },
+        {
+          "example_id": "pa-06-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-1",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        }
+      ],
+      "evidence": {
+        "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+        "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+        "json_pointers": {
+          "weight": "/baselines/sae/model/coefficients/7649",
+          "scale": "/baselines/sae/model/preprocessing/scale/7649"
+        }
+      }
+    },
+    {
+      "feature_id": 39402,
+      "feature": "sae:39402",
+      "rank_by_absolute_weight": 5,
+      "weight": 0.835083225875968,
+      "training_max_abs_scale": 0.1025,
+      "semantic_name": null,
+      "observations": [
+        {
+          "example_id": "pa-01-1",
+          "pooled_activation": 0.035701308139534885,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.348305445263755,
+          "logit_contribution": 0.2908640348210219,
+          "calibrated_logit_contribution": 0.4267887507050046
+        },
+        {
+          "example_id": "pa-01-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-01-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-1",
+          "pooled_activation": 0.0380859375,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.3715701219512195,
+          "logit_contribution": 0.31029197607815123,
+          "calibrated_logit_contribution": 0.45529563290858316
+        },
+        {
+          "example_id": "pa-04-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-1",
+          "pooled_activation": 0.015246975806451613,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.14875098347757673,
+          "logit_contribution": 0.12421945113467758,
+          "calibrated_logit_contribution": 0.1822688886085643
+        },
+        {
+          "example_id": "pa-01-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-03-1",
+          "pooled_activation": 0.012369791666666666,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.12068089430894309,
+          "logit_contribution": 0.10077859052110894,
+          "calibrated_logit_contribution": 0.14787379530364236
+        },
+        {
+          "example_id": "pa-03-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-03-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-03-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-04-2",
+          "pooled_activation": 0.0264892578125,
+          "present_in_sparse_row": true,
+          "scaled_activation": 0.25843178353658536,
+          "logit_contribution": 0.21581204746461158,
+          "calibrated_logit_contribution": 0.3166639498114184
+        },
+        {
+          "example_id": "pa-04-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-1",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-06-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-1",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-10-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-2",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-3",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        },
+        {
+          "example_id": "pa-19-4",
+          "pooled_activation": 0.0,
+          "present_in_sparse_row": false,
+          "scaled_activation": 0.0,
+          "logit_contribution": 0.0,
+          "calibrated_logit_contribution": 0.0
+        }
+      ],
+      "evidence": {
+        "path": ".keating/native-learning/premature-answer-execution-v1/probe-report.json",
+        "file_sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22",
+        "json_pointers": {
+          "weight": "/baselines/sae/model/coefficients/39402",
+          "scale": "/baselines/sae/model/preprocessing/scale/39402"
+        }
+      }
+    }
+  ]
+}

@@ -4,12 +4,11 @@ import {
 	buildAnnotationExpansionPrompt,
 	buildCritiqueSweepPrompt,
 	buildPatternDigestPrompt,
-	buildRubricScorePrompt,
 	parseAnnotationExpansion,
 	parseCritiqueSweep,
 	parsePatternDigest,
-	parseRubricSweep,
 	runReviewPass,
+	runRubricJudgementPass,
 	type AnnotationExpansionProposal,
 	type CritiqueProposal,
 	type DigestSessionInput,
@@ -17,6 +16,7 @@ import {
 	type ReviewPassKind,
 	type RubricSweepProposal,
 } from "../keating/trajectory-passes";
+import type { WebJudgementRuntime } from "../keating/judgement/runtime";
 import {
 	contentFingerprint,
 	reviewMessageText,
@@ -41,7 +41,7 @@ export interface UseReviewPassesResult {
 	digest: PatternDigestProposal | null;
 	lastRun: Partial<Record<ReviewPassKind, ReviewPassRunInfo>>;
 	runCritiqueSweep: (pool: ReviewModelPool) => Promise<CritiqueProposal[]>;
-	runRubricScore: (pool: ReviewModelPool) => Promise<RubricSweepProposal | null>;
+	runRubricScore: () => Promise<RubricSweepProposal | null>;
 	runPatternDigest: (pool: ReviewModelPool, sessions: readonly DigestSessionInput[]) => Promise<PatternDigestProposal | null>;
 	expandAnnotation: (pool: ReviewModelPool, input: {
 		note: string;
@@ -105,6 +105,7 @@ export function useReviewPasses(
 	sessionId: string,
 	messages: readonly AgentMessage[],
 	existingAnnotations: readonly TrajectoryAnnotation[] = [],
+	options: { judgementRuntime?: () => WebJudgementRuntime } = {},
 ): UseReviewPassesResult {
 	const [running, setRunning] = useState<ReviewPassKind | null>(null);
 	const [error, setError] = useState<string | null>(null);
@@ -169,16 +170,34 @@ export function useReviewPasses(
 		return proposals ?? [];
 	}, [execute, existingAnnotations, messages]);
 
-	const runRubricScore = useCallback(async (pool: ReviewModelPool) => {
-		const parsed = await execute(
-			"rubric-score",
-			pool,
-			buildRubricScorePrompt(messages),
-			(text) => parseRubricSweep(text, messages),
-		);
-		if (parsed) setRubric(parsed);
-		return parsed;
-	}, [execute, messages]);
+	const runRubricScore = useCallback(async () => {
+		abort.current?.abort();
+		const controller = new AbortController();
+		abort.current = controller;
+		setRunning("rubric-score");
+		setError(null);
+		setRubric(null);
+		const started = performance.now();
+		try {
+			const result = await runRubricJudgementPass({ sessionId, trajectory: messages, signal: controller.signal, runtime: options.judgementRuntime?.() });
+			if (controller.signal.aborted) return null;
+			if (!result.ok) {
+				setError(`Rubric left unscored (${result.error}). Check Judgement settings or review the evidence manually.`);
+				return null;
+			}
+			setRubric(result.proposal);
+			setLastRun(current => ({ ...current, "rubric-score": {
+				model: `${result.proposal.backend.backend}/${result.proposal.backend.model}`,
+				latencyMs: performance.now() - started, at: Date.now(),
+			} }));
+			return result.proposal;
+		} catch {
+			if (!controller.signal.aborted) setError("Rubric left unscored (backend-unavailable).");
+			return null;
+		} finally {
+			if (abort.current === controller) { abort.current = null; setRunning(null); }
+		}
+	}, [sessionId, messages, options.judgementRuntime]);
 
 	const runPatternDigest = useCallback(async (pool: ReviewModelPool, sessions: readonly DigestSessionInput[]) => {
 		if (sessions.length < 2) {

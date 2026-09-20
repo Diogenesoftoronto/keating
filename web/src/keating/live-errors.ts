@@ -90,7 +90,63 @@ export function classifyLiveFailure(
 	const detail = rawDetail(error);
 	const modelLabel = describeLiveModel(context.providerId, context.model).label;
 	const isTavus = context.providerId === "tavus";
-	const providerLabel = isTavus ? "Tavus" : context.providerId === "openai-realtime" ? "OpenAI" : "Google";
+	const isGptLive = context.providerId === "gpt-live";
+	const providerLabel = isGptLive ? "Not Organic" : isTavus ? "Tavus" : context.providerId === "openai-realtime" ? "OpenAI" : "Google";
+
+	if (isGptLive && /consent|consent_required/.test(haystack)) {
+		return {
+			...BASE,
+			kind: "auth",
+			title: "Live consent needed",
+			message: "Your Not Organic account has not approved live audio sessions.",
+			hint: "Review live permissions and the content logging disclosure in Speech settings, then approve them if you agree.",
+			settings: "speech",
+			dictation: true,
+			detail,
+		};
+	}
+
+	if (isGptLive && /not configured|not organic.*disabled|deployment.*not enabled|\b404\b|\b503\b|unavailable|unknown model|unsupported model/.test(haystack)
+		&& !/microphone/.test(haystack)) {
+		return {
+			...BASE,
+			kind: "unsupported-provider",
+			title: "GPT Live is unavailable",
+			message: "The Not Organic live service is not available for this deployment or account.",
+			hint: "Choose another live provider, or retry after the service is enabled.",
+			retry: true,
+			settings: "speech",
+			dictation: true,
+			detail,
+		};
+	}
+
+	if (isGptLive && /connect.*not organic|not organic.*(?:account needed|sign-in)|(?:missing|expired|invalid).*session|realtime:connect|\b401\b|\b403\b|unauthorized|forbidden/.test(haystack)) {
+		return {
+			...BASE,
+			kind: "auth",
+			title: "Not Organic account needed",
+			message: "GPT Live requires a connected Not Organic account with live access.",
+			hint: "Connect or reconnect your account under Providers & Models, then start again.",
+			settings: "providers",
+			dictation: true,
+			detail,
+		};
+	}
+
+	if (isGptLive && /\b402\b|\b429\b|balance|budget|ceiling|quota|rate.limit|capacity|billing/.test(haystack)) {
+		return {
+			...BASE,
+			kind: "rate-limit",
+			title: "GPT Live session limit reached",
+			message: "Not Organic could not continue within the account balance, session budget, or live capacity limit.",
+			hint: "Check your Not Organic balance and session allowance, then retry.",
+			retry: true,
+			settings: "providers",
+			dictation: true,
+			detail,
+		};
+	}
 
 	if (isTavus && /tavus live.*not configured|not organic.*disabled|deployment.*not enabled/.test(haystack)) {
 		return {

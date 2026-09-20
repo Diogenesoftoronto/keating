@@ -1,0 +1,1 @@
+/home/diogenes/Projects/keating/mobile/modules/keating-litert/android/CMakeLists.txt

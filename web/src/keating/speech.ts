@@ -31,6 +31,7 @@ export type SpeechProviderId =
 	| "gemini-live"
 	| "openai-tts"
 	| "openai-realtime"
+	| "gpt-live"
 	| "supertonic-3"
 	| string; // allows "custom:<id>"
 
@@ -193,7 +194,7 @@ export async function resolveSpeechCredential(
 	return null;
 }
 
-const DUPLEX_PROVIDER_IDS = new Set<SpeechProviderId>(["tavus", "gemini-live", "openai-realtime"]);
+const DUPLEX_PROVIDER_IDS = new Set<SpeechProviderId>(["tavus", "gemini-live", "openai-realtime", "gpt-live"]);
 
 export function isDuplexSpeechProvider(id: SpeechProviderId): boolean {
 	return DUPLEX_PROVIDER_IDS.has(id);
@@ -215,6 +216,7 @@ export function speechInputMode(settings: WebSpeechSettings): "duplex" | "stt" {
 
 /** Which LLM provider backs a speech provider, for capability lookup. */
 export function speechProviderModel(settings: WebSpeechSettings): ProviderModelDescriptor | null {
+	if (settings.providerId === "gpt-live") return { provider: "notorganic", id: settings.model, api: "gpt-live" };
 	if (settings.providerId === "tavus") return { provider: "tavus", id: settings.model, api: "tavus-cvi" };
 	if (settings.providerId === "openai-realtime") return { provider: "openai", id: settings.model, api: "openai-realtime" };
 	if (settings.providerId === "gemini-live") return { provider: "google", id: settings.model, api: "google-live" };
@@ -594,14 +596,16 @@ function withCanonicalDuplexModels<T extends SpeechProviderDescriptor>(provider:
 async function ensureProvidersRegistered(): Promise<void> {
 	if (registrationPromise) return registrationPromise;
 	registrationPromise = (async () => {
-		const [tavus, gemini, oaiTts, oaiRealtime, supertonic] = await Promise.all([
+		const [tavus, gemini, oaiTts, oaiRealtime, supertonic, gptLive] = await Promise.all([
 			import("./speech-providers/tavus-live"),
 			import("./speech-providers/gemini-live"),
 			import("./speech-providers/openai-tts"),
 			import("./speech-providers/openai-realtime"),
 			import("./speech-providers/supertonic"),
+			import("./speech-providers/gpt-live"),
 		]);
 		providerRegistry.set("tavus", withCanonicalDuplexModels(tavus.tavusLiveProvider));
+		providerRegistry.set("gpt-live", withCanonicalDuplexModels(gptLive.gptLiveProvider));
 		providerRegistry.set("gemini-live", withCanonicalDuplexModels(gemini.geminiLiveProvider));
 		providerRegistry.set("openai-tts", oaiTts.openAITtsProvider);
 		providerRegistry.set("openai-realtime", withCanonicalDuplexModels(oaiRealtime.openAIRealtimeProvider));

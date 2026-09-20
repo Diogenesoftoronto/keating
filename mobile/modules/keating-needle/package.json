@@ -1,0 +1,7 @@
+{
+  "name": "keating-needle",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pinned native Needle embedding bridge for Keating",
+  "main": "src/index.ts"
+}

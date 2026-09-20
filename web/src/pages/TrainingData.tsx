@@ -13,7 +13,9 @@ import { downloadFile, downloadTextFile } from "../lib/browser-download";
 import { ModelSelectorDialog } from "../components/ModelSelector";
 import { Nav } from "../components/Nav";
 import { useSeo } from "../hooks/useSeo";
-import { createResumableExportJudge, type JudgeProgress, type JudgeCheckpoint, type JudgeScorerConfig } from "../keating/export-judge";
+import { createRuntimeExportJudge, type JudgeProgress, type JudgeCheckpoint, type JudgeScorerConfig } from "../keating/export-judge";
+import { createWebJudgementRuntime } from "../keating/judgement/runtime";
+import { loadJudgementModelSettings, subscribeJudgementModelSettings } from "../keating/judgement-model";
 import { loadTrainingExportJob, saveTrainingExportJob, trainingScoreCache, type TrainingExportJob } from "../keating/training-export-jobs";
 import type { JudgeScore } from "../keating/reward";
 import { TrainingDatasetShare } from "../components/training/TrainingDatasetShare";
@@ -30,9 +32,8 @@ function TrainingWorkspace() {
 	const jobRef = useRef<TrainingExportJob | null>(null);
 	const abortRef = useRef<AbortController | null>(null);
 	const [scorerSettings, setScorerSettings] = useState({ maxTokens: 4096, temperature: 0, timeoutMs: 60000, retries: 1 });
-	const [fallbackEnabled, setFallbackEnabled] = useState(false);
-	const [fallbackConfig, setFallbackConfig] = useState<JudgeScorerConfig>(() => ({ model: getModel("google", "gemini-2.5-flash") as Model<Api>, thinkingLevel: "minimal", maxTokens: 4096, temperature: 0, timeoutMs: 60000, retries: 1 }));
-	const [fallbackPickerOpen, setFallbackPickerOpen] = useState(false);
+	const [judgementSettings, setJudgementSettings] = useState(loadJudgementModelSettings);
+	useEffect(() => subscribeJudgementModelSettings(setJudgementSettings), []);
 
 	const [bundle, setBundle] = useState<WebFineTuneExportResult | null>(null);
 	const [maxAssistantChars, setMaxAssistantChars] = useState(0);
@@ -65,8 +66,8 @@ function TrainingWorkspace() {
 			setSource(o.source); setFormat(o.format); setRedact(o.redact); setMinAssistantChars(o.minAssistantChars);
 			setMaxAssistantChars(o.maxAssistantChars ?? 0); setMaxRecords(o.maxRecords ?? 0); setValidationPercent(o.validationPercent ?? 10);
 			setDeduplicate(o.deduplicate ?? false); setKeepAllResponses(o.keepAllResponses ?? false);
-			setJudgeScoring(job.scoring); setJudgeModel(job.primary.model); setJudgeThinkingLevel(job.primary.thinkingLevel);
-			setScorerSettings(job.primary); setFallbackEnabled(Boolean(job.fallback)); if (job.fallback) setFallbackConfig(job.fallback);
+			setJudgeScoring(job.scoring);
+			setScorerSettings(previous => ({ ...previous, timeoutMs: job.primary.timeoutMs, retries: job.primary.retries }));
 			setScoreAll(job.maxExamples === null); setMaxJudgeExamples(job.maxExamples ?? 50);
 		}).catch(() => { if (alive) setError("Could not open local checkpoints. Check browser storage before starting a scoring run."); })
 		.finally(() => { if (alive) setLoadingJob(false); });
@@ -82,19 +83,26 @@ function TrainingWorkspace() {
 			await getInitPromise();
 			const sources = !refreshSources && jobRef.current ? jobRef.current.sources : await loadWebExportSources();
 			const options = { source, format, redact, minAssistantChars, maxAssistantChars: maxAssistantChars || undefined, maxRecords: maxRecords || undefined, validationPercent, deduplicate, keepAllResponses };
-			const primary = { ...scorerSettings, model: judgeModel, thinkingLevel: judgeThinkingLevel };
+			// Snapshot the independent judgement choice for this run, never the README/tutor model.
+			const runtime = createWebJudgementRuntime();
+			const selected = runtime.policy.tiers[0]?.key;
+			const primary: JudgeScorerConfig = { ...scorerSettings, thinkingLevel: "off", model: {
+				...judgeModel, id: selected?.model ?? "off", name: "Judgement runtime", provider: selected?.backend ?? "local",
+			} };
 			const base = await buildWebFineTuneExportFromSources(sources, options);
-			const job: TrainingExportJob = { version: 1, sources, options, primary, fallback: fallbackEnabled ? fallbackConfig : undefined, maxExamples: scoreAll ? null : maxJudgeExamples, scoring: judgeScoring, bundle: base, updatedAt: Date.now() };
+			const job: TrainingExportJob = { version: 1, sources, options, primary, maxExamples: scoreAll ? null : maxJudgeExamples, scoring: judgeScoring, bundle: base, updatedAt: Date.now() };
 			setBundle(base); jobRef.current = job;
 			await saveTrainingExportJob(job);
 			const provenance = new Map<string, JudgeCheckpoint>();
 			const enrich = (next: WebFineTuneExportResult) => {
 				const manifest = JSON.parse(next.manifestJson);
 				manifest.scoringCheckpoints = [...provenance].map(([key, value]) => ({ key, ...value }));
-				manifest.scorerSettings = { primary: { ...scorerSettings, provider: judgeModel.provider, model: judgeModel.id, thinkingLevel: judgeThinkingLevel }, fallback: fallbackEnabled ? { ...fallbackConfig, model: { provider: fallbackConfig.model.provider, id: fallbackConfig.model.id } } : null };
+				manifest.scorerSettings = { judgement: runtime.settings, tiers: runtime.policy.tiers.map(tier => tier.key),
+					timeoutMs: scorerSettings.timeoutMs, retries: scorerSettings.retries, uncalibratedMinimumConfidence: 0.5,
+					notice: "Uncalibrated scores are exploratory teaching estimates, not measured learning gains. Checkpoints record the concrete model and calibration identity that answered." };
 				return { ...next, manifestJson: JSON.stringify(manifest, null, 2) };
 			};
-			const scoringOptions = { ...options, judgeModel: { provider: judgeModel.provider, id: judgeModel.id }, judgeThinkingLevel };
+			const scoringOptions = options;
 			let latestPartial: Array<JudgeScore | null> | null = null;
 			let lastPartialAt = 0;
 			const persist = async (next: WebFineTuneExportResult) => { job.bundle = next; job.updatedAt = Date.now(); setBundle(next); await saveTrainingExportJob(job); };
@@ -106,8 +114,8 @@ function TrainingWorkspace() {
 				partialQueue = partialQueue.then(async () => persist(enrich(await buildWebFineTuneExportFromSources(sources, { ...scoringOptions, judge: async () => copy }))));
 				void partialQueue.catch(() => controller.abort());
 			};
-			const judge = judgeScoring ? createResumableExportJudge({
-				primary, fallback: fallbackEnabled ? fallbackConfig : undefined,
+			const judge = judgeScoring ? createRuntimeExportJudge({
+				runtime, timeoutMs: scorerSettings.timeoutMs, retries: scorerSettings.retries,
 				maxExamples: scoreAll ? Number.POSITIVE_INFINITY : maxJudgeExamples,
 				cache: trainingScoreCache, signal: controller.signal, onProgress: setProgress,
 				onCheckpoint: (key, checkpoint) => provenance.set(key, checkpoint), onPartial: queuePartial,
@@ -209,21 +217,19 @@ function TrainingWorkspace() {
 		</fieldset>
 		<fieldset hidden={settingsTab !== "scorers"} disabled={exporting || loadingJob}>
 		<legend>Optional scoring</legend>
-		<label className="training-check"><input type="checkbox" checked={judgeScoring} onChange={e => setJudgeScoring(e.target.checked)} /><span>Add model judge scores<small>Sends eligible responses to your selected provider and uses API credits.</small></span></label>
+		<label className="training-check"><input type="checkbox" checked={judgeScoring} onChange={e => setJudgeScoring(e.target.checked)} /><span>Add teaching estimates<small>Uses your independent judgement setting. Hosted scoring uses account credits when enabled.</small></span></label>
 		{judgeScoring && <div className="training-judge">
-		<button type="button" className="training-secondary" onClick={() => setJudgePickerOpen(true)}>{judgeModel.name} · {judgeModel.provider}<ChevronRight size={16}/></button>
-		<label>Thinking level<select value={judgeThinkingLevel} onChange={e => setJudgeThinkingLevel(e.target.value as ModelThinkingLevel)}>{getSupportedThinkingLevels(judgeModel).map(level => <option key={level} value={level}>{level === "off" ? "Off" : level.charAt(0).toUpperCase() + level.slice(1)}</option>)}</select><small>Available levels depend on the model. More thinking can take longer and cost more.</small></label>
+		<p>Judgement: <strong>{judgementSettings.backend === "off" ? "Off — responses remain unscored" : judgementSettings.backend === "hosted" ? "Local first, then Not Organic" : "On this device"}</strong>{judgementSettings.backend !== "off" && <> · {judgementSettings.localModelId}</>}.</p>
+		<a className="training-secondary" href="/chat?settings=judgement" target="_blank" rel="noopener noreferrer">Judgement settings (new tab)<ChevronRight size={16}/></a>
 		<label>Scoring scope<select value={scoreAll ? "all" : "limited"} onChange={e => setScoreAll(e.target.value === "all")}><option value="limited">Limit the number of responses</option><option value="all">Score all eligible responses</option></select></label>
 		{!scoreAll && <label>Maximum responses to score<input type="number" min="1" value={maxJudgeExamples} onChange={e => setMaxJudgeExamples(Math.max(1, Number(e.target.value)))} /></label>}
-		{scoreAll && <p>Every eligible conversation response in this dataset will be sent for scoring. There is no request cap; time and provider charges scale with the dataset.</p>}
+		{scoreAll && <p>Every eligible conversation response will be checked. Time and any hosted charges scale with the dataset.</p>}
 		<ScorerSettings value={scorerSettings} onChange={patch => setScorerSettings(previous => ({ ...previous, ...patch }))}/>
-		<label className="training-check"><input type="checkbox" checked={fallbackEnabled} onChange={e => setFallbackEnabled(e.target.checked)}/><span>Use a fallback scorer<small>Try this scorer after primary retries fail.</small></span></label>
-		{fallbackEnabled && <section className="training-fallback"><h3>Fallback scorer</h3><button type="button" className="training-secondary" onClick={() => setFallbackPickerOpen(true)}>{fallbackConfig.model.name} · {fallbackConfig.model.provider}<ChevronRight size={16}/></button><label>Thinking level<select value={fallbackConfig.thinkingLevel} onChange={e => setFallbackConfig(previous => ({ ...previous, thinkingLevel: e.target.value as ModelThinkingLevel }))}>{getSupportedThinkingLevels(fallbackConfig.model).map(level => <option key={level}>{level}</option>)}</select></label><ScorerSettings value={fallbackConfig} onChange={patch => setFallbackConfig(previous => ({ ...previous, ...patch }))}/><p>Missing responses may be sent to {fallbackConfig.model.provider}. Completed primary or fallback scores are reused on resume.</p></section>}
-		<p>Scores estimate teaching behavior. They do not establish learning gains.</p>
+		<p>Uncalibrated scores are estimates of teaching behavior. They do not establish learning gains. Unavailable models and uncertain answers leave responses unscored.</p>
 		</div>}
 		</fieldset>
 				<section className="training-import" hidden={settingsTab !== "import"}><div><h2>Bring existing data in</h2><p>Import ChatML or Alpaca JSONL as local sessions, then prepare them with the same controls.</p><p aria-live="polite">{importResult && `${importResult.examplesImported} examples imported into ${importResult.sessionsImported} sessions · ${importResult.skipped} skipped`}</p></div><label className="training-secondary"><Upload size={16}/>Choose JSONL files<input className="training-file-input" type="file" accept=".jsonl,application/jsonl,application/x-ndjson" multiple disabled={exporting} onChange={e => { void handleImport(e.target.files); e.target.value = ""; }}/></label></section>
-		<div hidden={settingsTab !== "readme"}>		{bundle && <TrainingDatasetSummary bundle={bundle} model={judgeModel} thinkingLevel={judgeThinkingLevel} disabled={exporting} onChange={readmeSummary => {
+		<div hidden={settingsTab !== "readme"}><button type="button" className="training-secondary" disabled={exporting} onClick={() => setJudgePickerOpen(true)}>README model: {judgeModel.name}<ChevronRight size={16}/></button>		{bundle && <TrainingDatasetSummary bundle={bundle} model={judgeModel} thinkingLevel={judgeThinkingLevel} disabled={exporting} onChange={readmeSummary => {
 			setBundle(previous => previous ? { ...previous, readmeSummary } : previous);
 			if (jobRef.current) { jobRef.current.bundle = { ...jobRef.current.bundle, readmeSummary }; void saveTrainingExportJob(jobRef.current).catch(() => setError("The summary is in this session, but could not be checkpointed.")); }
 		}}/>}{!bundle && <p className="training-note">Prepare a dataset to add an optional summary to its README.</p>}</div>
@@ -231,7 +237,7 @@ function TrainingWorkspace() {
 		<button className="training-primary" disabled={exporting || loadingJob} type="submit">{exporting ? "Preparing dataset…" : judgeScoring ? "Score / resume missing" : "Prepare dataset"}<ChevronRight size={16}/></button>
 		<button type="button" className="training-secondary" disabled={exporting || loadingJob} onClick={() => void handleExport(true)}>Refresh source data</button>
 		</div>
-		<p className="training-note">{judgeScoring ? scoreAll ? `All eligible responses will be scored using ${judgeModel.provider}.` : `Up to ${maxJudgeExamples} responses will be scored using ${judgeModel.provider}.` : "Preparation runs locally. No model calls while scoring is off."}</p>
+		<p className="training-note">{judgeScoring ? `${scoreAll ? "All eligible responses" : `Up to ${maxJudgeExamples} responses`} use your judgement settings. Unknown scores remain empty.` : "Preparation runs locally. No model calls while scoring is off."}</p>
 
 		</form>
 		<section className="training-review" aria-label="Dataset overview" aria-busy={exporting}>
@@ -249,12 +255,11 @@ function TrainingWorkspace() {
 		</section>
 		</div>
 
-		<ModelSelectorDialog open={fallbackPickerOpen} currentModel={fallbackConfig.model} onClose={() => setFallbackPickerOpen(false)} onSelect={model => { const levels = getSupportedThinkingLevels(model); setFallbackConfig(previous => ({ ...previous, model, thinkingLevel: levels.includes(previous.thinkingLevel) ? previous.thinkingLevel : levels[0] ?? "off" })); setFallbackPickerOpen(false); }} title="Fallback scorer" description="Used only when primary scoring fails. Responses may be sent to this provider." actionLabel="Use as fallback" preloadBrowserModel={false}/>
-		<ModelSelectorDialog open={judgePickerOpen} currentModel={judgeModel} onClose={() => setJudgePickerOpen(false)} onSelect={model => { setJudgeModel(model); const levels = getSupportedThinkingLevels(model); if (!levels.includes(judgeThinkingLevel)) setJudgeThinkingLevel(levels.includes("minimal") ? "minimal" : levels[0] ?? "off"); setJudgePickerOpen(false); }} title="Select judge model" description="Choose the provider that scores exported responses. Provider usage may incur charges." actionLabel="Use as judge" preloadBrowserModel={false}/>
+		<ModelSelectorDialog open={judgePickerOpen} currentModel={judgeModel} onClose={() => setJudgePickerOpen(false)} onSelect={model => { setJudgeModel(model); const levels = getSupportedThinkingLevels(model); if (!levels.includes(judgeThinkingLevel)) setJudgeThinkingLevel(levels.includes("minimal") ? "minimal" : levels[0] ?? "off"); setJudgePickerOpen(false); }} title="README model" description="Writes the dataset summary. This does not change your judgement model." actionLabel="Use for README" preloadBrowserModel={false}/>
 	</div>;
 }
 function ScorerSettings({ value, onChange }: { value: { maxTokens: number; temperature: number; timeoutMs: number; retries: number }; onChange: (patch: Partial<JudgeScorerConfig>) => void }) {
-	return <details className="training-scorer-details"><summary>Request settings</summary><div className="training-fields"><label>Output token budget<input type="number" min="128" max="65536" value={value.maxTokens} onChange={e => onChange({ maxTokens: Math.min(65536, Math.max(128, Number(e.target.value))) })}/></label><label>Temperature<input type="number" min="0" max="2" step="0.1" value={value.temperature} onChange={e => onChange({ temperature: Math.min(2, Math.max(0, Number(e.target.value))) })}/></label><label>Timeout (seconds)<input type="number" min="5" max="600" value={value.timeoutMs / 1000} onChange={e => onChange({ timeoutMs: Math.min(600, Math.max(5, Number(e.target.value))) * 1000 })}/></label><label>Retries per response<input type="number" min="0" max="3" value={value.retries} onChange={e => onChange({ retries: Math.min(3, Math.max(0, Number(e.target.value))) })}/></label></div><p>Retries may incur additional usage. Changing model, thinking, temperature, or token budget starts a new score cache; changing retry limits, timeouts, or fallback keeps successful scores.</p></details>;
+	return <details className="training-scorer-details"><summary>Request settings</summary><div className="training-fields"><label>Timeout (seconds)<input type="number" min="5" max="600" value={value.timeoutMs / 1000} onChange={e => onChange({ timeoutMs: Math.min(600, Math.max(5, Number(e.target.value))) * 1000 })}/></label><label>Retries per response<input type="number" min="0" max="3" value={value.retries} onChange={e => onChange({ retries: Math.min(3, Math.max(0, Number(e.target.value))) })}/></label></div><p>Retries may use credits. Resume reuses scores only for the same concrete model and calibration. A hosted alias must resolve its version again before cached scores can be reused.</p></details>;
 }
 function BookPreview() { return <Download size={28} aria-hidden="true"/>; }
 export function TrainingData() {

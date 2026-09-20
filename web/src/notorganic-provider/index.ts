@@ -27,6 +27,8 @@ export const NOTORGANIC_DEFAULT_MODEL: Model<"openai-completions"> = {
 	provider: NOTORGANIC_PROVIDER_ID,
 	baseUrl: notOrganicOpenAiBaseUrl(),
 	reasoning: true,
+  // The account gateway accepts system/user/assistant/tool, not developer.
+  compat: { supportsDeveloperRole: false },
   input: ["text"],
 	cost: {
 		input: 0,

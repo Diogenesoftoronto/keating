@@ -1,3 +1,4 @@
+import { invalidateMobileQuizPerformance } from "./quiz-performance";
 import {
   createPortableLearnerEnvelope,
   hasOnlyKeys,
@@ -412,6 +413,7 @@ export class LearnerRecordStore {
       const current = await readData(transaction, this.clock());
       const merged = mergePortableLearnerData(current, incoming);
       await replaceData(transaction, merged);
+      await invalidateMobileQuizPerformance(transaction);
       return merged;
     });
   }
@@ -486,11 +488,13 @@ export class LearnerRecordStore {
 
   clear(): Promise<void> {
     return withExclusiveTransaction(this.database, async (transaction) => {
+      await invalidateMobileQuizPerformance(transaction, true);
       await transaction.runAsync("DELETE FROM learner_records;");
       await transaction.runAsync("DELETE FROM learner_profile;");
       await transaction.runAsync("DELETE FROM study_priorities;");
       await transaction.runAsync("DELETE FROM local_message_attachments;");
       await transaction.runAsync("DELETE FROM ui_action_journals;");
+      await transaction.execAsync("DELETE FROM judgement_reviews;");
       await transaction.runAsync("DELETE FROM repository_meta WHERE key = ?;", "portable_generated_at");
     });
   }

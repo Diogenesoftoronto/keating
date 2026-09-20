@@ -97,6 +97,9 @@ export function describeDownload(progress: DownloadProgress): string {
 	} else if (progress.bytesLoaded > 0) {
 		parts.push(formatBytes(progress.bytesLoaded));
 	}
+	if (progress.filesTotal > 1) {
+		parts.push(`${progress.filesDone} of ${progress.filesTotal} files`);
+	}
 	const rate = formatRate(progress.bytesPerSecond);
 	if (rate) parts.push(rate);
 	const eta = formatEta(progress.etaSeconds);
@@ -108,11 +111,11 @@ export function describeDownload(progress: DownloadProgress): string {
 export function describePhase(progress: DownloadProgress, modelName?: string): string {
 	switch (progress.phase) {
 		case "checking":
-			return "Checking GPU support…";
+			return "Checking device support…";
 		case "downloading":
 			return modelName ? `Downloading ${modelName}` : "Downloading model";
 		case "preparing":
-			return "Preparing model…";
+			return modelName ? `Loading ${modelName} into memory…` : "Loading model into memory…";
 		case "ready":
 			return "Model ready";
 		default:

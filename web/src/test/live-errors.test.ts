@@ -8,6 +8,7 @@ import {
 const GEMINI = { providerId: "gemini-live", model: "gemini-3.1-flash-live-preview" };
 const OPENAI = { providerId: "openai-realtime", model: "gpt-realtime-2.1" };
 const TAVUS = { providerId: "tavus", model: "keatingbot" };
+const GPT_LIVE = { providerId: "gpt-live", model: "gpt-live-1" };
 
 /** A DOMException-shaped error, which is what getUserMedia actually rejects with. */
 function mediaError(name: string, message = ""): Error {
@@ -17,6 +18,33 @@ function mediaError(name: string, message = ""): Error {
 }
 
 describe("session failures", () => {
+	test("GPT Live asks for account access and consent without requesting an OpenAI key", () => {
+		for (const message of ["Connect your Not Organic account", "HTTP 401", "realtime:connect missing"]) {
+			const failure = classifyLiveFailure(new Error(message), GPT_LIVE);
+			expect(failure.kind).toBe("auth");
+			expect(failure.settings).toBe("providers");
+			expect(failure.message).toContain("Not Organic account");
+			expect(failure.message).not.toContain("key");
+		}
+		const consent = classifyLiveFailure(new Error("403 consent_required"), GPT_LIVE);
+		expect(consent.title).toBe("Live consent needed");
+		expect(consent.hint).toContain("Review live permissions");
+	});
+
+	test("GPT Live service and spending failures have separate recovery instructions", () => {
+		for (const message of ["GPT Live not configured", "HTTP 404", "HTTP 503 unavailable"]) {
+			const failure = classifyLiveFailure(new Error(message), GPT_LIVE);
+			expect(failure.kind).toBe("unsupported-provider");
+			expect(failure.settings).toBe("speech");
+			expect(failure.title).not.toContain("key");
+		}
+		for (const message of ["HTTP 402", "Not Organic session budget exhausted", "HTTP 429"]) {
+			const failure = classifyLiveFailure(new Error(message), GPT_LIVE);
+			expect(failure.kind).toBe("rate-limit");
+			expect(failure.message).toContain("account balance");
+			expect(failure.switchModel).toBe(false);
+		}
+	});
 	test("a missing key points at Providers & Models, not at a retry", () => {
 		const failure = classifyLiveFailure(
 			new Error("No OpenAI API key configured. Add one in Settings → Providers & Models."),

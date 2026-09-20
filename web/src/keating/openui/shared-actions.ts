@@ -2,6 +2,7 @@ import {
 	UI_ACTION_JOURNAL_KIND,
 	UI_CONTRACT_VERSION,
 	canonicalUiAction,
+	compareContractTimestamps,
 	receiptForUiAction,
 	validateUiAction,
 	validateUiActionAgainstDocument,
@@ -263,7 +264,8 @@ function completedDocument(source: UiDocument, action: UiAction, now: string): U
 		revision: source.revision + 1,
 		lifecycle: action.type === "retry" ? "ready" : source.lifecycle,
 		nodes: applyActionToNodes(source.nodes, action),
-		updatedAt: now,
+		// Preserve document order when an authored timestamp is ahead of this device.
+		updatedAt: compareContractTimestamps(now, source.updatedAt) < 0 ? source.updatedAt : now,
 	};
 	if (!validateUiDocument(document)) throw new Error("The OpenUI action produced an invalid document.");
 	return document;

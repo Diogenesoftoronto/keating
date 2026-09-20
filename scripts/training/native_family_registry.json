@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "default": "deny",
+  "description": "Admission for pinned native scenario materialization only, not a commercial license grant or a sealed release holdout. Any overlap with a protected source split blocks development, even through another collection.",
+  "sources": {
+    "tutormoments": {
+      "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+      "assets": {
+        "moments.jsonl": "c447459f80cf6b138512171a015879aaeab09cef7857e9c03655ad64a75c230f"
+      },
+      "split_purposes": {
+        "benchmark": [
+          "reference"
+        ]
+      }
+    },
+    "mathdial": {
+      "revision": "acc3878459e0bd8c04ab840056572f0b8b1abe1f",
+      "assets": {
+        "train.jsonl": "d6135869c02dccf8d14756fa2f0367c5352922bb263ec22dc0eeace4da815d43",
+        "test.jsonl": "3ec54ee8ab921dc6191bf5e2ee766d4e7916b4264394eb17a6be9b3fe486e50b"
+      },
+      "split_purposes": {
+        "test": [
+          "reference"
+        ],
+        "train": [
+          "development",
+          "reference"
+        ]
+      }
+    },
+    "bridge": {
+      "revision": "8f469883aa7d7a5c1d64e5c961a033ce71d21f5e",
+      "assets": {
+        "train.json": "870fa10d299711d315718d1995f234988582d7168fa9c054c267ededd89ba260",
+        "validation.json": "1d87ffece5fba05b6f5e91a2bcd0e5d556afb00973dd47e09969c875576bf327",
+        "test.json": "7c1f5eccce6f635924ca495439c7a9d70885c73122dd4caf8ad9066c657265e9"
+      },
+      "split_purposes": {
+        "test": [
+          "reference"
+        ],
+        "train": [
+          "development",
+          "reference"
+        ],
+        "validation": [
+          "reference"
+        ]
+      }
+    },
+    "mrbench": {
+      "revision": "bbef521ddb875f2cc8a5ee798f4066965a7cfd8a",
+      "assets": {
+        "BEA_Shared_Task_2025_Datasets/mrbench_v3_devset.json": "a395feab801de50d44b73e1e9b88f84824a1f1d92e15ae86842d90c2b6dbf33c",
+        "BEA_Shared_Task_2025_Datasets/mrbench_v3_testset.json": "5a73434fd9e1dfc73026e146d3709f95f2483a51a5e5b354bc96d981448d92cd"
+      },
+      "split_purposes": {
+        "dev": [
+          "development",
+          "reference"
+        ],
+        "test": [
+          "reference"
+        ]
+      }
+    },
+    "mathtutorbench": {
+      "revision": "6faed173ec2bef55cb899b2a3e0f93982f9cb176",
+      "assets": {
+        "datasets/mathdial_bridge.json": "96609c808383eea57d16bb24a49f302a9d84ffa323571c5989e57638bbaf2066",
+        "datasets/mathdial_bridge_hard.json": "29a18632ae1c90395d7871513ff006363c781b955a7cd8ca403688ac1d2edfe4"
+      },
+      "split_purposes": {
+        "benchmark": [
+          "reference"
+        ]
+      }
+    }
+  },
+  "protected_families": [],
+  "development_exposed": [
+    {
+      "family": "tm-30e294b8-d5ab-5a47-80cb-7a7f3e9618db",
+      "source_record_ids": [
+        "balanced_520:0f01be53-9998-5223-b931-9ff6ed42ad20_c0f67d80-f8de-5977-8c5e-50a273e69cd4_30e294b8-d5ab-5a47-80cb-7a7f3e9618db__hum_120_122"
+      ],
+      "evidence": "scripts/training/benchmarks/tutormoments-keating-v1/cases.json",
+      "status": "development-exposed-never-untouched-holdout"
+    },
+    {
+      "family": "tm-569a0a00-9d3b-51fe-ae60-f9d37ec9c048",
+      "source_record_ids": [
+        "balanced_520:25acdad9-1263-5d75-bbc7-0cb316e7f15e_010c8c6e-a380-5740-aa53-a29a61adf7af_569a0a00-9d3b-51fe-ae60-f9d37ec9c048__hum_256_267"
+      ],
+      "evidence": "scripts/training/benchmarks/tutormoments-keating-v1/cases.json",
+      "status": "development-exposed-never-untouched-holdout"
+    },
+    {
+      "family": "tm-b09cc93d-7bbf-5d3d-b22f-eb3efc51e344",
+      "source_record_ids": [
+        "balanced_520:056dd847-9f7b-5cda-9370-269452f8d083_c425fbf6-427c-50e6-876b-36191e9e18bf_b09cc93d-7bbf-5d3d-b22f-eb3efc51e344__hum_244_258"
+      ],
+      "evidence": "scripts/training/benchmarks/tutormoments-keating-v1/cases.json",
+      "status": "development-exposed-never-untouched-holdout"
+    },
+    {
+      "family": "tm-bdf53111-1eda-5887-ba3f-4751d6dc3a14",
+      "source_record_ids": [
+        "balanced_520:1789ab1a-d177-547f-9b1f-1674e5700baf_5fc5a091-b96b-53d8-9755-dec4ae394f64_bdf53111-1eda-5887-ba3f-4751d6dc3a14__hum_45_52"
+      ],
+      "evidence": "scripts/training/benchmarks/tutormoments-keating-v1/cases.json",
+      "status": "development-exposed-never-untouched-holdout"
+    },
+    {
+      "family": "tm-ffa4bb37-6dd8-5c9a-a2ae-4c6f746ff82c",
+      "source_record_ids": [
+        "balanced_520:09264613-5009-5557-87c6-d590c3d6c391_02020d06-7b55-5b35-b27f-18b334d8c8c3_ffa4bb37-6dd8-5c9a-a2ae-4c6f746ff82c__hum_171_174",
+        "balanced_520:09264613-5009-5557-87c6-d590c3d6c391_02020d06-7b55-5b35-b27f-18b334d8c8c3_ffa4bb37-6dd8-5c9a-a2ae-4c6f746ff82c__hum_95_103"
+      ],
+      "evidence": "scripts/training/benchmarks/tutormoments-keating-v1/cases.json",
+      "status": "development-exposed-never-untouched-holdout"
+    }
+  ]
+}

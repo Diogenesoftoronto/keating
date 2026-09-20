@@ -1,0 +1,94 @@
+{
+  "$schema": "https://nono.sh/schemas/profile.schema.json",
+  "meta": {
+    "name": "antigravity",
+    "version": "1.1.0",
+    "description": "Secure capability profile for Antigravity with Keating, Entire CLI, GitNexus, and Graft",
+    "author": "Diogenes of Toronto"
+  },
+  "extends": "bun-dev",
+  "groups": {
+    "include": [
+      "node_runtime",
+      "nix_runtime",
+      "git_config",
+      "python_runtime",
+      "user_tools"
+    ]
+  },
+  "workdir": {
+    "access": "readwrite"
+  },
+  "filesystem": {
+    "allow": [
+      "$WORKDIR",
+      "$HOME/.gemini/antigravity-cli",
+      "$HOME/.config/entire",
+      "$HOME/.cache/entire",
+      "$HOME/.gitnexus",
+      "$HOME/.graft"
+    ],
+    "read": [
+      "$HOME/.gemini",
+      "$HOME/.local/lib",
+      "$HOME/.local/node_modules",
+      "$HOME/.lbdb"
+    ],
+    "read_file": [
+      "$HOME/.local/package.json",
+      "$HOME/.local/package-lock.json"
+    ],
+    "unix_socket": [
+      "$XDG_RUNTIME_DIR/bus"
+    ],
+    "suppress_save_prompt": [
+      "$WORKDIR/.env",
+      "$WORKDIR/.env.local",
+      "$WORKDIR/.env.*"
+    ]
+  },
+  "platform_overrides": {
+    "macos": {
+      "filesystem": {
+        "deny": [
+          "$WORKDIR/.env",
+          "$WORKDIR/.env.local",
+          "$WORKDIR/web/.env",
+          "$WORKDIR/web/.env.local",
+          "$WORKDIR/desktop/.env"
+        ]
+      }
+    }
+  },
+  "network": {
+    "block": false,
+    "network_profile": null
+  },
+  "environment": {
+    "deny_vars": [
+      "AWS_*",
+      "AZURE_*",
+      "GCLOUD_*",
+      "GOOGLE_APPLICATION_CREDENTIALS",
+      "GITHUB_TOKEN",
+      "GH_TOKEN",
+      "SSH_*",
+      "VAULT_*",
+      "NOTORGANIC_*"
+    ]
+  },
+  "rollback": {
+    "exclude_patterns": [
+      ".git",
+      "node_modules",
+      "dist",
+      ".output",
+      ".keating/outputs",
+      "storybook-static",
+      ".entire/metadata",
+      ".entire/tmp",
+      ".gitnexus",
+      "brain"
+    ]
+  }
+}

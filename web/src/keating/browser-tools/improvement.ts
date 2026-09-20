@@ -12,8 +12,6 @@ import {
 	DEFAULT_WEIGHTS,
 	clampPolicy,
 	diagnoseBenchmark,
-	evaluatePrompt,
-	evolvePromptTemplate,
 	promptEvolutionToMarkdown,
 	generateImprovementProposal,
 	proposalToMarkdown,
@@ -24,6 +22,9 @@ import {
 import { isNodePodActive, nodePodCreateSnapshot } from "../nodepod-runtime";
 import { getActiveKeatingPrompt } from "./prompt";
 import { createTool, type KeatingToolsOptions, type OutcomeCollector, type ToolRegistry } from "./shared";
+import { evaluateBrowserPrompt, type BrowserPromptEvaluationOptions } from "../judgement/prompt-evaluation";
+import { promptEvaluationMarkdown } from "../../../../shared/pedagogy/prompt-judgement";
+import { evolveBrowserPrompt } from "../prompt-evolution";
 
 const POLICY_FIELDS: Array<keyof Omit<TeacherPolicy, "name">> = [
 	"analogyDensity",
@@ -85,6 +86,7 @@ export function createImprovementTools(
 	storage: KeatingStorage,
 	options: KeatingToolsOptions,
 	collectRealOutcomes: OutcomeCollector,
+	promptEvaluation: BrowserPromptEvaluationOptions = {},
 ): AgentTool[] {
 	return [
 		createTool(
@@ -190,16 +192,21 @@ export function createImprovementTools(
 		// prompt_evolve - Iteratively evolve a teaching prompt template
 		createTool(
 			"prompt_evolve",
-			"Iteratively evolve a teaching prompt template using PROSPER-style pairwise selection. Runs 4 iterations of candidate generation and evaluation.",
+			"Propose a teaching prompt using four deterministic revisions and the independent judgement setting. One pinned scoring source compares the run; estimates do not measure learning or activate a teaching revision.",
 			{
 				name: { type: "string", description: "Name of the prompt template to evolve (defaults to 'learn')" }
 			},
-			async (params) => {
+			async (params, signal) => {
 				const promptName = (params.name as string) || "learn";
 				const basePrompt = await getActiveKeatingPrompt(storage, promptName);
 
-				const run = evolvePromptTemplate(basePrompt, promptName, 4);
-				const report = promptEvolutionToMarkdown(run);
+				const { run, receipt, receiptKey } = await evolveBrowserPrompt(basePrompt, promptName, promptEvaluation, signal);
+				const retained = receiptKey ? `Raw judgement receipt saved locally: ${receiptKey}.` : "Raw judgement receipt could not be saved locally.";
+				if (!run) throw new Error(`Prompt evolution stopped (${receipt.reason ?? "comparison-unavailable"}); no winner was saved. ${retained}`);
+				const provenance = receipt.source === "proxy"
+					? `Uncalibrated model estimates throughout this comparison: ${receipt.backend!.backend}/${receipt.backend!.model}.`
+					: `Deterministic heuristic keyword scores throughout this comparison; typed baseline ${receipt.evaluations[0]?.review.judgement.status ?? "not-requested"} (${receipt.evaluations[0]?.review.judgement.reason ?? "disabled"}).`;
+				const report = `${promptEvolutionToMarkdown(run)}\n## Evaluation provenance\n\n${provenance} Human learning remains unmeasured. This saved proposal does not activate a teaching revision.\n\n${retained}\n`;
 
 				await storage.savePromptEvolution(promptName, {
 					bestScore: run.best.score,
@@ -217,28 +224,18 @@ export function createImprovementTools(
 		// prompt_eval - Single-pass prompt evaluation
 		createTool(
 			"prompt_eval",
-			"Evaluate a prompt template for teaching effectiveness in a single pass. Returns score, per-objective breakdown, and improvement feedback.",
+			"Inspect prompt wording with the independent judgement setting. Returns labeled proxy estimates or a heuristic baseline; does not measure learning or authorize activation.",
 			{
 				prompt: { type: "string", description: "The prompt template content to evaluate" }
 			},
-			async (params) => {
+			async (params, signal) => {
 				const promptContent = (params.prompt as string) || "";
 				if (!promptContent) {
 					return "Prompt content required.";
 				}
 
-				const result = evaluatePrompt(promptContent);
-
-				const objectiveList = Object.entries(result.objectives)
-					.map(([k, v]) => `- ${k}: ${v.toFixed(2)}`)
-					.join("\n");
-
-				const feedbackSection =
-					result.feedback.length > 0
-						? `\n## Feedback\n${result.feedback.map((f) => `- ${f}`).join("\n")}`
-						: "\n## Feedback\n- No major issues detected.";
-
-				return `**Score:** ${result.score.toFixed(2)}/100\n\n## Objectives\n${objectiveList}${feedbackSection}`;
+				const result = await evaluateBrowserPrompt(promptContent, promptEvaluation, signal);
+				return promptEvaluationMarkdown(result) + (result.receiptKey ? "\n\nRaw judgement receipt saved locally." : "\n\nJudgement receipt could not be saved locally.");
 			},
 			["prompt"],
 		),

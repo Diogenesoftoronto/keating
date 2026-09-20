@@ -58,6 +58,7 @@ in
     (python3.withPackages (pythonPackages: [ pythonPackages.setuptools ]))
     similarityTs
     typst
+    uv
   ];
 
   # `devenv up` is an interactive, all-surface development workspace. The two
@@ -108,6 +109,16 @@ in
     description = "Bundle the independent Standard.site blog";
     exec = "bun scripts/blog-site/build.ts";
     before = [ "devenv:processes:blog-site" ];
+  };
+  tasks."keating:blog-preview" = {
+    description = "Prepare a Markdown blog post without publishing";
+    input = { file = ""; slug = ""; title = ""; description = ""; };
+    exec = "bun scripts/publish-blog-post.ts";
+  };
+  tasks."keating:blog-publish" = {
+    description = "Publish or update one Markdown post on the Keating blog";
+    input = { file = ""; slug = ""; title = ""; description = ""; };
+    exec = "bun scripts/publish-blog-post.ts --write";
   };
 
   processes = {
@@ -214,7 +225,33 @@ in
 
     # Positive per-request reservation ceiling in micro-USD (50000 = $0.05).
     NOTORGANIC_MAX_COST_MICROUSD = "50000";
+
+    # Ensure temporary, cache, and runtime directories reside within the workspace
+    # to avoid /tmp tmpfs inode exhaustion and sandbox access errors.
+    TMPDIR = "${config.env.DEVENV_ROOT}/.keating/tmp";
+    XDG_CACHE_HOME = "${config.env.DEVENV_ROOT}/.keating/cache";
+    XDG_RUNTIME_DIR = "${config.env.DEVENV_ROOT}/.keating/run";
   };
+
+  enterShell = ''
+    mkdir -p "$DEVENV_ROOT/.keating/tmp" "$DEVENV_ROOT/.keating/cache" "$DEVENV_ROOT/.keating/run"
+    export TMPDIR="$DEVENV_ROOT/.keating/tmp"
+    export XDG_CACHE_HOME="$DEVENV_ROOT/.keating/cache"
+    export XDG_RUNTIME_DIR="$DEVENV_ROOT/.keating/run"
+
+    # An unmounted Terax AppImage leaks PYTHONHOME/PYTHONPATH into the login
+    # environment, and every python3 then aborts with "Fatal Python error:
+    # Failed to import encodings module". Clear them so plain `python3` and
+    # `uv` work here without an `env -u PYTHONHOME` prefix.
+    unset PYTHONHOME PYTHONPATH
+
+    # uv otherwise builds each environment on the nix-profile CPython, whose
+    # link path has no libstdc++.so.6, so manylinux wheels (numpy, matplotlib)
+    # fail to load their C extensions. Use uv's own portable interpreter.
+    # Fallback if this is ever unavailable: put
+    # ${lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib ]} on LD_LIBRARY_PATH.
+    export UV_MANAGED_PYTHON=1
+  '';
 
   # Stryker is a project dependency so its version stays pinned in bun.lock.
   # Expose that local executable in the devenv shell like a system package.
@@ -374,6 +411,86 @@ in
     description = "Run the web test suite";
     exec = ''
       cd web && bun test
+    '';
+  };
+
+  # uv builds a throwaway environment per invocation, so there is no virtualenv
+  # to maintain. UV_MANAGED_PYTHON is set explicitly because tasks do not
+  # inherit enterShell; see the note there for why the nix CPython cannot be
+  # used. Some training modules import typer/httpx at module scope,
+  # so the test run needs both even though the test files are stdlib-only.
+  tasks."keating:test-python" = {
+    description = "Run the Python test suites";
+    exec = ''
+      # Tasks do not inherit enterShell, so re-clear the leaked interpreter
+      # paths here: a stale PYTHONHOME breaks python before it loads encodings.
+      unset PYTHONHOME PYTHONPATH
+      export UV_MANAGED_PYTHON=1
+      uv run --no-project --python 3.13 --with typer --with httpx --with pandas --with matplotlib --with numpy --with scikit-learn==1.7.2 --with catboost==1.2.10 \
+        python -m unittest discover -s scripts/training -p 'test_*.py'
+      uv run --no-project --with typer --with httpx --with pandas --with matplotlib --with numpy \
+        python -m unittest discover -s scripts/report-site -p 'test_*.py'
+    '';
+  };
+
+  tasks."keating:python" = {
+    description = "Python shell with pandas, matplotlib, NumPy and marimo";
+    exec = ''
+      unset PYTHONHOME PYTHONPATH
+      export UV_MANAGED_PYTHON=1
+      uv run --no-project --with pandas --with matplotlib --with numpy --with marimo==0.23.1 --with typer --with httpx python
+    '';
+  };
+
+  tasks."keating:research-preflight" = {
+    description = "Check Tinker/Runpod access from named Skate entries without billable work";
+    exec = ''
+      unset PYTHONHOME PYTHONPATH
+      export UV_MANAGED_PYTHON=1
+      uv run --script scripts/training/research_access.py
+    '';
+  };
+
+  tasks."keating:test-native-learning" = {
+    description = "Verify native learner delivery, source/export contracts and CPU observer mechanics";
+    exec = ''
+      unset PYTHONHOME PYTHONPATH
+      export UV_MANAGED_PYTHON=1
+      bun test scripts/training/test_native_episode.test.ts scripts/training/test_native_simulator.test.ts scripts/training/test_native_paths.test.ts scripts/training/test_native_resources.test.ts scripts/training/test_native_pilot_run.test.ts scripts/training/test_native_experiment.test.ts scripts/training/test_native_action_search.test.ts scripts/training/test_native_instruction_backend.test.ts scripts/training/test_native_process_supervisor.test.ts
+      uv run --no-project --python 3.13 --with typer --with httpx --with pandas --with matplotlib --with numpy --with scikit-learn==1.7.2 python -m unittest discover -s scripts/training -p 'test_native_*.py'
+      uv run --no-project --with typer python -m unittest discover -s scripts/training -p 'test_tutormoments_supervision.py'
+      uv run --no-project --with typer python -m unittest discover -s scripts/training -p 'test_mathdial_supervision.py'
+      uv run --no-project --python 3.13 --with numpy==2.2.6 --with scikit-learn==1.7.2 python -m unittest discover -s scripts/training -p 'test_user_model_evaluation.py'
+      uv run --no-project --python 3.13 --with numpy==2.2.6 --with scikit-learn==1.7.2 python -m unittest discover -s scripts/training -p 'test_profile_information.py'
+      # Exercise the pinned SDK's real data/retry interfaces without an account.
+      uv run --no-project --with typer --with httpx --with tinker==0.27.1 python -m unittest discover -s scripts/training -p 'test_native_tinker_update.py'
+      uv run --no-project --with certifi python -m unittest discover -s scripts/training -p 'test_observer_runpod.py'
+      uv run --script scripts/training/test_observer_core.py
+      uv run --script scripts/training/test_observer_probes.py
+      uv run --script scripts/training/test_observer_experiment.py
+      uv run --script scripts/training/test_observer_experiment_job.py
+      uv run --script scripts/training/test_native_combined_loss.py
+      uv run --script scripts/training/test_native_custom_update.py
+    '';
+  };
+
+  tasks."keating:tutormoments" = {
+    description = "Fetch and verify the pinned TutorMoments benchmark (no inference)";
+    exec = ''
+      unset PYTHONHOME PYTHONPATH
+      export UV_MANAGED_PYTHON=1
+      uv run --no-project python scripts/training/tutormoments.py fetch
+    '';
+  };
+
+  tasks."keating:notebooks" = {
+    description = "Open the marimo notebooks in analysis/";
+    exec = ''
+      # Tasks do not inherit enterShell, so re-clear the leaked interpreter
+      # paths here: a stale PYTHONHOME breaks python before it loads encodings.
+      unset PYTHONHOME PYTHONPATH
+      export UV_MANAGED_PYTHON=1
+      uvx marimo==0.23.1 edit --sandbox analysis/
     '';
   };
 

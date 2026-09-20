@@ -1,4 +1,5 @@
 import copy
+import importlib.util
 import json
 from pathlib import Path
 import ssl
@@ -45,6 +46,7 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(validate_payload({**payload(), "temperature": .3, "top_p": .8, "seed": 42})[3],
                          {"max_tokens": 3000, "temperature": .3, "top_p": .8, "seed": 42})
 
+    @unittest.skipUnless(importlib.util.find_spec("tinker_cookbook"), "tinker_cookbook is not installed")
     def test_native_tool_history_keeps_prompt_schema_and_real_call_ids(self):
         class Renderer:
             def create_conversation_prefix_with_tools(self, tools, system_prompt):

@@ -13,6 +13,10 @@ import { loadLearnerState, saveLearnerState } from "../../src/core/learner-state
 import { RpcUiActionDispatcher } from "../../src/tui/ui/rpc-action-transport.js";
 import { canonicalUiAction, type UiAction, type UiDocument } from "../../src/tui/learner-contracts.js";
 import { captureHarnessSources, changedHarnessSources, type HarnessSourceInventory } from "./benchmark_harness_v3_provenance.js";
+import { nativeSurfaceInstruction, type NativeSurface } from './native_surface.js';
+import { validateExperimentInstruction, type HarnessExperimentInstruction } from './native_experiment.js';
+import { NATIVE_SOURCE_COMMAND, deliveredNativeSource, encodeNativeSourceDelivery, nativeSourceMessage, validateNativeSourceDelivery } from './native_source_document.js';
+export { HARNESS_EXPERIMENT_INSTRUCTION_VERSION } from './native_experiment.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export const HARNESS_V3_LOCAL_TOOLS = ["read", "plan", "map", "verify", "quiz", "grade_quiz",
@@ -26,6 +30,7 @@ export interface HarnessTapeResponse {
   tool_calls?: Array<{ id: string; name: string; arguments: Record<string, unknown> }>;
 }
 export type HarnessV3Step = { kind: "message"; text: string } | { kind: "reopen" } | { kind: "new_session" }
+  | { kind: "source_document"; document: UiDocument; opening_message: string }
   | { kind: "ui_action"; action: UiAction; sourceDocument: UiDocument };
 export interface HarnessV3Request {
   id: string;
@@ -37,6 +42,8 @@ export interface HarnessV3Request {
   profile_name?: string;
   learner_profile?: string;
   allowed_tools?: string[];
+  surface?: NativeSurface;
+  experiment_instruction?: HarnessExperimentInstruction;
   limits?: Partial<{ max_provider_calls: number; max_tool_calls: number; max_output_tokens: number; turn_timeout_ms: number }>;
 }
 interface FileReceipt { path: string; sha256: string; content: string }
@@ -47,7 +54,8 @@ export interface HarnessV3Result {
   runtime: "keating-tui-pi-rpc";
   measurement: "offline_integration" | "model_episode";
   fidelity: { entrypoint: string; model_loop: string; tool_handlers: string; persistence: string; limitations: string[] };
-  configuration: { allowed_tools: string[]; limits: Required<HarnessV3Request>["limits"]; transport_kind: string; profile_name: string | null };
+  configuration: { allowed_tools: string[]; limits: Required<HarnessV3Request>["limits"]; transport_kind: string; profile_name: string | null;
+    surface?: NativeSurface; surface_instruction_sha256?: string; experiment_instruction?: HarnessExperimentInstruction };
   source_hashes: Record<string, string>;
   source_provenance: Omit<HarnessSourceInventory, "hashes" | "readonly_resources"> & { unchanged_at_end: boolean | null; changed_paths: string[] };
   steps: Array<{ index: number; kind: HarnessV3Step["kind"]; status: "completed" | "failed"; error_code?: string;
@@ -71,6 +79,11 @@ export function validateHarnessRequest(request: HarnessV3Request): void {
   if (!request || typeof request.id !== "string" || !request.id || request.id.length > 160
     || !Array.isArray(request.steps) || !request.steps.length || request.steps.length > 40) throw new Error("harness_invalid_request");
   if (!["tape", "provider"].includes(request.transport?.kind)) throw new Error("harness_invalid_transport");
+  if (request.surface !== undefined) nativeSurfaceInstruction(request.surface);
+  if (request.experiment_instruction !== undefined) {
+    if (request.surface === undefined) throw new Error('harness_experiment_requires_surface');
+    validateExperimentInstruction(request.experiment_instruction);
+  }
   if (request.transport.kind === "tape" && (!Array.isArray(request.transport.responses) || request.transport.responses.length > 100)) throw new Error("harness_invalid_tape");
   if (request.transport.kind === "provider" && (!request.transport.provider || !request.transport.model)) throw new Error("harness_invalid_model");
   if (request.transport.kind === "provider" && request.transport.endpoint !== undefined) {
@@ -83,7 +96,8 @@ export function validateHarnessRequest(request: HarnessV3Request): void {
       || !Number.isSafeInteger(transport.modelMetadata?.maxTokens) || transport.modelMetadata!.maxTokens < 1) throw new Error("harness_invalid_custom_provider");
   }
   for (const step of request.steps) {
-    if (!["message", "reopen", "new_session", "ui_action"].includes(step.kind)) throw new Error("harness_invalid_step");
+    if (!["message", "reopen", "new_session", "ui_action", "source_document"].includes(step.kind)) throw new Error("harness_invalid_step");
+    if (step.kind === 'source_document') validateNativeSourceDelivery({ ...step, surface: request.surface ?? 'interactive' });
     // Slash and shell commands execute before Pi tool guards. Learner text is conversation text only.
     if (step.kind === "message" && (typeof step.text !== "string" || !step.text.trim() || /^[\s]*[!/]/.test(step.text)
       || step.text.length > 65_536)) throw new Error("harness_invalid_learner_message");
@@ -133,8 +147,18 @@ async function assertRuntimeReady(client: KeatingRpcClient, directory: string, r
   if (request.transport.kind === "provider" && !receipts.some((receipt) => receipt.kind === "limits_installed")) throw new Error("harness_limits_not_installed");
 }
 
-export async function runHarnessEpisode(request: HarnessV3Request, diagnostics?: (error: unknown) => void): Promise<HarnessV3Result> {
+/** Trusted controller seam; learner models receive an allowlisted projection, not this receipt. */
+export interface HarnessStepController {
+  max_steps: number;
+  afterStep(receipt: HarnessV3Result["steps"][number]): Promise<HarnessV3Step | null>;
+}
+
+export async function runHarnessEpisode(request: HarnessV3Request, diagnostics?: (error: unknown) => void,
+  controller?: HarnessStepController): Promise<HarnessV3Result> {
   validateHarnessRequest(request);
+  const experiment = request.experiment_instruction === undefined ? undefined : validateExperimentInstruction(request.experiment_instruction);
+  if (controller && (request.steps.length !== 1 || !Number.isInteger(controller.max_steps)
+    || controller.max_steps < 1 || controller.max_steps > 40)) throw new Error("harness_invalid_controller");
   // The launcher pins its agent/session directories; reject executable preload/package overrides.
   for (const key of ["NODE_OPTIONS", "BUN_OPTIONS", "BUN_INSPECT", "PI_PACKAGE_DIR"]) {
     if (process.env[key]?.trim()) throw new Error("harness_ambient_runtime_override");
@@ -166,17 +190,22 @@ export async function runHarnessEpisode(request: HarnessV3Request, diagnostics?:
         "The explicit --tools profile includes teaching extensions; this installed Pi version also applies --tools to custom tools.",
         "Pi prompts/skills and teaching revision hooks run normally; ancestor/user context discovery, provider retries and auto-compaction are disabled explicitly.",
         builtSubmissionFollowup ? "Terminal assessment submissions use Pi's persisted follow-up loop; terminal journals and grading still differ from web IndexedDB." : "This built terminal receiver journals documents but predates automatic tutor follow-ups; source and built hashes are recorded separately.",
-        "Scripted learner behavior and offline tapes do not measure human learning or model teaching quality."],
+        "Scripted learner behavior and offline tapes do not measure human learning or model teaching quality.",
+        ...(controller ? ["A bounded external controller chooses learner steps after actual settled runtime output."] : [])],
     },
-    configuration: { allowed_tools, limits, transport_kind: request.transport.kind, profile_name: request.profile_name ?? null }, source_hashes,
+    configuration: { allowed_tools, limits, transport_kind: request.transport.kind, profile_name: request.profile_name ?? null,
+      ...(request.surface === undefined ? {} : { surface: request.surface,
+        surface_instruction_sha256: hash(nativeSurfaceInstruction(request.surface)) }),
+      ...(experiment === undefined ? {} : { experiment_instruction: experiment }) }, source_hashes,
     source_provenance: { scope: inventory.scope, unresolved_optional_imports: inventory.unresolved_optional_imports, unchanged_at_end: null, changed_paths: [] },
     steps: [], requests: [], receipts: [], initial_files: [], files: [], session_files: [],
   };
   try {
     await ensureProjectScaffold(cwd);
     await mkdir(directory, { recursive: true });
-    await writeFile(join(directory, "request.json"), JSON.stringify({ ...request, blocked_roots: [sessionsDir(cwd), configDir(cwd)], allowed_tools, limits,
-      readonly_resources: inventory.readonly_resources }), { mode: 0o600 });
+    await writeFile(join(directory, "request.json"), JSON.stringify({ ...request, experiment_instruction: experiment,
+      blocked_roots: [sessionsDir(cwd), configDir(cwd)], allowed_tools, limits,
+      readonly_resources: inventory.readonly_resources, system_prompt_sha256: source_hashes["SYSTEM.md"] }), { mode: 0o600 });
     const provider = request.transport.kind === "tape" ? "keating-benchmark-tape" : request.transport.provider;
     const model = request.transport.kind === "tape" ? "scripted" : request.transport.model;
     const thinking = request.transport.kind === "tape" ? "off" : request.transport.thinking ?? "off";
@@ -206,11 +235,25 @@ export async function runHarnessEpisode(request: HarnessV3Request, diagnostics?:
         void client?.respondToExtensionUI({ type: "extension_ui_response", id: event.id, cancelled: true, reason: "headless benchmark" });
       }
     });
-    for (const [index, step] of request.steps.entries()) {
+    const pendingSteps = [...request.steps];
+    for (const [index, step] of pendingSteps.entries()) {
       const before = await client.getMessages();
-      const receipt: HarnessV3Result["steps"][number] = { index, kind: step.kind, status: "completed", message_start_index: ["message", "ui_action"].includes(step.kind) ? before.length : 0, events: [], messages: [], state: {}, files: [] };
+      const receipt: HarnessV3Result["steps"][number] = { index, kind: step.kind, status: "completed", message_start_index: ["message", "ui_action", "source_document"].includes(step.kind) ? before.length : 0, events: [], messages: [], state: {}, files: [] };
       try {
         if (step.kind === "message") receipt.events = await client.promptAndWait(step.text, undefined, limits.turn_timeout_ms);
+        else if (step.kind === 'source_document') {
+          const delivery = { document: step.document, opening_message: step.opening_message, surface: request.surface ?? 'interactive' as const };
+          const expected = nativeSourceMessage(delivery);
+          const unsubscribe = client.onEvent(event => receipt.events.push(event));
+          try { await client.prompt(`/${NATIVE_SOURCE_COMMAND} ${encodeNativeSourceDelivery(delivery)}`); }
+          finally { unsubscribe(); }
+          // A successful command RPC is not proof of delivery. Require the actual session message.
+          const messages = await client.getMessages();
+          if (!messages.some(message => deliveredNativeSource(message)?.details.fingerprint === expected.details.fingerprint))
+            throw new Error('harness_source_document_not_delivered');
+          if (messages.slice(before.length).some((message: any) => message?.role === 'assistant'))
+            throw new Error('harness_source_document_triggered_actor');
+        }
         else if (step.kind === "reopen") {
           const state = await client.getState();
           const sessionPath = state.sessionFile;
@@ -270,6 +313,14 @@ export async function runHarnessEpisode(request: HarnessV3Request, diagnostics?:
       receipt.files = await domainFiles(cwd);
       result.steps.push(receipt);
       if (receipt.status === "failed") break;
+      if (controller) {
+        // Observe the final step even at the cap so its delivery remains in the ledger.
+        const next = await controller.afterStep(structuredClone(receipt));
+        if (next === null) break;
+        if (pendingSteps.length >= controller.max_steps) throw new Error("harness_learner_step_limit");
+        validateHarnessRequest({ ...request, steps: [next] });
+        pendingSteps.push(next);
+      }
     }
   } catch (error) {
     diagnostics?.(error);

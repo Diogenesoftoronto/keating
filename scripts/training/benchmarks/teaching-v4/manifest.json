@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "benchmark_id": "keating-teaching-v4",
+  "version": "4.1.0",
+  "status": "frozen-public-development-challenge",
+  "track": "fixed-cli-harness",
+  "files": {
+    "cases.json": "42ff4abc368c51ac0342f6818ccd2c172ab9aacf1267651e2d02216437cecca5",
+    "README.md": "9c651665dba302a9555648742dd0851c2bf71ced1daea7c7f56697708aad0287"
+  },
+  "authorship": "original-agent-authored-no-imported-traces",
+  "training_policy": "exclude-entire-family",
+  "comparison_plan_version": "matched-checkpoints-1.0.0"
+}

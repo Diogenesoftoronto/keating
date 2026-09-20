@@ -1,0 +1,2142 @@
+{
+  "schemaVersion": 1,
+  "policy": {
+    "minFitRows": 40,
+    "minFitGroups": 6,
+    "minValidationRows": 20,
+    "minValidationGroups": 6,
+    "maxValidationEce": 0.25,
+    "maxTreeDepth": 6
+  },
+  "features": [
+    "prediction",
+    "timing",
+    "hint"
+  ],
+  "observations": [
+    {
+      "rowId": "r0",
+      "groupId": "g0",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.0,
+        "timing": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r1",
+      "groupId": "g1",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.37,
+        "timing": 0.53,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r2",
+      "groupId": "g2",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.74,
+        "timing": 0.06,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r3",
+      "groupId": "g3",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.11,
+        "timing": 0.59,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r4",
+      "groupId": "g4",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.48,
+        "timing": 0.12,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r5",
+      "groupId": "g5",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.85,
+        "timing": 0.65
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r6",
+      "groupId": "g6",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.22,
+        "timing": 0.18,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r7",
+      "groupId": "g7",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.59,
+        "timing": 0.71,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r8",
+      "groupId": "g8",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.96,
+        "timing": 0.24,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r9",
+      "groupId": "g9",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.33,
+        "timing": 0.77,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r10",
+      "groupId": "g10",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.7,
+        "timing": 0.3
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r11",
+      "groupId": "g11",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.07,
+        "timing": 0.83,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r12",
+      "groupId": "g12",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.44,
+        "timing": 0.36,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r13",
+      "groupId": "g13",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.81,
+        "timing": 0.89,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r14",
+      "groupId": "g14",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.18,
+        "timing": 0.42,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r15",
+      "groupId": "g15",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.55,
+        "timing": 0.95
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r16",
+      "groupId": "g16",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.92,
+        "timing": 0.48,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r17",
+      "groupId": "g17",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.29,
+        "timing": 0.01,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r18",
+      "groupId": "g18",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.66,
+        "timing": 0.54,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r19",
+      "groupId": "g19",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.03,
+        "timing": 0.07,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r20",
+      "groupId": "g20",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.4,
+        "timing": 0.6
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r21",
+      "groupId": "g21",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.77,
+        "timing": 0.13,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r22",
+      "groupId": "g22",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.14,
+        "timing": 0.66,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r23",
+      "groupId": "g23",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.51,
+        "timing": 0.19,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r24",
+      "groupId": "g0",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.88,
+        "timing": 0.72,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r25",
+      "groupId": "g1",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.25,
+        "timing": 0.25
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r26",
+      "groupId": "g2",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.62,
+        "timing": 0.78,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r27",
+      "groupId": "g3",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.99,
+        "timing": 0.31,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r28",
+      "groupId": "g4",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.36,
+        "timing": 0.84,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r29",
+      "groupId": "g5",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.73,
+        "timing": 0.37,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r30",
+      "groupId": "g6",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.1,
+        "timing": 0.9
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r31",
+      "groupId": "g7",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.47,
+        "timing": 0.43,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r32",
+      "groupId": "g8",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.84,
+        "timing": 0.96,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r33",
+      "groupId": "g9",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.21,
+        "timing": 0.49,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r34",
+      "groupId": "g10",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.58,
+        "timing": 0.02,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r35",
+      "groupId": "g11",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.95,
+        "timing": 0.55
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r36",
+      "groupId": "g12",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.32,
+        "timing": 0.08,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r37",
+      "groupId": "g13",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.69,
+        "timing": 0.61,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r38",
+      "groupId": "g14",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.06,
+        "timing": 0.14,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r39",
+      "groupId": "g15",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.43,
+        "timing": 0.67,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r40",
+      "groupId": "g16",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.8,
+        "timing": 0.2
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r41",
+      "groupId": "g17",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.17,
+        "timing": 0.73,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r42",
+      "groupId": "g18",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.54,
+        "timing": 0.26,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r43",
+      "groupId": "g19",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.91,
+        "timing": 0.79,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r44",
+      "groupId": "g20",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.28,
+        "timing": 0.32,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r45",
+      "groupId": "g21",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.65,
+        "timing": 0.85
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r46",
+      "groupId": "g22",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.02,
+        "timing": 0.38,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r47",
+      "groupId": "g23",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.39,
+        "timing": 0.91,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r48",
+      "groupId": "g0",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.76,
+        "timing": 0.44,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r49",
+      "groupId": "g1",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.13,
+        "timing": 0.97,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r50",
+      "groupId": "g2",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.5,
+        "timing": 0.5
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r51",
+      "groupId": "g3",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.87,
+        "timing": 0.03,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r52",
+      "groupId": "g4",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.24,
+        "timing": 0.56,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r53",
+      "groupId": "g5",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.61,
+        "timing": 0.09,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r54",
+      "groupId": "g6",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.98,
+        "timing": 0.62,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r55",
+      "groupId": "g7",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.35,
+        "timing": 0.15
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r56",
+      "groupId": "g8",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.72,
+        "timing": 0.68,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r57",
+      "groupId": "g9",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.09,
+        "timing": 0.21,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r58",
+      "groupId": "g10",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.46,
+        "timing": 0.74,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r59",
+      "groupId": "g11",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.83,
+        "timing": 0.27,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r60",
+      "groupId": "g12",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.2,
+        "timing": 0.8
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r61",
+      "groupId": "g13",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.57,
+        "timing": 0.33,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r62",
+      "groupId": "g14",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.94,
+        "timing": 0.86,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r63",
+      "groupId": "g15",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.31,
+        "timing": 0.39,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r64",
+      "groupId": "g16",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.68,
+        "timing": 0.92,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r65",
+      "groupId": "g17",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.05,
+        "timing": 0.45
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r66",
+      "groupId": "g18",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.42,
+        "timing": 0.98,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r67",
+      "groupId": "g19",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.79,
+        "timing": 0.51,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r68",
+      "groupId": "g20",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.16,
+        "timing": 0.04,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r69",
+      "groupId": "g21",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.53,
+        "timing": 0.57,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r70",
+      "groupId": "g22",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.9,
+        "timing": 0.1
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r71",
+      "groupId": "g23",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.27,
+        "timing": 0.63,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r72",
+      "groupId": "g0",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.64,
+        "timing": 0.16,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r73",
+      "groupId": "g1",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.01,
+        "timing": 0.69,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r74",
+      "groupId": "g2",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.38,
+        "timing": 0.22,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r75",
+      "groupId": "g3",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.75,
+        "timing": 0.75
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r76",
+      "groupId": "g4",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.12,
+        "timing": 0.28,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r77",
+      "groupId": "g5",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.49,
+        "timing": 0.81,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r78",
+      "groupId": "g6",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.86,
+        "timing": 0.34,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r79",
+      "groupId": "g7",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.23,
+        "timing": 0.87,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r80",
+      "groupId": "g8",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.6,
+        "timing": 0.4
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r81",
+      "groupId": "g9",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.97,
+        "timing": 0.93,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r82",
+      "groupId": "g10",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.34,
+        "timing": 0.46,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r83",
+      "groupId": "g11",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.71,
+        "timing": 0.99,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r84",
+      "groupId": "g12",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.08,
+        "timing": 0.52,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r85",
+      "groupId": "g13",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.45,
+        "timing": 0.05
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r86",
+      "groupId": "g14",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.82,
+        "timing": 0.58,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r87",
+      "groupId": "g15",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.19,
+        "timing": 0.11,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r88",
+      "groupId": "g16",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.56,
+        "timing": 0.64,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r89",
+      "groupId": "g17",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.93,
+        "timing": 0.17,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r90",
+      "groupId": "g18",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.3,
+        "timing": 0.7
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r91",
+      "groupId": "g19",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.67,
+        "timing": 0.23,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r92",
+      "groupId": "g20",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.04,
+        "timing": 0.76,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r93",
+      "groupId": "g21",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.41,
+        "timing": 0.29,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r94",
+      "groupId": "g22",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.78,
+        "timing": 0.82,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r95",
+      "groupId": "g23",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.15,
+        "timing": 0.35
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r96",
+      "groupId": "g0",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.52,
+        "timing": 0.88,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r97",
+      "groupId": "g1",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.89,
+        "timing": 0.41,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r98",
+      "groupId": "g2",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.26,
+        "timing": 0.94,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r99",
+      "groupId": "g3",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.63,
+        "timing": 0.47,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r100",
+      "groupId": "g4",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.0,
+        "timing": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r101",
+      "groupId": "g5",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.37,
+        "timing": 0.53,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r102",
+      "groupId": "g6",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.74,
+        "timing": 0.06,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r103",
+      "groupId": "g7",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.11,
+        "timing": 0.59,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r104",
+      "groupId": "g8",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.48,
+        "timing": 0.12,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r105",
+      "groupId": "g9",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.85,
+        "timing": 0.65
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r106",
+      "groupId": "g10",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.22,
+        "timing": 0.18,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r107",
+      "groupId": "g11",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.59,
+        "timing": 0.71,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r108",
+      "groupId": "g12",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.96,
+        "timing": 0.24,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r109",
+      "groupId": "g13",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.33,
+        "timing": 0.77,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r110",
+      "groupId": "g14",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.7,
+        "timing": 0.3
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r111",
+      "groupId": "g15",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.07,
+        "timing": 0.83,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r112",
+      "groupId": "g16",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.44,
+        "timing": 0.36,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r113",
+      "groupId": "g17",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.81,
+        "timing": 0.89,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r114",
+      "groupId": "g18",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.18,
+        "timing": 0.42,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r115",
+      "groupId": "g19",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.55,
+        "timing": 0.95
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r116",
+      "groupId": "g20",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.92,
+        "timing": 0.48,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r117",
+      "groupId": "g21",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.29,
+        "timing": 0.01,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r118",
+      "groupId": "g22",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.66,
+        "timing": 0.54,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r119",
+      "groupId": "g23",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.03,
+        "timing": 0.07,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r120",
+      "groupId": "g0",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.4,
+        "timing": 0.6
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r121",
+      "groupId": "g1",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.77,
+        "timing": 0.13,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r122",
+      "groupId": "g2",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.14,
+        "timing": 0.66,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r123",
+      "groupId": "g3",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.51,
+        "timing": 0.19,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r124",
+      "groupId": "g4",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.88,
+        "timing": 0.72,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r125",
+      "groupId": "g5",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.25,
+        "timing": 0.25
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r126",
+      "groupId": "g6",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.62,
+        "timing": 0.78,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r127",
+      "groupId": "g7",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.99,
+        "timing": 0.31,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r128",
+      "groupId": "g8",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.36,
+        "timing": 0.84,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r129",
+      "groupId": "g9",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.73,
+        "timing": 0.37,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r130",
+      "groupId": "g10",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.1,
+        "timing": 0.9
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r131",
+      "groupId": "g11",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.47,
+        "timing": 0.43,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r132",
+      "groupId": "g12",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.84,
+        "timing": 0.96,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r133",
+      "groupId": "g13",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.21,
+        "timing": 0.49,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r134",
+      "groupId": "g14",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.58,
+        "timing": 0.02,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r135",
+      "groupId": "g15",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.95,
+        "timing": 0.55
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r136",
+      "groupId": "g16",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.32,
+        "timing": 0.08,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r137",
+      "groupId": "g17",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.69,
+        "timing": 0.61,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r138",
+      "groupId": "g18",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.06,
+        "timing": 0.14,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r139",
+      "groupId": "g19",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.43,
+        "timing": 0.67,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r140",
+      "groupId": "g20",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.8,
+        "timing": 0.2
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r141",
+      "groupId": "g21",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.17,
+        "timing": 0.73,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r142",
+      "groupId": "g22",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.54,
+        "timing": 0.26,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r143",
+      "groupId": "g23",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.91,
+        "timing": 0.79,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r144",
+      "groupId": "g0",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.28,
+        "timing": 0.32,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r145",
+      "groupId": "g1",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.65,
+        "timing": 0.85
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r146",
+      "groupId": "g2",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.02,
+        "timing": 0.38,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r147",
+      "groupId": "g3",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.39,
+        "timing": 0.91,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r148",
+      "groupId": "g4",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.76,
+        "timing": 0.44,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r149",
+      "groupId": "g5",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.13,
+        "timing": 0.97,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r150",
+      "groupId": "g6",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.5,
+        "timing": 0.5
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r151",
+      "groupId": "g7",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.87,
+        "timing": 0.03,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r152",
+      "groupId": "g8",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.24,
+        "timing": 0.56,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r153",
+      "groupId": "g9",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.61,
+        "timing": 0.09,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r154",
+      "groupId": "g10",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.98,
+        "timing": 0.62,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r155",
+      "groupId": "g11",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.35,
+        "timing": 0.15
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r156",
+      "groupId": "g12",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.72,
+        "timing": 0.68,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r157",
+      "groupId": "g13",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.09,
+        "timing": 0.21,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r158",
+      "groupId": "g14",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.46,
+        "timing": 0.74,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r159",
+      "groupId": "g15",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.83,
+        "timing": 0.27,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r160",
+      "groupId": "g16",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.2,
+        "timing": 0.8
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r161",
+      "groupId": "g17",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.57,
+        "timing": 0.33,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r162",
+      "groupId": "g18",
+      "split": "validation",
+      "label": 1,
+      "features": {
+        "prediction": 0.94,
+        "timing": 0.86,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r163",
+      "groupId": "g19",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.31,
+        "timing": 0.39,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r164",
+      "groupId": "g20",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.68,
+        "timing": 0.92,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r165",
+      "groupId": "g21",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.05,
+        "timing": 0.45
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r166",
+      "groupId": "g22",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.42,
+        "timing": 0.98,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r167",
+      "groupId": "g23",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.79,
+        "timing": 0.51,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r168",
+      "groupId": "g0",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.16,
+        "timing": 0.04,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r169",
+      "groupId": "g1",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.53,
+        "timing": 0.57,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r170",
+      "groupId": "g2",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.9,
+        "timing": 0.1
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r171",
+      "groupId": "g3",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.27,
+        "timing": 0.63,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r172",
+      "groupId": "g4",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.64,
+        "timing": 0.16,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r173",
+      "groupId": "g5",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.01,
+        "timing": 0.69,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r174",
+      "groupId": "g6",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.38,
+        "timing": 0.22,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r175",
+      "groupId": "g7",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.75,
+        "timing": 0.75
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r176",
+      "groupId": "g8",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.12,
+        "timing": 0.28,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r177",
+      "groupId": "g9",
+      "split": "validation",
+      "label": 0,
+      "features": {
+        "prediction": 0.49,
+        "timing": 0.81,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r178",
+      "groupId": "g10",
+      "split": "fit",
+      "label": 1,
+      "features": {
+        "prediction": 0.86,
+        "timing": 0.34,
+        "hint": 0.0
+      },
+      "baseline": 0.5
+    },
+    {
+      "rowId": "r179",
+      "groupId": "g11",
+      "split": "fit",
+      "label": 0,
+      "features": {
+        "prediction": 0.23,
+        "timing": 0.87,
+        "hint": 1.0
+      },
+      "baseline": 0.5
+    }
+  ]
+}

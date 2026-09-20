@@ -1,4 +1,5 @@
 import copy
+import importlib.util
 import json
 from pathlib import Path
 import tempfile
@@ -62,6 +63,7 @@ class ExtractionTests(unittest.TestCase):
             (path/'manifest.json').write_text(json.dumps({'method':'logged-user-interaction-sdpo-surrogate','synthetic_hints':0,'files':files}))
             with self.assertRaisesRegex(ValueError,'changed interaction'):load_dataset(path)
 
+@unittest.skipUnless(importlib.util.find_spec("torch"),"torch is not installed")
 class GradientTests(unittest.TestCase):
     def test_positive_negative_zero_and_prompt_mask(self):
         import torch
@@ -73,6 +75,7 @@ class GradientTests(unittest.TestCase):
         for advantages,length in [([1.],0),([float('nan')],2),([1.,2.],2)]:
             with self.assertRaises(ValueError):logged_token_loss(torch.tensor([-1.,-2.]),advantages,length)
 
+@unittest.skipUnless(importlib.util.find_spec("tinker_cookbook"),"tinker_cookbook is not installed")
 class NativeEncodingTests(unittest.TestCase):
     def test_same_observed_tokens_and_teacher_only_future_message(self):
         import os

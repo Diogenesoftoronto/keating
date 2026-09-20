@@ -9,6 +9,7 @@ import { MUSIC_CONTROLS_PRELUDE, MUSIC_PLAYER_SCRIPT } from "../components/labs/
 import { TWO_SUM_CHALLENGE, MUSIC_LAB_EXAMPLES } from "../components/labs/examples";
 import { CodingChallenge } from "../components/CodingChallenge";
 import { MusicLab } from "../components/MusicLab";
+import { RunnableCodeBlock } from "../components/RunnableCodeBlock";
 
 function executeFixture(code: string, tests = TWO_SUM_CHALLENGE.tests): Promise<CodingRunResult & { kind: string; message?: string }> {
 	return new Promise((resolve) => {
@@ -69,6 +70,15 @@ describe("music lab isolation", () => {
 		const disabled = renderToStaticMarkup(<MusicLab node={MUSIC_LAB_EXAMPLES.polyrhythm} disabled />);
 		expect(disabled).not.toContain("<iframe");
 		expect(disabled).toContain("setcpm(controls.tempo / 4)");
+	});
+	test("routes a Strudel chat fence to the isolated audio lab instead of the Node runner", () => {
+		const code = 'note("c3 e3 g3").s("piano")';
+		const html = renderToStaticMarkup(<RunnableCodeBlock code={code} language="js"><pre>{code}</pre></RunnableCodeBlock>);
+		expect(html).toContain("Runs in the Strudel sandbox");
+		expect(html).toContain("Sound starts when you press Play.");
+		expect(html).not.toContain("Run code on this device");
+		const plain = renderToStaticMarkup(<RunnableCodeBlock code="console.log(1)" language="js"><pre>console.log(1)</pre></RunnableCodeBlock>);
+		expect(plain).toContain("Run code on this device");
 	});
 	test("renders stable inert markup when a server test has a window stub without location", () => {
 		const previous = Object.getOwnPropertyDescriptor(globalThis, "window");
@@ -181,4 +191,14 @@ test("the pinned Strudel compiler keeps controls numeric and produces the intend
 	expect(harmonics.map((value: Record<string, unknown>) => value.freq)).toEqual([220, 440, 660]);
 	expect(harmonics.every((value: Record<string, unknown>) => Number.isFinite(value.gain))).toBe(true);
 	expect((await notes("timbre", { second: 0, third: 0 })).map((value: Record<string, unknown>) => value.gain)).toEqual([0.12, 0, 0]);
+	const snippet = [
+		'note("c3 e3 g3").s("piano")               // sample — warm, real',
+		'note("c3 e3 g3").s("sawtooth")            // pure synth — buzzy, clean',
+		'note("c3 e3 g3").s("sawtooth").lpf(800)   // synth shaped toward piano',
+		's("bd*4, hh*8")                            // drum samples — the rhythm workhorse',
+		'stack(s("bd*4"), note("c2").s("sawtooth")) // layers — the real production model',
+	].join("\n");
+	const chatPattern = await repl.evaluate(snippet, false);
+	expect(repl.state.error).toBeUndefined();
+	expect(chatPattern.queryArc(0, 1).length).toBeGreaterThan(0);
 });

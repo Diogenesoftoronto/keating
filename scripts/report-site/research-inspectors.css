@@ -1,0 +1,44 @@
+/* Evidence workbench: the report's paper and phosphor palette. */
+.reading nav{max-height:calc(100vh - 50px);overflow:auto}
+.inspector{margin:30px 0 44px;border-block:2px solid var(--green);padding:24px 0;min-width:0}
+.inspector .inspector-tools{display:flex;gap:18px;align-items:end;flex-wrap:wrap;margin:0 0 24px}
+.inspector-tools label{display:block;font-size:.85rem;font-weight:700;flex:1;min-width:0}
+.inspector select{display:block;width:100%;max-width:100%;margin-top:7px;padding:10px 32px 10px 12px;min-height:48px;border:1px solid var(--green);border-radius:3px;background:var(--paper);color:var(--ink);font-size:.9rem}
+.inspector-tools a{font-size:.78rem;padding-bottom:12px;flex:0 0 auto;white-space:nowrap}
+.inspector h4{font-size:1rem;line-height:1.4;margin:0 0 12px}
+.inspector h5{font-size:.88rem;margin:20px 0 8px}
+.inspector .record-heading{font:1.8rem/1.15 var(--display);margin:8px 0 16px}
+.inspector .pair{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin:20px 0}
+.inspector .evidence-pane{min-width:0;border-top:1px solid var(--line);padding-top:16px}
+.inspector .evidence-pane.native{border-color:var(--green)}
+.inspector .source-unit,.inspector .record-meta{font-size:.75rem;color:var(--soft);overflow-wrap:anywhere;margin:6px 0 12px}
+.inspector .verbatim{font-size:.86rem;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;max-height:400px;overflow:auto;padding:14px 0;margin:0}
+.inspector .native .verbatim{background:#e3ebde;padding:14px}
+.inspector .change-list{font-size:.84rem;padding-left:22px}
+.inspector details{border-top:1px solid var(--line);padding:15px 0;font-size:.82rem}
+.inspector summary{cursor:pointer;color:var(--green);font-weight:700;min-height:30px}
+.inspector .provenance{margin:10px 0;display:grid;grid-template-columns:100px 1fr;gap:7px 14px;overflow-wrap:anywhere;font-size:.74rem}
+.inspector .provenance dt{font-weight:700}.inspector .provenance dd{margin:0}
+.inspector .review-note{font-size:.82rem}
+.inspector .probe-text{display:grid;grid-template-columns:100px 1fr;gap:18px;border-top:1px solid var(--line);padding:16px 0}
+.inspector .probe-text strong{font-size:.76rem;color:var(--green)}
+.inspector .probe-text p{font-size:.9rem;white-space:pre-wrap;margin:0;overflow-wrap:anywhere}
+.inspector .score-strip{background:var(--terminal);color:var(--paper);padding:18px 22px;display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;margin:18px 0}
+.inspector .score-strip p{font-size:.78rem;margin:0}.inspector .score-strip b{display:block;font:1.9rem/1.15 var(--display);color:var(--phosphor);margin-top:5px}
+.inspector .score-strip .mismatch{color:#ffd19a}
+.inspector .probability-row{display:grid;grid-template-columns:105px 1fr 48px;align-items:center;gap:12px;font-size:.78rem;margin:12px 0}
+.inspector .probability-track{position:relative;height:18px;background:#d5dbcf}
+.inspector .probability-fill{display:block;height:100%;background:var(--green)}
+.inspector .threshold-marker{position:absolute;left:var(--threshold,50%);top:-4px;height:26px;border-left:2px solid var(--ink)}
+.inspector .threshold-workbench{padding:22px 0 4px;border-top:1px solid var(--line);margin-top:25px}
+.inspector .threshold-heading{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.inspector .threshold-heading label{font-size:.85rem;font-weight:700}.inspector output{font-variant-numeric:tabular-nums}
+.inspector input[type=range]{width:100%;min-height:44px;margin:8px 0;accent-color:var(--green)}
+.inspector button{background:transparent;border:1px solid var(--green);color:var(--green);border-radius:3px;padding:8px 12px;min-height:44px;font-size:.78rem}
+.inspector .threshold-explanation{font-size:.78rem;margin:5px 0 12px;color:var(--soft)}
+.inspector .confusion{display:flex;flex-wrap:wrap;gap:10px 24px;font-size:.81rem;margin:15px 0}
+.inspector .confusion span{min-width:150px}.inspector .confusion b{font-variant-numeric:tabular-nums;color:var(--green)}
+.inspector [hidden]{display:none}.inspector .js-only{display:none}.inspector.enhanced .js-only{display:flex}
+.inspector .print-context{display:none}
+@media(max-width:720px){.reading nav{max-height:none;overflow:visible}.inspector .pair{grid-template-columns:1fr;gap:18px}.inspector .probe-text{grid-template-columns:1fr;gap:8px}.inspector .probability-row{grid-template-columns:85px 1fr 45px;gap:8px}.inspector .verbatim{max-height:300px}.inspector .provenance{grid-template-columns:1fr;gap:3px}.inspector .provenance dd{margin-bottom:8px}.inspector .inspector-tools{align-items:stretch}.inspector-tools label{min-width:0;width:100%;flex-basis:100%}}
+@media print{.inspector .js-only,.inspector.enhanced .js-only,.inspector .threshold-workbench,.inspector details{display:none}.inspector [hidden]{display:block}.inspector .print-context{display:block;font-size:8pt}.inspector .diagnostic-panel{break-inside:avoid;margin:22px 0}.inspector .diagnostic-panel:not([data-featured=true]){display:none}.inspector .verbatim{max-height:none;overflow:visible;font-size:9pt}.inspector .score-strip{background:#eef5ee;color:var(--ink)}.inspector .score-strip b{color:var(--green);font-size:15pt}.inspector .probe-text p{font-size:9pt}.inspector .pair{gap:18px}.inspector{border-top-width:1px}.inspector .record-heading{font-size:19pt}.inspector .probability-track{print-color-adjust:exact}}

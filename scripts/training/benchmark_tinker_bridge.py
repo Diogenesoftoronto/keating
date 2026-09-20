@@ -19,6 +19,7 @@ import uuid
 
 import typer
 from serve_pilot import RequestError, make_server, validate_messages, validate_tools, Pilot
+from native_capture import append_capture, captured_sample
 
 
 @dataclass(frozen=True)
@@ -127,9 +128,13 @@ class NativeSampler:
         prompt = self.renderer.build_generation_prompt(conversation, **({"effort": self.spec.effort} if self.spec.effort is not None else {}))
         return prompt
 
-    def sample(self, prompt, settings):
+    def sample_with_capture(self, prompt, settings, emit):
+        return self.sample(prompt, settings, emit)
+
+    def sample(self, prompt, settings, emit=None):
         params = self.tinker.SamplingParams(**settings, stop=self.renderer.get_stop_sequences())
-        sequence = self.client.sample(prompt, num_samples=1, sampling_params=params).result(timeout=240).sequences[0]
+        sequence = (captured_sample(self.client, prompt, params, emit) if emit is not None else
+                    self.client.sample(prompt, num_samples=1, sampling_params=params).result(timeout=240).sequences[0])
         message, finished = self.renderer.parse_response(sequence.tokens)
         calls = []
         for call in message.get("tool_calls", []):
@@ -153,6 +158,20 @@ class Bridge(Pilot):
             with (self.state_dir / "usage.jsonl").open("a") as stream:
                 stream.write(json.dumps(receipt, allow_nan=False) + "\n")
 
+    def record_capture(self, request_id, spec, body, record):
+        # Raw conversations/tokens stay out of the compact usage journal.
+        # The bridge ID also becomes OpenAI/Pi's responseId, allowing a later
+        # exact response-occurrence join rather than text/timing matching.
+        with self.receipt_lock:
+            append_capture(self.state_dir / "raw-captures.jsonl", {
+                "response_id": request_id, "request_sha256": digest(body),
+                "base_model": spec.base_model, "renderer": spec.renderer,
+                "recorder_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                "capture_helper_sha256": hashlib.sha256(Path(__file__).with_name("native_capture.py").read_bytes()).hexdigest(),
+                "training_eligible": False,
+                **({"original_request": body} if record["phase"] == "prepared" else {}),
+                **record})
+
     def complete(self, body):
         spec, messages, tools, settings = validate_payload(body)
         request_id = "chatcmpl-" + uuid.uuid4().hex
@@ -173,7 +192,12 @@ class Bridge(Pilot):
                     raise RequestError(400, "Native context limit exceeded; no truncation applied")
                 receipt["input_tokens"] = prompt.length
                 receipt["native_prompt_sha256"] = digest(prompt.to_ints())
-                result = sampler.sample(prompt, settings)
+                capture_sample = getattr(sampler, "sample_with_capture", None)
+                if capture_sample is None:
+                    result = sampler.sample(prompt, settings)
+                else:
+                    result = capture_sample(prompt, settings,
+                        lambda record: self.record_capture(request_id, spec, body, record))
             receipt.update(status="completed", output_tokens=result["completion_tokens"],
                 parse_finished=result["parse_finished"], stop_reason=result["stop_reason"],
                 estimated_uncached_cost_usd=(prompt.length * spec.input_rate + result["completion_tokens"] * spec.output_rate) / 1e6,
@@ -182,6 +206,9 @@ class Bridge(Pilot):
             message = {"role": "assistant", "content": result["text"]}
             if result["tool_calls"]:
                 message["tool_calls"] = result["tool_calls"]
+            if capture_sample is not None:
+                self.record_capture(request_id, spec, body,
+                    {"phase": "parsed", "message": message, "parse_finished": result["parse_finished"]})
             # Preserve generated errors/undeclared calls for the actual Pi executor to handle; never fabricate tool results.
             return {"id": request_id, "object": "chat.completion", "created": int(time.time()), "model": spec.alias,
                     "choices": [{"index": 0, "message": message, "finish_reason": result["finish_reason"]}],

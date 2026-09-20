@@ -4,6 +4,8 @@ import {
   type LearnerQuizResult,
   type PortableLearnerData,
 } from "@keating/learner-contracts";
+import { decisionPolicySnapshot } from "../../../packages/learner-contracts/src/judgement/decision-policy-data";
+import { mobileDecisionSnapshotEstimate, type MobileDecisionEstimate, type MobileDecisionPolicies } from "./judgement/decision-policies";
 
 /** Matches the web learner-profile thresholds while keeping activity separate from performance. */
 export const LEARNER_PROGRESS_THRESHOLDS = {
@@ -64,6 +66,11 @@ export interface LearnerTopicProgress {
   pendingAssessmentCount: number;
   recentAssessedResult: RecentAssessedResult | null;
   status: LearnerTopicStatus;
+  measuredPolicy?: {
+    incumbentStatus: LearnerTopicStatus;
+    mastery: MobileDecisionEstimate | null;
+    retention: (MobileDecisionEstimate & { cards: number; cardIds: string[] }) | null;
+  };
 }
 
 export interface LearnerProgressDashboard {
@@ -170,7 +177,7 @@ function latestResult(results: readonly RecentAssessedResult[]): RecentAssessedR
  * It deliberately does not use session titles, topic activity, explicit
  * feedback, or recorded strengths/weaknesses as a performance score.
  */
-export function buildLearnerProgress(data: PortableLearnerData, now: number): LearnerProgressDashboard {
+export function buildLearnerProgress(data: PortableLearnerData, now: number, policies: MobileDecisionPolicies = {}): LearnerProgressDashboard {
   if (!validatePortableLearnerData(data)) throw new Error("Cannot project invalid portable learner data.");
   if (!Number.isFinite(now)) throw new Error("Learner progress requires a finite supplied clock.");
 
@@ -252,6 +259,19 @@ export function buildLearnerProgress(data: PortableLearnerData, now: number): Le
       + entry.reviewEvidence.reduce((total, item) => total + item.weight, 0);
     const confidence = clamp01(confidenceEvidenceWeight / LEARNER_PROGRESS_THRESHOLDS.confidenceWeightForFullScale);
     const recentAssessedResult = latestResult(entry.masteryEvidence.map((item) => item.result));
+    const incumbentStatus = statusFor(mastery, retention, confidence);
+    const snapshot = policies.mastery || policies.retention ? decisionPolicySnapshot(data, entry.topic, now) : null;
+    const masteryEstimate = snapshot ? mobileDecisionSnapshotEstimate(policies.mastery, "mastery", snapshot) : null;
+    const cards = policies.retention && snapshot ? snapshot.cards : [];
+    const recall = cards.flatMap(card => {
+      const estimate = mobileDecisionSnapshotEstimate(policies.retention, "retention", snapshot!, card);
+      return estimate ? [{ ...estimate, cardId: JSON.stringify([card.deckId, card.cardId]) }] : [];
+    });
+    const measuredPolicy = masteryEstimate || recall.length ? {
+      incumbentStatus, mastery: masteryEstimate,
+      retention: recall.length ? { ...recall[0]!, value: recall.reduce((sum, row) => sum + row.value, 0) / recall.length,
+        cards: recall.length, cardIds: recall.map(row => row.cardId) } : null,
+    } : undefined;
     return {
       topic: entry.topic,
       activityCount: entry.activityCount,
@@ -266,7 +286,9 @@ export function buildLearnerProgress(data: PortableLearnerData, now: number): Le
       reviewCount: entry.reviewEvidence.length,
       pendingAssessmentCount: entry.pendingAssessmentCount,
       recentAssessedResult,
-      status: statusFor(mastery, retention, confidence),
+      // The fitted binary gate predicts the next objective answer, not latent mastery.
+      status: masteryEstimate ? masteryEstimate.value >= 0.5 ? "strong" : "needs-review" : incumbentStatus,
+      ...(measuredPolicy ? { measuredPolicy } : {}),
     };
   }).sort(compareTopics);
 

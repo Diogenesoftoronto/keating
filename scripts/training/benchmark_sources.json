@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "checked_on": "2026-09-13",
+  "sources": [
+    {
+      "id": "tutormoments",
+      "title": "TutorMoments Preview",
+      "repository": "allenai/tutormoments-preview",
+      "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+      "license": "CC-BY-4.0",
+      "reuse_status": "attribution",
+      "scope": "Frozen moments; adapted Keating pilot available.",
+      "url": "https://huggingface.co/datasets/allenai/tutormoments-preview",
+      "files": [
+        {
+          "path": "moments.jsonl",
+          "url": "https://huggingface.co/datasets/allenai/tutormoments-preview/resolve/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/moments.jsonl",
+          "sha256": "c447459f80cf6b138512171a015879aaeab09cef7857e9c03655ad64a75c230f",
+          "bytes": 29509744
+        },
+        {
+          "path": "README.md",
+          "url": "https://huggingface.co/datasets/allenai/tutormoments-preview/resolve/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/README.md",
+          "sha256": "d492e5965139f6c25bbbbe4224ce00d5aae18ab181921e1b07ee8ce2e1d816c4",
+          "bytes": 6592
+        }
+      ]
+    },
+    {
+      "id": "mathdial",
+      "title": "MathDial",
+      "repository": "eth-nlped/mathdial",
+      "revision": "acc3878459e0bd8c04ab840056572f0b8b1abe1f",
+      "license": "CC-BY-4.0",
+      "reuse_status": "attribution",
+      "scope": "Original train/test splits; group adaptations by qid.",
+      "url": "https://huggingface.co/datasets/eth-nlped/mathdial",
+      "files": [
+        {
+          "path": "train.jsonl",
+          "url": "https://huggingface.co/datasets/eth-nlped/mathdial/resolve/acc3878459e0bd8c04ab840056572f0b8b1abe1f/train.jsonl",
+          "sha256": "d6135869c02dccf8d14756fa2f0367c5352922bb263ec22dc0eeace4da815d43",
+          "bytes": 7181555
+        },
+        {
+          "path": "test.jsonl",
+          "url": "https://huggingface.co/datasets/eth-nlped/mathdial/resolve/acc3878459e0bd8c04ab840056572f0b8b1abe1f/test.jsonl",
+          "sha256": "3ec54ee8ab921dc6191bf5e2ee766d4e7916b4264394eb17a6be9b3fe486e50b",
+          "bytes": 1858054
+        },
+        {
+          "path": "README.md",
+          "url": "https://huggingface.co/datasets/eth-nlped/mathdial/resolve/acc3878459e0bd8c04ab840056572f0b8b1abe1f/README.md",
+          "sha256": "c63e86fd95d4e1fd60cccd78226a27d9e787ad91ed037b353d8e3083a0e5eaeb",
+          "bytes": 1930
+        }
+      ]
+    },
+    {
+      "id": "bridge",
+      "title": "Bridge",
+      "repository": "rose-e-wang/bridge",
+      "revision": "8f469883aa7d7a5c1d64e5c961a033ce71d21f5e",
+      "license": "CC-BY-NC-4.0",
+      "reuse_status": "noncommercial",
+      "scope": "Original splits. Commercial permission remains unresolved.",
+      "url": "https://huggingface.co/datasets/rose-e-wang/bridge",
+      "files": [
+        {
+          "path": "train.json",
+          "url": "https://huggingface.co/datasets/rose-e-wang/bridge/resolve/8f469883aa7d7a5c1d64e5c961a033ce71d21f5e/train.json",
+          "sha256": "870fa10d299711d315718d1995f234988582d7168fa9c054c267ededd89ba260",
+          "bytes": 1025478
+        },
+        {
+          "path": "validation.json",
+          "url": "https://huggingface.co/datasets/rose-e-wang/bridge/resolve/8f469883aa7d7a5c1d64e5c961a033ce71d21f5e/validation.json",
+          "sha256": "1d87ffece5fba05b6f5e91a2bcd0e5d556afb00973dd47e09969c875576bf327",
+          "bytes": 172532
+        },
+        {
+          "path": "test.json",
+          "url": "https://huggingface.co/datasets/rose-e-wang/bridge/resolve/8f469883aa7d7a5c1d64e5c961a033ce71d21f5e/test.json",
+          "sha256": "7c1f5eccce6f635924ca495439c7a9d70885c73122dd4caf8ad9066c657265e9",
+          "bytes": 521815
+        },
+        {
+          "path": "README.md",
+          "url": "https://huggingface.co/datasets/rose-e-wang/bridge/resolve/8f469883aa7d7a5c1d64e5c961a033ce71d21f5e/README.md",
+          "sha256": "279b838af2dc1b73fe69d2757ccb4b8e00251708621d1f66d69ce78703584e63",
+          "bytes": 3017
+        }
+      ]
+    },
+    {
+      "id": "mrbench",
+      "title": "MRBench / BEA",
+      "repository": "kaushal0494/UnifyingAITutorEvaluation",
+      "revision": "bbef521ddb875f2cc8a5ee798f4066965a7cfd8a",
+      "license": "CC-BY-SA-4.0",
+      "reuse_status": "upstream-clarification",
+      "scope": "Selected BEA v3 dev/test files, not all MRBench versions. Bridge-derived content has upstream noncommercial terms.",
+      "url": "https://github.com/kaushal0494/UnifyingAITutorEvaluation",
+      "files": [
+        {
+          "path": "BEA_Shared_Task_2025_Datasets/mrbench_v3_devset.json",
+          "url": "https://raw.githubusercontent.com/kaushal0494/UnifyingAITutorEvaluation/bbef521ddb875f2cc8a5ee798f4066965a7cfd8a/BEA_Shared_Task_2025_Datasets/mrbench_v3_devset.json",
+          "sha256": "a395feab801de50d44b73e1e9b88f84824a1f1d92e15ae86842d90c2b6dbf33c",
+          "bytes": 1578346
+        },
+        {
+          "path": "BEA_Shared_Task_2025_Datasets/mrbench_v3_testset.json",
+          "url": "https://raw.githubusercontent.com/kaushal0494/UnifyingAITutorEvaluation/bbef521ddb875f2cc8a5ee798f4066965a7cfd8a/BEA_Shared_Task_2025_Datasets/mrbench_v3_testset.json",
+          "sha256": "5a73434fd9e1dfc73026e146d3709f95f2483a51a5e5b354bc96d981448d92cd",
+          "bytes": 680779
+        },
+        {
+          "path": "README.md",
+          "url": "https://raw.githubusercontent.com/kaushal0494/UnifyingAITutorEvaluation/bbef521ddb875f2cc8a5ee798f4066965a7cfd8a/README.md",
+          "sha256": "a3c3e49bc364b37eefcb71d47352a96e76608970276bd57970e9b7ed1ef9249f",
+          "bytes": 9525
+        }
+      ]
+    },
+    {
+      "id": "mathtutorbench",
+      "title": "MathTutorBench",
+      "repository": "eth-lre/mathtutorbench",
+      "revision": "6faed173ec2bef55cb899b2a3e0f93982f9cb176",
+      "license": "NOASSERTION",
+      "reuse_status": "permission-unresolved",
+      "scope": "Two bundled task data files, not the complete benchmark. Contains MathDial/Bridge; no explicit repository license found.",
+      "url": "https://github.com/eth-lre/mathtutorbench",
+      "files": [
+        {
+          "path": "datasets/mathdial_bridge.json",
+          "url": "https://raw.githubusercontent.com/eth-lre/mathtutorbench/6faed173ec2bef55cb899b2a3e0f93982f9cb176/datasets/mathdial_bridge.json",
+          "sha256": "96609c808383eea57d16bb24a49f302a9d84ffa323571c5989e57638bbaf2066",
+          "bytes": 1550455
+        },
+        {
+          "path": "datasets/mathdial_bridge_hard.json",
+          "url": "https://raw.githubusercontent.com/eth-lre/mathtutorbench/6faed173ec2bef55cb899b2a3e0f93982f9cb176/datasets/mathdial_bridge_hard.json",
+          "sha256": "29a18632ae1c90395d7871513ff006363c781b955a7cd8ca403688ac1d2edfe4",
+          "bytes": 718256
+        },
+        {
+          "path": "README.md",
+          "url": "https://raw.githubusercontent.com/eth-lre/mathtutorbench/6faed173ec2bef55cb899b2a3e0f93982f9cb176/README.md",
+          "sha256": "f4da3fbff27b1825836ec9e2b161e2dd3f1d13d084fb35d8c176b808ca705264",
+          "bytes": 14935
+        }
+      ]
+    },
+    {
+      "id": "studentsim",
+      "title": "StudentSim",
+      "repository": "microsoft/StudentSim",
+      "revision": "072a3e3b7a7c9009938be98ebdcee4cd76b426fc",
+      "license": "MIT",
+      "reuse_status": "software-only",
+      "scope": "Documentation and software license snapshot only. No simulator or training data imported or executed.",
+      "url": "https://github.com/microsoft/StudentSim",
+      "files": [
+        {
+          "path": "README.md",
+          "url": "https://raw.githubusercontent.com/microsoft/StudentSim/072a3e3b7a7c9009938be98ebdcee4cd76b426fc/README.md",
+          "sha256": "0bbb6d19bda53bdf4847e7855e74023c0514d04df8945d9b5078b87bae0c81ae",
+          "bytes": 7211
+        },
+        {
+          "path": "LICENSE",
+          "url": "https://raw.githubusercontent.com/microsoft/StudentSim/072a3e3b7a7c9009938be98ebdcee4cd76b426fc/LICENSE",
+          "sha256": "7df20dcdf9197e9945c14858d41c60f11b52b93e5b69e2b63416b874d598d322",
+          "bytes": 1074
+        }
+      ]
+    }
+  ]
+}

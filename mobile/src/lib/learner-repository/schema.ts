@@ -5,7 +5,7 @@ import {
 } from "./database";
 
 export const LEARNER_REPOSITORY_DATABASE_NAME = "keating-learner.sqlite";
-export const LEARNER_REPOSITORY_SCHEMA_VERSION = 5;
+export const LEARNER_REPOSITORY_SCHEMA_VERSION = 6;
 
 const CREATE_FOUNDATION_SQL = `
 CREATE TABLE IF NOT EXISTS repository_meta (
@@ -99,6 +99,14 @@ CREATE INDEX IF NOT EXISTS ui_action_journals_time_idx
   ON ui_action_journals (updated_at, document_id);
 `;
 
+const CREATE_JUDGEMENT_REVIEWS_SQL = `
+CREATE TABLE IF NOT EXISTS judgement_reviews (
+  check_id TEXT PRIMARY KEY NOT NULL,
+  reviewed_at TEXT NOT NULL,
+  payload_json TEXT NOT NULL CHECK (length(payload_json) <= 2097152)
+);
+`;
+
 interface MetaRow {
   value: string;
 }
@@ -183,6 +191,11 @@ async function applyOrderedMigrations(transaction: AsyncSqlExecutor, storedVersi
     );
     currentVersion = 5;
   }
+  if (currentVersion === 5) {
+    await transaction.execAsync(CREATE_JUDGEMENT_REVIEWS_SQL);
+    await transaction.runAsync("UPDATE repository_meta SET value = ? WHERE key = ?;", "6", "schema_version");
+    currentVersion = 6;
+  }
   if (currentVersion !== LEARNER_REPOSITORY_SCHEMA_VERSION) {
     throw new Error(`Learner repository has no migration path from schema ${currentVersion}.`);
   }
@@ -190,4 +203,5 @@ async function applyOrderedMigrations(transaction: AsyncSqlExecutor, storedVersi
   await transaction.execAsync(CREATE_LEARNER_RECORDS_SQL);
   await transaction.execAsync(CREATE_STUDY_PRIORITIES_SQL);
   await transaction.execAsync(CREATE_UI_ACTION_JOURNALS_SQL);
+  await transaction.execAsync(CREATE_JUDGEMENT_REVIEWS_SQL);
 }

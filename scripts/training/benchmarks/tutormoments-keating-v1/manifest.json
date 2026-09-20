@@ -1,0 +1,11 @@
+{
+  "benchmark_id": "keating-tutormoments-synthetic-v1",
+  "version": "1.0.0",
+  "files": {
+    "cases.json": "0a6b36f094578a68ac1b7e85663988b4373c3d3161a5f5e9b169ba711587b92a"
+  },
+  "source_moments": 6,
+  "cases": 12,
+  "status": "development-pilot-not-human-validated",
+  "split_policy": "All variants and moments from the same source conversation belong to one family; this pilot is development only, never an independent holdout."
+}

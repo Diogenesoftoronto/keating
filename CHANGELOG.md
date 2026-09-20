@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-09-19
+
+### Added
+- GPT Live (`gpt-live-1`) as a Not Organic account-backed Live option, with a fixed authenticated WebSocket relay, bounded PCM audio, captions, explicit consent controls and session spending ceiling. Production gateway configuration and consent deployment are required.
+- Managed desktop Needle installation with verified pinned assets, progress, cancellation and removal; persistent app-data storage and a dedicated local worker replace the need for a manually configured Python runtime.
+- Separate source-grounded mastery, retention and urgency harness datasets with grouped comparisons; verified retention/urgency fits can be installed in web and mobile Settings while the failed mastery candidate retains the incumbent rule.
+- Independent judgement settings and typed Noul, Choice, and Score reviews through Not Organic, with concrete model provenance, cancellation, abstention, and separate local and hosted calibration.
+- Explicit chat-inspector acceptance of a reviewed teaching direction for one next reply, with source and configuration guards and teacher-authored wording.
+- Durable MAP-Elites records from fresh training runs, retained across queue pruning and reused in proposal generation, with full judge calibration identity and unchanged promotion gates.
+- Save-first answer review, generated lesson-plan review, course authoring and selected-submission review, and explicit course-search reranking. Model proposals remain separate from final learner records and accepted feedback.
+- Stable course-search control items stay outside model review and retain their keyword positions. Only eligible slots in the original shortlist can be reordered; cohort membership follows course/item identity across searches and revisions.
+- Prerequisite-aware readiness review in CLI/Pi, web Coming Up, and mobile Learn. Saved answers, due work, exact plan bindings, and recorded prerequisite completion ground suggestions; unknown graphs and uncalibrated decisions abstain.
+- Developer judgement diagnostics tied to replies, review operations, and separately opted-in live transcripts, including lifecycle, source model, raw distributions, timing, usage, and application status.
+- Offline calibration fitting with independent fit and validation groups, reliability reports, and exact-hash artifact verification. Web and mobile Settings can import, reverify, and remove device-local calibration without changing review consent.
+- Optional pre-answer predictions in canonical web, mobile and terminal practice quizzes, linked after answer commit to deterministic correctness and in-app hint use, with device-local evidence export. Terminal hints now require an explicit reveal action.
+- Source-bound terminal quiz datasets and offline fitting: recheck completed answers, keep duplicate tasks in one group, compare a depth-three tree with raw estimates, and try a pinned ensemble only after the tree passes.
+- Native desktop closed-label scoring and local Cactus Needle retrieval for the CLI/Pi learner-context path, with exact source spans and explicit unavailable behavior.
+- Native mobile Needle recall with a verified optional model download, exact earlier learner excerpts during replies, and explicit Library search by meaning. A shared bounded index preserves source offsets and cancels stale work; desktop builds now include the fixed local embedding bridge.
+- Optional background CLI memory admission from exact Needle quotes, requiring separately fitted worth/category gates. Private proxy provenance, guarded source snapshots and ranked capacity limits protect explicit and noncomparable memories.
+- Optional structured onboarding, declared learner preferences, accessibility controls, and a resumable interface tour.
+- Private CLI learner-event records and mobile reward/export joins with source-message binding, timing, explicit-feedback precedence, and separate inferred proxy signals.
+- Research tooling for native teaching episodes, original-token capture, source supervision, observer features, contextual rewards, action search, and reproducible update/report workflows.
+- Inspectable research reports and analysis notebooks covering dataset sources, learner trajectories, model generations, probes, calibration, and benchmark limitations.
+
+### Changed
+- Integrate the independent judgement runtime into teaching evolution, training exports, trajectory rubrics, prompt evaluation and pinned browser prompt evolution, and optional pre-generation spend review while preserving both independent promotion gates.
+- Keep model estimates labelled as proxies and missing retention, transfer, or calibration unknown. No measured production calibration dataset is bundled.
+- Make review operations reject changed source documents, settings, model identities, and calibration artifacts, including non-cooperative late responses.
+- Extend canonical learner records and submission handling consistently across web, mobile, and terminal surfaces, including durable document timestamps and resumable training exports.
+- Refresh documentation walkthroughs, video demonstrations, searchable captions, and the research report experience; retire the superseded demo tapes and assets.
+- Expand native Devenv research tasks and synchronize every release version surface to 4.0.0.
+
+### Fixed
+- Serialize Not Organic tutor requests with the supported system role, avoiding rejected developer-role requests while preserving tool and authentication headers.
+- Keep learner profiles and quiz records isolated, preserve model-download progress and recovery state, and route supported Strudel activities through their runnable surface.
+- Submit and restore moved ordering answers correctly on mobile, using shared objective grading across web and mobile.
+- Preserve exact multiline calibration questions and reject malformed, oversized, stale, or mutated evidence before it can become an actionable review result.
+- Include the shared review and calibration dependency closure in generated NodePod sources, with explicit host-only boundaries for evaluation and account authority.
+- Keep version drift checks read-only and remove obsolete video embeds from archived blog entries.
+
+### Release notes
+- This release brings together all accumulated source, application, research, documentation, and public-asset changes. The [4.0.0 article](docs/blog/keating-4-0-0.md) explains the full scope and evidence limits.
+- Benchmarks and synthetic learner experiments do not establish human learning effectiveness. Sol comparisons, broader performance work, and unfinished cascade capabilities remain explicitly tracked in the implementation ledger.
+- Manual, browser, and physical-device verification remain with the user. Publishing and platform release artifacts have their own verification boundaries.
+
+## [3.15.1] - 2026-09-10
+
+### Added
+- Visual guide and multi-layer walkthroughs on `docs.keating.help` (`/visual-guide/`) with embedded videos across all seven architectural surfaces.
+- Inline video walkthroughs and cross-references across Getting Started and Learning documentation.
+- Semantic video schema, styling, and search index integration for video demonstrations in the static documentation generator.
+
 ## [3.15.0] - 2026-09-10
 
 ### Added

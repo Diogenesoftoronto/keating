@@ -47,6 +47,7 @@ public final class KeatingLiteRTModule: Module {
   private var activeId: String?
   private var lastCancelledId: String?
   private var cancelled = false
+  private let labelScorer = keating_label_scorer_create()
 
   private func directory() throws -> URL {
     var root = try FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
@@ -152,7 +153,7 @@ public final class KeatingLiteRTModule: Module {
 
   public func definition() -> ModuleDefinition {
     Name("KeatingLiteRT")
-    Constants(["runtimeVersion": "0.16.0", "supported": true])
+    Constants(["runtimeVersion": "0.16.0", "supported": true, "labelScorerVersion": "litert-0.16.0-cpu-candidate-nll-v1"])
     Events("onDelta")
     AsyncFunction("getDirectoryAsync") { () -> String in try self.directory().absoluteString }
     AsyncFunction("createFileAsync") { (uri: String) in
@@ -191,7 +192,35 @@ public final class KeatingLiteRTModule: Module {
         }
       }
     }
+    AsyncFunction("scoreLabelsAsync") { (requestId: String, uri: String, message: String, count: Int, promise: Promise) in
+      self.lock.lock()
+      let busy = self.activeId != nil
+      if !busy { self.activeId = requestId; self.cancelled = self.lastCancelledId == requestId }
+      self.lock.unlock()
+      if busy { promise.reject("E_BUSY", "Offline inference is busy."); return }
+      self.worker.async {
+        defer { self.lock.lock(); self.activeId = nil; self.lock.unlock() }
+        do {
+          guard (2...64).contains(count), !requestId.isEmpty, requestId.utf8.count <= 128,
+            !message.contains("\0"), message.utf8.count <= 150000 else {
+            throw Exception(name: "E_SCORING_INPUT", description: "Local judgement input is invalid.")
+          }
+          let file = try self.localFile(uri)
+          guard file.pathExtension == "litertlm", FileManager.default.fileExists(atPath: file.path) else {
+            throw Exception(name: "E_MISSING_MODEL", description: "Download the offline tutor first.")
+          }
+          self.closeEngine()
+          var scores = [Float](repeating: 0, count: count)
+          let status = scores.withUnsafeMutableBufferPointer { buffer in
+            keating_label_scorer_score(self.labelScorer, requestId, file.path, message, Int32(count), buffer.baseAddress)
+          }
+          guard status == 0 else { throw Exception(name: "E_OFFLINE_SCORING", description: "Local judgement unavailable or cancelled.") }
+          promise.resolve(scores.map(Double.init))
+        } catch { promise.reject(error) }
+      }
+    }
     Function("cancelGeneration") { (requestId: String) in
+      keating_label_scorer_cancel(self.labelScorer, requestId)
       self.lock.lock()
       defer { self.lock.unlock() }
       self.lastCancelledId = requestId
@@ -206,9 +235,10 @@ public final class KeatingLiteRTModule: Module {
     OnDestroy {
       self.lock.lock()
       self.cancelled = true
+      if let id = self.activeId { keating_label_scorer_cancel(self.labelScorer, id) }
       if let conversation = self.conversation { litert_lm_conversation_cancel_process(conversation) }
       self.lock.unlock()
-      self.worker.async { self.closeEngine() }
+      self.worker.async { self.closeEngine(); keating_label_scorer_delete(self.labelScorer) }
     }
   }
 }

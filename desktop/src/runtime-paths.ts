@@ -50,6 +50,11 @@ export function nitroEnvironment(
 
 	return {
 		...parentEnvironment,
+		// Packaged desktop has no Devenv shell. These public gateway settings
+		// enable account-authenticated relays without shipping provider secrets.
+		NOTORGANIC_ENABLED: parentEnvironment.NOTORGANIC_ENABLED ?? "true",
+		NOTORGANIC_ISSUER: parentEnvironment.NOTORGANIC_ISSUER ?? "https://api.notorganic.info",
+		NOTORGANIC_MAX_COST_MICROUSD: parentEnvironment.NOTORGANIC_MAX_COST_MICROUSD ?? "100000",
 		// Run the Electron executable as a Node child so the bundled Nitro output
 		// shares Electron's Node ABI without opening another Chromium process.
 		ELECTRON_RUN_AS_NODE: "1",

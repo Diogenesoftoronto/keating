@@ -1,3 +1,5 @@
+import { wrapTextWithAnsi } from "@earendil-works/pi-tui";
+import { randomUUID } from "node:crypto";
 import { relative } from "node:path";
 import { mathQuestionCredit } from "../../../../packages/learner-contracts/src/index.js";
 import {
@@ -6,6 +8,8 @@ import {
   planTopicArtifact,
   verifyTopicArtifact
 } from "../../../core/project.js";
+import { cliGradingEnabled, reviewCliOpenResponses, type CliGradingReceipt } from "../../../judgement/cli-grading.js";
+import { cliQuizRecordPath, saveCliQuizSubmission, saveCliQuizProposal, loadCliQuizRecord, finalizeCliQuizReview } from "../../../core/quiz-grading.js";
 import { generateQuiz, quizToMarkdown, quizAnswerKeyToMarkdown, type Quiz, type AuthoredQuestion } from "../../../core/quiz.js";
 import { learnerStatePath } from "../../../core/paths.js";
 import { loadLearnerState, recordQuizResult, saveLearnerState } from "../../../core/learner-state.js";
@@ -20,18 +24,30 @@ async function persistQuizResult(topicSlug: string, correct: number, total: numb
   await saveLearnerState(statePath, state);
 }
 
+function withGradingNotice(card: ReturnType<typeof renderQuizCard>, details: { grading?: CliGradingReceipt; review?: unknown; pendingIds?: readonly string[] }) {
+  if (!details.grading) return card;
+  const estimates = details.grading.proposals.flatMap(({ id, proposal }) => proposal
+    ? [`${id}: ${proposal.verdict}, ${proposal.backend.model} (uncalibrated proposal)`] : []);
+  const notice = details.review ? "Explicit review saved; model proposals remain separate."
+    : details.pendingIds?.length || details.grading.grades.some((grade) => grade.grading === "pending")
+      ? "Final open-response grades pending. Uncalibrated proposals require review."
+      : "Exact grades require no model judgement.";
+  return { render: (width: number) => [...card.render(width), ...[notice, ...estimates].flatMap((text) => wrapTextWithAnsi(text, Math.max(1, width)))],
+    invalidate: () => card.invalidate() };
+}
+
 export const teachingTools = [
   keatingToolMaker(
     "plan",
     "plan",
     "Generate a structured lesson plan for a topic, adapted to the current teaching policy. Use before teaching any topic to structure your approach.",
     { topic: { type: "string", description: "The topic to generate a lesson plan for" } },
-    async (params) => {
+    async (params, _ctx, signal) => {
       const topic = (params.topic as string) || "";
       if (!topic) return { content: [{ type: "text", text: "Topic required." }] };
-      const artifact = await planTopicArtifact(getCwd(), topic);
+      const artifact = await planTopicArtifact(getCwd(), topic, { signal });
       return {
-        content: [{ type: "text", text: `[artifact://plan]\nWrote ${relative(getCwd(), artifact.planPath)}` }],
+        content: [{ type: "text", text: `[artifact://plan]\nWrote ${relative(getCwd(), artifact.planPath)}\nLesson plan review: ${artifact.reviewStatus}${artifact.reviewPath ? ` — ${relative(getCwd(), artifact.reviewPath)}` : ". Opt in with KEATING_LESSON_PLAN_JUDGE=notorganic."}` }],
         details: artifact
       };
     },
@@ -89,7 +105,7 @@ export const teachingTools = [
   keatingToolMaker(
     "quiz",
     "quiz",
-    "Generate retrieval practice questions for a topic. Creates recall, comprehension, application, and transfer questions with answer keys.",
+    "Generate retrieval practice questions for a topic. Creates recall, comprehension, application, and transfer questions with answer keys. Optional independent review: keating login --judgement, then start the shell with KEATING_GRADING_JUDGE=notorganic (KEATING_JUDGEMENT_MODEL optionally pins a concrete judge). Proposals stay uncalibrated and pending until explicit review.",
     {
       topic: { type: "string", description: "The topic to generate quiz questions for" },
       questions: { type: "array", description: "Authored questions with question, correctAnswer, explanation, and optional mathProblem (arithmetic expression or linear-equation left, right, variable x).", items: { type: "object", properties: { question: { type: "string" }, correctAnswer: { type: "string" }, explanation: { type: "string" }, type: { type: "string" }, mathProblem: { type: "object", properties: { kind: { type: "string" }, expression: { type: "string" }, left: { type: "string" }, right: { type: "string" }, variable: { type: "string" } }, required: ["kind"] } }, required: ["question", "correctAnswer", "explanation"] } },
@@ -147,6 +163,26 @@ export const teachingTools = [
             openEndedIds.push(q.id);
           }
         }
+        if (cliGradingEnabled()) {
+          const resultId = `quiz-${randomUUID()}`;
+          const recordPath = await saveCliQuizSubmission(getCwd(), { id: resultId, quiz, answers: rawAnswers, objectiveResults, pendingMathIds });
+          const semanticQuestions = quiz.questions.filter((q) => openEndedIds.includes(q.id) && !q.mathProblem);
+          const receipt = await reviewCliOpenResponses(getCwd(), semanticQuestions.map((q) => ({
+            id: q.id, question: q.question, learnerAnswer: rawAnswers[q.id] ?? "", referenceAnswer: quiz.answerKey.get(q.id), rubric: q.rubric,
+          })));
+          await saveCliQuizProposal(getCwd(), resultId, receipt);
+          for (const grade of receipt.grades) if (grade.grading === "auto") objectiveResults[grade.id] = grade.credit === 1;
+          const pendingIds = quiz.questions.filter((q) => !Object.hasOwn(objectiveResults, q.id)).map((q) => q.id);
+          const correct = Object.values(objectiveResults).filter(Boolean).length;
+          if (pendingIds.length) pendingQuizResults.set(resultId, { quiz, answers: rawAnswers, objectiveResults, gradingRecordPath: recordPath });
+          else await persistQuizResult(quiz.slug, correct, Object.keys(objectiveResults).length);
+          const proposals = receipt.proposals.filter((entry) => entry.proposal !== null);
+          const description = proposals.map(({ id, proposal }) => `${id}: ${proposal!.verdict} (model ${proposal!.backend.model}; uncalibrated proposal only)`).join("; ");
+          return {
+            content: [{ type: "text", text: `Exact score: ${correct}/${Object.keys(objectiveResults).length}. ${pendingIds.length} answers pending final review. ${description || "No semantic proposal available."}\nSaved answers and judgement evidence: ${relative(getCwd(), recordPath)}. Use grade_quiz with result_id "${resultId}" to inspect; explicit reviewer grades are required to finalize pending answers. Do not turn a model proposal into a final grade automatically.` }],
+            details: { quiz, topic, answers: rawAnswers, objectiveResults, pendingMathIds, resultId, grading: receipt, pendingIds, gradingRecordPath: recordPath },
+          };
+        }
         const correctCount = Object.values(objectiveResults).filter(Boolean).length;
         const objectiveTotal = Object.keys(objectiveResults).length;
 
@@ -185,14 +221,14 @@ export const teachingTools = [
         if (!details?.quiz) return undefined;
         const answers = details.answers ? new Map<string, string>(Object.entries(details.answers)) : undefined;
         const objectiveResults = details.objectiveResults ? new Map<string, boolean>(Object.entries(details.objectiveResults)) : undefined;
-        return renderQuizCard(theme, details.quiz as Quiz, { answers, objectiveResults });
+        return withGradingNotice(renderQuizCard(theme, details.quiz as Quiz, { answers, objectiveResults }), details);
       }
     }
   ),
   keatingToolMaker(
     "grade_quiz",
     "grade_quiz",
-    "Grade the open-ended (short_answer/transfer) questions from a prior quiz tool call. Call after the quiz tool returns a result_id for open-ended grading.",
+    "Inspect or explicitly review open-ended questions from a prior quiz result_id. In account-backed mode omit grades to inspect saved pending proposals; submit a complete set only after reviewer authorization. Uncalibrated proposals must not be finalized automatically.",
     {
       result_id: { type: "string", description: "The result_id returned by the quiz tool." },
       grades: {
@@ -211,7 +247,34 @@ export const teachingTools = [
     },
     async (params) => {
       const resultId = (params.result_id as string) || "";
+      const saved = /^quiz-[a-z0-9-]{8,90}$/.test(resultId) ? await loadCliQuizRecord(getCwd(), resultId) : null;
+      if (saved) {
+        const quiz: Quiz = { ...saved.submission.quiz, answerKey: new Map(Object.entries(saved.submission.quiz.answerKey)) };
+        const objectiveResults = { ...saved.submission.objectiveResults };
+        for (const grade of saved.proposal?.grades ?? []) if (grade.grading === "auto") objectiveResults[grade.id] = grade.credit === 1;
+        const sharedDetails = { quiz, answers: saved.submission.answers, objectiveResults, grading: saved.proposal, resultId, pendingIds: quiz.questions.filter((q) => !Object.hasOwn(objectiveResults, q.id)).map((q) => q.id),
+          gradingRecordPath: cliQuizRecordPath(getCwd(), resultId) };
+        if (saved.review) return { content: [{ type: "text", text: `Reviewed quiz score: ${saved.review.score.correct}/${saved.review.score.total}. Existing review retained.` }], details: { ...sharedDetails, openEndedGrades: saved.review.grades, review: saved.review } };
+        const gradesInput = Array.isArray(params.grades) ? params.grades : [];
+        if (!gradesInput.length) return { content: [{ type: "text", text: "Final open-response grades remain pending. Saved model proposals are uncalibrated review suggestions; submit explicit reviewer grades to finalize." }], details: sharedDetails };
+        const grades: Record<string, { verdict: "correct" | "incorrect" | "partial"; note?: string }> = {};
+        for (const raw of gradesInput) {
+          if (!raw || typeof raw !== "object") return { isError: true, content: [{ type: "text", text: "Invalid reviewer grades." }] };
+          const item = raw as Record<string, unknown>;
+          if (typeof item.question_id !== "string" || Object.hasOwn(grades, item.question_id) || !["correct", "incorrect", "partial"].includes(String(item.verdict))) return { isError: true, content: [{ type: "text", text: "Invalid or duplicate reviewer grade." }] };
+          grades[item.question_id] = { verdict: item.verdict as "correct" | "incorrect" | "partial", ...(typeof item.note === "string" ? { note: item.note } : {}) };
+        }
+        try {
+          const review = await finalizeCliQuizReview(getCwd(), resultId, grades);
+          await persistQuizResult(quiz.slug, review.score.correct, review.score.total);
+          pendingQuizResults.delete(resultId);
+          return { content: [{ type: "text", text: `Reviewed quiz score: ${review.score.correct}/${review.score.total}. Model proposals remain separate from this explicit review.` }], details: { ...sharedDetails, openEndedGrades: review.grades, review } };
+        } catch {
+          return { isError: true, content: [{ type: "text", text: "Review was not applied. Include every pending question exactly once; exact results cannot be overridden. A saved review is never overwritten." }] };
+        }
+      }
       const pending = pendingQuizResults.get(resultId);
+      if (pending?.gradingRecordPath) return { isError: true, content: [{ type: "text", text: "This saved quiz belongs to another workspace or its submission is unavailable. Reopen the original workspace to review it." }] };
       if (!pending) return { content: [{ type: "text", text: `No pending quiz result found for result_id "${resultId}".` }] };
 
       const gradesInput = Array.isArray(params.grades) ? params.grades : [];
@@ -255,7 +318,7 @@ export const teachingTools = [
         const openEndedGrades = details.openEndedGrades
           ? new Map<string, { verdict: "correct" | "incorrect" | "partial"; note?: string }>(Object.entries(details.openEndedGrades))
           : undefined;
-        return renderQuizCard(theme, details.quiz as Quiz, { answers, objectiveResults, openEndedGrades });
+        return withGradingNotice(renderQuizCard(theme, details.quiz as Quiz, { answers, objectiveResults, openEndedGrades }), details);
       }
     }
   ),

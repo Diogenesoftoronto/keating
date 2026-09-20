@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { BookOpenCheck, ChevronRight, Clock3, Link2, Loader2, Network, Route } from "lucide-react";
-import { defineComponent, useStateField } from "@openuidev/react-lang";
+import { defineComponent, useStateField, useIsStreaming } from "@openuidev/react-lang";
 import { z } from "zod";
 import { css, cx } from "../../../styled-system/css";
 import { MermaidRenderer } from "../../components/MermaidRenderer";
 import { createCourse } from "../../courses/client";
 import { courseFromStudyPlan } from "../../courses/from-study-plan";
+import { LessonPlanJudgementReview } from "../../components/LessonPlanJudgementReview";
 
 export interface StudyPlanItem {
 	id: string;
@@ -388,6 +389,7 @@ function PlanBranch({ item, depth, planId, progress, expansion }: PlanBranchProp
 }
 
 function OpenUIStudyPlan({ props }: { props: z.infer<typeof studyPlanPropsSchema> }) {
+	const streaming = useIsStreaming();
 	const progress = useStateField<Record<string, boolean>>(`${props.id}:progress`, {});
 	const expansion = useStateField<Record<string, boolean>>(`${props.id}:expansion`, {});
 	const leafItems = studyPlanLeafItems(props.items);
@@ -436,6 +438,7 @@ function OpenUIStudyPlan({ props }: { props: z.infer<typeof studyPlanPropsSchema
 					</button>
 				</div>
 			</header>
+			<LessonPlanJudgementReview plan={props} disabled={streaming} />
 			{courseState.status === "error" ? (
 				<div className={courseErrorClass} role="alert">
 					<span>Course not created. {courseState.message}</span>

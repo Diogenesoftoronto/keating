@@ -2,6 +2,7 @@
 // stdin is a JSON message, stdout is a JSON response. No shell or user file paths.
 #include "engine.h"
 #include "conversation.h"
+#include "label-scorer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +14,7 @@
 
 int main(int argc, char **argv) {
   litert_lm_set_min_log_level(kLiteRtLmLogSeverityError);
+  if (argc == 3 && strcmp(argv[1], "--score-labels") == 0) return keating_score_labels(argv[2]);
   if (argc == 2 && strcmp(argv[1], "--probe") == 0) {
     LiteRtLmThinkingConfig *thinking = litert_lm_thinking_config_create();
     if (!thinking) return 2;

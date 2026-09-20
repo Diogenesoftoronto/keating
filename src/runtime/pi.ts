@@ -424,7 +424,8 @@ async function launchSelectedShell(cwd: string, args: string[]): Promise<number>
     promptDir,
     "--skill",
     skillsDir,
-    "--append-system-prompt",
+    // Keating supplies the base identity; Pi still adds skills and project context.
+    "--system-prompt",
     systemPrompt,
     "--tools",
     runtimeToolList(CLASSIC_PI_TOOL_POLICY),
@@ -519,7 +520,8 @@ async function launchSelectedRpcClient(cwd: string, args: string[]): Promise<Kea
     promptDir,
     "--skill",
     skillsDir,
-    "--append-system-prompt",
+    // Use the same Keating base prompt for the TUI and benchmark RPC path.
+    "--system-prompt",
     systemPrompt,
     "--tools",
     runtimeToolList(OPEN_TUI_TOOL_POLICY),

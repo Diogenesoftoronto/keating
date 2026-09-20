@@ -3,7 +3,7 @@ import { createReadStream } from "node:fs";
 import { mkdir, stat, open, rename, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
-import { OFFLINE_MODEL, offlineRequest, offlineMessages, type OfflineStatus, type KeatingOfflineBridge } from "./offline-contract.js";
+import { OFFLINE_MODEL, offlineRequest, offlineMessages, offlineLabelRequest, type OfflineLabelScores, type OfflineStatus, type KeatingOfflineBridge } from "./offline-contract.js";
 
 export async function verifyModel(path: string, model = OFFLINE_MODEL): Promise<boolean> {
   try {
@@ -42,6 +42,9 @@ export class OfflineRuntime implements KeatingOfflineBridge {
   private controller?: AbortController;
   private downloading?: Promise<void>;
   private generation?: Promise<string>;
+  private scoring?: Promise<OfflineLabelScores | null>;
+  private scoringId?: string;
+  private scoringController?: AbortController;
   private child?: ChildProcess;
   private cancelled = false;
   private removing = false;
@@ -146,7 +149,7 @@ export class OfflineRuntime implements KeatingOfflineBridge {
     try {
       await this.init();
       if (this.bundled) throw new Error("This model is bundled with the offline edition. Install the standard edition to reclaim its storage.");
-      if (this.generation) throw new Error("Stop the offline tutor before removing its model.");
+      if (this.generation || this.scoring) throw new Error("Stop offline inference before removing its model.");
       await this.cancelDownload();
       await rm(this.path, { force: true });
       await rm(this.partial, { force: true });
@@ -156,7 +159,7 @@ export class OfflineRuntime implements KeatingOfflineBridge {
   }
   generate(value: unknown): Promise<string> {
     const input = offlineRequest(value);
-    if (this.generation || this.removing || this.closed) return Promise.reject(new Error("Offline tutor is busy or stopping."));
+    if (this.generation || this.scoring || this.removing || this.closed) return Promise.reject(new Error("Offline tutor is busy or stopping."));
     this.cancelled = false;
     this.generation = (async () => {
       await this.init();
@@ -173,9 +176,34 @@ export class OfflineRuntime implements KeatingOfflineBridge {
     this.child?.kill("SIGKILL");
     await this.generation?.catch(() => {});
   }
+  scoreLabels(value: unknown): Promise<OfflineLabelScores | null> {
+    const input = offlineLabelRequest(value);
+    if (this.generation || this.scoring || this.removing || this.closed) return Promise.resolve(null);
+    const controller = this.scoringController = new AbortController();
+    this.scoringId = input.requestId;
+    this.scoring = (async () => {
+      await this.init();
+      if (controller.signal.aborted || !this.available || !this.installed) return null;
+      const message = JSON.stringify({ role: "user", content: [{ type: "text", text: input.prompt }] });
+      const nll = await runLabelScoring(this.options.executable, this.bundled ? this.options.bundledModel! : this.path,
+        `${input.labelCount}\n${message}`, input.labelCount, controller.signal);
+      return nll ? { modelId: input.modelId, negativeLogLikelihoods: nll } : null;
+    })().catch(() => null).finally(() => {
+      this.scoring = undefined;
+      this.scoringController = undefined;
+      this.scoringId = undefined;
+    });
+    return this.scoring;
+  }
+  async cancelScoring(requestId: string): Promise<void> {
+    if (requestId !== this.scoringId) return;
+    this.scoringController?.abort();
+    await this.scoring;
+  }
   async stop(): Promise<void> {
     this.closed = true;
-    await Promise.all([this.cancelDownload(), this.cancelGeneration()]);
+    this.scoringController?.abort();
+    await Promise.all([this.cancelDownload(), this.cancelGeneration(), this.scoring]);
   }
   private run(args: string[], input: string, timeout: number, generation = true): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -200,4 +228,31 @@ export class OfflineRuntime implements KeatingOfflineBridge {
       child.stdin.end(input);
     });
   }
+}
+
+/** Isolated scoring process; old helpers and unavailable scoring abstain. */
+function runLabelScoring(executable: string, model: string, input: string, count: number, signal: AbortSignal): Promise<readonly number[] | null> {
+  return new Promise(resolve => {
+    if (signal.aborted) { resolve(null); return; }
+    const child = spawn(executable, ["--score-labels", model], { stdio: ["pipe", "pipe", "ignore"], windowsHide: true });
+    let output = "", invalid = false;
+    const abort = () => { invalid = true; child.kill("SIGKILL"); };
+    const timer = setTimeout(abort, 120000);
+    signal.addEventListener("abort", abort, { once: true });
+    const clean = () => { clearTimeout(timer); signal.removeEventListener("abort", abort); };
+    child.stdout.setEncoding("utf8");
+    child.stdout.on("data", chunk => { output += chunk; if (output.length > 16384) abort(); });
+    child.stdin.on("error", () => {});
+    child.once("error", () => { invalid = true; clean(); resolve(null); });
+    child.once("close", code => {
+      clean();
+      if (invalid || signal.aborted || code !== 0) { resolve(null); return; }
+      try {
+        const scores: unknown = JSON.parse(output);
+        resolve(Array.isArray(scores) && scores.length === count
+          && scores.every(score => typeof score === "number" && Number.isFinite(score) && score >= 0) ? scores : null);
+      } catch { resolve(null); }
+    });
+    child.stdin.end(input);
+  });
 }

@@ -1,0 +1,6 @@
+# Keep video tapes and posters addable despite root media ignores
+!*.mp4
+!*.jpg
+!*.png
+!posters/
+!posters/*

@@ -14,6 +14,7 @@ import {
   type ColorInput,
 } from "@opentui/core";
 import { spawn } from "node:child_process";
+import { createCliQuizPerformanceController, exportCliQuizPerformanceEvidence } from "../judgement/cli-quiz-performance.js";
 import { launchRpcClient } from "../runtime/pi.js";
 import {
   ProviderLoginCancelledError,
@@ -262,6 +263,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       return outcome.result;
     },
   } : undefined);
+  let disposeQuizPredictions: (() => void) | undefined;
   let sacredSidebar: SacredSidebar<string> | null = null;
   let settle: ((result: OpenTuiExitResult) => void) | null = null;
   let settled = false;
@@ -275,6 +277,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     useKittyKeyboard: { disambiguate: true, alternateKeys: true, allKeysAsEscapes: true },
     ...(surfaceColor ? { backgroundColor: surfaceColor } : {}),
     onDestroy: () => {
+      disposeQuizPredictions?.();
       sacredSidebar?.destroy();
       sacredSidebar = null;
       detachRecoveryEvents?.();
@@ -1144,6 +1147,8 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   });
   const controller = new HostController(client, surface, {
     uiActionDispatcher,
+    createQuizPerformance: (document, nodeId, isCurrent) => createCliQuizPerformanceController({ cwd, document, nodeId, isCurrent }),
+    exportQuizPerformanceEvidence: (documentId) => exportCliQuizPerformanceEvidence(cwd, documentId),
     async restoreUiDocument(document) {
       const journal = await new FileUiActionJournalStorage(cwd, "receiver").load(document.id);
       return journal?.receipts.reduce((latest, receipt) => {
@@ -1152,6 +1157,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       }, document) ?? document;
     },
   });
+  disposeQuizPredictions = () => controller.dispose();
   controller.attach();
   await controller.initialize();
   const refreshKnownPiCommands = async () => {

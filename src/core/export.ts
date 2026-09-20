@@ -15,6 +15,9 @@ import {
   verificationsDir
 } from "./paths.js";
 import { slugify } from "./util.js";
+import { cliSourceHash, cliSourceMessages, loadCliLearnerEvents, type CliSourceMessage } from "./learner-events.js";
+import { computeCliRewardedTurns, type CliRewardedTurn, type CliQuizWithTiming } from "./session-reward.js";
+import { loadCliQuizRecord } from "./quiz-grading.js";
 
 export type ExportMode = "finetune";
 export type ExportSource = "all" | "artifacts" | "sessions";
@@ -41,6 +44,8 @@ export interface KeatingExportManifest {
     examplesWritten: number;
     skipped: number;
     redactions: number;
+    rewardedTurns?: number;
+    scoredTurns?: number;
   };
   files: string[];
   warnings: string[];
@@ -76,6 +81,7 @@ interface FineTuneConversation {
 }
 
 interface BuildResult {
+  rewardedTurns: CliRewardedTurn[];
   examples: FineTuneExample[];
   conversations: FineTuneConversation[];
   corpusSections: string[];
@@ -88,6 +94,7 @@ interface BuildResult {
 
 function createBuildResult(): BuildResult {
   return {
+    rewardedTurns: [],
     examples: [],
     conversations: [],
     corpusSections: [],
@@ -368,11 +375,29 @@ function conversationFromSession(
 async function buildSessionExamples(cwd: string, options: KeatingExportOptions): Promise<BuildResult> {
   const result = createBuildResult();
 
-  for (const file of (await collectFiles(sessionsDir(cwd))).filter((path) => path.endsWith(".json"))) {
+  for (const file of (await collectFiles(sessionsDir(cwd))).filter((path) => /\.jsonl?$/.test(path))) {
     const raw = await readFile(file, "utf8").catch(() => "");
     if (!raw.trim()) continue;
     try {
-      const parsed = JSON.parse(raw);
+      let parsed: any;
+      let sourceMessages: CliSourceMessage[];
+      if (file.endsWith(".jsonl")) {
+        // Use Pi's branch semantics instead of flattening alternate histories.
+        const { SessionManager } = await import("@earendil-works/pi-coding-agent");
+        const session = SessionManager.open(file);
+        const branch = session.getBranch();
+        sourceMessages = cliSourceMessages(branch);
+        parsed = { id: session.getSessionId(), title: session.getSessionName(),
+          // Pi has hidden reasoning, tool arguments and tool results in its
+          // native transcript. New exports expose visible text only.
+          messages: sourceMessages };
+      } else {
+        parsed = JSON.parse(raw);
+        const saved = Array.isArray(parsed?.messages) ? parsed.messages : Array.isArray(parsed) ? parsed : [];
+        sourceMessages = cliSourceMessages(saved.map((message: any, index: number) => ({ type: "message",
+          id: typeof message.id === "string" && /^[A-Za-z0-9_-]{1,200}$/.test(message.id) ? message.id : `unbound-${index}`,
+          timestamp: message.timestamp, message })));
+      }
       const messages = Array.isArray(parsed?.messages) ? parsed.messages : Array.isArray(parsed) ? parsed : [];
       if (!messages.length) {
         result.skipped += 1;
@@ -389,6 +414,25 @@ async function buildSessionExamples(cwd: string, options: KeatingExportOptions):
       // (Redaction counts come from the example path above to avoid double counting.)
       const conv = conversationFromSession(parsed, sessionId, messages, options);
       if (conv.conversation) result.conversations.push(conv.conversation);
+      // Legacy imports lacking stable IDs still export normally, but cannot
+      // acquire proxy rewards from unrelated learner-state timestamp matches.
+      if (!sourceMessages.length) sourceMessages = messages.flatMap((message: any, index: number) =>
+        ["user", "assistant"].includes(message?.role) && parseMessageText(message).trim()
+          ? [{ id: `unbound-${index}`, role: message.role, content: parseMessageText(message) }] : []);
+      let rewards: CliRewardedTurn[];
+      try {
+        rewards = await rewardedSessionTurns(cwd, sessionId, sourceMessages);
+      } catch {
+        result.warnings.push(`Reward evidence unavailable for session: ${sessionId}`);
+        rewards = computeCliRewardedTurns({ sessionId, messages: sourceMessages.map(message => ({ ...message, timestamp: undefined })), feedback: [], quizResults: [] });
+      }
+      for (const turn of rewards) {
+        if (turn.completion.trim().length < options.minAssistantChars || isBadAssistantText(turn.completion, {})) continue;
+        result.rewardedTurns.push({ ...turn,
+          completion: redactText(turn.completion, options.redact).text,
+          context: turn.context.map(message => ({ ...message, content: redactText(message.content, options.redact).text })),
+        });
+      }
     } catch {
       result.warnings.push(`Skipped invalid session JSON: ${relative(cwd, file)}`);
       result.skipped += 1;
@@ -396,6 +440,43 @@ async function buildSessionExamples(cwd: string, options: KeatingExportOptions):
   }
 
   return result;
+}
+
+/** Source-bound event facts only; no heuristic joins against project-wide state. */
+async function rewardedSessionTurns(cwd: string, sessionId: string, messages: CliSourceMessage[]): Promise<CliRewardedTurn[]> {
+  const events = await loadCliLearnerEvents(cwd, sessionId);
+  const bound = messages.map(message => {
+    const source = events.find(event => event.kind === "message" && event.messageId === message.id
+      && event.role === message.role && event.contentSha256 === cliSourceHash(message.content)
+      && event.timestamp === message.timestamp);
+    return { ...message, timestamp: source ? message.timestamp : undefined };
+  });
+  const ids = new Set(bound.filter(message => message.timestamp !== undefined && message.role === "assistant").map(message => message.id));
+  const feedback = events.flatMap(event => event.kind === "feedback" && ids.has(event.messageId)
+    ? [{ sessionId, messageId: event.messageId, sourceId: event.id, topic: event.topic, signal: event.signal, timestamp: new Date(event.timestamp).toISOString() }] : []);
+  const quizResults: CliQuizWithTiming[] = [];
+  for (const event of events) {
+    if (event.kind !== "quiz" || !ids.has(event.messageId)) continue;
+    const record = await loadCliQuizRecord(cwd, event.quizId).catch(() => null);
+    if (!record || Date.parse(record.submission.createdAt) !== event.timestamp) continue;
+    const questions = record.submission.quiz.questions;
+    const total = questions.length;
+    if (!total) continue;
+    const exact = record.submission.objectiveResults;
+    const allExact = questions.every(question => typeof exact[question.id] === "boolean");
+    const reviewed = record.review?.source === "explicit-review" && record.review.score.total === total
+      && Number.isFinite(record.review.score.correct) && record.review.score.correct >= 0 && record.review.score.correct <= total;
+    if (!reviewed && !allExact) continue;
+    const correct = reviewed ? record.review!.score.correct : questions.filter(question => exact[question.id]).length;
+    const rawTiming = (record.submission as unknown as { timing?: { perQuestionMs?: Record<string, number> } }).timing;
+    const perQuestionMs = Object.fromEntries(Object.entries(rawTiming?.perQuestionMs ?? {}).filter(([id, value]) =>
+      questions.some(question => question.id === id) && typeof value === "number" && Number.isFinite(value) && value >= 0));
+    quizResults.push({ sessionId, messageId: event.messageId,
+      sourceId: `${event.id}@sha256:${cliSourceHash(JSON.stringify(reviewed ? record.review : record.submission))}`,
+      topic: record.submission.quiz.slug, timestamp: new Date(event.timestamp).toISOString(), correct, total, score: correct / total,
+      timing: { perQuestionMs } });
+  }
+  return computeCliRewardedTurns({ sessionId, messages: bound, feedback, quizResults });
 }
 
 function toChatMlJsonl(conversations: FineTuneConversation[]): string {
@@ -443,6 +524,7 @@ export async function exportFineTuneDataset(
   const redactions = parts.reduce((sum, part) => sum + part.redactions, 0);
   const artifactsRead = parts.reduce((sum, part) => sum + part.artifactsRead, 0);
   const sessionsRead = parts.reduce((sum, part) => sum + part.sessionsRead, 0);
+  const rewardedTurns = parts.flatMap(part => part.rewardedTurns);
 
   if (examples.length === 0 && conversations.length === 0) {
     throw new Error("No fine-tuning examples found. Run keating plan, quiz, verify, or use Keating chat sessions first.");
@@ -461,6 +543,11 @@ export async function exportFineTuneDataset(
   ]);
 
   const files: string[] = [];
+  if (options.source !== "artifacts") {
+    const path = join(outDir, "rewarded-turns.jsonl");
+    await writeFile(path, rewardedTurns.map(turn => JSON.stringify(turn)).join("\n") + (rewardedTurns.length ? "\n" : ""), { mode: 0o600 });
+    files.push(relative(cwd, path));
+  }
   if (options.format === "chatml" || options.format === "both") {
     const path = join(outDir, "train.chatml.jsonl");
     await writeFile(path, toChatMlJsonl(conversations), "utf8");
@@ -504,6 +591,7 @@ export async function exportFineTuneDataset(
       examplesWritten: examples.length,
       skipped,
       redactions,
+      ...(options.source !== "artifacts" ? { rewardedTurns: rewardedTurns.length, scoredTurns: rewardedTurns.filter(turn => turn.scored).length } : {}),
     },
     files,
     warnings,

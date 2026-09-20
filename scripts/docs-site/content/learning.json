@@ -39,7 +39,69 @@
           "When Keating presents an interactive question, answer in that activity. A single question uses Send answer; a grouped check ends with Finish check. Explain the step you are unsure about instead of guessing what the tutor wants to hear.",
           "If the explanation moves too quickly, ask for one smaller step, a different example, or a hint. If it feels familiar, ask for a new case that changes an assumption. Finish by explaining the idea without looking back, then compare your explanation with the lesson."
         ],
-        "links": [{ "label": "Use quizzes and practice", "href": "/quizzes-and-practice/" }]
+        "surfaceTabs": [
+          {
+            "surface": "web",
+            "label": "Web UI",
+            "summary": "Step through interactive prediction prompts, OpenUI cards, and reconstruct concepts in the browser.",
+            "shortcut": "OpenUI Cards",
+            "bullets": [
+              "Respond inside typed Question activities with Send answer.",
+              "Grouped diagnostic checks conclude with Finish check.",
+              "Ask for smaller hints or alternative counter-examples when stuck."
+            ],
+            "code": "Explain why this stopping rule fails when the input is negative.",
+            "language": "Web chat input",
+            "video": {
+              "src": "/assets/tapes/web-tutorial.mp4",
+              "poster": "/assets/tapes/posters/web-tutorial.jpg",
+              "title": "Web guided problem flow",
+              "caption": "Elena Chen working through a guided problem flow: making predictions, receiving hints, and reconstructing concepts."
+            }
+          },
+          {
+            "surface": "tui",
+            "label": "Terminal UI",
+            "summary": "Engage with Socratic challenges, inspect teaching policies, and branch dialogue directly in the terminal.",
+            "shortcut": "keating tui",
+            "bullets": [
+              "Answer questions in the bottom input bar while viewing the complete conversation frame.",
+              "Press Ctrl+B to inspect active hyperparameters like socratic_ratio.",
+              "Branch off difficult questions into separate fork subtrees without losing state."
+            ],
+            "code": "keating tui 'Teach me Raft consensus leader election'",
+            "language": "Terminal command",
+            "video": {
+              "src": "/assets/tapes/tui-collaborative.mp4",
+              "poster": "/assets/tapes/posters/tui-collaborative.jpg",
+              "title": "Terminal UI Socratic challenge",
+              "caption": "Elena navigating interactive Socratic inquiry in OpenTUI: message frames, model inspection, and turn branching."
+            }
+          },
+          {
+            "surface": "cli",
+            "label": "CLI Shell",
+            "summary": "Generate active recall quizzes and run Chain-of-Verification invariant checks from the command line.",
+            "shortcut": "keating quiz",
+            "bullets": [
+              "Run keating quiz '<topic>' to compile interactive Socratic retrieval checks.",
+              "Run keating verify '<topic>' to produce deterministic CoVe invariant checklists.",
+              "Check spaced retention intervals with keating due and keating timeline."
+            ],
+            "code": "keating quiz 'Raft Consensus'\nkeating verify 'Raft Consensus'",
+            "language": "Terminal command",
+            "video": {
+              "src": "/assets/tapes/cli-artifacts.mp4",
+              "poster": "/assets/tapes/posters/cli-artifacts.jpg",
+              "title": "CLI verification and quiz workflow",
+              "caption": "Elena generating quizzes, meaning maps, and verification reports directly from the CLI."
+            }
+          }
+        ],
+        "links": [
+          { "label": "Use quizzes and practice", "href": "/quizzes-and-practice/" },
+          { "label": "Watch all layer walkthroughs", "href": "/visual-guide/#section-6-hyperteacher-architecture-and-narrated-film" }
+        ]
       },
       {
         "heading": "Tell Keating what helps you learn",
@@ -55,6 +117,47 @@
         "paragraphs": [
           "Open Settings, choose Learning, and find About You. Add useful context such as your goals, prior knowledge, preferred examples, languages, or accessibility needs, then choose Save about you. The saved setting lives in this browser and applies to the current conversation on your next message and to new sessions.",
           "Learning also contains Teacher Persona and Speech & Voice. You can still steer any lesson directly in chat: ask for shorter explanations, less jargon, a visual example, or more time to work through a problem."
+        ],
+        "surfaceTabs": [
+          {
+            "surface": "web",
+            "label": "Web UI",
+            "summary": "Configure your learner background, goals, and Socratic ratio in Settings → Learning.",
+            "shortcut": "Settings → Learning",
+            "bullets": [
+              "Add prior knowledge and topics in About You to tailor all future sessions.",
+              "Adjust the Socratic ratio and hint ladder in Teacher Persona.",
+              "Enable audio duplex playback in Speech & Voice for hands-free learning."
+            ],
+            "code": "Settings → Learning → Teacher Persona",
+            "language": "Web navigation"
+          },
+          {
+            "surface": "tui",
+            "label": "Terminal UI",
+            "summary": "Inspect active pedagogical weights and tune teaching behavior in the terminal.",
+            "shortcut": "/policy",
+            "bullets": [
+              "Type /policy directly into the message prompt to view active pedagogy scalars.",
+              "Press Ctrl+B → ACTIONS → Policies to inspect policy candidates.",
+              "Review Socratic ratio, analogy density, formalism, and exercise counts."
+            ],
+            "code": "/policy",
+            "language": "TUI command"
+          },
+          {
+            "surface": "cli",
+            "label": "CLI Shell",
+            "summary": "Print active hyperteacher policy scalars and rules directly to stdout.",
+            "shortcut": "keating policy",
+            "bullets": [
+              "Run keating policy to print active scalars (socraticRatio, analogyDensity, formalism).",
+              "Run keating bench <topic> to inspect recorded learner evidence limits.",
+              "Run keating feedback up|down|confused to steer future policy adaptations."
+            ],
+            "code": "keating policy\nkeating feedback up 'Raft Consensus' --comment='Great Socratic hints'",
+            "language": "Terminal command"
+          }
         ],
         "links": [{ "label": "Use voice and attachments", "href": "/voice-and-attachments/" }]
       },
@@ -80,6 +183,47 @@
         "paragraphs": [
           "Tell Keating the topic and what you want to test. For example: Quiz me on the Krebs cycle. Ask questions that test deeper understanding, then help me revisit the parts I miss. For a shorter check, ask one question at a time and explain your reasoning.",
           "Questions may ask you to choose an answer, choose several answers, fill blanks, arrange items, or write an explanation. Follow the instructions on the current activity; a text explanation needs different review from a choice with a supplied answer key."
+        ],
+        "surfaceTabs": [
+          {
+            "surface": "web",
+            "label": "Web UI",
+            "summary": "Interactive OpenUI quiz cards render right inside the chat stream with instant validation.",
+            "shortcut": "Ask in chat",
+            "bullets": [
+              "Ask 'Quiz me on Raft log matching invariants' to trigger an interactive quiz card.",
+              "Answer multiple choice, fill in the blank, or short-answer reasoning questions.",
+              "Receive instant step-by-step Socratic feedback and explanation breakdowns."
+            ],
+            "code": "Ask: 'Quiz me on Raft consensus with 3 active-recall questions'",
+            "language": "Prompt"
+          },
+          {
+            "surface": "tui",
+            "label": "Terminal UI",
+            "summary": "Generate targeted retrieval checks in your terminal session.",
+            "shortcut": "/quiz",
+            "bullets": [
+              "Type /quiz to request an immediate retrieval check on the current topic.",
+              "Answer questions directly in your terminal buffer without switching windows.",
+              "Rubrics grade your answers on nuance, core essence, and edge-case awareness."
+            ],
+            "code": "/quiz 'Raft Consensus'",
+            "language": "TUI command"
+          },
+          {
+            "surface": "cli",
+            "label": "CLI Shell",
+            "summary": "Compile deterministic Markdown quizzes, rubrics, and answer keys to your project.",
+            "shortcut": "keating quiz",
+            "bullets": [
+              "Run keating quiz '<topic>' to compile questions into .keating/outputs/quizzes/.",
+              "Includes question rubrics with point levels (vague, essence, precise).",
+              "Answers and explanations are saved separately for honest recall testing."
+            ],
+            "code": "keating quiz 'Raft Consensus'\nhead -n 25 .keating/outputs/quizzes/raft-consensus.md",
+            "language": "Terminal command"
+          }
         ]
       },
       {
@@ -150,6 +294,47 @@
         "paragraphs": [
           "Select a lesson in the course workspace to read its material and work with the practice or assignments attached to it. Check the task instructions, deliverables, and any opening or due dates before beginning. Keep a question tied to the lesson specific: ask about the passage or step that is blocking you.",
           "When creating a course, give it a concrete learning goal and a manageable scope. The New course builder is a starting point for assembling material you can return to. Review generated lessons and questions for accuracy and fit before inviting other people to rely on them."
+        ],
+        "surfaceTabs": [
+          {
+            "surface": "web",
+            "label": "Web UI",
+            "summary": "Assemble structured courses visually with the Course Builder, incorporating plans, decks, and assignments.",
+            "shortcut": "/courses",
+            "bullets": [
+              "Open https://keating.help/courses to view and create courses.",
+              "Add modules, flashcard decks, and OpenUI practice activities.",
+              "Track submission states and invite peer reviewers with role-based link invites."
+            ],
+            "code": "https://keating.help/courses",
+            "language": "Browser URL"
+          },
+          {
+            "surface": "tui",
+            "label": "Terminal UI",
+            "summary": "Organize lessons by topic directly from the terminal or inspect lesson artifacts.",
+            "shortcut": "Ctrl+B → Courses",
+            "bullets": [
+              "Press Ctrl+B to browse course collections and topic modules.",
+              "Run /outputs to inspect generated plans, concept maps, and quizzes.",
+              "Keep lesson notes synchronized across sessions."
+            ],
+            "code": "Ctrl+B → ACTIONS → Courses",
+            "language": "Keyboard navigation"
+          },
+          {
+            "surface": "cli",
+            "label": "CLI Shell",
+            "summary": "Compile and version course artifacts with deterministic CLI tools.",
+            "shortcut": "keating plan",
+            "bullets": [
+              "Run keating plan '<topic>' to compile the prerequisite and pedagogical sequence.",
+              "Run keating map '<topic>' to emit a Mermaid diagram of the curriculum.",
+              "All lesson files are versioned in .keating/outputs/ for git tracking."
+            ],
+            "code": "keating plan 'Distributed Consensus'\nkeating map 'Distributed Consensus'",
+            "language": "Terminal command"
+          }
         ]
       },
       {
@@ -196,6 +381,47 @@
         "paragraphs": [
           "Open the session browser and use Search sessions to find a saved conversation. Select a session to reopen it. In its actions, Rename lets you give it a useful title, such as Linear equations: balancing both sides.",
           "Use New session for a fresh topic. Use Fork session when you want a separate continuation of an existing conversation, or Fork session from here on a response to explore a different direction from that point."
+        ],
+        "surfaceTabs": [
+          {
+            "surface": "web",
+            "label": "Web UI",
+            "summary": "Reopen past conversations from the left-hand Sessions panel or fork from any response.",
+            "shortcut": "Sessions panel",
+            "bullets": [
+              "Click Open sessions panel to view chronological conversations with search filtering.",
+              "Use 'Fork session from here' on any message to branch into a separate inquiry.",
+              "Rename threads or export them to portable JSON."
+            ],
+            "code": "Click '+' for New Session\nClick 'Fork session' to branch",
+            "language": "Web navigation"
+          },
+          {
+            "surface": "tui",
+            "label": "Terminal UI",
+            "summary": "Switch between active session threads directly inside the terminal.",
+            "shortcut": "Ctrl+B → SESSIONS",
+            "bullets": [
+              "Press Ctrl+B to open the action sidebar and select SESSIONS.",
+              "Browse saved threads and hit Enter to resume without restarting.",
+              "Active session state is preserved in .keating/sessions/."
+            ],
+            "code": "Ctrl+B → SESSIONS → Select thread",
+            "language": "Keyboard navigation"
+          },
+          {
+            "surface": "cli",
+            "label": "CLI Shell",
+            "summary": "Resume the active session or pick up a targeted thread with shell flags.",
+            "shortcut": "--continue",
+            "bullets": [
+              "Use keating shell --continue to immediately jump back into the active lesson.",
+              "Use keating shell --session=<uuid> to resume a specific thread.",
+              "Use --profile=name to maintain independent learner histories."
+            ],
+            "code": "keating shell --continue\nkeating shell --profile=elena --continue",
+            "language": "Terminal command"
+          }
         ]
       },
       {
@@ -213,6 +439,47 @@
           "Coming up combines due flashcards with topics and open checks that may need attention. Start due review begins the cards currently due. Review this deck selects one deck; Practice in chat returns a topic to the tutor.",
           "Changing Learning priority changes what receives attention without changing a card's review date. Recall ratings determine when cards are due. Use this distinction to focus on an upcoming need while keeping an honest record of what you can remember."
         ],
+        "surfaceTabs": [
+          {
+            "surface": "web",
+            "label": "Web UI",
+            "summary": "Review overdue topics, flashcards, and retention curves on the Coming up page.",
+            "shortcut": "/coming-up",
+            "bullets": [
+              "Navigate to Coming up in the top header to inspect your review runway.",
+              "Click 'Start due review' to launch a flashcard session on due cards.",
+              "Visual retention bars indicate mastery decay and next recommended review dates."
+            ],
+            "code": "https://keating.help/coming-up",
+            "language": "Browser URL"
+          },
+          {
+            "surface": "tui",
+            "label": "Terminal UI",
+            "summary": "Access the review runway and due decks without leaving your keyboard.",
+            "shortcut": "Ctrl+B → Review",
+            "bullets": [
+              "Press Ctrl+B → ACTIONS → Review to check overdue decks.",
+              "Run /timeline to inspect spaced review intervals in the terminal stream.",
+              "Rate recall honestly to update scheduling curves."
+            ],
+            "code": "Ctrl+B → ACTIONS → Review",
+            "language": "Keyboard navigation"
+          },
+          {
+            "surface": "cli",
+            "label": "CLI Shell",
+            "summary": "Inspect due review items and engagement timelines with fast shell commands.",
+            "shortcut": "keating due",
+            "bullets": [
+              "Run keating due to list all topics currently overdue for active recall.",
+              "Run keating timeline to print a full engagement matrix with retention status.",
+              "Ideal for quick morning checks or shell startup hooks in your terminal."
+            ],
+            "code": "keating due\nkeating timeline",
+            "language": "Terminal command"
+          }
+        ],
         "links": [{ "label": "Use flashcards and quiz feedback", "href": "/quizzes-and-practice/" }]
       },
       {
@@ -229,6 +496,46 @@
         "paragraphs": [
           "Choose Review session in chat to inspect the teaching record. Use Contents to move between turns and read the learner's question alongside the tutor response. Tool calls and their results help you distinguish what the tutor said it checked from what actually ran.",
           "Use Rendered for normal reading and Raw when you need the exact source text. A useful review points to a concrete moment: an unexplained step, a misleading example, a helpful question, or an answer the tutor accepted too quickly."
+        ],
+        "surfaceTabs": [
+          {
+            "surface": "web",
+            "label": "Web UI",
+            "summary": "Open the lesson review workspace to inspect transcripts, tool calls, and verified proofs.",
+            "shortcut": "Review session",
+            "bullets": [
+              "Click Review session in the chat header to open the full pedagogical transcript.",
+              "Inspect tool execution logs, independent math checks, and fact-checking gates.",
+              "Annotate turns with problems, strengths, or suggestions."
+            ],
+            "code": "Click 'Review session' in chat header",
+            "language": "Web navigation"
+          },
+          {
+            "surface": "tui",
+            "label": "Terminal UI",
+            "summary": "Trigger pedagogical verification gates directly in the terminal.",
+            "shortcut": "/verify",
+            "bullets": [
+              "Type /verify to run a pedagogical invariant check on the active topic.",
+              "Inspect checklist gates before accepting explanations as verified."
+            ],
+            "code": "/verify 'Raft Consensus'",
+            "language": "TUI command"
+          },
+          {
+            "surface": "cli",
+            "label": "CLI Shell",
+            "summary": "Generate Chain-of-Verification (CoVe) checklists as version-controlled Markdown artifacts.",
+            "shortcut": "keating verify",
+            "bullets": [
+              "Run keating verify '<topic>' to compile a factual verification checklist.",
+              "Saves to .keating/outputs/verifications/<topic>.md for permanent auditing.",
+              "Guarantees that pedagogical explanations satisfy strict domain invariants."
+            ],
+            "code": "keating verify 'Raft Consensus'\nhead -n 22 .keating/outputs/verifications/raft-consensus.md",
+            "language": "Terminal command"
+          }
         ]
       },
       {
@@ -252,6 +559,68 @@
         "paragraphs": [
           "Select text in the transcript or an artifact, then choose Problem, Strength, or Suggestion. Explain Why does this matter? and save the note. Add detail such as severity or an alternative only when it helps explain your judgement.",
           "Choose Rewrite to draft an alternative while retaining the original text. In Assess, record the rubric ratings, summary, and verdict you can support with evidence. Set the review status to Final when you have finished; use Export to keep a copy of the review."
+        ],
+        "surfaceTabs": [
+          {
+            "surface": "web",
+            "label": "Web UI",
+            "summary": "Record whole-turn annotations, evaluate Socratic quality, and export structured rubrics in the Review Desk (/review).",
+            "shortcut": "/review",
+            "bullets": [
+              "Select transcript text or artifacts to attach Problem, Strength, or Suggestion tags.",
+              "Use Assess to record rubric ratings, qualitative verdicts, and evidence summaries.",
+              "Export reviews to JSON for audit trails and offline study portfolios."
+            ],
+            "code": "https://keating.help/review",
+            "language": "Browser URL",
+            "video": {
+              "src": "/assets/tapes/keating-surface-tour.mp4",
+              "poster": "/assets/tapes/posters/keating-surface-tour.jpg",
+              "title": "Review desk and runway tour",
+              "caption": "Browsing whole-turn annotations, rubric assessment, and the return runway."
+            }
+          },
+          {
+            "surface": "tui",
+            "label": "Terminal UI",
+            "summary": "Inspect historical conversation turns, explore branch forks, and trace dialogue without leaving the terminal.",
+            "shortcut": "Ctrl+B → SESSIONS",
+            "bullets": [
+              "Review historical turns and inspect previous Socratic prompts directly in the session view.",
+              "Use the fork tree to trace how hypotheses diverged across different conversational branches.",
+              "Switch between active threads instantly without losing in-flight context."
+            ],
+            "code": "Ctrl+B → SESSIONS",
+            "language": "Keyboard navigation",
+            "video": {
+              "src": "/assets/tapes/tui-collaborative.mp4",
+              "poster": "/assets/tapes/posters/tui-collaborative.jpg",
+              "title": "Terminal session branching and review",
+              "caption": "Navigating session histories, fork trees, and inspectable student dialogue in OpenTUI."
+            }
+          },
+          {
+            "surface": "cli",
+            "label": "CLI Shell",
+            "summary": "Inspect stored traces, output artifacts, and verification checklists from the terminal.",
+            "shortcut": "keating feedback",
+            "bullets": [
+              "Inspect generated artifact Markdown files in .keating/outputs/.",
+              "Send pedagogical quality signals with keating feedback up/down.",
+              "Review upcoming retrieval practice cards with keating due."
+            ],
+            "code": "keating feedback up 'Raft Consensus' --comment='Clear invariants'\nkeating due",
+            "language": "Terminal command",
+            "video": {
+              "src": "/assets/tapes/cli-artifacts.mp4",
+              "poster": "/assets/tapes/posters/cli-artifacts.jpg",
+              "title": "CLI artifact and feedback review",
+              "caption": "Inspecting generated artifacts and recording lesson feedback from the shell."
+            }
+          }
+        ],
+        "links": [
+          { "label": "Watch the full visual guide and walkthroughs", "href": "/visual-guide/#section-7-the-published-metaharness-paper-and-web-interface" }
         ]
       },
       {

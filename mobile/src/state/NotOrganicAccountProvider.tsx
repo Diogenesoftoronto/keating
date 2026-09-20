@@ -1,4 +1,5 @@
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { mobileJudgementAccountConfig } from "@/lib/notorganic-account/contracts";
 import type { NotOrganicAccountSnapshot, NotOrganicDeviceSession } from "@/lib/notorganic-account/contracts";
 import { beginNotOrganicLogin, completeAuthorizationFromUrl } from "@/lib/notorganic-account/auth";
 import { loadAccountSnapshot, revokeDeviceSession } from "@/lib/notorganic-account/client";
@@ -32,7 +33,7 @@ interface NotOrganicAccountContextValue {
   activePedagogy: ActiveAccountPedagogy | null;
   evolutionError: string | null;
   error: string | null;
-  login(): Promise<void>;
+  login(options?: { judgement?: boolean }): Promise<void>;
   completeLogin(callbackUrl: string): Promise<void>;
   logout(): Promise<void>;
   refresh(): Promise<void>;
@@ -112,11 +113,11 @@ export function NotOrganicAccountProvider({ children }: PropsWithChildren) {
     });
   }, [hydrateAccount]);
 
-  const login = useCallback(async () => {
+  const login = useCallback(async (options?: { judgement?: boolean }) => {
     setStatus("authorizing");
     setError(null);
     try {
-      const next = await beginNotOrganicLogin();
+      const next = await beginNotOrganicLogin(options?.judgement ? mobileJudgementAccountConfig() : undefined);
       if (!next) { setStatus(session ? "signed-in" : "signed-out"); return; }
       await hydrateAccount(next);
     } catch (cause) {

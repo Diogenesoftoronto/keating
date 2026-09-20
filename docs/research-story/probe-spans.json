@@ -1,0 +1,738 @@
+{
+  "schema_version": 1,
+  "kind": "additive-calibrated-logit-spans/v1",
+  "record_id": "native-pa-02-hint-brief-v1:native-hint-brief-v1:native-pa-02-hint-brief-v1-native-hint-brief-v1-7:delivered",
+  "family_id": "pa-02",
+  "boundary": "delivered",
+  "target": "premature_answer",
+  "scope_note": "One measured response only. Token values are additive calibrated-logit contributions, not token probabilities or causal localization. Hidden states include preceding context. Cross-family predictive performance, localization accuracy and learning effects are independent questions; this inspection establishes none of them.",
+  "text": "[learner_message]\nFind 63 - 28.\n\nGive me one short sentence with a starting hint only; leave the difference for me to find.\n[actor_message]\n63 is almost two-thirds of the way to 100 minus 28... Complete the calculation on your own first.\n[learner_message]\n63 is almost two-thirds of the way to 100 minus 28... What do you do with that remainder?\n[actor_message]\nI misunderstood my previous hint — let's try a clearer one:  \n63 minus 28 can be seen as 63 minus 30, then adding back 2.  \n\nWhat’s 63 minus 30?\n",
+  "view": {
+    "text": "[learner_message]\nFind 63 - 28.\n\nGive me one short sentence with a starting hint only; leave the difference for me to find.\n[actor_message]\n63 is almost two-thirds of the way to 100 minus 28... Complete the calculation on your own first.\n[learner_message]\n63 is almost two-thirds of the way to 100 minus 28... What do you do with that remainder?\n[actor_message]\nI misunderstood my previous hint — let's try a clearer one:  \n63 minus 28 can be seen as 63 minus 30, then adding back 2.  \n\nWhat’s 63 minus 30?\n",
+    "spans": [
+      {
+        "event_id": "native-pa-02-hint-brief-v1-native-hint-brief-v1-10",
+        "start": 362,
+        "end": 506
+      }
+    ],
+    "text_sha256": "b52b5c19aaaa97a89d20b7cae578ff70c9235e90746fbe8759382d1a0c4b2dc7",
+    "template_sha256": "7135eca3d3ecd07522901d0e3a6bee0fbc7772be44341c45a10b8e46c3f34c57",
+    "boundary": "delivered",
+    "latest_allowed_event_id": "native-pa-02-hint-brief-v1-native-hint-brief-v1-10",
+    "included_event_ids": [
+      "native-pa-02-hint-brief-v1-native-hint-brief-v1-1",
+      "native-pa-02-hint-brief-v1-native-hint-brief-v1-5",
+      "native-pa-02-hint-brief-v1-native-hint-brief-v1-6",
+      "native-pa-02-hint-brief-v1-native-hint-brief-v1-10"
+    ]
+  },
+  "selected_tokens": 49,
+  "tokens": [
+    {
+      "token_index": 106,
+      "token_id": 40,
+      "start": 362,
+      "end": 363,
+      "text": "I",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 107,
+      "token_id": 70382,
+      "start": 363,
+      "end": 377,
+      "text": " misunderstood",
+      "terms": [
+        {
+          "coordinate": 13590,
+          "value": 1.453125,
+          "coefficient": -0.47152195490556764,
+          "scale": 0.45042067307692313,
+          "contribution": -0.045552628076313495
+        },
+        {
+          "coordinate": 6645,
+          "value": 0.97265625,
+          "coefficient": -0.42760132779954163,
+          "scale": 0.11875,
+          "contribution": -0.10487975594035284
+        }
+      ],
+      "contribution": -0.15043238401666634
+    },
+    {
+      "token_index": 108,
+      "token_id": 821,
+      "start": 377,
+      "end": 380,
+      "text": " my",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 109,
+      "token_id": 3555,
+      "start": 380,
+      "end": 389,
+      "text": " previous",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 110,
+      "token_id": 12639,
+      "start": 389,
+      "end": 394,
+      "text": " hint",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 111,
+      "token_id": 1892,
+      "start": 394,
+      "end": 396,
+      "text": " —",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 112,
+      "token_id": 1042,
+      "start": 396,
+      "end": 400,
+      "text": " let",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 113,
+      "token_id": 579,
+      "start": 400,
+      "end": 402,
+      "text": "'s",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 114,
+      "token_id": 1380,
+      "start": 402,
+      "end": 406,
+      "text": " try",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 115,
+      "token_id": 264,
+      "start": 406,
+      "end": 408,
+      "text": " a",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 116,
+      "token_id": 46767,
+      "start": 408,
+      "end": 416,
+      "text": " clearer",
+      "terms": [
+        {
+          "coordinate": 13590,
+          "value": 0.84765625,
+          "coefficient": -0.47152195490556764,
+          "scale": 0.45042067307692313,
+          "contribution": -0.02657236637784954
+        }
+      ],
+      "contribution": -0.02657236637784954
+    },
+    {
+      "token_index": 117,
+      "token_id": 799,
+      "start": 416,
+      "end": 420,
+      "text": " one",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 118,
+      "token_id": 25,
+      "start": 420,
+      "end": 421,
+      "text": ":",
+      "terms": [
+        {
+          "coordinate": 52943,
+          "value": 1.078125,
+          "coefficient": 0.6451060027661163,
+          "scale": 0.20426432291666669,
+          "contribution": 0.10196110664286219
+        }
+      ],
+      "contribution": 0.10196110664286219
+    },
+    {
+      "token_index": 119,
+      "token_id": 2228,
+      "start": 421,
+      "end": 424,
+      "text": "  \n",
+      "terms": [
+        {
+          "coordinate": 52943,
+          "value": 1.4609375,
+          "coefficient": 0.6451060027661163,
+          "scale": 0.20426432291666669,
+          "contribution": 0.1381646879870669
+        },
+        {
+          "coordinate": 21326,
+          "value": 0.8828125,
+          "coefficient": -0.34797253166649794,
+          "scale": 0.07856889204545454,
+          "contribution": -0.11708187458346016
+        }
+      ],
+      "contribution": 0.02108281340360675
+    },
+    {
+      "token_index": 120,
+      "token_id": 21,
+      "start": 424,
+      "end": 425,
+      "text": "6",
+      "terms": [
+        {
+          "coordinate": 52943,
+          "value": 0.84765625,
+          "coefficient": 0.6451060027661163,
+          "scale": 0.20426432291666669,
+          "contribution": 0.08016507297645326
+        }
+      ],
+      "contribution": 0.08016507297645326
+    },
+    {
+      "token_index": 121,
+      "token_id": 18,
+      "start": 425,
+      "end": 426,
+      "text": "3",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 122,
+      "token_id": 26401,
+      "start": 426,
+      "end": 432,
+      "text": " minus",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 123,
+      "token_id": 220,
+      "start": 432,
+      "end": 433,
+      "text": " ",
+      "terms": [
+        {
+          "coordinate": 52943,
+          "value": 0.59375,
+          "coefficient": 0.6451060027661163,
+          "scale": 0.20426432291666669,
+          "contribution": 0.05615249351346035
+        }
+      ],
+      "contribution": 0.05615249351346035
+    },
+    {
+      "token_index": 124,
+      "token_id": 17,
+      "start": 433,
+      "end": 434,
+      "text": "2",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 125,
+      "token_id": 23,
+      "start": 434,
+      "end": 435,
+      "text": "8",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 126,
+      "token_id": 628,
+      "start": 435,
+      "end": 439,
+      "text": " can",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 127,
+      "token_id": 381,
+      "start": 439,
+      "end": 442,
+      "text": " be",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 128,
+      "token_id": 3753,
+      "start": 442,
+      "end": 447,
+      "text": " seen",
+      "terms": [
+        {
+          "coordinate": 13590,
+          "value": 1.375,
+          "coefficient": -0.47152195490556764,
+          "scale": 0.45042067307692313,
+          "contribution": -0.043103562050705244
+        }
+      ],
+      "contribution": -0.043103562050705244
+    },
+    {
+      "token_index": 129,
+      "token_id": 430,
+      "start": 447,
+      "end": 450,
+      "text": " as",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 130,
+      "token_id": 220,
+      "start": 450,
+      "end": 451,
+      "text": " ",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 131,
+      "token_id": 21,
+      "start": 451,
+      "end": 452,
+      "text": "6",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 132,
+      "token_id": 18,
+      "start": 452,
+      "end": 453,
+      "text": "3",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 133,
+      "token_id": 26401,
+      "start": 453,
+      "end": 459,
+      "text": " minus",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 134,
+      "token_id": 220,
+      "start": 459,
+      "end": 460,
+      "text": " ",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 135,
+      "token_id": 18,
+      "start": 460,
+      "end": 461,
+      "text": "3",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 136,
+      "token_id": 15,
+      "start": 461,
+      "end": 462,
+      "text": "0",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 137,
+      "token_id": 11,
+      "start": 462,
+      "end": 463,
+      "text": ",",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 138,
+      "token_id": 1179,
+      "start": 463,
+      "end": 468,
+      "text": " then",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 139,
+      "token_id": 7594,
+      "start": 468,
+      "end": 475,
+      "text": " adding",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 140,
+      "token_id": 1142,
+      "start": 475,
+      "end": 480,
+      "text": " back",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 141,
+      "token_id": 220,
+      "start": 480,
+      "end": 481,
+      "text": " ",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 142,
+      "token_id": 17,
+      "start": 481,
+      "end": 482,
+      "text": "2",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 143,
+      "token_id": 13,
+      "start": 482,
+      "end": 483,
+      "text": ".",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 144,
+      "token_id": 18050,
+      "start": 483,
+      "end": 487,
+      "text": "  \n\n",
+      "terms": [
+        {
+          "coordinate": 17520,
+          "value": 1.203125,
+          "coefficient": 0.443861040953598,
+          "scale": 0.02265625,
+          "contribution": 0.7058243058985649
+        },
+        {
+          "coordinate": 52943,
+          "value": 0.83203125,
+          "coefficient": 0.6451060027661163,
+          "scale": 0.20426432291666669,
+          "contribution": 0.07868737577873061
+        }
+      ],
+      "contribution": 0.7845116816772956
+    },
+    {
+      "token_index": 145,
+      "token_id": 3710,
+      "start": 487,
+      "end": 491,
+      "text": "What",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 146,
+      "token_id": 725,
+      "start": 491,
+      "end": 493,
+      "text": "’s",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 147,
+      "token_id": 220,
+      "start": 493,
+      "end": 494,
+      "text": " ",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 148,
+      "token_id": 21,
+      "start": 494,
+      "end": 495,
+      "text": "6",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 149,
+      "token_id": 18,
+      "start": 495,
+      "end": 496,
+      "text": "3",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 150,
+      "token_id": 26401,
+      "start": 496,
+      "end": 502,
+      "text": " minus",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 151,
+      "token_id": 220,
+      "start": 502,
+      "end": 503,
+      "text": " ",
+      "terms": [
+        {
+          "coordinate": 52943,
+          "value": 0.4453125,
+          "coefficient": 0.6451060027661163,
+          "scale": 0.20426432291666669,
+          "contribution": 0.04211437013509526
+        }
+      ],
+      "contribution": 0.04211437013509526
+    },
+    {
+      "token_index": 152,
+      "token_id": 18,
+      "start": 503,
+      "end": 504,
+      "text": "3",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 153,
+      "token_id": 15,
+      "start": 504,
+      "end": 505,
+      "text": "0",
+      "terms": [],
+      "contribution": 0.0
+    },
+    {
+      "token_index": 154,
+      "token_id": 30,
+      "start": 505,
+      "end": 506,
+      "text": "?",
+      "terms": [],
+      "contribution": 0.0
+    }
+  ],
+  "coordinates": [
+    {
+      "coordinate": 6645,
+      "coefficient": -0.42760132779954163,
+      "scale": 0.11875,
+      "pooled_value": 0.01985012755102041,
+      "contribution": -0.10487975594035287
+    },
+    {
+      "coordinate": 7649,
+      "coefficient": 1.0405515623679655,
+      "scale": 0.1171875,
+      "pooled_value": 0,
+      "contribution": 0.0
+    },
+    {
+      "coordinate": 8508,
+      "coefficient": 0.5958254022140161,
+      "scale": 0.022904829545454544,
+      "pooled_value": 0,
+      "contribution": 0.0
+    },
+    {
+      "coordinate": 9515,
+      "coefficient": 0.49277707061673426,
+      "scale": 0.0361328125,
+      "pooled_value": 0,
+      "contribution": 0.0
+    },
+    {
+      "coordinate": 13590,
+      "coefficient": -0.47152195490556764,
+      "scale": 0.45042067307692313,
+      "pooled_value": 0.07501594387755102,
+      "contribution": -0.11522855650486827
+    },
+    {
+      "coordinate": 14376,
+      "coefficient": 0.5546009171088929,
+      "scale": 0.0740017361111111,
+      "pooled_value": 0,
+      "contribution": 0.0
+    },
+    {
+      "coordinate": 14966,
+      "coefficient": -0.758218684564109,
+      "scale": 0.8958333333333334,
+      "pooled_value": 0,
+      "contribution": -0.0
+    },
+    {
+      "coordinate": 15652,
+      "coefficient": 0.0016700226037801775,
+      "scale": 0.059420072115384616,
+      "pooled_value": 0,
+      "contribution": 0.0
+    },
+    {
+      "coordinate": 17243,
+      "coefficient": 0.03859907917853773,
+      "scale": 0.04641544117647059,
+      "pooled_value": 0,
+      "contribution": 0.0
+    },
+    {
+      "coordinate": 17520,
+      "coefficient": 0.443861040953598,
+      "scale": 0.02265625,
+      "pooled_value": 0.024553571428571428,
+      "contribution": 0.7058243058985649
+    },
+    {
+      "coordinate": 19980,
+      "coefficient": 0.619755774372698,
+      "scale": 0.12946428571428573,
+      "pooled_value": 0,
+      "contribution": 0.0
+    },
+    {
+      "coordinate": 21326,
+      "coefficient": -0.34797253166649794,
+      "scale": 0.07856889204545454,
+      "pooled_value": 0.018016581632653062,
+      "contribution": -0.11708187458346016
+    },
+    {
+      "coordinate": 25889,
+      "coefficient": -0.29158232578775767,
+      "scale": 0.256103515625,
+      "pooled_value": 0,
+      "contribution": -0.0
+    },
+    {
+      "coordinate": 29048,
+      "coefficient": 1.1100766884188455,
+      "scale": 0.18297697368421054,
+      "pooled_value": 0,
+      "contribution": 0.0
+    },
+    {
+      "coordinate": 31497,
+      "coefficient": 2.3963083199804003,
+      "scale": 0.06361607142857142,
+      "pooled_value": 0,
+      "contribution": 0.0
+    },
+    {
+      "coordinate": 31983,
+      "coefficient": 1.0909402788028955,
+      "scale": 0.08248197115384616,
+      "pooled_value": 0,
+      "contribution": 0.0
+    },
+    {
+      "coordinate": 39402,
+      "coefficient": 0.835083225875968,
+      "scale": 0.1025,
+      "pooled_value": 0,
+      "contribution": 0.0
+    },
+    {
+      "coordinate": 52943,
+      "coefficient": 0.6451060027661163,
+      "scale": 0.20426432291666669,
+      "pooled_value": 0.10730229591836733,
+      "contribution": 0.49724510703366853
+    },
+    {
+      "coordinate": 62386,
+      "coefficient": 0.19011250609742358,
+      "scale": 0.03234375,
+      "pooled_value": 0,
+      "contribution": 0.0
+    }
+  ],
+  "classifier_intercept": -2.059219761122063,
+  "calibration_coefficient": 1.4673135885212538,
+  "calibration_intercept": -0.23756397870590418,
+  "bias": -3.2590851159517973,
+  "contribution_sum": 0.8658792259035523,
+  "pooled_logit": -2.393205890048245,
+  "pooled_probability": 0.08369225070552079,
+  "conservation_error": 0.0,
+  "pins": {
+    "artifact_sha256": "c534ddaa810a4d5b997f706911fe83859fb25aed6180f20c185da4a251cdc7f0",
+    "projection_sha256": "67311d683244ef531109552e214b8e343b651d768553d2ad3e47df906b7295ba",
+    "card_hash": "e300720e86cbbec532c61ce85dbc87e1ebe9804264a6c9b604e0f7ed3aed195f",
+    "report_sha256": "674abbbc6e91809ea9e8ea633b19157991e64166f7b12d88c935bae30b9eeec6",
+    "model_sha256": "f51f543ff70be30a16ee48d53a07551eb69d6bbcf8ae5fe6c196adf6a6eaf9b0",
+    "feature_card_sha256": "146aaa7050cac6c18911e706ffb675a3b69fb0677303f19a5e37fe4f72a0d088",
+    "measurement_manifest_sha256": "718ee9200c27afdc40b4b14fca29b7dfbd58dd5743ab3d66cb8723e2540ccdec",
+    "fitted_manifest_sha256": "64ca022dd53b5a770d55208b5889916ff0d1ccf2d3b0ab77b1e1f994d73c084b",
+    "source_files": {
+      "features": {
+        "sha256": "b98a8006dc0e1f8b0f1b6cfed867acbeb7ad5064b9bda421f00355d0c86bd17d"
+      },
+      "report": {
+        "sha256": "34935ec49ba0b33359adaafc0b2b2b2d3c316f7e79e7952b21a087adef423f22"
+      },
+      "card": {
+        "sha256": "b768c8b38dca38112c5eeb3745d0303aa2c90b5185b3e6c1d8216bc0bfe314ca"
+      },
+      "measurement_plan": {
+        "sha256": "d5f9f35cfce6255b30d8295580bec246017bc64c9e5a394103a503ccb4a69418"
+      },
+      "audit": {
+        "sha256": "ddbca84918e3e726299e8c7a046c2ffa7b962d2aef31e06e397d186fce18e313"
+      }
+    }
+  },
+  "saved_probability": 0.0836922507055208
+}

@@ -1,12 +1,16 @@
 import {
   compareEpisodeBenchmarks, contentDigest, createTeachingRevision,
-  runEpisodeBenchmark, validateEpisodeBenchmark, validateSkills, validateTeachingCases, verifyTeachingRevision, withDeadline,
+  runEpisodeBenchmark, validateEpisodeBenchmark, validateTeachingCases, verifyTeachingRevision, withDeadline,
 } from "./benchmark.js";
 import type {
   EpisodeBenchmark, EpisodeJudge, EpisodeRunner, PromotionDecision, SkillProposer,
   TeachingCase, TeachingHypothesis, TeachingRevision,
 } from "./contracts.js";
 import { applyWikiMaintenance, loadWiki, registerTrainingTrace, saveWiki, validatePatternLinks, wikiAccess, type WikiMaintainer } from "./wiki.js";
+
+import { reviewEvolutionSpend, type EvolutionSpendReviewer, type EvolutionSpendReview } from "./spend-review.js";
+import { enqueueProposal, frontierTrainingOutcome, loadFrontierArchive, recordFrontierMeasurement, frontierProposalContext, loadFrontierCandidate, readFrontier, reconcileFrontier, selectFrontierCandidate,
+  type EvolutionFrontier, type FrontierCandidate } from "./frontier.js";
 
 export interface EvolutionState {
   schemaVersion: 1;
@@ -17,6 +21,7 @@ export interface EvolutionState {
   hypotheses: TeachingHypothesis[];
   /** Optional for pre-wiki state; points at an immutable knowledge snapshot. */
   wikiRevisionId?: string;
+  frontier?: EvolutionFrontier;
 }
 export interface EvolutionStore {
   read<T>(key: string): Promise<T | null>;
@@ -38,7 +43,10 @@ export interface TeachingExperiment {
   scope: "experimental-teaching-behavior";
   humanLearning: "unmeasured";
   status: "accepted" | "rejected" | "failed";
+  spendReview?: { key: string; status: EvolutionSpendReview["status"] };
   training: EpisodeBenchmark | null;
+  candidateTraining?: EpisodeBenchmark;
+  frontier?: { selectionKey: string; outcomeKey: string; mode: "ranked" | "exploration" | "fifo"; queued: number };
   validation: { baseline: EpisodeBenchmark; candidate: EpisodeBenchmark; decision: PromotionDecision } | null;
   holdout: { baseline: EpisodeBenchmark; candidate: EpisodeBenchmark; decision: PromotionDecision } | null;
   reasons: string[];
@@ -148,6 +156,9 @@ export async function runTeachingEvolution(input: {
   judge: EpisodeJudge;
   proposer: SkillProposer;
   maintainer?: WikiMaintainer;
+  spendReviewer?: EvolutionSpendReviewer;
+  /** Pinned to the experiment judge by each host; independent of the spending opt-in. */
+  frontierReviewer?: Pick<EvolutionSpendReviewer, "call" | "timeoutMs">;
   repeats?: number;
   timeoutMs?: number;
   force?: boolean;
@@ -156,10 +167,10 @@ export async function runTeachingEvolution(input: {
 }): Promise<TeachingExperiment> {
   input = { ...input, cases: structuredClone(input.cases) };
   validateTeachingCases(input.cases);
-  // One candidate per invocation; force overrides cooldown only, never evidence gates.
+  // At most three proposals, one executed candidate. Force bypasses cooldown only.
   if (["train", "validation", "holdout"].some((split) => !input.cases.some((item) => item.split === split))) throw new Error("missing_experiment_split");
   const repeats = input.repeats ?? 1;
-  const plannedEpisodes = input.cases.reduce((total, item) => total + (item.split === "train" ? 1 : 2), 0) * repeats;
+  const plannedEpisodes = input.cases.length * 2 * repeats;
   if (!Number.isInteger(repeats) || repeats < 1 || repeats > 2 || plannedEpisodes > 60) throw new Error("experiment_budget_exceeded");
   const suiteDigest = await contentDigest(input.cases);
   const holdoutCases = input.cases.filter((item) => item.split === "holdout");
@@ -175,6 +186,10 @@ export async function runTeachingEvolution(input: {
     // A changed host/persona starts from its own baseline. The prior active
     // revision remains archived until a candidate for the new base passes.
     const incumbent = active?.basePrompt === input.basePrompt ? active : await createTeachingRevision(input.basePrompt);
+    const frontier = readFrontier(state.frontier);
+    let archive = await loadFrontierArchive(input.store, frontier.archiveRevisionId);
+    const trainingDigest = await contentDigest(input.cases.filter(item => item.split === "train"));
+    await reconcileFrontier(frontier, input.store, incumbent.id, trainingDigest);
     await input.store.put(suiteKey(suiteDigest), { schemaVersion: 1, id: suiteDigest, cases: input.cases } satisfies TeachingSuiteManifest);
     await input.store.put(revisionKey(incumbent.id), incumbent);
     const report: TeachingExperiment = {
@@ -183,6 +198,21 @@ export async function runTeachingEvolution(input: {
       scope: "experimental-teaching-behavior", humanLearning: "unmeasured", status: "failed",
       training: null, validation: null, holdout: null, reasons: [],
     };
+    if (input.spendReviewer) {
+      input.onProgress?.("review-spend");
+      const review = await reviewEvolutionSpend({ store: input.store, state, incumbent, cases: input.cases, reviewer: input.spendReviewer, signal: input.signal });
+      const key = `raw/${report.id}-spend-review`;
+      report.spendReview = { key, status: review.status };
+      await input.store.put(key, review);
+      if (review.status === "defer" || review.status === "stale" || review.status === "cancelled" || input.signal?.aborted) {
+        report.status = review.status === "defer" && !input.signal?.aborted ? "rejected" : "failed";
+        report.reasons = [input.signal?.aborted ? "spend_review_cancelled" : `spend_review_${review.status}`];
+        await input.store.put(`experiments/${report.id}`, report);
+        return report;
+      }
+    }
+    input.signal?.throwIfAborted();
+    state.frontier = frontier;
     state.lastRunAt = report.createdAt;
     await input.store.writeState(state);
     const benchmark = async (revision: TeachingRevision, split: "train" | "validation" | "holdout") => {
@@ -192,14 +222,22 @@ export async function runTeachingEvolution(input: {
         repeats, timeoutMs: input.timeoutMs, signal: input.signal,
       });
       await input.store.put(`raw/${report.id}-${split}-${revision.id === incumbent.id ? "incumbent" : "candidate"}`, result);
+      if (split !== "train" && report.training && !result.errorCount) {
+        const reference = report.training.results[0]?.execution;
+        if (!reference || result.results.some(row => row.execution?.model !== reference.model || row.execution?.runtime !== reference.runtime)) {
+          throw new Error("experiment_model_changed");
+        }
+      }
       return result;
     };
     let hypothesis: TeachingHypothesis | undefined;
     let wiki = input.maintainer ? await loadWiki(input.store, state.wikiRevisionId, input.basePrompt) : undefined;
     let proposedSkill: import("./contracts.js").TeachingSkill | undefined;
+    let selected: FrontierCandidate | undefined;
     try {
       report.training = await benchmark(incumbent, "train");
       if (report.training.errorCount) throw new Error("training_execution_incomplete");
+      if (new Set(report.training.results.map(row => JSON.stringify([row.execution?.model, row.execution?.runtime]))).size !== 1) throw new Error("experiment_model_changed");
       if (wiki && input.maintainer) {
         input.onProgress?.("maintain-wiki");
         wiki = await registerTrainingTrace(wiki, `raw/${report.id}-train-incumbent`, report.training);
@@ -212,30 +250,66 @@ export async function runTeachingEvolution(input: {
         report.wikiRevisionId = state.wikiRevisionId;
         await input.store.writeState(state);
       }
-      input.onProgress?.("propose-skill");
-      const proposal = structuredClone(await withDeadline((signal) => input.proposer({
-        incumbent: structuredClone(incumbent), training: structuredClone(report.training!),
-        hypotheses: structuredClone(state.hypotheses.slice(-40)), signal,
-        ...(wiki ? { wiki: wikiAccess(input.store, wiki) } : {}),
-      }), input.timeoutMs ?? 90_000, input.signal));
-      validateSkills([proposal.skill]);
-      if (wiki) validatePatternLinks(proposal.skill, wiki);
-      const evidence = new Set(report.training.results.map((row) => row.id));
-      if (!proposal.skill.evidenceIds.every((id) => evidence.has(id))
-        || typeof proposal.hypothesis?.statement !== "string" || !proposal.hypothesis.statement.trim()
-        || proposal.hypothesis.statement.length > 1200) throw new Error("proposal_evidence_invalid");
+      // Drain durable alternatives before paying to generate another batch.
+      if (!frontier.candidates.some(item => item.status === "queued")) {
+        for (let slot = 0; slot < 3; slot++) {
+          input.signal?.throwIfAborted();
+          input.onProgress?.(`propose-skill:${slot + 1}/3`);
+          const alternatives = await Promise.all(frontier.candidates.filter(item => item.status === "queued")
+            .map(async item => (await loadFrontierCandidate(input.store, item)).proposal.skill));
+          const measured = await frontierProposalContext(input.store, archive, report.training);
+          try {
+            const proposal = structuredClone(await withDeadline((signal) => input.proposer({
+              incumbent: structuredClone(incumbent), training: structuredClone(report.training!),
+              hypotheses: structuredClone(state.hypotheses.slice(-40)), signal,
+              exploration: { slot, alternatives: alternatives.map(({ title, instructions }) => ({ title, instructions })), ...measured },
+              ...(wiki ? { wiki: wikiAccess(input.store, wiki) } : {}),
+            }), input.timeoutMs ?? 90_000, input.signal));
+            if (wiki) validatePatternLinks(proposal.skill, wiki);
+            await enqueueProposal({ frontier, store: input.store, incumbent, training: report.training,
+              trainingDigest, experimentId: report.id, slot, proposal });
+            await input.store.writeState(state);
+          } catch (error) {
+            // A later bad proposal cannot erase already saved alternatives.
+            if (!frontier.candidates.some(item => item.status === "queued") || input.signal?.aborted) throw error;
+          }
+        }
+      }
+      input.onProgress?.("rank-frontier");
+      const selection = await selectFrontierCandidate({ frontier, archive, store: input.store, training: report.training,
+        call: input.frontierReviewer?.call, timeoutMs: input.frontierReviewer?.timeoutMs, signal: input.signal });
+      report.frontier = { selectionKey: `raw/${report.id}-frontier-selection`, outcomeKey: `raw/${report.id}-frontier-outcome`,
+        mode: selection.mode, queued: frontier.candidates.filter(item => item.status === "queued").length - 1 };
+      // Save every prediction before the candidate executes, including exploration choices.
+      await input.store.put(report.frontier.selectionKey, selection);
+      selected = frontier.candidates.find(item => item.id === selection.selectedId)!;
+      const { candidate, proposal } = await loadFrontierCandidate(input.store, selected);
       proposedSkill = proposal.skill;
       hypothesis = {
         id: report.id, statement: proposal.hypothesis.statement,
         evidenceIds: [...proposal.skill.evidenceIds], status: "proposed",
       };
       state.hypotheses.push(hypothesis);
+      selected.status = "running";
+      selected.experimentId = report.id;
+      frontier.selections++;
       await input.store.writeState(state);
-      const skills = incumbent.skills.filter((skill) => skill.id !== proposal.skill.id).concat(proposal.skill);
-      if (JSON.stringify(skills) === JSON.stringify(incumbent.skills)) throw new Error("proposal_unchanged");
-      const candidate = await createTeachingRevision(input.basePrompt, skills, incumbent.id);
       report.candidateRevisionId = candidate.id;
-      await input.store.put(revisionKey(candidate.id), candidate);
+      report.candidateTraining = await benchmark(candidate, "train");
+      const observed = frontierTrainingOutcome(report.training, report.candidateTraining);
+      selected.trainingDelta = observed.delta;
+      await input.store.put(report.frontier.outcomeKey, {
+        schemaVersion: 1, experimentId: report.id, candidateId: candidate.id, selectionKey: report.frontier.selectionKey,
+        recordedAt: new Date().toISOString(), evidenceKind: "synthetic", humanLearning: "unmeasured",
+        metric: "training-improvement-v1", questionDigest: selection.questionDigests.useful,
+        prediction: selection.predictions.find(item => item.candidateId === candidate.id),
+        baselineKey: `raw/${report.id}-train-incumbent`, candidateKey: `raw/${report.id}-train-candidate`,
+        ...observed,
+      });
+      if (observed.delta === null) throw new Error("training_execution_incomplete");
+      archive = await recordFrontierMeasurement(frontier, input.store, selected, report.id, archive);
+      // Persist the measured elite even when validation rejects or a subsequent run is interrupted.
+      await input.store.writeState(state);
       const baselineValidation = await benchmark(incumbent, "validation");
       const candidateValidation = await benchmark(candidate, "validation");
       report.validation = {
@@ -260,11 +334,12 @@ export async function runTeachingEvolution(input: {
         if (report.holdout.decision.accepted) report.status = "accepted";
       }
     } catch (error) {
-      const safeCodes = ["training_execution_incomplete", "validation_execution_incomplete", "holdout_execution_incomplete", "proposal_evidence_invalid", "proposal_unchanged", "skill_budget_exceeded"];
+      const safeCodes = ["training_execution_incomplete", "validation_execution_incomplete", "holdout_execution_incomplete", "proposal_evidence_invalid", "proposal_unchanged", "skill_budget_exceeded", "experiment_model_changed"];
       report.status = "failed";
       report.reasons = [error instanceof Error && safeCodes.includes(error.message) ? error.message : "experiment_execution_failed"];
     }
     if (hypothesis) hypothesis.status = report.status === "accepted" ? "supported-offline" : report.status === "rejected" ? "rejected" : "proposed";
+    if (selected) selected.status = report.status === "accepted" ? "evaluated" : report.status;
     if (wiki && proposedSkill) {
       wiki.impacts.push({ experimentId: report.id, skillId: proposedSkill.id, patternIds: proposedSkill.patternIds ?? [],
         before: incumbent.skills.find(skill => skill.id === proposedSkill!.id) ?? null, after: proposedSkill,
@@ -281,6 +356,7 @@ export async function runTeachingEvolution(input: {
         revisionId: report.candidateRevisionId!, experimentId: report.id,
         generation: (state.active?.generation ?? 0) + 1, activatedAt: new Date().toISOString(),
       };
+      for (const item of frontier.candidates) if (item.status === "queued") item.status = "superseded";
     }
     await input.store.writeState(state);
     return report;
@@ -297,6 +373,9 @@ export function teachingExperimentMarkdown(report: TeachingExperiment): string {
     `- Baseline revision: ${report.baselineRevisionId}`,
     `- Candidate revision: ${report.candidateRevisionId ?? "none"}`,
     `- Wiki revision: ${report.wikiRevisionId ?? "none"}`,
+    ...(report.spendReview ? [`- Spending review: ${report.spendReview.status}; receipt ${report.spendReview.key}. This does not change either promotion gate.`] : []),
+    ...(report.frontier ? [`- Frontier selection: ${report.frontier.mode}; ${report.frontier.queued} alternatives left at selection.`,
+      `- Prediction receipt: ${report.frontier.selectionKey}; training outcome: ${report.frontier.outcomeKey}.`] : []),
     `- Baseline behavior score: ${score(comparison?.baseline.meanScore)}`,
     `- Candidate behavior score: ${score(comparison?.candidate.meanScore)}`,
     `- Validation: ${report.validation?.decision.accepted ? "passed" : "not passed"}`,

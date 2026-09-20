@@ -12,7 +12,7 @@
  * and reused by the settings tab and the live surface alike.
  */
 
-export type LiveProviderId = "tavus" | "gemini-live" | "openai-realtime";
+export type LiveProviderId = "tavus" | "gemini-live" | "openai-realtime" | "gpt-live";
 
 /**
  * How much we trust a model to carry a whole lesson.
@@ -54,6 +54,15 @@ export interface LiveSpeechModelOption {
  * next entry that is not the one that just failed.
  */
 export const LIVE_MODELS: readonly LiveModelOption[] = [
+	{
+		providerId: "gpt-live",
+		value: "gpt-live-1",
+		label: "GPT Live",
+		grade: "recommended",
+		video: "none",
+		image: false,
+		note: "Voice conversation through your Not Organic account. Audio only; no live tools or visual input.",
+	},
 	{
 		providerId: "tavus",
 		value: "keatingbot",
@@ -154,7 +163,7 @@ export const LIVE_MODELS: readonly LiveModelOption[] = [
 ] as const;
 
 export function isLiveProviderId(id: string): id is LiveProviderId {
-	return id === "tavus" || id === "gemini-live" || id === "openai-realtime";
+	return id === "tavus" || id === "gemini-live" || id === "openai-realtime" || id === "gpt-live";
 }
 
 export function liveModelsFor(providerId: string): LiveModelOption[] {
@@ -198,8 +207,8 @@ export function describeLiveModel(providerId: string, value: string): LiveModelO
 		value,
 		label: value,
 		grade: "capable",
-		video: providerId === "openai-realtime" ? "none" : "native",
-		image: providerId !== "tavus",
+		video: providerId === "openai-realtime" || providerId === "gpt-live" ? "none" : "native",
+		image: providerId !== "tavus" && providerId !== "gpt-live",
 		surface: providerId === "tavus" ? "embedded" : undefined,
 		note: "Not in Keating's tested list — it may refuse the session.",
 	};

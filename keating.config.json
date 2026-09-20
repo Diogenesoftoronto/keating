@@ -1,10 +1,21 @@
 {
   "pi": {
     "runtimePreference": "embedded-only",
-    "defaultProvider": "openai",
-    "defaultModel": "gpt-5.5",
+    "defaultProvider": "notorganic",
+    "defaultModel": "balanced",
     "defaultThinking": "medium",
     "packages": []
+  },
+  "speech": {
+    "enabled": false,
+    "defaultVoice": "conversational",
+    "fastModel": "gemini-3.1-flash-live-preview",
+    "steeringModel": "default"
+  },
+  "debug": {
+    "persistTraces": true,
+    "traceTopLearners": 3,
+    "consoleSummary": false
   },
   "apiRetry": {
     "maxAttempts": 4,
@@ -12,17 +23,5 @@
     "maxDelayMs": 30000,
     "rateLimitIntervalMs": 500,
     "jitterRatio": 0.2
-  },
-  "optimizer": {
-    "backend": "gepa",
-    "numTrials": 24,
-    "seed": 20260401,
-    "fallback": "heuristic",
-    "objectives": ["voice", "diagnosis", "verification", "retrieval", "transfer", "structure"],
-    "promptLearning": {
-      "backend": "ace",
-      "maxEpochs": 3,
-      "onlineUpdates": true
-    }
   }
 }

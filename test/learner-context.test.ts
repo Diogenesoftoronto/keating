@@ -40,6 +40,8 @@ test("durable context includes attributed background and evidence without changi
     expect(context).toContain('"topic":"percentages"');
     expect(context).toContain("exposure, not demonstrated learning");
     expect(context).toContain("tuning estimates/defaults, not confirmed learner attributes");
+    expect(context).toContain("Stored goals are standing plans from earlier work, not the subject of this session");
+    expect(context).toContain("follow what the learner raises now");
     expect(await readFile(learnerStatePath(cwd), "utf8")).toBe(before);
   } finally { await rm(cwd, { recursive: true, force: true }); }
 });

@@ -42,3 +42,20 @@ test("observing speech settings never writes them back; one edit causes one noti
     expect(notifications).toBe(1);
   } finally { unsubscribe(); }
 });
+
+test("GPT Live selection and voice survive settings reload", () => {
+  const values = new Map<string, string>();
+  Object.defineProperty(globalThis, "window", { configurable: true, value: new EventTarget() });
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => { values.set(key, value); },
+  } });
+  saveWebSpeechSettings({
+    ...loadWebSpeechSettings(), providerId: "gpt-live", model: "gpt-live-1", voiceName: "marin",
+    enabled: true, microphoneEnabled: true, videoEnabled: false,
+  });
+  expect(loadWebSpeechSettings()).toMatchObject({
+    providerId: "gpt-live", model: "gpt-live-1", voiceName: "marin",
+    enabled: true, microphoneEnabled: true, videoEnabled: false,
+  });
+});

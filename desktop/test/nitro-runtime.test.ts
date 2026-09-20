@@ -50,8 +50,14 @@ describe("desktop Nitro runtime paths", () => {
 			ELECTRON_RUN_AS_NODE: "1",
 			NITRO_HOST: "127.0.0.1",
 			NITRO_PORT: "43123",
+			NOTORGANIC_ENABLED: "true",
+			NOTORGANIC_ISSUER: "https://api.notorganic.info",
+			NOTORGANIC_MAX_COST_MICROUSD: "100000",
 			KEATING_COURSES_STORAGE_DIR: "/tmp/keating-user/nitro/courses",
 			KEATING_COURSES_PEAR_STORAGE_DIR: "/tmp/keating-user/nitro/courses-pear",
+		});
+		expect(nitroEnvironment(paths, 43123, { NOTORGANIC_ENABLED: "false", NOTORGANIC_ISSUER: "https://custom.example", NOTORGANIC_MAX_COST_MICROUSD: "1000" })).toMatchObject({
+			NOTORGANIC_ENABLED: "false", NOTORGANIC_ISSUER: "https://custom.example", NOTORGANIC_MAX_COST_MICROUSD: "1000",
 		});
 	});
 });

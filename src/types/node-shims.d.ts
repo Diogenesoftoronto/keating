@@ -39,7 +39,7 @@ declare module "node:os" {
 
 declare module "node:crypto" {
   export function createHash(algorithm: string): {
-    update(data: string): { digest(encoding: string): string };
+    update(data: string | Uint8Array): { digest(encoding: string): string };
   };
 }
 

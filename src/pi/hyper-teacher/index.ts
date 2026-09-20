@@ -42,6 +42,8 @@ import { registerPiUiActionCommand } from "../../tui/ui/rpc-action-transport.js"
 import registerNotOrganicProvider from "../notorganic-provider-extension.js";
 import { activeTeachingPrompt, teachingBasePrompt } from "../../core/teaching-evolution.js";
 import { appendLearnerContext, loadLearnerContext, stripLearnerContext } from "../../core/learner-context.js";
+import { createCliMemoryAdmissionController } from "../../judgement/cli-memory-admission.js";
+import { captureCliFeedback, captureCliLearnerMessages, captureCliQuiz } from "../../core/learner-events.js";
 
 function topicFromArgs(args: string | string[]): string {
   return (Array.isArray(args) ? args.join(" ") : String(args ?? "")).trim();
@@ -52,6 +54,25 @@ let greetingShown = false;
 export default function hyperteacher(pi: any): void {
   let pinnedTeaching: Awaited<ReturnType<typeof activeTeachingPrompt>> | null = null;
   let hostTeachingBase = "";
+  let memoryAdmission: ReturnType<typeof createCliMemoryAdmissionController> | undefined;
+  let memoryAdmissionCwd: string | undefined;
+  let memoryRetrievalEpoch = 0;
+  const resetMemoryAdmission = (cwd: string) => {
+    memoryRetrievalEpoch++;
+    if (memoryAdmissionCwd !== cwd) {
+      memoryAdmission?.dispose();
+      memoryAdmission = createCliMemoryAdmissionController(cwd);
+      memoryAdmissionCwd = cwd;
+    }
+    memoryAdmission?.reset();
+    return { controller: memoryAdmission, epoch: memoryRetrievalEpoch };
+  };
+  pi.on("session_shutdown", () => {
+    memoryRetrievalEpoch++;
+    memoryAdmission?.dispose();
+    memoryAdmission = undefined;
+    memoryAdmissionCwd = undefined;
+  });
   if (typeof pi.registerProvider === "function") registerNotOrganicProvider(pi);
   registerPiUiActionCommand(pi);
 
@@ -257,6 +278,9 @@ export default function hyperteacher(pi: any): void {
       const state = await loadLearnerState(statePath);
       recordFeedback(state, topic, signal, comment);
       await saveLearnerState(statePath, state);
+      await captureCliFeedback(ctx.cwd, ctx.sessionManager, state.feedback.at(-1)!).catch(() => {
+        info(ctx, "Feedback saved; its training-event reference could not be recorded.");
+      });
       const commentHint = comment ? ` with comment` : "";
       info(ctx, `Recorded ${signal} feedback for "${topic}".${commentHint}`);
     }
@@ -289,7 +313,7 @@ export default function hyperteacher(pi: any): void {
       info(ctx, "Running a bounded teaching experiment. Accepted revisions apply next session.");
       const result = await autoImproveArtifact(ctx.cwd, topic, { surface: "pi" });
       ctx.ui.setEditorText(`read ${relative(ctx.cwd, result.reportPath)}`);
-      info(ctx, `Teaching experiment: ${result.status}. Human learning remains unmeasured. See ${relative(ctx.cwd, result.reportPath)}.`);
+      info(ctx, `Teaching experiment: ${result.status}.${result.judgement ? ` Judge: ${result.judgement.backend.model}; ${result.judgement.calibration} proxy estimates.` : ""} Human learning remains unmeasured. See ${relative(ctx.cwd, result.reportPath)}.`);
     }
   });
 
@@ -359,7 +383,11 @@ export default function hyperteacher(pi: any): void {
   });
 
   pi.on("session_start", async (_event: any, ctx: any) => {
+    resetMemoryAdmission(ctx.cwd);
     await ensureProjectScaffold(ctx.cwd);
+    await captureCliLearnerMessages(ctx.cwd, ctx.sessionManager).catch(() => {
+      info(ctx, "Saved conversation is available; training-event references could not be recorded.");
+    });
     const priorRevision = ctx.sessionManager?.getBranch?.().find((entry: any) =>
       entry.type === "custom" && entry.customType === "keating-teaching-revision"
       && typeof entry.data?.revisionId === "string")?.data;
@@ -405,7 +433,23 @@ export default function hyperteacher(pi: any): void {
     }
   });
 
-  pi.on("before_agent_start", async (event: { systemPrompt: string }, ctx: { cwd: string }) => {
+  // The host has persisted completed messages by agent_end; capture stable entry
+  // IDs from that branch, never transient streaming chunks or tool output.
+  pi.on("agent_end", async (_event: unknown, ctx: any) => {
+    await captureCliLearnerMessages(ctx.cwd, ctx.sessionManager).catch(() => {
+      info(ctx, "Conversation saved; training-event references could not be recorded.");
+    });
+  });
+  pi.on("tool_result", async (event: any, ctx: any) => {
+    if (event.toolName !== "quiz" || event.isError) return;
+    await captureCliQuiz(ctx.cwd, ctx.sessionManager, event.details?.resultId).catch(() => {
+      info(ctx, "Quiz saved; its training-event reference could not be recorded.");
+    });
+  });
+
+  pi.on("before_agent_start", async (event: { systemPrompt: string; prompt?: string }, ctx: { cwd: string; sessionManager?: import("../../core/learner-memory.js").LearnerMemorySession }) => {
+    const admission = resetMemoryAdmission(ctx.cwd);
+    const session = ctx.sessionManager;
     pinnedTeaching ??= await activeTeachingPrompt(ctx.cwd);
     // Preserve Pi's host/user context while applying the exact evaluated teaching supplement.
     const supplement = pinnedTeaching.prompt.slice(pinnedTeaching.basePrompt.length);
@@ -413,6 +457,11 @@ export default function hyperteacher(pi: any): void {
     const hostPrompt = hostTeachingBase ? withoutLearner.replace(hostTeachingBase, pinnedTeaching.basePrompt) : withoutLearner;
     // Refresh from the production files on every learner turn, including a restored/new session.
     const teachingPrompt = hostPrompt.endsWith(supplement) ? hostPrompt : `${hostPrompt}${supplement}`;
-    return { systemPrompt: appendLearnerContext(teachingPrompt, await loadLearnerContext(ctx.cwd)) };
+    return { systemPrompt: appendLearnerContext(teachingPrompt, await loadLearnerContext(ctx.cwd, {
+      query: event.prompt, session,
+      onRetrieved: (result) => {
+        if (session && memoryRetrievalEpoch === admission.epoch && memoryAdmission === admission.controller) admission.controller?.enqueue(result, session);
+      },
+    })) };
   });
 }

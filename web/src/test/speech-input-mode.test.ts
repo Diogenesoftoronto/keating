@@ -35,6 +35,7 @@ describe("realtime tier from speech settings", () => {
 
 		expect(duplexProviders.map((provider) => provider.id).sort()).toEqual([
 			"gemini-live",
+			"gpt-live",
 			"openai-realtime",
 			"tavus",
 		]);
@@ -83,6 +84,7 @@ describe("realtime tier from speech settings", () => {
 
 	it("resolves the full cascade from settings the user can actually pick", () => {
 		const cases = [
+			["gpt-live", "gpt-live-1", 1, "none", false],
 			["tavus", "keatingbot", 3, "native", false],
 			["gemini-live", "gemini-3.1-flash-live-preview", 3, "native", true],
 			["openai-realtime", "gpt-realtime-2.1", 2, "none", true],
@@ -96,5 +98,15 @@ describe("realtime tier from speech settings", () => {
 			expect(resolved.video).toBe(videoRoute === "native");
 			expect(resolved.image).toBe(image);
 		}
+	});
+
+	it("routes GPT Live through duplex without a direct OpenAI credential", async () => {
+		const settings = { ...DEFAULT_WEB_SPEECH_SETTINGS, providerId: "gpt-live", model: "gpt-live-1", enabled: true, microphoneEnabled: true };
+		expect(speechInputMode(settings)).toBe("duplex");
+		expect(speechProviderModel(settings)).toEqual({ provider: "notorganic", id: "gpt-live-1", api: "gpt-live" });
+		const provider = (await listSpeechProviders()).find((entry) => entry.id === "gpt-live");
+		expect(provider?.needsApiKey).toBeFalsy();
+		expect(provider?.voices).toContain("marin");
+		expect(resolveSpeechRealtimeTier(settings).capReason).toContain("Live tools and visual input are unavailable");
 	});
 });

@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
 import { runHarnessEpisode, validateHarnessRequest, type HarnessV3Request } from "./benchmark_harness_v3.js";
 import { OPENUI_JSON_PARITY_FIXTURE, type UiAction } from "../../src/tui/learner-contracts.js";
 import { limitHarnessPayload } from "./benchmark_harness_v3_limits.js";
@@ -20,6 +21,12 @@ test("actual Pi RPC executes feedback, continues, persists and restores the same
   expect(result.configuration.allowed_tools).not.toContain("quiz");
   expect((result.receipts.find((receipt: any) => receipt.kind === "session_start") as any).data.active_tools).not.toContain("quiz");
   expect(result.requests).toHaveLength(4);
+  const basePrompt = readFileSync(new URL("../../SYSTEM.md", import.meta.url), "utf8").trim();
+  for (const request of result.requests) {
+    const systemPrompt = (request as any).data.context.systemPrompt;
+    expect(systemPrompt).toStartWith(basePrompt);
+    expect(systemPrompt).not.toContain("You are an expert coding assistant operating inside pi");
+  }
   expect(result.steps).toHaveLength(3);
   expect(result.steps[0]!.messages.some((message: any) => message.role === "toolResult" && message.toolName === "feedback" && !message.isError)).toBe(true);
   const learner = JSON.parse(result.files.find((file) => file.path === ".keating/state/learner.json")!.content);

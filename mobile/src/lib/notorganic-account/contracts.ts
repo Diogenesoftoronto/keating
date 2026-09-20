@@ -37,6 +37,8 @@ export interface NotOrganicTokenResponse {
 }
 
 export interface NotOrganicDeviceSession {
+  /** Older sessions without this binding must reauthorize before judgement. */
+  issuer?: string;
   accessToken: string;
   accessExpiresAt: number;
   refreshToken: string;
@@ -66,3 +68,8 @@ export const defaultNotOrganicAccountConfig = (): NotOrganicAccountConfig => ({
   redirectUri: NOTORGANIC_MOBILE_REDIRECT_URI,
   scope: NOTORGANIC_MOBILE_SCOPE,
 });
+
+/** The only additional permission requested by the explicit judgement opt-in. */
+export function mobileJudgementAccountConfig(config = defaultNotOrganicAccountConfig()): NotOrganicAccountConfig {
+  return { ...config, scope: [...new Set([...config.scope.split(/\s+/).filter(Boolean), "judgement:evaluate"])].join(" ") };
+}

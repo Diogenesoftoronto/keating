@@ -5,6 +5,7 @@ import {
   exportProviderCompletion,
   setEvaluationObservationExporterForTests,
 } from "../src/observability/arize.js";
+import { EVALUATION_OBSERVATION_VERSION } from "../src/observability/types.js";
 
 describe("Arize observability configuration", () => {
   test("is inert without explicit operator configuration and exposes no secrets", () => {
@@ -22,7 +23,7 @@ describe("Arize observability configuration", () => {
 
   test("a failing exporter is isolated", async () => {
     setEvaluationObservationExporterForTests(async () => { throw new Error("private transport detail"); });
-    await exportEvaluationObservation({ schemaVersion: 1, operation: "benchmark", engine: "deterministic", status: "success", suite: "core", duration_ms: 1, app_version: "3.0.0", surface: "cli" });
+    await exportEvaluationObservation({ schemaVersion: EVALUATION_OBSERVATION_VERSION, operation: "benchmark", engine: "deterministic", status: "success", suite: "core", duration_ms: 1, app_version: "3.0.0", surface: "cli" });
     setEvaluationObservationExporterForTests();
     expect(true).toBe(true);
   });

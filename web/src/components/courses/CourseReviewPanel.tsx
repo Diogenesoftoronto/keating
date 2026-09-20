@@ -1,4 +1,5 @@
 import { AttachmentLinks } from "../SubmissionAttachments";
+import { CourseJudgementPanel } from "./CourseJudgementPanel";
 import { useMemo, useState } from "react";
 import { ClipboardCheck, Users } from "lucide-react";
 import { css, cx } from "../../../styled-system/css";
@@ -214,6 +215,7 @@ export function CourseReviewPanel({
                   >
                     {submission.answer}
                   </p>
+                  <CourseJudgementPanel snapshot={snapshot} target={{ kind: "lesson", submissionId: submission.id }} />
                   <textarea
                     rows={2}
                     value={feedback}
@@ -307,6 +309,7 @@ export function CourseReviewPanel({
                     {submission.answer}
                   </p>
                   <AttachmentLinks attachments={submission.attachments ?? []} courseId={snapshot.course.id} />
+                  <CourseJudgementPanel snapshot={snapshot} target={{ kind: "assignment", submissionId: submission.id }} />
                   <textarea
                     rows={3}
                     value={feedback}

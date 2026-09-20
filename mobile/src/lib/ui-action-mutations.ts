@@ -1,5 +1,6 @@
 import {
   applyReview,
+  compareContractTimestamps,
   dueAtAfterReview,
   type PortableLearnerData,
   type UiAnswer,
@@ -10,6 +11,7 @@ import {
   type UiQuestionGroupResponse,
   type UiStudyPlanItem,
 } from "@keating/learner-contracts";
+import { isMobileSemanticQuestion } from "./judgement/grading";
 import { createDeckWithCards } from "./learner-decks";
 import { appendQuestionChecks, appendQuizResult, recordCardReview } from "./learner-mutations";
 import type { UiActionMutationResult } from "./learner-repository";
@@ -49,7 +51,7 @@ function nextDocument(
     revision: source.revision + 1,
     lifecycle,
     nodes: update(structuredClone(source.nodes)),
-    updatedAt: now,
+    updatedAt: compareContractTimestamps(source.updatedAt, now) > 0 ? source.updatedAt : now,
   };
 }
 
@@ -88,6 +90,7 @@ function upsertArtifact(current: PortableLearnerData, artifact: PortableLearnerD
 function autoGrade(question: UiQuestion, values: readonly string[], rows?: readonly { optionId: string }[]):
   | { grading: "auto"; score: number }
   | { grading: "pending" } {
+  if (isMobileSemanticQuestion(question)) return { grading: "pending" };
   const expected = question.correctAnswers ?? (question.correctAnswer === undefined ? undefined : [question.correctAnswer]);
   if (expected?.length) {
     const normalize = (value: string) => value.trim().toLocaleLowerCase();
@@ -174,7 +177,9 @@ export function applyLocalUiAction(
       question: target.questionPrompt ?? "OpenUI question",
       answer,
       createdAt: now,
-      grading: "pending" as const,
+      ...((target.node.type === "question" || target.question)
+        ? autoGrade(target.node.type === "question" ? target.node : target.question!, action.type === "choose-option" ? action.optionIds : [answer])
+        : { grading: "pending" as const }),
       ...(sessionId ? { sessionId } : {}),
     };
     const next = current.questionChecks.some((candidate) => candidate.id === check.id)
@@ -244,8 +249,14 @@ export function applyLocalUiAction(
       skippedQuestionIds: [...action.skippedQuestionIds],
       ...(sessionId ? { sessionId } : {}),
     };
+    const pendingChecks = target.node.questions.filter(isMobileSemanticQuestion).flatMap(question => {
+      const answer = action.answers.find(answer => answer.questionId === question.id)?.answer;
+      return answer === undefined ? [] : [{ id: stableId("ui-quiz-check", document.id, action.idempotencyKey, question.id),
+        topic: target.node.type === "quiz" ? target.node.title : "Quiz", question: question.prompt, answer,
+        grading: "pending" as const, createdAt: now, ...(sessionId ? { sessionId } : {}) }];
+    });
     return {
-      data: appendQuizResult(current, result, now),
+      data: appendQuestionChecks(appendQuizResult(current, result, now), pendingChecks, now),
       resultingDocument: nextDocument(document, now),
       message: "Quiz result saved on this device.",
     };

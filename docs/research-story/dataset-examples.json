@@ -1,0 +1,441 @@
+{
+  "schema_version": 1,
+  "examples": [
+    {
+      "id": "tutormoments-place-value-pause",
+      "dataset": "tutormoments",
+      "title": "A pause before multiplying by ten",
+      "source": {
+        "record_id": "moments.jsonl#row=6",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "sha256": "f6c05015309f1ecfdbf40213ac2c5eda51576031930de5e74092196e1aece3ff",
+        "url": "https://huggingface.co/datasets/allenai/tutormoments-preview/resolve/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/moments.jsonl",
+        "license": "CC-BY-4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "license_evidence_url": "https://huggingface.co/datasets/allenai/tutormoments-preview/resolve/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/README.md",
+        "attribution": "Ai2 / TutorMoments Preview contributors, pinned preview release.",
+        "excerpt": "context[115] | tutor | turn 95\n[PROBLEM_CHANGE: p1 - '103 x 10 = ?' (start)] The screen displays a multiple-choice question: \"103 x 10 = ?\". The options are A) 1003, B) 10 110, C) 113, D) 1030.\n\ncontext[116] | tutor | turn 95\nAre you confused at all?\n\ncontext[117] | tutor | turn 96\n[PAUSE: 11 seconds]\n\ncontext[118] | student | turn 96\nWait, wait. I'm just not thinking.",
+        "unit": "One frozen moment; selected pre-cut context entries, indexed from zero."
+      },
+      "native": {
+        "id": "tutormoments-7eef228edeeabf73924fd588",
+        "text": "Conversation available before your next tutoring response:\nTutor: [PROBLEM_CHANGE: p1 - '103 x 10 = ?' (start)] The screen displays a multiple-choice question: \"103 x 10 = ?\". The options are A) 1003, B) 10 110, C) 113, D) 1030.\n\nTutor: Are you confused at all?\n\nTutor: [PAUSE: 11 seconds]\n\nLearner: Wait, wait. I'm just not thinking.",
+        "artifact_status": "saved-starting-state",
+        "license": "CC-BY-4.0"
+      },
+      "changes": [
+        "Keep context[115:119]: 4 entries through source cut turn 96; omit 115 earlier entries.",
+        "Add the native opening header and speaker labels; map student to Learner. Preserve every retained text entry and its order.",
+        "Keep source pauses, screen descriptions, and already-observed feedback as text.",
+        "Withhold the source persona, future continuation, dimension, and rubric. Add no future learner replies."
+      ],
+      "review": {
+        "finding": "The learner has paused without offering a mathematical attempt. The native opening preserves that decision point.",
+        "context_review": "heuristic-pass-independent-review-required",
+        "admission": "development",
+        "exposure": "development-exposed",
+        "private_fields_withheld": [
+          "student (including trait and reference)",
+          "dimension",
+          "rubric (including gold and hint)",
+          "participant and annotator provenance"
+        ],
+        "limitations": [
+          "The screen is represented by source text, not a delivered native multiple-choice activity.",
+          "Native text is the saved tutor-actor opening, not a delivered learner activity. Execution receipts were not examined; native assessment is unassessed.",
+          "Source answers and annotations do not establish native learning outcomes."
+        ],
+        "privacy": "Excerpt and opening reviewed: no participant names, contact details, or participant IDs exported. Dataset row offsets identify records.",
+        "reuse": "Source excerpts and adaptations retain CC-BY-4.0 attribution; changes are listed above."
+      },
+      "evidence": {
+        "source_path": ".keating/datasets/sources/tutormoments/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/moments.jsonl",
+        "source_row_zero_based": 6,
+        "source_asset_sha256": "c447459f80cf6b138512171a015879aaeab09cef7857e9c03655ad64a75c230f",
+        "source_excerpt_parts": [
+          {
+            "pointer": "/context/115/text",
+            "label": "context[115] | tutor | turn 95"
+          },
+          {
+            "pointer": "/context/116/text",
+            "label": "context[116] | tutor | turn 95"
+          },
+          {
+            "pointer": "/context/117/text",
+            "label": "context[117] | tutor | turn 96"
+          },
+          {
+            "pointer": "/context/118/text",
+            "label": "context[118] | student | turn 96"
+          }
+        ],
+        "source_excerpt_sha256": "db28e1f4f68cd7159d4e3a992c580f2a5d9d8022804f8eacb7dc2403a0f15c46",
+        "native_path": ".keating/native-learning/scenarios/adapters-development-verified/scenarios.json",
+        "native_pointer": "/scenarios/815/actor/opening_message",
+        "native_pack_sha256": "95aa08481dfed6ba93db23c864fdd8ca722760d635547409951abbc961880849",
+        "native_scenario_sha256": "ff1ef513b1410d5006f290b99a6dccd4694fb9e664907630b7aeab5d0f772e6b",
+        "native_text_sha256": "1cfacc775b52c33df374aba2b031ad589e353e07b2792096b32fc9e165d47b78",
+        "actor_path": ".keating/native-learning/scenarios/adapters-development-verified/actor.json",
+        "actor_pointer": "/815/opening_message",
+        "adapter_path": "scripts/training/native_scenarios.py",
+        "adapter_sha256": "cb4b6bd2ffa880ec994c98500c9d813d2c854c51a41bcecd4ffc9f46fd719040",
+        "adapter_documentation_path": "docs/native-scenario-adapters.md",
+        "comparison_notebook_path": "analysis/native_scenarios.py",
+        "license_path": ".keating/datasets/sources/tutormoments/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/README.md",
+        "license_asset_sha256": "d492e5965139f6c25bbbbe4224ce00d5aae18ab181921e1b07ee8ce2e1d816c4",
+        "verifier": "rtk proxy python3 scripts/report-site/curate_dataset_examples.py --check",
+        "verification_method": "Check pinned asset bytes, canonical original-record hash, excerpt JSON pointers, independent native reconstruction, and saved actor projection; compare the regenerated public JSON byte for byte.",
+        "authored_pilot_notebook_path": "analysis/tutormoments_comparison.py"
+      }
+    },
+    {
+      "id": "tutormoments-tripling-explanation",
+      "dataset": "tutormoments",
+      "title": "A correct answer with an explanation",
+      "source": {
+        "record_id": "moments.jsonl#row=8",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "sha256": "372e7ef2b57cec2be4812a1840ee5b7516babdaf4da4ae0444392ecec04a82ea",
+        "url": "https://huggingface.co/datasets/allenai/tutormoments-preview/resolve/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/moments.jsonl",
+        "license": "CC-BY-4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "license_evidence_url": "https://huggingface.co/datasets/allenai/tutormoments-preview/resolve/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/README.md",
+        "attribution": "Ai2 / TutorMoments Preview contributors, pinned preview release.",
+        "excerpt": "context[142] | tutor | turn 118\n[PROBLEM_CHANGE: p1 - '2, 6, ?' (start)] The screen shows a problem: \"2, 6, ?\". Below it says \"A non-linear sequence is found by tripling the previous term. What is the third term of this sequence?\". Options are A: 18, B: 9, C: 12, D: 10.\n\ncontext[144] | tutor | turn 119\n[SCREEN_INTERACTION: student - selecting answer] Student selects answer A, 18. A checkmark appears next to it.\n\ncontext[146] | tutor | turn 120\nAnd then how do we know it's eighteen?\n\ncontext[147] | student | turn 121\nUm, so this is it's found by tripling the previous term. So then two times three equals six and then six times three equals eighteen.",
+        "unit": "One frozen moment; selected pre-cut context entries, indexed from zero."
+      },
+      "native": {
+        "id": "tutormoments-26fb5c8d7c81a7f42d60246d",
+        "text": "Conversation available before your next tutoring response:\nTutor: [PROBLEM_CHANGE: p1 - '2, 6, ?' (start)] The screen shows a problem: \"2, 6, ?\". Below it says \"A non-linear sequence is found by tripling the previous term. What is the third term of this sequence?\". Options are A: 18, B: 9, C: 12, D: 10.\n\nTutor: So our question says, a non-linear sequence is found by tripling the previous term, right? So you multiply the number three times. What is the third, third term of this sequence? So we're saying that the question mark right here is the third term and we're trying to figure out what would it be.\n\nTutor: [SCREEN_INTERACTION: student - selecting answer] Student selects answer A, 18. A checkmark appears next to it.\n\nTutor: Mhm.\n\nTutor: And then how do we know it's eighteen?\n\nLearner: Um, so this is it's found by tripling the previous term. So then two times three equals six and then six times three equals eighteen.",
+        "artifact_status": "saved-starting-state",
+        "license": "CC-BY-4.0"
+      },
+      "changes": [
+        "Keep context[142:148]: 6 entries through source cut turn 121; omit 142 earlier entries.",
+        "Add the native opening header and speaker labels; map student to Learner. Preserve every retained text entry and its order.",
+        "Keep source pauses, screen descriptions, and already-observed feedback as text.",
+        "Withhold the source persona, future continuation, dimension, and rubric. Add no future learner replies."
+      ],
+      "review": {
+        "finding": "The learner explains both multiplications after selecting 18. The native state includes the explanation, not just the answer choice.",
+        "context_review": "heuristic-pass-independent-review-required",
+        "admission": "development",
+        "exposure": "development-exposed",
+        "private_fields_withheld": [
+          "student (including trait and reference)",
+          "dimension",
+          "rubric (including gold and hint)",
+          "participant and annotator provenance"
+        ],
+        "limitations": [
+          "The checkmark belongs to the source screen description; it is not a Keating activity receipt.",
+          "Native text is the saved tutor-actor opening, not a delivered learner activity. Execution receipts were not examined; native assessment is unassessed.",
+          "Source answers and annotations do not establish native learning outcomes."
+        ],
+        "privacy": "Excerpt and opening reviewed: no participant names, contact details, or participant IDs exported. Dataset row offsets identify records.",
+        "reuse": "Source excerpts and adaptations retain CC-BY-4.0 attribution; changes are listed above."
+      },
+      "evidence": {
+        "source_path": ".keating/datasets/sources/tutormoments/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/moments.jsonl",
+        "source_row_zero_based": 8,
+        "source_asset_sha256": "c447459f80cf6b138512171a015879aaeab09cef7857e9c03655ad64a75c230f",
+        "source_excerpt_parts": [
+          {
+            "pointer": "/context/142/text",
+            "label": "context[142] | tutor | turn 118"
+          },
+          {
+            "pointer": "/context/144/text",
+            "label": "context[144] | tutor | turn 119"
+          },
+          {
+            "pointer": "/context/146/text",
+            "label": "context[146] | tutor | turn 120"
+          },
+          {
+            "pointer": "/context/147/text",
+            "label": "context[147] | student | turn 121"
+          }
+        ],
+        "source_excerpt_sha256": "d53e94d4ec8a6eaf365591937f07d3d0d798216c18e30b2cd61a47bc83e72d57",
+        "native_path": ".keating/native-learning/scenarios/adapters-development-verified/scenarios.json",
+        "native_pointer": "/scenarios/816/actor/opening_message",
+        "native_pack_sha256": "95aa08481dfed6ba93db23c864fdd8ca722760d635547409951abbc961880849",
+        "native_scenario_sha256": "255ffd74ccade8cd5afa9de47a760d5f604cfcd478c021a8f57685cb13dfb7f3",
+        "native_text_sha256": "4dc7e46784e72f5a42843020b9c4539f8b60c748392143c490170bf72a047ccb",
+        "actor_path": ".keating/native-learning/scenarios/adapters-development-verified/actor.json",
+        "actor_pointer": "/816/opening_message",
+        "adapter_path": "scripts/training/native_scenarios.py",
+        "adapter_sha256": "cb4b6bd2ffa880ec994c98500c9d813d2c854c51a41bcecd4ffc9f46fd719040",
+        "adapter_documentation_path": "docs/native-scenario-adapters.md",
+        "comparison_notebook_path": "analysis/native_scenarios.py",
+        "license_path": ".keating/datasets/sources/tutormoments/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/README.md",
+        "license_asset_sha256": "d492e5965139f6c25bbbbe4224ce00d5aae18ab181921e1b07ee8ce2e1d816c4",
+        "verifier": "rtk proxy python3 scripts/report-site/curate_dataset_examples.py --check",
+        "verification_method": "Check pinned asset bytes, canonical original-record hash, excerpt JSON pointers, independent native reconstruction, and saved actor projection; compare the regenerated public JSON byte for byte.",
+        "authored_pilot_notebook_path": "analysis/tutormoments_comparison.py"
+      }
+    },
+    {
+      "id": "tutormoments-unmarked-task-change",
+      "dataset": "tutormoments",
+      "title": "An admitted prefix with a missing task boundary",
+      "source": {
+        "record_id": "moments.jsonl#row=3",
+        "revision": "66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc",
+        "sha256": "4b5c03c2d5f1db2f6d515657675509eb7cf02da99110aa10ef435ce50d0c94b3",
+        "url": "https://huggingface.co/datasets/allenai/tutormoments-preview/resolve/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/moments.jsonl",
+        "license": "CC-BY-4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "license_evidence_url": "https://huggingface.co/datasets/allenai/tutormoments-preview/resolve/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/README.md",
+        "attribution": "Ai2 / TutorMoments Preview contributors, pinned preview release.",
+        "excerpt": "context[115] | tutor | turn 95\n[PROBLEM_CHANGE: p1 - '103 x 10 = ?' (start)] The screen displays a multiple-choice question: \"103 x 10 = ?\". The options are A) 1003, B) 10 110, C) 113, D) 1030.\n\ncontext[131] | tutor | turn 106\n[SCREEN_UPDATE] The screen shows the correct answer was D. It then displays a list of topics, including \"Negative numbers with concrete models\". The student's cursor moves down the list and clicks on \"Negative numbers with concrete models\". The tutor gives a thumbs up.\n\ncontext[136] | tutor | turn 109\nWhere does our arrow pointing? Yeah.\n\ncontext[140] | tutor | turn 113\nSo it points from our starting, negative one, you're adding five, and it goes to four.\n\ncontext[141] | tutor | turn 114\nSo this one wouldn't work, right?\n\ncontext[142] | tutor | turn 115\nAlso, because what's four plus five?\n\ncontext[143] | student | turn 116\nNine.",
+        "unit": "One frozen moment; selected pre-cut context entries, indexed from zero."
+      },
+      "native": {
+        "id": "tutormoments-335749b87eec667f13c6f464",
+        "text": "Conversation available before your next tutoring response:\nTutor: [PROBLEM_CHANGE: p1 - '103 x 10 = ?' (start)] The screen displays a multiple-choice question: \"103 x 10 = ?\". The options are A) 1003, B) 10 110, C) 113, D) 1030.\n\nTutor: Are you confused at all?\n\nTutor: [PAUSE: 11 seconds]\n\nLearner: Wait, wait. I'm just not thinking.\n\nTutor: It's okay. Take your time.\n\nLearner: What? I can get this so easily. What am I?\n\nLearner: It's one, it's, it's 113. No. It's one, is this one?\n\nTutor: Why is it that one?\n\nTutor: [PAUSE: 22 seconds]\n\nTutor: Yeah.\n\nTutor: [PAUSE: 7 seconds]\n\nTutor: Okay, so read the words before you click. Good.\n\nLearner: Ten thousand.\n\nTutor: [PAUSE: 21 seconds] The student's cursor hovers over option D, then C, then B, then A, and finally clicks on D.\n\nTutor: Awesome.\n\nTutor: Just needed to get a little warmed up there.\n\nTutor: [SCREEN_UPDATE] The screen shows the correct answer was D. It then displays a list of topics, including \"Negative numbers with concrete models\". The student's cursor moves down the list and clicks on \"Negative numbers with concrete models\". The tutor gives a thumbs up.\n\nTutor: Good job.\n\nTutor: [PAUSE: 43 seconds]\n\nTutor: Okay.\n\nTutor: So, what are we doing here?\n\nTutor: Where does our arrow pointing? Yeah.\n\nTutor: So, before you click next, let's take a look at this.\n\nTutor: Okay, so the arrow is pointing up, right?\n\nLearner: Yeah.\n\nTutor: So it points from our starting, negative one, you're adding five, and it goes to four.\n\nTutor: So this one wouldn't work, right?\n\nTutor: Also, because what's four plus five?\n\nLearner: Nine.",
+        "artifact_status": "saved-starting-state",
+        "license": "CC-BY-4.0"
+      },
+      "changes": [
+        "Keep context[115:144]: 29 entries through source cut turn 116; omit 115 earlier entries.",
+        "Add the native opening header and speaker labels; map student to Learner. Preserve every retained text entry and its order.",
+        "Keep source pauses, screen descriptions, and already-observed feedback as text.",
+        "Withhold the source persona, future continuation, dimension, and rubric. Add no future learner replies."
+      ],
+      "review": {
+        "finding": "The retained prefix begins with 103 x 10, then switches to negative-number arrows without another explicit problem-start marker. The final reply is to four plus five.",
+        "context_review": "heuristic-pass-independent-review-required",
+        "admission": "development",
+        "exposure": "development-exposed",
+        "private_fields_withheld": [
+          "student (including trait and reference)",
+          "dimension",
+          "rubric (including gold and hint)",
+          "participant and annotator provenance"
+        ],
+        "limitations": [
+          "Curator review: the selected arrow and the full new task are unclear from the retained text; review before using this starting state.",
+          "The adapter admitted this record. This is a context-review finding, not a recorded adapter rejection.",
+          "This moment and the pause example come from the same source conversation; they are not independent learners.",
+          "Native text is the saved tutor-actor opening, not a delivered learner activity. Execution receipts were not examined; native assessment is unassessed.",
+          "Source answers and annotations do not establish native learning outcomes."
+        ],
+        "privacy": "Excerpt and opening reviewed: no participant names, contact details, or participant IDs exported. Dataset row offsets identify records.",
+        "reuse": "Source excerpts and adaptations retain CC-BY-4.0 attribution; changes are listed above."
+      },
+      "evidence": {
+        "source_path": ".keating/datasets/sources/tutormoments/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/moments.jsonl",
+        "source_row_zero_based": 3,
+        "source_asset_sha256": "c447459f80cf6b138512171a015879aaeab09cef7857e9c03655ad64a75c230f",
+        "source_excerpt_parts": [
+          {
+            "pointer": "/context/115/text",
+            "label": "context[115] | tutor | turn 95"
+          },
+          {
+            "pointer": "/context/131/text",
+            "label": "context[131] | tutor | turn 106"
+          },
+          {
+            "pointer": "/context/136/text",
+            "label": "context[136] | tutor | turn 109"
+          },
+          {
+            "pointer": "/context/140/text",
+            "label": "context[140] | tutor | turn 113"
+          },
+          {
+            "pointer": "/context/141/text",
+            "label": "context[141] | tutor | turn 114"
+          },
+          {
+            "pointer": "/context/142/text",
+            "label": "context[142] | tutor | turn 115"
+          },
+          {
+            "pointer": "/context/143/text",
+            "label": "context[143] | student | turn 116"
+          }
+        ],
+        "source_excerpt_sha256": "ba5421a20f8dff80e1c6f2dcff4185fee35e6eb3076e09a1725f8a091b30d839",
+        "native_path": ".keating/native-learning/scenarios/adapters-development-verified/scenarios.json",
+        "native_pointer": "/scenarios/814/actor/opening_message",
+        "native_pack_sha256": "95aa08481dfed6ba93db23c864fdd8ca722760d635547409951abbc961880849",
+        "native_scenario_sha256": "4962b16ce965fe9629e741821f0cfc5bf4ec8cffba5c57d8d590dfac705d22d9",
+        "native_text_sha256": "196ba5f69c4d1572030d14239f66e81a246c5f41a28fe755b1e8351275211daa",
+        "actor_path": ".keating/native-learning/scenarios/adapters-development-verified/actor.json",
+        "actor_pointer": "/814/opening_message",
+        "adapter_path": "scripts/training/native_scenarios.py",
+        "adapter_sha256": "cb4b6bd2ffa880ec994c98500c9d813d2c854c51a41bcecd4ffc9f46fd719040",
+        "adapter_documentation_path": "docs/native-scenario-adapters.md",
+        "comparison_notebook_path": "analysis/native_scenarios.py",
+        "license_path": ".keating/datasets/sources/tutormoments/66058b4c7ef5e7631b3c4d39a1dfa8172e36d8bc/README.md",
+        "license_asset_sha256": "d492e5965139f6c25bbbbe4224ce00d5aae18ab181921e1b07ee8ce2e1d816c4",
+        "verifier": "rtk proxy python3 scripts/report-site/curate_dataset_examples.py --check",
+        "verification_method": "Check pinned asset bytes, canonical original-record hash, excerpt JSON pointers, independent native reconstruction, and saved actor projection; compare the regenerated public JSON byte for byte.",
+        "authored_pilot_notebook_path": "analysis/tutormoments_comparison.py"
+      }
+    },
+    {
+      "id": "mathdial-aquarium-extra-addition",
+      "dataset": "mathdial",
+      "title": "An extra addition after tripling",
+      "source": {
+        "record_id": "train.jsonl#row=0",
+        "revision": "acc3878459e0bd8c04ab840056572f0b8b1abe1f",
+        "sha256": "ff243753182382fef9313578eb8518fd41715d5142271bbb429bb1df9ed8ec8a",
+        "url": "https://huggingface.co/datasets/eth-nlped/mathdial/resolve/acc3878459e0bd8c04ab840056572f0b8b1abe1f/train.jsonl",
+        "license": "CC-BY-4.0",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "license_evidence_url": "https://huggingface.co/datasets/eth-nlped/mathdial/resolve/acc3878459e0bd8c04ab840056572f0b8b1abe1f/README.md",
+        "attribution": "MathDial dataset, ETH Zurich NLP / Language, Reasoning and Education contributors.",
+        "excerpt": "question\nNancy is filling an aquarium for her fish. She fills it halfway and goes to answer the door. While she's gone, her cat knocks the aquarium over and spills half the water in it. Then Nancy comes back and triples the amount of water in the aquarium. If the aquarium is 4 feet long, 6 feet wide, and 3 feet high, how many cubic feet of water are in the aquarium?\n\nstudent_incorrect_solution\nThe aquarium has a volume of 4 x 6 x 3 = 72 cubic feet.\nWhen Nancy fills it halfway, she fills it with 72/2 = 36 cubic feet of water.\nWhen the cat spills half of that, there are 36/2 = 18 cubic feet of water left.\nWhen Nancy triples that amount, she adds 18 x 3 = 54 cubic feet of water.\nThe aquarium now has 18 + 54 = 72 cubic feet of water.\n 72",
+        "unit": "One MathDial row; problem qid 5000012; question and initial attempt fields."
+      },
+      "native": {
+        "id": "mathdial-212d76a13f262181d0878f7c",
+        "text": "Task supplied in the source:\nNancy is filling an aquarium for her fish. She fills it halfway and goes to answer the door. While she's gone, her cat knocks the aquarium over and spills half the water in it. Then Nancy comes back and triples the amount of water in the aquarium. If the aquarium is 4 feet long, 6 feet wide, and 3 feet high, how many cubic feet of water are in the aquarium?\n\nConversation available before your next tutoring response:\nLearner: The aquarium has a volume of 4 x 6 x 3 = 72 cubic feet.\nWhen Nancy fills it halfway, she fills it with 72/2 = 36 cubic feet of water.\nWhen the cat spills half of that, there are 36/2 = 18 cubic feet of water left.\nWhen Nancy triples that amount, she adds 18 x 3 = 54 cubic feet of water.\nThe aquarium now has 18 + 54 = 72 cubic feet of water.\n 72",
+        "artifact_status": "saved-starting-state",
+        "license": "CC-BY-4.0"
+      },
+      "changes": [
+        "Copy question under the native task header and student_incorrect_solution after Learner:; preserve both strings exactly.",
+        "Start before the original conversation; copy none of its tutor moves or later learner replies.",
+        "Withhold the solution key, source persona, teacher confusion label, and source ratings."
+      ],
+      "review": {
+        "finding": "The attempt computes 18 x 3 = 54, then adds the original 18 again. The native opening retains the problem and that exact attempt before any source tutoring.",
+        "context_review": "heuristic-pass-independent-review-required",
+        "admission": "reference",
+        "exposure": "reference-materialized-not-sealed-holdout",
+        "private_fields_withheld": [
+          "ground_truth",
+          "student_profile",
+          "teacher_described_confusion",
+          "conversation",
+          "self-correctness",
+          "self-typical-confusion",
+          "self-typical-interactions"
+        ],
+        "limitations": [
+          "Reference-only admission: this train question also appears in a protected benchmark family.",
+          "Native text is the saved tutor-actor opening, not a delivered learner activity. Execution receipts were not examined; native assessment is unassessed.",
+          "Source answers and annotations do not establish native learning outcomes."
+        ],
+        "privacy": "Excerpt and opening reviewed: no participant names, contact details, or participant IDs exported. Dataset row offsets identify records. Nancy is a character in the word problem.",
+        "reuse": "Source excerpts and adaptations retain CC-BY-4.0 attribution; changes are listed above."
+      },
+      "evidence": {
+        "source_path": ".keating/datasets/sources/mathdial/acc3878459e0bd8c04ab840056572f0b8b1abe1f/train.jsonl",
+        "source_row_zero_based": 0,
+        "source_asset_sha256": "d6135869c02dccf8d14756fa2f0367c5352922bb263ec22dc0eeace4da815d43",
+        "source_excerpt_parts": [
+          {
+            "pointer": "/question",
+            "label": "question"
+          },
+          {
+            "pointer": "/student_incorrect_solution",
+            "label": "student_incorrect_solution"
+          }
+        ],
+        "source_excerpt_sha256": "1db39a959df49a4293cf0781aa7543926925fdbbb7257c871c07f39cf05d91c0",
+        "native_path": ".keating/native-learning/scenarios/adapters-reference-verified/scenarios.json",
+        "native_pointer": "/scenarios/0/actor/opening_message",
+        "native_pack_sha256": "bdd4bee81b9521d0d9c70dd9110f59814799a7935d192573ef5727b0775e89fd",
+        "native_scenario_sha256": "cead1cfa514c26ac71dbc2bd6525e334f5364f38322f8b886c5d5e2b33ebcbf3",
+        "native_text_sha256": "8b1d518c8214f36202f4e916e19309c912babbc9fed632c700a29e007b799bc0",
+        "actor_path": ".keating/native-learning/scenarios/adapters-reference-verified/actor.json",
+        "actor_pointer": "/0/opening_message",
+        "adapter_path": "scripts/training/native_scenarios.py",
+        "adapter_sha256": "cb4b6bd2ffa880ec994c98500c9d813d2c854c51a41bcecd4ffc9f46fd719040",
+        "adapter_documentation_path": "docs/native-scenario-adapters.md",
+        "comparison_notebook_path": "analysis/native_scenarios.py",
+        "license_path": ".keating/datasets/sources/mathdial/acc3878459e0bd8c04ab840056572f0b8b1abe1f/README.md",
+        "license_asset_sha256": "c63e86fd95d4e1fd60cccd78226a27d9e787ad91ed037b353d8e3083a0e5eaeb",
+        "verifier": "rtk proxy python3 scripts/report-site/curate_dataset_examples.py --check",
+        "verification_method": "Check pinned asset bytes, canonical original-record hash, excerpt JSON pointers, independent native reconstruction, and saved actor projection; compare the regenerated public JSON byte for byte."
+      }
+    },
+    {
+      "id": "mrbench-pie-cost-units",
+      "dataset": "mrbench",
+      "title": "A cost-per-pie error inside a short dialogue",
+      "source": {
+        "record_id": "BEA_Shared_Task_2025_Datasets/mrbench_v3_devset.json#row=166",
+        "revision": "bbef521ddb875f2cc8a5ee798f4066965a7cfd8a",
+        "sha256": "e6226ceb7a37d34887b9e81581bb8db9509f053ce1284d63a948d3e155347985",
+        "url": "https://raw.githubusercontent.com/kaushal0494/UnifyingAITutorEvaluation/bbef521ddb875f2cc8a5ee798f4066965a7cfd8a/BEA_Shared_Task_2025_Datasets/mrbench_v3_devset.json",
+        "license": "CC-BY-SA-4.0",
+        "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+        "license_evidence_url": "https://raw.githubusercontent.com/kaushal0494/UnifyingAITutorEvaluation/bbef521ddb875f2cc8a5ee798f4066965a7cfd8a/README.md",
+        "attribution": "MRBench / BEA v3, Maurya et al.; underlying problem and attempt from MathDial.",
+        "excerpt": "conversation_history\nTutor: Hi, could you please provide a step-by-step solution for the question below? The question is: One pie costs $4 for a piece. Each pie is having 3 pieces. During one hour the bakery can make 12 pies. Creating one pie costs the bakery $0.5. Considering the bakery would be able to sell all pie pieces, how much money would it make?\n Student: The bakery earns 3 x $4 = $12 for each pie.\nSo, the bakery earns $12 x 12 = $144 for all 12 pies.\nCreating 1 pie costs the bakery $0.5 x 3 = $1.5.\nSo, creating 12 pies cost the bakery $1.5 x 12 = $18.\nTherefore, the bakery will make a profit of $144 - $18 = $126 if it sells all pie pieces. \n 126 \n Tutor: How many pies were made\n Student: 12 pies were made",
+        "unit": "One MRBench / BEA v3 dev row; its four-turn conversation_history field."
+      },
+      "native": {
+        "id": "mrbench-e8b8711fb0751e482d8ff952",
+        "text": "Conversation available before your next tutoring response:\nTutor: Hi, could you please provide a step-by-step solution for the question below? The question is: One pie costs $4 for a piece. Each pie is having 3 pieces. During one hour the bakery can make 12 pies. Creating one pie costs the bakery $0.5. Considering the bakery would be able to sell all pie pieces, how much money would it make?\n\nLearner: The bakery earns 3 x $4 = $12 for each pie.\nSo, the bakery earns $12 x 12 = $144 for all 12 pies.\nCreating 1 pie costs the bakery $0.5 x 3 = $1.5.\nSo, creating 12 pies cost the bakery $1.5 x 12 = $18.\nTherefore, the bakery will make a profit of $144 - $18 = $126 if it sells all pie pieces. \n 126\n\nTutor: How many pies were made\n\nLearner: 12 pies were made",
+        "artifact_status": "saved-starting-state",
+        "license": "CC-BY-SA-4.0"
+      },
+      "changes": [
+        "Parse the four source history turns; add the native opening header, map Student to Learner, and separate turns with blank lines.",
+        "Trim whitespace at parsed turn boundaries, including nonbreaking spaces. Preserve internal text and internal nonbreaking spaces.",
+        "Keep the two tutor history turns and two learner turns; withhold all eight candidate tutor responses and their annotations.",
+        "Retain the MathDial origin family (qid 5000043) instead of treating this repack as an independent task."
+      ],
+      "review": {
+        "finding": "The attempt multiplies the stated per-pie cost by three pieces. The native state ends after the learner confirms that 12 pies were made.",
+        "context_review": "heuristic-pass-independent-review-required",
+        "admission": "reference",
+        "exposure": "reference-materialized-not-sealed-holdout",
+        "private_fields_withheld": [
+          "tutor_responses (all candidate response text and annotations)",
+          "conversation_id"
+        ],
+        "limitations": [
+          "Reference-only admission: the matched family spans MathDial train/test, MathTutorBench benchmark, and MRBench dev.",
+          "Native text is the saved tutor-actor opening, not a delivered learner activity. Execution receipts were not examined; native assessment is unassessed.",
+          "Source answers and annotations do not establish native learning outcomes."
+        ],
+        "privacy": "Excerpt and opening reviewed: no participant names, contact details, or participant IDs exported. Dataset row offsets identify records.",
+        "reuse": "This MRBench example and its adaptation retain CC-BY-SA-4.0 with MathDial attribution. The license applies to this example; Bridge-derived material is not included."
+      },
+      "evidence": {
+        "source_path": ".keating/datasets/sources/mrbench/bbef521ddb875f2cc8a5ee798f4066965a7cfd8a/BEA_Shared_Task_2025_Datasets/mrbench_v3_devset.json",
+        "source_row_zero_based": 166,
+        "source_asset_sha256": "a395feab801de50d44b73e1e9b88f84824a1f1d92e15ae86842d90c2b6dbf33c",
+        "source_excerpt_parts": [
+          {
+            "pointer": "/conversation_history",
+            "label": "conversation_history"
+          }
+        ],
+        "source_excerpt_sha256": "d0636e3e4feb7f84d9df8c3b2e2ee813385c031d7956d270678d1bb652cc8564",
+        "native_path": ".keating/native-learning/scenarios/adapters-reference-verified/scenarios.json",
+        "native_pointer": "/scenarios/3115/actor/opening_message",
+        "native_pack_sha256": "bdd4bee81b9521d0d9c70dd9110f59814799a7935d192573ef5727b0775e89fd",
+        "native_scenario_sha256": "cd4c6f6a10b338ba6751f7fff775b0c236cd99e76b45a7747a1b32c9576518c7",
+        "native_text_sha256": "1932db0a6072e2fe45fc8eece71ac890beab222e0f7d89ab37c2f3021906e4e1",
+        "actor_path": ".keating/native-learning/scenarios/adapters-reference-verified/actor.json",
+        "actor_pointer": "/3115/opening_message",
+        "adapter_path": "scripts/training/native_scenarios.py",
+        "adapter_sha256": "cb4b6bd2ffa880ec994c98500c9d813d2c854c51a41bcecd4ffc9f46fd719040",
+        "adapter_documentation_path": "docs/native-scenario-adapters.md",
+        "comparison_notebook_path": "analysis/native_scenarios.py",
+        "license_path": ".keating/datasets/sources/mrbench/bbef521ddb875f2cc8a5ee798f4066965a7cfd8a/README.md",
+        "license_asset_sha256": "a3c3e49bc364b37eefcb71d47352a96e76608970276bd57970e9b7ed1ef9249f",
+        "verifier": "rtk proxy python3 scripts/report-site/curate_dataset_examples.py --check",
+        "verification_method": "Check pinned asset bytes, canonical original-record hash, excerpt JSON pointers, independent native reconstruction, and saved actor projection; compare the regenerated public JSON byte for byte.",
+        "origin_path": ".keating/datasets/sources/mathdial/acc3878459e0bd8c04ab840056572f0b8b1abe1f/train.jsonl",
+        "origin_record_id": "train.jsonl#row=814",
+        "origin_revision": "acc3878459e0bd8c04ab840056572f0b8b1abe1f",
+        "origin_record_sha256": "b7344e67c91d59396bbac7711b414ff90c203d2f4a147fef9e89eccae1290a81"
+      }
+    }
+  ]
+}

@@ -165,4 +165,75 @@
     }, { rootMargin: "-110px 0px -55% 0px", threshold: 0 });
     sections.forEach(section => observer.observe(section));
   }
+
+  // Surface tabs: synchronized switching, ARIA keyboard navigation, localStorage persistence
+  const tabContainers = [...document.querySelectorAll("[data-surface-tabs]")];
+  if (tabContainers.length) {
+    const STORAGE_KEY = "keating_preferred_surface";
+    const setSurface = (surface, persist = true) => {
+      if (!["web", "tui", "cli"].includes(surface)) return;
+      if (persist) {
+        try { localStorage.setItem(STORAGE_KEY, surface); } catch {}
+      }
+      for (const container of tabContainers) {
+        const buttons = [...container.querySelectorAll(".surface-tab-button")];
+        const panels = [...container.querySelectorAll(".surface-tab-panel")];
+        const targetButton = buttons.find(b => b.dataset.surface === surface);
+        const targetPanel = panels.find(p => p.dataset.surface === surface);
+        if (targetButton && targetPanel) {
+          for (const b of buttons) {
+            const active = b === targetButton;
+            b.classList.toggle("is-active", active);
+            b.setAttribute("aria-selected", active ? "true" : "false");
+            b.setAttribute("tabindex", active ? "0" : "-1");
+          }
+          for (const p of panels) {
+            const active = p === targetPanel;
+            p.classList.toggle("is-active", active);
+            if (active) p.removeAttribute("hidden");
+            else {
+              p.setAttribute("hidden", "");
+              p.querySelectorAll("video").forEach(v => { try { v.pause(); } catch {} });
+            }
+          }
+        }
+      }
+    };
+
+    for (const container of tabContainers) {
+      const buttons = [...container.querySelectorAll(".surface-tab-button")];
+      buttons.forEach((button, index) => {
+        const isActive = button.classList.contains("is-active");
+        button.setAttribute("tabindex", isActive ? "0" : "-1");
+        button.addEventListener("click", () => {
+          const surface = button.dataset.surface;
+          if (surface) setSurface(surface);
+        });
+        button.addEventListener("keydown", event => {
+          let nextIndex = index;
+          if (event.key === "ArrowRight") {
+            nextIndex = (index + 1) % buttons.length;
+          } else if (event.key === "ArrowLeft") {
+            nextIndex = (index - 1 + buttons.length) % buttons.length;
+          } else if (event.key === "Home") {
+            nextIndex = 0;
+          } else if (event.key === "End") {
+            nextIndex = buttons.length - 1;
+          } else {
+            return;
+          }
+          event.preventDefault();
+          const target = buttons[nextIndex];
+          target.focus();
+          const surface = target.dataset.surface;
+          if (surface) setSurface(surface);
+        });
+      });
+    }
+
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) setSurface(saved, false);
+    } catch {}
+  }
 })();

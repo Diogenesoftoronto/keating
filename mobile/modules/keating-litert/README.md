@@ -2,6 +2,10 @@
 
 This local Expo module bundles LiteRT-LM 0.16.0 into Android/iOS builds. Model weights are downloaded separately from the pinned MiniCPM5 int4 URL in `src/lib/offline-model-contract.ts` (relative to the mobile project), checked with SHA-256, and retained in private storage excluded from device backups.
 
+Local judgements use CPU candidate likelihood scoring through the official C API. Each decimal candidate gets a fresh session with the same rendered prompt; the pinned runtime's log likelihood is converted to nonnegative NLL. This shares the verified model and exclusive inference lease with the offline tutor. Local judgement selection and hosted network consent are separate Settings controls. Calibration binds the complete model checksum and `litert-0.16.0-cpu-candidate-nll-v1` scorer identity.
+
+Android's Java SDK does not expose scoring. The Gradle preparation task runs `mobile/scripts/prepare-litert-scoring.mjs` to download and checksum the pinned official C SDK, then builds a small JNI bridge for arm64-v8a and x86_64. It reuses the desktop SDK cache when available. Generated SDK files stay inside the ignored module `.generated/` directory. iOS compiles the same C++ scorer against the existing pinned C API XCFramework.
+
 Android builds need a complete **JDK 21**, including `javac`; a Java 21 runtime alone is insufficient. Set `JAVA_HOME` to that JDK before building. The SDK adapter declares a Java 21 compiler toolchain and emits Java 17 bytecode for Android. Its separate Java-only Gradle project keeps the SDK's Kotlin 2.3 metadata off Expo's Kotlin 2.1 compile classpath. The dependency remains statically checked and is packaged transitively.
 
 After changing native sources or the config plugin, run Expo prebuild again. From `mobile/`:

@@ -6,6 +6,9 @@ import { createAssistantMessageEventStream, type AssistantMessage } from "@earen
 import { getApiProvider, registerApiProvider } from "@earendil-works/pi-ai/compat";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { HARNESS_V3_BOUNDED_APIS, limitHarnessPayload } from "./benchmark_harness_v3_limits.js";
+import { nativeSurfaceInstruction, nativeSurfaceSystemPrompt } from './native_surface.js';
+import { applyExperimentInstruction, validateExperimentInstruction } from './native_experiment.js';
+import { NATIVE_SOURCE_COMMAND, NATIVE_SOURCE_MESSAGE, decodeNativeSourceDelivery, nativeSourceMessage } from './native_source_document.js';
 
 const installed = new Map<string, { original: ApiProviderInternal; wrapped: ApiProviderInternal }>();
 type ApiProviderInternal = NonNullable<ReturnType<typeof getApiProvider>>;
@@ -14,6 +17,7 @@ export default function benchmarkHarnessExtension(pi: ExtensionAPI): void {
   const cwd = process.cwd();
   const directory = join(cwd, ".keating", "benchmark-harness");
   const request = JSON.parse(readFileSync(join(directory, "request.json"), "utf8"));
+  const experiment = request.experiment_instruction === undefined ? undefined : validateExperimentInstruction(request.experiment_instruction);
   const counterPath = join(directory, "counters.json");
   const counters = (): { provider: number; tool: number } => {
     try { return JSON.parse(readFileSync(counterPath, "utf8")); }
@@ -72,12 +76,36 @@ export default function benchmarkHarnessExtension(pi: ExtensionAPI): void {
   pi.registerCommand("keating-benchmark-v3-ready", { description: "Private benchmark resource readiness check", handler: async (_args, ctx) => {
     const resourceOptions = ctx.getSystemPromptOptions();
     const skills = resourceOptions.skills ?? [];
-    if (resourceOptions.contextFiles?.length || resourceOptions.customPrompt || skills.some((skill) => !request.readonly_resources?.[skill.filePath])) {
+    const customPromptHash = resourceOptions.customPrompt
+      ? createHash("sha256").update(resourceOptions.customPrompt).digest("hex") : null;
+    // The production launcher supplies Keating's shipped SYSTEM.md as its base
+    // prompt. Accept only the exact bytes inventoried before the runtime starts.
+    if (resourceOptions.contextFiles?.length || (customPromptHash !== null && customPromptHash !== request.system_prompt_sha256)
+      || skills.some((skill) => !request.readonly_resources?.[skill.filePath])) {
       log("fatal", { code: "harness_unpinned_runtime_resources", context_count: resourceOptions.contextFiles?.length ?? 0,
         custom_prompt_present: Boolean(resourceOptions.customPrompt), unexpected_skills: skills.filter((skill) => !request.readonly_resources?.[skill.filePath]).map((skill) => skill.filePath) });
     } else {
-      log("resources_verified", { context_files: [], skills: skills.map((skill) => ({ name: skill.name, path: skill.filePath, sha256: request.readonly_resources[skill.filePath] })) });
+      log("resources_verified", { context_files: [], custom_prompt_sha256: customPromptHash,
+        skills: skills.map((skill) => ({ name: skill.name, path: skill.filePath, sha256: request.readonly_resources[skill.filePath] })) });
     }
+  } });
+  pi.registerCommand(NATIVE_SOURCE_COMMAND, { description: 'Deliver public benchmark source activity without an actor turn', handler: async (args, ctx) => {
+    const delivery = decodeNativeSourceDelivery(String(args).trim());
+    if (!ctx.isIdle() || delivery.surface !== (request.surface ?? 'interactive')) throw new Error('harness_source_document_busy_or_surface_mismatch');
+    const message = nativeSourceMessage(delivery);
+    const prior = ctx.sessionManager.getBranch().find(entry => entry.type === 'custom_message' && entry.customType === NATIVE_SOURCE_MESSAGE);
+    if (prior) {
+      if (prior.type !== 'custom_message' || (prior.details as { fingerprint?: string })?.fingerprint !== message.details.fingerprint)
+        throw new Error('harness_source_document_conflict');
+      log('source_document_reused', { fingerprint: message.details.fingerprint, entry_id: prior.id });
+      return;
+    }
+    pi.sendMessage(message, { triggerTurn: false });
+    const entry = ctx.sessionManager.getBranch().find(entry => entry.type === 'custom_message'
+      && entry.customType === NATIVE_SOURCE_MESSAGE && (entry.details as { fingerprint?: string })?.fingerprint === message.details.fingerprint);
+    if (!entry) throw new Error('harness_source_document_not_delivered');
+    // Persist the actual session entry as delivery evidence even before Pi flushes its first assistant turn.
+    log('source_document_delivered', { session_id: ctx.sessionManager.getSessionId(), entry });
   } });
   pi.on("session_start", (_event, ctx) => {
     if (request.transport.kind === "provider") {
@@ -96,18 +124,26 @@ export default function benchmarkHarnessExtension(pi: ExtensionAPI): void {
         const cap = Math.min(request.limits.max_output_tokens, model.maxTokens);
         let payloadCount = 0;
         log("provider_attempt", { index, model: { provider: model.provider, id: model.id, api: model.api }, context });
-        return original[method](model, context, {
+        const stream = original[method](model, context, {
           ...options, maxTokens: cap, maxRetries: 0,
           onPayload: async (payload, payloadModel) => {
             if (++payloadCount > 1) throw new Error("harness_provider_retry_disabled");
             // Preserve the app hook, then enforce the final payload outside its error-swallowing event bus.
             const transformed = await options?.onPayload?.(payload, payloadModel);
             const bounded = limitHarnessPayload(model.api, transformed ?? payload, cap);
-            log("provider_request", { index, model: { provider: model.provider, id: model.id, api: model.api },
+            log("provider_request", { index, model: { provider: model.provider, id: model.id, api: model.api }, context,
               payload: bounded.payload, output_limit: { field: bounded.field, maximum: bounded.maximum }, max_retries: 0 });
             return bounded.payload;
           },
         });
+        // Preserve the native bridge's response identity at the transport boundary.
+        // result() observes the terminal message without consuming stream events.
+        void stream.result().then(message => {
+          log("provider_response", { index, response_id: message.responseId ?? null,
+            message_sha256: createHash("sha256").update(JSON.stringify(message)).digest("hex"),
+            stop_reason: message.stopReason });
+        }).catch(() => log("provider_response_failed", { index }));
+        return stream;
       };
       registerApiProvider({ api, stream: wrap("stream"), streamSimple: wrap("streamSimple") }, "keating-benchmark-v3-limits");
       installed.set(api, { original, wrapped: getApiProvider(api)! });
@@ -123,7 +159,14 @@ export default function benchmarkHarnessExtension(pi: ExtensionAPI): void {
       active_tools: pi.getActiveTools() });
   });
   pi.on("before_agent_start", (event) => {
-    log("system_prompt", { system_prompt: event.systemPrompt, resource_options: event.systemPromptOptions });
+    const instruction = request.surface === undefined ? null : nativeSurfaceInstruction(request.surface);
+    const sourcePrompt = experiment === undefined ? event.systemPrompt : applyExperimentInstruction(event.systemPrompt, experiment);
+    const systemPrompt = request.surface === undefined ? sourcePrompt : nativeSurfaceSystemPrompt(sourcePrompt, request.surface);
+    log("system_prompt", { system_prompt: systemPrompt, resource_options: event.systemPromptOptions,
+      ...(instruction === null ? {} : { surface: request.surface,
+        surface_instruction_sha256: createHash('sha256').update(instruction).digest('hex') }),
+      ...(experiment === undefined ? {} : { experiment_instruction: experiment }) });
+    if (instruction !== null) return { systemPrompt };
   });
   pi.on("tool_call", async (event, ctx) => {
     const count = increment("tool");

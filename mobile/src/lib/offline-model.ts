@@ -64,7 +64,7 @@ const storage: OfflineFiles = {
     for (const file of [model, marker, partial]) if (file.exists) file.delete();
   },
 };
-export const offlineDownload = new OfflineDownload(storage, nativeFetch as typeof fetch);
+export const offlineDownload = new OfflineDownload(storage, nativeFetch as unknown as typeof fetch);
 if (!nativeLiteRT || nativeLiteRT.supported === false) offlineDownload.state = { phase: "unavailable", bytes: 0, freeBytes: 0,
   error: nativeLiteRT?.supported === false ? "Offline tutoring requires a 64-bit device. Your online models remain available." : null };
 else {

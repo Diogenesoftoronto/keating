@@ -1,4 +1,5 @@
 import { Select } from "../Select";
+import { JudgementDiagnostics } from "../JudgementDiagnostics";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	Camera,
@@ -624,6 +625,8 @@ export default function LiveConversation({ session, connectEmbeddedSurface = tru
 					<p className={css({ opacity: 0.65 })}><span className={css({ color: "var(--primary)" })}>Keating: </span>{session.transcript.draft.assistant}</p>
 				) : null}
 			</div>
+
+			{session.judgementSessionId && <JudgementDiagnostics sessionId={session.judgementSessionId} />}
 
 			{/* Controls. One row, thumb-reachable, same order every time. */}
 			<div

@@ -7,6 +7,7 @@ import type {
 } from "./contracts";
 import { defaultNotOrganicAccountConfig } from "./contracts";
 import { deviceSessionGeneration, loadDeviceSession, saveDeviceSessionIfCurrent } from "./credentials";
+import { randomBase64Url } from "./crypto";
 import { createDpopProof, getDevicePublicJwk } from "./dpop";
 
 export type AccountFetch = typeof fetch;
@@ -23,9 +24,10 @@ async function parseResponse<T>(response: Response): Promise<T> {
   return body as T;
 }
 
-function tokenSession(token: NotOrganicTokenResponse, now = Date.now()): NotOrganicDeviceSession {
+function tokenSession(token: NotOrganicTokenResponse, issuer: string | undefined, now = Date.now()): NotOrganicDeviceSession {
   if (!token.refresh_token || token.token_type !== "DPoP") throw new Error("Not Organic did not issue a mobile device session.");
   return {
+    ...(issuer ? { issuer } : {}),
     accessToken: token.access_token,
     accessExpiresAt: now + token.expires_in * 1_000,
     refreshToken: token.refresh_token,
@@ -50,7 +52,7 @@ export async function exchangeAuthorizationCode(input: { code: string; verifier:
       device_name: input.deviceName ?? "Keating mobile",
     }),
   });
-  const session = tokenSession(await parseResponse<NotOrganicTokenResponse>(response));
+  const session = tokenSession(await parseResponse<NotOrganicTokenResponse>(response), config.issuer);
   await saveDeviceSessionIfCurrent(session, generation);
   return session;
 }
@@ -61,13 +63,14 @@ export async function refreshDeviceSession(config = defaultNotOrganicAccountConf
     const generation = deviceSessionGeneration();
     const current = await loadDeviceSession();
     if (!current || current.refreshExpiresAt <= Date.now()) throw new Error("Your Not Organic login has expired. Sign in again.");
+    if (current.issuer && current.issuer !== config.issuer) throw new Error("Sign in to the configured Not Organic account service.");
     const url = `${config.issuer}/v1/public/device/token`;
     const response = await accountFetch(url, {
       method: "POST",
       headers: { "content-type": "application/json", dpop: await createDpopProof({ url, method: "POST", boundToken: current.refreshToken }) },
       body: JSON.stringify({ grant_type: "refresh_token", refresh_token: current.refreshToken }),
     });
-    const next = tokenSession(await parseResponse<NotOrganicTokenResponse>(response));
+    const next = tokenSession(await parseResponse<NotOrganicTokenResponse>(response), current.issuer);
     next.accountId = current.accountId;
     await saveDeviceSessionIfCurrent(next, generation);
     return next;
@@ -131,4 +134,28 @@ export async function revokeDeviceSession(config = defaultNotOrganicAccountConfi
     headers: { "content-type": "application/json", dpop: await createDpopProof({ url, method: "POST", boundToken: session.refreshToken }) },
     body: JSON.stringify({ refresh_token: session.refreshToken }),
   }).catch(() => null);
+}
+
+/** First-party judgement only. Older or differently issued sessions cannot be forwarded. */
+export async function notOrganicJudgementRequest(
+  body: string, signal?: AbortSignal, config = defaultNotOrganicAccountConfig(),
+): Promise<Response> {
+  const issuer = new URL(config.issuer);
+  if (issuer.protocol !== "https:" || issuer.username || issuer.password || issuer.search || issuer.hash
+    || issuer.pathname !== "/") throw new Error("Judgement account configuration is invalid.");
+  const stored = await loadDeviceSession();
+  if (stored?.issuer !== config.issuer || !stored.scope.split(/\s+/).includes("judgement:evaluate")) {
+    return new Response(null, { status: 403 });
+  }
+  const session = await activeDeviceSession(config);
+  if (signal?.aborted || session.issuer !== config.issuer || !session.scope.split(/\s+/).includes("judgement:evaluate")
+    || !Number.isFinite(session.accessExpiresAt) || session.accessExpiresAt <= Date.now()) return new Response(null, { status: 403 });
+  const generation = deviceSessionGeneration();
+  const url = `${config.issuer}/v1/judgement`;
+  const proof = await createDpopProof({ url, method: "POST", boundToken: session.accessToken });
+  const idempotencyKey = `keating-mobile-judgement-${await randomBase64Url(24)}`;
+  if (signal?.aborted || generation !== deviceSessionGeneration()) return new Response(null, { status: 403 });
+  return accountFetch(url, { method: "POST", body, signal, redirect: "error",
+    headers: { "content-type": "application/json", authorization: `DPoP ${session.accessToken}`, dpop: proof,
+      "idempotency-key": idempotencyKey, "x-notorganic-max-cost-microusd": "100000" } });
 }

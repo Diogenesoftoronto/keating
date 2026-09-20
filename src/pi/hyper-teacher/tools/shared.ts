@@ -16,6 +16,8 @@ export interface PendingQuizResult {
   quiz: Quiz;
   answers: Record<string, string>;
   objectiveResults: Record<string, boolean>;
+  /** Durable submission used by account-backed grading across sessions. */
+  gradingRecordPath?: string;
 }
 export const pendingQuizResults = new Map<string, PendingQuizResult>();
 
@@ -38,7 +40,7 @@ export function keatingToolMaker(
   label: string,
   description: string,
   parameters: Record<string, unknown>,
-  exec: (params: Record<string, unknown>, ctx: any) => Promise<Record<string, unknown>>,
+  exec: (params: Record<string, unknown>, ctx: any, signal?: AbortSignal) => Promise<Record<string, unknown>>,
   render?: { result?: (result: any, options: any, theme: any, context: any) => any }
 ) {
   return {
@@ -47,7 +49,7 @@ export function keatingToolMaker(
     description,
     parameters: { type: "object" as const, additionalProperties: false, properties: parameters },
     async execute(_toolCallId: string, params: Record<string, unknown>, _signal: AbortSignal | undefined, _onUpdate: unknown, ctx: any) {
-      return exec(params, ctx);
+      return exec(params, ctx, _signal);
     },
     ...(render?.result ? { renderResult: render.result } : {})
   };

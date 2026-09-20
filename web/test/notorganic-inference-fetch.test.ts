@@ -1,7 +1,9 @@
 import { expect, test } from "bun:test";
-import type { Api, Model } from "@earendil-works/pi-ai";
+import type { Api, Context, Model } from "@earendil-works/pi-ai";
+import { Type } from "typebox";
 import { streamSimple } from "@earendil-works/pi-ai/compat";
 import { createNotOrganicInferenceFetch } from "../src/notorganic-provider/inference-fetch";
+import { NOTORGANIC_DEFAULT_MODEL } from "../src/notorganic-provider";
 import { streamWithApiRetry, WEB_API_RETRY_POLICY } from "../src/keating/api-retry";
 const url = "https://api.notorganic.test/v1/chat/completions";
 const model: Model<Api> = {
@@ -50,4 +52,41 @@ test("rejects unexpected endpoints before signing", async () => {
 	const fetcher = createNotOrganicInferenceFetch({ async headersFor() { signed = true; return new Headers(); } }, url, { idempotencyKey: "request", maxCostMicrousd: 1 });
 	await expect(fetcher("https://unexpected.test/v1/chat/completions", { method: "POST" })).rejects.toThrow("Unexpected");
 	expect(signed).toBe(false);
+});
+
+test("real reasoning model serializes supported system and tool roles while preserving account headers", async () => {
+	const selected = { ...NOTORGANIC_DEFAULT_MODEL, baseUrl: "https://api.notorganic.test/v1" };
+	const context: Context = {
+		systemPrompt: "Guide the learner through one step at a time.",
+		tools: [{ name: "lookup", description: "Look up a learning concept", parameters: Type.Object({ topic: Type.String() }) }],
+		messages: [
+			{ role: "user", content: "Explain the hinge.", timestamp: 1 },
+			{ role: "assistant", content: [{ type: "toolCall", id: "call_lookup", name: "lookup", arguments: { topic: "hinge" } }],
+				api: selected.api, provider: selected.provider, model: selected.id, timestamp: 2, stopReason: "toolUse",
+				usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } },
+			{ role: "toolResult", toolCallId: "call_lookup", toolName: "lookup", content: [{ type: "text", text: "A pivot point." }], isError: false, timestamp: 3 },
+		],
+	};
+	let outbound: Request | undefined;
+	const authenticated = createNotOrganicInferenceFetch({ async headersFor(_method, _url, initial) {
+		const headers = new Headers(initial);
+		headers.set("authorization", "DPoP test-account-token"); headers.set("dpop", "fresh-test-proof");
+		return headers;
+	} }, url, { idempotencyKey: "role-regression", maxCostMicrousd: 123, fetch: (async (input, init) => {
+		outbound = new Request(input, init);
+		return new Response('data: {"id":"ok","choices":[{"index":0,"delta":{"content":"A careful answer."},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n', { headers: { "content-type": "text/event-stream" } });
+	}) as typeof fetch });
+	const result = await streamSimple(selected, context, { fetch: authenticated, headers: { authorization: "DPoP stale" }, maxRetries: 0 }).result();
+	expect(result.stopReason).toBe("stop");
+	expect(selected.reasoning).toBe(true);
+	expect(outbound?.headers.get("authorization")).toBe("DPoP test-account-token");
+	expect(outbound?.headers.get("dpop")).toBe("fresh-test-proof");
+	expect(outbound?.headers.get("idempotency-key")).toBe("role-regression");
+	expect(outbound?.headers.get("x-notorganic-max-cost-microusd")).toBe("123");
+	const body = await outbound!.json();
+	expect(body.messages.map((message: { role: string }) => message.role)).toEqual(["system", "user", "assistant", "tool"]);
+	expect(body.messages[0].content).toBe(context.systemPrompt);
+	expect(body.messages[2].tool_calls[0]).toMatchObject({ id: "call_lookup", type: "function", function: { name: "lookup", arguments: '{"topic":"hinge"}' } });
+	expect(body.messages[3]).toMatchObject({ tool_call_id: "call_lookup", content: "A pivot point." });
+	expect(body.tools[0].function).toMatchObject({ name: "lookup", parameters: { type: "object", properties: { topic: { type: "string" } } } });
 });

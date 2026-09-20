@@ -15,7 +15,7 @@ import type {
 import { useTrajectoryReview } from "../hooks/use-trajectory-review";
 import { critiqueProposalTarget, useReviewPasses } from "../hooks/use-review-passes";
 import { markPassDrafted, overallAuthorship } from "../keating/annotation-provenance";
-import type { CritiqueProposal, RubricSweepProposal } from "../keating/trajectory-passes";
+import { rubricProposalMatchesTrajectory, type CritiqueProposal, type RubricSweepProposal } from "../keating/trajectory-passes";
 import type { TrajectoryPassCallbacks, TrajectoryPassState } from "../components/trajectory/types";
 import { checkBrowserModelAvailability, discoverModels } from "../lib/model-catalog";
 import { reviewArtifactDisplayText } from "../keating/trajectory-artifacts";
@@ -432,9 +432,9 @@ export function TrajectoryReview() {
 
 	const passCallbacks: TrajectoryPassCallbacks = {
 		onRunPass: (kind) => {
+			if (kind === "rubric-score") { void passes.runRubricScore(); return; }
 			if (!activePool) return;
 			if (kind === "critique-sweep") void passes.runCritiqueSweep(activePool);
-			else if (kind === "rubric-score") void passes.runRubricScore(activePool);
 			else if (kind === "annotation-expand") {
 				const draft = ui.annotationDraft;
 				if (!draft?.note.trim()) return;
@@ -495,6 +495,11 @@ export function TrajectoryReview() {
 		onDismissProposal: passes.dismissCritique,
 		onDismissAllProposals: passes.clearCritique,
 		onApplyRubric: (proposal: RubricSweepProposal) => {
+			if (!rubricProposalMatchesTrajectory(proposal, sessionId, reviewState.session?.messages ?? [])) {
+				dispatchUi({ type: "error", message: "The transcript changed. Run the rubric review again before applying its estimates." });
+				passes.clearRubric();
+				return;
+			}
 			const base = ui.reviewDraft ?? reviewState.review;
 			if (!base) return;
 			const ratings = { ...base.ratings };
@@ -504,6 +509,7 @@ export function TrajectoryReview() {
 				review: {
 					...base,
 					ratings,
+					rubricJudgement: proposal.judgement ?? base.rubricJudgement,
 					overallRating: proposal.overallRating ?? base.overallRating,
 					// The teacher's own summary and verdict are never overwritten.
 					summary: base.summary?.trim() ? base.summary : proposal.summary,

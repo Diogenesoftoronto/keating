@@ -1,0 +1,4 @@
+# ninja log v5
+0	574	1789886560697551237	CMakeFiles/keating_label_scorer.dir/label-scorer-jni.cpp.o	27bd664353823b11
+0	583	1789886560705901738	CMakeFiles/keating_label_scorer.dir/home/diogenes/Projects/keating/mobile/modules/keating-litert/cpp/label-scorer.cpp.o	c8ffed4be57dd43c
+583	637	1789886560765706329	../../../../build/intermediates/cxx/RelWithDebInfo/4o271mt2/obj/x86_64/libkeating_label_scorer.so	f06b22f0e83073e6

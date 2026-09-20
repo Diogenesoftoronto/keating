@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { css } from "../../styled-system/css";
+import { getBrowserModel, localModel } from "../stores/local-model";
 import {
 	describeDownload,
 	describePhase,
@@ -44,12 +45,8 @@ const fillStyle = css({
 	height: "100%",
 	borderRadius: "9999px",
 	background: "var(--primary)",
-	backgroundImage:
-		"repeating-linear-gradient(115deg, color-mix(in srgb, white 18%, transparent) 0 6px, transparent 6px 12px)",
-	backgroundSize: "24px 100%",
-	animation: "model-download-stripes 900ms linear infinite",
 	transition: "width 220ms ease-out",
-	_motionReduce: { animation: "none", transition: "none" },
+	_motionReduce: { transition: "none" },
 });
 
 const sweepStyle = css({
@@ -93,7 +90,7 @@ export function ModelDownloadBar({
 	const detail = determinate
 		? describeDownload(progress)
 		: progress.phase === "preparing"
-			? "Compiling for your GPU — no network needed"
+			? "Compiling for your GPU, no network needed"
 			: sizeLabel
 				? `About ${sizeLabel.replace(/^~\s*/, "")} to download, once`
 				: "";
@@ -118,8 +115,9 @@ export function ModelDownloadBar({
 								event.preventDefault();
 								onCancel();
 							}}
+							aria-label={`Cancel download of ${modelName ?? "model"}`}
 						>
-							Cancel
+							Cancel download
 						</button>
 					)}
 				</span>
@@ -133,7 +131,7 @@ export function ModelDownloadBar({
 				// Omitted while indeterminate so assistive tech announces "busy"
 				// rather than a percentage we cannot honestly report.
 				aria-valuenow={determinate ? Math.floor(percent) : undefined}
-				aria-valuetext={determinate ? `${Math.floor(percent)}% — ${detail}` : undefined}
+				aria-valuetext={determinate ? `${Math.floor(percent)}%, ${detail}` : undefined}
 			>
 				{determinate ? (
 					<div className={fillStyle} style={{ width: `${percent}%` }} />
@@ -143,6 +141,51 @@ export function ModelDownloadBar({
 			</div>
 			{detail && <div className={detailStyle}>{detail}</div>}
 		</div>
+	);
+}
+
+const activityStyle = css({
+	position: "fixed",
+	zIndex: 40,
+	insetInline: "1rem",
+	bottom: "max(1rem, env(safe-area-inset-bottom))",
+	marginInline: "auto",
+	width: "min(100%, 32rem)",
+	border: "1px solid var(--border)",
+	borderRadius: "0.5rem",
+	backgroundColor: "var(--background)",
+	padding: "0.75rem",
+	color: "var(--foreground)",
+	fontSize: "0.75rem",
+	lineHeight: 1.4,
+});
+
+/**
+ * Keeps an active browser-model load visible after the picker closes or the
+ * user moves to another route. The store owns the work; this is only a view
+ * of that work, so unmounting the picker cannot cancel it.
+ */
+export function BrowserModelDownloadStatus() {
+	const [local, setLocal] = useState(localModel.getState());
+
+	useEffect(() => localModel.subscribe(setLocal), []);
+
+	if (!local.loading || !local.modelId) return null;
+	const spec = getBrowserModel(local.modelId);
+	const modelName = spec?.name ?? local.modelId;
+
+	return (
+		<aside className={activityStyle} aria-label="Browser model activity" aria-live="polite">
+			<div className={css({ marginBottom: "0.25rem", color: "var(--muted-foreground)" })}>
+				{modelName} continues in the background. You can keep using Keating while it loads.
+			</div>
+			<ModelDownloadBar
+				progress={local.download}
+				modelName={modelName}
+				sizeLabel={spec?.downloadLabel}
+				onCancel={() => localModel.cancel()}
+			/>
+		</aside>
 	);
 }
 

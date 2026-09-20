@@ -16,6 +16,74 @@ import { join, relative } from "node:path";
 import type * as TypeScript from "typescript";
 
 const SOURCE_DIRS = ["src/core", "shared", "pi/prompts", "web/src/keating"];
+// These modules are reached by teaching/review code, but their parent directories
+// also contain account transports and evaluation authority. Keep an explicit list.
+const REVIEW_SOURCE_FILES = [
+  "packages/learner-contracts/src/judgement/contracts.ts",
+  "packages/learner-contracts/src/judgement/calibration-artifact.ts",
+  "packages/learner-contracts/src/judgement/projections.ts",
+  "packages/learner-contracts/src/judgement/wire.ts",
+  "packages/learner-contracts/src/judgement/router.ts",
+  "packages/learner-contracts/src/judgement/assessment.ts",
+  "src/judgement/cli-readiness.ts",
+  "src/judgement/calibration-artifact.ts",
+  "src/judgement/cli-lesson-plan.ts",
+  "src/judgement/cli-prompt-evaluation.ts",
+  "src/judgement/cli-prompt-evolution.ts",
+  "src/observability/types.ts",
+];
+// Generated workspaces cannot acquire account capabilities or export telemetry.
+// Stubs retain the importing modules' contract without bundling those services.
+const REVIEW_OVERRIDES: Readonly<Record<string, string>> = {
+  "src/core/teaching-evolution.ts": `/** NodePod-only boundary: sealed evaluation and activation remain with the host. */
+export type TeachingEvolutionOptions = Readonly<Record<string, unknown>>;
+export async function teachingEvolutionArtifact(_cwd: string, _options: TeachingEvolutionOptions = {}): Promise<never> {
+  throw new Error("host-execution-unavailable");
+}
+export async function teachingBenchmarkArtifact(_cwd: string, _options: TeachingEvolutionOptions = {}): Promise<never> {
+  throw new Error("host-execution-unavailable");
+}
+`,
+  "src/core/pi-agent.ts": `/** NodePod-only boundary: model execution belongs to the host. */
+export interface PiCompletionOptions {
+  systemPrompt?: string;
+  json?: boolean;
+  thinking?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
+}
+export async function piComplete(_cwd: string, _prompt: string, _options: PiCompletionOptions = {}): Promise<string> {
+  throw new Error("host-execution-unavailable");
+}
+export async function piCompleteJson<T>(_cwd: string, _prompt: string, _options: PiCompletionOptions = {}): Promise<T> {
+  throw new Error("host-execution-unavailable");
+}
+`,
+  "src/judgement/transport.ts": `/** NodePod-only boundary: account judgement execution belongs to the host. */
+import type { JudgementBackendKey, JudgementCaller } from "../../packages/learner-contracts/src/judgement/contracts.js";
+export const JUDGEMENT_MODEL_ENV = "KEATING_JUDGEMENT_MODEL";
+export const JUDGEMENT_CALIBRATION_ENV = "KEATING_JUDGEMENT_CALIBRATION_SHA256";
+export interface CliJudgementOptions {
+  readonly env?: Readonly<Record<string, string | undefined>>;
+  readonly cwd?: string;
+  readonly fetch?: unknown;
+  readonly loadCredential?: (cwd: string) => unknown;
+  readonly now?: () => number;
+  readonly retry?: unknown;
+  readonly sleep?: (milliseconds: number) => Promise<void>;
+}
+export interface CliJudgementBackend { readonly key: JudgementBackendKey; readonly call: JudgementCaller }
+export function createCliJudgementBackend(_options: CliJudgementOptions = {}): CliJudgementBackend | null { return null; }
+`,
+  "src/observability/arize.ts": `/** NodePod-only boundary: telemetry is exported by the host, never this mutable workspace. */
+import type { EvaluationObservationV1 } from "./types.js";
+export async function exportEvaluationObservation(_observation: EvaluationObservationV1): Promise<void> {}
+export async function exportProviderCompletion(_observation: unknown): Promise<void> {}
+export function classifyObservationError(error: unknown): string {
+  if (error instanceof Error && /not ready|cooldown/i.test(error.message)) return "rejected";
+  if (error instanceof Error && /parse|json/i.test(error.message)) return "parse";
+  return "operation_failed";
+}
+`,
+};
 const OUTPUT_FILE = "web/src/keating/nodepod-boot-files.ts";
 const INCLUDE_PATTERNS = [/\.ts$/, /\.md$/, /\.py$/, /\.sh$/, /\.txt$/];
 const EXCLUDE_PATTERNS = [
@@ -73,6 +141,12 @@ async function transpileWithTypeScript(source: string, filename: string): Promis
 async function main() {
   const files = new Map<string, string>();
   const rootDir = process.cwd();
+  async function addSource(path: string, content: string) {
+    files.set(path, content);
+    if (path.endsWith(".ts") && !path.endsWith(".d.ts")) {
+      files.set(path.replace(/\.ts$/, ".js"), await transpileWithTypeScript(content, path));
+    }
+  }
 
   for (const dir of SOURCE_DIRS) {
     try {
@@ -82,19 +156,15 @@ async function main() {
         const exclude = EXCLUDE_PATTERNS.some((p) => p.test(rel));
         if (!include || exclude) continue;
         const content = await readFile(filePath, "utf8");
-        files.set(rel, content);
-
-        // Transpile .ts → .js using Bun's built-in transformer
-        if (rel.endsWith(".ts") && !rel.endsWith(".d.ts")) {
-          const jsPath = rel.replace(/\.ts$/, ".js");
-          const jsContent = await transpileWithTypeScript(content, rel);
-          files.set(jsPath, jsContent);
-        }
+        await addSource(rel, content);
       }
     } catch (e: any) {
       console.warn(`Warning: could not read ${dir}: ${e.message}`);
     }
   }
+
+  for (const path of REVIEW_SOURCE_FILES) await addSource(path, await readFile(path, "utf8"));
+  for (const [path, content] of Object.entries(REVIEW_OVERRIDES)) await addSource(path, content);
 
   // Sort for deterministic output
   const sorted = Array.from(files.entries()).sort(([a], [b]) => a.localeCompare(b));

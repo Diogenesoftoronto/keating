@@ -1,0 +1,9 @@
+.generation-grades table{min-width:0;width:100%;font-size:.7rem}
+.generation-grades th,.generation-grades td{padding:9px 5px}
+#generation-workbench .verbatim{max-height:none;background:transparent}
+#generation-workbench .native .verbatim{background:#e3ebde}
+#generation-workbench .pair{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+#generation-workbench .inspector-tools label{min-width:210px}
+#generation-workbench .record-heading{margin-top:24px}
+@media(max-width:720px){#generation-workbench .pair{grid-template-columns:1fr}.generation-grades table{font-size:.75rem}#generation-workbench .inspector-tools label{min-width:0}}
+@media print{#generation-workbench{display:none}}

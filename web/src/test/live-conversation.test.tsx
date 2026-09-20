@@ -53,6 +53,19 @@ function session(providerId: "tavus" | "openai-realtime" | "gemini-live"): LiveS
 }
 
 describe("live visual input controls", () => {
+	test("GPT Live exposes audio controls without images, video, or a hosted room", () => {
+		const audioSession: LiveSessionController = {
+			...session("openai-realtime"), providerId: "gpt-live", model: liveModelsFor("gpt-live")[0],
+			models: liveModelsFor("gpt-live"), tierLabel: "Audio duplex", imageCapable: false,
+		};
+		const html = renderToStaticMarkup(<LiveConversation session={audioSession} />);
+		expect(html).toContain(">Mute<");
+		expect(html).toContain(">End<");
+		expect(html).not.toContain("Add image");
+		expect(html).not.toContain(">Camera<");
+		expect(html).not.toContain("Share screen");
+		expect(html).not.toContain('aria-label="KeatingBot video"');
+	});
 	test("GPT Realtime offers a still image without camera or screen controls", () => {
 		const html = renderToStaticMarkup(<LiveConversation session={session("openai-realtime")} />);
 		expect(html).toContain("Add image");

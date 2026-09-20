@@ -12,6 +12,7 @@ import java.util.concurrent.Executors
 class KeatingLiteRTModule : Module() {
   private val worker = Executors.newSingleThreadExecutor()
   private val runner = LiteRTRunner()
+  @Volatile private var activeScoring: String? = null
 
   private fun directory(): File {
     val context = appContext.reactContext ?: error("Keating is not ready.")
@@ -26,7 +27,7 @@ class KeatingLiteRTModule : Module() {
 
   override fun definition() = ModuleDefinition {
     Name("KeatingLiteRT")
-    Constants("runtimeVersion" to "0.16.0", "supported" to Process.is64Bit())
+    Constants("runtimeVersion" to "0.16.0", "supported" to Process.is64Bit(), "labelScorerVersion" to "litert-0.16.0-cpu-candidate-nll-v1")
     Events("onDelta")
     AsyncFunction("getDirectoryAsync") { Uri.fromFile(directory()).toString() }
     AsyncFunction("createFileAsync") { uri: String -> localFile(uri).createNewFile(); Unit }
@@ -59,7 +60,29 @@ class KeatingLiteRTModule : Module() {
         }
       }
     }
-    Function("cancelGeneration") { requestId: String -> runner.cancel(requestId) }
+    AsyncFunction("scoreLabelsAsync") { requestId: String, uri: String, message: String, count: Int, promise: Promise ->
+      if (!runner.reserve(requestId)) promise.reject("E_BUSY", "Offline inference is busy.", null)
+      else {
+        activeScoring = requestId
+        worker.execute {
+        try {
+          require(Process.is64Bit() && count in 2..64 && requestId.length in 1..128 && !message.contains('\u0000') && message.toByteArray(Charsets.UTF_8).size <= 150000)
+          val file = localFile(uri)
+          require(file.isFile && file.name.endsWith(".litertlm"))
+          // Do not keep a tutor engine resident while the scorer owns its CPU engine.
+          runner.close()
+          val scores = KeatingLabelScorer.score(requestId, file.path.toByteArray(Charsets.UTF_8), message.toByteArray(Charsets.UTF_8), count)
+            ?: error("Local judgement unavailable or cancelled")
+          promise.resolve(scores.map { it.toDouble() })
+        } catch (error: Throwable) { promise.reject("E_OFFLINE_SCORING", "Local judgement could not finish.", error) }
+        finally { activeScoring = null; runner.finish() }
+        }
+      }
+    }
+    Function("cancelGeneration") { requestId: String ->
+      runner.cancel(requestId)
+      if (Process.is64Bit()) KeatingLabelScorer.cancel(requestId)
+    }
     AsyncFunction("unloadAsync") { promise: Promise ->
       worker.execute {
         try { runner.close(); promise.resolve(null) }
@@ -68,6 +91,7 @@ class KeatingLiteRTModule : Module() {
     }
     OnDestroy {
       runner.cancelActive()
+      activeScoring?.let { KeatingLabelScorer.cancel(it) }
       worker.execute { runCatching { runner.close() } }
       worker.shutdown()
     }

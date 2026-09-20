@@ -22,6 +22,10 @@ desktop/release-offline/
 *.pdf
 *.png
 *.svg
+!docs/assets/native-combined-update.svg
+!docs/assets/checkpoint-behavior.svg
+!docs/assets/teaching-v4-pilot.svg
+!docs/assets/native-document-clock.svg
 !web/public/*.png
 !web/public/*.svg
 !web/public/*.pdf
@@ -57,6 +61,7 @@ web/.output/
 test/bench.log
 video/keating-intro/public/generated/
 analysis/__pycache__/
+analysis/__marimo__/
 *.pyc
 
 # Mutation testing
@@ -122,3 +127,6 @@ video/*/.thumbnails/
 
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 /graft/
+
+# Pinned browser Needle runtime downloaded by web/scripts/prepare-needle-wasm.mjs
+/web/public/needle-wasm/

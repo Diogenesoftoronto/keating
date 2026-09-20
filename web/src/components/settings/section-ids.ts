@@ -9,6 +9,7 @@
  */
 export const MODELS_TAB_SECTION_IDS = [
 	"cloud-providers",
+	"judgement",
 	"web-search",
 	"provider-visibility",
 	"my-models",
@@ -17,6 +18,7 @@ export const MODELS_TAB_SECTION_IDS = [
 
 export const MODELS_TAB_SECTION_LABELS: Record<typeof MODELS_TAB_SECTION_IDS[number], string> = {
 	"cloud-providers": "Cloud",
+	"judgement": "Judgement",
 	"web-search": "Web Search",
 	"provider-visibility": "Visibility",
 	"my-models": "My Models",
