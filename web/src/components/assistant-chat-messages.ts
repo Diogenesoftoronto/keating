@@ -1,4 +1,5 @@
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
+import type { FlueConversationMessage } from "@flue/sdk";
 import type { FlueConversation } from "../keating/flue/conversation";
 
 export function textFromContent(content: unknown): string {
@@ -80,6 +81,22 @@ export function assistantTextParts(text: string): AssistantTextPart[] {
   const tail = text.slice(cursor);
   if (tail) parts.push({ type: "text", text: tail });
   return parts.length > 0 ? parts : [{ type: "text", text: "" }];
+}
+
+/** Failed model attempts can leave visible but empty native assistant records. */
+export function shouldRenderFlueMessage(message: FlueConversationMessage): boolean {
+  // A settlement is the recoverable failure/stop notice, not an empty attempt.
+  if (message.settlement) return true;
+  if (message.display !== "visible") return false;
+  if (message.role !== "assistant") return true;
+  return message.parts.some((part) => {
+    if (part.type === "text")
+      return assistantTextParts(part.text).some((textPart) => textPart.text.trim().length > 0);
+    if (part.type === "reasoning") return part.text.trim().length > 0;
+    if (part.type === "dynamic-tool") return true;
+    if (part.type === "file") return Boolean(part.url);
+    return false;
+  });
 }
 
 export function hasUserTextMessage(messages: AgentMessage[], text: string): boolean {
