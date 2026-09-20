@@ -8,6 +8,7 @@ import { addRecentModel } from "../keating/ui-settings";
 import { ModelPicker } from "./ModelPicker";
 import { ModelDownloadBar, ModelCacheControls } from "./ModelDownloadBar";
 import { useCachedModelSize, refreshCachedModelSizes } from "../hooks/useCachedModelSize";
+import { NOTORGANIC_DEFAULT_MODEL } from "../notorganic-provider";
 
 function BrowserCache({ id }: { id: string }) {
  const cached = useCachedModelSize(id, true);
@@ -55,6 +56,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, exc
   (!capability || (capability === "reasoning" ? entry.model.reasoning : entry.model.input.includes("image"))))
  .map(({ key, model }) => ({
   id: key, name: model.name, group: displayModelProvider(model.provider),
+  pinnedLabel: key === modelKey(NOTORGANIC_DEFAULT_MODEL) ? "Provider default" : undefined,
   summary: [displayModelProvider(model.provider), model.reasoning ? "Step-by-step reasoning" : "", model.input.includes("image") ? "Understands images" : ""].filter(Boolean).join(" · "),
   details: <div><p>Model ID: {model.id}</p>
    {model.provider === "browser" ? <p>{getBrowserModel(model.id)?.blurb} Downloads when selected.</p> : <p>Context: {model.contextWindow.toLocaleString()} tokens</p>}
