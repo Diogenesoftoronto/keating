@@ -5,6 +5,7 @@ import {
   makePromptErrorMessage,
   textFromContent,
   mergeConsecutiveAssistantMessages,
+  shouldRenderFlueMessage,
 } from "./assistant-chat-messages";
 import {
   generatedImageTagPattern,
@@ -4128,7 +4129,7 @@ function AssistantThread({
     const pendingStatus = messages.at(-1) as (AgentMessage & { __keatingPrefillStatus?: boolean }) | undefined;
     if (pendingStatus?.__keatingPrefillStatus) local.push(pendingStatus);
     const localError = local.some(message => message.role === "assistant" && ["error", "aborted"].includes(message.stopReason));
-    const visibleNative = native.messages.filter(message => (message.display === "visible" || !!message.settlement) && !(localError && message.settlement));
+    const visibleNative = native.messages.filter(message => shouldRenderFlueMessage(message) && !(localError && message.settlement));
     const totalMessages = legacy.length + visibleNative.length + local.length;
     return [
       ...legacy.map((message, index) => toAssistantMessage(message, index, totalMessages, false, modelRef.current?.provider)),
