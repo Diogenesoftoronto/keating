@@ -4,7 +4,22 @@ import "./selection-library.css";
 
 export interface PickerItem {
  id: string; name: string; group: string; summary?: string; details?: ReactNode;
+ pinnedLabel?: string;
 }
+
+export function orderedPickerItems(items: PickerItem[], query: string, selected: string): PickerItem[] {
+ const search = query.trim().toLowerCase();
+ const matches = items.filter(item => !item.pinnedLabel &&
+  (item.name + " " + item.group + " " + (item.summary ?? "") + " " + item.id).toLowerCase().includes(search));
+ // Keep the provider default available while searching, without restoring items
+ // already excluded by the caller's provider/capability filters.
+ return [...items.filter(item => item.pinnedLabel), ...matches.filter(item => item.id === selected), ...matches.filter(item => item.id !== selected)];
+}
+
+function pickerItemHeading(item: PickerItem, selected: string): string {
+ return item.pinnedLabel ?? (item.id === selected ? "Selected model" : item.group);
+}
+
 export function ModelPicker({ open, label, items, selected, onSelect, onClose, filters, notice, loading = false, error = "" }: {
  open: boolean; label: string; items: PickerItem[]; selected: string;
  onSelect: (id: string) => void | Promise<void>; onClose: () => void;
@@ -24,8 +39,7 @@ export function ModelPicker({ open, label, items, selected, onSelect, onClose, f
   searchRef.current?.focus();
   return () => { dialog.current?.close(); previous?.focus(); };
  }, [open]);
- const matches = items.filter(item => (item.name + " " + item.group + " " + (item.summary ?? "") + " " + item.id).toLowerCase().includes(query.trim().toLowerCase()));
- const ordered = [...matches.filter(item => item.id === selected), ...matches.filter(item => item.id !== selected)];
+ const ordered = orderedPickerItems(items, query, selected);
  const focus = (index: number) => {
   const item = ordered[(index + ordered.length) % ordered.length];
   if (!item) return;
@@ -64,8 +78,8 @@ export function ModelPicker({ open, label, items, selected, onSelect, onClose, f
     {loading ? <p className="library-message" role="status">Finding available models…</p> :
      !ordered.length ? <p className="library-message">No matching models. Try another name or clear your filters.</p> :
      ordered.map((item, index) => <div key={item.id} className="model-picker__item">
-      {(index === 0 || ordered[index - 1].group !== item.group || ordered[index - 1].id === selected) &&
-       <div className="library-group">{item.id === selected ? "Selected model" : item.group}</div>}
+      {(index === 0 || pickerItemHeading(ordered[index - 1], selected) !== pickerItemHeading(item, selected)) &&
+       <div className="library-group">{pickerItemHeading(item, selected)}</div>}
       <button type="button" className="model-picker__option" aria-pressed={item.id === selected} aria-busy={busy === item.id}
        ref={node => { if (node) buttons.current.set(item.id, node); else buttons.current.delete(item.id); }}
        onClick={() => void choose(item.id)}
