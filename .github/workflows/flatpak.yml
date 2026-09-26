@@ -38,7 +38,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
-      GNUPGHOME: ${{ runner.temp }}/keating-signing
+      GNUPGHOME: ${{ github.workspace }}/.keating-signing
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
