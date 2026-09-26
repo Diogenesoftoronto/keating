@@ -275,3 +275,109 @@ test("disabled hosted access fails identically for both public routes", async ()
 		}
 	} finally { restoreEnv(saved); }
 });
+
+describe("explicit server development judgement", () => {
+	test("both routes use server-held Bearer auth only after opt-in, with configured model and endpoint", async () => {
+		const saved = saveEnv();
+		const payload = { model: "jev-1.13", answers: { correct: { noul: .9 } } };
+		try {
+			delete process.env.NOTORGANIC_ENABLED;
+			process.env.TYPESAFE_API_KEY = "server-dev-key";
+			process.env.KEATING_JUDGEMENT_MODEL = "jev-1.13";
+			for (const flag of ["1", "true"]) {
+				process.env.KEATING_JUDGEMENT_DEV_DIRECT = flag;
+				for (const endpoint of ["https://api.typesafe.ai/v1/systemone", "http://localhost:9123/judge", "http://127.0.0.1:9123/judge", "http://[::1]:9123/judge"]) {
+					process.env.KEATING_JUDGEMENT_ENDPOINT = endpoint;
+					let calls = 0;
+					globalThis.fetch = (async (input, init) => {
+						calls++;
+						expect(String(input)).toBe(endpoint);
+						const headers = new Headers(init?.headers);
+						expect(headers.get("authorization")).toBe("Bearer server-dev-key");
+						expect(headers.get("dpop")).toBeNull();
+						expect(headers.get("idempotency-key")).toBe("one-evaluation");
+						expect(init?.redirect).toBe("error");
+						expect(JSON.parse(String(init?.body))).toEqual({ ...VALID_BODY, model: "jev-1.13" });
+						return Response.json(payload, { headers: { "set-cookie": "must-stay-upstream" } });
+					}) as typeof fetch;
+					for (const handler of [judgementGateway, notorganicJudgement]) {
+						const response = await handler(requestEvent()) as Response;
+						expect(response.status).toBe(200);
+						expect(response.headers.get("cache-control")).toBe("no-store");
+						expect(response.headers.get("set-cookie")).toBeNull();
+						expect(await response.json()).toEqual(payload);
+					}
+					expect(calls).toBe(2);
+				}
+			}
+		} finally { globalThis.fetch = originalFetch; restoreEnv(saved); }
+	});
+
+	test("defaults to SystemOne and jev-latest without accepting a browser model override", async () => {
+		const saved = saveEnv();
+		try {
+			process.env.KEATING_JUDGEMENT_DEV_DIRECT = "true";
+			process.env.TYPESAFE_API_KEY = "server-dev-key";
+			delete process.env.KEATING_JUDGEMENT_ENDPOINT;
+			delete process.env.KEATING_JUDGEMENT_MODEL;
+			globalThis.fetch = (async (input, init) => {
+				expect(String(input)).toBe("https://api.typesafe.ai/v1/systemone");
+				expect(JSON.parse(String(init?.body)).model).toBe("jev-latest");
+				return Response.json({ model: "jev-1.13", answers: {} });
+			}) as typeof fetch;
+			expect((await handleJudgementGateway(requestEvent({ ...VALID_BODY, model: "browser-arbitrary-model" }))).status).toBe(200);
+		} finally { globalThis.fetch = originalFetch; restoreEnv(saved); }
+	});
+
+	test("missing key, disabled flag, unsafe endpoints and invalid bodies never call upstream", async () => {
+		const saved = saveEnv();
+		let calls = 0;
+		globalThis.fetch = Object.assign(async () => { calls++; throw new Error("unexpected fetch"); }, { preconnect: originalFetch.preconnect });
+		try {
+			delete process.env.NOTORGANIC_ENABLED;
+			process.env.KEATING_JUDGEMENT_DEV_DIRECT = "true";
+			delete process.env.TYPESAFE_API_KEY;
+			expect((await handleJudgementGateway(requestEvent())).status).toBe(503);
+			process.env.TYPESAFE_API_KEY = "server-dev-key";
+			for (const flag of ["", "0", "false", "yes"]) {
+				process.env.KEATING_JUDGEMENT_DEV_DIRECT = flag;
+				expect((await handleJudgementGateway(requestEvent())).status).toBe(503);
+			}
+			process.env.KEATING_JUDGEMENT_DEV_DIRECT = "true";
+			for (const endpoint of ["invalid", "http://remote.example/judge", "https://user:secret@remote.example/judge", "https://remote.example/judge?secret=x", "https://remote.example/judge#fragment", "file:///tmp/judge"]) {
+				process.env.KEATING_JUDGEMENT_ENDPOINT = endpoint;
+				const response = await handleJudgementGateway(requestEvent());
+				expect(response.status).toBe(502);
+				expect(await response.json()).toEqual({ error: { code: "backend-unavailable" } });
+			}
+			delete process.env.KEATING_JUDGEMENT_ENDPOINT;
+			expect((await handleJudgementGateway(requestEvent({ state: "x", questions: {} }))).status).toBe(400);
+			expect(calls).toBe(0);
+		} finally { globalThis.fetch = originalFetch; restoreEnv(saved); }
+	});
+
+	test("direct failures remain sanitized and timeout aborts upstream", async () => {
+		const saved = saveEnv();
+		try {
+			process.env.KEATING_JUDGEMENT_DEV_DIRECT = "true";
+			process.env.TYPESAFE_API_KEY = "server-dev-key";
+			delete process.env.KEATING_JUDGEMENT_ENDPOINT;
+			for (const fetcher of [
+				async () => new Response("learner-private-echo", { status: 401 }),
+				async () => { throw new Error("learner-private-echo"); },
+				async () => new Response("learner-private-echo", { status: 200 }),
+			]) {
+				globalThis.fetch = Object.assign(fetcher, { preconnect: originalFetch.preconnect });
+				const response = await handleJudgementGateway(requestEvent());
+				expect(response.status).toBe(502);
+				expect(await response.text()).not.toContain("learner-private-echo");
+			}
+			let signal: AbortSignal | null | undefined;
+			globalThis.fetch = (async (_input, init) => { signal = init?.signal; return new Promise<Response>(() => {}); }) as typeof fetch;
+			const response = await handleJudgementGateway(requestEvent(), { timeoutMs: 5 });
+			expect(response.status).toBe(504);
+			expect(await response.json()).toEqual({ error: { code: "backend-timeout" } });
+			expect(signal?.aborted).toBe(true);
+		} finally { globalThis.fetch = originalFetch; restoreEnv(saved); }
+	});
+});

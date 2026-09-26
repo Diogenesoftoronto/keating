@@ -1,0 +1,331 @@
+{
+  "typography": [
+    {
+      "role": "display",
+      "fontFamily": "Space Mono",
+      "fontSize": "100px",
+      "fontWeight": "700",
+      "lineHeight": "105px",
+      "letterSpacing": "-6.5px",
+      "color": "#1C211B",
+      "sampleText": "Seen this before?"
+    },
+    {
+      "role": "heading",
+      "fontFamily": "Space Mono",
+      "fontSize": "60px",
+      "fontWeight": "500",
+      "lineHeight": "67.2px",
+      "letterSpacing": "-3.9px",
+      "color": "#1C211B",
+      "sampleText": "so we made keating"
+    },
+    {
+      "role": "heading-2",
+      "fontFamily": "Space Mono",
+      "fontSize": "44px",
+      "fontWeight": "700",
+      "lineHeight": "50.6px",
+      "letterSpacing": "-1.98px",
+      "color": "#1C211B",
+      "sampleText": "You asked to learn.You got more to read."
+    },
+    {
+      "role": "heading-3",
+      "fontFamily": "Space Mono",
+      "fontSize": "28px",
+      "fontWeight": "700",
+      "lineHeight": "36.4px",
+      "letterSpacing": "-0.7px",
+      "color": "#14743C",
+      "sampleText": "Build your way through it with Keating."
+    },
+    {
+      "role": "heading-4",
+      "fontFamily": "Space Mono",
+      "fontSize": "26px",
+      "fontWeight": "700",
+      "lineHeight": "35.1px",
+      "letterSpacing": "normal",
+      "color": "#1C211B",
+      "sampleText": "Make your first synth patch"
+    },
+    {
+      "role": "heading-2",
+      "fontFamily": "Space Mono",
+      "fontSize": "24px",
+      "fontWeight": "700",
+      "lineHeight": "27.6px",
+      "letterSpacing": "-1.08px",
+      "color": "#1C211B",
+      "sampleText": "Try it yourself."
+    },
+    {
+      "role": "label",
+      "fontFamily": "JetBrains Mono",
+      "fontSize": "22px",
+      "fontWeight": "600",
+      "lineHeight": "36.3px",
+      "letterSpacing": "-0.55px",
+      "color": "#F1ECE0",
+      "sampleText": "Start a session"
+    },
+    {
+      "role": "link",
+      "fontFamily": "VT323",
+      "fontSize": "18.2px",
+      "fontWeight": "400",
+      "lineHeight": "30.03px",
+      "letterSpacing": "normal",
+      "color": "#1C211B",
+      "sampleText": "[PRICING]"
+    },
+    {
+      "role": "body-small",
+      "fontFamily": "JetBrains Mono",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "lineHeight": "26.4px",
+      "letterSpacing": "normal",
+      "color": "#1C211B",
+      "sampleText": "You asked to learn.You got more to read."
+    },
+    {
+      "role": "body",
+      "fontFamily": "JetBrains Mono",
+      "fontSize": "13px",
+      "fontWeight": "400",
+      "lineHeight": "18.2px",
+      "letterSpacing": "normal",
+      "color": "#1C211B",
+      "sampleText": "Explain recursion."
+    },
+    {
+      "role": "code",
+      "fontFamily": "JetBrains Mono",
+      "fontSize": "12px",
+      "fontWeight": "400",
+      "lineHeight": "19.2px",
+      "letterSpacing": "normal",
+      "color": "#1C211B",
+      "sampleText": "function sum(n) { return n === 0 ? 0 : n + sum(n - 1); }"
+    }
+  ],
+  "spacing": {
+    "observed": [
+      2,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12,
+      13,
+      14,
+      16,
+      18,
+      19,
+      20,
+      21
+    ],
+    "baseUnit": 4
+  },
+  "radius": [
+    "5px",
+    "7.8px"
+  ],
+  "shadows": [
+    {
+      "value": "rgb(221, 235, 221) 0px -3px 0px 0px inset",
+      "count": 3
+    },
+    {
+      "value": "rgba(32, 37, 28, 0.11) 0px 10px 32px 0px",
+      "count": 2
+    },
+    {
+      "value": "rgb(28, 33, 27) 5px 5px 0px 0px",
+      "count": 2
+    },
+    {
+      "value": "rgb(28, 33, 27) 3px 3px 0px 0px",
+      "count": 2
+    },
+    {
+      "value": "rgb(28, 33, 27) 4px 4px 0px 0px, color(srgb 0.109804 0.129412 0.105882 / 0.14) 0px -3px 0px 0px inset, rgba(255, 255, 255, 0.55) 0px 1px 0px 0px inset",
+      "count": 1
+    }
+  ],
+  "buttons": [
+    {
+      "label": "Download Keating",
+      "background": "#F6F2E8",
+      "backgroundImage": "linear-gradient(rgba(255, 255, 255, 0.36), rgba(0, 0, 0, 0) 48%), none",
+      "backdropFilter": "",
+      "color": "#1C211B",
+      "padding": "10.4px 15.6px",
+      "borderRadius": "0px",
+      "border": "2px solid rgb(28, 33, 27)",
+      "boxShadow": "rgb(28, 33, 27) 4px 4px 0px 0px, color(srgb 0.109804 0.129412 0.105882 / 0.14) 0px -3px 0px 0px inset, rgba(255, 255, 255, 0.55) 0px 1px 0px 0px inset",
+      "fontSize": "18.2px",
+      "fontWeight": "700",
+      "height": "54.8125px"
+    },
+    {
+      "label": "ChatGPT↗",
+      "background": "color(srgb 0.333333 0.529412 0.443137 / 0.1)",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#1C211B",
+      "padding": "10px 16px",
+      "borderRadius": "0px",
+      "border": "0px none rgb(28, 33, 27)",
+      "boxShadow": "none",
+      "fontSize": "12px",
+      "fontWeight": "600",
+      "height": "44px"
+    },
+    {
+      "label": "Claude↗",
+      "background": "color(srgb 0.682353 0.490196 0.34902 / 0.1)",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#1C211B",
+      "padding": "10px 16px",
+      "borderRadius": "0px",
+      "border": "0px none rgb(28, 33, 27)",
+      "boxShadow": "none",
+      "fontSize": "12px",
+      "fontWeight": "600",
+      "height": "44px"
+    },
+    {
+      "label": "Gemini↗",
+      "background": "color(srgb 0.376471 0.498039 0.682353 / 0.1)",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#1C211B",
+      "padding": "10px 16px",
+      "borderRadius": "0px",
+      "border": "0px none rgb(28, 33, 27)",
+      "boxShadow": "none",
+      "fontSize": "12px",
+      "fontWeight": "600",
+      "height": "44px"
+    },
+    {
+      "label": "ChatGPT · Recursion",
+      "background": "color(srgb 0.109804 0.129412 0.105882 / 0.05)",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#1C211B",
+      "padding": "8px 12px",
+      "borderRadius": "5px",
+      "border": "1px solid color(srgb 0.109804 0.129412 0.105882 / 0.35)",
+      "boxShadow": "none",
+      "fontSize": "12px",
+      "fontWeight": "400",
+      "height": "44px"
+    },
+    {
+      "label": "Claude · Photosynthesis",
+      "background": "transparent",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#1C211B",
+      "padding": "8px 12px",
+      "borderRadius": "5px",
+      "border": "1px solid rgba(0, 0, 0, 0)",
+      "boxShadow": "none",
+      "fontSize": "12px",
+      "fontWeight": "400",
+      "height": "44px"
+    }
+  ],
+  "cards": [
+    {
+      "label": "card",
+      "background": "color(srgb 0.91451 0.905686 0.856667)",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#1C211B",
+      "padding": "0px",
+      "borderRadius": "9px",
+      "border": "1px solid color(srgb 0.109804 0.129412 0.105882 / 0.35)",
+      "boxShadow": "rgba(32, 37, 28, 0.15) 0px 14px 40px 0px",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "height": "435px"
+    },
+    {
+      "label": "card",
+      "background": "color(srgb 0.926706 0.89502 0.841373)",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#1C211B",
+      "padding": "0px",
+      "borderRadius": "9px",
+      "border": "1px solid color(srgb 0.109804 0.129412 0.105882 / 0.35)",
+      "boxShadow": "rgba(32, 37, 28, 0.11) 0px 10px 32px 0px",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "height": "435px"
+    },
+    {
+      "label": "card",
+      "background": "color(srgb 0.916667 0.904118 0.868627)",
+      "backgroundImage": "",
+      "backdropFilter": "",
+      "color": "#1C211B",
+      "padding": "0px",
+      "borderRadius": "9px",
+      "border": "1px solid color(srgb 0.109804 0.129412 0.105882 / 0.35)",
+      "boxShadow": "rgba(32, 37, 28, 0.11) 0px 10px 32px 0px",
+      "fontSize": "16px",
+      "fontWeight": "400",
+      "height": "435px"
+    }
+  ],
+  "nav": {
+    "label": "navigation",
+    "background": "#F1ECE0",
+    "backgroundImage": "",
+    "backdropFilter": "",
+    "color": "#1C211B",
+    "padding": "0px",
+    "borderRadius": "0px",
+    "border": "",
+    "boxShadow": "none",
+    "fontSize": "16px",
+    "fontWeight": "400",
+    "height": "74.7969px"
+  },
+  "chips": [],
+  "statCells": [],
+  "tabs": [
+    {
+      "label": "1.",
+      "background": "transparent",
+      "color": "#4A5247",
+      "padding": "0px",
+      "borderRadius": "0px",
+      "border": "0px solid rgb(74, 82, 71)",
+      "boxShadow": "none",
+      "fontSize": "11px",
+      "fontWeight": "400",
+      "height": "15.3906px"
+    }
+  ],
+  "backgrounds": [
+    {
+      "value": "radial-gradient(at 50% 0px, rgba(202, 143, 70, 0.1), rgba(0, 0, 0, 0) 65%)",
+      "area": 1619490
+    },
+    {
+      "value": "radial-gradient(at 50% 43%, rgba(202, 158, 91, 0.16), rgba(0, 0, 0, 0) 58%)",
+      "area": 1459200
+    }
+  ],
+  "glass": []
+}

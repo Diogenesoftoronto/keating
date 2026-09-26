@@ -2,6 +2,7 @@ import { subscribeLocalSetting } from "./local-setting";
 
 const STORAGE_KEY = "keating_model_prefs";
 const PREFS_CHANGED_EVENT = "keating:model-prefs-changed";
+export const PROVIDER_CREDENTIALS_CHANGED_EVENT = "keating:provider-credentials-changed";
 const LEGACY_UI_SETTINGS_KEY = "keating_ui_settings";
 
 export type SavedModel = {
@@ -26,6 +27,17 @@ export const DEFAULT_MODEL_PREFS: ModelPrefs = {
 	recentModels: [],
 	customModels: [],
 };
+
+/** Built-in cloud providers stay out of the picker until they are connected. */
+export function shouldShowModelProvider(input: {
+	cloud: boolean;
+	configured: boolean;
+	manuallyHidden: boolean;
+	revealed: boolean;
+}): boolean {
+	if (input.manuallyHidden && !input.revealed) return false;
+	return !input.cloud || input.configured || input.revealed;
+}
 
 type LegacyModelPrefsInput = Partial<ModelPrefs>;
 
@@ -110,6 +122,14 @@ export function saveModelPrefs(next: ModelPrefs): void {
 		console.warn("Failed to save Keating model prefs:", error);
 	}
 	window.dispatchEvent(new CustomEvent<ModelPrefs>(PREFS_CHANGED_EVENT, { detail: normalized }));
+}
+
+/** Notify model surfaces that a provider was connected or disconnected. */
+export function notifyProviderCredentialsChanged(provider?: string): void {
+	if (typeof window === "undefined") return;
+	window.dispatchEvent(new CustomEvent<{ provider?: string }>(PROVIDER_CREDENTIALS_CHANGED_EVENT, {
+		detail: provider ? { provider } : {},
+	}));
 }
 
 export function subscribeModelPrefs(callback: (value: ModelPrefs) => void): () => void {

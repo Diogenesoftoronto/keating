@@ -367,7 +367,7 @@ describe("OpenTUI host controller", () => {
       nodeId: "choice-question",
       optionIds: ["wrong"],
     });
-    expect(dispatched[0]?.idempotencyKey).toMatch(/^tui-ui-terminal-doc-3-choice-question-choose-option-/);
+    expect(dispatched[0]?.idempotencyKey).toMatch(/^tui-ui-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}-terminal-doc-3-choice-question-choose-option-/);
   });
 
   test("cancel keeps the focused document and sends no action", async () => {

@@ -1,0 +1,206 @@
+<!doctype html>
+<!-- Live: an audio-led conversation. Shared build injects real word timings and RMS. -->
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=1920, height=1080"/><script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script><style>
+{{fonts}}
+:root{--paper:#f1ece0;--card:#f6f2e8;--ink:#1c211b;--accent:#1e9b50;--accent-dim:#14743c;--phosphor:#4be388;--display:"Space Mono",monospace;--body:"JetBrains Mono",monospace;--loud:"Roboto",sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:var(--paper)}
+#root{position:relative;width:100%;height:100%;overflow:hidden;color:var(--ink);font-family:var(--body);background:var(--paper)}
+.scene{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;z-index:1}
+.fx{position:absolute;inset:0;width:1920px;height:1080px;pointer-events:none}#fx-bg{z-index:0}#fx-over{z-index:4;opacity:.35}
+.film-tag{position:absolute;left:60px;top:44px;z-index:6;font:700 23px/1 var(--display);letter-spacing:.07em;color:var(--paper);background:var(--ink);padding:14px 18px}
+.headline{position:absolute;left:100px;top:137px;font:900 94px/1.02 var(--loud);letter-spacing:-.035em;z-index:3;max-width:1720px}.headline span{display:inline-block;background:var(--paper);padding:10px 18px 14px}
+.art{position:absolute;inset:0;overflow:hidden}.art-media{position:absolute;inset:0}.art-media img,.art-media video{position:absolute;inset:0;width:1920px;height:1080px;object-fit:cover}.art-clone{position:absolute;inset:0;background-size:cover;background-position:center}.art .foreground{clip-path:polygon(53% 0,100% 0,100% 100%,53% 100%)}.art .wash{position:absolute;inset:0;background:linear-gradient(180deg,rgba(241,236,224,.22),transparent 35%)}
+.plate{position:absolute;left:300px;top:390px;width:1320px;background:var(--card);border:2px solid var(--ink);box-shadow:16px 16px 0 var(--accent);transform-origin:50% 50%;z-index:2}.plate .label{position:absolute;left:-2px;top:-49px;font:700 22px/1 var(--display);letter-spacing:.06em;color:var(--paper);background:var(--ink);padding:12px 16px;white-space:nowrap}.viewport{position:relative;overflow:hidden;width:100%}.plate img{display:block;width:100%;height:auto}.mark{position:absolute;height:7px;background:var(--accent);transform-origin:0 50%;box-shadow:0 2px 0 var(--paper)}
+#picker-card .viewport{height:380px}#picker-card img{margin-top:-54px}#picker-mark{left:7.4%;top:74%;width:17%}
+#surface-card{left:250px;top:430px;width:1420px}#surface-card .viewport{height:350px}#surface-card img{width:1920px;max-width:none;margin-top:-920px;margin-left:-25px}#transcript-ring{position:absolute;left:29px;top:51px;width:1270px;height:115px;border:5px solid var(--accent);border-radius:14px}
+#gemini-card{left:300px;top:455px;width:1320px}#gemini-card .viewport{height:230px}#gemini-card img{width:2640px;max-width:none;margin-left:-1320px;margin-top:-30px}#gemini-mark{left:45%;top:55%;width:44%}
+/* The CRT is on the left; the transcript is a speech bubble on the right. */
+.conversation .art{width:1180px;height:830px;left:0;top:210px}.conversation .art-media img,.conversation .art-media video{width:1180px;height:830px;object-fit:cover}.conversation .headline{font-size:84px}
+.screen{position:absolute;left:310px;top:420px;width:560px;height:365px;border:2px solid var(--ink);border-radius:22px;background:var(--paper);z-index:2;overflow:hidden}
+.wave-label{position:absolute;left:30px;top:30px;font:700 24px/1 var(--display)}.wave{position:absolute;left:30px;top:105px;width:496px;height:205px;display:flex;gap:6px;align-items:center}.wave i{display:block;flex:1;height:194px;border-radius:7px;background:var(--ink);transform-origin:50% 50%}.keating .wave i{background:var(--accent)}.keating .wave-label{color:var(--accent-dim)}
+.bubble{position:absolute;left:1100px;top:335px;width:700px;min-height:325px;border:3px solid var(--ink);border-radius:32px 32px 32px 0;background:var(--paper);box-shadow:12px 12px 0 var(--ink);padding:35px 37px;z-index:3}.bubble.keating{border-radius:32px 32px 0 32px;box-shadow:12px 12px 0 var(--accent)}.speaker{font:700 23px/1 var(--display);margin-bottom:26px}.keating .speaker{color:var(--accent-dim)}.transcript{font:700 42px/1.25 var(--display);letter-spacing:-.04em;min-height:212px}.transcript .word{display:inline-block;white-space:pre}
+.bot{position:absolute;width:210px;height:210px;left:1440px;top:722px;z-index:3}.atlas{width:100%;height:100%;background-repeat:no-repeat;background-size:400% 200%;background-position:0% 0%}.bot-state{position:absolute;left:1180px;top:790px;font:700 25px/1.3 var(--display);color:var(--accent-dim)}
+#meter-art .back{transform-origin:50% 60%}#meter-dial{position:absolute;left:485px;top:290px;width:850px;height:650px;z-index:2}#meter-dial svg{width:100%;height:100%}.mic-status{position:absolute;left:1395px;top:690px;font:700 33px/1.25 var(--display);padding:22px 24px;background:var(--paper);border:2px solid var(--ink);box-shadow:8px 8px 0 var(--accent);width:380px}.mic-status b{display:block;font:900 55px/1 var(--loud);margin-bottom:10px;color:var(--accent-dim)}
+.endcard{position:absolute;inset:0;background:var(--paper);z-index:3}.end-logo{position:absolute;left:800px;top:205px;width:780px;height:420px;object-fit:contain}.end-url{position:absolute;left:815px;top:700px;font:700 108px/1 var(--display);letter-spacing:-.05em;color:var(--accent-dim)}#end-bot{left:230px;top:225px;width:520px;height:520px}
+.cap{position:absolute;left:0;top:0;width:1920px;height:1080px;z-index:5;pointer-events:none}.cap .pill{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);white-space:nowrap;font:500 34px/1 var(--body);color:var(--paper);background:var(--ink);border:2px solid var(--ink);padding:16px 28px;box-shadow:5px 5px 0 var(--accent)}.cap .cw{color:var(--paper)}
+</style></head><body><div id="root" data-composition-id="main" data-start="0" data-duration="{{total}}" data-width="1920" data-height="1080">
+<!-- Texture canvases have no text or layout; geometry is checked on the real content. -->
+<canvas data-layout-ignore id="fx-bg" class="fx" width="1920" height="1080" data-layout-allow-overflow></canvas>
+<section id="s-open" class="scene clip" data-start="{{start:open}}" data-duration="{{dur:open}}" data-track-index="0">
+{{art:live-1-talk:talk-art:open:0:Pick@0.4}}
+<h1 id="open-title" class="headline"><span>JUST TALK.</span></h1>
+<div id="picker-card" class="plate"><div class="label">[VOICE MODEL / GPT LIVE]</div><div class="viewport"><img data-layout-allow-overflow src="assets/shots/picker.png" alt="GPT Live selected (gpt-live-1)"/><i id="picker-mark" class="mark"></i></div></div>
+</section>
+<section id="s-ask" class="scene clip conversation" data-start="{{start:ask}}" data-duration="{{dur:ask}}" data-track-index="0">
+{{art:live-2-waves:ask-art:ask}}
+<h1 id="ask-title" class="headline"><span>MAKE IT VISIBLE.</span></h1>
+<div id="ask-screen" class="screen"><div class="wave-label">[YOU]</div><div id="ask-wave" class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+<div id="ask-bubble" class="bubble"><div class="speaker">[YOU]</div><div id="ask-transcript" class="transcript"></div></div>
+<div id="ask-bot" class="bot"><div class="atlas" style="background-image:url(assets/bot/head-listening.avif)"></div></div><div class="bot-state">KEATING<div>LISTENING</div></div>
+</section>
+<section id="s-answer" class="scene clip conversation" data-start="{{start:answer}}" data-duration="{{dur:answer}}" data-track-index="0">
+{{art:live-2-waves:answer-art:answer}}
+<h1 id="answer-title" class="headline"><span>ONE LINE. SAME DIRECTION.</span></h1>
+<div id="answer-screen" class="screen keating"><div class="wave-label">[KEATING]</div><div id="answer-wave" class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+<div id="answer-bubble" class="bubble keating"><div class="speaker">[KEATING]</div><div id="answer-transcript" class="transcript"></div></div>
+<div id="answer-bot" class="bot"><div class="atlas" style="background-image:url(assets/bot/head-speaking.avif)"></div></div><div class="bot-state">KEATING<div>SPEAKING</div></div>
+</section>
+<section id="s-context" class="scene clip" data-start="{{start:context}}" data-duration="{{dur:context}}" data-track-index="0"><h1 id="context-title" class="headline"><span>THE CONVERSATION COMES WITH YOU.</span></h1><div id="surface-card" class="plate"><div class="label">[LIVE / YOUR TRANSCRIPT]</div><div class="viewport"><img data-layout-allow-overflow src="assets/shots/surface.png" alt="Your conversation transcript"/><div id="transcript-ring"></div></div></div></section>
+<section id="s-ceiling" class="scene clip" data-start="{{start:ceiling}}" data-duration="{{dur:ceiling}}" data-track-index="0">{{art:live-3-meter:meter-art:ceiling}}<h1 id="ceiling-title" class="headline"><span>YOU SET THE LIMIT.</span></h1>
+<div id="meter-dial"><svg viewBox="0 0 714 650" aria-label="Spending meter stops below its red limit"><circle cx="357" cy="322" r="302" fill="#f1ece0" stroke="#1c211b" stroke-width="7"/><path d="M99 277 A264 264 0 0 1 578 116" fill="none" stroke="#1c211b" stroke-width="16" stroke-dasharray="4 24"/><path d="M572 106 A264 264 0 0 1 610 199" fill="none" stroke="#d5604b" stroke-width="26"/><g id="meter-needle"><path d="M357 315 L145 197 L346 336 Z" fill="#1c211b"/><circle cx="357" cy="322" r="26" fill="#1c211b" stroke="#f1ece0" stroke-width="5"/></g></svg></div>
+<div id="mic-status" class="mic-status"><b>CALL ENDED</b>MICROPHONE OFF</div></section>
+<section id="s-close" class="scene clip" data-start="{{start:close}}" data-duration="{{dur:close}}" data-track-index="0"><h1 id="close-title" class="headline"><span>ONE PICK AWAY.</span></h1><div id="gemini-card" class="plate"><div class="label">[LIVE / PROVIDER PICKER]</div><div class="viewport"><img data-layout-allow-overflow src="assets/shots/gemini.png" alt="Gemini 3.1 Flash Live provider"/><i id="gemini-mark" class="mark"></i></div></div><div id="endcard" class="endcard" data-layout-allow-overflow><div id="end-bot" class="bot"><div class="atlas" style="background-image:url(assets/bot/body-waving.avif)"></div></div><img id="end-logo" class="end-logo" src="assets/brand/logo-lockup.png" alt="Keating"/><div id="end-url" class="end-url">keating.help</div></div></section>
+<canvas data-layout-ignore id="fx-over" class="fx" width="1920" height="1080" data-layout-allow-occlusion data-layout-allow-overflow></canvas><div class="film-tag">[{{label}}]</div>{{captions}}<audio id="mix" src="assets/audio/mix.wav" data-start="0" data-duration="{{total}}" data-volume="1"></audio></div><script>
+const TIMING=/*TIMING*/ null;
+const S=Object.fromEntries(TIMING.scenes.map(s=>[s.id,s]));
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9]/g,'');
+const st=id=>S[id].start,en=id=>S[id].start+S[id].duration;
+function at(id,w){const found=S[id].words.find(x=>norm(x.w)===norm(w));if(!found)throw Error(`Missing cue ${id}/${w}`);return found.s}
+const tl=gsap.timeline({paused:true});
+const pop=(sel,t)=>tl.fromTo(sel,{opacity:0,y:32},{opacity:1,y:0,duration:.4,ease:'power3.out'},t);
+const mark=(sel,t)=>tl.fromTo(sel,{scaleX:0},{scaleX:1,duration:.5,ease:'power2.out'},t);
+function poster(sel,t,d){const moving=document.querySelector(sel).dataset.motion==='true';tl.fromTo(sel+' .back',{scale:1},{scale:moving?1.018:1.07,duration:d,ease:'none'},t);if(!moving)tl.fromTo(sel+' .foreground',{scale:1,x:0},{scale:1.09,x:-20,duration:d,ease:'none'},t)}
+function product(sel,t,zoom=1.15){pop(sel,t);tl.fromTo(sel,{scale:1},{scale:zoom,duration:1.4,ease:'power2.inOut'},t+.5)}
+for(const id of Object.keys(S))pop('#'+id+'-title',st(id)+.08);
+const pick=at('open','Pick');poster('#talk-art',0,pick+.4);tl.to('#talk-art',{opacity:0,duration:.3},pick);product('#picker-card',pick+.1);mark('#picker-mark',pick+.75);
+function sprite(sel,state,t0,t1){const keys=state==='speaking'?Array.from({length:8},(_,i)=>[i/8,i]):[[0,0],[.38,1],[.46,2],[.54,3],[.62,4],[.7,5],[.78,6],[.86,7]];const period=state==='speaking'?1:3.2;for(let p=t0;p<t1;p+=period)for(const [k,f] of keys)if(p+k*period<t1)tl.set(sel,{backgroundPosition:`${f%4/3*100}% ${Math.floor(f/4)*100}%`},p+k*period)}
+for(const id of ['ask','answer']){
+ poster('#'+id+'-art',st(id),S[id].duration);
+ pop('#'+id+'-bubble',st(id)+.1);pop('#'+id+'-bot',st(id)+.1);
+ sprite('#'+id+'-bot .atlas',id==='ask'?'listening':'speaking',st(id),en(id));
+ const transcript=document.querySelector('#'+id+'-transcript');
+ for(const word of S[id].words){
+  const span=document.createElement('span');span.className='word';transcript.appendChild(span);
+  [...word.w+' '].forEach((letter,i)=>{const glyph=document.createElement('span');glyph.textContent=letter;span.appendChild(glyph);tl.fromTo(glyph,{opacity:0},{opacity:1,duration:.03,ease:'none'},word.s+i/word.w.length*Math.max(.08,word.e-word.s))});
+ }
+ // Measured RMS samples drive each bar; no synthetic looping waveform.
+ const e=TIMING.env[id],bars=[...document.querySelectorAll('#'+id+'-wave i')];
+ bars.forEach((bar,i)=>{tl.set(bar,{scaleY:.025},st(id));for(let k=0;k<e.v.length;k++){const t=e.t0+k*e.step;if(t>=en(id))break;const sample=(e.v[k]??0)*(.32+.68*Math.sin((i+1)/25*Math.PI));tl.to(bar,{scaleY:.025+sample*.94,duration:e.step,ease:'none'},t)}tl.set(bar,{scaleY:.025},Math.min(en(id)-.04,e.t0+S[id].voDuration))});
+}
+product('#surface-card',st('context')+.3);tl.fromTo('#transcript-ring',{opacity:0,scaleX:.2},{opacity:1,scaleX:1,duration:.6,ease:'power2.out'},at('context','messages'));
+const dial=at('ceiling','ceiling');poster('#meter-art',st('ceiling'),S.ceiling.duration);tl.to('#meter-art',{opacity:0,duration:.35},dial-.2);pop('#meter-dial',dial);
+tl.set('#meter-needle',{attr:{transform:'rotate(0 357 322)'}},st('ceiling'));
+const stop=at('ceiling','stops');tl.fromTo('#meter-needle',{attr:{transform:'rotate(0 357 322)'}},{attr:{transform:'rotate(112 357 322)'},duration:Math.max(.4,stop-dial-.2),ease:'power1.inOut'},dial+.1);
+tl.to('#meter-needle',{attr:{transform:'rotate(0 357 322)'},duration:.55,ease:'power3.out'},stop);pop('#mic-status',stop+.1);
+product('#gemini-card',st('close')+.2);mark('#gemini-mark',at('close','providers'));
+const endcard=en('close')-1.8;tl.fromTo('#endcard',{y:1080},{y:0,duration:.3,ease:'power3.inOut'},endcard);pop('#end-logo',endcard+.15);pop('#end-url',endcard+.2);pop('#end-bot',endcard+.1);sprite('#end-bot .atlas','listening',endcard,TIMING.total);
+        const NOISE = `
+          precision highp float;
+          varying vec2 v_uv;
+          uniform float u_t;
+          float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+          float noise(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+          }
+          float fbm(vec2 p) {
+            float v = 0.0, a = 0.5;
+            mat2 R = mat2(0.8, 0.6, -0.6, 0.8);
+            for (int i = 0; i < 5; i++) { v += a * noise(p); p = R * p * 2.02; a *= 0.5; }
+            return v;
+          }
+          const vec3 PAPER = vec3(0.945, 0.925, 0.878);
+          const vec3 WASH = vec3(0.925, 0.965, 0.925);
+          const vec3 TERM = vec3(0.047, 0.082, 0.063);
+          const vec3 PHOS = vec3(0.294, 0.890, 0.533);
+          const vec3 PHOS_DIM = vec3(0.180, 0.604, 0.361);
+        `;
+        const BG = NOISE + `
+          uniform float u_from, u_to, u_p, u_edge, u_down, u_kick;
+          void main() {
+            vec2 uv = v_uv, p = uv * vec2(1.7778, 1.0) * 2.2;
+            float t = u_t;
+            vec2 q = vec2(fbm(p + t * 0.05), fbm(p + vec2(5.2, 1.3) - t * 0.04));
+            float n = fbm(p + (1.6 + 1.4 * u_kick) * q + vec2(1.7, 9.2) + t * 0.03);
+            // Paper only ever lightens from its base, so ink and green type keep their contrast.
+            vec3 paper = mix(PAPER, vec3(1.0), 0.16 * smoothstep(0.3, 0.8, n));
+            paper = mix(paper, WASH, smoothstep(0.6, 0.9, n) * (0.25 + 0.45 * u_kick));
+            float v = 1.0 - smoothstep(0.2, 1.1, length((uv - vec2(0.5, 0.6)) * vec2(1.6, 1.0)));
+            vec3 term = TERM + PHOS_DIM * (pow(n, 2.5) * 0.38 + 0.04) * (0.5 + 0.7 * v) + vec3(0.03, 0.06, 0.04) * v;
+            vec3 a = mix(paper, term, u_from), b = mix(paper, term, u_to);
+            // Burn: a noisy front sweeps up the frame (down when entering the terminal).
+            float y = u_down > 0.5 ? 1.0 - uv.y : uv.y;
+            float field = 0.72 * y + 0.45 * fbm(uv * vec2(1.7778, 1.0) * 4.0 + 3.0);
+            float front = u_p * 1.4 - 0.12;
+            float gone = smoothstep(front + 0.012, front - 0.012, field);
+            vec3 col = mix(a, b, gone);
+            float beyond = field - front;
+            col = mix(col, vec3(0.05, 0.04, 0.03), u_edge * 0.55 * smoothstep(0.0, 0.015, beyond) * (1.0 - smoothstep(0.02, 0.07, beyond)));
+            float glow = exp(-abs(beyond) * 55.0) * u_edge;
+            col += (mix(PHOS, vec3(1.0, 0.97, 0.82), exp(-abs(beyond) * 220.0)) * 1.1) * glow;
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `;
+        const OVER = NOISE + `
+          uniform float u_crt, u_sweep, u_sweepAmp, u_glitch, u_flash, u_frame;
+          void main() {
+            vec2 uv = v_uv;
+            vec3 add = vec3(0.0);
+            float dark = hash(floor(uv * vec2(1920.0, 1080.0)) + floor(u_t * 12.0)) * 0.035;
+            vec2 ray = (uv - vec2(0.52, 0.28)) * vec2(1.7778, 1.0);
+            float sun = smoothstep(0.12, 0.2, sin(atan(ray.y, ray.x) * 18.0 + u_t * 0.055));
+            add += PHOS * sun * 0.035 * smoothstep(0.45, 0.9, uv.y);
+            if (u_crt > 0.001) {
+              float band = exp(-pow(1.0 - uv.y - fract(u_t * 0.12), 2.0) * 140.0);
+              add += PHOS * band * 0.05 * u_crt;
+              float g = hash(floor(uv * vec2(960.0, 540.0)) + u_frame * 1.37);
+              add += PHOS * max(g - 0.5, 0.0) * 0.1 * u_crt;
+              dark = smoothstep(0.45, 0.95, length((uv - 0.5) * vec2(1.25, 1.0))) * 0.45 * u_crt;
+            }
+            if (u_sweepAmp > 0.001) {
+              vec2 p = (uv - 0.5) * vec2(1.7778, 1.0);
+              float d = dot(p, normalize(vec2(1.0, 0.45))) - mix(-1.3, 1.3, u_sweep);
+              add += (vec3(1.0, 0.97, 0.88) * exp(-d * d * 60.0) * 0.26 + PHOS * exp(-d * d * 6.0) * 0.07) * u_sweepAmp;
+            }
+            if (u_glitch > 0.001) {
+              float row = floor(uv.y * 54.0);
+              float h = hash(vec2(row, u_frame));
+              float on = step(1.0 - 0.45 * u_glitch, h);
+              float h2 = hash(vec2(row * 1.7, u_frame + 3.1));
+              vec3 tint = h2 < 0.33 ? vec3(0.84, 0.38, 0.29) : h2 < 0.66 ? vec3(0.1, 0.85, 0.9) : PHOS;
+              float seg = step(hash(vec2(floor(uv.x * 12.0 + h * 40.0), row)), 0.6);
+              add += tint * on * seg * 0.38 * u_glitch;
+              dark = max(dark, on * (1.0 - seg) * 0.55 * u_glitch);
+            }
+            float r = length((uv - 0.5) * vec2(1.7778, 1.0));
+            add += mix(PHOS, vec3(1.0), 0.35) * u_flash * (0.55 - 0.3 * r);
+            gl_FragColor = vec4(add, dark);
+          }
+        `;
+
+        function layer(id, fs) {
+          const gl = document.getElementById(id).getContext("webgl", { preserveDrawingBuffer: false, premultipliedAlpha: true, antialias: false });
+          if (!gl) throw new Error("no webgl");
+          const compile = (type, src) => {
+            const sh = gl.createShader(type);
+            gl.shaderSource(sh, src);
+            gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+            return sh;
+          };
+          const prog = gl.createProgram();
+          gl.attachShader(prog, compile(gl.VERTEX_SHADER, "attribute vec2 p; varying vec2 v_uv; void main() { v_uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }"));
+          gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+          gl.linkProgram(prog);
+          gl.useProgram(prog);
+          gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+          const loc = gl.getAttribLocation(prog, "p");
+          gl.enableVertexAttribArray(loc);
+          gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+          const uni = {};
+          return (vals) => {
+            for (const k in vals) {
+              if (!(k in uni)) uni[k] = gl.getUniformLocation(prog, "u_" + k);
+              if (uni[k]) gl.uniform1f(uni[k], vals[k]);
+            }
+            gl.viewport(0, 0, 1920, 1080);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          };
+        }
+
+try{const bg=layer('fx-bg',BG),over=layer('fx-over',OVER);const draw=t=>{const state={t,from:0,to:0,p:1,edge:0,down:0,kick:0,crt:0,sweep:0,sweepAmp:0,glitch:0,flash:0,frame:Math.floor(t*TIMING.fps)};bg(state);over(state)};const clock={t:0};tl.to(clock,{t:TIMING.total,duration:TIMING.total,ease:'none',onUpdate:()=>draw(clock.t)},0);draw(0)}catch(e){console.warn('[fx]',e.message)}
+document.querySelectorAll('.cap .cw').forEach(el=>{tl.set(el,{color:'#4be388'},Number(el.dataset.s));tl.set(el,{color:'#f1ece0'},Number(el.dataset.e))});
+tl.set({}, {}, TIMING.total);window.__timelines['main']=tl;
+</script></body></html>

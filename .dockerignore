@@ -15,6 +15,10 @@
 .pi
 .zero
 .flox
+.env
+.env.*
+**/.env
+**/.env.*
 
 node_modules
 **/node_modules
@@ -26,6 +30,7 @@ storybook-static
 **/storybook-static
 
 video
+web/artwork
 docs
 test
 mobile

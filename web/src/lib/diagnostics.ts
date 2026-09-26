@@ -177,3 +177,69 @@ export function buildDiagnosticReport(options: {
 	};
 	return `${JSON.stringify(report, null, 2)}\n`;
 }
+
+/** The published support address; the desktop external-link allowlist matches it. */
+export const DIAGNOSTIC_SUPPORT_EMAIL = "help@keating.help";
+
+const REPORT_ENDPOINT = "/api/diagnostics/report";
+/** Matches the server route's own cap so the two ends agree on the limit. */
+const MAX_REPORT_LENGTH = 200_000;
+/**
+ * `mailto:` URLs longer than a few kilobytes are truncated or refused by mail
+ * clients, so the attached report is trimmed rather than dropped.
+ */
+const MAILTO_BODY_LIMIT = 1_800;
+
+export type DiagnosticDelivery = "email" | "log";
+
+/**
+ * Build an `mailto:` link carrying the same sanitized report, for learners who
+ * would rather email the problem than turn diagnostics on.
+ */
+export function diagnosticReportMailto(options: {
+	summary: string;
+	report?: string;
+}): string {
+	const report = options.report ?? buildDiagnosticReport();
+	// Redact and trim in one pass: the mailto body leaves Keating entirely, so
+	// it goes through the same sanitizer as the in-memory log.
+	const trimmed = sanitizeDiagnosticText(report, MAILTO_BODY_LIMIT);
+	const subject = sanitizeDiagnosticText(`Keating error report: ${options.summary}`, 160);
+	const body = [
+		"Sanitized Keating diagnostics are below. Prompts, replies, tool payloads, credentials, and URL parameters are excluded.",
+		"",
+		trimmed,
+	].join("\n");
+	return `mailto:${DIAGNOSTIC_SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+/**
+ * Send the report to Keating. Returns the server's accepted destination, or
+ * false when the caller should offer the email fallback.
+ */
+export async function sendDiagnosticReport(options: {
+	summary: string;
+	report?: string;
+	fetcher?: typeof fetch;
+}): Promise<DiagnosticDelivery | false> {
+	const report = options.report ?? buildDiagnosticReport();
+	try {
+		const response = await (options.fetcher ?? fetch)(REPORT_ENDPOINT, {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({
+				schemaVersion: 1,
+				summary: sanitizeDiagnosticText(options.summary, 200),
+				// Sent text is re-redacted so a caller cannot hand the server raw content.
+				report: sanitizeDiagnosticText(report, MAX_REPORT_LENGTH),
+			}),
+		});
+		if (!response.ok) return false;
+		const payload: unknown = await response.json().catch(() => null);
+		if (!payload || typeof payload !== "object") return false;
+		const delivery = (payload as { delivery?: unknown }).delivery;
+		return delivery === "email" || delivery === "log" ? delivery : false;
+	} catch {
+		return false;
+	}
+}

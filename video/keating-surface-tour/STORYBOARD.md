@@ -1,142 +1,122 @@
 ---
 format: 1920x1080
 duration: 32s
-message: "One learning thread can move through every Keating surface without losing its evidence"
-arc: Classroom → model → live → review → course → publish → TUI → CLI
+message: "Keating is more than a chat"
+arc: Simulate → Code → Speak → Recall → Exam → Plan → Sessions → Desktop
 audience: prospective self-directed learners and educators
 mode: autonomous
 music: none
-rhythm: captured-hold · still-drift · still-drift · still-drift · still-drift · still-drift · captured-hold · captured-resolve
+rhythm: 8 × still-pan (4s each)
 ---
 
-## Beat 1 — Web classroom
+## Beat 1: Simulate
 
 - status: animated
 - src: index.html
 - duration: 4s
-- poster: 2s
-- transition_in: cut
-- provenance: real capture
-- scene: A real streamed tutoring exchange fills the stage beside the WEB rail.
-- asset_candidates: assets/web-classroom.mp4
-
-At 0.2s the rail arrives from the left and the recording settles into the
-frame. Hold long enough to read the learner question and Keating's follow-up.
-
-## Beat 2 — Model choice
-
-- status: animated
-- src: index.html
-- duration: 4s
-- poster: 6s
+- start: 0s
 - transition_in: cut
 - provenance: real Storybook capture
-- source_reference: web/src/components/ModelSelector.tsx
-- asset_candidates: assets/feature-models.jpg
-- scene: The real model selector fills the stage while the camera drifts toward the cloud list.
+- story: learning-simulation--base-rate-neglect
+- asset: assets/shots/simulation.png
+- rail: SIMULATE / "Move the idea." / BASE-RATE MODEL, LIVE CHART
+- scene: The base-rate simulation with its prevalence and specificity controls and the live chart.
 
-Preserve the current `Select Model`, search, provider, capability, `Cloud`, and
-model-card pixels. The Hyperframes layer adds only a bounded scale-and-pan move.
-
-## Beat 3 — Live media
+## Beat 2: Code
 
 - status: animated
 - src: index.html
 - duration: 4s
-- poster: 10s
+- start: 4s
 - transition_in: cut
-- provenance: real route capture
-- source_reference: web/src/pages/Live.tsx
-- asset_candidates: assets/feature-live.jpg
-- scene: The real audio and video duplex route shows the CRT camera and session terminal.
+- provenance: real Storybook capture
+- story: learning-labs--type-script
+- asset: assets/shots/code-lab.png
+- rail: CODE / "Write it, then test it." / TYPESCRIPT LAB, SAMPLE TESTS
+- scene: The TypeScript lab: problem statement, editor, Run tests and the sample-test list.
 
-Keep the current `keating --live --tier=3`, `Audio + video duplex`, no-video
-input state, terminal, and `START SESSION` control intact.
-
-## Beat 4 — Coming Up / Anki
+## Beat 3: Speak
 
 - status: animated
 - src: index.html
 - duration: 4s
-- poster: 14s
+- start: 8s
 - transition_in: cut
-- provenance: real route capture
-- source_reference: web/src/pages/ComingUp.tsx
-- asset_candidates: assets/feature-coming-up.jpg
-- scene: The real review runway and priority-board controls organize due work.
+- provenance: real Storybook capture
+- story: learning-language-practice--pronunciation
+- asset: assets/shots/pronunciation.png
+- rail: SPEAK / "Say it out loud." / PRONUNCIATION, RECORD + COMPARE
+- scene: Spanish pronunciation practice with Listen, Record yourself and compare.
 
-Use the current `Coming up`, `Cards due now`, `Review time`, `Priority board`,
-`Import Anki`, and `Export .apkg` vocabulary. Preserve the captured empty state;
-this tour does not invent learner data.
-
-## Beat 5 — Courses
+## Beat 4: Recall
 
 - status: animated
 - src: index.html
 - duration: 4s
-- poster: 18s
+- start: 12s
 - transition_in: cut
-- provenance: real route capture
-- source_reference: web/src/components/courses/CoursesAccessGate.tsx
-- asset_candidates: assets/feature-courses.jpg
-- scene: The signed-out course workspace explains its durable-room and consent boundary.
+- provenance: real Storybook capture
+- story: artifacts-flashcards--phosphor-arena
+- asset: assets/shots/flashcards.png
+- rail: RECALL / "Remember on purpose." / FLASHCARD ARENA, SPACED REVIEW
+- scene: The flashcard arena on a Bayes-rule deck, with the Reveal answer control.
 
-Use `Not Organic workspace`, `A course is learning you can return to`, and the
-current gateway ledger: browser to authenticated gateway, gateway to Pear
-network, teacher access consented, source documents immutable. The access copy
-and protocol ledger enter as two linked focal points; no authenticated course
-content is implied.
-
-## Beat 6 — Standard.site publishing
+## Beat 5: Exam
 
 - status: animated
 - src: index.html
 - duration: 4s
-- poster: 22s
+- start: 16s
 - transition_in: cut
-- provenance: real route capture
-- source_reference: web/src/pages/AtprotoBlog.tsx
-- asset_candidates: assets/feature-publish.jpg
-- scene: The Standard.site blog surface reports its current unavailable state honestly.
+- provenance: real Storybook capture
+- story: learning-exam--in-progress
+- asset: assets/shots/exam.png
+- rail: EXAM / "Test under time." / TIMED EXAM, FLAG + REVIEW
+- scene: An exam in progress: countdown, question navigator and Flag.
 
-Use `Keating Blog`, `STANDARD.SITE`, `Posts are not available`, `The AT Protocol
-blog is unavailable`, and `Retry loading posts`. Keep the protocol source label
-visible, but do not imply that a live feed loaded successfully in this run.
-
-## Beat 7 — Collaborative TUI
+## Beat 6: Plan
 
 - status: animated
 - src: index.html
 - duration: 4s
-- poster: 26s
+- start: 20s
 - transition_in: cut
-- provenance: real capture
-- scene: The OpenTUI collaborative host continues the work inside the terminal.
-- asset_candidates: assets/tui-collaborative.mp4
+- provenance: real Storybook capture
+- story: learning-nestedstudyplan--detailed-two-levels-with-plan-links
+- asset: assets/shots/study-plan.png
+- rail: PLAN / "See the whole path." / NESTED STUDY PLAN, LINKED LESSONS
+- scene: A two-level study plan whose steps link to lessons, with Save & review plan.
 
-At 24.2s the rail advances to TUI and the real host footage settles. The media
-slot is intentionally stable so a later improved TUI capture can replace the
-file without changing composition timing.
-
-## Beat 8 — Artifact CLI
+## Beat 7: Sessions
 
 - status: animated
 - src: index.html
 - duration: 4s
-- poster: 30s
+- start: 24s
 - transition_in: cut
-- provenance: real capture
-- scene: The CLI generates and inspects a plan, map, verification, and trace.
-- asset_candidates: assets/cli-artifacts.mp4
+- provenance: real Storybook capture
+- story: sessions-library--search-keeps-ancestry
+- asset: assets/shots/sessions.png
+- rail: SESSIONS / "Pick the thread back up." / SESSION SEARCH, FORK ANCESTRY
+- scene: The session library filtered by search, still showing each fork's parent.
 
-At 28.2s the terminal footage settles and holds through the final frame. There
-is no generic exit fade; the last readable artifact is the resolution.
+## Beat 8: Desktop
 
-## Video direction
+- status: animated
+- src: index.html
+- duration: 4s
+- start: 28s
+- transition_in: cut
+- provenance: real Storybook capture
+- story: workspace-desktop--run-and-stop
+- asset: assets/shots/workspace.png
+- rail: DESKTOP / "Run it on your machine." / LOCAL FILES, REAL PROCESSES
+- scene: The desktop workspace with a working folder, command and time limit, and Run command.
 
-Warm paper, dark ink, and one Keating-green accent. Real recordings and real
-product stills occupy the same 1500×844 stage. The numbered rail supplies
-orientation and the bottom tracker preserves the single-thread story. Motion is
-finite, seek-safe, and mostly structural: a waterfall rail arrival plus bounded
-camera drift across each still capture.
-No narration, music, SFX, invented customer data, or extra claims.
+## Motion (every beat)
+
+At +0.2s the frame fades and scales in, and the rail and progress tab highlight.
+From +0.5s the still is sized to 1010 px tall inside the 1492×836 stage. It pans
+down by its overflow (about 174 px) and pushes in from 1.00 to 1.03 over 3.3 s
+with sine.inOut, which is deterministic and seek-safe. `index.motion.json` checks that each
+frame appears by +0.8s, that the frames appear in order, and that each stays in frame.

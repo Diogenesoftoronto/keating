@@ -44,11 +44,22 @@ describe("provider default pinning", () => {
   expect(html.match(/Provider default/g)).toHaveLength(1);
  });
 
- it("keeps the default label when it is also selected", () => {
+	it("keeps the default label when it is also selected", () => {
   const html = renderToStaticMarkup(<ModelPicker open label="Find a model" items={items}
    selected={cloud.id} onSelect={() => {}} onClose={() => {}} />);
   expect(html).toContain("Provider default");
   expect(html).not.toContain("Selected model");
-  expect(html).toContain('aria-label="Selected"');
- });
+		expect(html).toContain('aria-label="Selected"');
+	});
+
+	it("renders a recovery action for an unavailable selection", () => {
+		const html = renderToStaticMarkup(<ModelPicker open label="Find a model" items={[{
+			...other,
+			action: <button type="button">Add key or sign in</button>,
+		}]} selected={other.id} error="Provider is not connected." errorAction={<button type="button">Open provider settings</button>}
+			onSelect={() => {}} onClose={() => {}} />);
+		expect(html).toContain("Provider is not connected.");
+		expect(html).toContain("Add key or sign in");
+		expect(html).toContain("Open provider settings");
+	});
 });

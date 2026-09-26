@@ -12,9 +12,34 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    outputs:
+      apple_signing: ${{ steps.signing.outputs.apple_signing }}
 
     steps:
       - uses: actions/checkout@v6
+
+      - name: Check optional Apple signing availability
+        id: signing
+        env:
+          CERTIFICATE: ${{ secrets.KEATING_APPLE_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.KEATING_APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ACCOUNT: ${{ secrets.KEATING_APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.KEATING_APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM: ${{ secrets.KEATING_APPLE_TEAM_ID }}
+        run: |
+          COUNT=0
+          for name in CERTIFICATE CERTIFICATE_PASSWORD APPLE_ACCOUNT APPLE_PASSWORD APPLE_TEAM; do
+            if [ -n "${!name}" ]; then COUNT=$((COUNT + 1)); fi
+          done
+          if [ "$COUNT" -eq 0 ]; then
+            echo 'apple_signing=false' >> "$GITHUB_OUTPUT"
+            echo 'macOS desktop omitted: Apple signing credentials are not configured. No unsigned installer will be published.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$COUNT" -eq 5 ]; then
+            echo 'apple_signing=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'Incomplete Apple signing configuration; refusing release.' >&2
+            exit 1
+          fi
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -219,6 +244,70 @@ jobs:
             desktop/release-offline/*.deb
             desktop/release-offline/*.rpm
 
+  build-desktop-macos:
+    needs: validate
+    if: ${{ needs.validate.outputs.apple_signing == 'true' }}
+    # LiteRT currently ships a macOS arm64 library only; never bundle an
+    # arm64 native runtime into an Intel installer.
+    runs-on: macos-latest
+    timeout-minutes: 60
+    env:
+      CSC_LINK: ${{ secrets.KEATING_APPLE_CERTIFICATE_BASE64 }}
+      CSC_KEY_PASSWORD: ${{ secrets.KEATING_APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_ID: ${{ secrets.KEATING_APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.KEATING_APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.KEATING_APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Require Apple Developer ID signing and notarization credentials
+        run: |
+          for name in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
+            if [ -z "${!name}" ]; then echo "Missing Apple release credential: ${name}" >&2; exit 1; fi
+          done
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+      - name: Install dependencies
+        run: |
+          bun install --frozen-lockfile
+          bun install --cwd spikes/flue-host --frozen-lockfile
+          bun install --cwd web --frozen-lockfile
+      - name: Build, sign, and notarize macOS desktop
+        run: |
+          bun scripts/sync-version.ts --check
+          bun run --cwd desktop setup:electron
+          bun run --cwd desktop build:main
+          bun run --cwd desktop dist:mac --publish never
+      - name: Verify Developer ID, notarization ticket, and native runtime
+        run: |
+          APP="desktop/release/mac-arm64/Keating.app"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          codesign -dvv "$APP" 2> "$RUNNER_TEMP/keating-signature.txt"
+          grep -F 'Authority=Developer ID Application:' "$RUNNER_TEMP/keating-signature.txt"
+          grep -Fx "TeamIdentifier=$APPLE_TEAM_ID" "$RUNNER_TEMP/keating-signature.txt"
+          xcrun stapler validate "$APP"
+          spctl --assess --type execute --verbose=2 "$APP"
+          "$APP/Contents/Resources/offline/keating-offline" --probe
+          VERSION="${GITHUB_REF_NAME#v}"
+          test -s "desktop/release/Keating-${VERSION}-macos-arm64.dmg"
+          test -s "desktop/release/Keating-${VERSION}-macos-arm64.zip"
+          codesign --verify --verbose=2 "desktop/release/Keating-${VERSION}-macos-arm64.dmg"
+          # Staple the distributed disk image as well as the enclosed app.
+          xcrun notarytool submit "desktop/release/Keating-${VERSION}-macos-arm64.dmg" --apple-id "$APPLE_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD" --team-id "$APPLE_TEAM_ID" --wait
+          xcrun stapler staple "desktop/release/Keating-${VERSION}-macos-arm64.dmg"
+          xcrun stapler validate "desktop/release/Keating-${VERSION}-macos-arm64.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: keating-desktop-macos-arm64
+          if-no-files-found: error
+          path: |
+            desktop/release/Keating-*-macos-arm64.dmg
+            desktop/release/Keating-*-macos-arm64.zip
+
   build-native:
     needs: validate
     uses: ./.github/workflows/native-downloads.yml
@@ -227,15 +316,46 @@ jobs:
     secrets: inherit
 
   release:
-    needs: [build, build-desktop-linux, build-native]
+    needs: [validate, build, build-desktop-linux, build-desktop-macos, build-native]
+    # An intentionally omitted desktop platform must not suppress the release;
+    # configured builds and signing failures must still block publication.
+    if: ${{ always() && needs.validate.result == 'success' && needs.build.result == 'success' && needs.build-desktop-linux.result == 'success' && needs.build-native.result == 'success' && (needs.build-desktop-macos.result == 'success' || needs.build-desktop-macos.result == 'skipped') }}
     runs-on: ubuntu-latest
+    env:
+      GNUPGHOME: ${{ runner.temp }}/keating-release-signing
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
 
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+
+      - name: Install Linux signing tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gpg rpm
+
+      - name: Prepare pinned release signing key
+        env:
+          KEATING_RELEASE_SIGNING_KEY: ${{ secrets.KEATING_RELEASE_SIGNING_KEY }}
+          KEATING_RELEASE_SIGNING_PASSPHRASE: ${{ secrets.KEATING_RELEASE_SIGNING_PASSPHRASE }}
+        run: node desktop/scripts/prepare-release-signing.mjs
+
+      - name: Sign Linux installers and verify the complete artifact manifest
+        env:
+          KEATING_RELEASE_SIGNING_PASSPHRASE: ${{ secrets.KEATING_RELEASE_SIGNING_PASSPHRASE }}
+        run: node desktop/scripts/sign-release.mjs --artifacts artifacts --rpm-sign
+
+      - name: Remove private signing material
+        if: always()
+        run: |
+          gpgconf --kill gpg-agent || true
+          rm -rf "$GNUPGHOME"
 
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -246,7 +366,11 @@ jobs:
             artifacts/**/*.deb
             artifacts/**/*.rpm
             artifacts/**/*.exe
+            artifacts/**/*.dmg
+            artifacts/**/*.zip
             artifacts/**/*.apk
+            artifacts/**/*.asc
+            artifacts/SHA256SUMS
             web/public/keating-metaharness.pdf
           generate_release_notes: true
 

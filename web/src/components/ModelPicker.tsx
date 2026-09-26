@@ -4,6 +4,7 @@ import "./selection-library.css";
 
 export interface PickerItem {
  id: string; name: string; group: string; summary?: string; details?: ReactNode;
+ action?: ReactNode;
  pinnedLabel?: string;
 }
 
@@ -20,10 +21,10 @@ function pickerItemHeading(item: PickerItem, selected: string): string {
  return item.pinnedLabel ?? (item.id === selected ? "Selected model" : item.group);
 }
 
-export function ModelPicker({ open, label, items, selected, onSelect, onClose, filters, notice, loading = false, error = "" }: {
+export function ModelPicker({ open, label, items, selected, onSelect, onClose, filters, notice, noticeLabel = "Models that run on this device", loading = false, error = "", errorAction }: {
  open: boolean; label: string; items: PickerItem[]; selected: string;
  onSelect: (id: string) => void | Promise<void>; onClose: () => void;
- filters?: ReactNode; notice?: ReactNode; loading?: boolean; error?: string;
+ filters?: ReactNode; notice?: ReactNode; noticeLabel?: string; loading?: boolean; error?: string; errorAction?: ReactNode;
 }) {
  const dialog = useRef<HTMLDialogElement>(null);
  const searchRef = useRef<HTMLInputElement>(null);
@@ -74,7 +75,10 @@ export function ModelPicker({ open, label, items, selected, onSelect, onClose, f
    </div>
    {filters && <div className="model-picker__filters">{filters}</div>}
    <div className="model-picker__results" aria-label="Models" aria-busy={loading}>
-    {(error || failure) && <p className="library-message" role="alert">{failure || error}</p>}
+    {(error || failure) && <>
+     <p className="library-message" role="alert">{failure || error}</p>
+     {errorAction && <div className="model-picker__error-action">{errorAction}</div>}
+    </>}
     {loading ? <p className="library-message" role="status">Finding available models…</p> :
      !ordered.length ? <p className="library-message">No matching models. Try another name or clear your filters.</p> :
      ordered.map((item, index) => <div key={item.id} className="model-picker__item">
@@ -91,9 +95,10 @@ export function ModelPicker({ open, label, items, selected, onSelect, onClose, f
        {busy === item.id ? <small>Loading…</small> : item.id === selected ? <Check size={18} aria-label="Selected"/> : null}
       </button>
       {item.details && <details className="model-picker__details"><summary>Model details</summary>{item.details}</details>}
+      {item.action && <div className="model-picker__item-action">{item.action}</div>}
      </div>)}
    </div>
-   {notice && <details className="model-picker__notice"><summary>Models that run on this device</summary>{notice}</details>}
+   {notice && <details className="model-picker__notice"><summary>{noticeLabel}</summary>{notice}</details>}
    <div className="model-picker__hint" role="status">↑ ↓ to browse · Enter to choose · Esc to close</div>
   </div>
  </dialog>;

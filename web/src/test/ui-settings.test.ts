@@ -91,6 +91,14 @@ describe("Keating UI Settings", () => {
 			expect(loadKeatingUiSettings().webSearch).toBe("auto");
 		});
 
+		it("applies plan changes autonomously unless approval is explicitly chosen", () => {
+			expect(DEFAULT_UI_SETTINGS.planChanges).toBe("autonomous");
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ planChanges: "approval" }));
+			expect(loadKeatingUiSettings().planChanges).toBe("approval");
+			localStorage.setItem("keating_ui_settings", JSON.stringify({ planChanges: "garbage" }));
+			expect(loadKeatingUiSettings().planChanges).toBe("autonomous");
+		});
+
 		it("migrates the legacy grounding key to webSearch off when webSearch is missing", () => {
 			localStorage.setItem("keating_ui_settings", JSON.stringify({ [LEGACY_GOOGLE_GROUNDING_KEY]: "off" }));
 			expect(loadKeatingUiSettings().webSearch).toBe("off");

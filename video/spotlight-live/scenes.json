@@ -1,0 +1,7 @@
+[
+  {"shot": "picker", "kicker": "GPT LIVE", "title": "Pick a live voice", "body": "GPT Live, through your Not Organic account.", "line": "Keating 4.0 adds GPT Live to the voice model picker. Choose it, and connect your Not Organic account."},
+  {"shot": "listening", "kicker": "CARRY THE LESSON", "title": "Your conversation comes with you", "body": "Recent messages and course context go too.", "line": "Your recent messages and course context come with you, so the spoken lesson picks up the question you were already working on."},
+  {"shot": "surface", "kicker": "ONE SURFACE", "title": "Mic, captions, the way back", "body": "Everything a spoken lesson needs, in one place.", "line": "The Live surface keeps the microphone, the captions, and the way back to chat, all in one place."},
+  {"shot": "speaking", "kicker": "YOUR LIMITS", "title": "Spending you can see", "body": "A visible ceiling and consent you can revoke.", "line": "Each session has a visible spending ceiling, and you can revoke live consent in Settings. Ending a call stops the microphone at once."},
+  {"shot": "gemini", "kicker": "MORE VOICES", "title": "Images and video, elsewhere", "body": "Other live providers stay one pick away.", "line": "Need to show an image or video? The other live providers are still one pick away. Talk it through, then get back to the page."}
+]

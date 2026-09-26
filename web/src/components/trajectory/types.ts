@@ -39,6 +39,8 @@ export interface TrajectorySessionMessage {
 	model?: string;
 	durationMs?: number;
 	status?: "complete" | "running" | "failed";
+	/** Draft-gate outcome for this tutor turn: check verdicts and the active work it was judged against. */
+	draftReview?: import("../../keating/storage").TeachingDraftReceiptRecord;
 }
 
 export type NormalizedArtifactMedia =

@@ -1,7 +1,10 @@
 import { getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
 import { BROWSER_MODELS, checkWebGpuAvailable } from "../stores/local-model";
-import { loadModelPrefs } from "../keating/model-prefs";
-import { buildSavedModel, getSelectableModels } from "./provider-models";
+import { loadModelPrefs, shouldShowModelProvider } from "../keating/model-prefs";
+import { isNotOrganicFeatureEnabled, NOTORGANIC_PROVIDER_ID } from "../notorganic-provider";
+import { buildSavedModel, getCustomProviders, getSelectableModels, hasProviderCredential } from "./provider-models";
+
+export { hasProviderCredential } from "./provider-models";
 
 /**
  * The one model catalog. Chat and the review model pools both read from here so
@@ -17,6 +20,13 @@ export type SelectableModel = {
 	key: string;
 	model: Model<Api>;
 	group: SelectableModelGroup;
+};
+
+export type ModelProviderAvailability = {
+	id: string;
+	configured: boolean;
+	cloud: boolean;
+	manuallyHidden: boolean;
 };
 
 const MODEL_PROVIDER_PRIORITY = [
@@ -58,6 +68,34 @@ export function displayModelProvider(provider: string): string {
 	return labels[provider.toLowerCase()] ?? provider;
 }
 
+function cloudProviderIds(): Set<string> {
+	return new Set([
+		...getProviders(),
+		...(isNotOrganicFeatureEnabled() ? [NOTORGANIC_PROVIDER_ID] : []),
+	]);
+}
+
+export function requiresProviderCredential(provider: string): boolean {
+	return cloudProviderIds().has(provider);
+}
+
+export async function getModelProviderAvailability(): Promise<ModelProviderAvailability[]> {
+	const modelPrefs = loadModelPrefs();
+	const cloudProviders = cloudProviderIds();
+	const customProviders = await getCustomProviders();
+	const providerIds = Array.from(new Set([
+		...cloudProviders,
+		...customProviders.map((provider) => provider.name),
+	]));
+	const availability = await Promise.all(providerIds.map(async (id) => ({
+		id,
+		cloud: cloudProviders.has(id),
+		configured: await hasProviderCredential(id),
+		manuallyHidden: modelPrefs.hiddenProviders.includes(id),
+	})));
+	return availability.sort((left, right) => compareModelProviders(left.id, right.id));
+}
+
 export function modelKey(model: Model<any>): string {
 	return `${model.provider}::${model.api}::${model.id}`;
 }
@@ -84,10 +122,24 @@ export async function checkBrowserModelAvailability(): Promise<BrowserModelAvail
 	return Object.fromEntries(entries);
 }
 
-export async function discoverModels(browserAvailability: BrowserModelAvailability): Promise<SelectableModel[]> {
+export async function discoverModels(
+	browserAvailability: BrowserModelAvailability,
+	options: { revealProviders?: ReadonlySet<string> } = {},
+): Promise<SelectableModel[]> {
 	const modelPrefs = loadModelPrefs();
 	const hidden = new Set(modelPrefs.hiddenProviders);
-	const all = await getSelectableModels((provider) => !hidden.has(provider));
+	const cloudProviders = cloudProviderIds();
+	const revealed = options.revealProviders ?? new Set<string>();
+	const configured = new Set<string>();
+	await Promise.all(Array.from(cloudProviders).map(async (provider) => {
+		if (await hasProviderCredential(provider)) configured.add(provider);
+	}));
+	const all = await getSelectableModels((provider) => shouldShowModelProvider({
+		cloud: cloudProviders.has(provider),
+		configured: configured.has(provider),
+		manuallyHidden: hidden.has(provider),
+		revealed: revealed.has(provider),
+	}));
 
 	for (const saved of modelPrefs.customModels) {
 		all.push(buildSavedModel(saved));

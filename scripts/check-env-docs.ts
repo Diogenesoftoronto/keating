@@ -19,7 +19,7 @@ const ENV_EXAMPLE = "web/.env.example";
 const OPERATIONS = "web/src/notorganic-provider/OPERATIONS.md";
 
 /** Variables the checker governs. Everything else is left alone. */
-const GOVERNED = /^(?:VITE_)?NOTORGANIC[A-Z0-9_]*$/;
+const GOVERNED = /^(?:VITE_)?(?:NOTORGANIC[A-Z0-9_]*|KEATING_JUDGEMENT_[A-Z0-9_]+)$/;
 
 function governed(names: Iterable<string>): Set<string> {
 	return new Set([...names].filter((name) => GOVERNED.test(name)));
@@ -35,12 +35,12 @@ async function readByCode(): Promise<Set<string>> {
 	const patterns = [
 		/process\.env\.([A-Z0-9_]+)/g,
 		/process\.env\[["'`]([A-Z0-9_]+)["'`]\]/g,
-		/import\.meta\.env\.([A-Z0-9_]+)/g,
+		/import\.meta\.env\??\.([A-Z0-9_]+)/g,
 		/\benv\.([A-Z0-9_]+)/g,
 		/\benv\(["'`]([A-Z0-9_]+)["'`]\)/g,
 		// Names passed as string literals to config helpers, e.g.
 		// positiveIntegerEnv("NOTORGANIC_MAX_COST_MICROUSD", env).
-		/["'`]((?:VITE_)?NOTORGANIC[A-Z0-9_]*)["'`]/g,
+		/["'`]((?:VITE_)?(?:NOTORGANIC[A-Z0-9_]*|KEATING_JUDGEMENT_[A-Z0-9_]+))["'`]/g,
 	];
 	for (const root of ["web/src", "web/server"]) {
 		const glob = new Glob("**/*.{ts,tsx}");
@@ -74,7 +74,7 @@ async function declaredInEnvExample(): Promise<Set<string>> {
 
 async function documentedInOperations(): Promise<Set<string>> {
 	const source = await readFile(OPERATIONS, "utf8");
-	return governed([...source.matchAll(/\b((?:VITE_)?NOTORGANIC[A-Z0-9_]*)\b/g)].map((m) => m[1]));
+	return governed([...source.matchAll(/\b((?:VITE_)?(?:NOTORGANIC[A-Z0-9_]*|KEATING_JUDGEMENT_[A-Z0-9_]+))\b/g)].map((m) => m[1]));
 }
 
 function report(

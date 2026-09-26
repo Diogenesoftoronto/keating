@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "capture": "cd ../.. && node video/shared/capture.mjs video/keating-surface-tour/shots.json video/keating-surface-tour/assets/shots",
     "dev": "npx --yes hyperframes@0.7.90 preview",
     "check": "npx --yes hyperframes@0.7.90 check",
     "render": "npx --yes hyperframes@0.7.90 render",

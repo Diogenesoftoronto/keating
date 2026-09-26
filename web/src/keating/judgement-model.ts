@@ -1,11 +1,9 @@
 /**
  * The judgement model is configured separately from the tutor model.
  *
- * The model you want teaching you is not necessarily the model you want
- * grading you: a tutor is chosen for prose and pacing, a scorer for calibration
- * and consistency. Tying them together would force one choice to compromise the
- * other, so this setting stands on its own and merely *defaults* to whatever
- * local model is installed.
+ * The tutor model and judgement service serve different roles. The review mode
+ * defaults to hosted Jev; the local model selection configures its on-device
+ * fallback and remains independent from the tutor model.
  */
 import { createLocalSetting } from "./local-setting";
 import { DEFAULT_BROWSER_MODEL_ID } from "../stores/local-model";
@@ -13,13 +11,16 @@ import { desktopOfflineBridge, DESKTOP_OFFLINE_MODEL } from "../lib/desktop-offl
 
 const JUDGEMENT_MODEL_KEY = "keating:judgement-model";
 export const JUDGEMENT_MODEL_CHANGED_EVENT = "keating:judgement-model-changed";
+/** TypeSafe's documented Jev request budgets. */
+export const JEV_REQUEST_TOKEN_LIMIT = 64_000;
+export const JEV_STATE_QUESTION_TOKEN_LIMIT = 32_000;
 
 /**
  * Which rung of the cascade may answer.
  *
- * `local` never leaves the device. `hosted` is opt-in because it sends learner
- * work to a third party, so it is not the default. `off` keeps every decision
- * on the deterministic tier, which always has an answer already.
+ * `local` never leaves the device. `hosted` tries hosted inference first and
+ * falls back to local scoring when available. `off` keeps every decision on
+ * the deterministic tier, which always has an answer already.
  */
 export type JudgementBackendPreference = "off" | "local" | "hosted";
 
@@ -36,12 +37,19 @@ export interface JudgementModelSettings {
    * browser bundle, so the hosted backend is reachable only through this.
    */
   readonly gatewayPath: string;
+  /** Optional request and state-plus-longest-question limits for a custom judge. */
+  readonly requestTokens?: number | null;
+  readonly stateQuestionTokens?: number | null;
+  /** Legacy setting name, migrated to stateQuestionTokens when loading. */
+  readonly contextWindowTokens?: number | null;
 }
 
 export const DEFAULT_JUDGEMENT_MODEL_SETTINGS: JudgementModelSettings = {
-  backend: "local",
+  backend: "hosted",
   localModelId: DEFAULT_BROWSER_MODEL_ID,
   gatewayPath: "/api/judgement",
+  requestTokens: null,
+  stateQuestionTokens: null,
 };
 
 /** Choose the native scoring runtime only when this build exposes it. No download or inference. */
@@ -53,6 +61,11 @@ function defaultJudgementModelSettings(): JudgementModelSettings {
 
 function cleanString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeContextWindow(value: unknown): number | null {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 512 && value <= 2_000_000
+    ? value : null;
 }
 
 function normalizeBackend(value: unknown): JudgementBackendPreference {
@@ -94,6 +107,8 @@ const judgementModelSetting = createLocalSetting<JudgementModelSettings>({
       backend: normalizeBackend(parsed.backend),
       localModelId: cleanString(parsed.localModelId) || defaults.localModelId,
       gatewayPath: normalizeGatewayPath(parsed.gatewayPath),
+      requestTokens: normalizeContextWindow(parsed.requestTokens),
+      stateQuestionTokens: normalizeContextWindow(parsed.stateQuestionTokens ?? parsed.contextWindowTokens),
     };
   },
 });

@@ -55,6 +55,35 @@ test("missing executable and oversized requests abstain without exposing inputs"
   expect(await call({ texts: ["x".repeat(8193)] })).toBeNull();
 });
 
+test("classify bounds are checked before any subprocess starts", async () => {
+  const config: NeedleRuntimeConfig = { python: "/missing/needle-python", engine: "/unused", weights: "/unused", engineSha256: "a".repeat(64), weightsSha256: "b".repeat(64) };
+  const call = createNeedleCaller(config);
+  expect(await call({ texts: ["input"], classify: Array(9).fill("input") })).toBeNull();
+  expect(await call({ texts: ["input"], classify: ["x".repeat(501)] })).toBeNull();
+});
+
+test.skipIf(process.platform !== "linux")("subject classification reaches the worker privately and returns calibrated fields", async () => {
+  const { config, receipt } = await fixture("console.log(JSON.stringify({model,vectors:request.input.texts.map(()=>[1,0,0]),selections:[],classifications:[{field:'physics',confidence:0.93}]}));");
+  const result = await createNeedleCaller(config)({ texts: ["PRIVATE topic"], classify: ["PRIVATE topic"] });
+  expect(result?.classifications).toEqual([{ field: "physics", confidence: 0.93 }]);
+  const proof = JSON.parse(await readFile(receipt, "utf8"));
+  expect(proof.request.input.classify).toEqual(["PRIVATE topic"]);
+  expect(JSON.stringify(proof.argv)).not.toContain("PRIVATE topic");
+});
+
+test.skipIf(process.platform !== "linux")("invalid or unknown subject classifications abstain", async () => {
+  for (const classifications of [
+    "[{field:'not-a-field',confidence:0.9}]",
+    "[{field:'physics',confidence:1.5}]",
+    "[{field:'physics',confidence:'high'}]",
+    "[{field:'physics'}]",
+    "'not-a-list'",
+  ]) {
+    const { config } = await fixture(`console.log(JSON.stringify({model,vectors:request.input.texts.map(()=>[1,0,0]),selections:[],classifications:${classifications}}));`);
+    expect(await createNeedleCaller(config)({ texts: ["one"], classify: ["one"] })).toBeNull();
+  }
+});
+
 test("production configuration requires absolute asset paths and full hashes", async () => {
   const { cwd, config } = await fixture("process.exit(0);");
   expect(await loadNeedleConfig(cwd)).toBeNull();

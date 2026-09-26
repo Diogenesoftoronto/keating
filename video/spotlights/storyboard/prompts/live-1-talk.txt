@@ -1,0 +1,3 @@
+Keating house style: a 1970s public-information poster crossed with an early computer lab. Flat cream paper (#f1ece0), huge green (#1e9b50) sunburst rays from a low horizon, ink-black (#1c211b) forms with hard offset shadows, one coral-red accent, subtle print grain. No text, no letters, no numbers, no logos, no UI text.
+Scene: a learner at a kitchen table in the evening talking out loud to an open laptop, hands gesturing mid-explanation; a soft green glow from the screen; speech shown as bold abstract sound-wave shapes (no text).
+16:9 frame, clean composition.

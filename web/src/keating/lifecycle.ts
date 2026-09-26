@@ -18,7 +18,8 @@ export type KeatingLifecycleEvent =
 	| { type: "artifact_finalized"; sessionId: string; artifact: LearningArtifactEvent }
 	| { type: "session_idle"; sessionId: string }
 	| { type: "session_end"; sessionId: string }
-	| { type: "topic_shift"; sessionId: string; fromCategory: string; toCategory: string; sampleText?: string };
+	| { type: "topic_shift"; sessionId: string; fromCategory: string; toCategory: string; sampleText?: string }
+	| { type: "plan_revised"; sessionId: string; documentId: string; revision: number; op: "complete-item" | "insert-prerequisite" | "expand-item"; via: "autonomous" | "accepted" };
 
 type EventOfType<T extends KeatingLifecycleEvent["type"]> = Extract<KeatingLifecycleEvent, { type: T }>;
 export type KeatingLifecycleHandler<T extends KeatingLifecycleEvent["type"]> = (

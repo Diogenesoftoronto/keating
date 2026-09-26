@@ -133,7 +133,7 @@ export function createWebMemoryAccount(options: {
   const cacheKey = "keating:memory-account-scope:v1";
   const cache = options.storage ?? (() => typeof localStorage === "undefined" ? null : localStorage);
   const session = () => {
-    try { const client = (options.client ?? notOrganicPublicClient)(); return { client, token: client?.getSession()?.accessToken ?? null }; }
+    try { const client = (options.client ?? notOrganicPublicClient)(); return { client, token: (() => { const current = client?.getSession(); return current ? current.id ?? current.accessToken : null; })() }; }
     catch { return { client: null, token: null }; }
   };
   const identity = (source: ReturnType<typeof session>) => JSON.stringify([source.client?.config.issuer ?? null, source.token]);

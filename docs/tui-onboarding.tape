@@ -15,20 +15,36 @@ Set Framerate 25
 Set TypingSpeed 30ms
 Set Theme "Catppuccin Mocha"
 
-# Prepare a clean project and a local portrait without showing temp/home paths.
+# Prepare a clean project, a local portrait and an isolated `keating` command
+# without showing temp/home paths. A clean Pi agent directory guarantees the
+# no-provider onboarding branch; on camera only `keating tui` is typed.
 Hide
-Type "KEATING_CAPTURE_REPO=$PWD; KEATING_CAPTURE_TMP=$(mktemp -d); trap 'case $KEATING_CAPTURE_TMP in /tmp/tmp.*) rm -rf -- $KEATING_CAPTURE_TMP;; esac' EXIT; cd $KEATING_CAPTURE_TMP; cp $KEATING_CAPTURE_REPO/web/public/avatars/learner-newsprint.png ./portrait.png"
+Type "KEATING_CAPTURE_REPO=$PWD; KEATING_CAPTURE_TMP=$(mktemp -d); trap 'case $KEATING_CAPTURE_TMP in /tmp/tmp.*) rm -rf -- $KEATING_CAPTURE_TMP;; esac' EXIT; cd $KEATING_CAPTURE_TMP; cp $KEATING_CAPTURE_REPO/web/public/avatars/learner-newsprint.png ./portrait.png; keating() { env -i HOME=$HOME PATH=$PATH TERM=$TERM COLORTERM=$COLORTERM LANG=$LANG PI_CODING_AGENT_DIR=$KEATING_CAPTURE_TMP/pi bun $KEATING_CAPTURE_REPO/src/cli/main.ts $@; }; clear"
 Enter
 Show
 
-# A clean Pi agent directory guarantees the no-provider onboarding branch.
-Type "env -i HOME=$HOME PATH=$PATH TERM=$TERM COLORTERM=$COLORTERM LANG=$LANG PI_CODING_AGENT_DIR=$KEATING_CAPTURE_TMP/pi bun $KEATING_CAPTURE_REPO/src/cli/main.ts tui"
+Type "keating tui"
 Enter
 Sleep 7s
 
-# The first-run brand screen stays in place until the learner is ready. A blank
-# Enter begins setup and opens the learner-name field directly.
-Enter
+# The eight-step first-run tour advances with Space. The last step's Space
+# opens profile setup with the learner-name field focused.
+Sleep 2s
+Space
+Sleep 3s
+Space
+Sleep 2500ms
+Space
+Sleep 2500ms
+Space
+Sleep 2500ms
+Space
+Sleep 2500ms
+Space
+Sleep 2500ms
+Space
+Sleep 3s
+Space
 Sleep 2s
 
 # Replace the default display name without relying on selection shortcuts.

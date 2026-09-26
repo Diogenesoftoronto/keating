@@ -45,12 +45,24 @@ test("off and local settings never send learner work to hosted inference", async
   expect(remoteCalls).toBe(0);
 });
 
-test("hosted opt-in escalates only after local abstention", async () => {
+test("hosted selection tries hosted judgement first without unnecessary local scoring", async () => {
   const calls: string[] = [];
   const result = await route({ settings: settings("hosted"), localScorer: { modelId: local.model, scoreLabels: async () => { calls.push("local"); return [1, 1]; } },
     hosted: { fetch: async (url, init) => { calls.push("hosted"); expect(url).toBe("/api/judgement"); expect(init.headers.authorization).toBeUndefined(); expect(JSON.parse(init.body).model).toBe("judgement"); return response(); } },
     calibration: { local: calibration(local), hosted: calibration(hosted) } });
-  expect(calls).toEqual(["local", "hosted"]);
+  expect(calls).toEqual(["hosted"]);
+  expect(result.value).toBe(true);
+  expect(result.attempts.map(attempt => attempt.outcome)).toEqual(["decided"]);
+});
+
+test("hosted abstention falls back to an available calibrated local scorer", async () => {
+  const calls: string[] = [];
+  const result = await route({ settings: settings("hosted"),
+    localScorer: { modelId: local.model, scoreLabels: async () => { calls.push("local"); return [0, 1]; } },
+    hosted: { fetch: async () => { calls.push("hosted"); return { ok: true, status: 200,
+      json: async () => ({ model: hosted.model, answers: { ready: { type: "noul", noul: .5 } } }) }; } },
+    calibration: { local: calibration(local), hosted: calibration(hosted) } });
+  expect(calls).toEqual(["hosted", "local"]);
   expect(result.value).toBe(true);
   expect(result.attempts.map(attempt => attempt.outcome)).toEqual(["abstained", "decided"]);
 });

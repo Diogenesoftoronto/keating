@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   AbsoluteFill,
   Audio,
+  cancelRender,
+  continueRender,
+  delayRender,
   Easing,
+  Img,
   interpolate,
-  Loop,
-  OffthreadVideo,
   Sequence,
   staticFile,
   useCurrentFrame,
@@ -13,28 +15,35 @@ import {
 } from "remotion";
 
 export interface IntroScene {
-  clipSrc: string;
-  clipDurationSeconds: number;
+  shotSrc: string;
+  width: number;
+  height: number;
   title: string;
   kicker: string;
   body: string;
   weight: number;
 }
 
-export interface KeatingIntroProps {
+export type KeatingIntroProps = {
+  /** Header label; spotlights reuse this composition with their own. */
+  label?: string;
   audioSrc: string | null;
   durationSeconds: number;
   scenes: IntroScene[];
-}
+};
 
 const palette = {
-  ink: "#171512",
-  parchment: "#f2ead6",
-  cream: "#fff7df",
-  terracotta: "#c45f38",
-  sage: "#7f9864",
-  slate: "#2f4050",
+  paper: "#f1ece0",
+  ink: "#1c211b",
+  green: "#1e9b50",
+  deepGreen: "#14743c",
+  mint: "#b7f1ce",
+  paperDeep: "#e5dfd1",
+  inkSoft: "#4a5147",
 };
+const labelFont = '"JetBrains Mono"';
+const stageWidth = 1120;
+const stageHeight = 860;
 
 function sceneDurations(scenes: IntroScene[], totalFrames: number): number[] {
   const weightTotal = scenes.reduce((sum, scene) => sum + scene.weight, 0);
@@ -49,161 +58,124 @@ function sceneDurations(scenes: IntroScene[], totalFrames: number): number[] {
   });
 }
 
-const SceneCard: React.FC<{ scene: IntroScene; duration: number }> = ({ scene, duration }) => {
+const SceneCard: React.FC<{ scene: IntroScene; duration: number; index: number }> = ({ scene, duration, index }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const fade = interpolate(frame, [0, 18, duration - 18, duration], [0, 1, 1, 0], {
+  const enter = (delay: number) => interpolate(frame, [delay, delay + 12], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
-    easing: Easing.bezier(0.2, 0.8, 0.2, 1),
+    easing: Easing.out(Easing.exp),
   });
-  const lift = interpolate(frame, [0, duration], [24, -18], {
+  // Fade out over the last few frames so a cut dips to paper instead of popping.
+  const exit = interpolate(frame, [duration - 8, duration - 1], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
+    easing: Easing.in(Easing.quad),
   });
-  const clipFrames = Math.max(1, Math.round(scene.clipDurationSeconds * fps));
+  const textStyle = (delay: number): React.CSSProperties => ({
+    opacity: enter(delay) * exit,
+    transform: `translateY(${(1 - enter(delay)) * 18}px)`,
+  });
+  const progress = interpolate(frame, [0, Math.max(1, duration - 1)], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.inOut(Easing.sin),
+  });
+  // Compare height/width in the same orientation as the stage. Cover + objectPosition
+  // traverses exactly the vertical overflow, exposing the top and bottom at the ends.
+  const tall = scene.height / scene.width > 0.9 * (stageHeight / stageWidth);
+  const direction = index % 2 === 0 ? 1 : -1;
+  const scale = tall ? 1 : 1.02 + progress * 0.06;
+  const drift = tall ? 0 : direction * (progress * 2 - 1) * 8;
 
   return (
-    <AbsoluteFill style={{ backgroundColor: palette.ink, overflow: "hidden" }}>
-      <Loop durationInFrames={clipFrames}>
-        <OffthreadVideo
-          src={staticFile(scene.clipSrc)}
-          muted
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            filter: "saturate(0.95) contrast(1.12) brightness(0.72)",
-            transform: `scale(1.05) translateY(${lift}px)`,
-          }}
-        />
-      </Loop>
-      <AbsoluteFill
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(23,21,18,0.96) 0%, rgba(23,21,18,0.76) 38%, rgba(23,21,18,0.22) 70%, rgba(23,21,18,0.08) 100%)",
-        }}
-      />
-      <AbsoluteFill
-        style={{
-          background:
-            "radial-gradient(circle at 72% 20%, rgba(196,95,56,0.26), transparent 30%), linear-gradient(0deg, rgba(23,21,18,0.4), transparent 42%)",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          left: 120,
-          top: 128,
-          width: 780,
-          opacity: fade,
-          transform: `translateY(${interpolate(frame, [0, 24], [18, 0], {
-            extrapolateRight: "clamp",
-          })}px)`,
-          color: palette.cream,
-          fontFamily: "Georgia, 'Times New Roman', serif",
-        }}
-      >
-        <div
-          style={{
-            color: palette.sage,
-            fontSize: 31,
-            textTransform: "uppercase",
-            letterSpacing: 0,
-            fontWeight: 700,
-            marginBottom: 22,
-          }}
-        >
-          {scene.kicker}
+    <AbsoluteFill>
+      <div style={{ position: "absolute", left: 96, top: 110, height: stageHeight, width: 560, display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div style={{ ...textStyle(0), color: palette.green, fontFamily: labelFont, fontWeight: 700, fontSize: 22, letterSpacing: 2, marginBottom: 28 }}>
+          [{scene.kicker}]
         </div>
-        <div
-          style={{
-            fontSize: 104,
-            lineHeight: 0.92,
-            fontWeight: 800,
-            marginBottom: 32,
-            textShadow: "0 7px 26px rgba(0,0,0,0.36)",
-          }}
-        >
+        <div style={{ ...textStyle(4), fontFamily: '"Space Mono"', fontSize: 64, fontWeight: 700, lineHeight: 1.08, letterSpacing: -2.5, marginBottom: 30 }}>
           {scene.title}
         </div>
-        <div
-          style={{
-            width: 118,
-            height: 8,
-            background: palette.terracotta,
-            marginBottom: 34,
-          }}
-        />
-        <div
-          style={{
-            color: palette.parchment,
-            fontSize: 39,
-            lineHeight: 1.22,
-            maxWidth: 710,
-            textShadow: "0 5px 20px rgba(0,0,0,0.42)",
-          }}
-        >
+        <div style={{ ...textStyle(8), fontFamily: '"Roboto"', fontWeight: 500, fontSize: 26, lineHeight: 1.45, color: palette.inkSoft, maxWidth: 510 }}>
           {scene.body}
         </div>
+        <div style={{ width: 120, height: 12, background: palette.green, marginTop: 36, opacity: exit, transform: `scaleX(${enter(12)})`, transformOrigin: "left" }} />
       </div>
-      <div
-        style={{
-          position: "absolute",
-          left: 120,
-          bottom: 78,
-          color: "rgba(255,247,223,0.72)",
-          fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
-          fontSize: 24,
-          opacity: fade,
-        }}
-      >
-        keating.help / cognitive empowerment through Socratic AI
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          right: 76,
-          bottom: 68,
-          width: 320,
-          height: 6,
-          background: "rgba(255,247,223,0.18)",
-        }}
-      >
-        <div
-          style={{
-            width: `${interpolate(frame, [0, duration], [0, 100], {
-              extrapolateLeft: "clamp",
-              extrapolateRight: "clamp",
-            })}%`,
-            height: "100%",
-            background: palette.terracotta,
-          }}
-        />
+      <div style={{ position: "absolute", right: 96, top: 110, width: stageWidth, height: stageHeight, boxSizing: "border-box", border: `4px solid ${palette.ink}`, background: palette.paper, boxShadow: `16px 16px 0 ${palette.green}`, opacity: enter(0) * exit, transform: `translateX(${40 * (1 - enter(0))}px)` }}>
+        <AbsoluteFill style={{ overflow: "hidden" }}>
+          <Img src={staticFile(scene.shotSrc)} style={{
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            // Landscape captures have a paper safety margin so the push never
+            // crops the left-aligned product instructions or answer controls.
+            width: tall ? "100%" : stageWidth - 96,
+            height: tall ? "100%" : (stageWidth - 96) * scene.height / scene.width,
+            objectFit: "cover",
+            objectPosition: tall ? `50% ${progress * 100}%` : "50% 50%",
+            transform: `translate(-50%, -50%) translateX(${drift}px) scale(${scale})`,
+          }} />
+        </AbsoluteFill>
+        <div style={{ position: "absolute", right: -4, bottom: -4, border: `3px solid ${palette.ink}`, background: palette.mint, padding: "10px 16px", fontFamily: labelFont, fontSize: 15, fontWeight: 700, letterSpacing: 1.4 }}>
+          REAL PRODUCT CAPTURE
+        </div>
       </div>
     </AbsoluteFill>
   );
 };
 
-export const KeatingIntro: React.FC<KeatingIntroProps> = ({ audioSrc, durationSeconds, scenes }) => {
+export const KeatingIntro: React.FC<KeatingIntroProps> = ({ label = "KEATING // 4.0", audioSrc, durationSeconds, scenes }) => {
   const { fps } = useVideoConfig();
+  const frame = useCurrentFrame();
+  const [fontHandle] = useState(() => delayRender("Load local Keating fonts"));
+  useEffect(() => {
+    const stylesheet = document.createElement("link");
+    stylesheet.rel = "stylesheet";
+    stylesheet.href = staticFile("fonts/fonts.css");
+    stylesheet.onload = () => {
+      void Promise.all([
+        document.fonts.load('400 24px "Space Mono"'),
+        document.fonts.load('700 64px "Space Mono"'),
+        document.fonts.load('700 22px "JetBrains Mono"'),
+        document.fonts.load('500 26px "Roboto"'),
+      ]).then((fonts) => {
+        if (fonts.some((faces) => faces.length === 0)) throw new Error("A required Keating font is missing");
+        continueRender(fontHandle);
+      }).catch((error: Error) => cancelRender(error));
+    };
+    stylesheet.onerror = () => cancelRender(new Error("Could not load local fonts/fonts.css"));
+    document.head.appendChild(stylesheet);
+    return () => { stylesheet.remove(); };
+  }, [fontHandle]);
+
   const totalFrames = Math.round(durationSeconds * fps);
   const durations = sceneDurations(scenes, totalFrames);
   let from = 0;
+  const starts = durations.map((duration) => {
+    const start = from;
+    from += duration;
+    return start;
+  });
+  const activeIndex = starts.findIndex((start, index) => frame >= start && frame < start + durations[index]);
 
   return (
-    <AbsoluteFill style={{ backgroundColor: palette.ink }}>
+    <AbsoluteFill style={{ backgroundColor: palette.paper, color: palette.ink }}>
       {audioSrc ? <Audio src={staticFile(audioSrc)} /> : null}
-      {scenes.map((scene, index) => {
-        const duration = durations[index];
-        const sequence = (
-          <Sequence key={scene.clipSrc} from={from} durationInFrames={duration}>
-            <SceneCard scene={scene} duration={duration} />
-          </Sequence>
-        );
-        from += duration;
-        return sequence;
-      })}
+      {scenes.map((scene, index) => (
+        <Sequence key={scene.shotSrc} from={starts[index]} durationInFrames={durations[index]}>
+          <SceneCard scene={scene} duration={durations[index]} index={index} />
+        </Sequence>
+      ))}
+      <div style={{ position: "absolute", left: 96, right: 96, top: 36, paddingBottom: 16, borderBottom: `2px solid ${palette.ink}`, fontFamily: labelFont, fontWeight: 700, fontSize: 22, letterSpacing: 2 }}>
+        {label}
+      </div>
+      <div style={{ position: "absolute", left: 96, right: 96, bottom: 30, height: 42, display: "flex", border: `3px solid ${palette.ink}`, background: palette.paperDeep }}>
+        {scenes.map((scene, index) => (
+          <div key={scene.shotSrc} style={{ flex: 1, minWidth: 0, display: "flex", justifyContent: "center", alignItems: "center", borderRight: index < scenes.length - 1 ? `3px solid ${palette.ink}` : undefined, background: index === activeIndex ? palette.green : index < activeIndex ? palette.mint : palette.paperDeep, color: index === activeIndex ? palette.paper : index < activeIndex ? palette.deepGreen : palette.inkSoft, fontFamily: labelFont, fontWeight: 700, fontSize: 14, letterSpacing: 0.3 }}>
+            {scene.kicker}
+          </div>
+        ))}
+      </div>
     </AbsoluteFill>
   );
 };

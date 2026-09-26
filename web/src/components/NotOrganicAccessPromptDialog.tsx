@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { KeyRound, X } from "lucide-react";
+import { KeatingBot } from "./KeatingBot";
 import { css, cx } from "../../styled-system/css";
 import { iconButton, primaryButton } from "../../styled-system/recipes";
 import {
@@ -122,9 +123,15 @@ export function NotOrganicAccessPanel({ loading = false, error, summary, connect
 			<button type="button" onClick={onDismiss} aria-label="Close account sign-in" className={cx(iconButton({ size: "md", tone: "ghost" }), css({ minWidth: "2.75rem", minHeight: "2.75rem" }))}><X size={18} aria-hidden="true" /></button>
 		</header>
 		{creditContent ? <div id={descriptionId} className={css({ padding: "0.75rem" })}>{creditContent}</div> : <div className={css({ display: "flex", flexDirection: "column", gap: "1rem", padding: "1.25rem" })}>
+			{/* The sign-in ask is the first thing many people ever see of Keating.
+			    The bot switches to `connecting` while the handshake runs, so the
+			    wait has something in it other than a disabled button. */}
+			<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.875rem" })}>
+			<KeatingBot size={64} state={loading ? "connecting" : connected ? "settled" : "greeting"} label="" />
 			<p id={descriptionId} className={css({ fontSize: "0.9375rem", lineHeight: 1.6 })}>{pack
 				? <>Add <strong>${pack.priceUsd}</strong> in Keating credits with your Not Organic account.</>
 				: <>Sign up or sign in to use <strong>Inkling Small</strong>, Keating’s default model. Your account is managed by Not Organic.</>}</p>
+			</div>
 			{summary && <p role="status" className={css({ fontSize: "0.875rem", overflowWrap: "anywhere" })}>{summary}</p>}
 			{error && <p role="alert" className={css({ fontSize: "0.875rem", color: "var(--destructive)", overflowWrap: "anywhere" })}>{error}</p>}
 			<div className={css({ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "0.75rem" })}>

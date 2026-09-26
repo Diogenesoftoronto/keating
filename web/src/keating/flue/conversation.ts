@@ -306,6 +306,21 @@ export class FlueConversation {
   sendPrepared(message: AgentMessage, prepare: (signal: AbortSignal) => Promise<void>): Promise<void> {
     return this.run([message], prepare);
   }
+  /**
+   * Submit a restored trailing learner turn that never reached Flue, such as
+   * one interrupted by a sign-in redirect. Resuming would only send a signal,
+   * so the turn would never enter the native history the chat renders.
+   */
+  sendRestored(prepare?: (signal: AbortSignal) => Promise<void>): Promise<void> {
+    const last = this.context.messages.at(-1);
+    if (!last || last.role !== "user")
+      return Promise.reject(new Error("No restored learner message to send."));
+    this.context.messages = this.context.messages.slice(0, -1);
+    const restored = this.initialHistory.at(-1);
+    if (!this.bridge && restored?.role === "user" && restored.timestamp === last.timestamp)
+      this.initialHistory = this.initialHistory.slice(0, -1);
+    return this.run([last], prepare);
+  }
   resume(prepare?: (signal: AbortSignal) => Promise<void>): Promise<void> {
     // Context notices may follow the unfinished turn. They still belong in
     // model context, but must not prevent retrying the learner's message.

@@ -9,7 +9,7 @@ import { spawn } from 'node:child_process';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PIN_PATH = resolve(HERE, '../signing/fingerprint.txt');
-const ARTIFACT = /(?:\.AppImage|\.deb|\.rpm|\.exe|\.tar\.gz)$/;
+const ARTIFACT = /(?:\.AppImage|\.deb|\.rpm|\.exe|\.dmg|\.zip|\.apk|\.tar\.gz)$/;
 const LINUX = /(?:\.AppImage|\.deb|\.rpm)$/;
 
 /** No command output is logged: signing tools can print sensitive diagnostics. */

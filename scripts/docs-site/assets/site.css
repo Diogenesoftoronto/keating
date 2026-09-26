@@ -120,6 +120,8 @@ main{min-width:0;padding-top:30px}
 .app-screenshot figcaption a{display:table;padding:7px 0;font-size:.82rem}
 .app-video{margin:28px 0;max-width:100%}
 .app-video video{display:block;width:100%;max-width:100%;height:auto;aspect-ratio:16/9;background:#0c1510;border:1px solid var(--ink);box-shadow:3px 3px 0 var(--ink);border-radius:3px}
+.app-video--portrait video{aspect-ratio:9/16;max-width:min(100%,360px)}
+.app-video--square video{aspect-ratio:1/1;max-width:min(100%,480px)}
 .app-video figcaption{margin-top:12px;color:var(--muted);font-size:.85rem;line-height:1.65;max-width:70ch;overflow-wrap:anywhere}
 .app-video figcaption strong{color:var(--ink);font-weight:600}
 .app-video figcaption a{display:table;padding:7px 0;font-size:.82rem}

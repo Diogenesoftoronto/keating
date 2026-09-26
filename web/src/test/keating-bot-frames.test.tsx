@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AppStatusScreen } from "../components/AppStatusScreen";
-import { KeatingBot, keatingBotFramePosition, keatingBotSpriteVariant, KEATING_BOT_CHAT_STATES, KEATING_BOT_ACTIVITY_STATES } from "../components/KeatingBot";
+import { KeatingBot, keatingBotFramePosition, keatingBotSpriteVariant, KEATING_BOT_CHAT_STATES, KEATING_BOT_ACTIVITY_STATES, KEATING_BOT_ONBOARDING_STATES, type KeatingBotState } from "../components/KeatingBot";
 
 describe("Keatingbot authored atlas frames", () => {
 	test("each row-major pose selects one of the eight distinct cells", () => {
@@ -21,7 +21,7 @@ describe("Keatingbot authored atlas frames", () => {
 		expect(keatingBotFramePosition(4.9)).toEqual({ x: "0%", y: "100%" });
 	});
 	test("every state exposes the final frozen frame and keeps accessible naming", () => {
-		for (const variant of ["head", "body"] as const) for (const state of [...KEATING_BOT_CHAT_STATES, ...KEATING_BOT_ACTIVITY_STATES]) {
+		for (const variant of ["head", "body"] as const) for (const state of [...KEATING_BOT_CHAT_STATES, ...KEATING_BOT_ACTIVITY_STATES, ...KEATING_BOT_ONBOARDING_STATES]) {
 			const html = renderToStaticMarkup(<KeatingBot variant={variant} state={state} frame={7} label="Keating is listening" />);
 			expect(html).toContain('data-frozen="true"');
 			expect(html).toContain('--keating-bot-frame-x:100%;--keating-bot-frame-y:100%');
@@ -29,12 +29,16 @@ describe("Keatingbot authored atlas frames", () => {
 		}
 	});
 	test("walking and flips keep the full pose visible at either placement", () => {
-		for (const state of ["walking", "flipping", "lotus", "connecting", "understanding"] as const) {
-			expect(keatingBotSpriteVariant("head", state)).toBe("body");
-			expect(keatingBotSpriteVariant("body", state)).toBe("body");
+		// Spelled out rather than derived from the function, so a state that quietly
+		// changes placement fails here instead of agreeing with itself.
+		const wholeBody = new Set<string>(["walking", "flipping", "lotus", "connecting", "understanding", ...KEATING_BOT_ONBOARDING_STATES]);
+		for (const state of wholeBody) {
+			expect(keatingBotSpriteVariant("head", state as KeatingBotState)).toBe("body");
+			expect(keatingBotSpriteVariant("body", state as KeatingBotState)).toBe("body");
 		}
-		for (const state of [...KEATING_BOT_CHAT_STATES, ...KEATING_BOT_ACTIVITY_STATES]) {
-			if (state !== "walking" && state !== "flipping" && state !== "lotus" && state !== "connecting" && state !== "understanding") expect(keatingBotSpriteVariant("head", state)).toBe("head");
+		for (const state of [...KEATING_BOT_CHAT_STATES, ...KEATING_BOT_ACTIVITY_STATES, ...KEATING_BOT_ONBOARDING_STATES]) {
+			if (wholeBody.has(state)) continue;
+			expect(keatingBotSpriteVariant("head", state)).toBe("head");
 		}
 	});
 	test("route loading uses authored motion while error artwork stays distinct", () => {

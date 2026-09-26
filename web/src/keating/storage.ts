@@ -38,7 +38,7 @@ import {
 export type { Flashcard, FlashcardDeck, FlashcardSrsState } from "./flashcard-types";
 
 const DB_NAME = "keating-db";
-const DB_VERSION = 7;
+const DB_VERSION = 9;
 const LEARNER_STATE_SCHEMA_VERSION = 3;
 const META_STORE = "_meta";
 const OPENUI_ACTION_JOURNAL_PREFIX = "openui-action-journal:v1:";
@@ -62,6 +62,8 @@ const STORES = {
 	DECKS: "decks",
 	CARD_REVIEWS: "card-reviews",
 	QUESTION_CHECKS: "question-checks",
+	OPENUI_PRESENTATIONS: "openui-presentations",
+	TEACHING_DRAFT_RECEIPTS: "teaching-draft-receipts",
 } as const;
 
 export interface KeatingStoragePortableData {
@@ -379,6 +381,50 @@ export interface QuestionCheckRecord {
 	judgement?: BrowserQuestionJudgement;
 	createdAt: number;
 	sessionId?: string;
+	/** Top-level OpenUI node that produced this answer; absent on legacy records. */
+	source?: OpenUiRecordSource;
+}
+
+export interface OpenUiRecordSource {
+	documentId: string;
+	revision: number;
+	nodeId: string;
+}
+
+/**
+ * One interactive OpenUI node as first shown to the learner, linked to the
+ * plan item that was the active focus at that moment. Written once; the link
+ * is never rewritten when the focus later moves.
+ */
+export interface OpenUiPresentationRecord {
+	/** `${documentId}:${nodeId}` so re-renders and revisions keep the first link. */
+	id: string;
+	documentId: string;
+	revision: number;
+	nodeId: string;
+	component: string;
+	sessionId?: string;
+	createdAt: number;
+	planRef: { documentId: string; itemId: string } | null;
+	/** Presented snapshot, kept only for study plans so the plan is known before any learner action. */
+	document?: UiDocument;
+}
+
+/**
+ * What the draft gate decided for one published tutor turn. Holds the same
+ * content-free projection as the live status (check ids, verdicts,
+ * probabilities, timing) plus the active-work view the drafts were judged
+ * against. No draft text is ever stored.
+ */
+export interface TeachingDraftReceiptRecord {
+	/** `${sessionId}:${messageTimestamp}` */
+	id: string;
+	sessionId: string;
+	/** Timestamp of the published assistant message this receipt describes. */
+	messageTimestamp: number;
+	createdAt: number;
+	snapshot: import("@keating/learner-contracts").TeachingDraftSnapshot;
+	activeWork?: import("@keating/learner-contracts").ActiveWork;
 }
 
 /** The durable result of applying one canonical OpenUI action to learner records. */
@@ -1032,6 +1078,7 @@ export class KeatingStorage {
 						...grade,
 						createdAt: timestamp,
 						sessionId: this.currentSessionId ?? undefined,
+						source: { documentId: sourceDocument.id, revision: sourceDocument.revision, nodeId: target!.node.id },
 					};
 					await requestValue(transaction.objectStore(STORES.QUESTION_CHECKS).put(check));
 					queueReview(check, question);
@@ -1051,6 +1098,7 @@ export class KeatingStorage {
 							...automaticallyGradeQuestionGroupResponse(response, question),
 							createdAt: timestamp,
 							sessionId: this.currentSessionId ?? undefined,
+							source: { documentId: sourceDocument.id, revision: sourceDocument.revision, nodeId: group.id },
 						} satisfies QuestionCheckRecord;
 					});
 					const questionChecks = transaction.objectStore(STORES.QUESTION_CHECKS);
@@ -1084,6 +1132,7 @@ export class KeatingStorage {
 							...grade,
 							createdAt: timestamp,
 							sessionId: this.currentSessionId ?? undefined,
+							source: { documentId: sourceDocument.id, revision: sourceDocument.revision, nodeId: quiz.id },
 						};
 						await requestValue(questionChecks.put(check));
 						queueReview(check, question);
@@ -2134,6 +2183,34 @@ export class KeatingStorage {
 	async getQuestionChecks(topic?: string): Promise<QuestionCheckRecord[]> {
 		if (topic) return this.getByTopic<QuestionCheckRecord>(STORES.QUESTION_CHECKS, topic);
 		return this.getAll<QuestionCheckRecord>(STORES.QUESTION_CHECKS);
+	}
+
+	/** Records first presentations only; returns how many were new. */
+	async recordOpenUiPresentations(records: readonly OpenUiPresentationRecord[]): Promise<number> {
+		if (!records.length) return 0;
+		const store = await this.getStore(STORES.OPENUI_PRESENTATIONS, "readwrite");
+		let added = 0;
+		for (const record of records) {
+			const existing = await requestValue(store.get(record.id));
+			if (existing) continue;
+			await requestValue(store.put(record));
+			added += 1;
+		}
+		return added;
+	}
+
+	async getOpenUiPresentations(sessionId?: string): Promise<OpenUiPresentationRecord[]> {
+		const records = await this.getAll<OpenUiPresentationRecord>(STORES.OPENUI_PRESENTATIONS);
+		return sessionId ? records.filter((record) => record.sessionId === sessionId) : records;
+	}
+
+	async recordTeachingDraftReceipt(record: TeachingDraftReceiptRecord): Promise<void> {
+		await this.put(STORES.TEACHING_DRAFT_RECEIPTS, record);
+	}
+
+	async getTeachingDraftReceipts(sessionId: string): Promise<TeachingDraftReceiptRecord[]> {
+		const records = await this.getAll<TeachingDraftReceiptRecord>(STORES.TEACHING_DRAFT_RECEIPTS);
+		return records.filter((record) => record.sessionId === sessionId).sort((a, b) => a.messageTimestamp - b.messageTimestamp);
 	}
 
 	async gradeQuestionCheck(id: string, grade: { score: number; misconception?: string }): Promise<QuestionCheckRecord | null> {

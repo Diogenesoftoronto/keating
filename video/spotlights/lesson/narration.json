@@ -1,0 +1,23 @@
+{
+  "$comment": "Native 9:16 micro-lesson: Keating teaches the seasons Socratically. Two voices; the learner reaches the answer. Canonical narration; edit a line and re-run produce.sh.",
+  "label": "KEATING // ONE-MINUTE LESSON",
+  "format": "micro-lesson — vertical, two-voice Socratic dialogue over animated illustrations",
+  "output": "keating-lesson",
+  "size": [1080, 1920],
+  "tts": {
+    "engine": "fal",
+    "model": "google/gemini-3.8-flash-tts",
+    "voice": "Kore",
+    "instructions": "Voice: a warm, wry teacher mid-lesson with one student, genuinely curious about how they think. Pacing: conversational, a real pause after every question. Pronounce 'Keating' as KEE-ting."
+  },
+  "timing": { "lead": 0.3, "tail": 0.45, "fps": 30 },
+  "scenes": [
+    { "id": "hook", "min": 3, "role": "keating", "text": "Quick one. Why is it colder in winter?", "art": ["l-1-winter"] },
+    { "id": "guess", "min": 3, "role": "learner", "voice": "Puck", "instructions": "A bright student answering quickly and confidently, a common guess. Natural and casual.", "text": "Because the Earth is farther from the sun?", "art": ["l-1-winter"] },
+    { "id": "push", "min": 4.5, "role": "keating", "text": "Good guess. Then why is it summer in Sydney when it's winter in Toronto?", "art": ["l-2-globe"] },
+    { "id": "think", "min": 4.5, "role": "learner", "voice": "Puck", "instructions": "The same student slowing down, thinking it through out loud, a little surprised at themself.", "text": "Oh. Same distance, both places. So it's not distance. Is it the tilt?", "art": ["l-3-orbit"] },
+    { "id": "probe", "min": 3.5, "role": "keating", "text": "Keep going. What does the tilt do to the sunlight?", "art": ["l-4-beam"] },
+    { "id": "aha", "min": 4.5, "role": "learner", "voice": "Puck", "instructions": "The same student, the idea clicking, pleased and a little excited.", "text": "It hits us at a low angle, so the same light spreads out thinner.", "art": ["l-4-beam"] },
+    { "id": "close", "min": 6, "role": "keating", "text": "Exactly. We're actually closest to the sun in January. You worked that out — I only asked.", "art": [] }
+  ]
+}

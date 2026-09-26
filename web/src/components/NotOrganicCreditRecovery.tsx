@@ -138,9 +138,10 @@ export function NotOrganicCreditRecovery({ onRetry, onModelSelect, details, init
     try {
       const verified = await readWallet();
       if (!availableCreditPacks(verified, checkoutEnabled).some(pack => pack.id === packId)) throw new Error("Credit purchases aren’t available right now. Your message is still saved.");
-      // The hosted gateway requires HTTPS. Keep the chat open, including in
-      // desktop, and verify the authenticated wallet when focus returns.
-      const result = await createNotOrganicCheckout(packId, "https://keating.help/pricing?checkout=returned");
+      // Stay on the signed-in web origin. Desktop uses a local origin, so its
+      // checkout still returns to the secure website in the system browser.
+      const returnOrigin = window.location.protocol === "https:" ? window.location.origin : "https://keating.help";
+      const result = await createNotOrganicCheckout(packId, `${returnOrigin}/pricing?checkout=returned`);
       const url = new URL(result.url ?? result.checkout_url ?? "");
       if (url.protocol !== "https:" || url.username || url.password) throw new Error("Checkout could not be opened. Please try again.");
       if (mounted.current) {

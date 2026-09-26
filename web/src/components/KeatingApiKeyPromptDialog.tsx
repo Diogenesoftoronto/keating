@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { getAppStorage } from "../keating/app-storage";
 import { KeyRound, X } from "lucide-react";
+import { KeatingBot } from "./KeatingBot";
 import { css } from "../../styled-system/css";
 import { handleTutorialLinkClick, tutorialApiKeyHref } from "../lib/tutorial-links";
 import { isNotOrganicProvider } from "../notorganic-provider";
 import { providerToOAuthId } from "../keating/oauth";
+import { notifyProviderCredentialsChanged } from "../keating/model-prefs";
 import {
 	NotOrganicAccessPromptDialog,
 	promptNotOrganicAccess,
@@ -29,7 +31,9 @@ export async function promptKeatingApiKey(
 	if (typeof window === "undefined") return false;
 	if (isNotOrganicProvider(provider)) {
 		// Keating uses an account session, never a stored provider API key.
-		return promptNotOrganicAccess({ force: options.force, allowSignIn: true });
+		const connected = await promptNotOrganicAccess({ force: options.force, allowSignIn: true });
+		if (connected) notifyProviderCredentialsChanged(provider);
+		return connected;
 	}
 	if (!options.force) {
 		const existing = await getAppStorage().providerKeys.get(provider);
@@ -116,6 +120,7 @@ export function KeatingApiKeyPromptDialog() {
 		setError("");
 		try {
 			await getAppStorage().providerKeys.set(request.provider, trimmed);
+			notifyProviderCredentialsChanged(request.provider);
 			closePrompt(true);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
@@ -142,9 +147,14 @@ export function KeatingApiKeyPromptDialog() {
 					</button>
 				</div>
 				<div className={css({ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem" })}>
-					<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
+					{/* Asking for a key is the least welcoming moment in the product;
+					    the bot is here so it reads as a request rather than a wall. */}
+					<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.75rem" })}>
+						<KeatingBot size={52} state="greeting" label="" />
+						<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>
 						Add a local browser API key for {label || request.provider} to use this model.
-					</p>
+						</p>
+					</div>
 					<input
 						type="password"
 						className={css({ width: "100%", borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem" })}

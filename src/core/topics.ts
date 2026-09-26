@@ -2,6 +2,7 @@ import { Domain, TopicDefinition } from "./types.js";
 
 export type { TopicDefinition } from "./types.js";
 import { slugify, titleCase } from "./util.js";
+import { familyOf, guessField } from "../../shared/pedagogy/domains.js";
 
 const TOPICS: Record<string, TopicDefinition> = {
   derivative: {
@@ -496,53 +497,6 @@ const TOPICS: Record<string, TopicDefinition> = {
   }
 };
 
-const DOMAIN_KEYWORDS: Record<string, Domain> = {};
-for (const [kw, d] of [
-  ["function", "code"], ["algorithm", "code"], ["programming", "code"], ["code", "code"],
-  ["loop", "code"], ["variable", "code"], ["compiler", "code"], ["data-structure", "code"],
-  ["class", "code"], ["inheritance", "code"], ["api", "code"], ["database", "code"],
-  ["court", "law"], ["statute", "law"], ["legal", "law"], ["tort", "law"],
-  ["contract", "law"], ["constitution", "law"], ["rights", "law"], ["jurisdiction", "law"],
-  ["democracy", "politics"], ["election", "politics"], ["sovereignty", "politics"],
-  ["ideology", "politics"], ["parliament", "politics"], ["governance", "politics"],
-  ["memory", "psychology"], ["emotion", "psychology"], ["behavior", "psychology"],
-  ["cognition", "psychology"], ["perception", "psychology"], ["personality", "psychology"],
-  ["diagnosis", "medicine"], ["treatment", "medicine"], ["pathology", "medicine"],
-  ["clinical", "medicine"], ["anatomy", "medicine"], ["pharmacology", "medicine"],
-  ["painting", "arts"], ["sculpture", "arts"], ["music", "arts"], ["composition", "arts"],
-  ["poetry", "arts"], ["theatre", "arts"], ["aesthetic", "arts"], ["harmony", "arts"],
-  ["war", "history"], ["empire", "history"], ["revolution", "history"], ["medieval", "history"],
-  ["colonial", "history"], ["ancient", "history"], ["civilization", "history"],
-  ["theorem", "math"], ["proof", "math"], ["calculus", "math"], ["algebra", "math"],
-  ["geometry", "math"], ["integral", "math"], ["topology", "math"],
-  ["evolution", "science"], ["quantum", "science"], ["thermodynamic", "science"],
-  ["cell", "science"], ["gravity", "science"], ["relativity", "science"],
-  ["dna", "science"], ["rna", "science"], ["gene", "science"], ["genome", "science"],
-  ["protein", "science"], ["enzyme", "science"], ["chromosome", "science"],
-  ["mitosis", "science"], ["meiosis", "science"], ["mutation", "science"],
-  ["ecosystem", "science"], ["biodiversity", "science"], ["habitat", "science"],
-  ["species", "science"], ["biosphere", "science"], ["biome", "science"],
-  ["anatomy", "science"], ["physiology", "science"], ["organ", "science"],
-  ["muscle", "science"], ["bone", "science"], ["cardiovascular", "science"],
-  ["neuron", "science"], ["synapse", "science"], ["hormone", "science"],
-  ["bacteria", "science"], ["virus", "science"], ["pathogen", "science"],
-  ["infection", "science"], ["microbiology", "science"], ["antibiotic", "science"],
-  ["vaccine", "science"], ["microbiome", "science"], ["epidemiology", "science"],
-  ["immunology", "science"], ["antibody", "science"], ["antigen", "science"],
-  ["ethics", "philosophy"], ["epistemology", "philosophy"], ["metaphysics", "philosophy"],
-  ["logic", "philosophy"], ["existentialism", "philosophy"], ["ontology", "philosophy"]
-] as const) {
-  DOMAIN_KEYWORDS[kw] = d;
-}
-
-function guessDomain(slug: string): Domain {
-  const words = slug.split("-");
-  for (const word of words) {
-    if (DOMAIN_KEYWORDS[word]) return DOMAIN_KEYWORDS[word];
-  }
-  return "general";
-}
-
 const DOMAIN_EXAMPLE_HINTS: Record<Domain, { examples: [string, string]; exercises: [string, string] }> = {
   code: {
     examples: ["Write a minimal runnable example demonstrating %s.", "Trace execution step by step for a simple input."],
@@ -597,7 +551,8 @@ const VISUALIZABLE_DOMAINS: Set<Domain> = new Set([
 function buildFallbackTopic(rawTopic: string): TopicDefinition {
   const title = titleCase(rawTopic.trim());
   const slug = slugify(rawTopic);
-  const domain = guessDomain(slug);
+  const field = guessField(slug);
+  const domain = field ? familyOf(field) : "general";
   const hints = DOMAIN_EXAMPLE_HINTS[domain];
   return {
     slug,

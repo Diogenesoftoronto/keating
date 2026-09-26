@@ -1,0 +1,12 @@
+[
+  { "shot": "landing", "kicker": "KEATING 4.0", "title": "Seen this before?", "body": "An open-source teacher that asks before it tells.", "line": "Keating is a teacher for the age of answering machines. It doesn't hand you the mountain. It teaches you to climb." },
+  { "shot": "onboarding", "kicker": "FIRST, YOU", "title": "How should Keating teach you?", "body": "Pace, depth, where you get stuck — you set the terms.", "line": "It starts by asking how you learn: how much to ask before it tells, and what to do when you're stuck." },
+  { "shot": "profile", "kicker": "LEARNER PROFILE", "title": "It remembers who you are", "body": "Languages, level, and goals shape every lesson.", "line": "It remembers who you are, the languages you speak, and what you're working toward." },
+  { "shot": "sources", "kicker": "GROUNDED", "title": "Sources you can open", "body": "Every claim links back to where it came from.", "line": "When it looks something up, it shows its sources, so you can check the claim yourself." },
+  { "shot": "simulation", "kicker": "SIMULATIONS", "title": "Move the idea", "body": "Change one number and watch the curve answer.", "line": "Ideas become things you can move. Change a rate, and watch the curve answer back." },
+  { "shot": "fieldwork", "kicker": "FIELDWORK", "title": "Learning leaves the screen", "body": "Go out, collect evidence, bring back what surprised you.", "line": "Learning leaves the screen: go out, gather evidence, and bring back what surprised you." },
+  { "shot": "recall", "kicker": "TIMED RECALL", "title": "Say it before the clock runs out", "body": "Spoken practice, judged on what you actually said.", "line": "Recall is spoken and timed. Say it before the clock runs out." },
+  { "shot": "word-order", "kicker": "LANGUAGE", "title": "Build it word by word", "body": "Sentences you assemble, not phrases you copy.", "line": "A new language gets built word by word, in an order you have to find." },
+  { "shot": "exam-graded", "kicker": "EXAMS", "title": "A real exam, graded honestly", "body": "Question-by-question marks, with what to revisit.", "line": "And when you're ready, sit a real exam, graded question by question." },
+  { "shot": "download", "kicker": "ANYWHERE", "title": "Wherever curiosity finds you", "body": "Browser, desktop, phone, terminal. Free and open.", "line": "Keating runs in your browser or on your own machine. The future should not make students smaller. Keating helps them grow." }
+]

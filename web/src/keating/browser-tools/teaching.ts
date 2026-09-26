@@ -12,6 +12,8 @@ import {
 import { initialSrsState, validateDeckDraft } from "../srs";
 import { buildGoal, advanceGoalStep, computeGoalProgress, type GoalStepInput, type GoalStepStatus } from "../goals";
 import { createTool } from "./shared";
+import { planRevisionChangeFrom, revisePlan } from "../plan-revisions";
+import { loadKeatingUiSettings } from "../ui-settings";
 
 export function createTeachingTools(storage: KeatingStorage): AgentTool[] {
 	return [
@@ -339,6 +341,44 @@ ${profileBeliefs}
 				return `Updated "${saved.title}" → ${progress.done}/${progress.total} steps (${progress.percent}%). ${next}\n\n<keating-goal json=${JSON.stringify(JSON.stringify(saved))} />`;
 			},
 			["goal_id", "step_id", "status"],
+		),
+
+		// revise_study_plan - Apply (or, in approval mode, propose) one bounded study-plan change
+		createTool(
+			"revise_study_plan",
+			"Revise the active study plan by one bounded change. `complete-item` marks an item done; `insert-prerequisite` adds one prerequisite step (items[0]) before item_id; `expand-item` splits item_id into 1-8 specific sub-items. By default the change applies immediately and the rendered plan updates; if the learner turned on plan approval, it is proposed with Accept/Decline instead.",
+			{
+				plan_document_id: { type: "string", description: "The study plan's document id, as given in the plan review directive." },
+				change: { type: "string", description: "One of: complete-item, insert-prerequisite, expand-item." },
+				item_id: { type: "string", description: "The plan item the change targets (the item to complete, to put a prerequisite before, or to expand)." },
+				items: {
+					type: "array",
+					description: "New items: exactly one for insert-prerequisite, 1-8 for expand-item. Ids must be new within the plan.",
+					items: {
+						type: "object",
+						properties: {
+							id: { type: "string", description: "New unique item id." },
+							title: { type: "string", description: "Short concrete step title." },
+							detail: { type: "string", description: "Optional one-line detail." },
+							outcomes: { type: "array", items: { type: "string" }, description: "Optional observable outcomes." },
+						},
+					},
+				},
+			},
+			async (params) => {
+				const documentId = String(params.plan_document_id ?? "").trim();
+				const change = planRevisionChangeFrom(params);
+				if (!documentId || !change) return "Error: plan_document_id, a valid change, item_id, and the items that change needs are required.";
+				const outcome = await revisePlan(storage, documentId, change, loadKeatingUiSettings().planChanges);
+				if (outcome.status === "rejected") {
+					return outcome.reason === "no-plan"
+						? `Error: no presented study plan with id ${documentId}.`
+						: "Error: the change does not fit the plan (unknown item id, duplicate new id, or too many items). Nothing changed.";
+				}
+				if (outcome.status === "applied") return `Plan revised (${change.op}); now at revision ${outcome.document.revision}. Tell the learner what changed.`;
+				return `Plan change proposed (${change.op}); the learner sees Accept/Decline. Do not treat it as applied until they accept.\n\n<keating-plan-revision json=${JSON.stringify(JSON.stringify(outcome.proposal))} />`;
+			},
+			["plan_document_id", "change", "item_id"],
 		),
 
 		// source_edit - Apply a search/replace edit inside the NodePod VFS

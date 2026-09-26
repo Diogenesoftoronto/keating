@@ -26,6 +26,7 @@ const { buildKeatingSystemPrompt, composeKeatingSystemPrompt } = await import(
   "../../web/src/keating/browser-tools/prompt"
 );
 const { DEFAULT_TEACHER_PERSONA } = await import("../../web/src/keating/persona");
+const { defaultDeclaredProfile } = await import("../../packages/learner-contracts/src/learner-profile-declared.js");
 const { keatingOpenUIPrompt } = await import("../../web/src/keating/openui/library");
 const { composeSessionStartSystemPrompt } = await import("../../web/src/keating/session-start-hooks");
 const { appendWorkspaceCapabilityPrompt } = await import("../../web/src/keating/capabilities");
@@ -59,7 +60,10 @@ const toolsText = `${JSON.stringify(toolSchemas, null, 2)}\n`;
 const toolsOutput = resolve(dirname(output), "tool-schemas.json");
 
 const base = composeKeatingSystemPrompt(DEFAULT_TEACHER_PERSONA);
-const withLearner = buildKeatingSystemPrompt(false, base, "");
+// Supply the real empty profile explicitly: the hook's default loader reads
+// browser storage, which must remain outside a new-user prompt export.
+const declaredProfile = defaultDeclaredProfile();
+const withLearner = buildKeatingSystemPrompt(false, base, "", declaredProfile);
 const withOpenUi = base.includes(keatingOpenUIPrompt)
   ? withLearner
   : `${withLearner}\n\n${keatingOpenUIPrompt}`;
@@ -92,7 +96,7 @@ const originalBuilder = new Function(
   `${executable.outputText}\nreturn buildAgentSystemPrompt;`,
 )(buildKeatingSystemPrompt, keatingOpenUIPrompt, composeSessionStartSystemPrompt,
   appendWorkspaceCapabilityPrompt, appendCourseCollaborationPrompt);
-const original = originalBuilder(false, base, "", "", undefined, undefined);
+const original = originalBuilder(false, base, "", "", undefined, undefined, declaredProfile);
 if (typeof original !== "string" || original !== composed) {
   throw new Error("Export differs from the original web hook prompt builder");
 }
@@ -101,8 +105,9 @@ if (original.split(keatingOpenUIPrompt).length !== 2) {
 }
 
 const inputs = [
+  "scripts/training/export_system_prompt.ts",
   hookPath, "web/src/keating/browser-tools/prompt.ts", "web/src/keating/persona.ts",
-  "web/src/keating/learner-context.ts", "web/src/keating/prompts/operational-protocol.md",
+  "web/src/keating/learner-context.ts", "packages/learner-contracts/src/learner-profile-declared.ts", "web/src/keating/prompts/operational-protocol.md",
   "web/src/keating/prompts/speech-system-prompt.md", "web/src/keating/openui/library.tsx",
   "web/src/keating/session-start-hooks.ts", "web/src/keating/capabilities.ts",
   "web/src/keating/browser-tools/courses.ts", "web/package.json", "bun.lock",
@@ -120,6 +125,9 @@ const metadata = {
   bytes: Buffer.byteLength(original),
   characters: original.length,
   openUiCharacters: keatingOpenUIPrompt.length,
+  openUiStart: original.indexOf(keatingOpenUIPrompt),
+  openUiSha256: digest(keatingOpenUIPrompt),
+  runtimeSuffixSha256: digest(original.slice(original.indexOf(keatingOpenUIPrompt) + keatingOpenUIPrompt.length)),
   originalBuilderSha256: digest(originalSource),
   verifiedEqualToOriginalWebBuilder: true,
   toolSchemas: {
@@ -133,6 +141,7 @@ const metadata = {
   state: {
     persona: "DEFAULT_TEACHER_PERSONA", speechEnabled: false,
     learnerContext: "", sessionStartContext: "", runtime: null, course: null,
+    declaredProfile: "defaultDeclaredProfile(); no browser storage read",
     activeTeachingRevision: null,
   },
   sourceSha256: inputHashes,

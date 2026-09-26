@@ -1,0 +1,191 @@
+<!doctype html>
+<!-- Music-only: cuts on the measured constant-tempo grid. -->
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=1080, height=1080"/>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script><style>
+{{fonts}}
+:root{--paper:#f1ece0;--ink:#1c211b;--green:#1e9b50;--deep:#14743c}*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:var(--paper)}
+#root{position:relative;width:100%;height:100%;overflow:hidden;background:var(--paper);font-family:"Space Mono",monospace}
+.scene{position:absolute;inset:0;width:1080px;height:1080px;overflow:hidden}.paper{background:var(--paper);color:var(--ink)}.green{background:var(--deep);color:var(--paper)}.ink{background:var(--ink);color:var(--green)}
+.big{position:absolute;left:60px;top:190px;width:960px;height:620px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:"Roboto",sans-serif;font-weight:900;letter-spacing:-.05em;text-align:center;line-height:.95;transform-origin:center}
+.line{display:block;white-space:nowrap}.glyph{display:inline-block;white-space:pre}.small{position:absolute;left:85px;bottom:100px;width:910px;font:700 31px/1.35 "Space Mono",monospace;letter-spacing:-.04em;text-align:center}
+.film-tag{position:absolute;left:42px;top:38px;z-index:8;font:700 26px/1 "Space Mono",monospace;letter-spacing:.02em}.progress{position:absolute;left:0;bottom:0;width:1080px;height:10px;background:#1e9b50;transform-origin:left center;z-index:9}
+.number{display:flex;justify-content:center;gap:4px;height:540px;perspective:1200px}.digit{position:relative;width:286px;height:540px;perspective:1000px;letter-spacing:-.05em}.paper .digit{background:var(--paper)}.ink .digit{background:var(--ink)}.face{position:absolute;left:0;width:100%;height:50%;overflow:hidden;background:inherit;backface-visibility:hidden}.face span{position:absolute;left:0;width:100%;height:540px;font:900 510px/540px "Roboto",sans-serif;letter-spacing:-.07em;text-align:center}.top,.leaf-a{top:0}.bottom,.leaf-b{top:50%}.bottom span,.leaf-b span{top:-270px}.leaf-a{transform-origin:center bottom}.leaf-b{transform-origin:center top}.digit:after{content:"";position:absolute;left:15px;right:15px;top:50%;height:2px;background:currentColor;opacity:.13;z-index:3}.unit{font:900 122px/1 "Roboto",sans-serif;letter-spacing:-.04em}
+.end-logo{position:absolute;left:145px;top:215px;width:790px;height:440px;object-fit:contain}.end-url{position:absolute;left:0;top:755px;width:1080px;text-align:center;font:700 91px/1 "Space Mono",monospace;letter-spacing:-.055em;color:var(--deep)}
+.fx{position:absolute;inset:0;width:1080px;height:1080px;z-index:7;pointer-events:none;opacity:.2}
+</style></head><body><div id="root" data-composition-id="main" data-start="0" data-duration="{{total}}" data-width="{{width}}" data-height="{{height}}">
+<section id="s-open" class="scene clip paper" data-start="{{start:open}}" data-duration="{{dur:open}}" data-track-index="0"><h1 id="big-open" class="big" aria-label="KEATING 4.0"><span class="line" style="font-size:192px">KEATING</span><span class="line" style="font-size:420px">4.0</span></h1><div id="small-open" class="small">what&#x27;s new</div></section>
+<section id="s-judge" class="scene clip green" data-start="{{start:judge}}" data-duration="{{dur:judge}}" data-track-index="0"><h1 id="big-judge" class="big" aria-label="JUDGEMENTS"><span class="line" style="font-size:150px">JUDGEMENTS</span></h1><div id="small-judge" class="small">your answer first · an independent judge second</div></section>
+<section id="s-flag" class="scene clip ink" data-start="{{start:flag}}" data-duration="{{dur:flag}}" data-track-index="0"><h1 id="big-flag" class="big" aria-label="FLAG IT"><span class="line" style="font-size:320px">FLAG</span><span class="line" style="font-size:340px">IT</span></h1><div id="small-flag" class="small">if the review missed something</div></section>
+<section id="s-states" class="scene clip paper" data-start="{{start:states}}" data-duration="{{dur:states}}" data-track-index="0"><h1 id="big-states" class="big" aria-label="288"><span class="number" id="number-states"></span></h1><div id="small-states" class="small">practice states tune what you practise next</div></section>
+<section id="s-recall" class="scene clip green" data-start="{{start:recall}}" data-duration="{{dur:recall}}" data-track-index="0"><h1 id="big-recall" class="big" aria-label="LOCAL RECALL"><span class="line" style="font-size:275px">LOCAL</span><span class="line" style="font-size:240px">RECALL</span></h1><div id="small-recall" class="small">your earlier work, quoted with its source</div></section>
+<section id="s-mb" class="scene clip ink" data-start="{{start:mb}}" data-duration="{{dur:mb}}" data-track-index="0"><h1 id="big-mb" class="big" aria-label="36 MB"><span class="number" id="number-mb"></span><span class="unit">MB</span></h1><div id="small-mb" class="small">on your own machine</div></section>
+<section id="s-search" class="scene clip paper" data-start="{{start:search}}" data-duration="{{dur:search}}" data-track-index="0"><h1 id="big-search" class="big" aria-label="SEARCH BY MEANING"><span class="line" style="font-size:235px">SEARCH</span><span class="line" style="font-size:150px">BY</span><span class="line" style="font-size:195px">MEANING</span></h1><div id="small-search" class="small">find sessions by idea, not keyword</div></section>
+<section id="s-live" class="scene clip green" data-start="{{start:live}}" data-duration="{{dur:live}}" data-track-index="0"><h1 id="big-live" class="big" aria-label="GPT LIVE"><span class="line" style="font-size:335px">GPT</span><span class="line" style="font-size:335px">LIVE</span></h1><div id="small-live" class="small">just talk</div></section>
+<section id="s-ceiling" class="scene clip ink" data-start="{{start:ceiling}}" data-duration="{{dur:ceiling}}" data-track-index="0"><h1 id="big-ceiling" class="big" aria-label="SPENDING CEILING"><span class="line" style="font-size:177px">SPENDING</span><span class="line" style="font-size:235px">CEILING</span></h1><div id="small-ceiling" class="small">end the call, the mic stops at once</div></section>
+<section id="s-first" class="scene clip paper" data-start="{{start:first}}" data-duration="{{dur:first}}" data-track-index="0"><h1 id="big-first" class="big" aria-label="FIRST RUN"><span class="line" style="font-size:305px">FIRST</span><span class="line" style="font-size:335px">RUN</span></h1><div id="small-first" class="small">every step optional</div></section>
+<section id="s-teacher" class="scene clip green" data-start="{{start:teacher}}" data-duration="{{dur:teacher}}" data-track-index="0"><h1 id="big-teacher" class="big" aria-label="YOUR TEACHER"><span class="line" style="font-size:290px">YOUR</span><span class="line" style="font-size:210px">TEACHER</span></h1><div id="small-teacher" class="small">persona · voice · how it speaks</div></section>
+<section id="s-close" class="scene clip paper" data-start="{{start:close}}" data-duration="{{dur:close}}" data-track-index="0"><div id="closing"><img class="end-logo" src="assets/brand/logo-lockup.png" alt="Keating"/><div class="end-url">keating.help</div></div></section>
+<canvas id="fx-over" class="fx" width="1080" height="1080" data-layout-ignore data-layout-allow-overflow data-layout-allow-occlusion></canvas>
+<div class="film-tag" id="film-tag">[{{label}}]</div><div id="progress" class="progress"></div>
+<audio id="mix" src="assets/audio/mix.wav" data-start="0" data-duration="{{total}}" data-volume="1"></audio></div><script>
+const TIMING=/*TIMING*/ null;
+const tl=gsap.timeline({paused:true});
+// Split-flap mechanism adapted from the registry: paired half-glyph faces,
+// a falling top leaf, and a deterministic reconstruction at every seek time.
+function counter(s){
+ const number=document.getElementById('number-'+s.id),digits=String(s.count).length,cells=[];
+ for(let i=0;i<digits;i++){
+  const cell=document.createElement('span');cell.className='digit';
+  for(const attr of ['overlap','occlusion','overflow'])cell.setAttribute('data-layout-allow-'+attr,'');
+  const faces={};for(const name of ['top','bottom','leaf-a','leaf-b']){const face=document.createElement('span');face.className='face '+name;const glyph=document.createElement('span');glyph.textContent='0';for(const attr of ['overlap','occlusion','overflow']){face.setAttribute('data-layout-allow-'+attr,'');glyph.setAttribute('data-layout-allow-'+attr,'')}face.appendChild(glyph);cell.appendChild(face);faces[name]={face,glyph}}
+  number.appendChild(cell);cells.push(faces);
+ }
+ const duration=Math.min(.82,s.duration*.55),steps=10,state={t:0};
+ const paint=()=>{
+  const raw=Math.min(steps,Math.max(0,state.t/duration*steps)),k=Math.floor(raw),phase=raw-k;
+  const old=String(Math.round(s.count*k/steps)).padStart(digits,'0'),next=String(Math.round(s.count*Math.min(steps,k+1)/steps)).padStart(digits,'0');
+  cells.forEach((cell,i)=>{
+   const flip=k<steps&&phase>0&&old[i]!==next[i],angle=180*phase*phase;
+   cell.top.glyph.textContent=flip?next[i]:old[i];cell.bottom.glyph.textContent=old[i];
+   for(const name of ['leaf-a','leaf-b']){cell[name].face.style.opacity='0';cell[name].face.style.transform='';cell[name].glyph.textContent=''}
+   if(flip){const a=angle<90?'leaf-a':'leaf-b';cell[a].glyph.textContent=angle<90?old[i]:next[i];cell[a].face.style.opacity='1';cell[a].face.style.transform=`rotateX(${angle<90?-angle:180-angle}deg)`}
+  });
+ };
+ paint();tl.to(state,{t:duration,duration,ease:'none',onUpdate:paint},s.start+.02);
+}
+TIMING.scenes.forEach((s,i)=>{
+ const color=s.id==='close'||i%3===0?'#1c211b':i%3===1?'#f1ece0':'#1e9b50';tl.set('#film-tag',{color},s.start);
+ if(s.id==='close'){tl.fromTo('#closing',{opacity:0,scale:.96},{opacity:1,scale:1,duration:.3,ease:'power2.out',transformOrigin:'540px 540px'},s.start);return}
+ const big='#big-'+s.id;
+ if(s.count){counter(s);tl.fromTo(big,{y:24,opacity:0},{y:0,opacity:1,duration:.16,ease:'power2.out'},s.start)}
+ else if(i%3===0){
+  // Heavy registry headline-slam landing, compressed to one half-beat.
+  tl.fromTo(big,{scale:1.16,opacity:0},{scale:1,opacity:1,duration:.27,ease:'back.out(1.15)'},s.start);
+ }else if(i%3===1){
+  tl.fromTo(big,{clipPath:'inset(0 100% 0 0)'},{clipPath:'inset(0 0% 0 0)',duration:.3,ease:'power3.out'},s.start);
+ }else{
+  document.querySelectorAll(big+' .line').forEach(line=>{const text=line.textContent;line.textContent='';for(const char of text){const glyph=document.createElement('span');glyph.className='glyph';glyph.textContent=char;line.appendChild(glyph)}});
+  tl.fromTo(big+' .glyph',{y:48,opacity:0},{y:0,opacity:1,duration:.22,stagger:.018,ease:'power3.out'},s.start);
+ }
+ tl.fromTo('#small-'+s.id,{y:12,opacity:0},{y:0,opacity:1,duration:.18,ease:'power2.out'},s.start+.13);
+});
+tl.fromTo('#progress',{scaleX:0},{scaleX:1,duration:TIMING.total,ease:'none'},0);
+        const NOISE = `
+          precision highp float;
+          varying vec2 v_uv;
+          uniform float u_t;
+          float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+          float noise(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+          }
+          float fbm(vec2 p) {
+            float v = 0.0, a = 0.5;
+            mat2 R = mat2(0.8, 0.6, -0.6, 0.8);
+            for (int i = 0; i < 5; i++) { v += a * noise(p); p = R * p * 2.02; a *= 0.5; }
+            return v;
+          }
+          const vec3 PAPER = vec3(0.945, 0.925, 0.878);
+          const vec3 WASH = vec3(0.925, 0.965, 0.925);
+          const vec3 TERM = vec3(0.047, 0.082, 0.063);
+          const vec3 PHOS = vec3(0.294, 0.890, 0.533);
+          const vec3 PHOS_DIM = vec3(0.180, 0.604, 0.361);
+        `;
+        const BG = NOISE + `
+          uniform float u_from, u_to, u_p, u_edge, u_down, u_kick;
+          void main() {
+            vec2 uv = v_uv, p = uv * vec2(1.0, 1.0) * 2.2;
+            float t = u_t;
+            vec2 q = vec2(fbm(p + t * 0.05), fbm(p + vec2(5.2, 1.3) - t * 0.04));
+            float n = fbm(p + (1.6 + 1.4 * u_kick) * q + vec2(1.7, 9.2) + t * 0.03);
+            // Paper only ever lightens from its base, so ink and green type keep their contrast.
+            vec3 paper = mix(PAPER, vec3(1.0), 0.16 * smoothstep(0.3, 0.8, n));
+            paper = mix(paper, WASH, smoothstep(0.6, 0.9, n) * (0.25 + 0.45 * u_kick));
+            float v = 1.0 - smoothstep(0.2, 1.1, length((uv - vec2(0.5, 0.6)) * vec2(1.6, 1.0)));
+            vec3 term = TERM + PHOS_DIM * (pow(n, 2.5) * 0.38 + 0.04) * (0.5 + 0.7 * v) + vec3(0.03, 0.06, 0.04) * v;
+            vec3 a = mix(paper, term, u_from), b = mix(paper, term, u_to);
+            // Burn: a noisy front sweeps up the frame (down when entering the terminal).
+            float y = u_down > 0.5 ? 1.0 - uv.y : uv.y;
+            float field = 0.72 * y + 0.45 * fbm(uv * vec2(1.0, 1.0) * 4.0 + 3.0);
+            float front = u_p * 1.4 - 0.12;
+            float gone = smoothstep(front + 0.012, front - 0.012, field);
+            vec3 col = mix(a, b, gone);
+            float beyond = field - front;
+            col = mix(col, vec3(0.05, 0.04, 0.03), u_edge * 0.55 * smoothstep(0.0, 0.015, beyond) * (1.0 - smoothstep(0.02, 0.07, beyond)));
+            float glow = exp(-abs(beyond) * 55.0) * u_edge;
+            col += (mix(PHOS, vec3(1.0, 0.97, 0.82), exp(-abs(beyond) * 220.0)) * 1.1) * glow;
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `;
+        const OVER = NOISE + `
+          uniform float u_crt, u_sweep, u_sweepAmp, u_glitch, u_flash, u_frame;
+          void main() {
+            vec2 uv = v_uv;
+            vec3 add = vec3(0.0);
+            float dark = hash(floor(uv * vec2(1080.0, 1080.0)) + floor(u_t * 12.0)) * 0.035;
+            vec2 ray = (uv - vec2(0.52, 0.28)) * vec2(1.0, 1.0);
+            float sun = smoothstep(0.12, 0.2, sin(atan(ray.y, ray.x) * 18.0 + u_t * 0.055));
+            add += PHOS * sun * 0.035 * smoothstep(0.45, 0.9, uv.y);
+            if (u_crt > 0.001) {
+              float band = exp(-pow(1.0 - uv.y - fract(u_t * 0.12), 2.0) * 140.0);
+              add += PHOS * band * 0.05 * u_crt;
+              float g = hash(floor(uv * vec2(960.0, 540.0)) + u_frame * 1.37);
+              add += PHOS * max(g - 0.5, 0.0) * 0.1 * u_crt;
+              dark = smoothstep(0.45, 0.95, length((uv - 0.5) * vec2(1.25, 1.0))) * 0.45 * u_crt;
+            }
+            if (u_sweepAmp > 0.001) {
+              vec2 p = (uv - 0.5) * vec2(1.0, 1.0);
+              float d = dot(p, normalize(vec2(1.0, 0.45))) - mix(-1.3, 1.3, u_sweep);
+              add += (vec3(1.0, 0.97, 0.88) * exp(-d * d * 60.0) * 0.26 + PHOS * exp(-d * d * 6.0) * 0.07) * u_sweepAmp;
+            }
+            if (u_glitch > 0.001) {
+              float row = floor(uv.y * 54.0);
+              float h = hash(vec2(row, u_frame));
+              float on = step(1.0 - 0.45 * u_glitch, h);
+              float h2 = hash(vec2(row * 1.7, u_frame + 3.1));
+              vec3 tint = h2 < 0.33 ? vec3(0.84, 0.38, 0.29) : h2 < 0.66 ? vec3(0.1, 0.85, 0.9) : PHOS;
+              float seg = step(hash(vec2(floor(uv.x * 12.0 + h * 40.0), row)), 0.6);
+              add += tint * on * seg * 0.38 * u_glitch;
+              dark = max(dark, on * (1.0 - seg) * 0.55 * u_glitch);
+            }
+            float r = length((uv - 0.5) * vec2(1.0, 1.0));
+            add += mix(PHOS, vec3(1.0), 0.35) * u_flash * (0.55 - 0.3 * r);
+            gl_FragColor = vec4(add, dark);
+          }
+        `;
+
+        function layer(id, fs) {
+          const gl = document.getElementById(id).getContext("webgl", { preserveDrawingBuffer: false, premultipliedAlpha: true, antialias: false });
+          if (!gl) throw new Error("no webgl");
+          const compile = (type, src) => {
+            const sh = gl.createShader(type);
+            gl.shaderSource(sh, src);
+            gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+            return sh;
+          };
+          const prog = gl.createProgram();
+          gl.attachShader(prog, compile(gl.VERTEX_SHADER, "attribute vec2 p; varying vec2 v_uv; void main() { v_uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }"));
+          gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+          gl.linkProgram(prog);
+          gl.useProgram(prog);
+          gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+          const loc = gl.getAttribLocation(prog, "p");
+          gl.enableVertexAttribArray(loc);
+          gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+          const uni = {};
+          return (vals) => {
+            for (const k in vals) {
+              if (!(k in uni)) uni[k] = gl.getUniformLocation(prog, "u_" + k);
+              if (uni[k]) gl.uniform1f(uni[k], vals[k]);
+            }
+            gl.viewport(0, 0, 1080, 1080);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          };
+        }
+
+const over=layer('fx-over',OVER);const state={t:0,crt:0,sweep:0,sweepAmp:0,glitch:0,flash:0,frame:0};tl.to(state,{t:TIMING.total,duration:TIMING.total,ease:'none',onUpdate:()=>{state.frame=Math.floor(state.t*TIMING.fps);over(state)}},0);over(state);
+tl.set({}, {}, TIMING.total);window.__timelines['main']=tl;
+</script></body></html>

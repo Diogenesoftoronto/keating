@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test } from 'bun:test';
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 // @ts-ignore plain Node release tooling has no declaration file.
@@ -30,6 +30,12 @@ async function mockFixture() {
 }
 
 describe('release artifact signing', () => {
+  test('includes Apple and Android installers in the signed checksum inventory', async () => {
+    const f = await fixture();
+    const names = ['Keating.apk', 'Keating.dmg', 'Keating.zip', 'keating.tar.gz'];
+    for (const name of [...names, 'Keating.dmg.asc', 'SHA256SUMS']) await writeFile(join(f.artifacts, name), 'artifact');
+    expect((await collectArtifacts(f.artifacts)).map((path: string) => basename(path))).toEqual(names);
+  });
   test('recursively hashes deterministic basenames and signs Linux artifacts plus the manifest', async () => {
     const f = await mockFixture();
     await mkdir(join(f.artifacts, 'linux'));

@@ -1,0 +1,7 @@
+[
+  {"shot": "library", "kicker": "LOCAL RECALL", "title": "Bring back earlier work", "body": "Your past sessions, ready when they matter.", "line": "Keating 4.0 remembers what you've already worked on, and brings that work back when it matters."},
+  {"shot": "settings", "kicker": "ONE SWITCH", "title": "Turn it on in Learning Settings", "body": "A 36 MB model that stays on your machine.", "line": "Turn on recall in Learning Settings. On desktop, it's a thirty-six megabyte model that stays on your own machine."},
+  {"shot": "panel", "kicker": "EXACT EXCERPTS", "title": "Quoted, with its source", "body": "Needle keeps the offsets of every passage.", "line": "Before a reply, Needle finds the exact passage from your earlier work, and keeps a reference to where it came from."},
+  {"shot": "phone", "kicker": "ON YOUR PHONE", "title": "Search by meaning", "body": "35 MB on device. The browser runs it locally too.", "line": "On your phone, Search by meaning finds sessions by idea, not keyword. In the browser, recall runs locally as well."},
+  {"shot": "profile", "kicker": "MEMORY", "title": "Remembered, on the record", "body": "Every saved memory keeps its source.", "line": "And an interest you mention today can become useful context next time, with its source kept alongside. Your past work, working for you."}
+]

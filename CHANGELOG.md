@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.1] - 2026-09-26
+
+### Added
+- Optional Anki interest import and profile proposals, with explicit review before applying learner preferences.
+- Source-bound teaching draft and lesson-plan reviews, active-work evidence, and clearer judgement state and diagnostics.
+- Subject-aware local Needle routing, prompt-adherence tooling, and context-window evaluation reports.
+- Narrated launch and feature films, captions, refreshed mascot frames, and updated learner documentation.
+
+### Fixed
+- Restore the landing launch-film player and start audible playback directly from the watch action.
+- Preserve pending chat turns during account/provider recovery, improve model selection, and expose local-model failures with useful diagnostics.
+- Keep original artwork out of staging upload archives while retaining prepared runtime assets; report Railway upload errors from both output streams.
+
+### Changed
+- Synchronize CLI, web, mobile, and desktop versions to 4.0.1.
+- Require verified platform signing before publishing Windows and macOS desktop installers.
+
 ## [4.0.0] - 2026-09-19
 
 ### Added
@@ -974,7 +991,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v3.11.0...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v4.0.1...HEAD
+[4.0.1]: https://github.com/Diogenesoftoronto/keating/compare/v4.0.0...v4.0.1
 [3.11.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.2...v3.11.0
 [3.10.2]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.1...v3.10.2
 [3.10.1]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.0...v3.10.1

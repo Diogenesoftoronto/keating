@@ -73,10 +73,11 @@ test("production runtime loads installed calibration without Settings and never 
   const store = createWebJudgementCalibrationStore({ storage: () => storage }); let calls = 0;
   const options = { calibrationStore: store, settings: { backend: "hosted" as const, localModelId: "missing-local", gatewayPath: "/api/judgement" }, hosted: { fetch: async () => { calls++; return { ok: true, status: 200, json: async () => ({ model: "jev-fixture-1", answers: { ready: { type: "noul", noul: .99 } } }) }; } } };
   const initial = createWebJudgementRuntime(options);
-  expect(await initial.policy.tiers.at(-1)!.isAvailable!()).toBe(false);
-  expect((await initial.policy.tiers.at(-1)!.call(request)).ok).toBe(false); expect(calls).toBe(0);
+  const pendingHosted = initial.policy.tiers.find(tier => tier.key.backend === "system-one")!;
+  expect(await pendingHosted.isAvailable!()).toBe(false);
+  expect((await pendingHosted.call(request)).ok).toBe(false); expect(calls).toBe(0);
   await store.ensureLoaded();
-  const configured = createWebJudgementRuntime(options), hosted = configured.policy.tiers.at(-1)!;
+  const configured = createWebJudgementRuntime(options), hosted = configured.policy.tiers.find(tier => tier.key.backend === "system-one")!;
   expect(hosted.key).toMatchObject({ model: "jev-fixture-1", calibrationSha256: fixture.artifact.calibrationSha256 });
   expect(Object.keys(configured.policy.calibration.entries)).toHaveLength(1);
   expect((await hosted.call(request)).ok).toBe(true); expect(calls).toBe(1);

@@ -52,6 +52,10 @@ import {
 } from "../lib/provider-models";
 import { recordDiagnostic } from "../lib/diagnostics";
 import { createReplyJudgementObserver } from "../keating/judgement/reply-review";
+import { withTeachingDraftGate } from "../keating/judgement/draft-gate";
+import { clearTeachingDraftStatus, projectTeachingDraftSnapshot, publishTeachingDraftStatus } from "../keating/judgement/draft-status";
+import { teachingDraftEvidence } from "../keating/judgement/draft-evidence";
+import { loadActiveWork } from "../keating/judgement/active-work-host";
 import { createTeachingAdjustmentController, withTeachingAdjustment, type TeachingAdjustmentController } from "../keating/judgement/teaching-adjustment";
 import { createDesktopNeedleRecall, withDesktopNeedleRecall } from "../keating/needle-retrieval";
 import { createWebMemoryAdmission, withWebMemoryBank } from "../keating/judgement/memory-admission";
@@ -117,6 +121,7 @@ import { loadDeclaredProfile, subscribeDeclaredProfile } from "../keating/learne
 import { requestInterfaceTour } from "../keating/interface-tour";
 import {
   composeSessionStartSystemPrompt,
+  loadCompleteLearnerStartupContext,
   runSessionStartHooks,
 } from "../keating/session-start-hooks";
 import {
@@ -1478,16 +1483,39 @@ export function useKeatingAgent(
         current: () => agentRef.current === agent && sessionIdRef.current === agentSessionId,
         // Only compared in this volatile closure; no token enters the recall
         // corpus, model payload, persisted index, logs or provider prompt.
-        identity: () => { try { return notOrganicPublicClient()?.getSession()?.accessToken ?? "local"; } catch { return "unavailable"; } },
+        identity: () => { try { const current = notOrganicPublicClient()?.getSession(); return current ? current.id ?? current.accessToken : "local"; } catch { return "unavailable"; } },
         requestIdentity: () => JSON.stringify({
           model: [agent.context.model.provider, agent.context.model.id],
           learner: [...agent.context.messages].reverse().find(message => message.role === "user" || message.role === "user-with-attachments"),
         }),
       });
-      const agent = new FlueConversation({
+      clearTeachingDraftStatus(agentSessionId);
+      const agent: FlueConversation = new FlueConversation({
         initialState: nextState,
         convertToLlm: toModelMessages,
-        streamFn: withDesktopNeedleRecall(withWebMemoryBank(withTeachingAdjustment(hybridStreamFn, adjustment), memory), recall),
+        streamFn: withDesktopNeedleRecall(withWebMemoryBank(withTeachingAdjustment(withTeachingDraftGate(hybridStreamFn, {
+          sessionId: agentSessionId,
+          basePrompt: () => systemPromptBaseRef.current,
+          isCurrent: () => agentRef.current === agent && sessionIdRef.current === agentSessionId,
+          evidence: async () => {
+            const [profile, activeWork] = await Promise.all([
+              loadCompleteLearnerStartupContext(keatingStorage),
+              loadActiveWork(keatingStorage, agentSessionId),
+            ]);
+            return { ...teachingDraftEvidence(profile), activeWork };
+          },
+          onProgress: snapshot => publishTeachingDraftStatus(agentSessionId, snapshot),
+          onReceipt: receipt => {
+            void keatingStorage.recordTeachingDraftReceipt({
+              id: `${agentSessionId}:${receipt.messageTimestamp}`,
+              sessionId: agentSessionId,
+              messageTimestamp: receipt.messageTimestamp,
+              createdAt: Date.now(),
+              snapshot: projectTeachingDraftSnapshot(receipt.snapshot),
+              ...(receipt.activeWork ? { activeWork: receipt.activeWork } : {}),
+            }).catch(() => { /* Review receipts are diagnostic; publication does not depend on them. */ });
+          },
+        }), adjustment), memory), recall),
         sessionId: agentSessionId,
       }, flueRuntimeUrl);
       setTeachingAdjustment(adjustment);
@@ -1872,15 +1900,18 @@ export function useKeatingAgent(
       await panel.setConversation(agent, setupCallbacks);
       if (isNotOrganicProvider(agent.context.model.provider) && await getProviderApiKey(agent.context.model.provider)
         && agentRef.current === agent && !agent.context.isStreaming) {
-        const pendingMessages = claimPendingChatTurn(agentSessionId, agent.context.messages);
-        if (pendingMessages) {
+        const pending = claimPendingChatTurn(agentSessionId, agent.context.messages);
+        if (pending) {
           // Claim before starting so StrictMode/remounts cannot submit twice.
-          agent.context.messages = pendingMessages;
+          agent.context.messages = pending.messages;
+          const prepare = async (signal: AbortSignal) => {
+            await ensureSessionStartContext();
+            signal.throwIfAborted();
+          };
           void (async () => {
-            await agent.resume(async signal => {
-              await ensureSessionStartContext();
-              signal.throwIfAborted();
-            });
+            // A turn interrupted before admission must be delivered as the
+            // learner's message, or the chat shows only the reply.
+            await (pending.undelivered ? agent.sendRestored(prepare) : agent.resume(prepare));
             await persistSnapshot();
           })().catch(error => console.error("Keating could not resume the signed-in message:", error));
         }

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Methods · A Measure of Machine Judgement</title>
+<meta name="description" content="Provenance for every measurement in the Keating on-device model report.">
+<meta name="color-scheme" content="light">
+<meta property="og:title" content="Methods · A Measure of Machine Judgement">
+<meta property="og:description" content="Provenance for every measurement in the Keating on-device model report.">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Roboto:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="/site.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="topbar"><div class="topbar-inner">
+<a class="wordmark" href="/">machine<span>/</span>judgement</a>
+<nav class="navlinks" aria-label="Sections"><a href="/">Report</a><a href="/methods/" aria-current="page">Methods</a><a href="/blog/needle-subject-routing/">Preview post</a><a href="/data.json">Data</a></nav>
+</div></header>
+<main id="main" class="prose">
+<div class="hero"><div class="wrap">
+<p class="kicker">METHOD NOTES</p>
+<h1>How each number <span>was produced</span></h1>
+<p class="lede">Every figure on the report page is read out of a result file by
+<code>scripts/on-device-site/collect.py</code>. Nothing is transcribed by hand. This page lists the harness that wrote
+each file, so any figure can be traced back to the run that produced it.</p>
+</div></div>
+<section><div class="wrap">
+<div class="tablewrap"><table><caption>Measurement provenance</caption><thead><tr><th class="">Measurement</th><th class="">Harness</th><th class="">Result artifact</th><th class="">Notes</th></tr></thead><tbody><tr class=""><td class="">Recall ranking</td><td class="">.keating/tmp/needle-recall-bench2.ts</td><td class="">bench-needle-retrieval.json</td><td class="">Needle through the production bridge; z-scored cosine via needleRelativeScores</td></tr><tr class=""><td class="">Static recall</td><td class="">.keating/tmp/bench-static-retrieval.py</td><td class="">site-data/static-retrieval.jsonl</td><td class="">Same corpus, queries and ranking function; only the model changes</td></tr><tr class=""><td class="">Needle latency</td><td class="">.keating/tmp/bench-needle-latency.ts</td><td class="">site-data/needle-latency.json</td><td class="">Full bridge round trip: spawn, hash, import, construct, embed</td></tr><tr class=""><td class="">Subject routing (production path)</td><td class="">.keating/tmp/bench-needle-subject-routing.ts</td><td class="">transcript</td><td class="">classifyDomainField with the 32-field FIELDS enum</td></tr><tr class=""><td class="">Classification census</td><td class="">.keating/tmp/needle-classify-census.py</td><td class="">site-data/needle-classify-census.json</td><td class="">Direct runtime call; counts emitted against suppressed calls</td></tr><tr class=""><td class="">Extraction census</td><td class="">.keating/tmp/needle-extract-census.py</td><td class="">site-data/needle-extract-census.json</td><td class="">Production schema, strict=True, over real learner messages</td></tr><tr class=""><td class="">Deterministic-span extraction</td><td class="">.keating/tmp/bench-static-extraction.py</td><td class="">site-data/static-extraction.json</td><td class="">Spans scored against the five category rubrics</td></tr><tr class=""><td class="">170-row subject bench</td><td class="">.keating/tmp/bench-static-subject-big.py</td><td class="">site-data/static-subject-170.jsonl</td><td class="">Four methods; the logistic head is 5-fold cross-validated</td></tr><tr class=""><td class="">Needle on the 170 rows</td><td class="">.keating/tmp/needle-training/eval_suite.py</td><td class="">needle-training/eval-report.json</td><td class="">Read from the committed report; artifact hashes match</td></tr><tr class=""><td class="">Probe contamination</td><td class="">.keating/tmp/bench-probe-split.py</td><td class="">site-data/probe-split.json</td><td class="">Nearest-neighbour cosine of each probe row against the training set</td></tr><tr class=""><td class="">Abstention sweep</td><td class="">.keating/tmp/bench-static-abstain.py</td><td class="">bench-abstain-8m.json, bench-abstain-32m.json</td><td class="">Margin and support gates; leave-one-out support for training rows</td></tr><tr class=""><td class="">KEV against Jev</td><td class="">.keating/tmp/run-kev-vs-jev.py</td><td class="">kev-vs-jev.jsonl</td><td class="">Byte-identical captured request bodies to both judges</td></tr><tr class=""><td class="">Jev full harness</td><td class="">.keating/tmp/run-jev-only.py</td><td class="">jev-only.jsonl</td><td class="">All 68 runnable captured requests</td></tr><tr class=""><td class="">Artifact sizes</td><td class="">scripts/on-device-site/collect.py</td><td class="">site-data/artifact-sizes.json</td><td class="">Hugging Face registry plus mobile/modules/keating-needle/assets.json</td></tr></tbody></table></div>
+<h3>Reproducing</h3>
+<div class="term"><pre><code><span class="dim"># regenerate the static-model artifacts</span>
+uv run --no-project --with model2vec --with numpy \
+  python .keating/tmp/bench-static-retrieval.py minishlab/potion-base-8M
+
+<span class="dim"># regenerate the local Needle artifacts (needs the pinned venv)</span>
+.keating/tmp/needle/venv/bin/python .keating/tmp/needle-classify-census.py
+
+<span class="dim"># hosted judge over the captured harness</span>
+TYPESAFE_API_KEY="$(skate get typesafe_api_key@secrets)" \
+  python3 .keating/tmp/run-jev-only.py
+
+<span class="dim"># rebuild this site</span>
+python3 scripts/on-device-site/build.py</code></pre></div>
+<div class="note warn"><h4>Scratch, not source</h4><p>The harnesses live under <code>.keating/tmp/</code> because they need the real pinned model, a real credential, or the real captured corpus, none of which belong in the deterministic test suite. They are reproducible but not committed as tests.</p></div>
+<div class="note"><h4>Credential handling</h4><p>The hosted runs read the TypeSafe key from the environment, sourced from the local secret store. It is never written into a result file, a log line, or this site.</p></div>
+</div></section>
+</main>
+<footer><div class="wrap">
+<h3>What this page is</h3>
+<p>A measurement record for the local models in Keating: what each one is wired into, what it scored on this
+repository's own corpora and captured harness, and where the evidence stops. Agreement between judges is agreement,
+not correctness. Benchmarks over archived transcripts are not evidence of human learning.</p>
+<p class="foot-meta">Generated 2026-09-23 from <code>scripts/on-device-site/</code> ·
+machine-readable results at <a href="/data.json">/data.json</a> ·
+method notes at <a href="/methods/">/methods/</a></p>
+</div></footer>
+</body>
+</html>

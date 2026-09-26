@@ -23,6 +23,34 @@ const RESOURCE_ROUTES = {
 
 type ResourceName = keyof typeof RESOURCE_ROUTES;
 
+/** Only trusted deployment origins may receive a billing checkout return. */
+export function checkoutReturnUrl(value: string, configuredOrigins = process.env.NOTORGANIC_CHECKOUT_RETURN_ORIGINS): string {
+	let url: URL;
+	try {
+		url = new URL(value);
+	} catch {
+		throw createError({ statusCode: 400, statusMessage: "return_url must be a valid HTTPS URL" });
+	}
+	if (url.protocol !== "https:" || url.username || url.password) {
+		throw createError({ statusCode: 400, statusMessage: "return_url must use HTTPS" });
+	}
+	const allowedOrigins = new Set(["https://keating.help", "https://chat.keating.help"]);
+	for (const configured of configuredOrigins?.split(",") ?? []) {
+		const origin = configured.trim();
+		try {
+			const candidate = new URL(origin);
+			// Require an exact origin, never a wildcard, path, or credentialed URL.
+			if (candidate.protocol === "https:" && candidate.origin === origin) allowedOrigins.add(origin);
+		} catch {
+			// Invalid deployment configuration grants no additional origins.
+		}
+	}
+	if (!allowedOrigins.has(url.origin)) {
+		throw createError({ statusCode: 400, statusMessage: "return_url origin is not approved" });
+	}
+	return url.toString();
+}
+
 function resourceName(event: H3Event): ResourceName | null {
 	const value = getRouterParam(event, "resource");
 	return typeof value === "string" && value in RESOURCE_ROUTES
@@ -68,13 +96,10 @@ export default defineEventHandler(async (event) => {
 				const wallet = await response.json().catch(() => null);
 				if (!response.ok || !subscriptionAvailable(wallet, true)) throw createError({ statusCode: 503, statusMessage: "Subscription checkout is not available yet" });
 			}
-			const returnUrl = new URL(input.return_url);
-			if (returnUrl.protocol !== "https:" || returnUrl.username || returnUrl.password) {
-				throw createError({ statusCode: 400, statusMessage: "return_url must use HTTPS" });
-			}
+			const returnUrl = checkoutReturnUrl(input.return_url);
 			body = JSON.stringify({
 				...selection,
-				return_url: returnUrl.toString(),
+				return_url: returnUrl,
 			});
 		}
 		return await client.request(path, {

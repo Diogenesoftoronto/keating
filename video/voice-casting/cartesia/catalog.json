@@ -1,0 +1,165 @@
+{
+  "model": "sonic-3.6",
+  "voices": [
+    {
+      "id": "db6b0ed5-d5d3-463d-ae85-518a07d3c2b4",
+      "name": "Skylar",
+      "tagline": "Friendly Guide",
+      "description": "Approachable American female ideal for customer care and support.",
+      "locale": "en-US",
+      "preview": "https://files.cartesia.ai/files/file_8Ksc9MiYHq3Qnvyy7Khja3/download?format=playback",
+      "file": "samples/db6b0ed5-d5d3-463d-ae85-518a07d3c2b4-en-US.wav",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click."
+    },
+    {
+      "id": "47c38ca4-5f35-497b-b1a3-415245fb35e1",
+      "name": "Daniel",
+      "tagline": "Modern Assistant",
+      "description": "Clear, crisp male voice for digital assistants and system interactions",
+      "locale": "en-US",
+      "preview": null,
+      "file": "samples/47c38ca4-5f35-497b-b1a3-415245fb35e1-en-US.wav",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click."
+    },
+    {
+      "id": "30894953-bcce-41fe-892c-15ce19c843ff",
+      "name": "Parker",
+      "tagline": "Supportive Pal",
+      "description": "Casual, supportive warmth for friendly conversational flows and approachable check-ins.",
+      "locale": "en-US",
+      "preview": null,
+      "file": "samples/30894953-bcce-41fe-892c-15ce19c843ff-en-US.wav",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click."
+    },
+    {
+      "id": "9626c31c-bec5-4cca-baa8-f8ba9e84c8bc",
+      "name": "Jacqueline",
+      "tagline": "Reassuring Agent",
+      "description": "Confident, young adult female for empathic customer support",
+      "locale": "en-US",
+      "preview": "https://files.cartesia.ai/files/file_TCUGPTjgU8gj7kPQypvjiq/download?format=playback",
+      "file": "samples/9626c31c-bec5-4cca-baa8-f8ba9e84c8bc-en-US.wav",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click."
+    },
+    {
+      "id": "630ed21c-2c5c-41cf-9d82-10a7fd668370",
+      "name": "Corey",
+      "tagline": "Supportive Buddy",
+      "description": "Inviting, cheerful young adult male for casual conversation.",
+      "locale": "en-US",
+      "preview": "https://files.cartesia.ai/files/file_B2XXu8ngt4gmUstCRNvkGo/download?format=playback",
+      "file": "samples/630ed21c-2c5c-41cf-9d82-10a7fd668370-en-US.wav",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click."
+    },
+    {
+      "id": "a33f7a4c-100f-41cf-a1fd-5822e8fc253f",
+      "name": "Lauren",
+      "tagline": "Lively Narrator",
+      "description": "Expressive female voice for narration, storytelling, and creative content",
+      "locale": "en-US",
+      "preview": null,
+      "file": "samples/a33f7a4c-100f-41cf-a1fd-5822e8fc253f-en-US.wav",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click."
+    },
+    {
+      "id": "f786b574-daa5-4673-aa0c-cbe3e8534c02",
+      "name": "Katie",
+      "tagline": "Friendly Fixer",
+      "description": "Enunciating young adult female for conversational support use cases",
+      "locale": "en-US",
+      "preview": "https://files.cartesia.ai/files/file_2pRueXdPn1LvK6QVZHRW9B/download?format=playback",
+      "file": "samples/f786b574-daa5-4673-aa0c-cbe3e8534c02-en-US.wav",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click."
+    },
+    {
+      "id": "a5136bf9-224c-4d76-b823-52bd5efcffcc",
+      "name": "Jameson",
+      "tagline": "Easygoing Support",
+      "description": "Friendly, laid-back male voice for customer support and onboarding",
+      "locale": "en-US",
+      "preview": "https://files.cartesia.ai/files/file_bBmFLYWVkNwmyERydeyyrn/download?format=playback",
+      "file": "samples/a5136bf9-224c-4d76-b823-52bd5efcffcc-en-US.wav",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click."
+    },
+    {
+      "id": "c6ccfe32-6bee-484a-a8a2-7a51bee93f99",
+      "name": "Étienne",
+      "tagline": "Precise Specialist",
+      "description": "This voice offers a precise and reassuring presence, ideal for customer support and detailed instructions.",
+      "locale": "fr-CA",
+      "preview": null,
+      "file": "samples/c6ccfe32-6bee-484a-a8a2-7a51bee93f99-fr-CA.wav",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin."
+    },
+    {
+      "id": "f5e6c270-2aa9-463f-b48b-579a39284ce2",
+      "name": "Félix",
+      "tagline": "Helpful Professional",
+      "description": "An approachable and steady tone makes this voice ideal for customer service and delivering practical, reassuring guidance.",
+      "locale": "fr-CA",
+      "preview": null,
+      "file": "samples/f5e6c270-2aa9-463f-b48b-579a39284ce2-fr-CA.wav",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin."
+    },
+    {
+      "id": "3b7d569e-01fc-45ef-b74b-29460956c691",
+      "name": "Josette",
+      "tagline": "Frontline Helper",
+      "description": "Josette's inviting and clear voice offers a friendly presence, perfect for guiding listeners with the feel of a frontline helper.",
+      "locale": "fr-CA",
+      "preview": null,
+      "file": "samples/3b7d569e-01fc-45ef-b74b-29460956c691-fr-CA.wav",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin."
+    },
+    {
+      "id": "63fdecc2-4e1d-4aa3-a442-27204e3cd3b5",
+      "name": "Léonie",
+      "tagline": "Bright Host",
+      "description": "An inviting and expressive voice that creates a pleasant atmosphere, ideal for interactive experiences and guiding listeners through processes.",
+      "locale": "fr-CA",
+      "preview": null,
+      "file": "samples/63fdecc2-4e1d-4aa3-a442-27204e3cd3b5-fr-CA.wav",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin."
+    },
+    {
+      "id": "382109c0-5c85-4fd1-9d94-b3ec07a4486b",
+      "name": "Samuel",
+      "tagline": "Informative Facilitator",
+      "description": "This voice provides clear and precise explanations with a composed and reassuring delivery, ideal for detailed guidance.",
+      "locale": "fr-CA",
+      "preview": null,
+      "file": "samples/382109c0-5c85-4fd1-9d94-b3ec07a4486b-fr-CA.wav",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin."
+    },
+    {
+      "id": "9d216805-e52e-4b1e-966a-6447df592a5d",
+      "name": "Fabien",
+      "tagline": "Tracking Desk",
+      "description": "A natural tracking desk style rather than a scripted announcer — clear, warm, and efficient.",
+      "locale": "fr-CA",
+      "preview": null,
+      "file": "samples/9d216805-e52e-4b1e-966a-6447df592a5d-fr-CA.wav",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin."
+    },
+    {
+      "id": "0e8d318d-7b5a-49d1-9952-dc265248c12a",
+      "name": "Livia",
+      "tagline": "Customer Advocate",
+      "description": "This voice combines clarity with a helpful demeanor, advocating for listeners and guiding them through service inquiries.",
+      "locale": "fr-CA",
+      "preview": null,
+      "file": "samples/0e8d318d-7b5a-49d1-9952-dc265248c12a-fr-CA.wav",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin."
+    },
+    {
+      "id": "c606ce2f-650e-40ca-958b-e11a393cead5",
+      "name": "Alice",
+      "tagline": "Attentive Supporter",
+      "description": "This voice delivers thoughtful and composed support, ideal for addressing inquiries with a focus on understanding.",
+      "locale": "fr-CA",
+      "preview": null,
+      "file": "samples/c606ce2f-650e-40ca-958b-e11a393cead5-fr-CA.wav",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin."
+    }
+  ]
+}

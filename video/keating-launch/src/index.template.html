@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<!--
+  Keating 4.0 launch — composition TEMPLATE.
+  Do not edit index.html directly: scripts/build.mjs fills this template from
+  build/timing.json (scene starts/durations measured from the voiced narration).
+  Double-brace placeholders (start:, dur:, total, captions…) become scene times in
+  seconds; the timeline script reads the same data from TIMING and keys motion to
+  spoken words.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+{{fonts}}
+      :root {
+        --paper: #f1ece0;
+        --paper-deep: #e9e2d2;
+        --card: #f6f2e8;
+        --ink: #1c211b;
+        --ink-soft: #4a5247;
+        --accent: #1e9b50;
+        --accent-dim: #14743c;
+        --green-wash: #ddebdd;
+        --terminal: #0c1510;
+        --terminal-edge: #1b2a1f;
+        --phosphor: #4be388;
+        --phosphor-dim: #2e9a5c;
+        --amber: #e8a33d;
+        --red: #d5604b;
+        --display: "Space Mono", monospace;
+        --body: "JetBrains Mono", monospace;
+        --loud: "Roboto", sans-serif;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--terminal); }
+      #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--terminal); font-family: var(--body); color: var(--ink); }
+
+      /* ---------- shared ---------- */
+      .scene { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; z-index: 1; }
+      .paper { background-color: var(--paper); background-image: radial-gradient(rgba(28, 33, 27, 0.09) 1.2px, transparent 1.6px); background-size: 26px 26px; }
+      .crt { background: radial-gradient(ellipse at 50% 40%, #13241a 0%, var(--terminal) 70%); }
+      /* Shader layers: #fx-bg paints the living paper/terminal ground under every scene,
+         #fx-over adds light, glitch and CRT texture on top. Without WebGL (.no-gl) the
+         flat CSS grounds come back. */
+      .fx { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; }
+      #fx-bg { z-index: 0; }
+      #fx-over { z-index: 4; }
+      .scene.paper { background-color: transparent; }
+      .scene.crt { background: none; }
+      .no-gl .scene.paper { background-color: var(--paper); }
+      .no-gl .scene.crt { background: radial-gradient(ellipse at 50% 40%, #13241a 0%, var(--terminal) 70%); }
+      .no-gl .fx { display: none; }
+      .scan { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px); }
+      .abs { position: absolute; }
+      .label { display: inline-block; font: 700 22px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; padding: 9px 14px; background: var(--ink); color: var(--paper); }
+      .label.green { background: var(--accent); }
+      .label.ghost { background: transparent; color: var(--phosphor); padding: 0; }
+      .frame { position: absolute; border: 3px solid var(--ink); background: var(--terminal); box-shadow: 16px 16px 0 var(--accent); overflow: hidden; }
+      .frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+      .card { position: absolute; background: var(--card); border: 3px solid var(--ink); box-shadow: 10px 10px 0 var(--ink); }
+
+      /* KeatingBot: 1024x512 atlas, 4x2 frames, stepped by the timeline. */
+      .bot { position: absolute; }
+      .bot .sway { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 50% 88%; }
+      .bot .atlas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-repeat: no-repeat; background-size: 400% 200%; background-position: 0% 0%; }
+      .bot .atlas.alt { opacity: 0; }
+
+      /* ---------- 1 hook ---------- */
+      .hook-art { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; opacity: 0.55; }
+      .hook-shade { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(12, 21, 16, 0.96) 0%, rgba(12, 21, 16, 0.85) 42%, rgba(12, 21, 16, 0.2) 70%, rgba(12, 21, 16, 0.55) 100%); }
+      .feed { position: absolute; left: 1040px; top: 0; width: 760px; height: 1080px; overflow: hidden; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 12%, #000 86%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 12%, #000 86%, transparent 100%); }
+      .feed-col { position: absolute; left: 0; top: 90px; width: 760px; display: flex; flex-direction: column; gap: 26px; }
+      .answer { background: rgba(12, 21, 16, 0.9); border: 1.5px solid var(--phosphor-dim); padding: 26px 30px; }
+      .answer .who { font: 700 20px/1 var(--display); letter-spacing: 0.08em; color: var(--phosphor); text-transform: uppercase; }
+      .answer .ask { font: 500 24px/1.3 var(--body); color: var(--paper); margin-top: 16px; }
+      .answer .said { font: 400 21px/1.6 var(--body); color: rgba(241, 236, 224, 0.72); margin-top: 14px; }
+      .hook-copy { position: absolute; left: 120px; top: 250px; width: 900px; }
+      .hook-h1 { font: 900 128px/0.98 var(--loud); color: var(--paper); letter-spacing: -0.035em; }
+      .hook-l { font: 700 56px/1.2 var(--display); color: var(--paper); letter-spacing: -0.02em; margin-top: 44px; }
+      .hook-l + .hook-l { margin-top: 10px; }
+      .hook-l .hl { position: relative; color: var(--red); }
+      .hook-rule { position: absolute; left: 0; bottom: -6px; width: 100%; height: 8px; background: var(--red); transform-origin: 0 50%; }
+
+      /* ---------- 2 stuck ---------- */
+      .stuck-feed { filter: grayscale(1) blur(2px); opacity: 0.35; }
+      .stuck-art { filter: grayscale(1); opacity: 0.18; }
+      .stuck-line { position: absolute; left: 0; top: 470px; width: 1920px; text-align: center; font: 500 76px/1.2 var(--body); color: var(--paper); letter-spacing: -0.02em; }
+      .stuck-line .ch { opacity: 0; }
+      .cursor { display: inline-block; width: 0.55em; height: 0.95em; background: var(--phosphor); vertical-align: -0.12em; margin-left: 6px; }
+
+      /* ---------- 3 reveal ---------- */
+      .reveal-copy { position: absolute; left: 900px; top: 330px; display: flex; flex-direction: column; align-items: flex-start; }
+      .reveal-a { font: 700 104px/1 var(--display); letter-spacing: -0.05em; color: var(--ink); }
+      .reveal-b { font: 700 196px/1 var(--display); letter-spacing: -0.06em; color: var(--accent); margin-top: 14px; }
+      /* inline-block keeps each glyph box to the line height (Space Mono's tall ascent
+         otherwise makes the two lines' boxes overlap); pre keeps the spaces. */
+      .reveal-copy .ch { opacity: 0; display: inline-block; white-space: pre; }
+
+      /* ---------- 4 promise ---------- */
+      .promise-copy { position: absolute; left: 120px; top: 190px; width: 1180px; }
+      .promise-a { font: 700 80px/1.1 var(--display); letter-spacing: -0.04em; color: var(--ink); }
+      .promise-b { font: 700 80px/1.1 var(--display); letter-spacing: -0.04em; color: var(--accent); margin-top: 18px; }
+      .promise-rule { width: 220px; height: 6px; background: var(--ink); margin-top: 56px; }
+      .promise-sub { font: 400 36px/1.5 var(--body); color: var(--ink-soft); margin-top: 44px; }
+      .chips { display: flex; gap: 22px; margin-top: 40px; }
+      .chip { font: 500 28px/1 var(--body); padding: 16px 22px; border: 2.5px solid var(--ink); background: var(--green-wash); color: var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+      .chip b { font-weight: 700; color: var(--accent-dim); margin-right: 12px; }
+
+      /* ---------- 6 quiz ---------- */
+      .wall { position: absolute; left: 80px; top: 40px; width: 1760px; font: 400 30px/1.55 var(--body); color: rgba(28, 33, 27, 0.26); }
+      .wall-strike { position: absolute; left: 60px; top: 520px; width: 1800px; height: 14px; background: var(--red); transform-origin: 0 50%; }
+      .quiz { left: 300px; top: 70px; width: 1020px; padding: 34px 40px; }
+      .quiz-head { display: flex; justify-content: space-between; align-items: center; }
+      .quiz-topic { font: 500 22px/1 var(--body); color: var(--ink-soft); }
+      .code { margin-top: 26px; background: var(--terminal); border: 2px solid var(--terminal-edge); padding: 24px 28px; font: 500 30px/1.5 var(--body); color: var(--phosphor); white-space: pre; font-variant-ligatures: none; }
+      .quiz-q { font: 700 40px/1.2 var(--display); letter-spacing: -0.02em; margin-top: 30px; }
+      .opts { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+      .opt { position: relative; display: flex; align-items: center; gap: 24px; padding: 14px 20px; border: 2.5px solid var(--ink); background: var(--paper); font: 500 32px/1 var(--body); }
+      .opt .k { display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border: 2.5px solid var(--ink); font: 700 24px/1 var(--display); background: var(--card); }
+      .opt .hover { position: absolute; left: -2px; top: -2px; right: -2px; bottom: -2px; border: 4px solid var(--accent); opacity: 0; }
+      .opt .fill { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: var(--accent); opacity: 0; }
+      .opt .k, .opt .v { position: relative; }
+      .opt .k { color: var(--ink); }
+      .verdict { display: flex; align-items: center; gap: 16px; margin-top: 22px; padding: 16px 20px; background: var(--green-wash); border: 2.5px solid var(--accent); font: 700 30px/1 var(--body); color: var(--accent-dim); opacity: 0; }
+      .verdict svg { flex: none; }
+
+      /* ---------- 7 own ---------- */
+      .tile { position: absolute; width: 520px; }
+      .tile .body { margin-top: 14px; }
+      .tile-img { width: 520px; height: 560px; border: 3px solid var(--ink); background: #6b6b6b; box-shadow: 10px 10px 0 var(--ink); overflow: hidden; }
+      .tile-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .persona { position: relative; height: 560px; padding: 34px 32px; }
+      .persona-row { display: flex; flex-direction: column; gap: 6px; padding: 18px 0; border-bottom: 2px dashed rgba(28, 33, 27, 0.25); }
+      .persona-row .k { font: 700 18px/1 var(--display); letter-spacing: 0.08em; color: var(--ink-soft); text-transform: uppercase; }
+      .persona-row .v { font: 500 30px/1.25 var(--body); color: var(--ink); }
+      .persona-row .v.name { font: 700 40px/1.1 var(--display); letter-spacing: -0.03em; }
+      .edit { position: absolute; right: 30px; bottom: 30px; font: 700 20px/1 var(--display); letter-spacing: 0.06em; color: var(--accent-dim); border: 2.5px solid var(--accent); padding: 10px 14px; background: var(--green-wash); }
+      .export { position: relative; height: 560px; padding: 34px 32px; background: var(--terminal); border-color: var(--ink); }
+      .export pre { font: 400 25px/1.55 var(--body); color: rgba(241, 236, 224, 0.82); }
+      .export pre .k2 { color: var(--phosphor); }
+      .dl { position: absolute; left: 32px; bottom: 32px; display: flex; align-items: center; gap: 14px; font: 700 28px/1 var(--body); color: var(--terminal); background: var(--phosphor); padding: 16px 22px; }
+      .stamp { position: absolute; left: 560px; top: 380px; width: 800px; text-align: center; font: 700 96px/1 var(--display); letter-spacing: 0.02em; color: var(--accent); border: 8px solid var(--accent); padding: 26px 0; background: rgba(241, 236, 224, 0.92); opacity: 0; }
+
+      /* ---------- 8 live ---------- */
+      .badge { position: absolute; left: 110px; top: 84px; font: 700 40px/1 var(--display); letter-spacing: 0.04em; color: var(--paper); background: var(--accent); padding: 16px 24px; box-shadow: 6px 6px 0 var(--phosphor); }
+      .crt-panel { position: absolute; left: 110px; top: 200px; width: 1060px; height: 663px; border: 3px solid var(--phosphor-dim); box-shadow: 0 0 60px rgba(75, 227, 136, 0.18), 12px 12px 0 var(--terminal-edge); overflow: hidden; }
+      .crt-panel img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .live-tag { position: absolute; left: 1290px; top: 240px; font: 700 26px/1 var(--display); letter-spacing: 0.08em; color: var(--phosphor); }
+      .live-state { position: absolute; left: 1290px; top: 800px; width: 560px; text-align: center; font: 500 24px/1 var(--body); color: var(--phosphor-dim); letter-spacing: 0.1em; }
+      .wave { position: absolute; left: 1290px; top: 700px; width: 560px; height: 80px; display: flex; align-items: center; justify-content: space-between; }
+      .wave i { display: block; width: 14px; height: 80px; background: var(--phosphor); transform: scaleY(0.08); }
+
+      /* ---------- 9 memory ---------- */
+      .device { position: absolute; left: 100px; top: 150px; width: 720px; height: 470px; border: 4px solid var(--ink); border-radius: 18px; background: var(--card); box-shadow: 10px 10px 0 var(--ink); overflow: hidden; }
+      .device-bar { display: flex; align-items: center; gap: 12px; padding: 16px 22px; background: var(--ink); color: var(--paper); font: 700 20px/1 var(--display); letter-spacing: 0.08em; }
+      .device-base { position: absolute; left: 60px; top: 628px; width: 800px; height: 26px; background: var(--ink); border-radius: 0 0 16px 16px; }
+      .recall { display: flex; flex-direction: column; gap: 16px; padding: 24px 22px; }
+      .quote { padding: 16px 20px; border: 2.5px solid var(--ink); background: var(--paper); border-left: 10px solid var(--accent); }
+      .quote .q { font: 500 25px/1.35 var(--body); color: var(--ink); }
+      .quote .m { font: 400 18px/1 var(--body); color: var(--ink-soft); margin-top: 10px; }
+      .mem-frame { left: 980px; top: 190px; width: 840px; height: 525px; }
+      .mem-frame img { position: absolute; left: 0; top: 0; }
+      .mem-label { position: absolute; left: 980px; top: 136px; }
+
+      /* ---------- 10 judge ---------- */
+      .proposal { left: 420px; top: 150px; width: 1080px; }
+      .proposal-bar { display: flex; justify-content: space-between; align-items: center; padding: 18px 28px; background: var(--ink); color: var(--paper); font: 700 22px/1 var(--display); letter-spacing: 0.08em; }
+      .proposal-bar span:last-child { color: var(--phosphor); }
+      .proposal-body { padding: 34px 40px 40px; }
+      .proposal-kicker { font: 500 26px/1 var(--body); color: var(--ink-soft); }
+      .proposal-title { font: 700 62px/1.1 var(--display); letter-spacing: -0.04em; margin-top: 16px; }
+      .proposal-why { font: 400 27px/1.5 var(--body); color: var(--ink-soft); margin-top: 22px; }
+      .buttons { display: flex; gap: 26px; margin-top: 36px; }
+      .btn { font: 700 30px/1 var(--display); letter-spacing: 0.06em; padding: 20px 34px; border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); }
+      .btn.go { background: var(--accent); color: var(--paper); }
+      .btn.no { background: var(--paper); color: var(--ink); }
+      .proposal-note { font: 400 22px/1 var(--body); color: var(--ink-soft); margin-top: 30px; }
+      .pointer { position: absolute; left: 1500px; top: 900px; width: 56px; height: 56px; }
+      .decide { position: absolute; left: 1210px; top: 640px; font: 700 64px/1 var(--display); color: var(--accent); border: 7px solid var(--accent); padding: 16px 26px; background: rgba(241, 236, 224, 0.94); opacity: 0; }
+
+      /* ---------- 11 anywhere ---------- */
+      .any-web { left: 100px; top: 170px; width: 1040px; height: 585px; }
+      .any-t { width: 620px; height: 349px; left: 1200px; }
+      .any-lab { position: absolute; }
+
+      /* ---------- 12 close ---------- */
+      .close-art { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; }
+      .close-copy { position: absolute; left: 110px; top: 96px; width: 900px; }
+      .close-kicker { font: 500 40px/1 var(--body); color: var(--ink-soft); }
+      .close-h { font: 700 96px/1.02 var(--display); letter-spacing: -0.05em; color: var(--ink); margin-top: 24px; }
+      .endcard { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+      .end-logo { position: absolute; left: 900px; top: 200px; width: 640px; }
+      .end-url { position: absolute; left: 900px; top: 610px; font: 700 124px/1 var(--display); letter-spacing: -0.05em; color: var(--accent); }
+      .end-meta { position: absolute; left: 906px; top: 780px; font: 500 36px/1 var(--body); color: var(--ink-soft); }
+
+      /* ---------- media wrappers (root level, never timed themselves) ---------- */
+      .vwrap { position: absolute; z-index: 2; }
+      .art-wrap { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; z-index: 1; }
+      .no-gl #s-close { background-color: transparent; }
+      .vwrap video { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+      .overlay { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 3; pointer-events: none; }
+
+      /* ---------- captions ---------- */
+      .cap { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5; pointer-events: none; }
+      .cap .pill { position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%); white-space: nowrap; font: 500 34px/1 var(--body); color: var(--paper); background: var(--ink); border: 2px solid var(--ink); padding: 16px 28px; box-shadow: 5px 5px 0 var(--accent); }
+      .cap .cw { color: var(--paper); }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-qyff" id="root" data-composition-id="main" data-start="0" data-duration="{{total}}" data-width="1920" data-height="1080">
+      <canvas data-hf-id="hf-86fp" id="fx-bg" class="fx" width="1920" height="1080"></canvas>
+{{artclips}}
+
+      <!-- 1 hook ------------------------------------------------------------------ -->
+      <section data-hf-id="hf-waim" id="s-hook" class="clip scene crt" data-start="{{start:hook}}" data-duration="{{dur:hook}}" data-track-index="0">
+        {{art:hook-scrolls:hook-art:hook}}
+        <div data-hf-id="hf-i6wl" class="hook-shade"></div>
+        <div data-hf-id="hf-oal9" class="feed" data-layout-allow-overflow=""><div data-hf-id="hf-nsjp" id="hook-col" data-layout-allow-overflow="" class="feed-col">{{answers}}</div></div>
+        <div data-hf-id="hf-az1f" class="scan"></div>
+        <div data-hf-id="hf-xc1l" class="hook-copy">
+          <div data-hf-id="hf-smrp" id="hook-h1" class="hook-h1">Seen this before?</div>
+          <div data-hf-id="hf-mzxt" id="hook-l1" class="hook-l">You asked to learn.</div>
+          <div data-hf-id="hf-tt3p" id="hook-l2" class="hook-l">You got <span data-hf-id="hf-drbz" class="hl">more to read.<span data-hf-id="hf-9x3c" id="hook-rule" data-layout-allow-overflow="" class="hook-rule"></span></span></div>
+        </div>
+      </section>
+
+      <!-- 2 stuck ----------------------------------------------------------------- -->
+      <section data-hf-id="hf-u934" id="s-stuck" class="clip scene crt" data-start="{{start:stuck}}" data-duration="{{dur:stuck}}" data-track-index="0">
+        <img data-hf-id="hf-8zmx" data-layout-allow-overflow="" class="hook-art stuck-art" src="assets/gen/hook-scrolls.png" alt="">
+        <div data-hf-id="hf-a2he" class="feed stuck-feed" data-layout-allow-overflow="" data-layout-allow-overlap=""><div data-hf-id="hf-4n9w" id="stuck-col" data-layout-allow-overflow="" data-layout-allow-overlap="" class="feed-col">{{answers}}</div></div>
+        <div data-hf-id="hf-51b7" class="scan"></div>
+        <div data-hf-id="hf-gzw8" id="stuck-line" data-layout-allow-overlap="" class="stuck-line">{{chars:…still not clicking.}}<span data-hf-id="hf-zzai" id="stuck-cursor" class="cursor"></span></div>
+      </section>
+
+      <!-- 3 reveal ---------------------------------------------------------------- -->
+      <section data-hf-id="hf-9yr0" id="s-reveal" class="clip scene paper" data-start="{{start:reveal}}" data-duration="{{dur:reveal}}" data-track-index="0">
+        <div data-hf-id="hf-zvmo" id="reveal-bot" class="bot" style="left: 190px; top: 190px; width: 640px; height: 640px">
+          <div data-hf-id="hf-zcs0" class="sway"><div data-hf-id="hf-k1go" class="atlas" style="background-image: url(assets/bot/body-waving.avif)"></div></div>
+        </div>
+        <div data-hf-id="hf-3obz" class="reveal-copy">
+          <div data-hf-id="hf-gwqk" id="reveal-label" class="label green">Keating 4.0</div>
+          <div data-hf-id="hf-nsci" class="reveal-a" style="margin-top: 34px">{{chars:so we made}}</div>
+          <div data-hf-id="hf-l3j2" class="reveal-b">{{chars:keating}}</div>
+        </div>
+      </section>
+
+      <!-- 4 promise --------------------------------------------------------------- -->
+      <section data-hf-id="hf-wk54" id="s-promise" class="clip scene paper" data-start="{{start:promise}}" data-duration="{{dur:promise}}" data-track-index="0">
+        <div data-hf-id="hf-9k6z" class="promise-copy">
+          <div data-hf-id="hf-1g69" id="promise-a" class="promise-a">You do the thinking.</div>
+          <div data-hf-id="hf-kfdw" id="promise-b" class="promise-b">Keating helps it click.</div>
+          <div data-hf-id="hf-f44a" id="promise-rule" class="promise-rule"></div>
+          <div data-hf-id="hf-bh9r" id="promise-sub1" class="promise-sub">A teacher that starts with your goals,</div>
+          <div data-hf-id="hf-326x" id="promise-sub2" class="promise-sub" style="margin-top: 0">and builds on what you already know.</div>
+          <div data-hf-id="hf-exrd" class="chips">
+            <div data-hf-id="hf-fwtk" id="chip-goal" class="chip"><b data-hf-id="hf-3pue">goal</b>understand recursion</div>
+            <div data-hf-id="hf-wzcv" id="chip-know" class="chip"><b data-hf-id="hf-hki7">you know</b>functions</div>
+          </div>
+        </div>
+        <div data-hf-id="hf-izli" id="promise-bot" class="bot" style="left: 1320px; top: 240px; width: 560px; height: 560px">
+          <div data-hf-id="hf-0oy0" class="sway"><div data-hf-id="hf-3t9i" class="atlas" style="background-image: url(assets/bot/body-thinking.avif)"></div></div>
+        </div>
+      </section>
+
+      <!-- 5 socratic (frame; the footage and head-bot sit above at root level) ---- -->
+      <section data-hf-id="hf-1cmd" id="s-socratic" class="clip scene paper" data-start="{{start:socratic}}" data-duration="{{dur:socratic}}" data-track-index="0">
+        <div data-hf-id="hf-2y2x" id="soc-label" class="label abs" style="left: 210px; top: 40px">[classroom]</div>
+        <div data-hf-id="hf-zo6d" id="soc-frame" class="frame" style="left: 210px; top: 82px; width: 1500px; height: 844px"></div>
+      </section>
+
+      <!-- 6 quiz ------------------------------------------------------------------ -->
+      <section data-hf-id="hf-wnu0" id="s-quiz" class="clip scene paper" data-start="{{start:quiz}}" data-duration="{{dur:quiz}}" data-track-index="0">
+        <div data-hf-id="hf-h2br" id="wall" data-layout-allow-overflow="" data-layout-allow-overlap="" class="wall">{{wall}}</div>
+        <div data-hf-id="hf-1ajc" id="wall-strike" class="wall-strike"></div>
+        <div data-hf-id="hf-ta7w" id="quiz" class="card quiz">
+          <div data-hf-id="hf-l3n6" class="quiz-head"><span data-hf-id="hf-jjr7" class="label green">[try it yourself]</span><span data-hf-id="hf-hf1h" class="quiz-topic">recursion · check</span></div>
+          <div data-hf-id="hf-jb5n" class="code">function sum(n) {
+  return n === 0 ? 0 : n + sum(n - 1);
+}</div>
+          <div data-hf-id="hf-w323" class="quiz-q">What does the base case return?</div>
+          <div data-hf-id="hf-a4xe" class="opts">
+            <div data-hf-id="hf-3dqy" id="opt-a" class="opt"><span data-hf-id="hf-s5oi" class="fill"></span><span data-hf-id="hf-768l" class="hover"></span><span data-hf-id="hf-7ui7" class="k">A</span><span data-hf-id="hf-iov7" class="v">0</span></div>
+            <div data-hf-id="hf-x815" id="opt-b" class="opt"><span data-hf-id="hf-ngva" class="fill"></span><span data-hf-id="hf-6op5" class="hover"></span><span data-hf-id="hf-7g76" class="k">B</span><span data-hf-id="hf-j368" class="v">1</span></div>
+            <div data-hf-id="hf-wgdc" id="opt-c" class="opt"><span data-hf-id="hf-nv6b" class="fill"></span><span data-hf-id="hf-7vm8" class="hover"></span><span data-hf-id="hf-71w5" class="k">C</span><span data-hf-id="hf-iak6" class="v">3</span></div>
+          </div>
+          <div data-hf-id="hf-6ykw" id="verdict" class="verdict">
+            <svg data-hf-id="hf-w17s" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#14743c" stroke-width="3.2" stroke-linecap="square"><path data-hf-id="hf-ubsc" d="M4 12.5l5 5L20 6.5" /></svg>
+            <span data-hf-id="hf-umck">sum(0) returns 0</span>
+          </div>
+        </div>
+        <div data-hf-id="hf-g5qn" id="quiz-bot" class="bot" style="left: 1390px; top: 330px; width: 500px; height: 500px">
+          <div data-hf-id="hf-zi0x" class="sway"><div data-hf-id="hf-f5qx" class="atlas" style="background-image: url(assets/bot/body-success.avif)"></div></div>
+        </div>
+      </section>
+
+      <!-- 7 own ------------------------------------------------------------------- -->
+      <section data-hf-id="hf-180d" id="s-own" class="clip scene paper" data-start="{{start:own}}" data-duration="{{dur:own}}" data-track-index="0">
+        <div data-hf-id="hf-v56a" id="tile-models" class="tile" style="left: 110px; top: 110px">
+          <span data-hf-id="hf-6qfv" class="label">[models]</span>
+          <div data-hf-id="hf-o9ea" class="body tile-img"><img data-hf-id="hf-ircu" src="assets/stills/feature-models.jpg" alt=""></div>
+        </div>
+        <div data-hf-id="hf-79cy" id="tile-persona" class="tile" style="left: 700px; top: 160px">
+          <span data-hf-id="hf-2jm7" class="label">[teacher persona]</span>
+          <div data-hf-id="hf-f32d" class="body card persona" style="position: relative">
+            <div data-hf-id="hf-pgo3" class="persona-row"><span data-hf-id="hf-a433" class="k">name</span><span data-hf-id="hf-cfg8" class="v name">John Keating</span></div>
+            <div data-hf-id="hf-in4z" class="persona-row"><span data-hf-id="hf-y6dq" class="k">voice</span><span data-hf-id="hf-rbpv" class="v">warm, curious, a little wry</span></div>
+            <div data-hf-id="hf-i8ty" class="persona-row"><span data-hf-id="hf-ow1l" class="k">style</span><span data-hf-id="hf-16mj" class="v">asks before it tells</span></div>
+            <span data-hf-id="hf-iup3" class="edit">✎ EDITABLE</span>
+          </div>
+        </div>
+        <div data-hf-id="hf-q4fn" id="tile-data" class="tile" style="left: 1290px; top: 210px">
+          <span data-hf-id="hf-bpye" class="label">[your data]</span>
+          <div data-hf-id="hf-b2cr" class="body card export" style="position: relative">
+            <pre data-hf-id="hf-rm7j">{
+  <span data-hf-id="hf-hunm" class="k2">"goals"</span>: [
+    "understand recursion"
+  ],
+  <span data-hf-id="hf-yu02" class="k2">"knows"</span>: ["functions"],
+  <span data-hf-id="hf-jcmx" class="k2">"reviews"</span>: [ … ]
+}</pre>
+            <div data-hf-id="hf-5pdn" class="dl">learner.json <svg data-hf-id="hf-p1e4" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0c1510" stroke-width="3" stroke-linecap="square"><path data-hf-id="hf-6oe6" d="M12 3v13M6 11l6 6 6-6M4 21h16" /></svg></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-jq55" id="stamp" data-layout-allow-overlap="" class="stamp">[OPEN SOURCE]</div>
+      </section>
+
+      <!-- 8 live ------------------------------------------------------------------ -->
+      <section data-hf-id="hf-vd8e" id="s-live" class="clip scene crt" data-start="{{start:live}}" data-duration="{{dur:live}}" data-track-index="0">
+        <div data-hf-id="hf-8y69" id="badge" class="badge">KEATING 4.0</div>
+        <div data-hf-id="hf-yq2u" id="crt-panel" class="crt-panel"><img data-hf-id="hf-ua5e" src="assets/stills/feature-live.jpg" alt=""><div data-hf-id="hf-4n06" class="scan"></div></div>
+        <div data-hf-id="hf-pj49" id="live-tag" class="live-tag">[GPT LIVE]</div>
+        <div data-hf-id="hf-hic7" id="live-bot" class="bot" style="left: 1350px; top: 270px; width: 440px; height: 440px">
+          <div data-hf-id="hf-zwby" class="sway">
+            <div data-hf-id="hf-nizz" id="live-listen" class="atlas" style="background-image: url(assets/bot/head-listening.avif)"></div>
+            <div data-hf-id="hf-an9q" id="live-speak" class="atlas alt" style="background-image: url(assets/bot/head-speaking.avif)"></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-nq2g" id="wave" class="wave">{{bars}}</div>
+        <div data-hf-id="hf-78t6" class="live-state"><span data-hf-id="hf-oz89" id="state-listen">● LISTENING</span><span data-hf-id="hf-tte0" id="state-speak" style="position: absolute; left: 0; width: 100%; opacity: 0">● SPEAKING</span></div>
+        <div data-hf-id="hf-48p5" class="scan"></div>
+      </section>
+
+      <!-- 9 memory ---------------------------------------------------------------- -->
+      <section data-hf-id="hf-ldom" id="s-memory" class="clip scene paper" data-start="{{start:memory}}" data-duration="{{dur:memory}}" data-track-index="0">
+        <div data-hf-id="hf-rbcy" id="device" class="device">
+          <div data-hf-id="hf-u5cy" class="device-bar">
+            <svg data-hf-id="hf-0r8k" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f1ece0" stroke-width="2.6"><rect data-hf-id="hf-reng" x="4" y="10" width="16" height="11" /><path data-hf-id="hf-apke" d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+            LOCAL RECALL · ON THIS DEVICE
+          </div>
+          <div data-hf-id="hf-wbdj" class="recall">
+            <div data-hf-id="hf-k8wc" id="q1" class="quote"><div data-hf-id="hf-cz97" class="q">“I think recursion is a loop that calls itself.”</div><div data-hf-id="hf-yx55" class="m">you · last week</div></div>
+            <div data-hf-id="hf-sws7" id="q2" class="quote"><div data-hf-id="hf-0me4" class="q">“So the base case is where it stops?”</div><div data-hf-id="hf-2exp" class="m">you · three days ago</div></div>
+            <div data-hf-id="hf-oyo6" id="q3" class="quote"><div data-hf-id="hf-fmfb" class="q">“I keep losing track of the stack.”</div><div data-hf-id="hf-le5l" class="m">you · yesterday</div></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-txg2" id="device-base" class="device-base"></div>
+        <div data-hf-id="hf-zahi" class="mem-label"><span data-hf-id="hf-luck" id="mem-lab-a" data-layout-allow-overlap="" class="label">[coming up]</span><span data-hf-id="hf-5gd4" id="mem-lab-b" data-layout-allow-overlap="" class="label green" style="position: absolute; left: 0; top: 0; opacity: 0; white-space: nowrap">[courses]</span></div>
+        <div data-hf-id="hf-sbit" id="mem-frame" class="frame mem-frame">
+          <img data-hf-id="hf-ft3v" src="assets/stills/feature-coming-up.jpg" alt="">
+          <img data-hf-id="hf-kbch" id="mem-b" src="assets/stills/feature-courses.jpg" alt="" style="opacity: 0">
+        </div>
+        <div data-hf-id="hf-hjms" id="mem-bot" class="bot" style="left: 770px; top: 600px; width: 320px; height: 320px">
+          <div data-hf-id="hf-ypev" class="sway"><div data-hf-id="hf-415e" class="atlas" style="background-image: url(assets/bot/body-understanding.avif)"></div></div>
+        </div>
+      </section>
+
+      <!-- 10 judge ---------------------------------------------------------------- -->
+      <section data-hf-id="hf-khie" id="s-judge" class="clip scene paper" data-start="{{start:judge}}" data-duration="{{dur:judge}}" data-track-index="0">
+        <div data-hf-id="hf-ks48" id="proposal" class="card proposal">
+          <div data-hf-id="hf-651e" class="proposal-bar"><span data-hf-id="hf-fpk7">[INDEPENDENT REVIEW]</span><span data-hf-id="hf-f78j">PROPOSAL</span></div>
+          <div data-hf-id="hf-o9kr" class="proposal-body">
+            <div data-hf-id="hf-l7dj" class="proposal-kicker">Review suggests:</div>
+            <div data-hf-id="hf-5535" class="proposal-title">Slow down on base cases.</div>
+            <div data-hf-id="hf-jj6e" class="proposal-why">Why: the base-case answers were hesitant; the recursive step was solid.</div>
+            <div data-hf-id="hf-xe1z" class="buttons"><div data-hf-id="hf-v5wx" id="btn-accept" class="btn go">[ACCEPT]</div><div data-hf-id="hf-u7e9" class="btn no">[DISMISS]</div></div>
+            <div data-hf-id="hf-9y37" class="proposal-note">Nothing changes until you accept it.</div>
+          </div>
+        </div>
+        <svg data-hf-id="hf-owbk" id="pointer" class="pointer" viewBox="0 0 24 24"><path data-hf-id="hf-rwzm" d="M4 2l15 11-6.5 1.2 3.8 7.3-3 1.5-3.8-7.3L4 20z" fill="#1c211b" stroke="#f1ece0" stroke-width="1.4" stroke-linejoin="round" /></svg>
+        <div data-hf-id="hf-l9rl" id="decide" data-layout-allow-overlap="" class="decide">you decide</div>
+      </section>
+
+      <!-- 11 anywhere (frames; footage above at root level) ----------------------- -->
+      <section data-hf-id="hf-lsoo" id="s-anywhere" class="clip scene paper" data-start="{{start:anywhere}}" data-duration="{{dur:anywhere}}" data-track-index="0">
+        <div data-hf-id="hf-xas9" id="any-web" class="frame any-web"><img data-hf-id="hf-n1mz" src="assets/stills/web-classroom.jpg" alt=""></div>
+        <div data-hf-id="hf-t84d" id="any-web-lab" class="label any-lab" style="left: 100px; top: 116px">[web]</div>
+        <div data-hf-id="hf-yahb" id="any-tui" class="frame any-t" style="top: 170px; box-shadow: 12px 12px 0 var(--ink)"></div>
+        <div data-hf-id="hf-pvv1" id="any-tui-lab" class="label any-lab" style="left: 1200px; top: 116px">[tui]</div>
+        <div data-hf-id="hf-m7ox" id="any-cli" class="frame any-t" style="top: 590px; box-shadow: 12px 12px 0 var(--ink)"></div>
+        <div data-hf-id="hf-4d0n" id="any-cli-lab" class="label any-lab" style="left: 1200px; top: 536px">[cli]</div>
+      </section>
+
+      <!-- 12 close ---------------------------------------------------------------- -->
+      <section data-hf-id="hf-rkng" id="s-close" class="clip scene paper" data-start="{{start:close}}" data-duration="{{dur:close}}" data-track-index="0">
+        {{art:close-summit:close-art:close}}
+        <div data-hf-id="hf-x4gu" class="close-copy">
+          <div data-hf-id="hf-biic" id="close-k" class="close-kicker">Done offloading?</div>
+          <div data-hf-id="hf-9k45" id="close-h" class="close-h">Ready to think for yourself?</div>
+        </div>
+        <div data-hf-id="hf-nxpq" id="endcard" class="endcard paper">
+          <div data-hf-id="hf-s5w1" id="end-bot" class="bot" style="left: 200px; top: 230px; width: 640px; height: 640px">
+            <div data-hf-id="hf-z3pw" class="sway">
+              <div data-hf-id="hf-doxb" id="end-wave" class="atlas" style="background-image: url(assets/bot/body-waving.avif)"></div>
+              <div data-hf-id="hf-5ryf" id="end-idle" class="atlas alt" style="background-image: url(assets/bot/body-idle.avif)"></div>
+            </div>
+          </div>
+          <img data-hf-id="hf-y275" id="end-logo" class="end-logo" src="assets/brand/logo-lockup.png" alt="Keating">
+          <div data-hf-id="hf-4g58" id="end-url" class="end-url">keating.help</div>
+          <div data-hf-id="hf-n17f" id="end-meta" class="end-meta">Keating 4.0 · open source</div>
+        </div>
+      </section>
+
+      <!-- root-level footage: timed on the video itself, moved via untimed wrappers -->
+      <div data-hf-id="hf-9eft" id="w-classroom" class="vwrap" style="left: 213px; top: 85px; width: 1494px; height: 838px">
+        <video data-hf-id="hf-c32w" id="v-classroom" class="clip" src="assets/clips/classroom.mp4" data-start="{{start:socratic}}" data-duration="{{dur:socratic}}" data-track-index="1" muted playsinline></video>
+      </div>
+      <div data-hf-id="hf-fbxq" id="w-tui" class="vwrap" style="left: 1203px; top: 173px; width: 614px; height: 343px">
+        <video data-hf-id="hf-hys6" id="v-tui" class="clip" src="assets/clips/tui.mp4" data-start="{{start:anywhere}}" data-duration="{{dur:anywhere}}" data-track-index="1" muted playsinline></video>
+      </div>
+      <div data-hf-id="hf-3srs" id="w-cli" class="vwrap" style="left: 1203px; top: 593px; width: 614px; height: 343px">
+        <video data-hf-id="hf-dyrx" id="v-cli" class="clip" src="assets/clips/cli.mp4" data-start="{{start:anywhere}}" data-duration="{{dur:anywhere}}" data-track-index="2" muted playsinline></video>
+      </div>
+
+      <!-- root-level overlay above the classroom footage -->
+      <div data-hf-id="hf-kkdg" id="o-socratic" class="clip overlay" data-start="{{start:socratic}}" data-duration="{{dur:socratic}}" data-track-index="3">
+        <div data-hf-id="hf-ww00" id="soc-bot" class="bot" style="left: 1560px; top: 660px; width: 320px; height: 320px">
+          <div data-hf-id="hf-xwst" class="sway"><div data-hf-id="hf-1ude" class="atlas" style="background-image: url(assets/bot/head-speaking.avif)"></div></div>
+        </div>
+      </div>
+
+      <canvas data-hf-id="hf-6mxi" id="fx-over" class="fx" width="1920" height="1080" data-layout-allow-occlusion=""></canvas>
+
+{{captions}}
+
+      <audio data-hf-id="hf-fjyn" id="mix" src="assets/audio/mix.wav" data-start="0" data-duration="{{total}}" data-volume="1"></audio>
+    </div>
+
+    <script>
+      const TIMING = /*TIMING*/ null;
+      const S = Object.fromEntries(TIMING.scenes.map((s) => [s.id, s]));
+      const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const st = (id) => S[id].start;
+      const en = (id) => S[id].start + S[id].duration;
+      // Time a spoken word starts (n-th occurrence) / ends, in root seconds.
+      function word(id, w, n = 1) {
+        let c = 0;
+        for (const x of S[id].words) if (norm(x.w) === norm(w) && ++c === n) return x;
+        throw new Error(`word "${w}" not in ${id}`);
+      }
+      const at = (id, w, n) => word(id, w, n).s;
+      const upto = (id, w, n) => word(id, w, n).e;
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- KeatingBot stop-motion cadences (mirrors web/src/components/keating-bot.css) ----
+      const even = (n) => Array.from({ length: n }, (_, i) => [i / n, i]);
+      const CAD = {
+        idle: { period: 6, keys: [[0, 0], [0.74, 1], [0.78, 2], [0.82, 3], [0.86, 4], [0.9, 5], [0.94, 6], [0.98, 7]] },
+        waving: { period: 4, keys: [[0, 0], [0.04, 1], [0.08, 2], [0.12, 3], [0.16, 4], [0.2, 5], [0.24, 6], [0.28, 7]] },
+        thinking: { period: 3.6, keys: [[0, 0], [0.28, 1], [0.36, 2], [0.44, 3], [0.6, 4], [0.68, 5], [0.76, 6], [0.84, 7]] },
+        speaking: { period: 1, keys: even(8) },
+        listening: { period: 3.2, keys: [[0, 0], [0.38, 1], [0.46, 2], [0.54, 3], [0.62, 4], [0.7, 5], [0.78, 6], [0.86, 7]] },
+        understanding: { period: 6, keys: [[0, 0], [0.12, 1], [0.24, 2], [0.38, 3], [0.48, 4], [0.6, 5], [0.8, 6], [0.9, 7]] },
+        success: { period: 1.05, once: true, keys: Array.from({ length: 8 }, (_, i) => [i / 7, i]) },
+      };
+      const framePos = (i) => `${((i % 4) / 3) * 100}% ${Math.floor(i / 4) * 100}%`;
+      function animateSprite(el, state, t0, t1) {
+        const c = CAD[state];
+        for (let p = t0; p < t1; p += c.period) {
+          for (const [k, f] of c.keys) {
+            const t = p + k * c.period;
+            if (t >= t1) break;
+            tl.set(el, { backgroundPosition: framePos(f) }, t);
+          }
+          if (c.once) break;
+        }
+      }
+      function sway(el, t0, t1) {
+        const n = Math.max(1, Math.ceil((t1 - t0) / 4.8));
+        tl.to(el, {
+          keyframes: [
+            { xPercent: -1, yPercent: 0, rotation: -1.8 },
+            { xPercent: 0, yPercent: -1.5, rotation: -0.4 },
+            { xPercent: 1, yPercent: 0, rotation: 1.8 },
+            { xPercent: 0, yPercent: -1, rotation: 0.4 },
+            { xPercent: 0, yPercent: 0, rotation: 0 },
+          ],
+          duration: 4.8, ease: "sine.inOut", repeat: n - 1,
+        }, t0);
+      }
+      function typeChars(sel, t0, t1) {
+        const chars = $$(sel + " .ch");
+        chars.forEach((c, i) => tl.set(c, { opacity: 1 }, t0 + ((t1 - t0) * i) / chars.length));
+      }
+      const pop = (sel, t, from = { y: 40 }) =>
+        tl.fromTo(sel, { opacity: 0, ...from }, { opacity: 1, x: 0, y: 0, scale: 1, rotation: 0, duration: 0.5, ease: "power3.out" }, t);
+
+      // ---- 1 hook -----------------------------------------------------------------
+      {
+        const t = st("hook");
+        tl.fromTo("#hook-art", { scale: 1.02 }, { scale: 1.1, duration: S.hook.duration, ease: "none" }, t);
+        tl.fromTo("#hook-col .answer", { opacity: 0, x: 160 }, { opacity: 1, x: 0, duration: 0.35, ease: "power4.out", stagger: 0.16 }, t + 0.05);
+        tl.fromTo("#hook-col", { y: 0 }, { y: -1700, duration: S.hook.duration - 0.8, ease: "power2.in" }, t + 0.8);
+        tl.fromTo("#hook-h1", { opacity: 0, y: 30, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.35, ease: "back.out(2)" }, at("hook", "Seen") - 0.1);
+        pop("#hook-l1", at("hook", "You") - 0.08);
+        pop("#hook-l2", at("hook", "and") - 0.08);
+        tl.fromTo("#hook-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: "power2.out" }, at("hook", "more"));
+      }
+
+      // ---- 2 stuck ----------------------------------------------------------------
+      {
+        const t = st("stuck");
+        tl.set("#stuck-col", { y: -1700 }, t);
+        typeChars("#stuck-line", at("stuck", "still") - 0.25, upto("stuck", "clicking."));
+        for (let b = t; b < en("stuck"); b += 0.5) tl.set("#stuck-cursor", { opacity: Math.round((b - t) / 0.5) % 2 ? 0 : 1 }, b);
+        tl.to("#s-stuck .stuck-feed", { y: 1100, duration: 0.5, ease: "power2.in" }, en("stuck") - 0.55);
+      }
+
+      // ---- 3 reveal ---------------------------------------------------------------
+      {
+        const t = st("reveal");
+        tl.fromTo("#reveal-bot", { yPercent: 70, scaleY: 0.82, opacity: 0 }, { yPercent: 0, scaleY: 1, opacity: 1, duration: 0.6, ease: "back.out(1.7)" }, t + 0.2);
+        animateSprite("#reveal-bot .atlas", "waving", t + 0.35, en("reveal"));
+        pop("#reveal-label", t + 0.3, { y: -20 });
+        typeChars("#s-reveal .reveal-copy", at("reveal", "So"), upto("reveal", "Keating."));
+      }
+
+      // ---- 4 promise --------------------------------------------------------------
+      {
+        const t = st("promise");
+        tl.fromTo("#promise-bot", { x: 260, opacity: 0 }, { x: 0, opacity: 1, duration: 0.55, ease: "power3.out" }, t);
+        animateSprite("#promise-bot .atlas", "thinking", t, en("promise"));
+        sway("#promise-bot .sway", t, en("promise"));
+        pop("#promise-a", at("promise", "You") - 0.1, { x: -60 });
+        pop("#promise-b", at("promise", "Keating") - 0.1, { x: -60 });
+        tl.fromTo("#promise-rule", { scaleX: 0, transformOrigin: "0 50%" }, { scaleX: 1, duration: 0.4, ease: "power2.out" }, at("promise", "click"));
+        pop("#promise-sub1", at("promise", "a") - 0.1, { y: 20 });
+        pop("#chip-goal", at("promise", "goals,") - 0.1, { y: 30 });
+        pop("#promise-sub2", at("promise", "and") - 0.1, { y: 20 });
+        pop("#chip-know", at("promise", "already") - 0.1, { y: 30 });
+      }
+
+      // ---- 5 socratic -------------------------------------------------------------
+      {
+        const t = st("socratic");
+        tl.fromTo(["#soc-frame", "#w-classroom"], { y: 160, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, t);
+        pop("#soc-label", t + 0.25, { y: 20 });
+        tl.fromTo("#soc-bot", { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "back.out(2)" }, t + 0.5);
+        const w = S.socratic.words;
+        animateSprite("#soc-bot .atlas", "speaking", w[0].s, w[w.length - 1].e);
+        tl.set("#soc-bot .atlas", { backgroundPosition: framePos(0) }, w[w.length - 1].e);
+      }
+
+      // ---- 6 quiz -----------------------------------------------------------------
+      {
+        const t = st("quiz");
+        tl.fromTo("#wall", { y: 0 }, { y: -160, duration: S.quiz.duration, ease: "none" }, t);
+        tl.fromTo("#wall-strike", { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "power2.inOut" }, at("quiz", "wall"));
+        tl.to(["#wall", "#wall-strike"], { opacity: 0.25, filter: "blur(3px)", duration: 0.4 }, at("quiz", "A") - 0.35);
+        tl.fromTo("#quiz", { rotationX: -80, opacity: 0, transformPerspective: 1400, transformOrigin: "50% 0%" }, { rotationX: 0, opacity: 1, duration: 0.6, ease: "back.out(1.3)" }, at("quiz", "A") - 0.35);
+        tl.fromTo("#quiz-bot", { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, at("quiz", "A"));
+        const hov = (id, a, b) => tl.fromTo(id + " .hover", { opacity: 0 }, { opacity: 1, duration: 0.12, yoyo: true, repeat: 1, repeatDelay: Math.max(0.1, b - a - 0.24) }, a);
+        const pick = at("quiz", "actually");
+        hov("#opt-c", pick - 1.3, pick - 0.9);
+        hov("#opt-b", pick - 0.85, pick - 0.45);
+        tl.fromTo("#opt-a .hover", { opacity: 0 }, { opacity: 1, duration: 0.12 }, pick - 0.4);
+        tl.to("#opt-a .fill", { opacity: 1, duration: 0.15 }, pick);
+        tl.to("#opt-a", { color: "#f1ece0", duration: 0.15 }, pick);
+        tl.fromTo("#verdict", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.35, ease: "back.out(2)" }, pick + 0.1);
+        animateSprite("#quiz-bot .atlas", "success", pick, en("quiz"));
+      }
+
+      // ---- 7 own ------------------------------------------------------------------
+      {
+        const t = st("own");
+        pop("#tile-models", at("own", "Choose") - 0.15, { y: 90, rotation: -3 });
+        pop("#tile-persona", at("own", "Shape") - 0.15, { y: 90, rotation: 3 });
+        pop("#tile-data", at("own", "Take") - 0.15, { y: 90, rotation: -2 });
+        tl.fromTo("#stamp", { opacity: 0, scale: 1.8, rotation: -2 }, { opacity: 1, scale: 1, rotation: -7, duration: 0.3, ease: "power4.in" }, at("own", "open") - 0.2);
+        tl.fromTo(["#tile-models", "#tile-persona", "#tile-data"], { x: 0 }, { x: 6, duration: 0.05, yoyo: true, repeat: 3, ease: "none" }, at("own", "open") + 0.1);
+      }
+
+      // ---- 8 live -----------------------------------------------------------------
+      {
+        const t = st("live");
+        tl.fromTo("#badge", { clipPath: "inset(0% 100% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.45, ease: "power3.out" }, t + 0.1);
+        tl.fromTo("#crt-panel", { opacity: 0, scaleY: 0.02 }, { opacity: 1, scaleY: 1, duration: 0.45, ease: "power4.out" }, t + 0.25);
+        pop("#live-tag", t + 0.4, { y: -16 });
+        tl.fromTo("#live-bot", { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "back.out(1.8)" }, t + 0.35);
+        const flip = at("live", "with") - 0.1;
+        animateSprite("#live-listen", "listening", t + 0.35, flip);
+        tl.set("#live-listen", { opacity: 0 }, flip);
+        tl.set("#live-speak", { opacity: 1 }, flip);
+        tl.set("#state-listen", { opacity: 0 }, flip);
+        tl.set("#state-speak", { opacity: 1 }, flip);
+        animateSprite("#live-speak", "speaking", flip, en("live"));
+        // Waveform: 24 bars driven by the narration's own loudness envelope.
+        const env = TIMING.env.live, bars = $$("#wave i");
+        env.v.forEach((v, k) => {
+          const time = env.t0 + k * env.step;
+          if (time >= en("live")) return;
+          bars.forEach((bar, i) => {
+            const shape = 0.55 + 0.45 * Math.abs(Math.sin(i * 1.93 + k * 0.61));
+            tl.to(bar, { scaleY: Math.max(0.08, v * shape), duration: env.step, ease: "none" }, time);
+          });
+        });
+      }
+
+      // ---- 9 memory ---------------------------------------------------------------
+      {
+        const t = st("memory");
+        pop("#device", t, { x: -80 });
+        pop("#device-base", t + 0.05, { x: -80 });
+        pop("#mem-frame", t + 0.25, { x: 120 });
+        pop(".mem-label", t + 0.35, { y: 16 });
+        tl.fromTo("#mem-bot", { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "back.out(1.6)" }, t + 0.4);
+        animateSprite("#mem-bot .atlas", "understanding", t + 0.4, en("memory"));
+        pop("#q1", at("memory", "brings") - 0.1, { x: -40 });
+        pop("#q2", at("memory", "said"), { x: -40 });
+        pop("#q3", at("memory", "before,"), { x: -40 });
+        const swap = at("memory", "courses") - 0.3;
+        tl.to("#mem-b", { opacity: 1, duration: 0.5, ease: "power1.inOut" }, swap);
+        tl.to("#mem-lab-a", { opacity: 0, duration: 0.2 }, swap);
+        tl.to("#mem-lab-b", { opacity: 1, duration: 0.2 }, swap);
+      }
+
+      // ---- 10 judge ---------------------------------------------------------------
+      {
+        const t = st("judge");
+        tl.fromTo("#proposal", { y: -700, rotation: -2 }, { y: 0, rotation: 0, duration: 0.7, ease: "bounce.out" }, t);
+        const aim = at("judge", "You") - 0.2, click = at("judge", "sticks.") - 0.25;
+        tl.fromTo("#pointer", { x: 0, y: 0, opacity: 0 }, { opacity: 1, duration: 0.2 }, aim - 0.2);
+        tl.to("#pointer", { x: -930, y: -375, duration: Math.max(0.5, click - aim - 0.1), ease: "power2.inOut" }, aim);
+        tl.to("#pointer", { scale: 0.82, duration: 0.08, yoyo: true, repeat: 1 }, click);
+        tl.to("#btn-accept", { x: 6, y: 6, boxShadow: "0px 0px 0 #1c211b", duration: 0.08 }, click);
+        tl.to("#proposal", { borderColor: "#1e9b50", boxShadow: "10px 10px 0 #1e9b50", duration: 0.2 }, click + 0.05);
+        tl.fromTo("#decide", { opacity: 0, scale: 1.7, rotation: 0 }, { opacity: 1, scale: 1, rotation: -6, duration: 0.28, ease: "power4.in" }, click + 0.2);
+      }
+
+      // ---- 11 anywhere ------------------------------------------------------------
+      {
+        const t = st("anywhere");
+        tl.fromTo(["#any-web", "#any-web-lab"], { x: -260, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, t);
+        const tt = at("anywhere", "or") - 0.2;
+        tl.fromTo(["#any-tui", "#any-tui-lab", "#w-tui"], { x: 320, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, tt);
+        tl.fromTo(["#any-cli", "#any-cli-lab", "#w-cli"], { x: 320, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, tt + 0.25);
+      }
+
+      // ---- 12 close ---------------------------------------------------------------
+      {
+        const t = st("close");
+        tl.fromTo("#s-close", { clipPath: "inset(100% 0% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.5, ease: "power3.inOut" }, t);
+        tl.fromTo("#close-art", { scale: 1.12 }, { scale: 1.0, duration: S.close.duration, ease: "power1.out" }, t);
+        pop("#close-k", at("close", "Done") - 0.1, { y: 20 });
+        pop("#close-h", at("close", "Ready") - 0.1, { y: 30 });
+        const card = at("close", "Start") - 0.2;
+        tl.fromTo("#endcard", { clipPath: "inset(100% 0% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.5, ease: "power3.inOut" }, card);
+        tl.fromTo("#end-bot", { yPercent: 60, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.6, ease: "back.out(1.6)" }, card + 0.25);
+        pop("#end-logo", card + 0.35, { y: 30 });
+        pop("#end-url", at("close", "keating.help.") - 0.1, { y: 30 });
+        pop("#end-meta", at("close", "keating.help.") + 0.3, { y: 16 });
+        const idle = card + 0.25 + 2.2;
+        animateSprite("#end-wave", "waving", card + 0.25, idle);
+        tl.set("#end-wave", { opacity: 0 }, idle);
+        tl.set("#end-idle", { opacity: 1 }, idle);
+        animateSprite("#end-idle", "idle", idle, en("close"));
+        sway("#end-bot .sway", idle, en("close"));
+      }
+
+      // ---- shaders --------------------------------------------------------------------
+      // Two WebGL layers. Both are pure functions of timeline time, drawn from one tween's
+      // onUpdate (never requestAnimationFrame), so Studio scrubbing and the frame-by-frame
+      // render produce the same pixels.
+      //   #fx-bg   the ground under every scene: paper, or the terminal's phosphor field.
+      //            It is a domain-warped noise field that drifts slowly, and each cut
+      //            stirs it briefly. When the ground changes between paper and terminal,
+      //            it burns through with a glowing phosphor edge.
+      //   #fx-over light sweeps on key beats, the glitch into "stuck", the flash at the
+      //            turn, plus a rolling scan band, grain and a vignette on terminal scenes.
+      //            It writes premultiplied alpha: rgb adds light, alpha darkens.
+      {
+        const TERMINAL = new Set(["hook", "stuck", "live"]);
+        const ground = (i) => (TERMINAL.has(TIMING.scenes[i].id) ? 1 : 0);
+        const burns = [];
+        TIMING.scenes.forEach((sc, i) => {
+          if (i && ground(i) !== ground(i - 1))
+            burns.push({ t: sc.start, from: ground(i - 1), to: ground(i), dur: sc.id === "reveal" ? 0.95 : 0.7, down: ground(i) });
+        });
+        const cuts = TIMING.scenes.slice(1).map((s) => s.start);
+        const sweeps = [
+          [st("reveal") + 0.55, 1], [at("quiz", "actually"), 0.7], [at("own", "open") - 0.1, 0.7],
+          [st("live") + 0.05, 0.9], [at("judge", "sticks.") - 0.1, 0.7], [at("close", "Start") + 0.1, 1],
+        ];
+        const glitches = [[st("stuck"), 1], [st("live"), 0.5]];
+        const flashes = [[st("reveal"), 1]];
+        // Rises over `a` seconds to t0, then decays with time constant `d`.
+        const pulse = (t, t0, a, d) => (t < t0 - a ? 0 : t < t0 ? (t - t0 + a) / a : Math.exp(-(t - t0) / d));
+        const ease = (x) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2);
+
+        function state(t) {
+          let i = 0;
+          while (i + 1 < TIMING.scenes.length && TIMING.scenes[i + 1].start <= t) i++;
+          const s = { t, from: ground(i), to: ground(i), p: 1, edge: 0, down: 0, kick: 0, sweep: 0, sweepAmp: 0, glitch: 0, flash: 0, frame: Math.floor(t * TIMING.fps + 1e-4) };
+          for (const b of burns) {
+            if (t >= b.t && t < b.t + b.dur) {
+              const x = (t - b.t) / b.dur;
+              Object.assign(s, { from: b.from, to: b.to, p: ease(x), edge: 1 - x ** 4, down: b.down });
+            }
+          }
+          for (const c of cuts) if (t >= c) s.kick = Math.max(s.kick, Math.exp(-(t - c) / 0.7));
+          for (const [t0, amp] of sweeps) {
+            if (t >= t0 && t < t0 + 0.9) Object.assign(s, { sweep: (t - t0) / 0.9, sweepAmp: amp * Math.sin(Math.PI * ((t - t0) / 0.9)) });
+          }
+          for (const [t0, amp] of glitches) if (t < t0 + 0.45) s.glitch = Math.max(s.glitch, amp * pulse(t, t0, 0.14, 0.14));
+          for (const [t0, amp] of flashes) s.flash = Math.max(s.flash, amp * pulse(t, t0, 0.06, 0.3));
+          s.crt = s.from + (s.to - s.from) * s.p;
+          return s;
+        }
+
+        const NOISE = `
+          precision highp float;
+          varying vec2 v_uv;
+          uniform float u_t;
+          float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+          float noise(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+          }
+          float fbm(vec2 p) {
+            float v = 0.0, a = 0.5;
+            mat2 R = mat2(0.8, 0.6, -0.6, 0.8);
+            for (int i = 0; i < 5; i++) { v += a * noise(p); p = R * p * 2.02; a *= 0.5; }
+            return v;
+          }
+          const vec3 PAPER = vec3(0.945, 0.925, 0.878);
+          const vec3 WASH = vec3(0.925, 0.965, 0.925);
+          const vec3 TERM = vec3(0.047, 0.082, 0.063);
+          const vec3 PHOS = vec3(0.294, 0.890, 0.533);
+          const vec3 PHOS_DIM = vec3(0.180, 0.604, 0.361);
+        `;
+        const BG = NOISE + `
+          uniform float u_from, u_to, u_p, u_edge, u_down, u_kick;
+          void main() {
+            vec2 uv = v_uv, p = uv * vec2(1.7778, 1.0) * 2.2;
+            float t = u_t;
+            vec2 q = vec2(fbm(p + t * 0.05), fbm(p + vec2(5.2, 1.3) - t * 0.04));
+            float n = fbm(p + (1.6 + 1.4 * u_kick) * q + vec2(1.7, 9.2) + t * 0.03);
+            // Paper only ever lightens from its base, so ink and green type keep their contrast.
+            vec3 paper = mix(PAPER, vec3(1.0), 0.16 * smoothstep(0.3, 0.8, n));
+            paper = mix(paper, WASH, smoothstep(0.6, 0.9, n) * (0.25 + 0.45 * u_kick));
+            float v = 1.0 - smoothstep(0.2, 1.1, length((uv - vec2(0.5, 0.6)) * vec2(1.6, 1.0)));
+            vec3 term = TERM + PHOS_DIM * (pow(n, 2.5) * 0.38 + 0.04) * (0.5 + 0.7 * v) + vec3(0.03, 0.06, 0.04) * v;
+            vec3 a = mix(paper, term, u_from), b = mix(paper, term, u_to);
+            // Burn: a noisy front sweeps up the frame (down when entering the terminal).
+            float y = u_down > 0.5 ? 1.0 - uv.y : uv.y;
+            float field = 0.72 * y + 0.45 * fbm(uv * vec2(1.7778, 1.0) * 4.0 + 3.0);
+            float front = u_p * 1.4 - 0.12;
+            float gone = smoothstep(front + 0.012, front - 0.012, field);
+            vec3 col = mix(a, b, gone);
+            float beyond = field - front;
+            col = mix(col, vec3(0.05, 0.04, 0.03), u_edge * 0.55 * smoothstep(0.0, 0.015, beyond) * (1.0 - smoothstep(0.02, 0.07, beyond)));
+            float glow = exp(-abs(beyond) * 55.0) * u_edge;
+            col += (mix(PHOS, vec3(1.0, 0.97, 0.82), exp(-abs(beyond) * 220.0)) * 1.1) * glow;
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `;
+        const OVER = NOISE + `
+          uniform float u_crt, u_sweep, u_sweepAmp, u_glitch, u_flash, u_frame;
+          void main() {
+            vec2 uv = v_uv;
+            vec3 add = vec3(0.0);
+            float dark = 0.0;
+            if (u_crt > 0.001) {
+              float band = exp(-pow(1.0 - uv.y - fract(u_t * 0.12), 2.0) * 140.0);
+              add += PHOS * band * 0.05 * u_crt;
+              float g = hash(floor(uv * vec2(960.0, 540.0)) + u_frame * 1.37);
+              add += PHOS * max(g - 0.5, 0.0) * 0.1 * u_crt;
+              dark = smoothstep(0.45, 0.95, length((uv - 0.5) * vec2(1.25, 1.0))) * 0.45 * u_crt;
+            }
+            if (u_sweepAmp > 0.001) {
+              vec2 p = (uv - 0.5) * vec2(1.7778, 1.0);
+              float d = dot(p, normalize(vec2(1.0, 0.45))) - mix(-1.3, 1.3, u_sweep);
+              add += (vec3(1.0, 0.97, 0.88) * exp(-d * d * 60.0) * 0.26 + PHOS * exp(-d * d * 6.0) * 0.07) * u_sweepAmp;
+            }
+            if (u_glitch > 0.001) {
+              float row = floor(uv.y * 54.0);
+              float h = hash(vec2(row, u_frame));
+              float on = step(1.0 - 0.45 * u_glitch, h);
+              float h2 = hash(vec2(row * 1.7, u_frame + 3.1));
+              vec3 tint = h2 < 0.33 ? vec3(0.84, 0.38, 0.29) : h2 < 0.66 ? vec3(0.1, 0.85, 0.9) : PHOS;
+              float seg = step(hash(vec2(floor(uv.x * 12.0 + h * 40.0), row)), 0.6);
+              add += tint * on * seg * 0.38 * u_glitch;
+              dark = max(dark, on * (1.0 - seg) * 0.55 * u_glitch);
+            }
+            float r = length((uv - 0.5) * vec2(1.7778, 1.0));
+            add += mix(PHOS, vec3(1.0), 0.35) * u_flash * (0.55 - 0.3 * r);
+            gl_FragColor = vec4(add, dark);
+          }
+        `;
+
+        function layer(id, fs) {
+          const gl = document.getElementById(id).getContext("webgl", { preserveDrawingBuffer: true, premultipliedAlpha: true, antialias: false });
+          if (!gl) throw new Error("no webgl");
+          const compile = (type, src) => {
+            const sh = gl.createShader(type);
+            gl.shaderSource(sh, src);
+            gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+            return sh;
+          };
+          const prog = gl.createProgram();
+          gl.attachShader(prog, compile(gl.VERTEX_SHADER, "attribute vec2 p; varying vec2 v_uv; void main() { v_uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }"));
+          gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+          gl.linkProgram(prog);
+          gl.useProgram(prog);
+          gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+          const loc = gl.getAttribLocation(prog, "p");
+          gl.enableVertexAttribArray(loc);
+          gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+          const uni = {};
+          return (vals) => {
+            for (const k in vals) {
+              if (!(k in uni)) uni[k] = gl.getUniformLocation(prog, "u_" + k);
+              if (uni[k]) gl.uniform1f(uni[k], vals[k]);
+            }
+            gl.viewport(0, 0, 1920, 1080);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          };
+        }
+
+        try {
+          const bg = layer("fx-bg", BG), over = layer("fx-over", OVER);
+          const draw = (t) => { const s = state(t); bg(s); over(s); };
+          const clock = { t: 0 };
+          tl.to(clock, { t: TIMING.total, duration: TIMING.total, ease: "none", onUpdate: () => draw(clock.t) }, 0);
+          draw(0);
+        } catch (err) {
+          console.warn("[fx] shader layers off:", err.message);
+          document.getElementById("root").classList.add("no-gl");
+        }
+
+        // The glitch also splits the picture itself: chromatic ghosts and a sideways jolt.
+        const split = (sel, t0, k) => {
+          tl.fromTo(sel,
+            { x: 16 * k, filter: `drop-shadow(${12 * k}px 0 0 rgba(213,96,75,0.75)) drop-shadow(${-12 * k}px 0 0 rgba(75,227,136,0.6))` },
+            { x: 0, filter: "drop-shadow(0px 0 0 rgba(213,96,75,0)) drop-shadow(0px 0 0 rgba(75,227,136,0))", duration: 0.4, ease: "power3.out" }, t0);
+          tl.set(sel, { filter: "none" }, t0 + 0.42);
+        };
+        tl.to("#s-hook", { x: -18, duration: 1 / 30, yoyo: true, repeat: 3, ease: "none" }, st("stuck") - 0.14);
+        split("#s-stuck", st("stuck"), 1);
+        split("#s-live", st("live"), 0.5);
+      }
+
+      // ---- captions: highlight the word being spoken --------------------------------
+      $$(".cap .cw").forEach((el) => {
+        tl.set(el, { color: "#4be388" }, Number(el.dataset.s));
+        tl.set(el, { color: "#f1ece0" }, Number(el.dataset.e));
+      });
+
+      tl.set({}, {}, TIMING.total);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

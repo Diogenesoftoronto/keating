@@ -1,13 +1,19 @@
 import { CircleAlert } from "lucide-react";
 import { css } from "../../styled-system/css";
 import { RetryResponseButton } from "./RetryResponseButton";
+import { ErrorDiagnosticsActions } from "./ErrorDiagnosticsActions";
 
 interface FailedResponseRecoveryProps {
 	recovery?: string;
 	onRetry: () => void | Promise<void>;
+	/**
+	 * Set for failures the learner cannot fix by retrying. Renders the
+	 * diagnostics/email escape hatch under the retry control.
+	 */
+	diagnosticsSummary?: string;
 }
 
-export function FailedResponseRecovery({ recovery, onRetry }: FailedResponseRecoveryProps) {
+export function FailedResponseRecovery({ recovery, onRetry, diagnosticsSummary }: FailedResponseRecoveryProps) {
 	return (
 		<div
 			role="alert"
@@ -41,6 +47,7 @@ export function FailedResponseRecovery({ recovery, onRetry }: FailedResponseReco
 				variant="primary"
 				className={css({ width: "100%", sm: { width: "auto" } })}
 			/>
+			{diagnosticsSummary && <ErrorDiagnosticsActions summary={diagnosticsSummary} />}
 		</div>
 	);
 }

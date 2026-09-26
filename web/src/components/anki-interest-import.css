@@ -1,0 +1,16 @@
+.anki-import { display: flex; align-items: flex-start; gap: 14px; margin-top: 20px; padding: 16px; border: 1px solid var(--border); border-radius: 8px; animation: anki-import-in .34s cubic-bezier(.22, .61, .36, 1) both; }
+@keyframes anki-import-in {
+	from { opacity: 0; transform: translateY(6px); }
+	to { opacity: 1; transform: none; }
+}
+.anki-import__body { display: grid; gap: 8px; min-width: 0; }
+.anki-import__ask { margin: 0; font-size: 14px; font-weight: 600; }
+.anki-import__body > p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted-foreground); }
+.anki-import__status { color: var(--primary) !important; }
+.anki-import__error { color: var(--destructive) !important; }
+/* The real control is the button; the input stays reachable to assistive tech
+   rather than being display:none, which would take it out of the tree. */
+.anki-import__file { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); opacity: 0; }
+.anki-import button { justify-self: start; }
+html[data-motion="reduce"] .anki-import { animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .anki-import { animation: none !important; } }

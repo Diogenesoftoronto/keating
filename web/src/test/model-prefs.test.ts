@@ -7,6 +7,7 @@ import {
 	loadModelPrefs,
 	removeCustomModel,
 	saveModelPrefs,
+	shouldShowModelProvider,
 	subscribeModelPrefs,
 	toggleProviderVisibility,
 } from "../keating/model-prefs";
@@ -81,6 +82,14 @@ describe("model prefs", () => {
 		toggleProviderVisibility("openai", true);
 		toggleProviderVisibility("openai", false);
 		expect(loadModelPrefs().hiddenProviders).toEqual([]);
+	});
+
+	it("hides unconfigured cloud providers until they are connected or explicitly revealed", () => {
+		expect(shouldShowModelProvider({ cloud: true, configured: false, manuallyHidden: false, revealed: false })).toBe(false);
+		expect(shouldShowModelProvider({ cloud: true, configured: true, manuallyHidden: false, revealed: false })).toBe(true);
+		expect(shouldShowModelProvider({ cloud: true, configured: false, manuallyHidden: false, revealed: true })).toBe(true);
+		expect(shouldShowModelProvider({ cloud: false, configured: false, manuallyHidden: false, revealed: false })).toBe(true);
+		expect(shouldShowModelProvider({ cloud: true, configured: true, manuallyHidden: true, revealed: false })).toBe(false);
 	});
 
 	it("round-trips recent models", () => {

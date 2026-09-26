@@ -1,0 +1,137 @@
+[a] [PRICING]
+[a] [COURSES]
+[a] [COMING UP]
+[button] Download Keating
+[h1] Seen this before?
+[a] Download Keating
+[a] Open Keating in the browser
+[p] Illustrated examples · authored text, not provider transcripts
+[span] ChatGPT
+[p] Explain recursion.
+[p] Recursion is a programming technique in which a function calls itself to solve a smaller instance of the same problem. A recursive function generally has two parts: a base case, which returns a result without making another call, and a recursive case, which reduces the problem and calls the function again.
+[p] For example, to sum the integers from zero to a positive integer n, a recursive function can return zero when n is zero, and otherwise return n plus the result of calling the function with n minus one. The call sum(2) therefore becomes 2 + sum(1), which becomes 2 + 1 + sum(0). Once the base case returns zero, the waiting calls finish, giving a final result of three.
+[p] Each unfinished call has a frame on the call stack. Those frames hold the information needed to continue after the smaller call returns. Calls must make progress toward a base case; otherwise, recursion can exhaust the stack. Understanding both the descent into smaller calls and the return through waiting calls is essential to reasoning about recursive programs.
+[span] Claude
+[p] Explain photosynthesis.
+[p] Photosynthesis is the process by which plants, algae, and some bacteria use light energy to build organic compounds. In plants, it takes place in chloroplasts. The overall process uses carbon dioxide and water to build sugars, while releasing oxygen. Light provides the energy needed to drive the chemical transformations; it does not supply the atoms from which sugar is assembled.
+[p] The light-dependent reactions take place in the thylakoid membranes. Chlorophyll absorbs light, which helps drive electron transfer and the production of ATP and NADPH. Water is split to replenish electrons, releasing oxygen in the process. The oxygen gas released by a plant therefore originates from water, rather than from the carbon dioxide taken in from the air.
+[p] The Calvin cycle uses ATP and NADPH to incorporate carbon from carbon dioxide into organic molecules. These molecules can be used to build sugars and other plant materials. Following the carbon atoms, oxygen atoms, and energy separately helps distinguish the roles of the inputs. A summary equation describes the overall balance, but does not by itself reveal every reaction or the path each atom follows.
+[span] Gemini
+[p] Explain probability with a die.
+[p] Probability measures how likely an event is to occur. For a finite set of equally likely outcomes, the probability of an event is the number of outcomes that satisfy the event divided by the total number of possible outcomes. A fair six-sided die has six equally likely outcomes, numbered one through six. An event can include one outcome or several outcomes.
+[p] For example, the probability of rolling exactly six is one out of six, because only one face satisfies the event. The probability of rolling an even number is three out of six, or one half, because two, four, and six are even. The probability of rolling a number less than five is four out of six, or two thirds, because one, two, three, and four satisfy the condition.
+[p] The equally likely assumption matters: simply counting outcomes would not give the correct probabilities for a biased die. Event wording also matters, because less than five excludes five, whereas at most five includes it. Listing the outcomes before simplifying the fraction is a useful way to check both the interpretation of an event and the resulting calculation.
+[button] ChatGPT
+[button] Recursion
+[button] Claude
+[button] Photosynthesis
+[button] Gemini
+[button] Probability
+[span] ...still not clicking.
+[h2] You asked to learn.
+[h2] You got more to read.
+[h2] so we made keating
+[span] Scroll
+[h2] You do the thinking.
+[span] Keating helps it click.
+[p] A teacher that starts with your goals and builds on what you know.
+[summary] Make it your own
+[p] Choose your model, shape your teacher, and take your data with you. It’s open source—build as deeply as you want.
+[a] Setup guide
+[a] Explore the source
+[button] Recursion
+[button] Photosynthesis
+[button] Probability
+[h2] Try it yourself.
+[code] function sum(n) {
+  return n === 0 ? 0 : n + sum(n - 1);
+}
+[summary] Need a starting point?
+[p] Understand recursion · you know functions
+[p] sum(0) reaches the base case and returns 0. It makes no further call. Use that return value to work back outward.
+[span] 1 / 3
+[p] What does the base case return?
+[div] Choose the return value
+[div] sum(0) returns
+[span] Drop or choose...
+[option] Drop or choose...
+[option] A. 0
+[option] B. 1
+[option] C. 3
+[button] Skip for now
+[p] Example lesson
+[h2] You know what you want to learn.
+[h2] Figuring out how is another job.
+[p] You collect tutorials, save links, and ask questions. You’re still left deciding where to start, what you’re missing, and whether any of it is taking you where you want to go.
+[h3] Build your way through it with Keating.
+[p] Bring your curiosity, what you already know, and what you want to be able to do. Shape a plan together, then change the depth, direction, and practice as you go.
+[span] Design your learning
+[span] Interactive example
+[p] How synthesizers make sound
+[p] Starting from scratch. Curious about making music.
+[legend] How far do you want to go?
+[button] Get the big picture
+[button] Build my own patch
+[legend] How would you like to practise?
+[button] Try experiments
+[button] Work through questions
+[a] Shape this plan with Keating
+[p] Opens this request in chat. You can edit it before sending.
+[p] Your possible path
+[span] Hear what an oscillator does
+[span] Shape a sound with filters
+[span] Make it move with envelopes
+[span] Build a patch of your own
+[p] Try this: change the filter cutoff. Describe what you hear.
+[button] Start with filters instead
+[h2] Explaining where you’re at.
+[h2] Again.
+[p] You found a useful explanation last time. Now you’re piecing the context back together: what you tried, what clicked, and where you got stuck.
+[h3] Pick up with a teacher that has your history.
+[p] Keating carries your goals and practice history into the next session. You can inspect and edit that context, shape the teaching instructions, and choose your model.
+[a] See how to make it yours
+[figcaption] Learning context · example
+[dt] Working toward
+[dd] Build my own synth patch
+[dt] Last practice
+[dd] Changing the filter cutoff
+[dt] Next question
+[dd] How does an envelope change the sound?
+[p] “Let’s build on the filter experiment. What if the brightness changed each time you pressed a key?”
+[h2] You learned something worth sharing.
+[h2] Where do you even start?
+[p] A chat transcript is a lot to hand someone. A pile of links leaves them finding their own way. And when you’re learning alongside others, your questions need somewhere to meet.
+[h3] Give what you know a place to grow.
+[p] Build a course with lessons and practice, invite others, and work through it together. Join someone else’s course to follow their path, ask questions, and share what you discover.
+[p] Example shared course
+[h4] Make your first synth patch
+[span] You + your study group
+[button] The learning path
+[button] The conversation
+[strong] Start with a sound
+[span] Listen, change the oscillator, compare.
+[strong] Make it your own
+[span] Shape the filter and envelope. Share your patch.
+[strong] Learn from each other
+[span] Try someone else’s approach. Explain what changed.
+[a] Build a course
+[a] Open your courses
+[p] Have an invitation? Follow its link to join.
+[p] Done offloading?
+[h2] Ready to think
+[h2] for yourself?
+[span] A question is enough.
+[span] Start a session
+[span] Take it with you.
+[span] Download Keating
+[p] An AI tutor for explanations, practice, and review.
+[a] Download
+[a] Open Keating
+[a] Live sessions
+[h5] Resources
+[a] Documentation
+[a] Changelog
+[a] keating.help
+[span] © 2026 Keating · v
+[a] Terms of Service
+[a] Privacy Policy

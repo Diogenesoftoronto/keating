@@ -1,6 +1,6 @@
 {
   "name": "@keating/desktop",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "type": "module",
   "private": true,
   "description": "Keating desktop (Electron) app — P2P, local-first teaching client.",
@@ -19,7 +19,8 @@
     "stage:offline": "node scripts/stage-offline.mjs",
     "dist:offline": "node scripts/build-offline-edition.mjs",
     "dist:linux": "electron-builder --linux AppImage deb rpm",
-    "dist:windows": "electron-builder --win nsis --x64"
+    "dist:windows": "electron-builder --win nsis --x64",
+    "dist:mac": "electron-builder --mac dmg zip --arm64"
   },
   "dependencies": {
     "@keating/p2p-core": "workspace:*"
@@ -35,10 +36,31 @@
     "productName": "Keating",
     "beforePack": "scripts/offline-before-pack.cjs",
     "win": {
+      "forceCodeSigning": true,
+      "signDlls": true,
+      "signExts": [".node"],
+      "signingHashAlgorithms": ["sha256"],
       "target": [{ "target": "nsis", "arch": ["x64"] }],
       "artifactName": "Keating-${version}-windows-${arch}-setup.${ext}",
       "icon": "../web/public/brand/logo-badge.png"
     },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["arm64"] }, { "target": "zip", "arch": ["arm64"] }],
+      "artifactName": "Keating-${version}-macos-${arch}.${ext}",
+      "category": "public.app-category.education",
+      "forceCodeSigning": true,
+      "hardenedRuntime": true,
+      "notarize": true,
+      "entitlements": "signing/entitlements.mac.plist",
+      "entitlementsInherit": "signing/entitlements.mac.plist",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Keating uses your microphone when you choose voice learning.",
+        "NSCameraUsageDescription": "Keating uses your camera when you choose a live learning session."
+      },
+      "binaries": ["Contents/Resources/offline/keating-offline", "Contents/Resources/offline/liblitert-lm.so"],
+      "icon": "../web/public/brand/logo-badge.png"
+    },
+    "dmg": { "sign": true },
     "nsis": {
       "oneClick": false,
       "perMachine": false,

@@ -1,0 +1,7 @@
+[
+  {"shot": "answer", "kicker": "ANSWER REVIEW", "title": "Your answer comes first", "body": "Saved with its question before any review runs.", "line": "In Keating 4.0, your answer comes first. It's saved, with the question and the task, before any review begins."},
+  {"shot": "checking", "kicker": "A SECOND LOOK", "title": "Judged against the rubric", "body": "An independent judge, chosen apart from your tutor.", "line": "Then an independent judge checks it against the rubric, and the result lands beside your work, ready to inspect."},
+  {"shot": "released", "kicker": "YOUR CALL", "title": "Flag what it missed", "body": "A second opinion, not the final word.", "line": "If the review missed something, you can flag it. A judgement is a second opinion, not the final word."},
+  {"shot": "queue", "kicker": "REVIEW ORDER", "title": "What to practise next", "body": "Recall fits checked on 288 practice states.", "line": "Judgements also decide what you practise next. Jev reviewed two hundred and eighty-eight practice states to tune recall and review order."},
+  {"shot": "exam", "kicker": "HONEST MARKS", "title": "Every mark has a reason", "body": "Open any question and see why.", "line": "So every mark comes with a reason you can open. Keating: judgement you can check."}
+]

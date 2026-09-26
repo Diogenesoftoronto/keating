@@ -1,0 +1,527 @@
+{
+  "summary": {
+    "webAnimations": 6,
+    "cssDeclarations": 74,
+    "scrollTargets": 14,
+    "cdpAnimations": 8,
+    "canvases": 1
+  },
+  "namedAnimations": [
+    "landing-overload-arrive",
+    "keating-bot-waving",
+    "keating-bot-understanding",
+    "keating-bot-idle-sway",
+    "keating-bot-idle",
+    "activity-count-settle",
+    "activity-arrive",
+    "keating-bot-thinking"
+  ],
+  "scrollTriggeredElements": 14,
+  "representativeAnimations": [
+    {
+      "type": "CSSAnimation",
+      "playState": "paused",
+      "animationName": "landing-overload-arrive",
+      "targetSelector": "div.landing-overload__stack",
+      "targetRect": {
+        "x": 435,
+        "y": 393.65625,
+        "width": 1050,
+        "height": 570,
+        "top": 393.65625,
+        "right": 1485,
+        "bottom": 963.65625,
+        "left": 435
+      },
+      "keyframes": [
+        {
+          "offset": 0,
+          "easing": "ease-out",
+          "composite": "auto",
+          "opacity": "0.25",
+          "translate": "0px 18px",
+          "computedOffset": 0
+        },
+        {
+          "offset": 1,
+          "easing": "ease-out",
+          "composite": "auto",
+          "opacity": "1",
+          "translate": "0px",
+          "computedOffset": 1
+        }
+      ],
+      "timing": {
+        "duration": 600,
+        "delay": 0,
+        "iterations": 1,
+        "easing": "linear",
+        "direction": "normal"
+      }
+    },
+    {
+      "type": "CSSAnimation",
+      "playState": "running",
+      "animationName": "keating-bot-waving",
+      "targetSelector": "span.keating-bot__sprite",
+      "targetRect": {
+        "x": 832,
+        "y": 1578.5625,
+        "width": 256,
+        "height": 256,
+        "top": 1578.5625,
+        "right": 1088,
+        "bottom": 1834.5625,
+        "left": 832
+      },
+      "keyframes": [
+        {
+          "offset": 0,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "0px",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0
+        },
+        {
+          "offset": 0.04,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "33.3333%",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.04
+        },
+        {
+          "offset": 0.08,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "66.6667%",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.08
+        },
+        {
+          "offset": 0.12,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "100%",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.12
+        },
+        {
+          "offset": 0.16,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "0px",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.16
+        },
+        {
+          "offset": 0.2,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "33.3333%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.2
+        },
+        {
+          "offset": 0.24,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "66.6667%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.24
+        },
+        {
+          "offset": 0.28,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "100%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.28
+        },
+        {
+          "offset": 1,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "100%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 1
+        }
+      ],
+      "timing": {
+        "duration": 4000,
+        "delay": 0,
+        "iterations": null,
+        "easing": "linear",
+        "direction": "normal"
+      }
+    },
+    {
+      "type": "CSSAnimation",
+      "playState": "running",
+      "animationName": "keating-bot-understanding",
+      "targetSelector": "span.keating-bot__sprite",
+      "targetRect": {
+        "x": 466.890625,
+        "y": 2472.71875,
+        "width": 270,
+        "height": 270,
+        "top": 2472.71875,
+        "right": 736.890625,
+        "bottom": 2742.71875,
+        "left": 466.890625
+      },
+      "keyframes": [
+        {
+          "offset": 0,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "0px",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0
+        },
+        {
+          "offset": 0.12,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "33.3333%",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.12
+        },
+        {
+          "offset": 0.24,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "66.6667%",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.24
+        },
+        {
+          "offset": 0.38,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "100%",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.38
+        },
+        {
+          "offset": 0.48,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "0px",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.48
+        },
+        {
+          "offset": 0.6,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "33.3333%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.6
+        },
+        {
+          "offset": 0.8,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "66.6667%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.8
+        },
+        {
+          "offset": 0.9,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "100%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.9
+        },
+        {
+          "offset": 1,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "100%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 1
+        }
+      ],
+      "timing": {
+        "duration": 6000,
+        "delay": 0,
+        "iterations": null,
+        "easing": "linear",
+        "direction": "normal"
+      }
+    },
+    {
+      "type": "CSSAnimation",
+      "playState": "running",
+      "animationName": "keating-bot-idle-sway",
+      "targetSelector": "span.keating-bot__motion",
+      "targetRect": {
+        "x": 1500.94189453125,
+        "y": 2309.46435546875,
+        "width": 56.3076171875,
+        "height": 56.3076171875,
+        "top": 2309.46435546875,
+        "right": 1557.24951171875,
+        "bottom": 2365.77197265625,
+        "left": 1500.94189453125
+      },
+      "keyframes": [
+        {
+          "offset": 0,
+          "easing": "ease-in-out",
+          "composite": "auto",
+          "transform": "translate(-1%) rotate(-1.8deg)",
+          "computedOffset": 0
+        },
+        {
+          "offset": 0.25,
+          "easing": "ease-in-out",
+          "composite": "auto",
+          "transform": "translateY(-1.5%) rotate(-0.4deg)",
+          "computedOffset": 0.25
+        },
+        {
+          "offset": 0.5,
+          "easing": "ease-in-out",
+          "composite": "auto",
+          "transform": "translate(1%) rotate(1.8deg)",
+          "computedOffset": 0.5
+        },
+        {
+          "offset": 0.75,
+          "easing": "ease-in-out",
+          "composite": "auto",
+          "transform": "translateY(-1%) rotate(0.4deg)",
+          "computedOffset": 0.75
+        },
+        {
+          "offset": 1,
+          "easing": "ease-in-out",
+          "composite": "auto",
+          "transform": "translate(-1%) rotate(-1.8deg)",
+          "computedOffset": 1
+        }
+      ],
+      "timing": {
+        "duration": 4800,
+        "delay": 0,
+        "iterations": null,
+        "easing": "linear",
+        "direction": "normal"
+      }
+    },
+    {
+      "type": "CSSAnimation",
+      "playState": "paused",
+      "animationName": "keating-bot-idle",
+      "targetSelector": "span.keating-bot__sprite",
+      "targetRect": {
+        "x": 1500.94189453125,
+        "y": 2309.46435546875,
+        "width": 56.3076171875,
+        "height": 56.3076171875,
+        "top": 2309.46435546875,
+        "right": 1557.24951171875,
+        "bottom": 2365.77197265625,
+        "left": 1500.94189453125
+      },
+      "keyframes": [
+        {
+          "offset": 0,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "0px",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0
+        },
+        {
+          "offset": 0.7,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "0px",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.7
+        },
+        {
+          "offset": 0.74,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "33.3333%",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.74
+        },
+        {
+          "offset": 0.78,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "66.6667%",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.78
+        },
+        {
+          "offset": 0.82,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "100%",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.82
+        },
+        {
+          "offset": 0.86,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "0px",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.86
+        },
+        {
+          "offset": 0.9,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "33.3333%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.9
+        },
+        {
+          "offset": 0.94,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "66.6667%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.94
+        },
+        {
+          "offset": 0.98,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "100%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.98
+        },
+        {
+          "offset": 1,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "0px",
+          "backgroundPositionY": "0px",
+          "computedOffset": 1
+        }
+      ],
+      "timing": {
+        "duration": 6000,
+        "delay": 0,
+        "iterations": null,
+        "easing": "linear",
+        "direction": "normal"
+      }
+    },
+    {
+      "type": "CSSAnimation",
+      "playState": "running",
+      "animationName": "keating-bot-thinking",
+      "targetSelector": "span.keating-bot__sprite",
+      "targetRect": {
+        "x": 996,
+        "y": 4711.921875,
+        "width": 64,
+        "height": 64,
+        "top": 4711.921875,
+        "right": 1060,
+        "bottom": 4775.921875,
+        "left": 996
+      },
+      "keyframes": [
+        {
+          "offset": 0,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "0px",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0
+        },
+        {
+          "offset": 0.2,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "0px",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.2
+        },
+        {
+          "offset": 0.28,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "33.3333%",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.28
+        },
+        {
+          "offset": 0.36,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "66.6667%",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.36
+        },
+        {
+          "offset": 0.44,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "100%",
+          "backgroundPositionY": "0px",
+          "computedOffset": 0.44
+        },
+        {
+          "offset": 0.6,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "0px",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.6
+        },
+        {
+          "offset": 0.68,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "33.3333%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.68
+        },
+        {
+          "offset": 0.76,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "66.6667%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.76
+        },
+        {
+          "offset": 0.84,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "100%",
+          "backgroundPositionY": "100%",
+          "computedOffset": 0.84
+        },
+        {
+          "offset": 1,
+          "easing": "steps(1)",
+          "composite": "auto",
+          "backgroundPositionX": "0px",
+          "backgroundPositionY": "0px",
+          "computedOffset": 1
+        }
+      ],
+      "timing": {
+        "duration": 3600,
+        "delay": 0,
+        "iterations": null,
+        "easing": "linear",
+        "direction": "normal"
+      }
+    }
+  ]
+}

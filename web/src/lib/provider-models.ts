@@ -392,6 +392,15 @@ export async function getProviderApiKey(providerName: string): Promise<string | 
 	return customProviders.find((provider) => provider.name === providerName)?.apiKey;
 }
 
+/** Return only whether the provider can currently authenticate. */
+export async function hasProviderCredential(providerName: string): Promise<boolean> {
+	try {
+		return Boolean(await getProviderApiKey(providerName));
+	} catch {
+		return false;
+	}
+}
+
 const FALLBACK_CHAT_MODEL_IDS: Record<string, string[]> = {
 	[NOTORGANIC_PROVIDER_ID]: [NOTORGANIC_DEFAULT_MODEL.id],
 	"openai-codex": ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex-spark"],

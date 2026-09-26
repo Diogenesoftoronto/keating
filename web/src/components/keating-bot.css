@@ -56,6 +56,35 @@
 .keating-bot[data-animated="true"][data-state="lotus"] .keating-bot__sprite { animation: keating-bot-speaking 4.8s steps(1, end) infinite; }
 .keating-bot[data-animated="true"][data-state="connecting"] .keating-bot__sprite { animation: keating-bot-study 5.6s steps(1, end) infinite; }
 .keating-bot[data-animated="true"][data-state="understanding"] .keating-bot__sprite { animation: keating-bot-understanding 6s steps(1, end) infinite; }
+/* Onboarding scenes. Each reuses an authored cadence rather than inventing one:
+   the loop timing carries the mood, and a shared timeline keeps them in family. */
+.keating-bot[data-animated="true"][data-state="greeting"] .keating-bot__sprite { animation: keating-bot-waving 3.6s steps(1, end) infinite; }
+.keating-bot[data-animated="true"][data-state="listening-voice"] .keating-bot__sprite { animation: keating-bot-attending 2.8s steps(1, end) infinite; }
+.keating-bot[data-animated="true"][data-state="importing"] .keating-bot__sprite { animation: keating-bot-study 4.6s steps(1, end) infinite; }
+.keating-bot[data-animated="true"][data-state="sorting"] .keating-bot__sprite { animation: keating-bot-study 5.2s steps(1, end) infinite; }
+.keating-bot[data-animated="true"][data-state="settled"] .keating-bot__sprite { animation: keating-bot-resting 7.2s steps(1, end) infinite; }
+/* Even frame spacing: attention is continuous, so no frame is held longer than another. */
+@keyframes keating-bot-attending {
+	0% { background-position: 0% 0%; }
+	12.5% { background-position: 33.333333% 0%; }
+	25% { background-position: 66.666667% 0%; }
+	37.5% { background-position: 100% 0%; }
+	50% { background-position: 0% 100%; }
+	62.5% { background-position: 33.333333% 100%; }
+	75% { background-position: 66.666667% 100%; }
+	87.5%, 100% { background-position: 100% 100%; }
+}
+/* A long hold on the rest pose, so a settled bot reads as still rather than idle-animating. */
+@keyframes keating-bot-resting {
+	0%, 52% { background-position: 0% 0%; }
+	56% { background-position: 33.333333% 0%; }
+	60% { background-position: 66.666667% 0%; }
+	64% { background-position: 100% 0%; }
+	68% { background-position: 0% 100%; }
+	72% { background-position: 33.333333% 100%; }
+	76% { background-position: 66.666667% 100%; }
+	80%, 100% { background-position: 100% 100%; }
+}
 @keyframes keating-bot-understanding {
 	0% { background-position: 0% 0%; }
 	12% { background-position: 33.333333% 0%; }

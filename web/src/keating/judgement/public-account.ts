@@ -24,7 +24,8 @@ function defaultClient(): NotOrganicPublicClient | null {
 function accountSession(client: JudgementAccountClient, now: number): NotOrganicProviderSession | null {
   try {
     const session = client.getSession();
-    return session?.accessToken && Number.isFinite(session.expiresAt) && session.expiresAt > now
+    // A stale access token is fine while the device session can renew it.
+    return session?.accessToken && ((Number.isFinite(session.expiresAt) && session.expiresAt > now) || !!session.refreshToken)
       ? session : null;
   } catch { return null; }
 }

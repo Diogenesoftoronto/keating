@@ -1,0 +1,14 @@
+{
+  "viewport": [1280, 860],
+  "scale": 2,
+  "shots": [
+    { "name": "simulation", "story": "learning-simulation--base-rate-neglect" },
+    { "name": "code-lab", "story": "learning-labs--type-script" },
+    { "name": "pronunciation", "story": "learning-language-practice--pronunciation" },
+    { "name": "flashcards", "story": "artifacts-flashcards--phosphor-arena" },
+    { "name": "exam", "story": "learning-exam--in-progress" },
+    { "name": "study-plan", "story": "learning-nestedstudyplan--detailed-two-levels-with-plan-links" },
+    { "name": "sessions", "story": "sessions-library--search-keeps-ancestry" },
+    { "name": "workspace", "story": "workspace-desktop--run-and-stop" }
+  ]
+}

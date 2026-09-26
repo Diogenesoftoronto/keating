@@ -25,7 +25,7 @@ Keating is a Pi-powered "hyperteacher" — a CLI tool + web app that generates p
 - **`shared/evolution/`** — Fresh teaching-episode benchmarks, immutable skill revisions, independent promotion gates, and fixed learner assessments. See `docs/teaching-evolution.md`.
 - **`scripts/`** — Build/utility scripts, plus `install/install.sh` used in release bundles.
 - **`docs/`** — Architecture docs, Typst study paper, VHS tape scripts for recordings.
-- **`video/`** — Remotion video project (`keating-intro/`).
+- **`video/`** — Product films: `keating-intro/` (Remotion, narrated), `keating-surface-tour/` (HyperFrames, silent), `keating-launch/` (HyperFrames, 4.0 launch), and `shared/` (Storybook capture, caption generator, fonts). Published encodes live in `web/public/tapes/` and are mirrored into the docs site.
 - **`bin/keating.js`** — Executable entrypoint for the CLI.
 
 ## Build & Test Commands
@@ -160,7 +160,25 @@ The narrated intro is composed at build time from two kinds of source footage:
    - Stitch with ffmpeg at 60fps: `ffmpeg -framerate 60 -pattern_type glob -i 'frame_*.jpg' -c:v libx264 -pix_fmt yuv420p -crf 18 docs/assets/<clip>.mp4`.
    - `devenv tasks run keating:video-web-stitch` runs `scripts/stitch-web-frames.mjs` to redo this stitching pass; the frame-pumping itself flows through the MCP capture driver.
 
-The Remotion composition in `video/keating-intro/src/{root.tsx,video.tsx}` consumes clips by name, and `scripts/render-keating-intro.mjs` mirrors the scene list (kept in sync manually — verify both files list the same scene count before rendering). Total intro duration: 104s across 10 scenes (7 TUI + 3 web). `devenv tasks run keating:video-intro` produces `.keating/outputs/video/keating-intro/keating-intro.mp4`.
+The current intro no longer uses these clips. `video/keating-intro/scenes.json` lists ten scenes, and each pairs a narration line with a Storybook capture (`shots.json` → `video/shared/capture.mjs`). `scripts/render-keating-intro.mjs` voices the lines with Gemini TTS (voice `Kore`, key `GEMINI_API_KEY`), snaps each cut to a narration pause, and renders `video/keating-intro/src/{root.tsx,video.tsx}` to about 76 s. `devenv tasks run keating:video-intro` produces `.keating/outputs/video/keating-intro/keating-intro.mp4`. The VHS and web clips above still feed the docs-site walkthroughs.
+
+### Other films and publishing
+
+- **Surface tour**: `video/keating-surface-tour/` is a silent 32 s HyperFrames cut of eight Storybook captures. Run `npm run capture`, then `npm run render`. `BRIEF.md` and `STORYBOARD.md` hold the beat plan.
+- **4.0 launch**: `video/keating-launch/` is a 70 s HyperFrames film. `./produce.sh` voices it with OpenAI TTS and renders `renders/keating-4-launch.mp4`; its `README.md` covers the pipeline.
+- **Web encodes**: the films in `web/public/tapes/` are re-encoded for the web (libx264 CRF 25, `+faststart`), with 1280-wide JPG posters in `posters/`. `node video/shared/captions.mjs` writes the WebVTT files in `captions/`.
+- **4.0 spotlights**: `video/spotlights/{judgements,recall,live,onboarding}/` are HyperFrames films on the launch engine, each in its own format (explainer, short story, conversation, kinetic poster). `video/spotlights/BRIEF.md` holds the readability rules. Each film's `narration.json` holds the lines and corner label, and `./produce.sh` stages the assets, voices the lines and renders `renders/keating-spotlight-<id>.mp4`; `--no-render` stops after the snapshots. The shared scripts are in `video/spotlights/shared/scripts/`. The product shots still come from `video/spotlight-<id>/shots.json`. `bash video/spotlights/publish.sh [id…]` writes the web encode, poster and captions.
+- **Other films**: `video/spotlights/{manifesto,lesson,changelog}/` run on the same scripts in different formats. `manifesto` is a 16:9 brand film made of illustrations and type. `lesson` is a 9:16 two-voice Socratic micro-lesson. `changelog` is 1:1 kinetic type cut to the music's beat, with no voice. In `narration.json`, `output` names the render and `size` sets the frame. `video/spotlights/FILMS.md` is their brief.
+- **Generated media for the spotlights**:
+  - The illustrations in `video/spotlights/storyboard/` come from `gen-image.mjs` (OpenAI images).
+  - The motion clips in `motion/` come from `gen-video.mjs` (fal: MiniMax H3 Max, Seedance 2.5 or Flux 3 image-to-video). `--aspect=9:16` makes portrait clips.
+  - The music beds in `music/` come from `gen-music.mjs` (fal: Lyria 3.5).
+  - The fal calls are paid and cached. `motion/ledger.json` logs every call, and a call that would pass `FAL_BUDGET` (default $20) is refused. The key is read at runtime from `FAL_KEY` or `skate get fal_api_key@secrets`.
+  - Builds never regenerate media. Clips in `motion/rejected/` had garbled text or drifted off the palette, and are not used. H3 tends to turn the green sunburst yellow, so Seedance was used for the scenes where the sunburst dominates.
+- **Social cuts**: `bash video/shared/social-cuts.sh` reframes the published web encodes for 9:16, 1:1 and 4:5 feeds with burned-in captions (`video/shared/social.mjs`). The cut windows are seconds into the encodes, so re-check them after a re-render.
+- **Web walkthrough clips**: `node scripts/capture-web-clips.mjs [--only=web-landing,...]` records the steps in `scripts/web-clips.json` with headless Chrome against a disposable profile. Model replies come from the loopback `scripts/tui-demo-provider.mjs`, so no real key is used.
+- **Terminal tapes**: use VHS v0.11.0. v0.12.0 renders nothing ([vhs#787](https://github.com/charmbracelet/vhs/issues/787)). If the prompt shows a literal `\[\]>`, put a directory with a plain `bash` symlink first on `PATH`. The camera should only see short `keating …` commands. The tape defines a `keating()` shell function inside `Hide`/`Show`, followed by `clear`, and runs its cleanup inside `Hide` too.
+- **Where they appear**: the landing page (`web/src/components/LandingFilms.tsx`) and the docs-site visual guide (`scripts/docs-site/content/getting-started.json`), and next to the matching how-to sections in `learning.json` (spotlights). The docs build copies `web/public/tapes/` into `scripts/docs-site/assets/tapes/`.
 
 ### Node Version
 `package.json` specifies `engines: { "node": ">=22.19.0" }`. Bun is the primary runtime used in CI.

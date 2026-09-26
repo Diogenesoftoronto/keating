@@ -2,7 +2,8 @@ import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { prepareMessagesForRetry } from "../hooks/session-recovery";
 
 const KEY = "keating:notorganic-pending-chat-turn";
-type PendingTurn = { sessionId: string; timestamp: number; ready: boolean };
+/** `undelivered`: the turn never reached Flue (credentials were missing before admission). */
+type PendingTurn = { sessionId: string; timestamp: number; ready: boolean; undelivered?: boolean };
 
 export function pendingChatTurn(): PendingTurn | null {
   try {
@@ -17,7 +18,9 @@ export function rememberChatTurn(sessionId: string, messages: AgentMessage[]): v
   const message = [...messages].reverse().find(message => message.role === "user");
   if (!message || !("timestamp" in message) || typeof message.timestamp !== "number") return;
   // Do not navigate away if this write fails: the caller surfaces the error.
-  sessionStorage.setItem(KEY, JSON.stringify({ sessionId, timestamp: message.timestamp, ready: false }));
+  // A trailing learner turn has no model attempt yet; an auth failure leaves an error after it.
+  const undelivered = messages.at(-1) === message;
+  sessionStorage.setItem(KEY, JSON.stringify({ sessionId, timestamp: message.timestamp, ready: false, undelivered }));
 }
 
 export function clearPendingChatTurn(sessionId?: string): void {
@@ -31,7 +34,7 @@ export function authorizePendingChatTurn(): void {
 }
 
 /** Claim once, and only for the same unanswered learner turn. */
-export function claimPendingChatTurn(sessionId: string, messages: AgentMessage[]): AgentMessage[] | null {
+export function claimPendingChatTurn(sessionId: string, messages: AgentMessage[]): { messages: AgentMessage[]; undelivered: boolean } | null {
   const pending = pendingChatTurn();
   if (!pending?.ready || pending.sessionId !== sessionId) return null;
   const retry = prepareMessagesForRetry(messages) ?? messages;
@@ -41,5 +44,5 @@ export function claimPendingChatTurn(sessionId: string, messages: AgentMessage[]
     return null;
   }
   clearPendingChatTurn(sessionId);
-  return retry;
+  return { messages: retry, undelivered: pending.undelivered === true };
 }

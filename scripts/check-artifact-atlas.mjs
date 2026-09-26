@@ -149,7 +149,8 @@ const retired = [
   "argument", "case", "concept", "sort", "field", "teachback",
 ];
 assert.deepEqual(
-  atlas.folded.map((entry) => entry.id).sort(),
+  // Copy into this realm: strict equality also compares Array prototypes.
+  Array.from(atlas.folded, (entry) => entry.id).sort(),
   [...retired].sort(),
   "all seventeen retired specimens are accounted for",
 );
@@ -350,12 +351,12 @@ for (const presetId of Object.keys(atlas.casePresets)) {
   const secondBranch = atlas.commitDecision(presetId, consequence.choices[0].id, "resolve the new state", 3, consequence.choices);
   assert.equal(atlas.branchState(presetId, [firstBranch.decision, secondBranch.decision]).complete, true, `${presetId} closes a two-step branch`);
 
-  const authoredOrder = preset.choices.map((choice) => choice.id);
+  const authoredOrder = Array.from(preset.choices, (choice) => choice.id);
   atlas.state.caseRanking[presetId] = [...authoredOrder];
   assert.equal(atlas.moveCaseRanking(presetId, authoredOrder[1], "up"), true, `${presetId} moves a learner ranking`);
-  assert.deepEqual(preset.choices.map((choice) => choice.id), authoredOrder, `${presetId} ranking never mutates authored preset data`);
+  assert.deepEqual(Array.from(preset.choices, (choice) => choice.id), authoredOrder, `${presetId} ranking never mutates authored preset data`);
   atlas.state.caseRanking[presetId] = [...authoredOrder];
-  assert.deepEqual(atlas.caseRankingFor(presetId), authoredOrder, `${presetId} restart restores the initial ranking`);
+  assert.deepEqual(Array.from(atlas.caseRankingFor(presetId)), authoredOrder, `${presetId} restart restores the initial ranking`);
 }
 
 // --- Build Board: the check names the FIRST wrong element --------------------
@@ -412,7 +413,7 @@ for (const presetId of Object.keys(atlas.buildPresets)) {
   atlas.state.boardLocked[presetId] = [order[0]];
   const beforeSwap = [...order];
   assert.equal(atlas.swapBoardItems(presetId, order[0], order[1]), false, `${presetId} rejects a swap involving a locked item`);
-  assert.deepEqual(order, beforeSwap, `${presetId} lock freezes the sequence`);
+  assert.deepEqual(Array.from(order), beforeSwap, `${presetId} lock freezes the sequence`);
 }
 
 // --- Signal Lab: the schedule is real, and the drill adapts ------------------
@@ -481,12 +482,12 @@ for (const presetId of Object.keys(atlas.signalPresets)) {
 }
 
 assert.deepEqual(
-  atlas.counterpointWarnings([[60, 62, 64, 65], [67, 69, 71, 72]]),
+  Array.from(atlas.counterpointWarnings([[60, 62, 64, 65], [67, 69, 71, 72]])),
   ["beats 1–2: parallel fifth", "beats 2–3: parallel fifth", "beats 3–4: parallel fifth"],
   "voice lanes report parallel fifths as they are edited",
 );
 assert.deepEqual(
-  atlas.counterpointWarnings([[60, 62, 64, 65], [67, 65, 64, 62]]),
+  Array.from(atlas.counterpointWarnings([[60, 62, 64, 65], [67, 65, 64, 62]])),
   [],
   "contrary motion produces no collision warning",
 );
