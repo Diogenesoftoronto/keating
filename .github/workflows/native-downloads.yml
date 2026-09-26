@@ -196,7 +196,9 @@ jobs:
           JAVA_TOOL_OPTIONS: -Xmx6g
         run: |
           unset CPATH CPLUS_INCLUDE_PATH C_INCLUDE_PATH LIBRARY_PATH
-          bun run --cwd mobile android:apk:release
+          # Command-line properties override the generated project's 2 GB
+          # daemon heap; GRADLE_OPTS alone only sizes the launcher JVM.
+          bun run --cwd mobile android:apk:release --max-workers=2 --no-parallel '-Dorg.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g' --stacktrace
       - name: Align, sign, and verify release APK
         env:
           RELEASE_VERSION: ${{ needs.validate-native-version.outputs.version }}
