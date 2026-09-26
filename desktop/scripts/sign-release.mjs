@@ -70,18 +70,23 @@ async function signRpms(files, fingerprint, passphrase, env, run) {
   await run('rpmsign', ['--version'], { env });
   const directory = await mkdtemp(join(tmpdir(), 'keating-rpmsign-'));
   try {
-    // RPM invokes its signer through a macro. The wrapper contains no secret;
-    // it reads an inherited FD and gives a fresh FD to each GPG invocation.
+    // RPM can invoke GPG repeatedly and repurpose inherited descriptors.
+    // Keep the passphrase in this owner-only temporary directory and supply
+    // a fresh pipe to every GPG child. Never include it in argv or logs.
+    const passphraseFile = join(directory, 'passphrase');
+    await writeFile(passphraseFile, `${passphrase}\n`, { mode: 0o600 });
     const keyFile = join(directory, 'release-key.asc');
     await writeFile(keyFile, await run('gpg', ['--batch', '--armor', '--export', fingerprint], { env }));
     const keyring = join(directory, 'rpmdb');
     await run('rpm', ['--dbpath', keyring, '--initdb'], { env });
     await run('rpm', ['--dbpath', keyring, '--import', keyFile], { env });
     const wrapper = join(directory, 'gpg-wrapper.mjs');
-    await writeFile(wrapper, `#!${process.execPath}\nimport { readFileSync } from 'node:fs';\nimport { spawn } from 'node:child_process';\nconst pass = readFileSync(3);\nconst child = spawn('gpg', ['--batch', '--yes', '--pinentry-mode', 'loopback', '--passphrase-fd', '3', ...process.argv.slice(2)], { stdio: ['ignore', 'inherit', 'inherit', 'pipe'], shell: false });\nchild.stdio[3].on('error', () => {});\nchild.stdio[3].end(pass);\nchild.on('error', () => process.exit(1));\nchild.on('close', code => process.exit(code ?? 1));\n`, { mode: 0o700 });
+    await writeFile(wrapper, `#!${process.execPath}\nimport { readFileSync } from 'node:fs';\nimport { spawn } from 'node:child_process';\nconst pass = readFileSync(${JSON.stringify(passphraseFile)});\nconst child = spawn('gpg', ['--batch', '--yes', '--pinentry-mode', 'loopback', '--passphrase-fd', '3', ...process.argv.slice(2)], { stdio: ['inherit', 'inherit', 'inherit', 'pipe'], shell: false });\nchild.stdio[3].on('error', () => {});\nchild.stdio[3].end(pass);\nchild.on('error', () => process.exit(1));\nchild.on('close', code => process.exit(code ?? 1));\n`, { mode: 0o700 });
     await chmod(wrapper, 0o700);
     if (/["\r\n]/.test(wrapper)) throw new Error('Unsafe RPM signer wrapper path.');
-    const command = `"${wrapper}" --no-armor --local-user "${fingerprint}" --detach-sign --output "%{__signature_filename}" "%{__plaintext_filename}"`;
+    // RPM 4.18/4.20 use execve(argv[0], argv + 1): provide the consumed
+    // argv[0] placeholder so the wrapper retains every GPG option.
+    const command = `"${wrapper}" gpg --no-armor --local-user "${fingerprint}" --detach-sign --output "%{__signature_filename}" "%{__plaintext_filename}"`;
     for (const file of rpms) {
       if (/["\r\n]/.test(file)) throw new Error('Unsafe RPM artifact path.');
       await run('rpmsign', ['--define', `_gpg_name ${fingerprint}`, '--define', `_openpgp_sign_id ${fingerprint}`, '--define', '_openpgp_sign gpg', '--define', `__gpg ${wrapper}`, '--define', `__gpg_sign_cmd ${command}`, '--addsign', file], { passphrase, env });
