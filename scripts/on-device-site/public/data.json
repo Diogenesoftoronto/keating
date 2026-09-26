@@ -1,0 +1,1917 @@
+{
+ "generated": "2026-09-23",
+ "notice": "Agreement is not correctness; no human learning is measured here.",
+ "measurements": {
+  "needleRetrieval": {
+   "corpusMessages": 90,
+   "embedMs": 6312,
+   "splits": {
+    "literal": {
+     "n": 11,
+     "needle": {
+      "R@1": 7,
+      "R@4": 9,
+      "R@8": 10,
+      "MRR": 0.717
+     },
+     "lexical": {
+      "R@1": 10,
+      "R@4": 11,
+      "MRR": 0.955
+     },
+     "separations": 7,
+     "rows": [
+      {
+       "query": "how does a merkle tree differ from a prolly tree?",
+       "overlap": 0.6,
+       "needleTop1": false,
+       "bestRelevantZ": 1.13,
+       "topIrrelevantZ": 1.19
+      },
+      {
+       "query": "why choose a b-tree instead of hashing on every write?",
+       "overlap": 0.6,
+       "needleTop1": true,
+       "bestRelevantZ": 1.39,
+       "topIrrelevantZ": 1.19
+      },
+      {
+       "query": "how should node boundaries behave when content changes?",
+       "overlap": 0.2,
+       "needleTop1": true,
+       "bestRelevantZ": 1.29,
+       "topIrrelevantZ": 1.28
+      },
+      {
+       "query": "when do I need media queries for different devices?",
+       "overlap": 0.8,
+       "needleTop1": true,
+       "bestRelevantZ": 1.51,
+       "topIrrelevantZ": 1.28
+      },
+      {
+       "query": "how do tailwind modifiers work?",
+       "overlap": 0.67,
+       "needleTop1": true,
+       "bestRelevantZ": 1.39,
+       "topIrrelevantZ": 1.2
+      },
+      {
+       "query": "what changed about project file access for the web agent?",
+       "overlap": 0.83,
+       "needleTop1": true,
+       "bestRelevantZ": 1.23,
+       "topIrrelevantZ": 1.15
+      },
+      {
+       "query": "how does the evolution algorithm work at runtime?",
+       "overlap": 0.8,
+       "needleTop1": true,
+       "bestRelevantZ": 1.46,
+       "topIrrelevantZ": 1.25
+      },
+      {
+       "query": "where do keating artifacts get written?",
+       "overlap": 1,
+       "needleTop1": false,
+       "bestRelevantZ": 1.21,
+       "topIrrelevantZ": 1.33
+      },
+      {
+       "query": "run a mastery quiz on climate change",
+       "overlap": 1,
+       "needleTop1": false,
+       "bestRelevantZ": 0.33,
+       "topIrrelevantZ": 1.43
+      },
+      {
+       "query": "what is discrete logic?",
+       "overlap": 1,
+       "needleTop1": false,
+       "bestRelevantZ": 1.29,
+       "topIrrelevantZ": 1.58
+      },
+      {
+       "query": "do symlinks matter for project access?",
+       "overlap": 0.75,
+       "needleTop1": true,
+       "bestRelevantZ": 1.38,
+       "topIrrelevantZ": 1.08
+      }
+     ]
+    },
+    "paraphrase": {
+     "n": 10,
+     "needle": {
+      "R@1": 1,
+      "R@4": 4,
+      "R@8": 6,
+      "MRR": 0.263
+     },
+     "lexical": {
+      "R@1": 3,
+      "R@4": 5,
+      "MRR": 0.415
+     },
+     "separations": 1,
+     "rows": [
+      {
+       "query": "how do self-balancing indexes avoid rewriting everything?",
+       "overlap": 0,
+       "needleTop1": false,
+       "bestRelevantZ": 1.18,
+       "topIrrelevantZ": 1.2
+      },
+      {
+       "query": "making a layout adapt to phones and tablets",
+       "overlap": 0,
+       "needleTop1": false,
+       "bestRelevantZ": 1.13,
+       "topIrrelevantZ": 1.56
+      },
+      {
+       "query": "utility classes and their variant syntax",
+       "overlap": 0,
+       "needleTop1": false,
+       "bestRelevantZ": 1.04,
+       "topIrrelevantZ": 1.22
+      },
+      {
+       "query": "what did the previous code change do?",
+       "overlap": 0,
+       "needleTop1": false,
+       "bestRelevantZ": 0.75,
+       "topIrrelevantZ": 1.26
+      },
+      {
+       "query": "why are towns located where they are?",
+       "overlap": 0.33,
+       "needleTop1": false,
+       "bestRelevantZ": 1.16,
+       "topIrrelevantZ": 1.35
+      },
+      {
+       "query": "security of filesystem references in browser tooling",
+       "overlap": 0.4,
+       "needleTop1": true,
+       "bestRelevantZ": 1.65,
+       "topIrrelevantZ": 1.26
+      },
+      {
+       "query": "the logic that adapts teaching over time",
+       "overlap": 0.2,
+       "needleTop1": false,
+       "bestRelevantZ": 1.39,
+       "topIrrelevantZ": 1.58
+      },
+      {
+       "query": "where generated outputs are stored",
+       "overlap": 0.67,
+       "needleTop1": false,
+       "bestRelevantZ": 1,
+       "topIrrelevantZ": 1.54
+      },
+      {
+       "query": "a check on my knowledge of weather patterns",
+       "overlap": 0,
+       "needleTop1": false,
+       "bestRelevantZ": 0.48,
+       "topIrrelevantZ": 2.17
+      },
+      {
+       "query": "propositional reasoning",
+       "overlap": 0,
+       "needleTop1": false,
+       "bestRelevantZ": 1.34,
+       "topIrrelevantZ": 1.52
+      }
+     ]
+    }
+   }
+  },
+  "staticRetrieval": [
+   {
+    "model": "minishlab/potion-base-2M",
+    "dimensions": 64,
+    "embedMs": 4.9,
+    "texts": 111,
+    "literal": {
+     "R@1": 10,
+     "R@4": 11,
+     "R@8": 11,
+     "MRR": 0.955,
+     "relevantAboveIrrelevant": 10
+    },
+    "paraphrase": {
+     "R@1": 3,
+     "R@4": 5,
+     "R@8": 8,
+     "MRR": 0.432,
+     "relevantAboveIrrelevant": 3
+    }
+   },
+   {
+    "model": "minishlab/potion-base-8M",
+    "dimensions": 256,
+    "embedMs": 3.1,
+    "texts": 111,
+    "literal": {
+     "R@1": 11,
+     "R@4": 11,
+     "R@8": 11,
+     "MRR": 1.0,
+     "relevantAboveIrrelevant": 11
+    },
+    "paraphrase": {
+     "R@1": 4,
+     "R@4": 7,
+     "R@8": 10,
+     "MRR": 0.562,
+     "relevantAboveIrrelevant": 4
+    }
+   },
+   {
+    "model": "minishlab/potion-base-32M",
+    "dimensions": 512,
+    "embedMs": 3.7,
+    "texts": 111,
+    "literal": {
+     "R@1": 11,
+     "R@4": 11,
+     "R@8": 11,
+     "MRR": 1.0,
+     "relevantAboveIrrelevant": 11
+    },
+    "paraphrase": {
+     "R@1": 4,
+     "R@4": 8,
+     "R@8": 10,
+     "MRR": 0.57,
+     "relevantAboveIrrelevant": 4
+    }
+   },
+   {
+    "model": "minishlab/potion-retrieval-32M",
+    "dimensions": 512,
+    "embedMs": 4.4,
+    "texts": 111,
+    "literal": {
+     "R@1": 11,
+     "R@4": 11,
+     "R@8": 11,
+     "MRR": 1.0,
+     "relevantAboveIrrelevant": 11
+    },
+    "paraphrase": {
+     "R@1": 3,
+     "R@4": 9,
+     "R@8": 9,
+     "MRR": 0.549,
+     "relevantAboveIrrelevant": 3
+    }
+   }
+  ],
+  "needleLatency": [
+   {
+    "label": "empty-vector-request",
+    "texts": 1,
+    "runs": 1,
+    "minMs": 209.1,
+    "medianMs": 209.1
+   },
+   {
+    "label": "embed-1",
+    "texts": 1,
+    "runs": 3,
+    "minMs": 212.2,
+    "medianMs": 222.9
+   },
+   {
+    "label": "embed-4",
+    "texts": 4,
+    "runs": 3,
+    "minMs": 319.5,
+    "medianMs": 322.7
+   },
+   {
+    "label": "embed-8",
+    "texts": 8,
+    "runs": 3,
+    "minMs": 444.3,
+    "medianMs": 452.9
+   },
+   {
+    "label": "embed-16",
+    "texts": 16,
+    "runs": 3,
+    "minMs": 733.3,
+    "medianMs": 745.5
+   },
+   {
+    "label": "embed-32",
+    "texts": 32,
+    "runs": 3,
+    "minMs": 1341.7,
+    "medianMs": 1464.2
+   },
+   {
+    "label": "embed-64",
+    "texts": 64,
+    "runs": 1,
+    "minMs": 2715.9,
+    "medianMs": 2715.9
+   },
+   {
+    "label": "embed-128",
+    "texts": 128,
+    "runs": 1,
+    "minMs": 4784.8,
+    "medianMs": 4784.8
+   }
+  ],
+  "needleClassifyCensus": {
+   "cases": 18,
+   "emittedCalls": 0,
+   "suppressedCalls": 8,
+   "empty": 10,
+   "medianMs": 150.2,
+   "rows": [
+    {
+     "expected": "science",
+     "topic": "why does a wave function collapse when measured?",
+     "emitted": 0,
+     "suppressed": 1,
+     "field": "physics",
+     "reasoning": "'wave function collapse' is a scientific knowledge question. Classify_subject with field '",
+     "confidence": null,
+     "validation": {
+      "ungrounded": [],
+      "negation": false
+     }
+    },
+    {
+     "expected": "science",
+     "topic": "how do covalent bonds share electrons?",
+     "emitted": 0,
+     "suppressed": 0,
+     "field": null,
+     "reasoning": "No tool available for web search or knowledge queries.",
+     "confidence": null,
+     "validation": null
+    },
+    {
+     "expected": "science",
+     "topic": "how does photosynthesis turn light into sugar?",
+     "emitted": 0,
+     "suppressed": 0,
+     "field": null,
+     "reasoning": "No tool available for scientific explanations or scientific knowledge.",
+     "confidence": null,
+     "validation": null
+    },
+    {
+     "expected": "code",
+     "topic": "why does recursion overflow the call stack?",
+     "emitted": 0,
+     "suppressed": 1,
+     "field": "ecology",
+     "reasoning": "'recursion overflow' is a scientific topic. Classify_subject with field 'recursion' covers",
+     "confidence": null,
+     "validation": {
+      "ungrounded": [],
+      "negation": false
+     }
+    },
+    {
+     "expected": "history",
+     "topic": "what caused the fall of the Roman empire?",
+     "emitted": 0,
+     "suppressed": 0,
+     "field": null,
+     "reasoning": "No tool available for scientific explanations or scientific knowledge.",
+     "confidence": null,
+     "validation": null
+    },
+    {
+     "expected": "arts",
+     "topic": "how does counterpoint work in a fugue?",
+     "emitted": 0,
+     "suppressed": 1,
+     "field": "cognitive-science",
+     "reasoning": "'counterpoint work' -> field 'counterpoint work'.",
+     "confidence": null,
+     "validation": {
+      "ungrounded": [],
+      "negation": false
+     }
+    },
+    {
+     "expected": "general",
+     "topic": "when should I use the Spanish subjunctive?",
+     "emitted": 0,
+     "suppressed": 0,
+     "field": null,
+     "reasoning": "No tool available for language translation or general knowledge queries.",
+     "confidence": null,
+     "validation": null
+    },
+    {
+     "expected": "general",
+     "topic": "how do I plan a better morning routine?",
+     "emitted": 0,
+     "suppressed": 0,
+     "field": null,
+     "reasoning": "No tool available for routine planning or schedule queries.",
+     "confidence": null,
+     "validation": null
+    },
+    {
+     "expected": "medicine",
+     "topic": "how do SSRIs affect serotonin?",
+     "emitted": 0,
+     "suppressed": 0,
+     "field": null,
+     "reasoning": "No tool available for physics or diagnostics.",
+     "confidence": null,
+     "validation": null
+    },
+    {
+     "expected": "science",
+     "topic": "why does the sun shine?",
+     "emitted": 0,
+     "suppressed": 0,
+     "field": null,
+     "reasoning": "No tool available for weather queries.",
+     "confidence": null,
+     "validation": null
+    },
+    {
+     "expected": "philosophy",
+     "topic": "is it ever right to lie?",
+     "emitted": 0,
+     "suppressed": 1,
+     "field": "philosophy",
+     "reasoning": "'lie' is a philosophical question -> classify_subject with field 'philosophy'",
+     "confidence": null,
+     "validation": {
+      "ungrounded": [],
+      "negation": false
+     }
+    },
+    {
+     "expected": "code",
+     "topic": "how do I centre a div?",
+     "emitted": 0,
+     "suppressed": 0,
+     "field": null,
+     "reasoning": "No tool available for math or general knowledge queries.",
+     "confidence": null,
+     "validation": null
+    },
+    {
+     "expected": "general",
+     "topic": "how do I centre a table in my dining room?",
+     "emitted": 0,
+     "suppressed": 0,
+     "field": null,
+     "reasoning": "No tool available for unit conversion or calculations.",
+     "confidence": null,
+     "validation": null
+    },
+    {
+     "expected": "law",
+     "topic": "what does the commerce clause mean?",
+     "emitted": 0,
+     "suppressed": 1,
+     "field": "computing",
+     "reasoning": "'commerce clause' is the subject to classify.",
+     "confidence": null,
+     "validation": {
+      "ungrounded": [],
+      "negation": false
+     }
+    },
+    {
+     "expected": "politics",
+     "topic": "how does a bill become law?",
+     "emitted": 0,
+     "suppressed": 1,
+     "field": "law",
+     "reasoning": "'bill become law' is a scientific field. classify_subject with field 'bill' from query.",
+     "confidence": null,
+     "validation": {
+      "ungrounded": [],
+      "negation": false
+     }
+    },
+    {
+     "expected": "psychology",
+     "topic": "why do I procrastinate?",
+     "emitted": 0,
+     "suppressed": 1,
+     "field": "physics",
+     "reasoning": "'procrastinate' is a question about knowledge -> classify_subject with field 'physics' to ",
+     "confidence": null,
+     "validation": {
+      "ungrounded": [],
+      "negation": false
+     }
+    },
+    {
+     "expected": "math",
+     "topic": "explain Bayes' theorem",
+     "emitted": 0,
+     "suppressed": 1,
+     "field": "business",
+     "reasoning": "field 'bayes' from query; field 'theorem' from query.",
+     "confidence": null,
+     "validation": {
+      "ungrounded": [],
+      "negation": false
+     }
+    },
+    {
+     "expected": "arts",
+     "topic": "what makes a sonnet a sonnet?",
+     "emitted": 0,
+     "suppressed": 0,
+     "field": null,
+     "reasoning": "'sonnet' is a classify_subject field. 'sonnet' is the subject.",
+     "confidence": null,
+     "validation": null
+    }
+   ]
+  },
+  "needleExtractCensus": {
+   "cases": 8,
+   "returned": 1,
+   "medianMs": 477.5,
+   "rows": [
+    {
+     "index": 21,
+     "note": "states why they chose a standard b-tree over hashing",
+     "goldCategory": "study-context",
+     "category": null,
+     "quote": ""
+    },
+    {
+     "index": 15,
+     "note": "states prior knowledge of binary/merkle trees",
+     "error": "ExtractionValidationError: extraction returned values not grounded in the input: negated request, quote"
+    },
+    {
+     "index": 36,
+     "note": "names media queries / responsive devices as the topic",
+     "goldCategory": "interest",
+     "category": null,
+     "quote": ""
+    },
+    {
+     "index": 38,
+     "note": "reports how they believed tailwind behaves",
+     "goldCategory": "learning-preference",
+     "category": null,
+     "quote": ""
+    },
+    {
+     "index": 11,
+     "note": "first-time-session note",
+     "error": "ExtractionValidationError: extraction returned values not grounded in the input: negated request"
+    },
+    {
+     "index": 57,
+     "note": "describes what a commit changed",
+     "goldCategory": "study-context",
+     "category": null,
+     "quote": ""
+    },
+    {
+     "index": 0,
+     "note": "bare greeting",
+     "goldCategory": "not-memory",
+     "category": null,
+     "quote": ""
+    },
+    {
+     "index": 63,
+     "note": "wants a general-purpose change view",
+     "goldCategory": "motivation",
+     "category": "learning-preference",
+     "quote": "repo we pass in at root"
+    }
+   ]
+  },
+  "staticExtraction": {
+   "cases": 8,
+   "verbatimAll": true,
+   "categoryHits": 4,
+   "medianMs": 0.324,
+   "rows": [
+    {
+     "index": 21,
+     "note": "states why they chose a standard b-tree over hashing",
+     "gold": "study-context",
+     "abstain": false,
+     "category": "motivation",
+     "categoryHit": false,
+     "score": 0.281,
+     "margin": 0.021,
+     "quote": "choose a standard b-tree because i would have to run the hash everytime to see if the boundary splits and it o",
+     "verbatim": true
+    },
+    {
+     "index": 15,
+     "note": "states prior knowledge of binary/merkle trees",
+     "gold": "study-context",
+     "abstain": false,
+     "category": "study-context",
+     "categoryHit": true,
+     "score": 0.269,
+     "margin": 0.039,
+     "quote": "i would say i am fairly comfortable with both but i don't think i could write an implementation for either",
+     "verbatim": true
+    },
+    {
+     "index": 36,
+     "note": "names media queries / responsive devices as the topic",
+     "gold": "interest",
+     "abstain": false,
+     "category": "study-context",
+     "categoryHit": false,
+     "score": 0.319,
+     "margin": 0.028,
+     "quote": "media queries and resizing for different devices or interaction? but i honestly don't see why those can't be d",
+     "verbatim": true
+    },
+    {
+     "index": 38,
+     "note": "reports how they believed tailwind behaves",
+     "gold": "learning-preference",
+     "abstain": false,
+     "category": "learning-preference",
+     "categoryHit": true,
+     "score": 0.227,
+     "margin": 0.012,
+     "quote": "also as far as i know tailwind no longer forces you into a design system you can use arbitrary sizes now as fa",
+     "verbatim": true
+    },
+    {
+     "index": 11,
+     "note": "first-time-session note",
+     "gold": "study-context",
+     "abstain": false,
+     "category": "study-context",
+     "categoryHit": true,
+     "score": 0.357,
+     "margin": 0.051,
+     "quote": "we've never covered those topics, I would like you to refresh your memory, this is the first time talking with",
+     "verbatim": true
+    },
+    {
+     "index": 57,
+     "note": "describes what a commit changed",
+     "gold": "study-context",
+     "abstain": false,
+     "category": "communication-preference",
+     "categoryHit": false,
+     "score": 0.265,
+     "margin": 0.017,
+     "quote": "this commit gives the browser agent project access through tools like list and read file which use http with b",
+     "verbatim": true
+    },
+    {
+     "index": 0,
+     "note": "bare greeting",
+     "gold": "not-memory",
+     "abstain": false,
+     "category": "communication-preference",
+     "categoryHit": false,
+     "score": 0.107,
+     "margin": 0.016,
+     "quote": "hi",
+     "verbatim": true
+    },
+    {
+     "index": 63,
+     "note": "wants a general-purpose change view",
+     "gold": "motivation",
+     "abstain": false,
+     "category": "motivation",
+     "categoryHit": true,
+     "score": 0.272,
+     "margin": 0.019,
+     "quote": "and i am specifically talking not just a bout keating but more a more general purpose thing",
+     "verbatim": true
+    }
+   ]
+  },
+  "subject170": [
+   {
+    "embedMs": 5.7,
+    "results": [
+     {
+      "method": "A rubric-prototypes (zero-shot)",
+      "probeCorrect": 12,
+      "probeN": 18,
+      "trainCorrect": 97,
+      "trainN": 170,
+      "refused": 0,
+      "refusedN": 6,
+      "refusedAny": 6,
+      "totalMs": 0.9,
+      "trainPerClass": {
+       "<none>": "0/16",
+       "field_arts": "7/14",
+       "field_code": "9/14",
+       "field_general": "9/14",
+       "field_history": "10/14",
+       "field_law": "9/14",
+       "field_math": "9/14",
+       "field_medicine": "11/14",
+       "field_philosophy": "10/14",
+       "field_politics": "12/14",
+       "field_psychology": "4/14",
+       "field_science": "7/14"
+      }
+     },
+     {
+      "method": "B class-centroids (fitted on 170)",
+      "probeCorrect": 14,
+      "probeN": 18,
+      "trainCorrect": 159,
+      "trainN": 170,
+      "refused": 1,
+      "refusedN": 6,
+      "refusedAny": 5,
+      "totalMs": 0.3,
+      "trainPerClass": {
+       "<none>": "13/16",
+       "field_arts": "13/14",
+       "field_code": "13/14",
+       "field_general": "14/14",
+       "field_history": "14/14",
+       "field_law": "14/14",
+       "field_math": "14/14",
+       "field_medicine": "13/14",
+       "field_philosophy": "13/14",
+       "field_politics": "13/14",
+       "field_psychology": "13/14",
+       "field_science": "12/14"
+      }
+     },
+     {
+      "method": "C kNN k=5 (fitted on 170)",
+      "probeCorrect": 11,
+      "probeN": 18,
+      "trainCorrect": 83,
+      "trainN": 170,
+      "refused": 2,
+      "refusedN": 6,
+      "refusedAny": 4,
+      "totalMs": 7.3,
+      "trainPerClass": {
+       "<none>": "12/16",
+       "field_arts": "4/14",
+       "field_code": "6/14",
+       "field_general": "8/14",
+       "field_history": "11/14",
+       "field_law": "7/14",
+       "field_math": "8/14",
+       "field_medicine": "8/14",
+       "field_philosophy": "7/14",
+       "field_politics": "7/14",
+       "field_psychology": "3/14",
+       "field_science": "2/14"
+      }
+     },
+     {
+      "method": "C kNN k=9 (fitted on 170)",
+      "probeCorrect": 12,
+      "probeN": 18,
+      "trainCorrect": 84,
+      "trainN": 170,
+      "refused": 3,
+      "refusedN": 6,
+      "refusedAny": 3,
+      "totalMs": 15.7,
+      "trainPerClass": {
+       "<none>": "11/16",
+       "field_arts": "4/14",
+       "field_code": "7/14",
+       "field_general": "9/14",
+       "field_history": "10/14",
+       "field_law": "6/14",
+       "field_math": "7/14",
+       "field_medicine": "10/14",
+       "field_philosophy": "8/14",
+       "field_politics": "9/14",
+       "field_psychology": "2/14",
+       "field_science": "1/14"
+      }
+     },
+     {
+      "method": "D logistic head (5-fold CV on 170)",
+      "probeCorrect": 15,
+      "probeN": 18,
+      "trainCorrect": 97,
+      "trainN": 170,
+      "refused": 3,
+      "refusedN": 6,
+      "refusedAny": 3,
+      "totalMs": 89.1,
+      "trainPerClass": {
+       "<none>": "11/16",
+       "field_arts": "5/14",
+       "field_code": "8/14",
+       "field_general": "10/14",
+       "field_history": "13/14",
+       "field_law": "8/14",
+       "field_math": "6/14",
+       "field_medicine": "8/14",
+       "field_philosophy": "10/14",
+       "field_politics": "10/14",
+       "field_psychology": "4/14",
+       "field_science": "4/14"
+      },
+      "trainCorrectInSample": 170
+     }
+    ],
+    "model": "minishlab/potion-base-8M"
+   },
+   {
+    "embedMs": 6.2,
+    "results": [
+     {
+      "method": "A rubric-prototypes (zero-shot)",
+      "probeCorrect": 13,
+      "probeN": 18,
+      "trainCorrect": 117,
+      "trainN": 170,
+      "refused": 0,
+      "refusedN": 6,
+      "refusedAny": 6,
+      "totalMs": 1.3,
+      "trainPerClass": {
+       "<none>": "0/16",
+       "field_arts": "10/14",
+       "field_code": "11/14",
+       "field_general": "10/14",
+       "field_history": "11/14",
+       "field_law": "10/14",
+       "field_math": "12/14",
+       "field_medicine": "12/14",
+       "field_philosophy": "12/14",
+       "field_politics": "12/14",
+       "field_psychology": "7/14",
+       "field_science": "10/14"
+      }
+     },
+     {
+      "method": "B class-centroids (fitted on 170)",
+      "probeCorrect": 16,
+      "probeN": 18,
+      "trainCorrect": 160,
+      "trainN": 170,
+      "refused": 2,
+      "refusedN": 6,
+      "refusedAny": 4,
+      "totalMs": 0.5,
+      "trainPerClass": {
+       "<none>": "13/16",
+       "field_arts": "12/14",
+       "field_code": "14/14",
+       "field_general": "14/14",
+       "field_history": "14/14",
+       "field_law": "14/14",
+       "field_math": "14/14",
+       "field_medicine": "13/14",
+       "field_philosophy": "13/14",
+       "field_politics": "14/14",
+       "field_psychology": "12/14",
+       "field_science": "13/14"
+      }
+     },
+     {
+      "method": "C kNN k=5 (fitted on 170)",
+      "probeCorrect": 15,
+      "probeN": 18,
+      "trainCorrect": 92,
+      "trainN": 170,
+      "refused": 1,
+      "refusedN": 6,
+      "refusedAny": 5,
+      "totalMs": 12.9,
+      "trainPerClass": {
+       "<none>": "12/16",
+       "field_arts": "9/14",
+       "field_code": "8/14",
+       "field_general": "8/14",
+       "field_history": "10/14",
+       "field_law": "8/14",
+       "field_math": "6/14",
+       "field_medicine": "11/14",
+       "field_philosophy": "8/14",
+       "field_politics": "7/14",
+       "field_psychology": "5/14",
+       "field_science": "0/14"
+      }
+     },
+     {
+      "method": "C kNN k=9 (fitted on 170)",
+      "probeCorrect": 13,
+      "probeN": 18,
+      "trainCorrect": 88,
+      "trainN": 170,
+      "refused": 2,
+      "refusedN": 6,
+      "refusedAny": 4,
+      "totalMs": 26.0,
+      "trainPerClass": {
+       "<none>": "11/16",
+       "field_arts": "7/14",
+       "field_code": "7/14",
+       "field_general": "9/14",
+       "field_history": "12/14",
+       "field_law": "4/14",
+       "field_math": "6/14",
+       "field_medicine": "11/14",
+       "field_philosophy": "10/14",
+       "field_politics": "8/14",
+       "field_psychology": "3/14",
+       "field_science": "0/14"
+      }
+     },
+     {
+      "method": "D logistic head (5-fold CV on 170)",
+      "probeCorrect": 16,
+      "probeN": 18,
+      "trainCorrect": 106,
+      "trainN": 170,
+      "refused": 4,
+      "refusedN": 6,
+      "refusedAny": 2,
+      "totalMs": 99.8,
+      "trainPerClass": {
+       "<none>": "10/16",
+       "field_arts": "9/14",
+       "field_code": "8/14",
+       "field_general": "10/14",
+       "field_history": "13/14",
+       "field_law": "9/14",
+       "field_math": "8/14",
+       "field_medicine": "10/14",
+       "field_philosophy": "9/14",
+       "field_politics": "9/14",
+       "field_psychology": "5/14",
+       "field_science": "6/14"
+      },
+      "trainCorrectInSample": 170
+     }
+    ],
+    "model": "minishlab/potion-base-32M"
+   },
+   {
+    "embedMs": 12.0,
+    "results": [
+     {
+      "method": "A rubric-prototypes (zero-shot)",
+      "probeCorrect": 11,
+      "probeN": 18,
+      "trainCorrect": 109,
+      "trainN": 170,
+      "refused": 0,
+      "refusedN": 6,
+      "refusedAny": 6,
+      "totalMs": 1.5,
+      "trainPerClass": {
+       "<none>": "0/16",
+       "field_arts": "10/14",
+       "field_code": "9/14",
+       "field_general": "12/14",
+       "field_history": "8/14",
+       "field_law": "10/14",
+       "field_math": "13/14",
+       "field_medicine": "7/14",
+       "field_philosophy": "12/14",
+       "field_politics": "12/14",
+       "field_psychology": "9/14",
+       "field_science": "7/14"
+      }
+     },
+     {
+      "method": "B class-centroids (fitted on 170)",
+      "probeCorrect": 16,
+      "probeN": 18,
+      "trainCorrect": 164,
+      "trainN": 170,
+      "refused": 3,
+      "refusedN": 6,
+      "refusedAny": 3,
+      "totalMs": 0.6,
+      "trainPerClass": {
+       "<none>": "14/16",
+       "field_arts": "13/14",
+       "field_code": "13/14",
+       "field_general": "14/14",
+       "field_history": "14/14",
+       "field_law": "14/14",
+       "field_math": "14/14",
+       "field_medicine": "14/14",
+       "field_philosophy": "14/14",
+       "field_politics": "14/14",
+       "field_psychology": "13/14",
+       "field_science": "13/14"
+      }
+     },
+     {
+      "method": "C kNN k=5 (fitted on 170)",
+      "probeCorrect": 15,
+      "probeN": 18,
+      "trainCorrect": 94,
+      "trainN": 170,
+      "refused": 3,
+      "refusedN": 6,
+      "refusedAny": 3,
+      "totalMs": 13.0,
+      "trainPerClass": {
+       "<none>": "7/16",
+       "field_arts": "8/14",
+       "field_code": "5/14",
+       "field_general": "11/14",
+       "field_history": "13/14",
+       "field_law": "9/14",
+       "field_math": "9/14",
+       "field_medicine": "7/14",
+       "field_philosophy": "8/14",
+       "field_politics": "7/14",
+       "field_psychology": "7/14",
+       "field_science": "3/14"
+      }
+     },
+     {
+      "method": "C kNN k=9 (fitted on 170)",
+      "probeCorrect": 12,
+      "probeN": 18,
+      "trainCorrect": 100,
+      "trainN": 170,
+      "refused": 1,
+      "refusedN": 6,
+      "refusedAny": 5,
+      "totalMs": 25.7,
+      "trainPerClass": {
+       "<none>": "7/16",
+       "field_arts": "8/14",
+       "field_code": "6/14",
+       "field_general": "11/14",
+       "field_history": "11/14",
+       "field_law": "9/14",
+       "field_math": "10/14",
+       "field_medicine": "9/14",
+       "field_philosophy": "7/14",
+       "field_politics": "9/14",
+       "field_psychology": "8/14",
+       "field_science": "5/14"
+      }
+     },
+     {
+      "method": "D logistic head (5-fold CV on 170)",
+      "probeCorrect": 17,
+      "probeN": 18,
+      "trainCorrect": 105,
+      "trainN": 170,
+      "refused": 4,
+      "refusedN": 6,
+      "refusedAny": 2,
+      "totalMs": 89.1,
+      "trainPerClass": {
+       "<none>": "8/16",
+       "field_arts": "8/14",
+       "field_code": "9/14",
+       "field_general": "10/14",
+       "field_history": "12/14",
+       "field_law": "8/14",
+       "field_math": "8/14",
+       "field_medicine": "8/14",
+       "field_philosophy": "10/14",
+       "field_politics": "9/14",
+       "field_psychology": "8/14",
+       "field_science": "7/14"
+      },
+      "trainCorrectInSample": 170
+     }
+    ],
+    "model": "minishlab/potion-retrieval-32M"
+   }
+  ],
+  "needle170": {
+   "artifacts": {
+    "base": "c9d915eca282ed42d1a09b143b592adb4cc6744ffe2d294adf5cfc5548170c38",
+    "tuned": "fca1836a0e39a26b085e7e765e9527331e8b1f7b100663595445bea1e47dfc95"
+   },
+   "models": {
+    "base": {
+     "probeCorrect": 1,
+     "probeN": 18,
+     "trainCorrect": 17,
+     "trainN": 170,
+     "refused": 0,
+     "refusedN": 6,
+     "medianMs": 228.5,
+     "loadMs": 1353.6,
+     "perClass": {
+      "<none>": "2/16",
+      "field_arts": "2/14",
+      "field_code": "0/14",
+      "field_general": "1/14",
+      "field_history": "2/14",
+      "field_law": "1/14",
+      "field_math": "0/14",
+      "field_medicine": "0/14",
+      "field_philosophy": "3/14",
+      "field_politics": "4/14",
+      "field_psychology": "0/14",
+      "field_science": "2/14"
+     }
+    },
+    "tuned": {
+     "probeCorrect": 7,
+     "probeN": 18,
+     "trainCorrect": 39,
+     "trainN": 170,
+     "refused": 1,
+     "refusedN": 6,
+     "medianMs": 253.7,
+     "loadMs": 1434.2,
+     "perClass": {
+      "<none>": "2/16",
+      "field_arts": "4/14",
+      "field_code": "0/14",
+      "field_general": "4/14",
+      "field_history": "7/14",
+      "field_law": "0/14",
+      "field_math": "1/14",
+      "field_medicine": "7/14",
+      "field_philosophy": "3/14",
+      "field_politics": "6/14",
+      "field_psychology": "0/14",
+      "field_science": "5/14"
+     }
+    }
+   }
+  },
+  "datasetShape": {
+   "rows": 170,
+   "refusalRows": 16,
+   "subjectRows": 154,
+   "tools": 11,
+   "toolNames": [
+    "field_math",
+    "field_science",
+    "field_philosophy",
+    "field_code",
+    "field_law",
+    "field_politics",
+    "field_psychology",
+    "field_medicine",
+    "field_arts",
+    "field_history",
+    "field_general"
+   ],
+   "probeRows": 18
+  },
+  "probeSplit": {
+   "nearDuplicateThreshold": 0.9,
+   "novelCount": 8,
+   "nearDuplicateCount": 10,
+   "novelRows": [
+    {
+     "query": "why does a wave function collapse when measured?",
+     "nearestCos": 0.262,
+     "expected": "field_science"
+    },
+    {
+     "query": "how do covalent bonds share electrons?",
+     "nearestCos": 0.836,
+     "expected": "field_science"
+    },
+    {
+     "query": "how does photosynthesis turn light into sugar?",
+     "nearestCos": 0.725,
+     "expected": "field_science"
+    },
+    {
+     "query": "why does recursion overflow the call stack?",
+     "nearestCos": 0.471,
+     "expected": "field_code"
+    },
+    {
+     "query": "what caused the fall of the Roman empire?",
+     "nearestCos": 0.885,
+     "expected": "field_history"
+    },
+    {
+     "query": "how does counterpoint work in a fugue?",
+     "nearestCos": 0.477,
+     "expected": "field_arts"
+    },
+    {
+     "query": "when should I use the Spanish subjunctive?",
+     "nearestCos": 0.194,
+     "expected": "field_general"
+    },
+    {
+     "query": "how do I plan a better morning routine?",
+     "nearestCos": 0.435,
+     "expected": "field_general"
+    }
+   ],
+   "results": {
+    "Needle 3 base": {
+     "all": "1/18",
+     "novel": "0/8",
+     "towardDuplicates": "1/10"
+    },
+    "Needle 3 tuned": {
+     "all": "7/18",
+     "novel": "4/8",
+     "towardDuplicates": "3/10"
+    },
+    "potion-retrieval-32M rubric prototypes": {
+     "all": "11/18",
+     "novel": "8/8"
+    },
+    "potion-retrieval-32M class centroids": {
+     "all": "16/18",
+     "novel": "8/8"
+    },
+    "potion-retrieval-32M logistic head (5-fold)": {
+     "all": "17/18",
+     "novel": "7/8"
+    }
+   }
+  },
+  "abstain": {
+   "potion-base-8M": {
+    "model": "minishlab/potion-base-8M",
+    "dimensions": 256,
+    "embedMs": 8.8,
+    "supportPercentiles": {
+     "labelledSubjects": [
+      0.238,
+      0.346,
+      0.431,
+      0.497,
+      0.682
+     ],
+     "labelledRefusals": [
+      0.225,
+      0.273,
+      0.358,
+      0.393,
+      0.613
+     ],
+     "probe": [
+      0.408,
+      0.6,
+      0.996,
+      0.998,
+      0.999
+     ],
+     "offtopic": [
+      0.253,
+      0.256,
+      0.446,
+      0.476,
+      0.567,
+      0.659
+     ]
+    },
+    "probeBaseline": 12,
+    "offtopicBaselineRefused": 0,
+    "sweep": [
+     {
+      "marginFloor": 0.0,
+      "supportFloor": 0.0,
+      "trainAnswered": [
+       170,
+       97
+      ],
+      "probeAnswered": [
+       18,
+       12
+      ],
+      "offtopicRefused": 0
+     },
+     {
+      "marginFloor": 0.5,
+      "supportFloor": 0.0,
+      "trainAnswered": [
+       127,
+       91
+      ],
+      "probeAnswered": [
+       13,
+       10
+      ],
+      "offtopicRefused": 3
+     },
+     {
+      "marginFloor": 1.0,
+      "supportFloor": 0.0,
+      "trainAnswered": [
+       82,
+       68
+      ],
+      "probeAnswered": [
+       8,
+       7
+      ],
+      "offtopicRefused": 3
+     },
+     {
+      "marginFloor": 1.5,
+      "supportFloor": 0.0,
+      "trainAnswered": [
+       45,
+       42
+      ],
+      "probeAnswered": [
+       6,
+       5
+      ],
+      "offtopicRefused": 5
+     },
+     {
+      "marginFloor": 2.0,
+      "supportFloor": 0.0,
+      "trainAnswered": [
+       19,
+       17
+      ],
+      "probeAnswered": [
+       3,
+       2
+      ],
+      "offtopicRefused": 6
+     },
+     {
+      "marginFloor": 0.0,
+      "supportFloor": 0.3,
+      "trainAnswered": [
+       149,
+       90
+      ],
+      "probeAnswered": [
+       17,
+       11
+      ],
+      "offtopicRefused": 2
+     },
+     {
+      "marginFloor": 1.0,
+      "supportFloor": 0.3,
+      "trainAnswered": [
+       72,
+       63
+      ],
+      "probeAnswered": [
+       8,
+       7
+      ],
+      "offtopicRefused": 5
+     },
+     {
+      "marginFloor": 2.0,
+      "supportFloor": 0.3,
+      "trainAnswered": [
+       17,
+       16
+      ],
+      "probeAnswered": [
+       3,
+       2
+      ],
+      "offtopicRefused": 6
+     },
+     {
+      "marginFloor": 1.0,
+      "supportFloor": 0.35,
+      "trainAnswered": [
+       60,
+       52
+      ],
+      "probeAnswered": [
+       8,
+       7
+      ],
+      "offtopicRefused": 5
+     },
+     {
+      "marginFloor": 2.0,
+      "supportFloor": 0.35,
+      "trainAnswered": [
+       15,
+       14
+      ],
+      "probeAnswered": [
+       3,
+       2
+      ],
+      "offtopicRefused": 6
+     },
+     {
+      "marginFloor": 1.0,
+      "supportFloor": 0.4,
+      "trainAnswered": [
+       51,
+       46
+      ],
+      "probeAnswered": [
+       8,
+       7
+      ],
+      "offtopicRefused": 5
+     },
+     {
+      "marginFloor": 2.0,
+      "supportFloor": 0.4,
+      "trainAnswered": [
+       11,
+       10
+      ],
+      "probeAnswered": [
+       3,
+       2
+      ],
+      "offtopicRefused": 6
+     }
+    ]
+   },
+   "potion-retrieval-32M": {
+    "model": "minishlab/potion-retrieval-32M",
+    "dimensions": 512,
+    "embedMs": 8.8,
+    "supportPercentiles": {
+     "labelledSubjects": [
+      0.168,
+      0.24,
+      0.306,
+      0.411,
+      0.692
+     ],
+     "labelledRefusals": [
+      0.106,
+      0.16,
+      0.247,
+      0.33,
+      0.515
+     ],
+     "probe": [
+      0.252,
+      0.539,
+      0.987,
+      0.994,
+      0.998
+     ],
+     "offtopic": [
+      0.107,
+      0.308,
+      0.353,
+      0.367,
+      0.452,
+      0.456
+     ]
+    },
+    "probeBaseline": 11,
+    "offtopicBaselineRefused": 0,
+    "sweep": [
+     {
+      "marginFloor": 0.0,
+      "supportFloor": 0.0,
+      "trainAnswered": [
+       170,
+       109
+      ],
+      "probeAnswered": [
+       18,
+       11
+      ],
+      "offtopicRefused": 0
+     },
+     {
+      "marginFloor": 0.5,
+      "supportFloor": 0.0,
+      "trainAnswered": [
+       136,
+       100
+      ],
+      "probeAnswered": [
+       11,
+       7
+      ],
+      "offtopicRefused": 2
+     },
+     {
+      "marginFloor": 1.0,
+      "supportFloor": 0.0,
+      "trainAnswered": [
+       92,
+       77
+      ],
+      "probeAnswered": [
+       7,
+       4
+      ],
+      "offtopicRefused": 5
+     },
+     {
+      "marginFloor": 1.5,
+      "supportFloor": 0.0,
+      "trainAnswered": [
+       55,
+       48
+      ],
+      "probeAnswered": [
+       4,
+       2
+      ],
+      "offtopicRefused": 5
+     },
+     {
+      "marginFloor": 2.0,
+      "supportFloor": 0.0,
+      "trainAnswered": [
+       27,
+       26
+      ],
+      "probeAnswered": [
+       1,
+       1
+      ],
+      "offtopicRefused": 6
+     },
+     {
+      "marginFloor": 0.0,
+      "supportFloor": 0.3,
+      "trainAnswered": [
+       85,
+       62
+      ],
+      "probeAnswered": [
+       16,
+       9
+      ],
+      "offtopicRefused": 1
+     },
+     {
+      "marginFloor": 1.0,
+      "supportFloor": 0.3,
+      "trainAnswered": [
+       58,
+       52
+      ],
+      "probeAnswered": [
+       7,
+       4
+      ],
+      "offtopicRefused": 5
+     },
+     {
+      "marginFloor": 2.0,
+      "supportFloor": 0.3,
+      "trainAnswered": [
+       20,
+       19
+      ],
+      "probeAnswered": [
+       1,
+       1
+      ],
+      "offtopicRefused": 6
+     },
+     {
+      "marginFloor": 1.0,
+      "supportFloor": 0.35,
+      "trainAnswered": [
+       41,
+       35
+      ],
+      "probeAnswered": [
+       7,
+       4
+      ],
+      "offtopicRefused": 5
+     },
+     {
+      "marginFloor": 2.0,
+      "supportFloor": 0.35,
+      "trainAnswered": [
+       12,
+       11
+      ],
+      "probeAnswered": [
+       1,
+       1
+      ],
+      "offtopicRefused": 6
+     },
+     {
+      "marginFloor": 1.0,
+      "supportFloor": 0.4,
+      "trainAnswered": [
+       30,
+       28
+      ],
+      "probeAnswered": [
+       7,
+       4
+      ],
+      "offtopicRefused": 6
+     },
+     {
+      "marginFloor": 2.0,
+      "supportFloor": 0.4,
+      "trainAnswered": [
+       11,
+       10
+      ],
+      "probeAnswered": [
+       1,
+       1
+      ],
+      "offtopicRefused": 6
+     }
+    ]
+   }
+  },
+  "kevVsJev": {
+   "requests": 11,
+   "questions": 124,
+   "agreement": {
+    "all": {
+     "agree": 34,
+     "total": 124
+    },
+    "evidence-selection": {
+     "agree": 17,
+     "total": 31
+    },
+    "judgeable-noul": {
+     "agree": 3,
+     "total": 31
+    },
+    "rubric-score": {
+     "agree": 9,
+     "total": 31
+    },
+    "support-choice": {
+     "agree": 5,
+     "total": 31
+    }
+   },
+   "kevLevels": {
+    "evidence-selection": {
+     "__no_match__": 14,
+     "i0": 17
+    },
+    "judgeable-noul": {
+     "no": 29,
+     "yes": 2
+    },
+    "rubric-score": {
+     "1": 28,
+     "2": 3
+    },
+    "support-choice": {
+     "not_applicable": 2,
+     "provided_reference": 1,
+     "self_contained_reasoning": 5,
+     "unverifiable": 23
+    }
+   },
+   "jevLevels": {
+    "evidence-selection": {
+     "i0": 31
+    },
+    "judgeable-noul": {
+     "no": 1,
+     "yes": 30
+    },
+    "rubric-score": {
+     "0": 1,
+     "1": 6,
+     "2": 24
+    },
+    "support-choice": {
+     "provided_reference": 2,
+     "self_contained_reasoning": 29
+    }
+   },
+   "meanAbsScoreDelta": 0.551,
+   "confidentDisagreements": 0,
+   "kevMedianMs": 36343,
+   "jevMedianMs": 382,
+   "suites": [
+    "teaching-v1",
+    "teaching-v2"
+   ]
+  },
+  "jevHarness": {
+   "requests": 68,
+   "errors": 0,
+   "questionsRequested": 895,
+   "questionsAnswered": 895,
+   "models": {
+    "jev-1.13.0": 68
+   },
+   "latency": {
+    "min": 341,
+    "median": 413,
+    "p90": 584,
+    "max": 695
+   },
+   "latencyBySuite": {
+    "teaching-v1": 474,
+    "teaching-v2": 382,
+    "teaching-v3": 544,
+    "teaching-v4": 596
+   },
+   "requestsBySuite": {
+    "teaching-v1": 8,
+    "teaching-v2": 48,
+    "teaching-v3": 1,
+    "teaching-v4": 11
+   },
+   "scoreLevels": {
+    "0": 43,
+    "1": 26,
+    "2": 153
+   },
+   "scoreLevelsBySuite": {
+    "teaching-v1": {
+     "0": 1,
+     "1": 5,
+     "2": 19
+    },
+    "teaching-v2": {
+     "1": 10,
+     "2": 130
+    },
+    "teaching-v3": {
+     "1": 1,
+     "2": 3
+    },
+    "teaching-v4": {
+     "0": 42,
+     "1": 10,
+     "2": 1
+    }
+   },
+   "rowsAllTwos": 33,
+   "judgeable": {
+    "yes": 168,
+    "no": 54
+   },
+   "support": {
+    "provided_reference": 15,
+    "self_contained_reasoning": 170,
+    "unverifiable": 37
+   },
+   "evidence": {
+    "span": 182,
+    "no_match": 47
+   },
+   "realAnswers": {
+    "judgeableYes": 168,
+    "judgeableNo": 1,
+    "span": 169,
+    "noMatch": 0,
+    "unverifiable": 0,
+    "dims": 169,
+    "requests": 57
+   },
+   "stubAnswers": {
+    "judgeableYes": 0,
+    "judgeableNo": 53,
+    "span": 13,
+    "noMatch": 47,
+    "unverifiable": 37,
+    "dims": 53,
+    "requests": 11
+   },
+   "choiceConfidence": {
+    "median": 0.88,
+    "atLeast0.9": 213,
+    "n": 451
+   },
+   "tokens": {
+    "input": 600327,
+    "output": 31739
+   }
+  },
+  "artifactSizes": {
+   "potionOnnx": {
+    "minishlab/potion-base-8m-onnx": {
+     "license": "mit",
+     "files": {
+      ".gitattributes": 1519,
+      "README.md": 2490,
+      "config.json": 23,
+      "model.onnx": 30251506,
+      "special_tokens_map.json": 26,
+      "tokenizer.json": 682879,
+      "tokenizer_config.json": 271
+     },
+     "modelBytes": 30251506,
+     "tokenizerBytes": 682879,
+     "totalBytes": 30938714
+    },
+    "minishlab/potion-base-32m-onnx": {
+     "license": "mit",
+     "files": {
+      ".gitattributes": 1519,
+      "README.md": 2497,
+      "config.json": 23,
+      "model.onnx": 129225202,
+      "special_tokens_map.json": 26,
+      "tokenizer.json": 1492367,
+      "tokenizer_config.json": 271
+     },
+     "modelBytes": 129225202,
+     "tokenizerBytes": 1492367,
+     "totalBytes": 130721905
+    },
+    "minishlab/potion-retrieval-32m-onnx": {
+     "license": "mit",
+     "files": {
+      ".gitattributes": 1519,
+      "README.md": 2532,
+      "config.json": 23,
+      "model.onnx": 129225202,
+      "special_tokens_map.json": 26,
+      "tokenizer.json": 1492367,
+      "tokenizer_config.json": 271
+     },
+     "modelBytes": 129225202,
+     "tokenizerBytes": 1492367,
+     "totalBytes": 130721940
+    },
+    "minishlab/potion-multilingual-128m-onnx": {
+     "license": "mit",
+     "files": {
+      ".gitattributes": 1570,
+      "README.md": 3096,
+      "config.json": 23,
+      "model.onnx": 512376309,
+      "special_tokens_map.json": 26,
+      "tokenizer.json": 34630288,
+      "tokenizer_config.json": 271
+     },
+     "modelBytes": 512376309,
+     "tokenizerBytes": 34630288,
+     "totalBytes": 547011583
+    }
+   },
+   "needle": {
+    "revision": "b274efcb211a9eef48c9a88da4b43bd569696a39",
+    "repository": "Cactus-Compute/needle3",
+    "weightsBytes": 35335380,
+    "weightsSha256": "c9d915eca282ed42d1a09b143b592adb4cc6744ffe2d294adf5cfc5548170c38",
+    "platforms": {
+     "android-arm64": 1663992,
+     "ios-arm64": 1137096,
+     "ios-sim-arm64": 1154848
+    },
+    "cliEngineBytes": 1294696,
+    "cliWeightsBytes": 35335380
+   },
+   "kev": {
+    "license": "apache-2.0",
+    "files": {
+     ".gitattributes": 1570,
+     "README.md": 7257,
+     "adapter_config.json": 1273,
+     "adapter_model.safetensors": 43338624,
+     "head.pt": 2103103,
+     "provenance.json": 3120,
+     "result.json": 73917,
+     "tokenizer.json": 19989325,
+     "tokenizer_config.json": 1128,
+     "train.log": 3393,
+     "training_config.json": 1625,
+     "training_metrics.json": 321
+    }
+   }
+  },
+  "indexFootprint": {
+   "entries": 1,
+   "dimensions": 3072,
+   "jsonBytes": 67285,
+   "bytesPerEntry": 67285,
+   "packedFloat32Bytes": 12288,
+   "capEntries": 152,
+   "projectedJsonBytesAtCap": 10227320,
+   "projected256Int8BytesAtCap": 38912
+  }
+ }
+}

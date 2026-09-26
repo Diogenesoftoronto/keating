@@ -4,7 +4,11 @@ import {
 	type DeclaredProfileGroup,
 	seedCurrentPursuitFromGoal,
 } from "@keating/learner-contracts";
-import { KeatingBot } from "./KeatingBot";
+import { KeatingBot, type KeatingBotState } from "./KeatingBot";
+import { AnkiInterestImport } from "./AnkiInterestImport";
+import { ProfileIntakeChat } from "./ProfileIntakeChat";
+import { ProfileProposalReview } from "./ProfileProposalReview";
+import type { ProfileProposal } from "@keating/learner-contracts";
 import { OfflineTutorSettings } from "./OfflineTutorSettings";
 import { desktopOfflineBridge } from "../lib/desktop-offline";
 import { NOTORGANIC_DEFAULT_MODEL } from "../notorganic-provider";
@@ -100,6 +104,55 @@ export const ONBOARDING_STEPS: StepDefinition[] = [
 
 const LAST_STEP = ONBOARDING_STEPS.length - 1;
 
+/** Which door the learner chose into their own profile. Both end in the same place. */
+export type IntakeMode = "form" | "conversation";
+
+/**
+ * The conversational door answers the four profile steps in one screen, so it
+ * shows a shorter track. The two arrays agree on every index up to `identity`,
+ * which is where the doors diverge — so switching between them mid-flow cannot
+ * land the learner on a different question than the one they were looking at.
+ */
+const CONVERSATION_STEP_IDS = new Set(["learning", "teaching", "accessibility"]);
+/**
+ * Fold Anki interests into whatever the conversation already proposed.
+ *
+ * Both sources land on one card because the learner is reviewing one question —
+ * what Keating thinks it knows about them — not two pipelines. An interest a
+ * learner already stated is not proposed twice.
+ */
+export function mergeProposals(
+	existing: readonly ProfileProposal[] | null,
+	incoming: readonly ProfileProposal[],
+): readonly ProfileProposal[] {
+	const seen = new Set((existing ?? []).map(proposal => `${proposal.field}:${proposal.value.toLowerCase()}`));
+	return Object.freeze([...(existing ?? []), ...incoming.filter(proposal => {
+		const key = `${proposal.field}:${proposal.value.toLowerCase()}`;
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	})]);
+}
+
+export function onboardingStepsFor(mode: IntakeMode): readonly StepDefinition[] {
+	return mode === "conversation" ? ONBOARDING_STEPS.filter(step => !CONVERSATION_STEP_IDS.has(step.id)) : ONBOARDING_STEPS;
+}
+
+/**
+ * The mascot reacts to where the learner is rather than idling through all eight
+ * steps. Setup is the one step that waits on a dialog, so it stays on `loading`.
+ */
+const STEP_BOT_STATES: Record<string, KeatingBotState> = {
+	welcome: "greeting",
+	access: "thinking",
+	setup: "loading",
+	identity: "listening",
+	learning: "understanding",
+	teaching: "reading",
+	accessibility: "connecting",
+	finish: "settled",
+};
+
 const TITLES: Record<string, string> = {
 	welcome: "Keating teaches by asking.",
 	identity: "Tell Keating who it is talking to.",
@@ -127,14 +180,18 @@ export function ChatOnboarding({ onUseKeating, onConnectAccount, onChooseModel, 
 	const [error, setError] = useState("");
 	const title = useRef<HTMLHeadingElement>(null);
 	const finished = useRef(false);
-	const current = ONBOARDING_STEPS[step] ?? ONBOARDING_STEPS[0];
+	const [mode, setMode] = useState<IntakeMode>("form");
+	const [proposals, setProposals] = useState<readonly ProfileProposal[] | null>(null);
+	const steps = onboardingStepsFor(mode);
+	const lastStep = steps.length - 1;
+	const current = steps[step] ?? steps[0];
 	const track = useOnboardingAnalytics();
 
 	useEffect(() => { title.current?.focus({ preventScroll: true }); }, [step]);
 
 	// One view event per screen reached, positions and ids only.
 	useEffect(() => {
-		track("onboarding_viewed", { step_id: current.id, step_index: step, step_count: ONBOARDING_STEPS.length });
+		track("onboarding_viewed", { step_id: current.id, step_index: step, step_count: steps.length });
 	}, [current.id, step, track]);
 
 	const patch = useCallback((next: Partial<DeclaredLearnerProfile>) => setProfile((value) => ({ ...value, ...next })), []);
@@ -160,7 +217,7 @@ export function ChatOnboarding({ onUseKeating, onConnectAccount, onChooseModel, 
 		const finalProfile = seedCurrentPursuitFromGoal(profile);
 		try { saveDeclaredProfile(finalProfile); } catch { /* ignore */ }
 		markChatOnboarding("completed", browserStorage(), LAST_STEP);
-		track("onboarding_completed", { step_count: ONBOARDING_STEPS.length, ...onboardingProfileProperties(finalProfile) });
+		track("onboarding_completed", { step_count: steps.length, intake_mode: mode, ...onboardingProfileProperties(finalProfile) });
 		onComplete(finalProfile.goalText.trim() || undefined);
 	}
 	async function openSetup(action: () => void | Promise<void>) {
@@ -177,7 +234,7 @@ export function ChatOnboarding({ onUseKeating, onConnectAccount, onChooseModel, 
 		if (current.group) markDeclaredProfileGroupSkipped(current.group);
 		track("onboarding_step_completed", { step_id: current.id, step_index: step, skipped: true });
 		setError("");
-		goTo(Math.min(step + 1, LAST_STEP));
+		goTo(Math.min(step + 1, lastStep));
 	}
 	async function next() {
 		if (pending) return;
@@ -189,7 +246,7 @@ export function ChatOnboarding({ onUseKeating, onConnectAccount, onChooseModel, 
 			finally { setPending(false); }
 		}
 		track("onboarding_step_completed", { step_id: current.id, step_index: step, skipped: false });
-		goTo(Math.min(step + 1, LAST_STEP));
+		goTo(Math.min(step + 1, lastStep));
 	}
 
 	const setupTitle = access === "keating" ? "Make yourself at home." : access === "offline" ? "Set up your offline tutor." : "Connect your model.";
@@ -202,16 +259,41 @@ export function ChatOnboarding({ onUseKeating, onConnectAccount, onChooseModel, 
 
 	return <section className="chat-onboarding" role="dialog" aria-modal="false" aria-labelledby="chat-onboarding-title" aria-describedby="chat-onboarding-description" onKeyDown={event => { if (event.key === "Escape") { event.preventDefault(); skip(); } }}>
 		<header className="chat-onboarding__top"><span>Welcome to Keating</span><button type="button" className="chat-onboarding__skip" onClick={skip}>Go straight to chat</button></header>
-		<div className="chat-onboarding__intro"><KeatingBot size={88} state="idle" label="" /><p className="chat-onboarding__progress">{step + 1} of {ONBOARDING_STEPS.length} · {current.label}</p></div>
+		<div className="chat-onboarding__intro">
+			<KeatingBot size={88} state={STEP_BOT_STATES[current.id] ?? "idle"} label="" />
+			<div className="chat-onboarding__progress">
+				<p className="chat-onboarding__progress-label">{step + 1} of {steps.length} · {current.label}</p>
+				{/* Decorative: the sentence above already states the position for screen readers. */}
+				<ol className="chat-onboarding__track" aria-hidden="true">
+					{steps.map((definition, index) => <li key={definition.id} data-state={index < step ? "done" : index === step ? "current" : "ahead"} />)}
+				</ol>
+			</div>
+		</div>
 		<h2 ref={title} tabIndex={-1} id="chat-onboarding-title">{current.id === "access" ? "How would you like to chat?" : current.id === "setup" ? setupTitle : TITLES[current.id]}</h2>
 		<p id="chat-onboarding-description">{current.id === "access" ? "Choose how to run your model. You can change this later." : current.id === "setup" ? setupDescription : DESCRIPTIONS[current.id]}</p>
-		<div className="chat-onboarding__step">
+		<div className="chat-onboarding__step" key={current.id}>
 			{current.id === "welcome" && <ul className="chat-onboarding__tips">
 				<li><strong>The composer</strong> at the bottom is where you ask. Plain questions work best.</li>
 				<li><strong>The side panel</strong> opens on its own when Keating draws a diagram, sets a quiz or writes a plan.</li>
 				<li><strong>Sessions</strong> in the left rail keep each subject separate, and Keating remembers what you covered.</li>
 				<li><strong>Settings → Learning</strong> is where you change your profile, the teacher’s persona and voice.</li>
 			</ul>}
+			{current.id === "welcome" && <div className="chat-onboarding__doors">
+				<p className="chat-onboarding__doors-ask">First, how should I get to know you?</p>
+				<div>
+					{/* Neither door is the fallback. The form is the default only because
+					    it works with no model configured and no microphone. */}
+					<button type="button" className="chat-onboarding__door" aria-pressed={mode === "form"} onClick={() => setMode("form")}>
+						<strong>Fill a short form</strong>
+						<span>Four screens of questions, all skippable.</span>
+					</button>
+					<button type="button" className="chat-onboarding__door" aria-pressed={mode === "conversation"} onClick={() => setMode("conversation")}>
+						<strong>Talk it through</strong>
+						<span>Four open questions, typed or spoken. I read your answers back before keeping anything.</span>
+					</button>
+				</div>
+			</div>}
+
 			{current.id === "access" && <fieldset className="chat-onboarding__access" disabled={pending}>
 				<legend>Model access</legend>
 				<label><input type="radio" name="onboarding-access" value="keating" checked={access === "keating"} onChange={() => { setAccess("keating"); setError(""); }} /><span><strong>Use Keating</strong><span>{NOTORGANIC_DEFAULT_MODEL.name} · Default</span></span></label>
@@ -221,7 +303,45 @@ export function ChatOnboarding({ onUseKeating, onConnectAccount, onChooseModel, 
 			{current.id === "setup" && access === "keating" && <button type="button" className="chat-onboarding__primary" disabled={pending} onClick={() => void openSetup(onConnectAccount)}>{pending ? "Opening…" : "Connect or create an account"}</button>}
 			{current.id === "setup" && access === "byok" && <button type="button" className="chat-onboarding__primary" disabled={pending} onClick={() => void openSetup(onChooseModel)}>{pending ? "Opening…" : "Choose a model and provider"}</button>}
 			{current.id === "setup" && access === "offline" && <><OfflineTutorSettings /><button type="button" className="chat-onboarding__secondary" disabled={pending} onClick={() => void openSetup(onChooseModel)}>Choose the offline model</button></>}
-			{current.id === "identity" && <div className="chat-onboarding__fields"><IdentityFields {...groupProps} /><LanguageFields {...groupProps} /></div>}
+			{current.id === "identity" && mode === "form" && <div className="chat-onboarding__fields"><IdentityFields {...groupProps} /><LanguageFields {...groupProps} /></div>}
+
+			{/* Offered on the identity step in either door: the collection says what
+			    the learner studies regardless of how they chose to answer. It is never
+			    shown mid-conversation, where the thread owns the screen. */}
+			{current.id === "identity" && (mode === "form" || proposals !== null) && <AnkiInterestImport
+				onImported={incoming => setProposals(current => mergeProposals(current, incoming))}
+			/>}
+
+			{/* The form is still on screen, so applying here fills it rather than moving on. */}
+			{current.id === "identity" && mode === "form" && proposals !== null && proposals.length > 0 && <ProfileProposalReview
+				proposals={proposals}
+				heading="From your decks."
+				onDismiss={() => setProposals(null)}
+				onApply={(_accepted, profilePatch) => { patch(profilePatch); setProposals(null); }}
+			/>}
+
+			{current.id === "identity" && mode === "conversation" && proposals?.length === 0 && <div className="chat-onboarding__doors">
+				<p className="chat-onboarding__doors-ask">I did not want to guess.</p>
+				<p>Nothing in those answers was clear enough for me to propose, so I have kept none of it. You can fill the form instead, or carry on — I will learn as we talk.</p>
+				<button type="button" className="chat-onboarding__secondary" onClick={() => { setProposals(null); setMode("form"); }}>Fill the form instead</button>
+			</div>}
+
+			{current.id === "identity" && mode === "conversation" && proposals?.length !== 0 && (proposals === null
+				? <ProfileIntakeChat
+					onUseForm={() => setMode("form")}
+					onDone={result => {
+						// Free text the learner wrote themselves is theirs already and needs
+						// no review; only what was inferred goes to the card.
+						patch(result.verbatim);
+						setProposals(result.proposals);
+					}}
+				/>
+				: <ProfileProposalReview
+					proposals={proposals}
+					heading="Here is what I picked up."
+					onDismiss={() => { setProposals(null); goTo(Math.min(step + 1, lastStep)); }}
+					onApply={(_accepted, profilePatch) => { patch(profilePatch); goTo(Math.min(step + 1, lastStep)); }}
+				/>)}
 			{current.id === "learning" && <div className="chat-onboarding__fields"><GoalFields {...groupProps} /><ContextFields {...groupProps} /></div>}
 			{current.id === "teaching" && <div className="chat-onboarding__fields"><PedagogyFields {...groupProps} /></div>}
 			{current.id === "accessibility" && <div className="chat-onboarding__fields"><AccessibilityFields {...groupProps} /></div>}
@@ -232,9 +352,9 @@ export function ChatOnboarding({ onUseKeating, onConnectAccount, onChooseModel, 
 			<div>{step > 0 && <button type="button" className="chat-onboarding__secondary" disabled={pending} onClick={() => { setError(""); goTo(step - 1); }}>Back</button>}</div>
 			<div className="chat-onboarding__advance">
 				{current.group && <button type="button" className="chat-onboarding__skip" disabled={pending} onClick={skipStep}>Skip this</button>}
-				{step < LAST_STEP
+				{!(current.id === "identity" && mode === "conversation" && proposals === null) && (step < lastStep
 					? <button type="button" className="chat-onboarding__secondary" disabled={pending} onClick={() => void next()}>{pending && current.id === "access" ? "Selecting…" : "Next"}</button>
-					: <button type="button" className="chat-onboarding__primary" onClick={finish}>Start chatting</button>}
+					: <button type="button" className="chat-onboarding__primary" onClick={finish}>Start chatting</button>)}
 			</div>
 		</footer>
 	</section>;

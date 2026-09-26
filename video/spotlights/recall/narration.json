@@ -1,0 +1,77 @@
+{
+  "$comment": "Spotlight: short story — one learner across three weeks, illustrated. Canonical narration; edit a line and re-run produce.sh (unchanged lines hit the TTS cache).",
+  "label": "KEATING // LOCAL RECALL",
+  "format": "short story — one learner across three weeks, illustrated",
+  "tts": {
+    "engine": "fal",
+    "model": "google/gemini-3.8-flash-tts",
+    "voice": "Enceladus",
+    "instructions": "Voice: a warm, grounded teacher who genuinely likes their students. Tone: calm, curious and a little wry; never salesy. Pacing: unhurried and conversational, with a small breath at each em dash and a real pause after questions. Pronounce 'Keating' as KEE-ting. This film is a short story: read the first three lines softly, like the opening of a picture book."
+  },
+  "timing": {
+    "lead": 0.35,
+    "tail": 0.55,
+    "fps": 30
+  },
+  "scenes": [
+    {
+      "id": "night",
+      "min": 4.5,
+      "text": "Tuesday night. Standing waves, one more time.",
+      "captions": true,
+      "art": [
+        "recall-1-night"
+      ]
+    },
+    {
+      "id": "weeks",
+      "min": 3,
+      "text": "Then three weeks go by.",
+      "captions": true,
+      "art": [
+        "recall-2-calendar"
+      ]
+    },
+    {
+      "id": "blank",
+      "min": 4.5,
+      "text": "An exam question asks about resonance — and it's all a blur.",
+      "captions": true,
+      "art": [
+        "recall-3-question"
+      ]
+    },
+    {
+      "id": "thread",
+      "min": 6.5,
+      "text": "Keating 4.0 remembers. Before it replies, local recall finds the exact passage from her earlier work — and keeps a reference to where it came from.",
+      "captions": true,
+      "art": [
+        "recall-4-thread"
+      ],
+      "shots": [
+        "panel"
+      ]
+    },
+    {
+      "id": "device",
+      "min": 6.5,
+      "text": "It runs on her own machine: a thirty-six megabyte model, switched on in Learning Settings. On a phone, search by meaning finds sessions by idea, not keyword.",
+      "captions": true,
+      "shots": [
+        "settings",
+        "phone"
+      ]
+    },
+    {
+      "id": "close",
+      "min": 4.5,
+      "text": "Your past work, working for you.",
+      "captions": true,
+      "shots": [
+        "library",
+        "profile"
+      ]
+    }
+  ]
+}

@@ -13,6 +13,7 @@
  *   echo it back. Failures leave as a stable `{error:{code}}` JSON body.
  */
 import { getHeader, readBody, type H3Event } from "h3";
+import { DEFAULT_SYSTEM_ONE_MODEL, SYSTEM_ONE_ENDPOINT } from "@keating/learner-contracts";
 import {
 	createNotOrganicServerClient,
 	getNotOrganicServerConfig,
@@ -118,7 +119,22 @@ function validQuestion(question: unknown): boolean {
 		&& Object.values(criteria).every((value) => value === null || typeof value === "string");
 }
 
-/** Both public paths enforce the same server-validated account boundary. */
+/** Server-only local development override; an API key alone never enables it. */
+function devDirectConfig(): { endpoint: string; model: string; apiKey: string } | null {
+	const flag = process.env.KEATING_JUDGEMENT_DEV_DIRECT?.trim().toLowerCase();
+	const apiKey = process.env.TYPESAFE_API_KEY?.trim();
+	if ((flag !== "1" && flag !== "true") || !apiKey) return null;
+	const endpoint = process.env.KEATING_JUDGEMENT_ENDPOINT?.trim() || SYSTEM_ONE_ENDPOINT;
+	const url = new URL(endpoint);
+	const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+	if ((url.protocol !== "https:" && !(url.protocol === "http:" && loopback))
+		|| url.username || url.password || url.search || url.hash) {
+		throw new Error("Invalid judgement endpoint");
+	}
+	return { endpoint, apiKey, model: process.env.KEATING_JUDGEMENT_MODEL?.trim() || DEFAULT_SYSTEM_ONE_MODEL };
+}
+
+/** Both public paths share account authorization and the explicit dev override. */
 export async function handleJudgementGateway(
 	event: H3Event,
 	options: { timeoutMs?: number } = {},
@@ -143,18 +159,34 @@ export async function handleJudgementGateway(
 	});
 	const run = async (): Promise<Response> => {
 		try {
-			const config = getNotOrganicServerConfig();
-			if (!config.enabled) return Response.json({ error: { code: "backend-unavailable" } }, { status: 503 });
-			const client = await createNotOrganicServerClient(event, "keating:judgement", config);
-			if (controller.signal.aborted) return judgementErrorResponse("backend-timeout");
-			const upstream = await client.request(NOTORGANIC_UPSTREAM_JUDGEMENT_PATH, {
-				method: "POST",
-				body: JSON.stringify(validated.body),
-				headers: { "content-type": "application/json" },
-				idempotencyKey,
-				maxCostMicrousd: config.maxCostMicrousd,
-				signal: controller.signal,
-			});
+			const direct = devDirectConfig();
+			let upstream: Response;
+			if (direct) {
+				upstream = await fetch(direct.endpoint, {
+					method: "POST",
+					body: JSON.stringify({ ...validated.body, model: direct.model }),
+					headers: {
+						"content-type": "application/json",
+						authorization: `Bearer ${direct.apiKey}`,
+						...(idempotencyKey ? { "idempotency-key": idempotencyKey } : {}),
+					},
+					signal: controller.signal,
+					redirect: "error",
+				});
+			} else {
+				const config = getNotOrganicServerConfig();
+				if (!config.enabled) return Response.json({ error: { code: "backend-unavailable" } }, { status: 503 });
+				const client = await createNotOrganicServerClient(event, "keating:judgement", config);
+				if (controller.signal.aborted) return judgementErrorResponse("backend-timeout");
+				upstream = await client.request(NOTORGANIC_UPSTREAM_JUDGEMENT_PATH, {
+					method: "POST",
+					body: JSON.stringify(validated.body),
+					headers: { "content-type": "application/json" },
+					idempotencyKey,
+					maxCostMicrousd: config.maxCostMicrousd,
+					signal: controller.signal,
+				});
+			}
 			if (!upstream.ok) return judgementErrorResponse(upstream.status);
 			const payload: unknown = await upstream.json();
 			if (!isPlainObject(payload) || typeof payload.model !== "string" || !isPlainObject(payload.answers)) {

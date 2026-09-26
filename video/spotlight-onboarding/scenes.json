@@ -1,0 +1,8 @@
+[
+  {"shot": "welcome", "kicker": "FIRST RUN", "title": "Keating teaches by asking", "body": "Every step optional. Chat is one click away.", "line": "Keating 4.0 starts by getting to know you. Every step is optional, and chat is always one click away."},
+  {"shot": "teach", "kicker": "YOUR TERMS", "title": "How should Keating teach you?", "body": "Pace, hints, tone and analogies.", "line": "Tell it how much to ask before it tells, what to do when you're stuck, and where to draw its analogies from."},
+  {"shot": "access", "kicker": "ACCESSIBILITY", "title": "Requirements, not suggestions", "body": "Plain language, captions, type, motion.", "line": "Accessibility choices are treated as requirements: plain language, captions, easier typography, and reduced motion."},
+  {"shot": "pursuit", "kicker": "PURSUITS", "title": "Goals that don't take over", "body": "Saved for later. Today's question still leads.", "line": "Longer goals are saved as pursuits. They stay close by, but today's question still leads."},
+  {"shot": "persona", "kicker": "TEACHER PERSONA", "title": "Shape the teacher", "body": "Persona, speech and voice, all editable.", "line": "In Settings, you can reshape the teacher itself: its persona, its voice, and how it speaks."},
+  {"shot": "tour", "kicker": "SHOW ME AROUND", "title": "A tour of your own screen", "body": "Replayable, and it skips what's closed.", "line": "Then choose Show me around first, and Keating points out the composer, the sessions, and the study panel, on the screen you're actually using."}
+]

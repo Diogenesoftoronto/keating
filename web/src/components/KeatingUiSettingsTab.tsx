@@ -326,6 +326,16 @@ export function KeatingUiSettingsTab() {
 				<Toggle checked={settings.showRawErrors} onChange={(checked) => update({ showRawErrors: checked })} />
 			</SettingRow>
 
+			<SettingRow
+				title="Ask before changing study plans"
+				description="By default the tutor revises your active study plan on its own (marking a step done, adding a prerequisite, splitting a step) and tells you what changed. Turn this on to Accept or Decline each change first."
+			>
+				<Toggle
+					checked={settings.planChanges === "approval"}
+					onChange={(checked) => update({ planChanges: checked ? "approval" : "autonomous" })}
+				/>
+			</SettingRow>
+
 			{canvasEnabled && <SettingRow
 				title="Open artifacts automatically"
 				description="Open the artifact side panel when Keating creates a plan, map, animation, benchmark, or evolution."

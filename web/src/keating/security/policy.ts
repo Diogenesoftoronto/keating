@@ -31,6 +31,7 @@ export const KEATING_TOOL_RISKS: Readonly<Record<string, ToolRiskClass>> = {
   remember_learner_profile: "state-change",
   set_learner_goal: "state-change",
   update_goal_step: "state-change",
+  revise_study_plan: "state-change",
   generate_image: "external-side-effect",
   animate: "external-side-effect",
   evolve: "state-change",

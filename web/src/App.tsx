@@ -116,6 +116,13 @@ import { BrowserModelDownloadStatus } from "./components/ModelDownloadBar";
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
   beforeLoad: ({ location, preload }) => {
+    if (
+      typeof window !== "undefined" &&
+      window.location.hostname === "chat.keating.help" &&
+      location.pathname === "/"
+    ) {
+      throw redirect({ to: "/chat", replace: true });
+    }
     if (!isDesktopShell()) return;
     const websiteUrl = desktopMarketingUrl(location.href);
     if (!websiteUrl) return;

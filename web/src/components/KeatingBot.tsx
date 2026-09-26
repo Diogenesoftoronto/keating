@@ -3,11 +3,20 @@ import "./keating-bot.css";
 
 export const KEATING_BOT_CHAT_STATES = ["idle", "listening", "thinking", "speaking", "success", "waving", "loading"] as const;
 export const KEATING_BOT_ACTIVITY_STATES = ["walking", "sitting", "flipping", "reading", "music", "science", "maths", "coding", "chemistry", "biology", "physics", "astronomy", "palaeontology", "electronics", "mycology", "lotus", "connecting", "understanding"] as const;
-export type KeatingBotState = typeof KEATING_BOT_CHAT_STATES[number] | typeof KEATING_BOT_ACTIVITY_STATES[number];
+/** Scenes that narrate first contact: meeting, being heard, bringing things in, and settling. */
+export const KEATING_BOT_ONBOARDING_STATES = ["greeting", "listening-voice", "importing", "sorting", "settled"] as const;
+export type KeatingBotState = typeof KEATING_BOT_CHAT_STATES[number] | typeof KEATING_BOT_ACTIVITY_STATES[number] | typeof KEATING_BOT_ONBOARDING_STATES[number];
+
+const WHOLE_BODY_STATES: ReadonlySet<string> = new Set<KeatingBotState>([
+	"walking", "flipping", "lotus", "connecting", "understanding",
+	// The onboarding scenes are authored full-figure only; a head crop would show
+	// an empty screen where the hands, cards and box carry the whole gesture.
+	...KEATING_BOT_ONBOARDING_STATES,
+]);
 
 /** Whole-body movement must stay in view even in a compact head placement. */
 export function keatingBotSpriteVariant(variant: "head" | "body", state: KeatingBotState): "head" | "body" {
-	return state === "walking" || state === "flipping" || state === "lotus" || state === "connecting" || state === "understanding" ? "body" : variant;
+	return WHOLE_BODY_STATES.has(state) ? "body" : variant;
 }
 
 export interface KeatingBotProps {

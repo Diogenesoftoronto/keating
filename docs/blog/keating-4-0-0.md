@@ -8,6 +8,9 @@ Keating 4.0 brings judgement into answer review, lesson plans, course creation, 
 We have also been following what happens after the tutor answers. The research tools connect a teaching response to the tokens the model generated, an independent assessment, and a training update. You can open the notebooks and follow each step. Some experiments found a useful signal; others changed the model without improving its teaching.
 
 
+[![Watch the Keating 4.0 launch film (70 seconds)](https://keating.help/tapes/posters/keating-4-launch.jpg)](https://keating.help/tapes/keating-4-launch.mp4)
+
+
 ## Tell Keating how you want to work
 
 The first-run experience now has space for the details that make a tutor easier to work with. Alongside account and model setup, optional steps cover language, background, goals, teaching preferences, and accessibility. Fill in what is useful, skip a section, and return to it in Settings whenever your circumstances change.

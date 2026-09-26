@@ -41,6 +41,7 @@ export const BASELINE_TEACHING_TOOLS = new Set([
   "remember_learner_profile",
   "set_learner_goal",
   "update_goal_step",
+  "revise_study_plan",
 ]);
 
 const TOOL_NAMES: Record<KeatingCapabilityId, string[]> = {

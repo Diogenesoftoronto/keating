@@ -14,12 +14,20 @@ class MemoryStorage implements Storage {
 
 function installBrowser(): void {
 	Object.defineProperty(globalThis, "sessionStorage", { configurable: true, writable: true, value: new MemoryStorage() });
+	Object.defineProperty(globalThis, "localStorage", { configurable: true, writable: true, value: new MemoryStorage() });
 	Object.defineProperty(globalThis, "indexedDB", { configurable: true, writable: true, value: new IDBFactory() });
 }
 
 const config = { issuer: "https://provider.test", authorizationUrl: "https://portal.test/authorize", clientId: "https://keating.test/client", redirectUri: "https://keating.test/notorganic/callback", scope: "wallet:read" };
-const stubFetch = (handler: () => Promise<Response>): typeof fetch => Object.assign(handler, { preconnect: fetch.preconnect });
+const stubFetch = (handler: (...args: Parameters<typeof fetch>) => Promise<Response>): typeof fetch => Object.assign(handler, { preconnect: fetch.preconnect });
 const successToken = () => Response.json({ access_token: "short-lived", token_type: "DPoP", expires_in: 300, scope: "wallet:read" });
+const deviceToken = (access: string, refresh: string, expiresIn = 300) => Response.json({ access_token: access, token_type: "DPoP", expires_in: expiresIn, scope: "wallet:read", refresh_token: refresh, refresh_expires_in: 30 * 86_400 });
+const proofClaims = (proof: string | null) => JSON.parse(atob(proof!.split(".")[1]!.replace(/-/g, "+").replace(/_/g, "/")));
+const sha256 = async (value: string) => btoa(String.fromCharCode(...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const expireAccess = () => {
+	const session = JSON.parse(localStorage.getItem("keating.notorganic.session")!);
+	localStorage.setItem("keating.notorganic.session", JSON.stringify({ ...session, expiresAt: Date.now() - 1 }));
+};
 const callback = (authorize: string, code = "one-time-code") => new URLSearchParams({ code, state: new URL(authorize).searchParams.get("state")! });
 
 describe("Not Organic public client", () => {
@@ -32,7 +40,7 @@ describe("Not Organic public client", () => {
 		expect(publicClientConfig({})).toBeNull();
 		expect(publicClientConfig({ VITE_NOTORGANIC_PUBLIC_ISSUER: "https://provider.test/", VITE_NOTORGANIC_AUTHORIZATION_URL: "https://portal.test/authorize", VITE_NOTORGANIC_CLIENT_ID: "https://keating.test/client", VITE_NOTORGANIC_REDIRECT_URI: "https://keating.test/notorganic/callback" })).toMatchObject({
 			issuer: "https://provider.test",
-			scope: "wallet:read usage:read billing:checkout infer:balanced realtime:connect",
+			scope: "wallet:read usage:read billing:checkout infer:balanced infer:image realtime:connect",
 		});
 		expect(publicClientMaxCostMicrousd({})).toBe(100_000);
 		expect(() => publicClientMaxCostMicrousd({ VITE_NOTORGANIC_MAX_COST_MICROUSD: "0" })).toThrow("positive integer");
@@ -213,5 +221,66 @@ describe("Not Organic public client", () => {
 		} finally {
 			globalThis.fetch = originalFetch;
 		}
+	});
+	it("renews an expired access token through the device session instead of asking to sign in", async () => {
+		installBrowser();
+		const calls: { url: string; body: Record<string, unknown>; headers: Headers }[] = [];
+		let refreshes = 0;
+		const client = new NotOrganicPublicClient(config, stubFetch(async (input, init) => {
+			const url = String(input);
+			calls.push({ url, body: init?.body ? JSON.parse(String(init.body)) : {}, headers: new Headers(init?.headers) });
+			if (url.endsWith("/v1/public/token")) return deviceToken("access-1", "refresh-1");
+			if (url.endsWith("/v1/public/device/token")) { refreshes++; return deviceToken("access-2", "refresh-2"); }
+			return Response.json({ ok: true });
+		}) as typeof fetch);
+		const signedIn = await client.completeAuthorization(callback(await client.authorizationUrl("/chat")));
+		expect(calls[0]!.body).toMatchObject({ device_session: true, device_name: "Keating web" });
+		// The session outlives the tab that signed in.
+		sessionStorage.clear();
+		expireAccess();
+		expect(client.getSession()).not.toBeNull();
+		await Promise.all([client.request("/v1/wallet"), client.request("/v1/wallet")]);
+		expect(refreshes).toBe(1);
+		const refresh = calls.find(call => call.url.endsWith("/v1/public/device/token"))!;
+		expect(refresh.body).toEqual({ grant_type: "refresh_token", refresh_token: "refresh-1" });
+		expect(proofClaims(refresh.headers.get("dpop"))).toMatchObject({ htm: "POST", htu: "https://provider.test/v1/public/device/token", ath: await sha256("refresh-1") });
+		expect(calls.filter(call => call.url.endsWith("/v1/wallet")).map(call => call.headers.get("authorization"))).toEqual(["DPoP access-2", "DPoP access-2"]);
+		const renewed = client.getSession()!;
+		expect(renewed).toMatchObject({ accessToken: "access-2", refreshToken: "refresh-2", id: signedIn.id, returnTo: "/chat" });
+	});
+
+	it("signs out when the provider rejects the device session", async () => {
+		installBrowser();
+		const client = new NotOrganicPublicClient(config, stubFetch(async (input) =>
+			String(input).endsWith("/v1/public/token") ? deviceToken("access-1", "refresh-1") : Response.json({ error: { code: "invalid_device_session" } }, { status: 401 })) as typeof fetch);
+		await client.completeAuthorization(callback(await client.authorizationUrl()));
+		expireAccess();
+		await expect(client.headersFor("GET", "https://provider.test/v1/wallet")).rejects.toThrow("Connect your Not Organic account");
+		expect(client.getSession()).toBeNull();
+	});
+
+	it("keeps the session through a transient renewal failure", async () => {
+		installBrowser();
+		const client = new NotOrganicPublicClient(config, stubFetch(async (input) =>
+			String(input).endsWith("/v1/public/token") ? deviceToken("access-1", "refresh-1") : new Response("unavailable", { status: 503 })) as typeof fetch);
+		await client.completeAuthorization(callback(await client.authorizationUrl()));
+		expireAccess();
+		await expect(client.activeSession()).rejects.toThrow("could not renew");
+		expect(client.getSession()?.refreshToken).toBe("refresh-1");
+	});
+
+	it("revokes the device session on sign-out", async () => {
+		installBrowser();
+		const calls: { url: string; body: unknown; dpop: string | null }[] = [];
+		const client = new NotOrganicPublicClient(config, stubFetch(async (input, init) => {
+			calls.push({ url: String(input), body: JSON.parse(String(init?.body)), dpop: new Headers(init?.headers).get("dpop") });
+			return String(input).endsWith("/v1/public/token") ? deviceToken("access-1", "refresh-1") : new Response(null, { status: 204 });
+		}) as typeof fetch);
+		await client.completeAuthorization(callback(await client.authorizationUrl()));
+		await client.signOut();
+		expect(client.getSession()).toBeNull();
+		const revoke = calls.at(-1)!;
+		expect(revoke).toMatchObject({ url: "https://provider.test/v1/public/device/revoke", body: { refresh_token: "refresh-1" } });
+		expect(proofClaims(revoke.dpop).ath).toBe(await sha256("refresh-1"));
 	});
 });

@@ -1,0 +1,235 @@
+[
+  {
+    "at": "2026-09-25T13:39:28.452Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/judge-3-referee.mp4",
+    "request": "01a0d8ca-dc18-7951-a2d0-571d105a7921"
+  },
+  {
+    "at": "2026-09-25T13:40:35.953Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/judge-1-write.mp4",
+    "request": "01a0d8cb-e3d0-7013-9e20-aa2ad33a4fc4"
+  },
+  {
+    "at": "2026-09-25T13:40:53.085Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/judge-2-seal.mp4",
+    "request": "01a0d8cc-26a6-7342-b70e-14967edb5376"
+  },
+  {
+    "at": "2026-09-25T13:41:05.665Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/judge-4-scale.mp4",
+    "request": "01a0d8cc-57d1-74a2-9f60-0ca5d4362741"
+  },
+  {
+    "at": "2026-09-25T13:41:22.615Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/recall-1-night.mp4",
+    "request": "01a0d8cc-9a18-7351-9b18-1d09ad75c537"
+  },
+  {
+    "at": "2026-09-25T13:41:40.581Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/recall-2-calendar.mp4",
+    "request": "01a0d8cc-e03f-7601-9c3a-0c7760495846"
+  },
+  {
+    "at": "2026-09-25T13:41:59.412Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/recall-3-question.mp4",
+    "request": "01a0d8cd-29b7-7623-a356-7c6e594a2979"
+  },
+  {
+    "at": "2026-09-25T13:42:17.371Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/recall-4-thread.mp4",
+    "request": "01a0d8cd-6ff6-7440-bf22-444db532a20c"
+  },
+  {
+    "at": "2026-09-25T13:42:34.596Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/live-1-talk.mp4",
+    "request": "01a0d8cd-b33c-77f1-8c30-cb278e3e3314"
+  },
+  {
+    "at": "2026-09-25T13:42:47.043Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/live-2-waves.mp4",
+    "request": "01a0d8cd-e3de-7652-b354-d4f4568532e1"
+  },
+  {
+    "at": "2026-09-25T13:43:12.897Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/live-3-meter.mp4",
+    "request": "01a0d8ce-48da-7342-864a-6b17aaa93231"
+  },
+  {
+    "at": "2026-09-25T13:43:26.828Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/first-1-door.mp4",
+    "request": "01a0d8ce-7f42-7610-bdf5-a23d70436f3a"
+  },
+  {
+    "at": "2026-09-25T13:43:39.675Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/first-2-dials.mp4",
+    "request": "01a0d8ce-b173-7151-b557-c7e6f04ff562"
+  },
+  {
+    "at": "2026-09-25T13:43:51.655Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/first-3-teachers.mp4",
+    "request": "01a0d8ce-e03f-71b1-8d04-cac3e1c088f0"
+  },
+  {
+    "at": "2026-09-25T13:44:10.101Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 5,
+    "cost": 0.125,
+    "out": "motion/first-4-desk.mp4",
+    "request": "01a0d8cf-2852-76f2-9037-5f3a135da80b"
+  },
+  {
+    "at": "2026-09-25T13:52:28.408Z",
+    "model": "bytedance/seedance-2.5/image-to-video",
+    "res": "720p",
+    "seconds": 5,
+    "cost": 2.35,
+    "out": "motion/judge-1-write.mp4",
+    "request": "01a0d8d6-c2d7-7663-b9a0-88d4ccaeeb53"
+  },
+  {
+    "at": "2026-09-25T14:03:19.087Z",
+    "model": "google/lyria-3.5",
+    "cost": 0.1,
+    "out": "music/judgements.mp3",
+    "request": "01a0d8e0-b08f-7450-9274-13513f030fa7"
+  },
+  {
+    "at": "2026-09-25T14:03:49.567Z",
+    "model": "google/lyria-3.5",
+    "cost": 0.1,
+    "out": "music/recall.mp3",
+    "request": "01a0d8e1-2796-7b70-9118-195d98f327af"
+  },
+  {
+    "at": "2026-09-25T14:04:28.109Z",
+    "model": "google/lyria-3.5",
+    "cost": 0.1,
+    "out": "music/live.mp3",
+    "request": "01a0d8e1-be29-7151-a360-5e8fd7a76229"
+  },
+  {
+    "at": "2026-09-25T14:04:58.055Z",
+    "model": "google/lyria-3.5",
+    "cost": 0.1,
+    "out": "music/onboarding.mp3",
+    "request": "01a0d8e2-3323-7680-b67d-cb5fabdd890e"
+  },
+  {
+    "at": "2026-09-25T14:05:55.047Z",
+    "model": "bytedance/seedance-2.5/image-to-video",
+    "res": "720p",
+    "seconds": 5,
+    "cost": 2.35,
+    "out": "motion/recall-2-calendar.mp4",
+    "request": "01a0d8e3-11c7-7522-9dfe-1950dd4b4d32"
+  },
+  {
+    "at": "2026-09-25T14:09:25.790Z",
+    "model": "bytedance/seedance-2.5/image-to-video",
+    "res": "720p",
+    "seconds": 6,
+    "cost": 2.82,
+    "out": "motion/live-2-waves.mp4",
+    "request": "01a0d8e6-48fe-7ac2-b03e-33792a32fcb3"
+  },
+  {
+    "at": "2026-09-25T14:56:17.890Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 8,
+    "cost": 0.2,
+    "out": "motion/m-2-lookup.mp4",
+    "request": "01a0d911-31b3-7e33-a7ff-d726a350f045"
+  },
+  {
+    "at": "2026-09-25T14:57:44.686Z",
+    "model": "minimax/h3-max/image-to-video",
+    "res": "1080p",
+    "seconds": 8,
+    "cost": 0.2,
+    "out": "motion/m-5-desk.mp4",
+    "request": "01a0d912-84ce-7220-a057-0465b22ce1d4"
+  },
+  {
+    "at": "2026-09-25T15:02:44.047Z",
+    "model": "bytedance/seedance-2.5/image-to-video",
+    "res": "720p",
+    "seconds": 5,
+    "cost": 2.35,
+    "out": "motion/m-5-desk.mp4",
+    "request": "01a0d917-1633-7163-beca-55aaa49ee425"
+  },
+  {
+    "at": "2026-09-25T15:10:17.252Z",
+    "model": "google/lyria-3.5",
+    "cost": 0.1,
+    "out": "music/manifesto.mp3",
+    "request": "01a0d91e-007b-7131-9c83-688de9ca410f"
+  },
+  {
+    "at": "2026-09-25T15:11:14.617Z",
+    "model": "bytedance/seedance-2.5/image-to-video",
+    "res": "720p",
+    "seconds": 5,
+    "cost": 2.35,
+    "out": "motion/l-2-globe.mp4",
+    "request": "01a0d91e-e08f-7f51-b802-84a62418ec70"
+  }
+]

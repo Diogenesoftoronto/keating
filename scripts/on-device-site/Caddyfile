@@ -1,0 +1,22 @@
+{
+    admin off
+    auto_https off
+}
+
+:{$PORT:8080} {
+    root * /srv
+    encode zstd gzip
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy strict-origin-when-cross-origin
+        X-Frame-Options DENY
+        Content-Security-Policy "default-src 'self'; script-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'none'"
+        -Server
+    }
+    header /data.json Cache-Control "public, max-age=300"
+    header /site.css Cache-Control "public, max-age=3600"
+    respond /healthz "ok" 200
+    try_files {path} {path}/ {path}/index.html
+    # Directory paths canonicalise to a trailing slash; internal links already use it.
+    file_server
+}

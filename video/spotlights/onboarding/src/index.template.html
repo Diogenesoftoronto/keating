@@ -1,0 +1,203 @@
+<!doctype html>
+<!-- Onboarding: kinetic posters, hard cuts, word-cued stamps. Narration is canonical. -->
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=1920, height=1080"/>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script><style>
+{{fonts}}
+:root{--paper:#f1ece0;--ink:#1c211b;--accent:#1e9b50;--green:#14743c;--card:#f6f2e8;--display:"Space Mono",monospace;--body:"JetBrains Mono",monospace;--loud:"Roboto",sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:var(--paper)}
+#root{position:relative;width:100%;height:100%;overflow:hidden;color:var(--ink);font-family:var(--body);background:var(--paper)}
+.scene{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;z-index:1}
+.fx{position:absolute;inset:0;width:1920px;height:1080px;pointer-events:none}#fx-bg{z-index:0}#fx-over{z-index:4;opacity:.35}
+.film-tag{position:absolute;left:60px;top:44px;z-index:6;font:700 23px/1 var(--display);letter-spacing:.07em;color:var(--paper);background:var(--ink);padding:14px 18px}
+.art{position:absolute;inset:0;overflow:hidden}.art-media{position:absolute;inset:0}.art-media img,.art-media video{position:absolute;inset:0;width:1920px;height:1080px;object-fit:cover}.art-clone{position:absolute;inset:0;background-size:cover;background-position:center}.art .foreground{clip-path:polygon(52% 0,100% 0,100% 100%,52% 100%)}.art .wash{position:absolute;inset:0;background:linear-gradient(180deg,rgba(241,236,224,.3),transparent 45%)}
+.word{position:absolute;left:100px;top:350px;width:1720px;text-align:center;font:900 265px/.98 var(--loud);letter-spacing:-.045em;z-index:3;transform-origin:50% 50%}.word span{display:inline-block;background:var(--paper);padding:0 25px 18px}.word.small{font-size:205px}.word.compact{top:136px;font-size:130px}.word.compact span{padding:0 18px 12px}.word.access-word{font-size:145px;top:153px}.word.hello{font-size:350px;top:320px}.word.dials{font-size:112px;top:147px}.word .active{color:var(--green)}
+.plate{position:absolute;left:320px;top:395px;width:1280px;background:var(--paper);border:2px solid var(--ink);box-shadow:16px 16px 0 var(--accent);transform-origin:50% 50%;z-index:2}
+.label{position:absolute;left:-2px;top:-48px;color:var(--paper);background:var(--ink);font:700 22px/1 var(--display);letter-spacing:.06em;padding:11px 16px;white-space:nowrap}
+.viewport{position:relative;overflow:hidden;width:100%}.panel{position:relative;width:100%}.panel img{display:block;width:100%;height:auto}.panel.overlay{position:absolute;inset:0}.mark{position:absolute;border:5px solid var(--accent);border-radius:10px;box-shadow:0 0 0 2px var(--paper);transform-origin:0 50%;pointer-events:none}.underline{height:7px;border:0;border-radius:0;background:var(--accent)}
+#welcome-card{top:505px;width:1380px;left:270px}#chat-mark{left:76.7%;top:26%;width:21.5%;height:45%}
+#teach-card{top:425px}#ask-mark{left:.4%;top:1%;width:48%;height:65%}#stuck-mark{left:51%;top:1%;width:48.5%;height:53%}#analogy-mark{left:51%;top:1%;width:48%;height:53%}
+#access-card{top:472px;width:1380px;left:270px}.access-panel{height:250px;display:flex;align-items:center}.access-panel img{width:100%}.access-mark{left:1.2%;top:10%;width:98%;height:80%}#motion-mark{left:1%;top:29%;width:40%;height:42%}
+#pursuit-card{top:380px;width:1100px;left:410px}#pursuit-mark{left:1%;top:54%;width:96%;height:42%}
+#persona-card{top:375px}#persona-mark{left:1.5%;top:34%;width:19%;height:7px}#voice-mark{left:1.5%;top:67%;width:24%;height:7px}
+#tour-card{left:660px;top:425px;width:1100px}#tour-mark{left:.7%;top:60%;width:32%;height:29%}
+.bot{position:absolute;left:95px;top:440px;width:455px;height:455px}.atlas{position:absolute;inset:0;background-repeat:no-repeat;background-size:400% 200%;background-position:0% 0%}
+.endcard{position:absolute;inset:0;z-index:3;background:var(--paper)}.end-logo{position:absolute;left:570px;top:220px;width:780px;height:400px;object-fit:contain}.end-url{position:absolute;left:0;top:700px;width:1920px;text-align:center;font:700 100px/1 var(--display);letter-spacing:-.05em;color:var(--green)}
+.cap{position:absolute;left:0;top:0;width:1920px;height:1080px;z-index:5;pointer-events:none}.cap .pill{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);white-space:nowrap;font:500 34px/1 var(--body);color:var(--paper);background:var(--ink);border:2px solid var(--ink);padding:16px 28px;box-shadow:5px 5px 0 var(--accent)}.cap .cw{color:var(--paper)}
+</style></head><body><div id="root" data-composition-id="main" data-start="0" data-duration="{{total}}" data-width="1920" data-height="1080">
+<canvas data-layout-ignore id="fx-bg" class="fx" width="1920" height="1080" data-layout-allow-overflow></canvas>
+<section id="s-hello" class="clip scene" data-start="{{start:hello}}" data-duration="{{dur:hello}}" data-track-index="0">
+{{art:first-1-door:door:hello}}<h1 id="hello-title" class="word hello"><span>HELLO.</span></h1></section>
+<section id="s-optional" class="clip scene" data-start="{{start:optional}}" data-duration="{{dur:optional}}" data-track-index="0">
+<h1 id="optional-big" class="word"><span>OPTIONAL.</span></h1><h1 id="optional-title" class="word compact"><span>OPTIONAL.</span></h1>
+<div id="welcome-card" class="plate"><div class="label">[WELCOME / GO STRAIGHT TO CHAT]</div><div class="viewport"><div class="panel"><img src="assets/shots/welcome-detail.png" alt="Welcome and Go straight to chat"/><i id="chat-mark" class="mark"></i></div></div></div></section>
+<section id="s-dials" class="clip scene" data-start="{{start:dials}}" data-duration="{{dur:dials}}" data-track-index="0">
+{{art:first-2-dials:dials-art:dials:0:ask@0.1}}<h1 id="dials-title" class="word dials"><span><b id="ask-word">ASK</b> · <b id="stuck-word">STUCK</b> · <b id="analogy-word">ANALOGIES</b></span></h1>
+<div id="teach-card" class="plate"><div class="label">[HOW TO TEACH YOU]</div><div class="viewport"><div id="teach-ask-panel" class="panel"><img src="assets/shots/teach-ask.png" alt="Ask before telling and when stuck preferences"/><i id="ask-mark" class="mark"></i><i id="stuck-mark" class="mark"></i></div><div id="teach-analogy-panel" class="panel overlay"><img src="assets/shots/teach-analogy.png" alt="Draw analogies from familiar fields"/><i id="analogy-mark" class="mark"></i></div></div></div></section>
+<section id="s-access" class="clip scene" data-start="{{start:access}}" data-duration="{{dur:access}}" data-track-index="0">
+<h1 id="access-big" class="word small"><span>REQUIREMENTS.</span></h1>
+<h1 id="plain-title" class="word access-word"><span>PLAIN.</span></h1><h1 id="captions-title" class="word access-word"><span>CAPTIONS.</span></h1><h1 id="type-title" class="word access-word"><span>EASIER TYPE.</span></h1><h1 id="motion-title" class="word access-word"><span>LESS MOTION.</span></h1>
+<div id="access-card" class="plate"><div class="label">[ACCESSIBILITY / YOUR REQUIREMENTS]</div><div class="viewport">
+<div id="plain-panel" class="panel access-panel"><img src="assets/shots/access-plain.png" alt="Plain language"/><i id="plain-mark" class="mark access-mark"></i></div>
+<div id="captions-panel" class="panel access-panel overlay"><img src="assets/shots/access-captions.png" alt="Prefer captions and transcripts"/><i id="captions-mark" class="mark access-mark"></i></div>
+<div id="type-panel" class="panel access-panel overlay"><img src="assets/shots/access-type.png" alt="Dyslexia-friendly typography"/><i id="type-mark" class="mark access-mark"></i></div>
+<div id="motion-panel" class="panel access-panel overlay"><img src="assets/shots/access-motion.png" alt="Reduce motion"/><i id="motion-mark" class="mark access-mark"></i></div>
+</div></div></section>
+<section id="s-pursuit" class="clip scene" data-start="{{start:pursuit}}" data-duration="{{dur:pursuit}}" data-track-index="0">
+{{art:first-4-desk:desk:pursuit:0:pursuits@0.15}}<h1 id="pursuit-big" class="word small"><span>PURSUITS</span></h1><h1 id="pursuit-title" class="word compact"><span>PURSUITS</span></h1>
+<div id="pursuit-card" class="plate"><div class="label">[YOUR LEARNING / TODAY'S QUESTION]</div><div class="viewport"><div class="panel"><img src="assets/shots/pursuit-detail.png" alt="Your learning goal and today's question"/><i id="pursuit-mark" class="mark"></i></div></div></div></section>
+<section id="s-teacher" class="clip scene" data-start="{{start:teacher}}" data-duration="{{dur:teacher}}" data-track-index="0">
+{{art:first-3-teachers:teachers:teacher:0:persona@0.15}}<h1 id="teacher-big" class="word small"><span>YOUR TEACHER</span></h1><h1 id="teacher-title" class="word compact"><span>YOUR TEACHER</span></h1>
+<div id="persona-card" class="plate"><div class="label">[SETTINGS / LEARNING]</div><div class="viewport"><div class="panel"><img src="assets/shots/persona-detail.png" alt="Teacher persona, speech and voice"/><i id="persona-mark" class="mark underline"></i><i id="voice-mark" class="mark underline"></i></div></div></div></section>
+<section id="s-tour" class="clip scene" data-start="{{start:tour}}" data-duration="{{dur:tour}}" data-track-index="0">
+<h1 id="tour-title" class="word compact"><span>SHOW ME AROUND</span></h1><div id="tour-bot" class="bot"><div class="atlas" style="background-image:url(assets/bot/body-waving.avif)"></div></div>
+<div id="tour-card" class="plate"><div class="label">[YOU ARE SET / TAKE A TOUR]</div><div class="viewport"><div class="panel"><img src="assets/shots/tour-detail.png" alt="Show me around first button"/><i id="tour-mark" class="mark"></i></div></div></div>
+<div id="endcard" class="endcard"><img id="end-logo" class="end-logo" src="assets/brand/logo-lockup.png" alt="Keating"/><div id="end-url" class="end-url">keating.help</div></div></section>
+<canvas data-layout-ignore id="fx-over" class="fx" width="1920" height="1080" data-layout-allow-overflow data-layout-allow-occlusion></canvas><div class="film-tag">[{{label}}]</div>{{captions}}
+<audio id="mix" src="assets/audio/mix.wav" data-start="0" data-duration="{{total}}" data-volume="1"></audio></div><script>
+const TIMING=/*TIMING*/ null;
+const S=Object.fromEntries(TIMING.scenes.map(s=>[s.id,s]));
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9]/g,"");
+const st=id=>S[id].start,en=id=>S[id].start+S[id].duration;
+function at(id,w){const x=S[id].words.find(x=>norm(x.w)===norm(w));if(!x)throw Error(`Missing cue ${id}/${w}`);return x.s}
+const tl=gsap.timeline({paused:true});
+// Adapted from the registry headline-slam: heavy scale landing and frame-stepped shake.
+function slam(sel,t){tl.fromTo(sel,{scale:1.28,opacity:0},{scale:1,opacity:1,duration:.3,ease:'expo.out'},t);tl.to(sel,{x:5,y:-3,duration:1/30},t+.3);tl.to(sel,{x:-3,y:2,duration:1/30},t+.3+1/30);tl.to(sel,{x:0,y:0,duration:1/30},t+.3+2/30)}
+function hide(sel,t){tl.set(sel,{opacity:0},t)}
+function stamp(sel,t,tilt=-3){tl.fromTo(sel,{scale:1.2,rotation:tilt,opacity:0,y:60},{scale:1,rotation:0,opacity:1,y:0,duration:.38,ease:'back.out(1.4)'},t);tl.to(sel,{scale:1.15,duration:1.1,ease:'power2.inOut'},t+.55)}
+function mark(sel,t){tl.fromTo(sel,{scaleX:0,opacity:0},{scaleX:1,opacity:1,duration:.25,ease:'power2.out'},t)}
+function poster(sel,t,d){const moving=document.querySelector(sel).dataset.motion==='true';tl.fromTo(sel+' .back',{scale:1.08},{scale:moving?1.025:1.15,duration:d,ease:'power2.out'},t);if(!moving)tl.fromTo(sel+' .foreground',{scale:1.08,x:0},{scale:1.18,x:-22,duration:d,ease:'none'},t)}
+function whip(sel,t){tl.to(sel,{x:-1920,duration:.24,ease:'power3.in'},t);tl.set(sel,{opacity:0},t+.24)}
+poster('#door',0,S.hello.duration);slam('#hello-title',.12);whip('#hello-title',en('hello')-.24);
+slam('#optional-big',st('optional')+.08);const opt=at('optional','Chat')-.15;hide('#optional-big',opt);slam('#optional-title',opt);stamp('#welcome-card',opt);mark('#chat-mark',at('optional','click')-.15);
+const ask=at('dials','ask')-.15,analogy=at('dials','Where')-.1;
+poster('#dials-art',st('dials'),ask-st('dials')+.3);slam('#dials-title',st('dials')+.1);whip('#dials-art',ask);stamp('#teach-card',ask,3);mark('#ask-mark',at('dials','ask'));tl.to('#ask-word',{color:'#14743c',duration:.1},at('dials','ask'));
+hide('#ask-mark',at('dials','What'));mark('#stuck-mark',at('dials','What'));tl.to('#stuck-word',{color:'#14743c',duration:.1},at('dials','stuck'));
+tl.fromTo('#teach-analogy-panel',{opacity:0},{opacity:1,duration:.15},analogy);hide('#teach-ask-panel',analogy+.15);mark('#analogy-mark',at('dials','analogies'));tl.to('#analogy-word',{color:'#14743c',duration:.1},at('dials','analogies'));
+slam('#access-big',st('access')+.06);const access=at('access','plain')-.18;hide('#access-big',access);stamp('#access-card',access,2);
+const ac=[['plain','plain'],['captions','captions'],['type','easier'],['motion','less']];
+for(let i=0;i<ac.length;i++){const [id,cue]=ac[i],t=at('access',cue)-.08;slam('#'+id+'-title',t);tl.fromTo('#'+id+'-panel',{opacity:0},{opacity:1,duration:.1},t);mark('#'+id+'-mark',t+.12);if(i){const prev=ac[i-1][0];hide('#'+prev+'-title',t);hide('#'+prev+'-panel',t)}}
+const pursuit=at('pursuit','pursuits')-.1;poster('#desk',st('pursuit'),pursuit-st('pursuit')+.3);slam('#pursuit-big',st('pursuit')+.08);hide('#pursuit-big',pursuit);slam('#pursuit-title',pursuit);whip('#desk',pursuit);stamp('#pursuit-card',pursuit);mark('#pursuit-mark',at('pursuit',"today's")-.2);
+const teacher=at('teacher','persona')-.15;poster('#teachers',st('teacher'),teacher-st('teacher')+.3);slam('#teacher-big',st('teacher')+.08);hide('#teacher-big',teacher);slam('#teacher-title',teacher);whip('#teachers',teacher);stamp('#persona-card',teacher,3);mark('#persona-mark',at('teacher','persona'));mark('#voice-mark',at('teacher','voice'));
+slam('#tour-title',st('tour')+.08);stamp('#tour-card',st('tour')+.15);slam('#tour-bot',st('tour')+.12);mark('#tour-mark',at('tour','Show'));
+for(let p=st('tour')+.12;p<en('tour');p+=4){for(const [k,f] of [[0,0],[.04,1],[.08,2],[.12,3],[.16,4],[.2,5],[.24,6],[.28,7]]){if(p+k*4<en('tour'))tl.set('#tour-bot .atlas',{backgroundPosition:`${((f%4)/3)*100}% ${Math.floor(f/4)*100}%`},p+k*4)}}
+const close=en('tour')-1.6;tl.fromTo('#endcard',{opacity:0},{opacity:1,duration:.01},close);slam('#end-logo',close);slam('#end-url',close+.06);
+        const NOISE = `
+          precision highp float;
+          varying vec2 v_uv;
+          uniform float u_t;
+          float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+          float noise(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+          }
+          float fbm(vec2 p) {
+            float v = 0.0, a = 0.5;
+            mat2 R = mat2(0.8, 0.6, -0.6, 0.8);
+            for (int i = 0; i < 5; i++) { v += a * noise(p); p = R * p * 2.02; a *= 0.5; }
+            return v;
+          }
+          const vec3 PAPER = vec3(0.945, 0.925, 0.878);
+          const vec3 WASH = vec3(0.925, 0.965, 0.925);
+          const vec3 TERM = vec3(0.047, 0.082, 0.063);
+          const vec3 PHOS = vec3(0.294, 0.890, 0.533);
+          const vec3 PHOS_DIM = vec3(0.180, 0.604, 0.361);
+        `;
+        const BG = NOISE + `
+          uniform float u_from, u_to, u_p, u_edge, u_down, u_kick;
+          void main() {
+            vec2 uv = v_uv, p = uv * vec2(1.7778, 1.0) * 2.2;
+            float t = u_t;
+            vec2 q = vec2(fbm(p + t * 0.05), fbm(p + vec2(5.2, 1.3) - t * 0.04));
+            float n = fbm(p + (1.6 + 1.4 * u_kick) * q + vec2(1.7, 9.2) + t * 0.03);
+            // Paper only ever lightens from its base, so ink and green type keep their contrast.
+            vec3 paper = mix(PAPER, vec3(1.0), 0.16 * smoothstep(0.3, 0.8, n));
+            paper = mix(paper, WASH, smoothstep(0.6, 0.9, n) * (0.25 + 0.45 * u_kick));
+            float v = 1.0 - smoothstep(0.2, 1.1, length((uv - vec2(0.5, 0.6)) * vec2(1.6, 1.0)));
+            vec3 term = TERM + PHOS_DIM * (pow(n, 2.5) * 0.38 + 0.04) * (0.5 + 0.7 * v) + vec3(0.03, 0.06, 0.04) * v;
+            vec3 a = mix(paper, term, u_from), b = mix(paper, term, u_to);
+            // Burn: a noisy front sweeps up the frame (down when entering the terminal).
+            float y = u_down > 0.5 ? 1.0 - uv.y : uv.y;
+            float field = 0.72 * y + 0.45 * fbm(uv * vec2(1.7778, 1.0) * 4.0 + 3.0);
+            float front = u_p * 1.4 - 0.12;
+            float gone = smoothstep(front + 0.012, front - 0.012, field);
+            vec3 col = mix(a, b, gone);
+            float beyond = field - front;
+            col = mix(col, vec3(0.05, 0.04, 0.03), u_edge * 0.55 * smoothstep(0.0, 0.015, beyond) * (1.0 - smoothstep(0.02, 0.07, beyond)));
+            float glow = exp(-abs(beyond) * 55.0) * u_edge;
+            col += (mix(PHOS, vec3(1.0, 0.97, 0.82), exp(-abs(beyond) * 220.0)) * 1.1) * glow;
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `;
+        const OVER = NOISE + `
+          uniform float u_crt, u_sweep, u_sweepAmp, u_glitch, u_flash, u_frame;
+          void main() {
+            vec2 uv = v_uv;
+            vec3 add = vec3(0.0);
+            float dark = hash(floor(uv * vec2(1920.0, 1080.0)) + floor(u_t * 12.0)) * 0.035;
+            vec2 ray = (uv - vec2(0.52, 0.28)) * vec2(1.7778, 1.0);
+            float sun = smoothstep(0.12, 0.2, sin(atan(ray.y, ray.x) * 18.0 + u_t * 0.055));
+            add += PHOS * sun * 0.035 * smoothstep(0.45, 0.9, uv.y);
+            if (u_crt > 0.001) {
+              float band = exp(-pow(1.0 - uv.y - fract(u_t * 0.12), 2.0) * 140.0);
+              add += PHOS * band * 0.05 * u_crt;
+              float g = hash(floor(uv * vec2(960.0, 540.0)) + u_frame * 1.37);
+              add += PHOS * max(g - 0.5, 0.0) * 0.1 * u_crt;
+              dark = smoothstep(0.45, 0.95, length((uv - 0.5) * vec2(1.25, 1.0))) * 0.45 * u_crt;
+            }
+            if (u_sweepAmp > 0.001) {
+              vec2 p = (uv - 0.5) * vec2(1.7778, 1.0);
+              float d = dot(p, normalize(vec2(1.0, 0.45))) - mix(-1.3, 1.3, u_sweep);
+              add += (vec3(1.0, 0.97, 0.88) * exp(-d * d * 60.0) * 0.26 + PHOS * exp(-d * d * 6.0) * 0.07) * u_sweepAmp;
+            }
+            if (u_glitch > 0.001) {
+              float row = floor(uv.y * 54.0);
+              float h = hash(vec2(row, u_frame));
+              float on = step(1.0 - 0.45 * u_glitch, h);
+              float h2 = hash(vec2(row * 1.7, u_frame + 3.1));
+              vec3 tint = h2 < 0.33 ? vec3(0.84, 0.38, 0.29) : h2 < 0.66 ? vec3(0.1, 0.85, 0.9) : PHOS;
+              float seg = step(hash(vec2(floor(uv.x * 12.0 + h * 40.0), row)), 0.6);
+              add += tint * on * seg * 0.38 * u_glitch;
+              dark = max(dark, on * (1.0 - seg) * 0.55 * u_glitch);
+            }
+            float r = length((uv - 0.5) * vec2(1.7778, 1.0));
+            add += mix(PHOS, vec3(1.0), 0.35) * u_flash * (0.55 - 0.3 * r);
+            gl_FragColor = vec4(add, dark);
+          }
+        `;
+
+        function layer(id, fs) {
+          const gl = document.getElementById(id).getContext("webgl", { preserveDrawingBuffer: false, premultipliedAlpha: true, antialias: false });
+          if (!gl) throw new Error("no webgl");
+          const compile = (type, src) => {
+            const sh = gl.createShader(type);
+            gl.shaderSource(sh, src);
+            gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+            return sh;
+          };
+          const prog = gl.createProgram();
+          gl.attachShader(prog, compile(gl.VERTEX_SHADER, "attribute vec2 p; varying vec2 v_uv; void main() { v_uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }"));
+          gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+          gl.linkProgram(prog);
+          gl.useProgram(prog);
+          gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+          const loc = gl.getAttribLocation(prog, "p");
+          gl.enableVertexAttribArray(loc);
+          gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+          const uni = {};
+          return (vals) => {
+            for (const k in vals) {
+              if (!(k in uni)) uni[k] = gl.getUniformLocation(prog, "u_" + k);
+              if (uni[k]) gl.uniform1f(uni[k], vals[k]);
+            }
+            gl.viewport(0, 0, 1920, 1080);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          };
+        }
+
+
+try{const bg=layer('fx-bg',BG),over=layer('fx-over',OVER);const draw=t=>{const kick=Math.max(0,...TIMING.scenes.filter(s=>t>=s.start).map(s=>Math.exp(-(t-s.start)/.5)));const state={t,from:0,to:0,p:1,edge:0,down:0,kick,crt:0,sweep:0,sweepAmp:0,glitch:0,flash:0,frame:Math.floor(t*TIMING.fps)};bg(state);over(state)};const clock={t:0};tl.to(clock,{t:TIMING.total,duration:TIMING.total,ease:'none',onUpdate:()=>draw(clock.t)},0);draw(0)}catch(e){console.warn('[fx]',e.message)}
+document.querySelectorAll('.cap .cw').forEach(el=>{tl.set(el,{color:'#4be388'},Number(el.dataset.s));tl.set(el,{color:'#f1ece0'},Number(el.dataset.e))});tl.set({},{},TIMING.total);window.__timelines['main']=tl;
+</script></body></html>

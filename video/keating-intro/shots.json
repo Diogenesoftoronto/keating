@@ -1,0 +1,16 @@
+{
+  "viewport": [1280, 860],
+  "scale": 2,
+  "shots": [
+    { "name": "landing", "url": "https://keating.help/", "wait": 12000, "trim": false },
+    { "name": "onboarding", "story": "chat-onboarding--how-to-teach-you" },
+    { "name": "profile", "story": "settings-learnerprofiletab--existing-profile" },
+    { "name": "sources", "story": "chat-web-search--sources" },
+    { "name": "simulation", "story": "learning-simulation--compound-growth" },
+    { "name": "fieldwork", "story": "learning-task--fieldwork" },
+    { "name": "recall", "story": "learning-task--mandarin-animal-recall" },
+    { "name": "word-order", "story": "learning-language-practice--word-order" },
+    { "name": "exam-graded", "story": "learning-exam--completed" },
+    { "name": "download", "url": "https://keating.help/download", "wait": 12000, "trim": false }
+  ]
+}

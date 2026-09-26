@@ -52,7 +52,8 @@ export class WebDecisionPolicyStore {
       return revisions[target] === revision && verified.artifact.target === target && verified.artifact.status === "validated" ? verified : null;
     } catch { return null; }
   }
-  async import(target: DecisionPolicyTarget, text: string): Promise<VerifiedDecisionPolicy> {
+  // Keep Vite's import analysis from rewriting this method as a dynamic import.
+  async ["import"](target: DecisionPolicyTarget, text: string): Promise<VerifiedDecisionPolicy> {
     const revision = ++revisions[target];
     if (text.length > MAX_DECISION_POLICY_FIT_BYTES) throw new Error("Policy file is too large");
     const sha256 = await this.digest(text), verified = await verifyDecisionPolicyText(text, sha256, this.digest);

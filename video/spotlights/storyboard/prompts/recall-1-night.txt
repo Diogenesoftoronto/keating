@@ -1,0 +1,3 @@
+Keating house style: a 1970s public-information poster crossed with an early computer lab. Flat cream paper (#f1ece0), huge green (#1e9b50) sunburst rays from a low horizon, ink-black (#1c211b) forms with hard offset shadows, one coral-red accent, subtle print grain. No text, no letters, no numbers, no logos, no UI text.
+Scene: The learner: a young woman with dark shoulder-length wavy hair wearing a coral-red sweater (same character in every frame). She sits at a desk at night, lamp on, writing notes about a vibrating guitar string drawn as a standing wave. Cozy, quiet, window with a crescent moon. Three-quarter view from behind her shoulder.
+16:9 frame, clean composition.

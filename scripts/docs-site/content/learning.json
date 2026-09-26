@@ -75,7 +75,7 @@
               "src": "/assets/tapes/tui-collaborative.mp4",
               "poster": "/assets/tapes/posters/tui-collaborative.jpg",
               "title": "Terminal UI Socratic challenge",
-              "caption": "Elena navigating interactive Socratic inquiry in OpenTUI: message frames, model inspection, and turn branching."
+              "caption": "A short exchange in keating tui: a question, a follow-up example, and a fork of the conversation."
             }
           },
           {
@@ -93,8 +93,8 @@
             "video": {
               "src": "/assets/tapes/cli-artifacts.mp4",
               "poster": "/assets/tapes/posters/cli-artifacts.jpg",
-              "title": "CLI verification and quiz workflow",
-              "caption": "Elena generating quizzes, meaning maps, and verification reports directly from the CLI."
+              "title": "CLI plan, map, and verification",
+              "caption": "Generating a plan, a meaning map, and a verification checklist from the shell."
             }
           }
         ],
@@ -105,6 +105,15 @@
       },
       {
         "heading": "Tell Keating what helps you learn",
+        "videos": [
+          {
+            "src": "/assets/tapes/keating-spotlight-onboarding.mp4",
+            "poster": "/assets/tapes/posters/keating-spotlight-onboarding.jpg",
+            "title": "First run and the teacher persona",
+            "caption": "Telling Keating how to teach you, which accessibility needs to treat as requirements, and how to shape the teacher's persona.",
+            "captions": "/assets/tapes/captions/keating-spotlight-onboarding.vtt"
+          }
+        ],
         "screenshots": [
           {
             "src": "/assets/screenshots/settings-learning-about-you.png",
@@ -235,6 +244,15 @@
       },
       {
         "heading": "Read the score and the grading status together",
+        "videos": [
+          {
+            "src": "/assets/tapes/keating-spotlight-judgements.mp4",
+            "poster": "/assets/tapes/posters/keating-spotlight-judgements.jpg",
+            "title": "Judgements you can check",
+            "caption": "Your answer is saved first, an independent judge checks it against the rubric, and you can flag a review that missed something.",
+            "captions": "/assets/tapes/captions/keating-spotlight-judgements.vtt"
+          }
+        ],
         "paragraphs": [
           "Questions with a usable objective check can be scored immediately. Open-ended answers wait for the tutor model to grade them. Awaiting your teacher's review and awaiting grading refer to this pending model feedback; they do not mean a human teacher has reviewed your work.",
           "The summary counts answers that have been scored and keeps pending answers separate until a grade arrives. Open Your answers to revisit what you submitted. If feedback is unclear, ask Keating to explain the specific step behind its correct, partial, or incorrect verdict."
@@ -378,6 +396,15 @@
     "sections": [
       {
         "heading": "Find a conversation you want to continue",
+        "videos": [
+          {
+            "src": "/assets/tapes/keating-spotlight-recall.mp4",
+            "poster": "/assets/tapes/posters/keating-spotlight-recall.jpg",
+            "title": "Local recall",
+            "caption": "Keating brings back earlier work with its source: Needle on desktop, Search by meaning on your phone, and recall in the browser.",
+            "captions": "/assets/tapes/captions/keating-spotlight-recall.vtt"
+          }
+        ],
         "paragraphs": [
           "Open the session browser and use Search sessions to find a saved conversation. Select a session to reopen it. In its actions, Rename lets you give it a useful title, such as Linear equations: balancing both sides.",
           "Use New session for a fresh topic. Use Fork session when you want a separate continuation of an existing conversation, or Fork session from here on a response to explore a different direction from that point."
@@ -596,7 +623,7 @@
               "src": "/assets/tapes/tui-collaborative.mp4",
               "poster": "/assets/tapes/posters/tui-collaborative.jpg",
               "title": "Terminal session branching and review",
-              "caption": "Navigating session histories, fork trees, and inspectable student dialogue in OpenTUI."
+              "caption": "Opening the session browser in keating tui and forking a whole branch. The original stays saved."
             }
           },
           {
@@ -614,8 +641,8 @@
             "video": {
               "src": "/assets/tapes/cli-artifacts.mp4",
               "poster": "/assets/tapes/posters/cli-artifacts.jpg",
-              "title": "CLI artifact and feedback review",
-              "caption": "Inspecting generated artifacts and recording lesson feedback from the shell."
+              "title": "CLI artifact review",
+              "caption": "Inspecting generated artifacts and their trace from the shell."
             }
           }
         ],
@@ -679,6 +706,15 @@
       },
       {
         "heading": "Set up speech or a live conversation",
+        "videos": [
+          {
+            "src": "/assets/tapes/keating-spotlight-live.mp4",
+            "poster": "/assets/tapes/posters/keating-spotlight-live.jpg",
+            "title": "GPT Live",
+            "caption": "Choosing GPT Live in the voice picker: your conversation comes with you, and each session has a visible spending ceiling.",
+            "captions": "/assets/tapes/captions/keating-spotlight-live.vtt"
+          }
+        ],
         "screenshots": [
           {
             "src": "/assets/screenshots/surface-live.png",

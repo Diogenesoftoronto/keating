@@ -3,6 +3,7 @@ import { fn } from "storybook/test";
 import "../hooks/keating-storage";
 import { IMAGE_GENERATORS } from "../lib/image-generators";
 import type { SpeechProviderDescriptor } from "../keating/speech";
+import { gptLiveProvider } from "../keating/speech-providers/gpt-live";
 import {
 	AudioModelSelectorDialog,
 	ImageGenerationModelSelectorDialog,
@@ -97,6 +98,18 @@ export const RealtimeVoiceModels: Story = {
 			open
 			provider={openAiRealtime}
 			currentModelId="gpt-realtime-2.1"
+			onClose={fn()}
+			onSelect={fn()}
+		/>
+	),
+};
+
+export const GptLiveVoiceModels: Story = {
+	render: () => (
+		<AudioModelSelectorDialog
+			open
+			provider={gptLiveProvider}
+			currentModelId="gpt-live-1"
 			onClose={fn()}
 			onSelect={fn()}
 		/>

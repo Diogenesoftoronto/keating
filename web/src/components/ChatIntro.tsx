@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { css, cx } from "../../styled-system/css";
+import { KeatingBot } from "./KeatingBot";
 
 const KEATING_ASCII = `
 ██╗  ██╗███████╗ █████╗ ████████╗██╗███╗   ██╗ ██████╗
@@ -11,7 +12,7 @@ const KEATING_ASCII = `
 `.trim();
 
 const INTRO_LINES = [
-  { text: "INIT SEQUENCE v4.0.0", delay: 100 },
+  { text: "INIT SEQUENCE v4.0.1", delay: 100 },
   { text: "─────────────────────────────────────────", delay: 200 },
   { text: "model   : Kimi k2.6", delay: 300 },
   { text: "policy  : keating-default", delay: 400 },
@@ -114,6 +115,10 @@ export function ChatIntro({ onDismiss }: { onDismiss?: () => void }) {
         {/* Cursor + dismiss hint */}
         {typingDone && (
           <div className={css({ marginTop: "1rem", display: "flex", alignItems: "center", gap: "0.75rem" })}>
+            {/* The boot sequence ends with someone actually there. The bot arrives
+                only once the typing finishes, so it reads as the machine waking up
+                rather than as decoration sitting through the whole sequence. */}
+            <KeatingBot size={44} state="settled" label="" />
             <span className="cursor-blink">_</span>
             <span
               className={css({

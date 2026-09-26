@@ -49,6 +49,39 @@ publisher evidence, not a Keating browser smoke test. Requires `shader-f16`.
 LFM 2.5 remains a smaller-download alternative. All entries are exposed as
 text-only because Keating's current browser generation path sends text only.
 
+## Diagnosing WebGPU failures
+
+Browser-model load and generation failures preserve the original runtime error.
+The console also emits a copyable JSON record tagged `[local-model] diagnostics`
+with the model/dtype, runtime versions, phase, input-token count, output-token
+limit, and ONNX's actual device features and buffer limits. These are device
+limits, not a second adapter probe. Reports include device loss, the first error
+observed on that device, and up to eight errors during the operation (with a
+total count). Concurrent operations on a shared device can observe the same
+GPU error. Keating does not explicitly collect prompts, replies, or tensor data
+in these reports; original runtime error text is preserved.
+
+For an `Invalid Buffer`/`mapAsync` failure, enable deeper runtime logging in
+Keating's DevTools console **before reloading and loading the model**:
+
+```js
+localStorage.setItem("keating:local-model-debug", "1");
+location.reload();
+```
+
+Enable **Preserve log** and all console log levels, reproduce once, and copy the
+first runtime error plus the `[local-model] diagnostics` JSON. The debug flag
+enables both Transformers.js session logging and ONNX debug/verbose logging.
+Disable it afterward with `localStorage.removeItem("keating:local-model-debug")`
+and reload. Debug logging can slow inference substantially.
+
+Device observation starts after session creation exposes the runtime device;
+initialization errors and errors captured internally by ONNX may only appear in
+verbose logs. No captured GPU event means unknown, not that the GPU was healthy.
+The diagnostic helper does not create another model or device and does not
+override the runtime's error handler. A readback failure alone does not establish
+unsupported WebGPU, missing FP16, or exhausted memory.
+
 ## Queued — verified loadable, not shipped
 
 These meet all four requirements and were checked against the Hub. Adding one is

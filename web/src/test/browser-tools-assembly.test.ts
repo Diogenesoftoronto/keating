@@ -83,6 +83,7 @@ const browserOnlyToolOrder = [
   "set_learner_goal",
   "list_learner_goals",
   "update_goal_step",
+  "revise_study_plan",
   "source_edit",
   "source_diff",
   "run_script",

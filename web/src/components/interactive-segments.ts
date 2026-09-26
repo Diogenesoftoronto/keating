@@ -20,7 +20,7 @@ export const generatedImageTagPattern = new RegExp(
   "g",
 );
 const interactiveTagPattern = new RegExp(
-  String.raw`<keating-(quiz|scene|question|goal|image|quiz-result|quiz-grade|animation|deck)\s+(json|markdown)=${TAG_PAYLOAD}\s*\/>`,
+  String.raw`<keating-(quiz|scene|question|goal|image|quiz-result|quiz-grade|animation|deck|plan-revision)\s+(json|markdown)=${TAG_PAYLOAD}\s*\/>`,
   "g",
 );
 export function parseInteractiveSegments(
@@ -36,6 +36,7 @@ export function parseInteractiveSegments(
   | { type: "quiz-grade"; json: string }
   | { type: "animation"; json: string }
   | { type: "deck"; json: string }
+  | { type: "plan-revision"; json: string }
 > {
   const segments: ReturnType<typeof parseInteractiveSegments> = [];
   let lastIndex = 0;
@@ -68,6 +69,8 @@ export function parseInteractiveSegments(
     if (tag === "animation")
       segments.push({ type: "animation", json: payload });
     if (tag === "deck") segments.push({ type: "deck", json: payload });
+    if (tag === "plan-revision")
+      segments.push({ type: "plan-revision", json: payload });
     lastIndex = index + match[0].length;
   }
 

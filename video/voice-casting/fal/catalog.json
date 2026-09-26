@@ -1,0 +1,325 @@
+{
+  "model": "google/gemini-3.8-flash-tts",
+  "voices": [
+    {
+      "id": "17613e877a5bfd3d",
+      "name": "Achernar",
+      "locale": "en-US",
+      "style": "Warm, grounded teacher; intimate studio tone, patient pace, lightly wry. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Achernar-en-US.wav"
+    },
+    {
+      "id": "9ced873e4b121f6c",
+      "name": "Achernar",
+      "locale": "fr-CA",
+      "style": "Warm, grounded teacher; intimate studio tone, patient pace, lightly wry. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Achernar-fr-CA.wav"
+    },
+    {
+      "id": "e20629c76115db85",
+      "name": "Achird",
+      "locale": "en-US",
+      "style": "Clear, calm documentary narrator; rounded resonance and precise diction. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Achird-en-US.wav"
+    },
+    {
+      "id": "7aff17e100487472",
+      "name": "Achird",
+      "locale": "fr-CA",
+      "style": "Clear, calm documentary narrator; rounded resonance and precise diction. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Achird-fr-CA.wav"
+    },
+    {
+      "id": "1300447407f5eff1",
+      "name": "Algenib",
+      "locale": "en-US",
+      "style": "Bright, curious mentor; friendly lift, natural pace, restrained energy. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Algenib-en-US.wav"
+    },
+    {
+      "id": "32dd8b02c1b39f95",
+      "name": "Algenib",
+      "locale": "fr-CA",
+      "style": "Bright, curious mentor; friendly lift, natural pace, restrained energy. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Algenib-fr-CA.wav"
+    },
+    {
+      "id": "113bfa9d91072438",
+      "name": "Algieba",
+      "locale": "en-US",
+      "style": "Soft conversational voice; sincere and close, with unforced pauses. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Algieba-en-US.wav"
+    },
+    {
+      "id": "b694ec9cdbd0cfdc",
+      "name": "Algieba",
+      "locale": "fr-CA",
+      "style": "Soft conversational voice; sincere and close, with unforced pauses. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Algieba-fr-CA.wav"
+    },
+    {
+      "id": "53d609959fcedcca",
+      "name": "Alnilam",
+      "locale": "en-US",
+      "style": "Steady, composed narrator; crisp articulation, humane and confident. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Alnilam-en-US.wav"
+    },
+    {
+      "id": "82ffa9fc64bae762",
+      "name": "Alnilam",
+      "locale": "fr-CA",
+      "style": "Steady, composed narrator; crisp articulation, humane and confident. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Alnilam-fr-CA.wav"
+    },
+    {
+      "id": "6cd5aefebd633b44",
+      "name": "Aoede",
+      "locale": "en-US",
+      "style": "Reflective storyteller; gentle low-mid register, thoughtful pauses. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Aoede-en-US.wav"
+    },
+    {
+      "id": "1bca4b1d22c58d0f",
+      "name": "Aoede",
+      "locale": "fr-CA",
+      "style": "Reflective storyteller; gentle low-mid register, thoughtful pauses. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Aoede-fr-CA.wav"
+    },
+    {
+      "id": "715a2ce623f063f2",
+      "name": "Autonoe",
+      "locale": "en-US",
+      "style": "Open-hearted guide; humane, quietly passionate, speaking to one person. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Autonoe-en-US.wav"
+    },
+    {
+      "id": "20e084cd938b3507",
+      "name": "Autonoe",
+      "locale": "fr-CA",
+      "style": "Open-hearted guide; humane, quietly passionate, speaking to one person. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Autonoe-fr-CA.wav"
+    },
+    {
+      "id": "672fc56e84eacfdd",
+      "name": "Callirrhoe",
+      "locale": "en-US",
+      "style": "Playful but credible teacher; light warmth, never exaggerated. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Callirrhoe-en-US.wav"
+    },
+    {
+      "id": "94ee03ae7267f4a6",
+      "name": "Callirrhoe",
+      "locale": "fr-CA",
+      "style": "Playful but credible teacher; light warmth, never exaggerated. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Callirrhoe-fr-CA.wav"
+    },
+    {
+      "id": "5efbe5f7a9865536",
+      "name": "Charon",
+      "locale": "en-US",
+      "style": "Velvety documentary delivery; measured phrasing and subtle emphasis. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Charon-en-US.wav"
+    },
+    {
+      "id": "58b64093109af599",
+      "name": "Charon",
+      "locale": "fr-CA",
+      "style": "Velvety documentary delivery; measured phrasing and subtle emphasis. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Charon-fr-CA.wav"
+    },
+    {
+      "id": "eb5be7fcfd1c7141",
+      "name": "Despina",
+      "locale": "en-US",
+      "style": "Easygoing student; candid, quick, curious, and conversational. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Despina-en-US.wav"
+    },
+    {
+      "id": "cb94239606681cc7",
+      "name": "Despina",
+      "locale": "fr-CA",
+      "style": "Easygoing student; candid, quick, curious, and conversational. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Despina-fr-CA.wav"
+    },
+    {
+      "id": "0c0f6c32f41a9c0e",
+      "name": "Enceladus",
+      "locale": "en-US",
+      "style": "Warm, grounded teacher; intimate studio tone, patient pace, lightly wry. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Enceladus-en-US.wav"
+    },
+    {
+      "id": "1196554a2def8803",
+      "name": "Enceladus",
+      "locale": "fr-CA",
+      "style": "Warm, grounded teacher; intimate studio tone, patient pace, lightly wry. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Enceladus-fr-CA.wav"
+    },
+    {
+      "id": "4834477f0e0c5daf",
+      "name": "Erinome",
+      "locale": "en-US",
+      "style": "Clear, calm documentary narrator; rounded resonance and precise diction. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Erinome-en-US.wav"
+    },
+    {
+      "id": "16fa52b6b37a42b5",
+      "name": "Erinome",
+      "locale": "fr-CA",
+      "style": "Clear, calm documentary narrator; rounded resonance and precise diction. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Erinome-fr-CA.wav"
+    },
+    {
+      "id": "a695f10f9537dcc2",
+      "name": "Fenrir",
+      "locale": "en-US",
+      "style": "Bright, curious mentor; friendly lift, natural pace, restrained energy. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Fenrir-en-US.wav"
+    },
+    {
+      "id": "44d6bacf157d802e",
+      "name": "Fenrir",
+      "locale": "fr-CA",
+      "style": "Bright, curious mentor; friendly lift, natural pace, restrained energy. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Fenrir-fr-CA.wav"
+    },
+    {
+      "id": "95ceda501c438d9e",
+      "name": "Gacrux",
+      "locale": "en-US",
+      "style": "Soft conversational voice; sincere and close, with unforced pauses. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Gacrux-en-US.wav"
+    },
+    {
+      "id": "35fea732622d0330",
+      "name": "Gacrux",
+      "locale": "fr-CA",
+      "style": "Soft conversational voice; sincere and close, with unforced pauses. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Gacrux-fr-CA.wav"
+    },
+    {
+      "id": "ed0dd4c746e21d7a",
+      "name": "Iapetus",
+      "locale": "en-US",
+      "style": "Steady, composed narrator; crisp articulation, humane and confident. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Iapetus-en-US.wav"
+    },
+    {
+      "id": "9daddc958e10901d",
+      "name": "Iapetus",
+      "locale": "fr-CA",
+      "style": "Steady, composed narrator; crisp articulation, humane and confident. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Iapetus-fr-CA.wav"
+    },
+    {
+      "id": "c609c229036ff2ae",
+      "name": "Kore",
+      "locale": "en-US",
+      "style": "Reflective storyteller; gentle low-mid register, thoughtful pauses. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Kore-en-US.wav"
+    },
+    {
+      "id": "565402f20edc0712",
+      "name": "Kore",
+      "locale": "fr-CA",
+      "style": "Reflective storyteller; gentle low-mid register, thoughtful pauses. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Kore-fr-CA.wav"
+    },
+    {
+      "id": "92f65d0614bca0ae",
+      "name": "Laomedeia",
+      "locale": "en-US",
+      "style": "Open-hearted guide; humane, quietly passionate, speaking to one person. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Laomedeia-en-US.wav"
+    },
+    {
+      "id": "3c8bd6a4c43612c6",
+      "name": "Laomedeia",
+      "locale": "fr-CA",
+      "style": "Open-hearted guide; humane, quietly passionate, speaking to one person. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Laomedeia-fr-CA.wav"
+    },
+    {
+      "id": "2d2f2361508db45e",
+      "name": "Leda",
+      "locale": "en-US",
+      "style": "Playful but credible teacher; light warmth, never exaggerated. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Leda-en-US.wav"
+    },
+    {
+      "id": "f1df9cea16c6b18f",
+      "name": "Leda",
+      "locale": "fr-CA",
+      "style": "Playful but credible teacher; light warmth, never exaggerated. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Leda-fr-CA.wav"
+    },
+    {
+      "id": "0c2934c6fcd0127b",
+      "name": "Orus",
+      "locale": "en-US",
+      "style": "Velvety documentary delivery; measured phrasing and subtle emphasis. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Orus-en-US.wav"
+    },
+    {
+      "id": "115f7d03c6082b4b",
+      "name": "Orus",
+      "locale": "fr-CA",
+      "style": "Velvety documentary delivery; measured phrasing and subtle emphasis. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Orus-fr-CA.wav"
+    },
+    {
+      "id": "28aa83b45de8a27f",
+      "name": "Pulcherrima",
+      "locale": "en-US",
+      "style": "Easygoing student; candid, quick, curious, and conversational. Speak natural North American English.",
+      "text": "Good teaching starts with a better question. Take a moment, notice what you already know, and let the next idea click.",
+      "file": "samples/Pulcherrima-en-US.wav"
+    },
+    {
+      "id": "a6a16f8392cca779",
+      "name": "Pulcherrima",
+      "locale": "fr-CA",
+      "style": "Easygoing student; candid, quick, curious, and conversational. Parle en français québécois contemporain, accent naturel de Montréal ou de Québec, sans caricature.",
+      "text": "Un bon enseignement commence par une meilleure question. Prends un instant, vois ce que tu sais déjà, puis laisse la prochaine idée faire son chemin.",
+      "file": "samples/Pulcherrima-fr-CA.wav"
+    }
+  ]
+}

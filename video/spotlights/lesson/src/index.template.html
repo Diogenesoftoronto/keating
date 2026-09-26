@@ -1,0 +1,78 @@
+<!doctype html>
+<!-- captions: custom -->
+<!-- The conversation is the caption track. Video segments preserve source time across speaker turns. -->
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=1080, height=1920"/>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script><style>
+{{fonts}}
+:root{--paper:#f1ece0;--ink:#1c211b;--green:#1e9b50}*{margin:0;padding:0;box-sizing:border-box}html,body{width:100%;height:100%;overflow:hidden;background:var(--paper)}
+#root{position:relative;width:100%;height:100%;overflow:hidden;background:var(--paper);color:var(--ink);font-family:"Space Mono",monospace}
+.heading{position:absolute;left:42px;top:34px;z-index:5}.tag{font:700 22px/1.2 "Space Mono",monospace;letter-spacing:.045em}.topic{margin-top:27px;width:980px;font:900 88px/.98 "Roboto",sans-serif;letter-spacing:-.025em}.topic span{display:block}
+.scene{position:absolute;left:0;top:270px;width:1080px;height:1200px;overflow:hidden}.visual{position:absolute;inset:0;overflow:hidden}.visual img,.visual video{position:absolute;inset:0;width:1080px;height:1200px;object-fit:cover;object-position:center 30%}.visual .photo{position:absolute;inset:0}
+.light{position:absolute;inset:-200px;background:radial-gradient(ellipse at 20% 35%,rgba(255,248,208,.66),transparent 45%);mix-blend-mode:screen;pointer-events:none}
+.orbit-rays{position:absolute;left:-180px;top:-180px;width:1440px;height:1440px;background:repeating-conic-gradient(from 12deg at 50% 50%,transparent 0deg 11deg,rgba(241,236,224,.12) 11deg 20deg);mix-blend-mode:screen}
+.orbit-track{position:absolute;left:0;top:0;width:1080px;height:1200px}.orbit-dot{fill:#1e9b50;stroke:#f1ece0;stroke-width:5}
+.beam-pulse{position:absolute;inset:0;border:0 solid var(--green);box-shadow:inset 0 0 0 14px var(--green);pointer-events:none}
+.dim{position:absolute;inset:0;background:var(--ink);opacity:.28}
+#thread{position:absolute;left:0;top:1488px;width:1080px;height:414px;overflow:hidden;z-index:5}
+.bubble{position:absolute;left:130px;top:202px;width:900px;height:190px;padding:16px 22px;border:2px solid var(--ink);border-radius:20px 20px 20px 0;background:var(--paper);box-shadow:7px 7px 0 var(--green);font:700 36px/1.18 "Space Mono",monospace;letter-spacing:-.055em}
+.bubble.learner{left:100px;width:930px;background:var(--ink);color:var(--paper);border-radius:20px 20px 0 20px;box-shadow:none}
+.words{height:132px}.word{display:inline-block;white-space:pre}.word.highlight{color:#4be388}.wave{position:absolute;left:24px;bottom:13px;width:270px;height:24px;display:flex;align-items:center;gap:5px}.wave i{display:block;width:7px;height:24px;background:var(--green);transform-origin:center}.learner .wave{background:var(--paper);padding:2px 8px;border-radius:4px}.learner .wave i{background:var(--ink);height:20px}
+.bot{position:absolute;left:-97px;top:4px;width:80px;height:80px;background-size:400% 200%;background-repeat:no-repeat;background-image:url(assets/bot/head-speaking.avif)}
+.endcard{position:absolute;left:0;top:270px;width:1080px;height:1200px;background:var(--paper);z-index:4}.end-logo{position:absolute;left:180px;top:240px;width:720px;height:390px;object-fit:contain}.end-url{position:absolute;top:760px;left:0;width:1080px;text-align:center;font:700 76px/1 "Space Mono",monospace;letter-spacing:-.06em;color:#14743c}
+</style></head><body><div id="root" data-composition-id="main" data-start="0" data-duration="{{total}}" data-width="{{width}}" data-height="{{height}}">
+<div class="heading"><div class="tag">[{{label}}]</div><h1 class="topic"><span>WHY IS WINTER</span><span>COLD?</span></h1></div>
+<section id="s-hook" class="scene clip" data-start="{{start:hook}}" data-duration="{{dur:hook}}" data-track-index="0"><div class="visual" id="visual-hook">
+<div class="photo"><img src="assets/art/l-1-winter.png" alt=""/><video id="video-hook" class="clip" src="assets/motion/l-1-winter.mp4" poster="assets/art/l-1-winter.png" data-start="0" data-duration="4.433333" data-media-start="0.000000" data-playback-rate="1" data-track-index="2" muted playsinline></video></div>
+</div></section>
+<section id="s-guess" class="scene clip" data-start="{{start:guess}}" data-duration="{{dur:guess}}" data-track-index="0"><div class="visual" id="visual-guess">
+<div class="photo"><img src="assets/art/l-1-winter.png" alt=""/><video id="video-guess" class="clip" src="assets/motion/l-1-winter.mp4" poster="assets/art/l-1-winter.png" data-start="0" data-duration="3.200000" data-media-start="4.433333" data-playback-rate="1" data-track-index="2" muted playsinline></video></div>
+</div></section>
+<section id="s-push" class="scene clip" data-start="{{start:push}}" data-duration="{{dur:push}}" data-track-index="0"><div class="visual" id="visual-push">
+<div class="photo" id="photo-push" data-layout-allow-overflow><img src="assets/art/l-2-globe.png" alt="" data-layout-allow-overflow/></div><div class="light" id="globe-light" data-layout-allow-overflow></div></div></section>
+<section id="s-think" class="scene clip" data-start="{{start:think}}" data-duration="{{dur:think}}" data-track-index="0"><div class="visual" id="visual-think">
+<div class="photo" id="photo-think" data-layout-allow-overflow><img src="assets/art/l-3-orbit.png" alt="" data-layout-allow-overflow/></div><div class="orbit-rays" id="orbit-rays" data-layout-allow-overflow></div><svg class="orbit-track" viewBox="0 0 1080 1200"><circle id="orbit-dot" class="orbit-dot" cx="540" cy="520" r="16"/></svg></div></section>
+<section id="s-probe" class="scene clip" data-start="{{start:probe}}" data-duration="{{dur:probe}}" data-track-index="0"><div class="visual" id="visual-probe">
+<div class="photo"><img src="assets/art/l-4-beam-last.png" alt=""/><video id="video-probe" class="clip" src="assets/motion/l-4-beam.mp4" poster="assets/art/l-4-beam.png" data-start="0" data-duration="4.533333" data-media-start="0.000000" data-playback-rate="0.6" data-track-index="2" muted playsinline></video></div>
+</div></section>
+<section id="s-aha" class="scene clip" data-start="{{start:aha}}" data-duration="{{dur:aha}}" data-track-index="0"><div class="visual" id="visual-aha">
+<div class="photo"><img src="assets/art/l-4-beam-last.png" alt=""/><video id="video-aha" class="clip" src="assets/motion/l-4-beam.mp4" poster="assets/art/l-4-beam.png" data-start="0" data-duration="4.900000" data-media-start="2.720000" data-playback-rate="0.6" data-track-index="2" muted playsinline></video></div>
+<div class="beam-pulse" id="beam-pulse"></div></div></section>
+<section id="s-close" class="scene clip" data-start="{{start:close}}" data-duration="{{dur:close}}" data-track-index="0"><div class="visual" id="visual-close">
+<div class="photo"><img src="assets/art/l-4-beam-last.png" alt=""/><video id="video-close" class="clip" src="assets/motion/l-4-beam.mp4" poster="assets/art/l-4-beam.png" data-start="0" data-duration="3.900000" data-media-start="5.660000" data-playback-rate="0.6" data-track-index="2" muted playsinline></video></div>
+<div class="dim"></div></div></section>
+<div id="endcard" class="endcard"><img class="end-logo" src="assets/brand/logo-lockup.png" alt="Keating"/><div class="end-url">keating.help</div></div>
+<div id="thread"></div><audio id="mix" src="assets/audio/mix.wav" data-start="0" data-duration="{{total}}" data-volume="1"></audio></div><script>
+const TIMING=/*TIMING*/ null;
+const S=Object.fromEntries(TIMING.scenes.map(s=>[s.id,s]));
+const tl=gsap.timeline({paused:true});
+const thread=document.getElementById('thread');
+TIMING.scenes.forEach((s,index)=>{
+ const bubble=document.createElement('div');bubble.id='bubble-'+s.id;bubble.className='bubble '+s.role;
+ // Older bubbles deliberately slide beyond the clipped thread viewport.
+ bubble.setAttribute('data-layout-allow-overflow','');bubble.setAttribute('data-layout-allow-occlusion','');
+ const words=document.createElement('div');words.className='words';bubble.appendChild(words);
+ for(const w of s.words){const span=document.createElement('span');span.className='word';span.textContent=(s.id==='close'&&w.w==='I'?'— ':'')+w.w+' ';if(s.id==='aha'&&['spreads','out','thinner.'].includes(w.w))span.classList.add('highlight');words.appendChild(span);tl.fromTo(span,{opacity:0},{opacity:1,duration:.06,ease:'none'},w.s)}
+ const wave=document.createElement('div');wave.className='wave';bubble.appendChild(wave);
+ for(let i=0;i<23;i++){const bar=document.createElement('i');wave.appendChild(bar);const e=TIMING.env[s.id];tl.set(bar,{scaleY:.06},0);e.v.forEach((v,k)=>{tl.to(bar,{scaleY:.06+v*.9*(.25+.75*Math.sin((i+1)/24*Math.PI)),duration:e.step,ease:'none'},e.t0+k*e.step)});tl.set(bar,{scaleY:.06},s.voStart+s.voDuration)}
+ if(s.role==='keating'){
+  const bot=document.createElement('div');bot.className='bot';bubble.appendChild(bot);
+  for(let t=s.voStart;t<s.voStart+s.voDuration;t+=.125){const f=Math.floor((t-s.voStart)*8)%8;tl.set(bot,{backgroundPosition:`${f%4/3*100}% ${Math.floor(f/4)*100}%`},t)}
+  const next=TIMING.scenes[index+1];if(next)tl.set(bot,{backgroundImage:'url(assets/bot/head-listening.avif)',backgroundPosition:'0% 0%'},next.voStart);
+ }
+ thread.appendChild(bubble);
+ tl.fromTo(bubble,{opacity:0,y:24},{opacity:1,y:0,duration:.22,ease:'power2.out'},s.voStart-.06);
+ const next=TIMING.scenes[index+1],after=TIMING.scenes[index+2];
+ if(next){tl.to(bubble,{y:-202,duration:.22,ease:'power2.inOut'},next.start);tl.to(wave,{opacity:0,duration:.12},next.start)}
+ if(after){tl.to(bubble,{opacity:0,duration:.06,ease:'none'},after.start);tl.to(bubble,{y:-410,duration:.3,ease:'power2.in'},after.start)}
+});
+tl.fromTo('#photo-push',{scale:1},{scale:1.07,duration:S.push.duration,ease:'none'},S.push.start);
+tl.fromTo('#globe-light',{x:-300,opacity:0},{x:320,opacity:.7,duration:S.push.duration,ease:'sine.inOut'},S.push.start);
+tl.fromTo('#orbit-rays',{rotation:0},{rotation:13,duration:S.think.duration,ease:'none'},S.think.start);
+const orbit={angle:0};tl.to(orbit,{angle:Math.PI*2,duration:S.think.duration,ease:'none',onUpdate:()=>{gsap.set('#orbit-dot',{x:Math.cos(orbit.angle)*412,y:Math.sin(orbit.angle)*350})}},S.think.start);
+const aha=S.aha.words.find(w=>w.w==='spreads').s;
+tl.fromTo('#beam-pulse',{opacity:0},{opacity:.9,duration:.18,ease:'power2.out'},aha);tl.to('#beam-pulse',{opacity:0,duration:.6,ease:'power2.out'},aha+.18);
+// The last phrase remains readable while the illustration gives way to the lockup.
+const close=TIMING.total-1.5;
+tl.fromTo('#endcard',{opacity:0},{opacity:1,duration:.25,ease:'none'},close);
+tl.set({}, {}, TIMING.total);window.__timelines['main']=tl;
+</script></body></html>

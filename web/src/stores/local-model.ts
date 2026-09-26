@@ -13,6 +13,11 @@ import {
 	parseSizeLabel,
 	type DownloadProgress,
 } from "../lib/model-download-progress";
+import {
+	LocalModelDiagnostics,
+	localModelDebugEnabled,
+	localModelErrorMessage,
+} from "../lib/local-model-diagnostics";
 
 export type BrowserModelKind = "multimodal" | "text";
 
@@ -117,18 +122,38 @@ export function classifyLocalModelError(message: string, spec: BrowserModelSpec)
 		return `${spec.name} has no processor config, so it must load as a text-only model. This is a Keating configuration bug — please report it.`;
 	}
 
-	if (lower.includes("shader-f16") || lower.includes("shader_f16")) {
-		return `Your GPU does not support the WebGPU shader-f16 feature, which ${spec.name} needs. Try a smaller browser model instead.`;
+	if (lower.includes("device lost") || lower.includes("device was lost") || lower.includes("device is lost") || lower.includes("device-lost")) {
+		return `The GPU device was lost while running ${spec.name}. Reload the page before retrying. See the device-loss reason in the diagnostic details.`;
+	}
+
+	if (/out of memory|outofmemory|memory allocation|not enough memory|failed to allocate/.test(lower)) {
+		return `A memory allocation failed while running ${spec.name}. Close other GPU-heavy apps or try a smaller model. This error does not measure available GPU memory.`;
+	}
+
+	if (/maxbuffersize|maxstoragebufferbindingsize|buffer size.*(exceed|limit)|size.*exceeds.*(buffer|limit)/.test(lower)) {
+		return `${spec.name} hit a WebGPU buffer-size or binding limit. The diagnostic report includes the limits of ONNX's actual device.`;
+	}
+
+	if (/invalid buffer|mapasync|map_async|failed to download data from buffer/.test(lower)) {
+		return `${spec.name} could not read inference data back from a GPU buffer. An earlier GPU error may explain why; this does not establish that WebGPU is unsupported or that memory ran out.`;
+	}
+
+	if (/shader[-_]f16/.test(lower) && /not support|unsupported|not available|unavailable|missing/.test(lower)) {
+		return `The runtime reports that shader-f16 is unavailable for ${spec.name}. Check the actual device's enabled features in the diagnostic report.`;
 	}
 
 	// ONNX Runtime's MatMulNBits kernel accepts 4-bit and 8-bit weights only, so
 	// q2/ternary exports fail at session creation no matter how they are loaded.
-	if (lower.includes("bits must be") || lower.includes("matmulnbits")) {
+	if (/bits must be (4 or 8|4,? 8)/.test(lower)) {
 		return `${spec.name} ships weights quantized below 4 bits, which the browser ONNX runtime cannot execute yet. Pick a 4-bit model from the list instead.`;
 	}
 
-	if (lower.includes("webgpu") || lower.includes("no adapter")) {
-		return "WebGPU is not supported in this browser. The browser model requires Chrome 113+ or Edge 113+. Enable hardware acceleration in your browser settings.";
+	if (/no (webgpu )?adapter|failed to get gpu adapter|webgpu is not supported|webgpu is unavailable/.test(lower)) {
+		return "The runtime could not access a WebGPU adapter. Check browser hardware acceleration and the GPU driver.";
+	}
+
+	if (/webgpu|ortrun|matmulnbits|shader[-_]f16/.test(lower)) {
+		return `${spec.name} failed during WebGPU execution. See the original runtime error and GPU diagnostic details below.`;
 	}
 
 	if (lower.includes("404") || lower.includes("could not locate") || lower.includes("unauthorized")) {
@@ -144,16 +169,8 @@ export function classifyLocalModelError(message: string, spec: BrowserModelSpec)
 		return `Could not download ${spec.name}. Check your internet connection and try again — the download is ${spec.downloadLabel}.`;
 	}
 
-	if (
-		lower.includes("out of memory")
-		|| lower.includes("memory allocation")
-		|| lower.includes("not enough memory")
-	) {
-		return `Not enough GPU memory to load ${spec.name} (${spec.downloadLabel}). Close other GPU-heavy tabs, or pick a smaller model from the list.`;
-	}
-
 	if (lower.includes("aborted") || lower.includes("cancelled")) {
-		return "Model loading was cancelled.";
+		return "Browser model operation was cancelled.";
 	}
 
 	return message;
@@ -252,12 +269,12 @@ class LocalModelStore {
 		this.listeners.forEach((l) => l(this.state));
 	}
 
-	private fail(spec: BrowserModelSpec, rawMessage: string): void {
-		const message = classifyLocalModelError(rawMessage, spec);
+	private fail(spec: BrowserModelSpec, error: unknown, diagnostics: LocalModelDiagnostics): void {
+		const failure = diagnostics.error(error, classifyLocalModelError(localModelErrorMessage(error), spec));
 		this.clearPreparingTimer();
-		this.state = { ...IDLE_STATE, error: message, modelId: spec.id };
+		this.state = { ...IDLE_STATE, error: failure.message, modelId: spec.id };
 		this.notify();
-		console.error(`[local-model] ${spec.id} failed:`, rawMessage);
+		console.error(`[local-model] ${spec.id} failed:`, failure);
 	}
 
 	private clearPreparingTimer(): void {
@@ -380,6 +397,8 @@ class LocalModelStore {
 		this.notify();
 
 		let restoreFetch: (() => void) | null = null;
+		const diagnostics = new LocalModelDiagnostics(spec.id, spec.dtype, "loading", localModelDebugEnabled());
+		let runtime: Parameters<LocalModelDiagnostics["attach"]>[0] | undefined;
 		try {
 			const gpuCheck = await checkWebGpuAvailable(spec);
 			if (!this.isCurrentLoad(epoch)) return;
@@ -390,9 +409,12 @@ class LocalModelStore {
 				return;
 			}
 
-			const { AutoProcessor, AutoTokenizer, AutoModelForCausalLM, env } = await import(
+			const { AutoProcessor, AutoTokenizer, AutoModelForCausalLM, env, LogLevel } = await import(
 				"@huggingface/transformers"
 			);
+			if (!this.isCurrentLoad(epoch)) return;
+			runtime = env.backends.onnx;
+			diagnostics.transformersVersion = env.version;
 
 			// Never attempt to resolve models from the app's own origin.
 			env.allowLocalModels = false;
@@ -416,9 +438,14 @@ class LocalModelStore {
 				this.abortLoad = null;
 			};
 			this.restoreFetch = restoreFetch;
-			// The ONNX runtime narrates every session it builds; the progress bar
-			// already says what is happening, so keep the console for real errors.
-			env.backends.onnx.logLevel = "error";
+			// Transformers.js sets per-session severity from its own log level.
+			// Enable both layers before creating a session for diagnostic retries.
+			if (diagnostics.debug) {
+				env.logLevel = LogLevel.DEBUG;
+				env.backends.onnx.debug = true;
+				env.backends.onnx.logLevel = "verbose";
+				console.info("[local-model] verbose runtime diagnostics enabled");
+			}
 
 			// Cached weights emit no progress events at all, so say "preparing"
 			// rather than sitting at 0% for the whole load.
@@ -440,6 +467,7 @@ class LocalModelStore {
 					this.schedulePreparingPhase(tracker, epoch);
 				},
 			});
+			await diagnostics.attach(runtime);
 
 			this.clearPreparingTimer();
 			if (!this.isCurrentLoad(epoch)) return;
@@ -460,8 +488,11 @@ class LocalModelStore {
 			// A cancelled load has already bumped the epoch, so its abort error
 			// lands here and is correctly ignored.
 			if (!this.isCurrentLoad(epoch)) return;
-			this.fail(spec, error instanceof Error ? error.message : String(error));
+			if (runtime) await diagnostics.attach(runtime, false);
+			if (!this.isCurrentLoad(epoch)) return;
+			this.fail(spec, error, diagnostics);
 		} finally {
+			diagnostics.finish();
 			restoreFetch?.();
 		}
 	}
@@ -477,8 +508,13 @@ class LocalModelStore {
 		}
 		const spec = getBrowserModel(modelId);
 		if (!spec) throw new Error(`Unknown browser model: ${modelId}`);
+		const diagnostics = new LocalModelDiagnostics(spec.id, spec.dtype, "generation", localModelDebugEnabled());
+		diagnostics.maxNewTokens = Math.max(1, options?.max_length ?? 512);
 
 		try {
+			const { TextStreamer, env } = await import("@huggingface/transformers");
+			diagnostics.transformersVersion = env.version;
+			await diagnostics.attach(env.backends.onnx);
 				// Multimodal templates expect typed content parts; text-only templates
 				// take a plain string.
 				const messages = [
@@ -510,7 +546,7 @@ class LocalModelStore {
 			const inputs =
 				spec.kind === "multimodal" ? await processMultimodal() : tokenizer(formattedPrompt, { add_special_tokens: false });
 
-			const { TextStreamer } = await import("@huggingface/transformers");
+			diagnostics.inputTokens = inputs.input_ids.dims.at(-1) ?? null;
 
 			const streamer = new TextStreamer(tokenizer, {
 				skip_prompt: true,
@@ -523,7 +559,7 @@ class LocalModelStore {
 
 			const outputs = await model.generate({
 				...inputs,
-				max_new_tokens: Math.max(1, options?.max_length ?? 512),
+				max_new_tokens: diagnostics.maxNewTokens,
 				do_sample: doSample,
 				...(doSample ? { temperature } : {}),
 				streamer,
@@ -536,9 +572,11 @@ class LocalModelStore {
 
 			return decoded[0] ?? "";
 		} catch (error) {
-			const rawMessage = error instanceof Error ? error.message : String(error);
-			console.error(`[local-model] ${spec.id} generation failed:`, rawMessage);
-			throw new Error(classifyLocalModelError(rawMessage, spec));
+			const failure = diagnostics.error(error, classifyLocalModelError(localModelErrorMessage(error), spec));
+			console.error(`[local-model] ${spec.id} generation failed:`, failure);
+			throw failure;
+		} finally {
+			diagnostics.finish();
 		}
 	}
 

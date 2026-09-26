@@ -1,0 +1,75 @@
+{
+  "sourceRepository": "https://github.com/NandhaKishorM/laya",
+  "sourceRevision": "970dc8c5f63d7b886a68409493f37d569424f933",
+  "sourceVersion": "0.3.20",
+  "plannedRuntime": {
+    "torch": "2.8.0",
+    "transformers": "5.17.0",
+    "fast": false,
+    "compile": false
+  },
+  "models": [
+    {
+      "providerId": "laya-english",
+      "repository": "convaiinnovations/laya",
+      "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+      "rawModelId": "laya-rl-agent",
+      "defaultMaxLen": 512,
+      "runMaxLen": 1024,
+      "headMaxLen": 192,
+      "maxStateTokens": 459,
+      "maxUnclippedTokens": 623,
+      "questionRows": 1522,
+      "nativeDefaultClippedRows": 78,
+      "optionOver48Rows": 0,
+      "fullContextTokenAuditFile": "/home/diogenes/Projects/keating/.keating/tmp/laya-source/laya-token-audit.json"
+    },
+    {
+      "providerId": "laya-multilingual",
+      "repository": "convaiinnovations/laya-multilingual",
+      "revision": "e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+      "rawModelId": "laya-rl-agent",
+      "defaultMaxLen": 1024,
+      "runMaxLen": 1024,
+      "headMaxLen": 256,
+      "maxStateTokens": 455,
+      "maxUnclippedTokens": 622,
+      "questionRows": 1522,
+      "nativeDefaultClippedRows": 0,
+      "optionOver48Rows": 0,
+      "fullContextTokenAuditFile": "/home/diogenes/Projects/keating/.keating/tmp/laya-source/laya-multilingual-token-audit.json"
+    },
+    {
+      "providerId": "laya-typed-decisions",
+      "repository": "convaiinnovations/laya-typed-decisions",
+      "revision": "1a793eb568e6718f15941d08f85432581df534e3",
+      "rawModelId": "laya-rl-agent",
+      "defaultMaxLen": 1024,
+      "runMaxLen": 1024,
+      "headMaxLen": 256,
+      "maxStateTokens": 459,
+      "maxUnclippedTokens": 623,
+      "questionRows": 1522,
+      "nativeDefaultClippedRows": 0,
+      "optionOver48Rows": 0,
+      "fullContextTokenAuditFile": "/home/diogenes/Projects/keating/.keating/tmp/laya-source/laya-typed-decisions-token-audit.json"
+    }
+  ],
+  "scope": "Token-only full frozen plan audit; no model inference performed. Runner also compares exact upstream sequences against uncropped token assembly before every inference.",
+  "serving": "Direct pinned Agent.system_one; upstream HTTP endpoint does not forward token budget overrides; all original question batches preserved.",
+  "actualRuntime": {
+    "torch": "2.9.0+cu129",
+    "transformers": "5.17.0",
+    "tokenizers": "0.23.2",
+    "safetensors": "0.8.0",
+    "huggingface_hub": "1.32.0",
+    "laya": "0.3.20"
+  },
+  "actualDevice": "cuda",
+  "actualBatchCallsPerModel": 50,
+  "actualFullContextQuestionRowsPerModel": 1522,
+  "notes": [
+    "The initial planned Torch2.8 version was superseded by observed pinned-container Torch2.9.0+cu129 before inference.",
+    "choice:11+ temperature clamp warns on checkpoint load, but no benchmark Choice has more than3 options, so this bucket affects no rows."
+  ]
+}

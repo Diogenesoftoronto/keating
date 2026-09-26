@@ -16,6 +16,7 @@ import {
 } from "../../../shared/pedagogy/benchmark-real";
 import { DEFAULT_ENGAGEMENT_POLICY, formatDaysAgo } from "../../../shared/pedagogy/engagement";
 import { formatMapElitesRun, placeInMapElitesGrid } from "../../../shared/pedagogy/map-elites";
+import { familyOf, guessField } from "../../../shared/pedagogy/domains";
 import type { ScoreableLearnerOutcome } from "../../../shared/pedagogy/benchmark-real";
 import type {
 	BenchmarkMeasurement,
@@ -271,45 +272,11 @@ const TOPICS: Record<string, TopicDefinition> = {
 	},
 };
 
-const DOMAIN_KEYWORDS: Record<string, Domain> = {
-	function: "code",
-	algorithm: "code",
-	programming: "code",
-	code: "code",
-	class: "code",
-	database: "code",
-	theorem: "math",
-	proof: "math",
-	calculus: "math",
-	algebra: "math",
-	evolution: "science",
-	quantum: "science",
-	relativity: "science",
-	ethics: "philosophy",
-	logic: "philosophy",
-	court: "law",
-	statute: "law",
-	democracy: "politics",
-	memory: "psychology",
-	diagnosis: "medicine",
-	painting: "arts",
-	music: "arts",
-	war: "history",
-	revolution: "history",
-};
-
-function guessDomain(slug: string): Domain {
-	const words = slug.split("-");
-	for (const word of words) {
-		if (DOMAIN_KEYWORDS[word]) return DOMAIN_KEYWORDS[word];
-	}
-	return "general";
-}
-
 function buildFallbackTopic(rawTopic: string): TopicDefinition {
 	const title = titleCase(rawTopic.trim());
 	const slug = slugify(rawTopic);
-	const domain = guessDomain(slug);
+	const field = guessField(slug);
+	const domain = field ? familyOf(field) : "general";
 	return {
 		slug,
 		title,

@@ -1,34 +1,13 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 
-// Match the shim convention used by the other storage-backed web tests, but
-// keep a real listener registry so the subscribe test exercises dispatch.
+// Isolate storage and use native events so this fixture cannot change the
+// constructors used by EventTargets in later test files.
 const values = new Map<string, string>();
-const listeners = new Map<string, Array<(event: unknown) => void>>();
-(globalThis as any).localStorage = {
+const storage = {
   getItem: (key: string) => values.get(key) ?? null,
   setItem: (key: string, value: string) => values.set(key, value),
   removeItem: (key: string) => values.delete(key),
   clear: () => values.clear(),
-};
-(globalThis as any).window = {
-  dispatchEvent: (event: { type: string }) => {
-    for (const listener of listeners.get(event.type) ?? []) listener(event);
-    return true;
-  },
-  addEventListener: (type: string, listener: (event: unknown) => void) => {
-    listeners.set(type, [...(listeners.get(type) ?? []), listener]);
-  },
-  removeEventListener: (type: string, listener: (event: unknown) => void) => {
-    listeners.set(type, (listeners.get(type) ?? []).filter((entry) => entry !== listener));
-  },
-};
-(globalThis as any).CustomEvent = class {
-  type: string;
-  detail: unknown;
-  constructor(type: string, init?: { detail?: unknown }) {
-    this.type = type;
-    this.detail = init?.detail;
-  }
 };
 
 import {
@@ -41,13 +20,26 @@ import { DESKTOP_OFFLINE_MODEL } from "../lib/desktop-offline";
 
 const KEY = "keating:judgement-model";
 
-beforeEach(() => { localStorage.clear(); delete window.keatingOffline; });
-afterEach(() => { localStorage.clear(); delete window.keatingOffline; });
+let previousWindow: PropertyDescriptor | undefined;
+let previousStorage: PropertyDescriptor | undefined;
+beforeEach(() => {
+  previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  previousStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  values.clear();
+  Object.defineProperty(globalThis, "window", { configurable: true, writable: true, value: Object.assign(new EventTarget(), { CustomEvent }) });
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, writable: true, value: storage });
+});
+afterEach(() => {
+  if (previousWindow) Object.defineProperty(globalThis, "window", previousWindow);
+  else Reflect.deleteProperty(globalThis, "window");
+  if (previousStorage) Object.defineProperty(globalThis, "localStorage", previousStorage);
+  else Reflect.deleteProperty(globalThis, "localStorage");
+});
 
 describe("the judgement model is configured independently of the tutor model", () => {
-  test("defaults to the installed local model with the hosted tier opted out", () => {
+  test("defaults to hosted review while retaining the selected local fallback model", () => {
     const settings = loadJudgementModelSettings();
-    expect(settings.backend).toBe("local");
+    expect(settings.backend).toBe("hosted");
     expect(settings.localModelId).toBe("RASMUS/MiniCPM5-2B-ONNX");
   });
   test("a chosen judgement model round-trips without touching tutor settings", () => {
@@ -56,8 +48,9 @@ describe("the judgement model is configured independently of the tutor model", (
     expect(localStorage.getItem("keating_model_prefs")).toBeNull();
     expect(localStorage.getItem("keating_ui_settings")).toBeNull();
   });
-  test("escalating to the hosted tier is an explicit stored choice", () => {
-    expect(loadJudgementModelSettings().backend).not.toBe("hosted");
+  test("an explicit local-only choice persists until hosted review is selected", () => {
+    saveJudgementModelSettings({ ...DEFAULT_JUDGEMENT_MODEL_SETTINGS, backend: "local" });
+    expect(loadJudgementModelSettings().backend).toBe("local");
     saveJudgementModelSettings({ ...DEFAULT_JUDGEMENT_MODEL_SETTINGS, backend: "hosted" });
     expect(loadJudgementModelSettings().backend).toBe("hosted");
   });
@@ -89,9 +82,9 @@ describe("stored settings are normalized rather than trusted", () => {
       expect(loadJudgementModelSettings()).toEqual(DEFAULT_JUDGEMENT_MODEL_SETTINGS);
     }
   });
-  test("an unknown backend value does not silently become hosted", () => {
+  test("an unknown backend value falls back to the default review mode", () => {
     localStorage.setItem(KEY, JSON.stringify({ backend: "everything", localModelId: "m", gatewayPath: "/g" }));
-    expect(loadJudgementModelSettings().backend).toBe("local");
+    expect(loadJudgementModelSettings().backend).toBe(DEFAULT_JUDGEMENT_MODEL_SETTINGS.backend);
   });
   test("an off-origin gateway is rejected so a credential cannot be shipped to a third party", () => {
     for (const gatewayPath of [

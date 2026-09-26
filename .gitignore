@@ -118,6 +118,8 @@ docs/drafts/
 /history.txt
 
 # HyperFrames render artifacts
+.hyperframes/
+video/*/renders/
 video/*/snapshots/
 video/*/.thumbnails/
 

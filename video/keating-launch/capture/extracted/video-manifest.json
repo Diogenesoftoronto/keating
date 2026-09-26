@@ -1,0 +1,29 @@
+[
+  {
+    "index": 0,
+    "url": "https://keating.help/landing/clips/office-rage.mp4",
+    "filename": "office-rage.mp4",
+    "width": 416,
+    "height": 258,
+    "sourceWidth": 498,
+    "sourceHeight": 254,
+    "heading": "You asked to learn.You got more to read.",
+    "caption": "You asked to learn.You got more to read.",
+    "ariaLabel": "An office worker loses patience with his CRT computer.",
+    "preview": "assets/videos/previews/video-0-preview.png",
+    "localPath": "assets/videos/office-rage.mp4"
+  },
+  {
+    "index": 1,
+    "url": "https://keating.help/landing/clips/moss-rage.mp4",
+    "filename": "moss-rage.mp4",
+    "width": 0,
+    "height": 0,
+    "sourceWidth": 0,
+    "sourceHeight": 0,
+    "heading": "",
+    "caption": "",
+    "ariaLabel": "",
+    "localPath": "assets/videos/moss-rage.mp4"
+  }
+]

@@ -19,6 +19,10 @@ Keating exists because as AI grows more capable, the risk is not just that it re
 
 We use technology to ensure the "powerful play" goes on, and that every learner is equipped to contribute their own verse.
 
+[![Watch the Keating 4.0 launch film (70 seconds)](https://keating.help/tapes/posters/keating-4-launch.jpg)](https://keating.help/tapes/keating-4-launch.mp4)
+
+Watch the [narrated introduction](https://keating.help/tapes/keating-intro.mp4) or the [32-second surface tour](https://keating.help/tapes/keating-surface-tour.mp4), or see every film on [keating.help](https://keating.help/#watch-keating).
+
 It is designed around five influences:
 
 - `feynman` for the shell ergonomics, slash workflows, and artifact-oriented research UX.

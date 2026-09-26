@@ -1,0 +1,22 @@
+{
+  "$comment": "Kinetic-typography changelog: no voice, music only, cuts on the beat. `beats` is how many beats each card holds. Every claim is taken from the spotlight narrations; keep it that way.",
+  "label": "KEATING // 4.0",
+  "format": "changelog — 1:1 kinetic typography cut to the music, no voice",
+  "output": "keating-changelog",
+  "size": [1080, 1080],
+  "voice": false,
+  "scenes": [
+    { "id": "open", "beats": 4, "big": "KEATING 4.0", "small": "what's new" },
+    { "id": "judge", "beats": 4, "big": "JUDGEMENTS", "small": "your answer first · an independent judge second" },
+    { "id": "flag", "beats": 2, "big": "FLAG IT", "small": "if the review missed something" },
+    { "id": "states", "beats": 3, "big": "288", "small": "practice states tune what you practise next", "count": 288 },
+    { "id": "recall", "beats": 4, "big": "LOCAL RECALL", "small": "your earlier work, quoted with its source" },
+    { "id": "mb", "beats": 2, "big": "36 MB", "small": "on your own machine", "count": 36 },
+    { "id": "search", "beats": 3, "big": "SEARCH BY MEANING", "small": "find sessions by idea, not keyword" },
+    { "id": "live", "beats": 4, "big": "GPT LIVE", "small": "just talk" },
+    { "id": "ceiling", "beats": 3, "big": "SPENDING CEILING", "small": "end the call, the mic stops at once" },
+    { "id": "first", "beats": 4, "big": "FIRST RUN", "small": "every step optional" },
+    { "id": "teacher", "beats": 3, "big": "YOUR TEACHER", "small": "persona · voice · how it speaks" },
+    { "id": "close", "beats": 6, "big": "keating.help", "small": "" }
+  ]
+}

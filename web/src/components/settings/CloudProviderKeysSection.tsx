@@ -21,6 +21,7 @@ import {
 	notOrganicPublicClient,
 } from "../../notorganic-provider";
 import { recordDiagnostic } from "../../lib/diagnostics";
+import { notifyProviderCredentialsChanged } from "../../keating/model-prefs";
 import { css } from "../../../styled-system/css";
 
 const sectionClass = css({ display: "flex", flexDirection: "column", gap: "1rem", scrollMarginTop: "5rem" });
@@ -127,6 +128,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			const providerNames = oauthProviderToProviderNames(result.provider);
 			setOAuthStatus((prev) => setProviderAliases(prev, providerNames, true));
 			setOAuthErrors((prev) => setProviderAliases(prev, providerNames, ""));
+			notifyProviderCredentialsChanged(provider);
 		} else {
 			recordDiagnostic("error", "auth", "Provider sign-in failed", { provider, method: "device-code" });
 			setOAuthErrors((prev) => ({
@@ -177,6 +179,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 							getNotOrganicWallet(),
 						]);
 						status[provider] = true;
+						notifyProviderCredentialsChanged(provider);
 						const balance = typeof wallet.balance_microusd === "number"
 							? `$${(wallet.balance_microusd / 1_000_000).toFixed(2)} available`
 							: "Wallet connected";
@@ -255,6 +258,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			} else {
 				await storage.providerKeys.delete(provider);
 			}
+			notifyProviderCredentialsChanged(provider);
 			setKeyErrors((prev) => ({ ...prev, [provider]: "" }));
 			recordDiagnostic("info", "auth", value.trim() ? "Provider API key saved" : "Provider API key removed", { provider, method: "api-key" });
 		} catch (error) {
@@ -363,6 +367,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			setOAuthInputs((prev) => setProviderAliases(prev, statusProviders, ""));
 			setOAuthErrors((prev) => setProviderAliases(prev, statusProviders, ""));
 			setOauthLoading((prev) => setProviderAliases(prev, statusProviders, false));
+			notifyProviderCredentialsChanged(result.provider);
 		} else {
 			recordDiagnostic("error", "auth", "Provider sign-in failed", { provider, method: "manual-code" });
 			setOAuthErrors((prev) => ({ ...prev, [provider]: result.error ?? "OAuth sign-in failed." }));
@@ -389,6 +394,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			await notOrganicPublicClient()?.signOut();
 			setOAuthStatus((prev) => ({ ...prev, [provider]: false }));
 			setHostedSummary("");
+			notifyProviderCredentialsChanged(provider);
 			recordDiagnostic("info", "auth", "Provider signed out", { provider });
 			return;
 		}
@@ -397,6 +403,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 		await deleteOAuthCredentials(oauthId);
 		const storage = getAppStorage();
 		await storage.providerKeys.delete(provider);
+		notifyProviderCredentialsChanged(provider);
 		setOAuthStatus((prev) => ({ ...prev, [provider]: false }));
 		setKeys((prev) => ({ ...prev, [provider]: "" }));
 		recordDiagnostic("info", "auth", "Provider signed out", { provider });

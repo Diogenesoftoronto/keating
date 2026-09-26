@@ -11,7 +11,7 @@ import {
   type RouterPolicy,
 } from "@keating/learner-contracts";
 import { desktopOfflineBridge, DESKTOP_OFFLINE_MODEL, type DesktopOfflineBridge } from "../../lib/desktop-offline";
-import { DEFAULT_JUDGEMENT_MODEL_SETTINGS, loadJudgementModelSettings, type JudgementModelSettings } from "../judgement-model";
+import { DEFAULT_JUDGEMENT_MODEL_SETTINGS, JEV_REQUEST_TOKEN_LIMIT, JEV_STATE_QUESTION_TOKEN_LIMIT, loadJudgementModelSettings, type JudgementModelSettings } from "../judgement-model";
 import { createDesktopLocalLabelScorer } from "./local-scorer";
 import { createWebJudgementCaller, WEB_JUDGEMENT_MODEL_ALIAS, type WebJudgementCallerOptions } from "./transport";
 import { createPublicAccountJudgementBackend, type JudgementAccountClient } from "./public-account";
@@ -30,9 +30,14 @@ export interface WebJudgementRuntimeOptions {
   readonly settings?: JudgementModelSettings;
   readonly desktopBridge?: DesktopOfflineBridge;
   /** Future browser/other local runtimes must explicitly name their model. */
-  readonly localScorer?: { readonly modelId: string; readonly scoreLabels: LocalLabelScorer };
+  readonly localScorer?: { readonly modelId: string; readonly scoreLabels: LocalLabelScorer; readonly contextWindowTokens?: number | null };
   readonly hosted?: Pick<WebJudgementCallerOptions, "model" | "fetch" | "sleep"> & {
     readonly accountClient?: JudgementAccountClient | null;
+    /** Provider-specific limits; omit to use Jev's documented defaults when selected. */
+    readonly requestTokens?: number | null;
+    readonly stateQuestionTokens?: number | null;
+    /** Legacy alias for stateQuestionTokens. */
+    readonly contextWindowTokens?: number | null;
   };
   /** No defaults: local and hosted thresholds are measured separately. */
   readonly calibration?: { readonly local?: WebJudgementCalibration; readonly hosted?: WebJudgementCalibration };
@@ -42,6 +47,8 @@ export interface WebJudgementRuntimeOptions {
 
 export interface WebJudgementRuntime {
   readonly settings: JudgementModelSettings;
+  /** Effective budgets of the active judgement model, or null when a limit is unknown. */
+  readonly judgementModel?: { readonly id: string; readonly requestTokens: number | null; readonly stateQuestionTokens: number | null };
   /** Pass directly to existing routeJudgement(s)/assessment helpers. */
   readonly policy: RouterPolicy;
 }
@@ -79,8 +86,9 @@ function calibratedEntries(key: JudgementBackendKey, calibration?: WebJudgementC
 /**
  * One immutable configuration per operation/experiment. Rebuild between runs
  * when settings change; a running comparison keeps its original pin and table.
- * `local` never calls hosted inference; `hosted` permits local-first escalation
- * to the account gateway; `off` retains only the caller's deterministic baseline.
+ * `local` never calls hosted inference; `hosted` tries hosted inference first
+ * and falls back to local scoring when available; `off` retains only the
+ * caller's deterministic baseline.
  * Missing calibration stays unknown, so the shared router makes no model call.
  */
 export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = {}): WebJudgementRuntime {
@@ -89,6 +97,12 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
     backend: requested.backend === "hosted" || requested.backend === "off" ? requested.backend : "local",
     localModelId: requested.localModelId,
     gatewayPath: gatewayPath(requested.gatewayPath),
+    requestTokens: typeof requested.requestTokens === "number" && Number.isSafeInteger(requested.requestTokens)
+      && requested.requestTokens >= 512 && requested.requestTokens <= 2_000_000 ? requested.requestTokens : null,
+    stateQuestionTokens: typeof requested.stateQuestionTokens === "number" && Number.isSafeInteger(requested.stateQuestionTokens)
+      && requested.stateQuestionTokens >= 512 && requested.stateQuestionTokens <= 2_000_000 ? requested.stateQuestionTokens
+      : typeof requested.contextWindowTokens === "number" && Number.isSafeInteger(requested.contextWindowTokens)
+        && requested.contextWindowTokens >= 512 && requested.contextWindowTokens <= 2_000_000 ? requested.contextWindowTokens : null,
   });
   const installation = settings.backend !== "off" && options.calibration === undefined ? options.calibrationStore ?? webJudgementCalibrationStore() : null;
   if (installation) void installation.ensureLoaded();
@@ -115,7 +129,8 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   if (settings.backend === "hosted") {
     const model = options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;
     const key = calibrationKey("system-one", model, calibration?.hosted);
-    const account = !options.hosted?.fetch || options.hosted?.accountClient
+    const sameOrigin = import.meta.env?.VITE_KEATING_JUDGEMENT_SAME_ORIGIN === "true";
+    const account = !sameOrigin && (!options.hosted?.fetch || options.hosted?.accountClient)
       ? createPublicAccountJudgementBackend({ client: options.hosted?.accountClient,
         model: key.model, calibrationSha256: key.calibrationSha256, sleep: options.hosted?.sleep }) : null;
     const hosted = createWebJudgementCaller({
@@ -127,13 +142,43 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
     Object.assign(entries, calibratedEntries(key, calibration?.hosted));
   }
 
+  const orderedTiers = settings.backend === "hosted" ? [...tiers].reverse() : tiers;
   const policy: RouterPolicy = Object.freeze({
-    tiers: Object.freeze(tiers.map(tier => Object.freeze({ ...tier,
+    tiers: Object.freeze(orderedTiers.map(tier => Object.freeze({ ...tier,
       ...(installation ? { isAvailable: () => installation.current(generation!) && (tier.isAvailable?.() ?? true) } : {}),
       call: observeJudgementCaller(installation ? guardCalibrationCall(tier.call, installation, generation!) : tier.call, tier.key),
     }))),
     calibration: Object.freeze({ entries: Object.freeze(entries) }),
     ...(options.pinnedBackend ? { pinnedBackend: Object.freeze({ ...options.pinnedBackend }) } : {}),
   });
-  return Object.freeze({ settings, policy });
+  const hostedModel = options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;
+  const isJevModel = hostedModel === "jev-latest" || hostedModel === "jev-preview" || /^jev-\d/.test(hostedModel);
+  const localNativeContextWindow = options.localScorer?.contextWindowTokens
+    ?? (settings.localModelId === DESKTOP_OFFLINE_MODEL.id && typeof (options.desktopBridge ?? desktopOfflineBridge())?.scoreLabels === "function"
+      ? DESKTOP_OFFLINE_MODEL.contextWindow : null);
+  const localRequestTokens = localNativeContextWindow ?? settings.requestTokens ?? null;
+  const localStateQuestionTokens = localNativeContextWindow ?? settings.stateQuestionTokens ?? null;
+  const hostedRequestTokens = options.hosted?.requestTokens ?? settings.requestTokens
+    ?? (isJevModel ? JEV_REQUEST_TOKEN_LIMIT : null);
+  const hostedStateQuestionTokens = options.hosted?.stateQuestionTokens ?? options.hosted?.contextWindowTokens ?? settings.stateQuestionTokens
+    ?? (isJevModel ? JEV_STATE_QUESTION_TOKEN_LIMIT : null);
+  const localFallbackAvailable = options.localScorer?.modelId === settings.localModelId
+    || settings.localModelId === DESKTOP_OFFLINE_MODEL.id && typeof (options.desktopBridge ?? desktopOfflineBridge())?.scoreLabels === "function";
+  const activeRequestLimits = settings.backend === "hosted"
+    ? [hostedRequestTokens, ...(localFallbackAvailable ? [localRequestTokens] : [])]
+    : settings.backend === "local" ? [localRequestTokens] : [];
+  const activeStateQuestionLimits = settings.backend === "hosted"
+    ? [hostedStateQuestionTokens, ...(localFallbackAvailable ? [localStateQuestionTokens] : [])]
+    : settings.backend === "local" ? [localStateQuestionTokens] : [];
+  const minimumKnown = (values: readonly (number | null)[]) => {
+    const known = values.filter((value): value is number => typeof value === "number"
+      && Number.isSafeInteger(value) && value >= 512 && value <= 2_000_000);
+    return known.length ? Math.min(...known) : null;
+  };
+  const judgementModel = Object.freeze({
+    id: settings.backend === "hosted" ? hostedModel : settings.localModelId,
+    requestTokens: minimumKnown(activeRequestLimits),
+    stateQuestionTokens: minimumKnown(activeStateQuestionLimits),
+  });
+  return Object.freeze({ settings, policy, judgementModel });
 }

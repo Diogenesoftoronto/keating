@@ -9,6 +9,7 @@ import {
 
 export const NOTORGANIC_PROVIDER_ID = "notorganic";
 export const NOTORGANIC_MODEL_ALIAS = "balanced";
+export const NOTORGANIC_IMAGE_MODEL_ALIAS = "image";
 export const NOTORGANIC_FEATURE = "keating:web-chat";
 export const NOTORGANIC_PROXY_BASE_PATH = "/api/notorganic/openai/v1";
 
@@ -17,6 +18,10 @@ export function notOrganicOpenAiBaseUrl(origin = currentOrigin()): string {
 	return publicConfig
 		? `${publicConfig.issuer}/v1`
 		: `${origin.replace(/\/+$/, "")}${NOTORGANIC_PROXY_BASE_PATH}`;
+}
+
+export function notOrganicOpenAiImageEndpoint(origin = currentOrigin()): string {
+	return `${notOrganicOpenAiBaseUrl(origin)}/images/generations`;
 }
 
 export const NOTORGANIC_DEFAULT_MODEL: Model<"openai-completions"> = {

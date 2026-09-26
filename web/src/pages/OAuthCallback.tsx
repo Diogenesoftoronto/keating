@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { usePostHog } from "@posthog/react";
 import { completeOAuthFromInput, OAUTH_MESSAGE_CHANNEL, type OAuthCallbackResult } from "../keating/oauth";
 import { css, cx } from "../../styled-system/css";
+import { KeatingBot } from "../components/KeatingBot";
 
 function oauthErrorType(error: string): string {
 	const normalized = error.toLowerCase();
@@ -16,6 +17,7 @@ function oauthErrorType(error: string): string {
 const styles = {
 	page: css({ display: "flex", minH: "100vh", alignItems: "center", justifyContent: "center", bg: "var(--background)" }),
 	card: css({ maxW: "28rem", borderRadius: "0.5rem", border: "1px solid var(--border)", bg: "var(--card)", p: "2rem", textAlign: "center", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)" }),
+	scene: css({ display: "flex", justifyContent: "center", mb: "0.75rem" }),
 	spinner: css({ mx: "auto", mb: "1rem", h: "2rem", w: "2rem", animation: "spin 1s linear infinite", borderRadius: "9999px", border: "2px solid var(--primary)", borderTopColor: "transparent" }),
 	icon: css({ mx: "auto", mb: "1rem", display: "flex", h: "2.5rem", w: "2.5rem", alignItems: "center", justifyContent: "center", borderRadius: "9999px" }),
 	successIcon: css({ bg: "color-mix(in srgb, var(--primary) 10%, transparent)", color: "var(--primary)" }),
@@ -47,9 +49,11 @@ export function OAuthCallback() {
 			<div className={styles.card}>
 				{result === null ? (
 					<>
-						<div className={styles.spinner} />
-						<h2 className={styles.title}>Signing in...</h2>
-						<p className={styles.copy}>Completing authentication, please wait.</p>
+						{/* A bot plugging itself in reads as progress in a way a spinner
+						    does not, and this screen is often the longest wait in the flow. */}
+						<div className={styles.scene}><KeatingBot size={96} state="connecting" label="" /></div>
+						<h2 className={styles.title}>Signing you in…</h2>
+						<p className={styles.copy}>Finishing up with your provider. This usually takes a moment.</p>
 					</>
 				) : result.success ? (
 					<>

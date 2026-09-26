@@ -23,6 +23,8 @@ export interface NotOrganicPublicToken {
 	token_type: "DPoP";
 	expires_in: number;
 	scope: string;
+	refresh_token?: string;
+	refresh_expires_in?: number;
 }
 
 export interface NotOrganicProviderSession {
@@ -30,6 +32,11 @@ export interface NotOrganicProviderSession {
 	expiresAt: number;
 	scope: string;
 	returnTo?: string;
+	/** Rotating device-session credential; lets the 5-minute access token renew without another sign-in. */
+	refreshToken?: string;
+	refreshExpiresAt?: number;
+	/** Stable across refreshes; changes only when the learner signs in again. */
+	id?: string;
 }
 
 interface AuthorizationTransaction {
@@ -63,6 +70,9 @@ const SESSION_KEY = "keating.notorganic.session";
 const DPOP_DATABASE = "keating-notorganic";
 const DPOP_STORE = "keys";
 const DPOP_KEY = "browser-dpop";
+const DEVICE_NAME = "Keating web";
+const REFRESH_MARGIN = 15_000;
+const refreshes = new Map<string, Promise<NotOrganicProviderSession | null>>();
 
 function requestId(): string {
 	return `keating_${crypto.randomUUID()}`;
@@ -104,6 +114,47 @@ function readJson<T>(key: string): T | null {
 		requireBrowserStorage().removeItem(key);
 		return null;
 	}
+}
+
+/** The signed-in session outlives a tab; PKCE state stays tab-scoped in sessionStorage. */
+function sessionStore(): Storage {
+	try {
+		if (typeof localStorage !== "undefined") return localStorage;
+	} catch { /* Blocked storage falls back to the tab. */ }
+	return requireBrowserStorage();
+}
+
+function readSession(): NotOrganicProviderSession | null {
+	const storage = sessionStore();
+	const value = storage.getItem(SESSION_KEY);
+	if (!value) return null;
+	try {
+		return JSON.parse(value) as NotOrganicProviderSession;
+	} catch {
+		storage.removeItem(SESSION_KEY);
+		return null;
+	}
+}
+
+function writeSession(session: NotOrganicProviderSession): void {
+	sessionStore().setItem(SESSION_KEY, JSON.stringify(session));
+}
+
+function clearSession(): void {
+	sessionStore().removeItem(SESSION_KEY);
+	requireBrowserStorage().removeItem(SESSION_KEY);
+}
+
+const accessValid = (session: NotOrganicProviderSession, now: number) =>
+	!!session.accessToken && Number.isFinite(session.expiresAt) && session.expiresAt > now + REFRESH_MARGIN;
+const refreshValid = (session: NotOrganicProviderSession, now: number) =>
+	typeof session.refreshToken === "string" && !!session.refreshToken
+	&& Number.isFinite(session.refreshExpiresAt) && session.refreshExpiresAt! > now + REFRESH_MARGIN;
+
+/** Refresh tokens rotate, so only one tab may spend one at a time. */
+async function withRefreshLock<T>(name: string, task: () => Promise<T>): Promise<T> {
+	const locks = typeof navigator === "undefined" ? undefined : navigator.locks;
+	return locks ? await locks.request(name, task) : await task();
 }
 
 function writeJson(key: string, value: unknown): void {
@@ -217,8 +268,8 @@ export function publicClientConfig(
 		authorizationUrl,
 		clientId,
 		redirectUri,
-		scope: env.VITE_NOTORGANIC_SCOPE
-			?? "wallet:read usage:read billing:checkout infer:balanced realtime:connect",
+		 scope: env.VITE_NOTORGANIC_SCOPE
+			?? "wallet:read usage:read billing:checkout infer:balanced infer:image realtime:connect",
 	};
 }
 
@@ -228,6 +279,24 @@ export function publicClientMaxCostMicrousd(env: Record<string, string | undefin
 		throw new NotOrganicPublicClientError("VITE_NOTORGANIC_MAX_COST_MICROUSD must be a positive integer.");
 	}
 	return configured;
+}
+
+function sessionFromToken(token: Partial<NotOrganicPublicToken>, base: Pick<NotOrganicProviderSession, "id" | "returnTo" | "refreshToken" | "refreshExpiresAt">): NotOrganicProviderSession | null {
+	if (typeof token.access_token !== "string" || !token.access_token || token.token_type !== "DPoP"
+		|| typeof token.expires_in !== "number" || !Number.isFinite(token.expires_in) || token.expires_in <= 0) return null;
+	const now = Date.now();
+	const rotated = typeof token.refresh_token === "string" && !!token.refresh_token
+		&& typeof token.refresh_expires_in === "number" && Number.isFinite(token.refresh_expires_in) && token.refresh_expires_in > 0;
+	return {
+		accessToken: token.access_token,
+		expiresAt: now + token.expires_in * 1_000,
+		scope: typeof token.scope === "string" ? token.scope : "",
+		...(base.id ? { id: base.id } : {}),
+		...(base.returnTo ? { returnTo: base.returnTo } : {}),
+		...(rotated
+			? { refreshToken: token.refresh_token, refreshExpiresAt: now + token.refresh_expires_in! * 1_000 }
+			: base.refreshToken ? { refreshToken: base.refreshToken, refreshExpiresAt: base.refreshExpiresAt } : {}),
+	};
 }
 
 export class NotOrganicPublicClient {
@@ -255,13 +324,57 @@ export class NotOrganicPublicClient {
 		return url.toString();
 	}
 
+	/**
+	 * The signed-in session, if its access token is current or can be renewed.
+	 * Its access token may be stale: send requests through request()/headersFor(),
+	 * or await activeSession() for a current one.
+	 */
 	getSession(): NotOrganicProviderSession | null {
-		const session = readJson<NotOrganicProviderSession>(SESSION_KEY);
-		if (!session || !session.accessToken || !Number.isFinite(session.expiresAt) || session.expiresAt <= Date.now() + 15_000) {
-			requireBrowserStorage().removeItem(SESSION_KEY);
+		const session = readSession();
+		const now = Date.now();
+		if (!session || (!accessValid(session, now) && !refreshValid(session, now))) {
+			if (session) clearSession();
 			return null;
 		}
 		return session;
+	}
+
+	/** The session with a current access token, renewing it through the device session when needed. */
+	async activeSession(): Promise<NotOrganicProviderSession | null> {
+		const session = this.getSession();
+		if (!session) return null;
+		if (accessValid(session, Date.now())) return session;
+		const key = this.config.issuer;
+		const pending = refreshes.get(key);
+		if (pending) return await pending;
+		const refresh = withRefreshLock(`keating-notorganic-refresh:${key}`, () => this.refreshSession())
+			.finally(() => refreshes.delete(key));
+		refreshes.set(key, refresh);
+		return await refresh;
+	}
+
+	private async refreshSession(): Promise<NotOrganicProviderSession | null> {
+		// Another tab may have rotated the token while this one waited for the lock.
+		const current = this.getSession();
+		if (!current || accessValid(current, Date.now())) return current;
+		const refreshToken = current.refreshToken!;
+		const url = `${this.config.issuer}/v1/public/device/token`;
+		const response = await this.fetcher(url, {
+			method: "POST",
+			headers: { "content-type": "application/json", dpop: await dpopProof({ method: "POST", url, accessToken: refreshToken }) },
+			body: JSON.stringify({ grant_type: "refresh_token", refresh_token: refreshToken }),
+		});
+		const token = await response.json().catch(() => null) as Partial<NotOrganicPublicToken> | null;
+		// Signing out while the request was in flight cancels its authority to write.
+		if (readSession()?.refreshToken !== refreshToken) return this.getSession();
+		if (response.status === 400 || response.status === 401 || response.status === 403) {
+			clearSession();
+			return null;
+		}
+		const next = response.ok && token ? sessionFromToken(token, current) : null;
+		if (!next) throw new NotOrganicPublicClientError("Not Organic could not renew your session. Check your connection and try again.");
+		writeSession(next);
+		return next;
 	}
 
 	async completeAuthorization(search: URLSearchParams): Promise<NotOrganicProviderSession> {
@@ -279,7 +392,7 @@ export class NotOrganicPublicClient {
 		if (!transaction && code && state && !search.has("error")) {
 			const receipt = readJson<AuthorizationReceipt>(RECEIPT_KEY);
 			if (receipt && matches(receipt) && receipt.codeHash === await sha256Base64Url(code)) {
-				const session = this.getSession();
+				const session = await this.activeSession().catch(() => this.getSession());
 				if (session) return session;
 			}
 		}
@@ -309,12 +422,13 @@ export class NotOrganicPublicClient {
 		const response = await this.fetcher(`${this.config.issuer}/v1/public/token`, {
 			method: "POST",
 			headers: { "content-type": "application/json" },
-			body: JSON.stringify({ code, code_verifier: transaction.verifier, client_id: this.config.clientId, redirect_uri: this.config.redirectUri, dpop_jwk: await dpopPublicJwk() }),
+			body: JSON.stringify({ code, code_verifier: transaction.verifier, client_id: this.config.clientId, redirect_uri: this.config.redirectUri, dpop_jwk: await dpopPublicJwk(), device_session: true, device_name: DEVICE_NAME }),
 		});
 		const token = await response.json().catch(() => null) as Partial<NotOrganicPublicToken> | null;
-		if (!response.ok || !token || typeof token.access_token !== "string" || !token.access_token || token.token_type !== "DPoP" || typeof token.expires_in !== "number" || !Number.isFinite(token.expires_in) || token.expires_in <= 0) {
-			throw new NotOrganicPublicClientError("Not Organic could not finish sign-in. Try connecting again.");
-		}
+		const session = response.ok && token
+			? sessionFromToken(token, { id: crypto.randomUUID(), returnTo: safeAuthorizationReturnTo(transaction.returnTo) })
+			: null;
+		if (!session) throw new NotOrganicPublicClientError("Not Organic could not finish sign-in. Try connecting again.");
 		const codeHash = await sha256Base64Url(code);
 		// Signing out or starting a newer login while the request was in flight
 		// cancels its authority to replace the current session/transaction.
@@ -322,16 +436,13 @@ export class NotOrganicPublicClient {
 			|| Date.now() - transaction.createdAt >= AUTHORIZATION_TTL) {
 			throw new NotOrganicPublicClientError("Not Organic sign-in could not be verified. Start the connection again.");
 		}
-		const session = { accessToken: token.access_token, expiresAt: Date.now() + token.expires_in * 1_000, scope: typeof token.scope === "string" ? token.scope : "", returnTo: safeAuthorizationReturnTo(transaction.returnTo) };
-		writeJson(SESSION_KEY, session);
+		writeSession(session);
 		writeJson(RECEIPT_KEY, { state: transaction.state, issuer: transaction.issuer, clientId: transaction.clientId, redirectUri: transaction.redirectUri, createdAt: transaction.createdAt, codeHash } satisfies AuthorizationReceipt);
 		requireBrowserStorage().removeItem(TRANSACTION_KEY);
 		return session;
 	}
 
 	async request(path: string, init: RequestInit = {}): Promise<Response> {
-		const session = this.getSession();
-		if (!session) throw new NotOrganicPublicClientError("Connect your Not Organic account to continue.");
 		const url = new URL(path, `${this.config.issuer}/`).toString();
 		const headers = await this.headersFor(init.method ?? "GET", url, init.headers);
 		const method = (init.method ?? "GET").toUpperCase();
@@ -342,7 +453,7 @@ export class NotOrganicPublicClient {
 	}
 
 	async headersFor(method: string, url: string, initial?: HeadersInit): Promise<Headers> {
-		const session = this.getSession();
+		const session = await this.activeSession();
 		if (!session) throw new NotOrganicPublicClientError("Connect your Not Organic account to continue.");
 		const headers = new Headers(initial);
 		headers.set("authorization", `DPoP ${session.accessToken}`);
@@ -351,7 +462,15 @@ export class NotOrganicPublicClient {
 	}
 
 	async signOut(): Promise<void> {
-		requireBrowserStorage().removeItem(SESSION_KEY);
+		const refreshToken = readSession()?.refreshToken;
+		clearSession();
+		if (refreshToken) {
+			// Best effort: the local session is already gone, and the key is deleted below.
+			const url = `${this.config.issuer}/v1/public/device/revoke`;
+			await dpopProof({ method: "POST", url, accessToken: refreshToken })
+				.then(dpop => this.fetcher(url, { method: "POST", headers: { "content-type": "application/json", dpop }, body: JSON.stringify({ refresh_token: refreshToken }) }))
+				.catch(() => undefined);
+		}
 		requireBrowserStorage().removeItem(TRANSACTION_KEY);
 		requireBrowserStorage().removeItem(RECEIPT_KEY);
 		await deleteDpopKey();

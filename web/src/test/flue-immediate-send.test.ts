@@ -9,7 +9,7 @@ function deferred() {
   const promise = new Promise<void>(done => { resolve = done; });
   return { promise, resolve };
 }
-function fixture(admissionGate?: Promise<void>, missingHistory = false, modelError?: string) {
+function fixture(admissionGate?: Promise<void>, missingHistory = false, modelError?: string, messages: any[] = []) {
   const chat = new FlueConversation({ streamFn: () => {
     const stream = createAssistantMessageEventStream();
     const response = (chat as any).errorMessage("error", modelError);
@@ -18,7 +18,7 @@ function fixture(admissionGate?: Promise<void>, missingHistory = false, modelErr
     return stream;
   }, initialState: { model: {
     id: "fixture", provider: "openai", api: "openai-completions",
-  } as any } }, "unused");
+  } as any, messages } }, "unused");
   const state = chat as any;
   const native = { messages: [] as any[] };
   let calls = 0;
@@ -63,6 +63,17 @@ describe("immediate learner turns", () => {
     await pending;
     expect(calls()).toBe(1);
     expect(chat.context.messages.filter(item => item.role === "user")).toEqual([sent]);
+    await chat.dispose();
+  });
+  it("delivers a turn interrupted before admission as a visible learner message", async () => {
+    const { chat, calls } = fixture(undefined, true, undefined, [message("Sent before signing in")]);
+    expect(chat.localMessages).toEqual([]);
+    await chat.sendRestored();
+    expect(calls()).toBe(1);
+    const users = chat.getSnapshot().conversation?.messages.filter(item => item.role === "user") ?? [];
+    expect(users.map(item => item.parts as unknown)).toEqual([[{ type: "text", text: "Sent before signing in" }]]);
+    expect(chat.legacyMessages).toEqual([]);
+    expect(chat.context.messages.filter(item => item.role === "user")).toHaveLength(1);
     await chat.dispose();
   });
   it("publishes the turn with running state before delayed preparation, then reconciles once", async () => {

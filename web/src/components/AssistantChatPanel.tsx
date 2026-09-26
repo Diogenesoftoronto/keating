@@ -22,6 +22,8 @@ import { chatMascotState } from "./chat-mascot-state";
 import { ChatMascotMenu } from "./ChatMascotMenu";
 import "./chat-mascot.css";
 import { RecordingWaveform } from "./RecordingWaveform";
+import { DraftReviewStatus } from "./DraftReviewStatus";
+import { getTeachingDraftStatus, subscribeTeachingDraftStatus, teachingDraftIsActive } from "../keating/judgement/draft-status";
 import { prepareAudioAttachment } from "../lib/audio-attachment";
 import { rememberRecordingTranscript, recordingHasTranscript } from "../lib/recording-transcripts";
 import type { FlueConversation } from "../keating/flue/conversation";
@@ -36,6 +38,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import type { Key, ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -138,6 +141,9 @@ import type {
   QuizQuestionGrade,
 } from "../keating/core";
 import { KeatingStorage } from "../keating/storage";
+import type { PlanRevisionProposal } from "../keating/plan-revisions";
+import { PlanRevisionCard } from "./PlanRevisionCard";
+import { recordAssistantPresentations } from "../keating/judgement/active-work-host";
 import {
   QuizGradesContext,
   type QuizGradesContextValue,
@@ -179,6 +185,7 @@ import { WebSearchPart } from "./WebSearchPart";
 import { isWebSearchToolName, splitSearchSources } from "./web-search-result";
 import { FailedResponseRecovery } from "./FailedResponseRecovery";
 import { NotOrganicCreditRecovery } from "./NotOrganicCreditRecovery";
+import { ErrorDiagnosticsActions } from "./ErrorDiagnosticsActions";
 import { FlashcardRenderer } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
 import { MermaidRenderer } from "./MermaidRenderer";
@@ -215,6 +222,7 @@ const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(
   () => Promise.resolve(false),
 );
 const quizGradeStorage = new KeatingStorage();
+const LIVE_PRESENTATION_WINDOW_MS = 2 * 60_000;
 
 const capturedApiErrorKeys = new Set<string>();
 const MAX_CAPTURED_API_ERROR_KEYS = 256;
@@ -559,8 +567,16 @@ function StreamingTextPart({
 }) {
   const posthog = usePostHog();
   const messageId = useMessage((message) => message.id);
+  const messageCreatedAt = useMessage((message) => message.createdAt);
 	const sessionId = useContext(OpenUISessionScopeContext);
   const isMarkedError = text.startsWith(ERROR_TEXT_PREFIX);
+  // Only turns completed while this view is open link to the current plan
+  // focus; reopened history must not be linked to today's focus.
+  const liveTurnRef = useRef(
+    status?.type === "running" ||
+      (messageCreatedAt ? Date.now() - messageCreatedAt.getTime() < LIVE_PRESENTATION_WINDOW_MS : false),
+  );
+  if (status?.type === "running") liveTurnRef.current = true;
   const displayText = isMarkedError
     ? text.slice(ERROR_TEXT_PREFIX.length)
     : text;
@@ -624,6 +640,16 @@ function StreamingTextPart({
     });
   }, [displayText, isMarkedError, posthog, status?.type]);
 
+  useEffect(() => {
+    if (!sessionId || isMarkedError || status?.type === "running" || !liveTurnRef.current) return;
+    liveTurnRef.current = false;
+    void recordAssistantPresentations(
+      quizGradeStorage,
+      stripArtifactLinks(splitSearchSources(displayText).text),
+      { sessionId, messageId },
+    ).catch((error) => console.warn("[keating] could not record OpenUI presentations", error));
+  }, [displayText, isMarkedError, messageId, sessionId, status?.type]);
+
   if (isMarkedError) {
     const classified = classifyError(visibleText);
     return (
@@ -664,6 +690,51 @@ const VOICE_ERROR_PATTERNS =
 
 interface ClassifiedError extends LlmErrorDetails {
   icon: typeof CircleAlert;
+}
+
+/**
+ * Categories the learner can act on directly: a missing key, missing credits,
+ * a prompt that is too long or malformed, or a safety refusal. Everything else
+ * (server faults, withdrawn models, unrecognized failures) cannot be fixed from
+ * the UI, so those are the ones worth reporting.
+ */
+const NON_REPORTABLE_ERROR_CATEGORIES = new Set([
+	"auth",
+	"billing",
+	"context-length",
+	"invalid-request",
+	"safety",
+	"aborted",
+	"network",
+	"rate-limit",
+	"timeout",
+	"missing-key",
+	"permission",
+	"model-unavailable",
+	"unsupported-provider",
+	"microphone-denied",
+	"microphone-unavailable",
+	"camera-denied",
+	"camera-unavailable",
+	"camera-in-use",
+	"screen-denied",
+	"vision-unsupported",
+]);
+
+/** Report summary for a failure with no known learner-side recovery. */
+function diagnosticsSummaryForFailure(
+	failure: { category?: string; kind?: string; title?: string },
+	prefix?: string,
+): string | undefined {
+	const category = failure.category ?? failure.kind ?? "unknown";
+	if (NON_REPORTABLE_ERROR_CATEGORIES.has(category)) return undefined;
+	const summary = failure.title ? `${category}: ${failure.title}` : category;
+	return prefix ? `${prefix}: ${summary}` : summary;
+}
+
+function speechDiagnosticsSummary(errorText: string): string | undefined {
+	if (/no speech was detected|microphone unavailable|could not attach|speech provider key/i.test(errorText)) return undefined;
+	return diagnosticsSummaryForFailure(classifyError(errorText), "speech");
 }
 
 function classifyError(errorText: string): ClassifiedError {
@@ -1087,6 +1158,7 @@ function SpeechComposerControl({
         <button type="button" disabled={busy} onClick={() => void retryTranscription()}
           className={css({marginTop: "0.5rem", textDecoration: "underline", cursor: "pointer"})}>Retry transcription</button>
       </>}
+      {speechDiagnosticsSummary(audioError) && <ErrorDiagnosticsActions summary={speechDiagnosticsSummary(audioError)!} />}
     </div>, document.body) : null;
 
   if (!expanded) {
@@ -1257,6 +1329,9 @@ function LiveVoiceOverlay({
     onConversationComplete,
     initialVideoPromise,
   });
+  const liveDiagnosticsSummary = session.failure
+    ? diagnosticsSummaryForFailure(session.failure, "live session")
+    : undefined;
 
   // Ending is the learner's decision, so the surface closes only once the
   // session has flushed its transcript into the chat.
@@ -1291,6 +1366,11 @@ function LiveVoiceOverlay({
         onOpenSettings={onOpenSettings}
         onUseDictation={onFallback}
       />
+      {liveDiagnosticsSummary && (
+        <div className={css({ position: "absolute", left: "1rem", right: "1rem", bottom: "7.5rem", zIndex: 1, display: "flex", justifyContent: "center" })}>
+          <ErrorDiagnosticsActions summary={liveDiagnosticsSummary} />
+        </div>
+      )}
     </div>
   );
 }
@@ -1746,6 +1826,15 @@ function renderInteractiveSegment(
       const goal = normalizeGoal(JSON.parse(JSON.parse(seg.json)));
       if (!goal) return null;
       return <GoalRenderer key={key} goal={goal} />;
+    } catch {
+      return null;
+    }
+  }
+  if (seg.type === "plan-revision") {
+    try {
+      const proposal = JSON.parse(JSON.parse(seg.json)) as PlanRevisionProposal;
+      if (!proposal?.id || !proposal.change) return null;
+      return <PlanRevisionCard key={key} proposal={proposal} />;
     } catch {
       return null;
     }
@@ -2778,6 +2867,9 @@ function ToolPart({
             <ImageGenerationRetryButton
               onRetry={onImageGenerationModelSelect}
             />
+          )}
+          {classifiedError && diagnosticsSummaryForFailure(classifiedError, `${toolName} tool`) && (
+            <ErrorDiagnosticsActions summary={diagnosticsSummaryForFailure(classifiedError, `${toolName} tool`)!} />
           )}
         </div>
       ) : showDetails && resultText ? (
@@ -4059,6 +4151,9 @@ function AssistantThread({
   const [dismissedQuizId, setDismissedQuizId] = useState<string | null>(null);
   const [hasGoogleKey, setHasGoogleKey] = useState<boolean | null>(null);
   const isRunning = agent?.getSnapshot().running ?? false;
+  const draftStatus = useSyncExternalStore(subscribeTeachingDraftStatus,
+    () => getTeachingDraftStatus(agent?.sessionId), () => null);
+  const draftActive = teachingDraftIsActive(draftStatus);
   const currentThinkingLevel =
     agent?.context.thinkingLevel ?? callbacks.thinkingLevel ?? "medium";
   const [selectedThinkingLevel, setSelectedThinkingLevel] =
@@ -4087,11 +4182,11 @@ function AssistantThread({
   const messages = useMemo(() => {
     const visibleMessages = visibleAgentMessages(agent, speechEnabled);
     const lastMessage = visibleMessages.at(-1) as any;
-    if (agent && isRunning && lastMessage?.role === "user") {
+    if (agent && isRunning && !draftActive && lastMessage?.role === "user") {
       return [...visibleMessages, makePrefillStatusMessage(agent, loadingStep)];
     }
     return visibleMessages;
-  }, [agent, version, localVersion, speechEnabled, isRunning, loadingStep]);
+  }, [agent, version, localVersion, speechEnabled, isRunning, loadingStep, draftActive]);
   const activeQuestion = useMemo(
     () => extractActiveQuestion(messages),
     [messages],
@@ -4651,6 +4746,7 @@ function AssistantThread({
                     />
                   </AuiIf>
                   <ThreadPrimitive.Messages components={threadComponents} />
+                  {agent && <DraftReviewStatus sessionId={agent.sessionId} status={draftStatus} />}
                 </div>
                 <ThreadPrimitive.ViewportFooter
                   className={css({
@@ -5417,7 +5513,12 @@ function AssistantMessage({
               <FailedResponseRecovery
                 recovery={llmFailure.recovery}
                 onRetry={onRetry}
+                diagnosticsSummary={diagnosticsSummaryForFailure(llmFailure)}
               />
+            )}
+            {/* A reportable failure with no retry control still needs a way out. */}
+            {llmFailure && !(canRetry && onRetry) && diagnosticsSummaryForFailure(llmFailure) && (
+              <ErrorDiagnosticsActions summary={diagnosticsSummaryForFailure(llmFailure)!} />
             )}
             {llmFailure && retryAttempts && retryAttempts > 1 && (
               <p

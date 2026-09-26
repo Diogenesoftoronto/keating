@@ -1,0 +1,11 @@
+{
+  "name": "keating-spotlight-onboarding",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.8.78 preview",
+    "check": "npx --yes hyperframes@0.8.78 check",
+    "render": "npx --yes hyperframes@0.8.78 render",
+    "prerender": "node -e \"if (require('./build/timing.json').previewOnly) throw new Error('Visual preview only: run ./produce.sh with narration access before rendering.')\""
+  }
+}

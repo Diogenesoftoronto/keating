@@ -25,6 +25,7 @@ import {
 	type SharedUiActionDelivery,
 	type SharedUiActionIntent,
 } from "./shared-actions";
+import { PLAN_REVISED_EVENT, type PlanRevisedDetail } from "../plan-revisions";
 import {
 	loadOpenUISourceState,
 	migrateOpenUISourceStateToSharedDocument,
@@ -334,6 +335,17 @@ function DurableSharedUiDocument({
 	));
 	const [actionError, setActionError] = useState<string | null>(null);
 	const deliveriesInFlight = useRef(new Set<string>());
+
+	// Tutor revisions and accepted proposals rewrite the stored plan outside this card.
+	useEffect(() => {
+		if (!actionStorage || typeof window === "undefined") return;
+		const reload = (event: Event) => {
+			if ((event as CustomEvent<PlanRevisedDetail>).detail?.documentId !== document.id) return;
+			setState(loadSharedUiActionState(actionStorage, document, metadata.legacyIds));
+		};
+		window.addEventListener(PLAN_REVISED_EVENT, reload);
+		return () => window.removeEventListener(PLAN_REVISED_EVENT, reload);
+	}, [actionStorage, document, metadata.legacyIds]);
 
 	const emitDelivery = useCallback(async (delivery: SharedUiActionDelivery) => {
 		if (!hostAction || !actionStorage || delivery.state !== "pending") return;

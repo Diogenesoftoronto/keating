@@ -1,0 +1,10 @@
+{
+  "name": "keating-changelog",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "npx --yes hyperframes@0.8.77 preview",
+    "check": "npx --yes hyperframes@0.8.77 check",
+    "render": "./produce.sh"
+  }
+}

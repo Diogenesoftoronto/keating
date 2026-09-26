@@ -53,6 +53,7 @@ in
 
   packages = with pkgs; [
     bun
+    railway
     gcc
     gnumake
     (python3.withPackages (pythonPackages: [ pythonPackages.setuptools ]))
@@ -122,6 +123,12 @@ in
   };
 
   processes = {
+    # Snapshot this branch, including uncommitted app sources, once per startup.
+    # Railway keeps serving it after the local workspace stops.
+    staging = {
+      exec = "bun scripts/staging.ts deploy";
+      process-compose.availability.restart = "no";
+    };
     blog-site.exec = "bun scripts/blog-site/dist/server.js";
 
     terminal-shell = {
@@ -194,9 +201,19 @@ in
   # This block, web/.env.example, and OPERATIONS.md must agree. That is enforced:
   #   devenv tasks run keating:check-env
   env = {
+    KEATING_STAGING_ENABLED = lib.mkDefault "true";
+    # Direct judgement is local-only and opt-in. Credentials stay server-side.
+    KEATING_JUDGEMENT_DEV_DIRECT = lib.mkDefault "false";
+    VITE_KEATING_JUDGEMENT_SAME_ORIGIN = lib.mkDefault "false";
+    KEATING_JUDGEMENT_ENDPOINT = "https://api.typesafe.ai/v1/systemone";
+    KEATING_JUDGEMENT_MODEL = "jev-latest";
+    NOTORGANIC_CHECKOUT_RETURN_ORIGINS = "";
     # Server-side gate for the hosted provider routes under
-    # web/server/api/notorganic/**.
-    NOTORGANIC_ENABLED = "false";
+    # web/server/api/notorganic/**, and for the GPT Live relay at
+    # web/server/api/live.ts. While this is "false" the browser still offers
+    # GPT Live as a speech provider but every session is refused as
+    # "not configured on this Keating deployment".
+    NOTORGANIC_ENABLED = "true";
 
     # Client-side gate. Vite exposes VITE_-prefixed shell variables on
     # import.meta.env, so this value reaches the browser bundle. While it is
@@ -587,6 +604,27 @@ in
   };
 
   # ── Web ─────────────────────────────────────────────────────────
+  tasks."keating:staging-deploy" = {
+    description = "Upload this branch and its uncommitted app work to staging; wait for health";
+    exec = "bun scripts/staging.ts deploy";
+  };
+  tasks."keating:staging-preview-status" = {
+    description = "Show the live staging snapshot and chat URL";
+    exec = "bun scripts/staging.ts status";
+  };
+  tasks."keating:promote-staging" = {
+    description = "Ask Railway to check promotion (now=true skips wait; sha requests a prior rollback)";
+    input = { now = false; sha = ""; };
+    exec = "bun scripts/request-staging-promotion.ts";
+  };
+  tasks."keating:staging-status" = {
+    description = "Inspect the local candidate and staging health (Railway owns promotion history)";
+    exec = "bun scripts/promote-staging.ts status";
+  };
+  tasks."keating:staging-scheduler" = {
+    description = "Refresh the always-on Railway promotion candidate from this staging snapshot";
+    exec = "bun scripts/staging.ts deploy";
+  };
   tasks."keating:web" = {
     description = "Start the Keating web UI dev server (Vite on port 3000)";
     exec = ''
@@ -822,7 +860,7 @@ in
 
   git-hooks.hooks = {
     keating-radicle-main = {
-      enable = true;
+      enable = false;
       name = "keating-radicle-main";
       entry = "devenv tasks run keating:mirror-radicle";
       language = "system";

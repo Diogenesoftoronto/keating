@@ -1,0 +1,221 @@
+<!doctype html>
+<!-- Recall: a picture-book story. Narration and word cues are supplied by the shared compiler. -->
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=1920, height=1080"/>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script><style>
+{{fonts}}
+:root{--paper:#f1ece0;--card:#f6f2e8;--ink:#1c211b;--accent:#1e9b50;--accent-dim:#14743c;--phosphor:#4be388;--display:"Space Mono",monospace;--body:"JetBrains Mono",monospace;--loud:"Roboto",sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--paper)}
+#root{position:relative;width:100%;height:100%;overflow:hidden;font-family:var(--body);color:var(--ink);background:var(--paper)}
+.scene{position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;z-index:1}
+.fx{position:absolute;inset:0;width:1920px;height:1080px;pointer-events:none}#fx-bg{z-index:0}#fx-over{z-index:4;opacity:.35}
+.film-tag{position:absolute;left:60px;top:42px;z-index:6;font:700 23px/1 var(--display);letter-spacing:.06em;color:var(--paper);background:var(--ink);padding:14px 18px}
+.art,.art-media{position:absolute;inset:0;overflow:hidden}.art-media img,.art-media video{position:absolute;inset:0;width:1920px;height:1080px;object-fit:cover}.art-clone{position:absolute;inset:0;background-size:cover;background-position:center}.art .foreground{clip-path:polygon(0 45%,43% 45%,43% 100%,0 100%)}.art .wash{position:absolute;inset:0;background:linear-gradient(180deg,rgba(241,236,224,.22),transparent 38%)}
+.chapter{position:absolute;right:64px;top:44px;z-index:3;padding:18px 24px;border:2px solid var(--ink);background:var(--paper);box-shadow:8px 8px 0 var(--accent);font:700 34px/1.15 var(--display)}
+.story-title{position:absolute;left:70px;top:164px;z-index:3;font:900 92px/.98 var(--loud);letter-spacing:-.04em;max-width:850px}.story-title span{display:inline-block;background:var(--paper);padding:10px 20px 16px}
+#night-title{top:710px;font-size:104px}#blank-title{left:1160px;top:182px;width:650px;font-size:102px}
+.headline{position:absolute;left:115px;top:140px;font:900 84px/1.05 var(--loud);letter-spacing:-.035em;z-index:3}.headline span{display:inline-block;background:var(--paper);padding:8px 16px 12px}
+.sheets{position:absolute;inset:0;z-index:2;pointer-events:none}.sheet{position:absolute;left:390px;top:395px;width:250px;height:290px;background:var(--paper);border:3px solid var(--ink);box-shadow:7px 9px 0 rgba(28,33,27,.2);transform-origin:50% 0}.sheet:before{content:"";position:absolute;inset:40px 20px 22px;background:repeating-linear-gradient(0deg,transparent 0 41px,#7e8876 42px 44px),repeating-linear-gradient(90deg,transparent 0 38px,#7e8876 39px 41px);border-top:14px solid var(--accent)}
+.plate{position:absolute;left:260px;top:350px;width:1400px;background:var(--card);border:2px solid var(--ink);box-shadow:16px 16px 0 var(--accent);transform-origin:50% 50%;z-index:2}.label{position:absolute;left:-2px;top:-46px;padding:11px 16px;background:var(--ink);color:var(--paper);font:700 22px/1 var(--display);letter-spacing:.06em;white-space:nowrap}.viewport{position:relative;overflow:hidden;width:100%}.plate img{display:block;width:100%;height:auto}.mark{position:absolute;height:7px;background:var(--accent);transform-origin:0 50%;box-shadow:0 2px 0 var(--paper)}
+#notebook{transform-origin:25% 56%}
+#thread-veil{position:absolute;inset:0;background:var(--paper)}
+#thread-card{left:590px;top:365px;width:1130px;height:430px;display:flex;padding:22px;gap:26px}
+#thread-card .source-crop{position:relative;width:300px;height:382px;overflow:hidden;flex:none;border-right:2px solid var(--ink)}
+#thread-card .source-crop img{width:630px;max-width:none;position:absolute;left:-8px;top:-235px}
+.detail{position:relative;flex:1;padding:12px 8px}.eyebrow{font:700 20px/1.3 var(--display);letter-spacing:.05em;color:var(--accent-dim)}.quote{font:500 33px/1.3 var(--body);margin-top:26px}.source{font:500 21px/1.4 var(--body);margin-top:28px}.detail-note{font:400 17px/1.2 var(--body);margin-top:24px;color:#4a5247}
+#passage-mark{left:8px;top:191px;width:640px}#source-mark{left:8px;top:282px;width:500px}
+#thread-svg{position:absolute;inset:0;width:1920px;height:1080px;pointer-events:none;z-index:2}.thread-path{fill:none;stroke:var(--accent);stroke-width:8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 10px #4be388)}
+#settings-card{left:270px;top:367px;width:1380px;height:430px;display:flex;padding:24px;gap:32px}
+#settings-card .settings-context{position:relative;overflow:hidden;width:260px;flex:none;border-right:2px solid var(--ink)}#settings-card .settings-context img{position:absolute;width:1250px;max-width:none;left:-56px;top:-35px}
+.settings-detail{flex:1;position:relative;padding:14px 8px}.settings-detail h2{font:700 42px/1.15 var(--display);margin-top:22px}.settings-detail p.detail-note{font:400 20px/1.2 var(--body)}.settings-detail p{font:400 27px/1.4 var(--body);margin-top:25px;max-width:740px}.toggle{position:absolute;right:8px;top:54px;width:90px;height:45px;border-radius:30px;background:var(--accent)}.toggle:after{content:"";position:absolute;right:5px;top:5px;width:35px;height:35px;background:var(--paper);border-radius:50%}.size{font:900 68px/1 var(--loud);color:var(--accent-dim);margin-top:18px}#toggle-ring{position:absolute;right:-5px;top:41px;width:116px;height:71px;border:5px solid var(--accent);border-radius:45px}#size-mark{left:8px;top:249px;width:200px}
+#phone-card{left:410px;top:354px;width:1100px}.phone-crop{height:475px}#phone-card img{margin-top:0}#phone-mark{left:5.5%;top:33%;width:84%}
+#close-title{left:100px;top:130px;font-size:78px;max-width:1720px}.spread{position:absolute;left:140px;top:365px;display:flex;gap:110px;z-index:2}.spread .plate{position:relative;left:auto;top:auto;width:760px;transform-origin:50% 50%}.spread .viewport{height:390px}.spread img{width:100%;height:auto}#library-card img{margin-top:-120px}#profile-card img{margin-top:-92px}.spread .label{font-size:21px}#library-mark{left:6%;top:90%;width:54%}#profile-mark{left:5.5%;top:30%;width:35%}
+.endcard{position:absolute;inset:0;background:var(--paper);z-index:3}.end-logo{position:absolute;left:785px;top:205px;width:800px;height:410px;object-fit:contain}.end-url{position:absolute;left:790px;top:693px;font:700 108px/1 var(--display);letter-spacing:-.05em;color:var(--accent-dim)}#end-bot{position:absolute;left:225px;top:255px;width:500px;height:500px}.atlas{position:absolute;inset:0;background-repeat:no-repeat;background-size:400% 200%;background-position:0% 0%}
+.cap{position:absolute;left:0;top:0;width:1920px;height:1080px;z-index:5;pointer-events:none}.cap .pill{position:absolute;left:50%;bottom:44px;transform:translateX(-50%);white-space:nowrap;font:500 34px/1 var(--body);color:var(--paper);background:var(--ink);border:2px solid var(--ink);padding:16px 28px;box-shadow:5px 5px 0 var(--accent)}.cap .cw{color:var(--paper)}
+</style></head><body><div id="root" data-composition-id="main" data-start="0" data-duration="{{total}}" data-width="1920" data-height="1080">
+<canvas data-layout-ignore id="fx-bg" class="fx" width="1920" height="1080" data-layout-allow-overflow></canvas>
+<section id="s-night" class="clip scene" data-start="{{start:night}}" data-duration="{{dur:night}}" data-track-index="0">
+{{art:recall-1-night:night-art:night}}<div id="chapter-night" class="chapter">TUESDAY NIGHT</div><h1 id="night-title" class="story-title"><span>One more time.</span></h1>
+</section>
+<section id="s-weeks" class="clip scene" data-start="{{start:weeks}}" data-duration="{{dur:weeks}}" data-track-index="0">
+{{art:recall-2-calendar:weeks-art:weeks}}<div class="sheets" aria-hidden="true"><div id="page-1" class="sheet"></div><div id="page-2" class="sheet"></div><div id="page-3" class="sheet"></div></div><h1 id="chapter-weeks" class="chapter">3 WEEKS LATER</h1>
+</section>
+<section id="s-blank" class="clip scene" data-start="{{start:blank}}" data-duration="{{dur:blank}}" data-track-index="0">
+{{art:recall-3-question:blank-art:blank}}<div id="chapter-blank" class="chapter">EXAM DAY</div><h1 id="blank-title" class="story-title"><span>All a blur.</span></h1>
+</section>
+<section id="s-thread" class="clip scene" data-start="{{start:thread}}" data-duration="{{dur:thread}}" data-track-index="0">
+{{art:recall-4-thread:notebook:thread}}<div id="thread-veil"></div><h1 id="thread-title" class="headline"><span>Pick up the thread.</span></h1>
+<svg id="thread-svg" viewBox="0 0 1920 1080" aria-hidden="true"><path id="green-thread" class="thread-path" d="M 295 295 C 200 385 212 539 310 545 C 448 552 371 800 474 806 C 595 815 444 489 598 503"/></svg>
+<div id="thread-card" class="plate"><div class="label">[RECALLED PASSAGE + SOURCE]</div><div class="source-crop"><img data-layout-allow-overflow src="assets/shots/panel.png" alt="Standing waves session in the sessions panel"/></div><div class="detail"><div class="eyebrow">FROM HER EARLIER WORK</div><p class="quote">“A guitar string, two fixed<br/>ends, and a pattern<br/>that stays put.”</p><p class="source">Standing waves, explained<br/>↳ From Wave mechanics</p><p class="detail-note">Illustrated recall detail</p><i id="passage-mark" class="mark"></i><i id="source-mark" class="mark"></i></div></div>
+</section>
+<section id="s-device" class="clip scene" data-start="{{start:device}}" data-duration="{{dur:device}}" data-track-index="0">
+<h1 id="device-title" class="headline"><span>On her own machine.</span></h1>
+<div id="settings-card" class="plate"><div class="label">[LEARNING SETTINGS / ILLUSTRATED DETAIL]</div><div class="settings-context"><img data-layout-allow-overflow src="assets/shots/settings.png" alt="Learning settings navigation"/></div><div class="settings-detail"><div class="eyebrow">LEARNING SETTINGS</div><h2>Local recall</h2><div class="toggle" aria-label="Recall on"></div><p>Find earlier work on this device.</p><div class="size">36 MB</div><p class="detail-note">Illustrated recall control</p><i id="toggle-ring"></i><i id="size-mark" class="mark"></i></div></div>
+<h1 id="phone-title" class="headline"><span>Search by meaning.</span></h1><div id="phone-card" class="plate"><div class="label">[PHONE / FIND EARLIER SESSIONS]</div><div class="viewport phone-crop"><img data-layout-allow-overflow src="assets/shots/phone.png" alt="Sessions on a phone"/><i id="phone-mark" class="mark"></i></div></div>
+</section>
+<section id="s-close" class="clip scene" data-start="{{start:close}}" data-duration="{{dur:close}}" data-track-index="0">
+<h1 id="close-title" class="headline"><span id="past-title">Your past work,</span> <span id="working-title">working for you.</span></h1><div id="past-work" class="spread"><div id="library-card" class="plate"><div class="label">[YOUR SESSIONS]</div><div class="viewport"><img data-layout-allow-overflow src="assets/shots/library.png" alt="Earlier work in the library"/><i id="library-mark" class="mark"></i></div></div><div id="profile-card" class="plate"><div class="label">[YOUR PROFILE]</div><div class="viewport"><img data-layout-allow-overflow src="assets/shots/profile.png" alt="Saved learner profile"/><i id="profile-mark" class="mark"></i></div></div></div>
+<div id="endcard" class="endcard"><div id="end-bot"><div class="atlas" style="background-image:url(assets/bot/body-waving.avif)"></div></div><img id="end-logo" class="end-logo" src="assets/brand/logo-lockup.png" alt="Keating"/><div id="end-url" class="end-url">keating.help</div></div>
+</section>
+<canvas data-layout-ignore id="fx-over" class="fx" width="1920" height="1080" data-layout-allow-occlusion data-layout-allow-overflow></canvas><div class="film-tag">[{{label}}]</div>
+{{captions}}
+<audio id="mix" src="assets/audio/mix.wav" data-start="0" data-duration="{{total}}" data-volume="1"></audio></div><script>
+const TIMING = /*TIMING*/ null;
+const S=Object.fromEntries(TIMING.scenes.map(s=>[s.id,s]));
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9]/g,"");
+const st=id=>S[id].start,en=id=>S[id].start+S[id].duration;
+function at(id,w,n=1){let c=0;for(const x of S[id].words)if(norm(x.w)===norm(w)&&++c===n)return x.s;throw Error(`Missing cue ${id}/${w}`)}
+const tl=gsap.timeline({paused:true});
+const land=(sel,t)=>tl.fromTo(sel,{opacity:0,y:35},{opacity:1,y:0,duration:.6,ease:'power2.out'},t);
+const mark=(sel,t)=>tl.fromTo(sel,{scaleX:0},{scaleX:1,duration:.65,ease:'power2.out'},t);
+function poster(sel,t,d){const moving=document.querySelector(sel).dataset.motion==='true';tl.fromTo(sel+' .back',{scale:1.01,x:0},{scale:moving?1.04:1.09,x:moving?-8:-26,duration:d,ease:'none'},t);if(!moving)tl.fromTo(sel+' .foreground',{scale:1.01,x:0},{scale:1.13,x:-45,duration:d,ease:'none'},t)}
+function product(sel,t,zoom=1.15){land(sel,t);tl.fromTo(sel,{scale:1},{scale:zoom,duration:1.5,ease:'sine.inOut'},t+.65)}
+for(const id of ['night','weeks','blank']){poster('#'+id+'-art',st(id),S[id].duration);land('#chapter-'+id,st(id)+.1)}
+land('#night-title',at('night','Standing')-.2);land('#blank-title',at('blank','resonance')-.2);
+for(let i=1;i<=3;i++){const t=st('weeks')+.25+(i-1)*.5;tl.fromTo('#page-'+i,{x:0,y:0,rotation:-8,opacity:0,scale:.6},{opacity:1,duration:.2},t);tl.to('#page-'+i,{x:550+i*140,y:-80-i*50,rotation:18+i*14,scale:1,duration:1.35,ease:'power1.inOut'},t);tl.to('#page-'+i,{opacity:0,duration:.4},t+1.05)}
+poster('#notebook',st('thread'),S.thread.duration);land('#thread-title',st('thread')+.15);
+const find=at('thread','recall')-.2;
+tl.fromTo('#thread-veil',{opacity:0},{opacity:.9,duration:1.1},find);
+// Stroke-dash trace adapted from the installed svg-stroke-trace component.
+const path=document.querySelector('#green-thread'),len=path.getTotalLength();
+tl.fromTo(path,{strokeDasharray:len,strokeDashoffset:len,opacity:0},{opacity:1,strokeDashoffset:0,duration:1.6,ease:'sine.inOut'},find-.35);
+product('#thread-card',find+.65,1.15);mark('#passage-mark',at('thread','passage'));mark('#source-mark',at('thread','reference'));
+land('#device-title',st('device')+.1);product('#settings-card',st('device')+.2,1.15);
+tl.fromTo('#toggle-ring',{opacity:0,scale:.85},{opacity:1,scale:1,duration:.55},at('device','switched'));mark('#size-mark',at('device','megabyte'));
+const phone=at('device','phone')-.25;
+tl.to(['#settings-card','#device-title'],{opacity:0,duration:.3},phone-.35);land('#phone-title',phone);product('#phone-card',phone+.1,1.15);mark('#phone-mark',at('device','meaning'));
+land('#past-title',st('close')+.05);land('#working-title',st('close')+.3);product('#library-card',st('close')+.1,1.06);product('#profile-card',st('close')+.2,1.06);mark('#library-mark',st('close')+.75);mark('#profile-mark',st('close')+.95);
+const endcard=en('close')-1.65;
+tl.fromTo('#endcard',{opacity:0},{opacity:1,duration:.3},endcard);tl.to(['#past-work','#close-title'],{opacity:0,duration:.2},endcard);land('#end-logo',endcard+.08);land('#end-url',endcard+.13);land('#end-bot',endcard+.03);
+for(let i=0;i<8;i++)tl.set('#end-bot .atlas',{backgroundPosition:`${((i%4)/3)*100}% ${Math.floor(i/4)*100}%`},endcard+.12+i*.1);
+        const NOISE = `
+          precision highp float;
+          varying vec2 v_uv;
+          uniform float u_t;
+          float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+          float noise(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+          }
+          float fbm(vec2 p) {
+            float v = 0.0, a = 0.5;
+            mat2 R = mat2(0.8, 0.6, -0.6, 0.8);
+            for (int i = 0; i < 5; i++) { v += a * noise(p); p = R * p * 2.02; a *= 0.5; }
+            return v;
+          }
+          const vec3 PAPER = vec3(0.945, 0.925, 0.878);
+          const vec3 WASH = vec3(0.925, 0.965, 0.925);
+          const vec3 TERM = vec3(0.047, 0.082, 0.063);
+          const vec3 PHOS = vec3(0.294, 0.890, 0.533);
+          const vec3 PHOS_DIM = vec3(0.180, 0.604, 0.361);
+        `;
+        const BG = NOISE + `
+          uniform float u_from, u_to, u_p, u_edge, u_down, u_kick;
+          void main() {
+            vec2 uv = v_uv, p = uv * vec2(1.7778, 1.0) * 2.2;
+            float t = u_t;
+            vec2 q = vec2(fbm(p + t * 0.05), fbm(p + vec2(5.2, 1.3) - t * 0.04));
+            float n = fbm(p + (1.6 + 1.4 * u_kick) * q + vec2(1.7, 9.2) + t * 0.03);
+            // Paper only ever lightens from its base, so ink and green type keep their contrast.
+            vec3 paper = mix(PAPER, vec3(1.0), 0.16 * smoothstep(0.3, 0.8, n));
+            paper = mix(paper, WASH, smoothstep(0.6, 0.9, n) * (0.25 + 0.45 * u_kick));
+            float v = 1.0 - smoothstep(0.2, 1.1, length((uv - vec2(0.5, 0.6)) * vec2(1.6, 1.0)));
+            vec3 term = TERM + PHOS_DIM * (pow(n, 2.5) * 0.38 + 0.04) * (0.5 + 0.7 * v) + vec3(0.03, 0.06, 0.04) * v;
+            vec3 a = mix(paper, term, u_from), b = mix(paper, term, u_to);
+            // Burn: a noisy front sweeps up the frame (down when entering the terminal).
+            float y = u_down > 0.5 ? 1.0 - uv.y : uv.y;
+            float field = 0.72 * y + 0.45 * fbm(uv * vec2(1.7778, 1.0) * 4.0 + 3.0);
+            float front = u_p * 1.4 - 0.12;
+            float gone = smoothstep(front + 0.012, front - 0.012, field);
+            vec3 col = mix(a, b, gone);
+            float beyond = field - front;
+            col = mix(col, vec3(0.05, 0.04, 0.03), u_edge * 0.55 * smoothstep(0.0, 0.015, beyond) * (1.0 - smoothstep(0.02, 0.07, beyond)));
+            float glow = exp(-abs(beyond) * 55.0) * u_edge;
+            col += (mix(PHOS, vec3(1.0, 0.97, 0.82), exp(-abs(beyond) * 220.0)) * 1.1) * glow;
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `;
+        const OVER = NOISE + `
+          uniform float u_crt, u_sweep, u_sweepAmp, u_glitch, u_flash, u_frame;
+          void main() {
+            vec2 uv = v_uv;
+            vec3 add = vec3(0.0);
+            float dark = hash(floor(uv * vec2(1920.0, 1080.0)) + floor(u_t * 12.0)) * 0.035;
+            vec2 ray = (uv - vec2(0.52, 0.28)) * vec2(1.7778, 1.0);
+            float sun = smoothstep(0.12, 0.2, sin(atan(ray.y, ray.x) * 18.0 + u_t * 0.055));
+            add += PHOS * sun * 0.035 * smoothstep(0.45, 0.9, uv.y);
+            if (u_crt > 0.001) {
+              float band = exp(-pow(1.0 - uv.y - fract(u_t * 0.12), 2.0) * 140.0);
+              add += PHOS * band * 0.05 * u_crt;
+              float g = hash(floor(uv * vec2(960.0, 540.0)) + u_frame * 1.37);
+              add += PHOS * max(g - 0.5, 0.0) * 0.1 * u_crt;
+              dark = smoothstep(0.45, 0.95, length((uv - 0.5) * vec2(1.25, 1.0))) * 0.45 * u_crt;
+            }
+            if (u_sweepAmp > 0.001) {
+              vec2 p = (uv - 0.5) * vec2(1.7778, 1.0);
+              float d = dot(p, normalize(vec2(1.0, 0.45))) - mix(-1.3, 1.3, u_sweep);
+              add += (vec3(1.0, 0.97, 0.88) * exp(-d * d * 60.0) * 0.26 + PHOS * exp(-d * d * 6.0) * 0.07) * u_sweepAmp;
+            }
+            if (u_glitch > 0.001) {
+              float row = floor(uv.y * 54.0);
+              float h = hash(vec2(row, u_frame));
+              float on = step(1.0 - 0.45 * u_glitch, h);
+              float h2 = hash(vec2(row * 1.7, u_frame + 3.1));
+              vec3 tint = h2 < 0.33 ? vec3(0.84, 0.38, 0.29) : h2 < 0.66 ? vec3(0.1, 0.85, 0.9) : PHOS;
+              float seg = step(hash(vec2(floor(uv.x * 12.0 + h * 40.0), row)), 0.6);
+              add += tint * on * seg * 0.38 * u_glitch;
+              dark = max(dark, on * (1.0 - seg) * 0.55 * u_glitch);
+            }
+            float r = length((uv - 0.5) * vec2(1.7778, 1.0));
+            add += mix(PHOS, vec3(1.0), 0.35) * u_flash * (0.55 - 0.3 * r);
+            gl_FragColor = vec4(add, dark);
+          }
+        `;
+
+        function layer(id, fs) {
+          const gl = document.getElementById(id).getContext("webgl", { preserveDrawingBuffer: false, premultipliedAlpha: true, antialias: false });
+          if (!gl) throw new Error("no webgl");
+          const compile = (type, src) => {
+            const sh = gl.createShader(type);
+            gl.shaderSource(sh, src);
+            gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+            return sh;
+          };
+          const prog = gl.createProgram();
+          gl.attachShader(prog, compile(gl.VERTEX_SHADER, "attribute vec2 p; varying vec2 v_uv; void main() { v_uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }"));
+          gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+          gl.linkProgram(prog);
+          gl.useProgram(prog);
+          gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+          const loc = gl.getAttribLocation(prog, "p");
+          gl.enableVertexAttribArray(loc);
+          gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+          const uni = {};
+          return (vals) => {
+            for (const k in vals) {
+              if (!(k in uni)) uni[k] = gl.getUniformLocation(prog, "u_" + k);
+              if (uni[k]) gl.uniform1f(uni[k], vals[k]);
+            }
+            gl.viewport(0, 0, 1920, 1080);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          };
+        }
+
+
+try {
+ const bg=layer("fx-bg",BG),over=layer("fx-over",OVER);
+ const draw=t=>{
+  const dark=0;
+  const kick=Math.max(0,...TIMING.scenes.filter(s=>t>=s.start).map(s=>Math.exp(-(t-s.start)/.7)));
+  const state={t,from:dark,to:dark,p:1,edge:0,down:0,kick,crt:dark,sweep:0,sweepAmp:0,glitch:0,flash:0,frame:Math.floor(t*TIMING.fps)};
+  bg(state);over(state);
+ };
+ const clock={t:0};tl.to(clock,{t:TIMING.total,duration:TIMING.total,ease:"none",onUpdate:()=>draw(clock.t)},0);draw(0);
+} catch(e) {console.warn('[fx]',e.message)}
+document.querySelectorAll('.cap .cw').forEach(el=>{tl.set(el,{color:'#4be388'},Number(el.dataset.s));tl.set(el,{color:'#f1ece0'},Number(el.dataset.e))});
+tl.set({}, {}, TIMING.total);
+window.__timelines['main']=tl;
+</script></body></html>

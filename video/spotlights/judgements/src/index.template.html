@@ -1,0 +1,288 @@
+<!doctype html>
+<!-- Judgements explainer. Generated timing comes from the canonical narration. -->
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=1920, height=1080"/><script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script><style>
+{{fonts}}
+      :root {
+        --paper: #f1ece0;
+        --paper-deep: #e9e2d2;
+        --card: #f6f2e8;
+        --ink: #1c211b;
+        --ink-soft: #4a5247;
+        --accent: #1e9b50;
+        --accent-dim: #14743c;
+        --green-wash: #ddebdd;
+        --terminal: #0c1510;
+        --terminal-edge: #1b2a1f;
+        --phosphor: #4be388;
+        --phosphor-dim: #2e9a5c;
+        --amber: #e8a33d;
+        --red: #d5604b;
+        --display: "Space Mono", monospace;
+        --body: "JetBrains Mono", monospace;
+        --loud: "Roboto", sans-serif;
+      }
+
+* {margin:0;padding:0;box-sizing:border-box}
+html,body {width:100%;height:100%;overflow:hidden;background:var(--paper)}
+#root {position:relative;width:100%;height:100%;overflow:hidden;color:var(--ink);font-family:var(--body);background:var(--paper)}
+.scene {position:absolute;inset:0;width:1920px;height:1080px;overflow:hidden;z-index:1}
+.fx {position:absolute;inset:0;width:1920px;height:1080px;pointer-events:none}
+#fx-bg {z-index:0} #fx-over {z-index:4;opacity:.35}
+.film-tag {position:absolute;left:60px;top:44px;z-index:6;font:700 23px/1 var(--display);letter-spacing:.07em;color:var(--paper);background:var(--ink);padding:14px 18px}
+.headline {position:absolute;left:280px;top:142px;max-width:1510px;font:900 86px/.99 var(--loud);letter-spacing:-.035em;z-index:3}
+.headline span {display:inline-block;background:var(--paper);padding:10px 18px 14px}
+.hook-title {left:150px;top:310px;width:820px;font-size:132px;color:var(--paper)}
+.hook-shade {position:absolute;inset:0;background:linear-gradient(90deg,rgba(12,21,16,.95),rgba(12,21,16,.76) 36%,transparent 70%)}
+.art {position:absolute;inset:0;overflow:hidden}
+.art-media {position:absolute;inset:0}
+.art-media img,.art-media video {position:absolute;inset:0;width:1920px;height:1080px;object-fit:cover}
+.art-clone {position:absolute;inset:0;background-size:cover;background-position:center}
+.art .foreground {clip-path:polygon(53% 0,100% 0,100% 100%,53% 100%)}
+.art .wash {position:absolute;inset:0;background:linear-gradient(180deg,rgba(241,236,224,.55),transparent 38%)}
+.rail {position:absolute;left:62px;top:330px;width:112px;z-index:5}
+.rail:before {content:"";position:absolute;left:54px;top:20px;width:4px;height:450px;background:var(--ink)}
+.step {position:relative;display:flex;align-items:center;justify-content:center;width:112px;height:112px;margin-bottom:72px;border:2px solid var(--ink);background:var(--paper);font:700 74px/1 var(--display)}
+.plate {position:absolute;left:350px;top:410px;width:1320px;background:var(--card);border:2px solid var(--ink);box-shadow:16px 16px 0 var(--accent);transform-origin:50% 50%}
+.plate .label {position:absolute;left:-2px;top:-48px;display:block;font:700 22px/1 var(--display);letter-spacing:.08em;color:var(--paper);background:var(--ink);padding:11px 16px}
+.viewport {position:relative;overflow:hidden;width:100%}
+.plate img {display:block;width:100%;height:auto}
+.mark {position:absolute;height:7px;background:var(--accent);transform-origin:0 50%;box-shadow:0 2px 0 var(--paper)}
+#answer-mark {left:8.3%;top:30.2%;width:15.8%}
+#checking-mark {left:6.7%;top:38%;width:44.3%}
+#reason-mark {left:6.7%;top:45.5%;width:18%}
+#flag-mark {left:27.2%;top:30.6%;width:22.2%}
+#practice-card {left:300px;top:320px;width:1110px}
+#practice-card .viewport {height:600px}
+#practice-card img {margin-top:-252px}
+#queue-mark {left:14%;top:39.5%;width:63%}
+.stat {position:absolute;left:1500px;top:425px;width:350px;text-align:center;color:var(--accent-dim)}
+.stat .number {font:900 170px/1 var(--loud);letter-spacing:-.045em;font-variant-numeric:tabular-nums}
+.stat .unit {margin-top:12px;font:700 25px/1.35 var(--display);color:var(--ink)}
+#exam-card {top:340px;width:1320px}
+#exam-card .viewport {height:525px}
+#exam-card img {margin-top:-115px}
+#exam-mark {left:8%;top:68%;width:6%}
+.endcard {position:absolute;inset:0;background:var(--paper);z-index:3}
+.end-logo {position:absolute;left:800px;top:205px;width:780px;height:420px;object-fit:contain}
+.end-url {position:absolute;left:815px;top:700px;font:700 108px/1 var(--display);letter-spacing:-.05em;color:var(--accent-dim)}
+#end-bot {left:230px;top:225px;width:520px;height:520px}
+      .bot { position: absolute; }
+      .bot .sway { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 50% 88%; }
+      .bot .atlas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-repeat: no-repeat; background-size: 400% 200%; background-position: 0% 0%; }
+      .bot .atlas.alt { opacity: 0; }
+
+      .cap { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5; pointer-events: none; }
+      .cap .pill { position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%); white-space: nowrap; font: 500 34px/1 var(--body); color: var(--paper); background: var(--ink); border: 2px solid var(--ink); padding: 16px 28px; box-shadow: 5px 5px 0 var(--accent); }
+      .cap .cw { color: var(--paper); }
+</style></head><body>
+<div id="root" data-composition-id="main" data-start="0" data-duration="{{total}}" data-width="1920" data-height="1080"><!-- Decorative texture canvases contain no text or layout; exclude GPU pixel readback from the geometry audit. -->
+<canvas data-layout-ignore id="fx-bg" class="fx" width="1920" height="1080" data-layout-allow-overflow></canvas><section id="s-hook" class="clip scene" data-start="{{start:hook}}" data-duration="{{dur:hook}}" data-track-index="0">{{art:judge-3-referee:referee:hook}}<div class="hook-shade"></div><h1 id="hook-title" class="headline hook-title">WHO CHECKS THE CHECKER?</h1></section><section id="s-step1" class="clip scene" data-start="{{start:step1}}" data-duration="{{dur:step1}}" data-track-index="0">{{art:judge-1-write:writing:step1:0:It's@0.05}}{{art:judge-2-seal:sealed:step1:It's@-0.15:question@0.1}}<h1 id="step1-title" class="headline"><span>YOUR ANSWER COMES FIRST</span></h1><div id="answer-card" class="plate"><div class="label">[01 / YOUR RESPONSE]</div><div class="viewport"><img src="assets/shots/answer.png" alt=""/><i id="answer-mark" class="mark"></i></div></div></section><section id="s-step2" class="clip scene" data-start="{{start:step2}}" data-duration="{{dur:step2}}" data-track-index="0">{{art:judge-4-scale:scale-art:step2:0:checks@0.2}}<h1 id="step2-title" class="headline"><span>AN INDEPENDENT CHECK</span></h1><div id="checking-card" class="plate"><div class="label">[02 / AGAINST THE RUBRIC]</div><div class="viewport"><img src="assets/shots/checking.png" alt=""/><i id="checking-mark" class="mark"></i></div></div></section><section id="s-step3" class="clip scene" data-start="{{start:step3}}" data-duration="{{dur:step3}}" data-track-index="0"><h1 id="step3-title" class="headline"><span>A RESULT YOU CAN QUESTION</span></h1><div id="released-card" class="plate"><div class="label">[03 / REVIEW RELEASED]</div><div class="viewport"><img src="assets/shots/released.png" alt=""/><i id="reason-mark" class="mark"></i><i id="flag-mark" class="mark"></i></div></div></section><section id="s-practice" class="clip scene" data-start="{{start:practice}}" data-duration="{{dur:practice}}" data-track-index="0"><h1 id="practice-title" class="headline"><span>WHAT YOU PRACTISE NEXT</span></h1><div id="practice-card" class="plate"><div class="label">[PRACTICE / FLASHCARDS]</div><div class="viewport"><img data-layout-allow-overflow src="assets/shots/queue.png" alt=""/><i id="queue-mark" class="mark"></i></div></div><div id="practice-stat" class="stat"><div id="count" class="number">0</div><div class="unit">PRACTICE STATES</div></div></section><section id="s-close" class="clip scene" data-start="{{start:close}}" data-duration="{{dur:close}}" data-track-index="0"><h1 id="close-title" class="headline"><span>A SECOND OPINION</span></h1><div id="exam-card" class="plate"><div class="label">[EXAM / YOUR WORK]</div><div class="viewport"><img data-layout-allow-overflow src="assets/shots/exam.png" alt=""/><i id="exam-mark" class="mark"></i></div></div><div id="endcard" class="endcard" data-layout-allow-overflow><div id="end-bot" class="bot"><div class="sway"><div class="atlas" style="background-image:url(assets/bot/body-waving.avif)"></div></div></div><img id="end-logo" class="end-logo" src="assets/brand/logo-lockup.png" alt="Keating"/><div id="end-url" class="end-url">keating.help</div></div></section><div id="rail" class="rail"><div id="step-1" class="step">1</div><div id="step-2" class="step">2</div><div id="step-3" class="step">3</div></div><canvas data-layout-ignore id="fx-over" class="fx" width="1920" height="1080" data-layout-allow-occlusion data-layout-allow-overflow></canvas><div class="film-tag">[{{label}}]</div>
+{{captions}}
+<audio id="mix" src="assets/audio/mix.wav" data-start="0" data-duration="{{total}}" data-volume="1"></audio></div><script>
+
+const TIMING = /*TIMING*/ null;
+const S=Object.fromEntries(TIMING.scenes.map(s=>[s.id,s]));
+const norm=s=>s.toLowerCase().replace(/[^a-z0-9]/g,"");
+const st=id=>S[id].start, en=id=>S[id].start+S[id].duration;
+function at(id,w,n=1) {let c=0;for(const x of S[id].words)if(norm(x.w)===norm(w)&&++c===n)return x.s;throw Error(`Missing cue ${id}/${w}`)}
+const tl=gsap.timeline({paused:true});
+const pop=(sel,t)=>tl.fromTo(sel,{opacity:0,y:45},{opacity:1,y:0,duration:.45,ease:"power3.out"},t);
+const drawMark=(sel,t)=>tl.fromTo(sel,{scaleX:0},{scaleX:1,duration:.5,ease:"power2.out"},t);
+function poster(sel,t,d) {
+ const moving=document.querySelector(sel).dataset.motion==='true';
+ tl.fromTo(sel+' .back',{scale:1.01,x:0},{scale:moving?1.035:1.08,x:moving?-6:-15,duration:d,ease:"none"},t);
+ if(!moving)tl.fromTo(sel+' .foreground',{scale:1.01,x:0},{scale:1.1,x:-26,duration:d,ease:"none"},t);
+}
+function product(sel,t,zoom=1.18) {
+ pop(sel,t);
+ tl.fromTo(sel,{scale:1},{scale:zoom,duration:1.4,ease:"power2.inOut"},t+.55);
+}
+poster('#referee',0,S.hook.duration);
+tl.fromTo('#hook-title',{y:45,opacity:0},{y:0,opacity:1,duration:.55,ease:"power3.out"},.12);
+for(const id of ['step1','step2','step3','practice','close'])pop('#'+id+'-title',st(id)+.1);
+pop('#rail',st('step1'));
+for(let i=1;i<=3;i++)tl.to('#step-'+i,{backgroundColor:'#1e9b50',color:'#f1ece0',duration:.32},at('step'+i,['one','two','three'][i-1]));
+const seal=at('step1',"It's")-.15;
+const answer=at('step1','question')-.2;
+poster('#writing',st('step1'),seal-st('step1')+.2);
+poster('#sealed',seal,answer-seal+.2);
+tl.fromTo('#sealed',{opacity:0},{opacity:1,duration:.22},seal);
+tl.to('#writing',{opacity:0,duration:.2},seal);
+tl.to('#sealed',{opacity:0,duration:.3},answer);
+product('#answer-card',answer);
+drawMark('#answer-mark',answer+.7);
+const checking=at('step2','checks')-.1;
+poster('#scale-art',st('step2'),checking-st('step2')+.3);
+tl.to('#scale-art',{opacity:0,duration:.3},checking);
+product('#checking-card',checking);
+drawMark('#checking-mark',at('step2','rubric')-.2);
+product('#released-card',st('step3')+.35);
+drawMark('#reason-mark',at('step3','reason'));
+tl.to('#reason-mark',{opacity:0,duration:.18},at('step3','If'));
+drawMark('#flag-mark',at('step3','missed')-.1);
+product('#practice-card',st('practice')+.3,1.08);
+drawMark('#queue-mark',at('practice','next'));
+const number=at('practice','two'), numberEnd=at('practice','states');
+pop('#practice-stat',number-.4);
+const count={v:0};tl.to(count,{v:288,duration:numberEnd-number,ease:"power2.out",onUpdate:()=>{document.querySelector('#count').textContent=String(Math.round(count.v))}},number);
+product('#exam-card',st('close')+.25,1.12);
+drawMark('#exam-mark',at('close','opinion'));
+const endcard=en('close')-1.8;
+tl.fromTo('#endcard',{y:1080},{y:0,duration:.3,ease:"power3.inOut"},endcard);
+tl.to('#rail',{opacity:0,duration:.2},endcard);
+pop('#end-logo',endcard+.15);pop('#end-url',endcard+.2);pop('#end-bot',endcard+.1);
+      const even = (n) => Array.from({ length: n }, (_, i) => [i / n, i]);
+      const CAD = {
+        idle: { period: 6, keys: [[0, 0], [0.74, 1], [0.78, 2], [0.82, 3], [0.86, 4], [0.9, 5], [0.94, 6], [0.98, 7]] },
+        waving: { period: 4, keys: [[0, 0], [0.04, 1], [0.08, 2], [0.12, 3], [0.16, 4], [0.2, 5], [0.24, 6], [0.28, 7]] },
+        thinking: { period: 3.6, keys: [[0, 0], [0.28, 1], [0.36, 2], [0.44, 3], [0.6, 4], [0.68, 5], [0.76, 6], [0.84, 7]] },
+        speaking: { period: 1, keys: even(8) },
+        listening: { period: 3.2, keys: [[0, 0], [0.38, 1], [0.46, 2], [0.54, 3], [0.62, 4], [0.7, 5], [0.78, 6], [0.86, 7]] },
+        understanding: { period: 6, keys: [[0, 0], [0.12, 1], [0.24, 2], [0.38, 3], [0.48, 4], [0.6, 5], [0.8, 6], [0.9, 7]] },
+        success: { period: 1.05, once: true, keys: Array.from({ length: 8 }, (_, i) => [i / 7, i]) },
+      };
+      const framePos = (i) => `${((i % 4) / 3) * 100}% ${Math.floor(i / 4) * 100}%`;
+      function animateSprite(el, state, t0, t1) {
+        const c = CAD[state];
+        for (let p = t0; p < t1; p += c.period) {
+          for (const [k, f] of c.keys) {
+            const t = p + k * c.period;
+            if (t >= t1) break;
+            tl.set(el, { backgroundPosition: framePos(f) }, t);
+          }
+          if (c.once) break;
+        }
+      }
+
+animateSprite("#end-bot .atlas","waving",endcard+.1,TIMING.total);
+        const NOISE = `
+          precision highp float;
+          varying vec2 v_uv;
+          uniform float u_t;
+          float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+          float noise(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+          }
+          float fbm(vec2 p) {
+            float v = 0.0, a = 0.5;
+            mat2 R = mat2(0.8, 0.6, -0.6, 0.8);
+            for (int i = 0; i < 5; i++) { v += a * noise(p); p = R * p * 2.02; a *= 0.5; }
+            return v;
+          }
+          const vec3 PAPER = vec3(0.945, 0.925, 0.878);
+          const vec3 WASH = vec3(0.925, 0.965, 0.925);
+          const vec3 TERM = vec3(0.047, 0.082, 0.063);
+          const vec3 PHOS = vec3(0.294, 0.890, 0.533);
+          const vec3 PHOS_DIM = vec3(0.180, 0.604, 0.361);
+        `;
+        const BG = NOISE + `
+          uniform float u_from, u_to, u_p, u_edge, u_down, u_kick;
+          void main() {
+            vec2 uv = v_uv, p = uv * vec2(1.7778, 1.0) * 2.2;
+            float t = u_t;
+            vec2 q = vec2(fbm(p + t * 0.05), fbm(p + vec2(5.2, 1.3) - t * 0.04));
+            float n = fbm(p + (1.6 + 1.4 * u_kick) * q + vec2(1.7, 9.2) + t * 0.03);
+            // Paper only ever lightens from its base, so ink and green type keep their contrast.
+            vec3 paper = mix(PAPER, vec3(1.0), 0.16 * smoothstep(0.3, 0.8, n));
+            paper = mix(paper, WASH, smoothstep(0.6, 0.9, n) * (0.25 + 0.45 * u_kick));
+            float v = 1.0 - smoothstep(0.2, 1.1, length((uv - vec2(0.5, 0.6)) * vec2(1.6, 1.0)));
+            vec3 term = TERM + PHOS_DIM * (pow(n, 2.5) * 0.38 + 0.04) * (0.5 + 0.7 * v) + vec3(0.03, 0.06, 0.04) * v;
+            vec3 a = mix(paper, term, u_from), b = mix(paper, term, u_to);
+            // Burn: a noisy front sweeps up the frame (down when entering the terminal).
+            float y = u_down > 0.5 ? 1.0 - uv.y : uv.y;
+            float field = 0.72 * y + 0.45 * fbm(uv * vec2(1.7778, 1.0) * 4.0 + 3.0);
+            float front = u_p * 1.4 - 0.12;
+            float gone = smoothstep(front + 0.012, front - 0.012, field);
+            vec3 col = mix(a, b, gone);
+            float beyond = field - front;
+            col = mix(col, vec3(0.05, 0.04, 0.03), u_edge * 0.55 * smoothstep(0.0, 0.015, beyond) * (1.0 - smoothstep(0.02, 0.07, beyond)));
+            float glow = exp(-abs(beyond) * 55.0) * u_edge;
+            col += (mix(PHOS, vec3(1.0, 0.97, 0.82), exp(-abs(beyond) * 220.0)) * 1.1) * glow;
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `;
+        const OVER = NOISE + `
+          uniform float u_crt, u_sweep, u_sweepAmp, u_glitch, u_flash, u_frame;
+          void main() {
+            vec2 uv = v_uv;
+            vec3 add = vec3(0.0);
+            float dark = hash(floor(uv * vec2(1920.0, 1080.0)) + floor(u_t * 12.0)) * 0.035;
+            vec2 ray = (uv - vec2(0.52, 0.28)) * vec2(1.7778, 1.0);
+            float sun = smoothstep(0.12, 0.2, sin(atan(ray.y, ray.x) * 18.0 + u_t * 0.055));
+            add += PHOS * sun * 0.035 * smoothstep(0.45, 0.9, uv.y);
+            if (u_crt > 0.001) {
+              float band = exp(-pow(1.0 - uv.y - fract(u_t * 0.12), 2.0) * 140.0);
+              add += PHOS * band * 0.05 * u_crt;
+              float g = hash(floor(uv * vec2(960.0, 540.0)) + u_frame * 1.37);
+              add += PHOS * max(g - 0.5, 0.0) * 0.1 * u_crt;
+              dark = smoothstep(0.45, 0.95, length((uv - 0.5) * vec2(1.25, 1.0))) * 0.45 * u_crt;
+            }
+            if (u_sweepAmp > 0.001) {
+              vec2 p = (uv - 0.5) * vec2(1.7778, 1.0);
+              float d = dot(p, normalize(vec2(1.0, 0.45))) - mix(-1.3, 1.3, u_sweep);
+              add += (vec3(1.0, 0.97, 0.88) * exp(-d * d * 60.0) * 0.26 + PHOS * exp(-d * d * 6.0) * 0.07) * u_sweepAmp;
+            }
+            if (u_glitch > 0.001) {
+              float row = floor(uv.y * 54.0);
+              float h = hash(vec2(row, u_frame));
+              float on = step(1.0 - 0.45 * u_glitch, h);
+              float h2 = hash(vec2(row * 1.7, u_frame + 3.1));
+              vec3 tint = h2 < 0.33 ? vec3(0.84, 0.38, 0.29) : h2 < 0.66 ? vec3(0.1, 0.85, 0.9) : PHOS;
+              float seg = step(hash(vec2(floor(uv.x * 12.0 + h * 40.0), row)), 0.6);
+              add += tint * on * seg * 0.38 * u_glitch;
+              dark = max(dark, on * (1.0 - seg) * 0.55 * u_glitch);
+            }
+            float r = length((uv - 0.5) * vec2(1.7778, 1.0));
+            add += mix(PHOS, vec3(1.0), 0.35) * u_flash * (0.55 - 0.3 * r);
+            gl_FragColor = vec4(add, dark);
+          }
+        `;
+
+        function layer(id, fs) {
+          const gl = document.getElementById(id).getContext("webgl", { preserveDrawingBuffer: false, premultipliedAlpha: true, antialias: false });
+          if (!gl) throw new Error("no webgl");
+          const compile = (type, src) => {
+            const sh = gl.createShader(type);
+            gl.shaderSource(sh, src);
+            gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+            return sh;
+          };
+          const prog = gl.createProgram();
+          gl.attachShader(prog, compile(gl.VERTEX_SHADER, "attribute vec2 p; varying vec2 v_uv; void main() { v_uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }"));
+          gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+          gl.linkProgram(prog);
+          gl.useProgram(prog);
+          gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+          const loc = gl.getAttribLocation(prog, "p");
+          gl.enableVertexAttribArray(loc);
+          gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+          const uni = {};
+          return (vals) => {
+            for (const k in vals) {
+              if (!(k in uni)) uni[k] = gl.getUniformLocation(prog, "u_" + k);
+              if (uni[k]) gl.uniform1f(uni[k], vals[k]);
+            }
+            gl.viewport(0, 0, 1920, 1080);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          };
+        }
+
+
+try {
+ const bg=layer("fx-bg",BG),over=layer("fx-over",OVER);
+ const draw=t=>{
+  const dark=t<en('hook')?1:0;
+  const kick=Math.max(0,...TIMING.scenes.filter(s=>t>=s.start).map(s=>Math.exp(-(t-s.start)/.7)));
+  const state={t,from:dark,to:dark,p:1,edge:0,down:0,kick,crt:dark,sweep:0,sweepAmp:0,glitch:0,flash:0,frame:Math.floor(t*TIMING.fps)};
+  bg(state);over(state);
+ };
+ const clock={t:0};tl.to(clock,{t:TIMING.total,duration:TIMING.total,ease:"none",onUpdate:()=>draw(clock.t)},0);draw(0);
+} catch(e) {console.warn('[fx]',e.message)}
+document.querySelectorAll('.cap .cw').forEach(el=>{tl.set(el,{color:'#4be388'},Number(el.dataset.s));tl.set(el,{color:'#f1ece0'},Number(el.dataset.e))});
+tl.set({}, {}, TIMING.total);
+window.__timelines['main']=tl;
+</script></body></html>

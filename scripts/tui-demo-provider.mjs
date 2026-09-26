@@ -1,9 +1,16 @@
 #!/usr/bin/env bun
 
+// Deterministic local capture provider. Usage: bun scripts/tui-demo-provider.mjs [port]
+
 import { serve } from "bun";
 
 const requestedPort = Number.parseInt(process.argv[2] ?? "58173", 10);
 const port = Number.isFinite(requestedPort) ? requestedPort : 58173;
+const corsHeaders = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "GET, POST, OPTIONS",
+  "access-control-allow-headers": "*",
+};
 
 const contradictionReply = [
   "Proof by contradiction works because a claim and its negation cannot both be true.",
@@ -21,6 +28,24 @@ const raftReply = [
   "In Raft, if two entries in different logs have the same index and term, they store the identical command and their logs are identical up to that point.",
   "Now imagine two candidates timeout at the exact same millisecond in term 3 and both request votes.",
   "What condition prevents both candidates from acquiring a majority quorum simultaneously in the same term?",
+].join(" ");
+
+const citiesReply = [
+  "A city often begins where people have a reason to stop, exchange goods, and stay.",
+  "Rivers supply water and transport, while sheltered harbours and crossing trade routes bring people together.",
+  "If you were choosing a site for a new city, which of those advantages would matter most, and why?",
+].join(" ");
+
+const stoppingRuleHint = [
+  "Hint: trace the update before changing the stopping rule.",
+  "For `while (n !== 0) { n = n - 1; }`, does subtracting 1 move a negative number toward zero or away from it?",
+  "What do you predict happens for n = -3?",
+].join(" ");
+
+const stoppingRuleConfirmation = [
+  "Yes. Starting at -3 gives -4, -5, and so on, so the loop never reaches zero.",
+  "To handle negative inputs too, each step needs to move toward zero.",
+  "Can you restate the fix in your own words?",
 ].join(" ");
 
 function replyFor(messages) {
@@ -41,7 +66,10 @@ function replyFor(messages) {
       ? latest.content
       : "";
   if (content.toLowerCase().includes("raft") || content.toLowerCase().includes("consensus")) return raftReply;
-  return content.toLowerCase().includes("numerical example") ? exampleReply : contradictionReply;
+  if (content.toLowerCase().includes("numerical example")) return exampleReply;
+  if (content.includes("Explain why this stopping rule fails when the input is negative.")) return stoppingRuleHint;
+  if (content.includes("It never reaches zero, so it loops forever?")) return stoppingRuleConfirmation;
+  return content.toLowerCase().includes("cities") ? citiesReply : contradictionReply;
 }
 
 function chunk(id, content, finishReason = null) {
@@ -54,14 +82,21 @@ function chunk(id, content, finishReason = null) {
   });
 }
 
-serve({
+const server = serve({
   hostname: "127.0.0.1",
   port,
   async fetch(request) {
     const url = new URL(request.url);
-    if (url.pathname === "/health") return new Response("ready\n");
+    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders });
+    if (url.pathname === "/health") return new Response("ready\n", { headers: corsHeaders });
+    if (request.method === "GET" && url.pathname === "/v1/models") {
+      return Response.json(
+        { object: "list", data: [{ id: "local-tutor", object: "model", owned_by: "keating" }] },
+        { headers: corsHeaders },
+      );
+    }
     if (request.method !== "POST" || url.pathname !== "/v1/chat/completions") {
-      return Response.json({ error: { message: "Not found" } }, { status: 404 });
+      return Response.json({ error: { message: "Not found" } }, { status: 404, headers: corsHeaders });
     }
 
     const body = await request.json();
@@ -69,14 +104,17 @@ serve({
     const id = `chatcmpl-keating-${Date.now()}`;
 
     if (body.stream === false) {
-      return Response.json({
-        id,
-        object: "chat.completion",
-        created: Math.floor(Date.now() / 1000),
-        model: "local-tutor",
-        choices: [{ index: 0, message: { role: "assistant", content: text }, finish_reason: "stop" }],
-        usage: { prompt_tokens: 24, completion_tokens: 46, total_tokens: 70 },
-      });
+      return Response.json(
+        {
+          id,
+          object: "chat.completion",
+          created: Math.floor(Date.now() / 1000),
+          model: "local-tutor",
+          choices: [{ index: 0, message: { role: "assistant", content: text }, finish_reason: "stop" }],
+          usage: { prompt_tokens: 24, completion_tokens: 46, total_tokens: 70 },
+        },
+        { headers: corsHeaders },
+      );
     }
 
     const words = text.split(/(?<=\s)/u);
@@ -96,6 +134,7 @@ serve({
 
     return new Response(stream, {
       headers: {
+        ...corsHeaders,
         "cache-control": "no-cache",
         connection: "keep-alive",
         "content-type": "text/event-stream",
@@ -104,4 +143,4 @@ serve({
   },
 });
 
-console.log(`Keating capture provider listening on http://127.0.0.1:${port}`);
+console.log(`Keating capture provider listening on http://127.0.0.1:${server.port}`);

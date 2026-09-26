@@ -38,11 +38,19 @@ export interface KeatingUiSettings {
 	imageQuality: string;
 	localImageBaseUrl: string;
 	webSearch: "auto" | "off";
+	/** Tutor study-plan revisions apply immediately, or wait for the learner's Accept. */
+	planChanges: "autonomous" | "approval";
 	flashcardSoundEnabled: boolean;
+	/**
+	 * Opt-in consent to send sanitized crash diagnostics to Keating. Off until
+	 * the learner agrees, and revocable at any time.
+	 */
+	diagnosticsReporting: boolean;
 }
 
 export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
-	showToolUi: true,
+	// Tool call cards stay out of the transcript until the learner asks for them.
+	showToolUi: false,
 	autoOpenArtifacts: true,
 	limitInlineArtifactPreviews: true,
 	showRawErrors: false,
@@ -62,7 +70,9 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	imageQuality: "",
 	localImageBaseUrl: "",
 	webSearch: "auto",
-	flashcardSoundEnabled: false,
+	planChanges: "autonomous",
+	flashcardSoundEnabled: true,
+	diagnosticsReporting: false,
 };
 
 type FontStack = {
@@ -205,7 +215,13 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 		imageQuality: typeof value?.imageQuality === "string" ? value.imageQuality : DEFAULT_UI_SETTINGS.imageQuality,
 		localImageBaseUrl: typeof value?.localImageBaseUrl === "string" ? value.localImageBaseUrl : DEFAULT_UI_SETTINGS.localImageBaseUrl,
 		webSearch,
-		flashcardSoundEnabled: value?.flashcardSoundEnabled === true,
+		planChanges: value?.planChanges === "approval" ? "approval" : DEFAULT_UI_SETTINGS.planChanges,
+		// Flashcard sounds default to on, but an explicit off survives a reload.
+		flashcardSoundEnabled: typeof value?.flashcardSoundEnabled === "boolean"
+			? value.flashcardSoundEnabled
+			: DEFAULT_UI_SETTINGS.flashcardSoundEnabled,
+		// Diagnostic reporting is consent-gated: only an explicit true turns it on.
+		diagnosticsReporting: value?.diagnosticsReporting === true,
 	};
 }
 

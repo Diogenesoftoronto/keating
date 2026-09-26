@@ -1,7 +1,20 @@
 .chat-onboarding { box-sizing: border-box; width: min(100%, 560px); margin: 24px auto; padding: 24px; border: 1px solid var(--border); border-radius: 12px; background: var(--paper, #f3efe3); color: var(--ink, #242720); font-size: 14px; line-height: 1.5; }
 .chat-onboarding__top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--muted-foreground); }
 .chat-onboarding__intro { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-top: 20px; }
-.chat-onboarding__progress { margin: 0 0 8px; font-size: 12px; color: var(--muted-foreground); }
+.chat-onboarding__progress { display: grid; gap: 8px; justify-items: end; margin: 0 0 4px; }
+.chat-onboarding__progress-label { margin: 0; font-size: 12px; color: var(--muted-foreground); }
+/* A track the eye can read at a glance, rather than counting in prose. */
+.chat-onboarding__track { display: flex; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.chat-onboarding__track li { width: 18px; height: 3px; border-radius: 999px; background: color-mix(in srgb, var(--ink) 14%, transparent); transition: background-color .32s ease, width .32s ease; }
+.chat-onboarding__track li[data-state="done"] { background: color-mix(in srgb, var(--primary) 55%, transparent); }
+.chat-onboarding__track li[data-state="current"] { width: 26px; background: var(--primary); }
+/* Each step arrives rather than snapping, so the change of subject registers. */
+.chat-onboarding__step { animation: chat-onboarding-step-in .34s cubic-bezier(.22, .61, .36, 1) both; }
+@keyframes chat-onboarding-step-in {
+	from { opacity: 0; transform: translateY(6px); }
+	to { opacity: 1; transform: none; }
+}
+.chat-onboarding h2 { animation: chat-onboarding-step-in .34s cubic-bezier(.22, .61, .36, 1) 40ms both; }
 .chat-onboarding h2 { margin: 20px 0 10px; font-size: 26px; font-weight: 600; line-height: 1.2; letter-spacing: -.025em; text-wrap: balance; }
 .chat-onboarding h2:focus { outline: none; }
 .chat-onboarding > p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--muted-foreground); }
@@ -33,4 +46,23 @@
 .chat-onboarding__tips strong { font-weight: 600; }
 /* Profile steps are taller than the setup steps; keep the footer reachable without the page growing. */
 .chat-onboarding__fields { display: grid; gap: 20px; max-height: min(56vh, 30rem); overflow-y: auto; padding-right: 4px; }
-@media (max-width: 460px) { .chat-onboarding { margin-block: 12px; padding: 18px; } .chat-onboarding h2 { font-size: 23px; } }
+@media (max-width: 460px) { .chat-onboarding { margin-block: 12px; padding: 18px; } .chat-onboarding h2 { font-size: 23px; } .chat-onboarding__track li { width: 14px; } .chat-onboarding__track li[data-state="current"] { width: 20px; } }
+/* Motion here is decoration; the track and the headings must still read without it. */
+html[data-motion="reduce"] .chat-onboarding__step,
+html[data-motion="reduce"] .chat-onboarding h2,
+html[data-motion="reduce"] .chat-onboarding__track li { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+	.chat-onboarding__step, .chat-onboarding h2, .chat-onboarding__track li { animation: none !important; transition: none !important; }
+}
+/* The two doors into the profile, presented as peers rather than a choice with a default. */
+.chat-onboarding__doors { display: grid; gap: 10px; margin-top: 20px; }
+.chat-onboarding__doors-ask { margin: 0; font-size: 14px; font-weight: 600; }
+.chat-onboarding__doors > p:not(.chat-onboarding__doors-ask) { margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted-foreground); }
+.chat-onboarding__doors > div { display: grid; gap: 10px; }
+.chat-onboarding__door { display: grid; gap: 3px; padding: 14px; border: 1px solid var(--border); border-radius: 6px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; transition: border-color .2s ease, background-color .2s ease; }
+.chat-onboarding__door[aria-pressed="true"] { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+.chat-onboarding__door strong { font-size: 14px; font-weight: 600; }
+.chat-onboarding__door span { font-size: 12px; line-height: 1.5; color: var(--muted-foreground); }
+@media (min-width: 560px) { .chat-onboarding__doors > div { grid-template-columns: 1fr 1fr; } }
+html[data-motion="reduce"] .chat-onboarding__door { transition: none !important; }
+@media (prefers-reduced-motion: reduce) { .chat-onboarding__door { transition: none !important; } }

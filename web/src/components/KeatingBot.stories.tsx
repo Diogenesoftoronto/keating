@@ -1,8 +1,8 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { KeatingBot, KEATING_BOT_CHAT_STATES, KEATING_BOT_ACTIVITY_STATES, type KeatingBotState } from "./KeatingBot";
+import { KeatingBot, KEATING_BOT_CHAT_STATES, KEATING_BOT_ACTIVITY_STATES, KEATING_BOT_ONBOARDING_STATES, type KeatingBotState } from "./KeatingBot";
 
-const states: KeatingBotState[] = [...KEATING_BOT_CHAT_STATES, ...KEATING_BOT_ACTIVITY_STATES];
+const states: KeatingBotState[] = [...KEATING_BOT_CHAT_STATES, ...KEATING_BOT_ACTIVITY_STATES, ...KEATING_BOT_ONBOARDING_STATES];
 const meta = {
 	title: "Brand/KeatingBot",
 	component: KeatingBot,
@@ -57,7 +57,7 @@ export const WavingFrames: Story = { ...SpeakingFrames, args: { state: "waving",
 
 export const StopMotionGallery: Story = {
 	render: args => <div style={{ display: "grid", gap: "3rem", padding: "1rem" }}>
-		{[{ title: "Conversation", states: KEATING_BOT_CHAT_STATES }, { title: "Study and play", states: KEATING_BOT_ACTIVITY_STATES }].map(group => <section key={group.title}>
+		{[{ title: "Conversation", states: KEATING_BOT_CHAT_STATES }, { title: "Study and play", states: KEATING_BOT_ACTIVITY_STATES }, { title: "First contact", states: KEATING_BOT_ONBOARDING_STATES }].map(group => <section key={group.title}>
 			<h2 style={{ fontSize: "1rem", margin: "0 0 1.5rem" }}>{group.title}</h2>
 			<div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "2rem" }}>
 				{group.states.map(state => <figure key={state} style={{ margin: 0, display: "grid", justifyItems: "center", gap: "1rem" }}>

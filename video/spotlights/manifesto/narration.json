@@ -1,0 +1,22 @@
+{
+  "$comment": "Brand film: no product UI. Six poster illustrations, one voice, title cards. Canonical narration; edit a line and re-run produce.sh (unchanged lines hit the TTS cache).",
+  "label": "KEATING // WHY",
+  "format": "manifesto — cinematic brand film, illustration and type only",
+  "output": "keating-manifesto",
+  "size": [1920, 1080],
+  "tts": {
+    "engine": "fal",
+    "model": "google/gemini-3.8-flash-tts",
+    "voice": "Aoede",
+    "instructions": "Voice: a warm, grounded teacher speaking to one student, quietly passionate. Tone: sincere and a little wry, never salesy or grand. Pacing: slow and deliberate, with a real pause at each full stop and em dash; let lines breathe. Pronounce 'Keating' as KEE-ting."
+  },
+  "timing": { "lead": 0.6, "tail": 1.1, "fps": 30 },
+  "scenes": [
+    { "id": "tap", "min": 6, "title": "ONE TAP AWAY.", "text": "Every answer is one tap away now. It has never been easier to stop thinking.", "art": ["m-1-screens"] },
+    { "id": "look", "min": 6, "title": "LOOK UP.", "text": "Keating is built for the other moment — when you look up, and want to understand.", "art": ["m-2-lookup"] },
+    { "id": "stuck", "min": 6.5, "title": "ASK BEFORE TELLING.", "text": "It asks before it tells. It lets you get stuck — and stays with you while you work it out.", "art": ["m-4-stuck"] },
+    { "id": "climb", "min": 6.5, "title": "EARN IT.", "text": "It checks your work honestly, remembers what you've learned, and brings it back when it matters.", "art": ["m-3-climb"] },
+    { "id": "desk", "min": 6, "title": "SEE FURTHER.", "text": "Not to think for you. To help you see further — on your own.", "art": ["m-5-desk"] },
+    { "id": "close", "min": 7, "title": "KEATING", "text": "Keating. A teacher that makes you the one who knows.", "art": ["m-6-flight"] }
+  ]
+}

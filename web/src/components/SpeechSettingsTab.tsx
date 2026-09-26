@@ -6,6 +6,7 @@ import { Toggle } from "./Toggle";
 import { SettingRow } from "./SettingRow";
 import { AudioModelSelectorDialog } from "./ModelSelector";
 import {
+	isDuplexSpeechProvider,
 	listSpeechProviders,
 	resolveSpeechRealtimeTier,
 	usesProviderHostedLiveSurface,
@@ -141,6 +142,15 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 		? settings.customModels.find((m) => `custom:${m.id}` === settings.providerId)
 		: undefined;
 
+	/**
+	 * A duplex provider holds a live conversation with the learner, so a mic
+	 * that is already on is the useful default. Half-duplex providers (plain
+	 * TTS) stay opt-in: turning the mic on there changes the composer's
+	 * behaviour without anything to talk to.
+	 */
+	const duplexMicDefault = (providerId: SpeechProviderId): Partial<WebSpeechSettings> =>
+		isDuplexSpeechProvider(providerId) ? { microphoneEnabled: true } : {};
+
 	const handleProviderChange = (providerId: SpeechProviderId) => {
 		setAudioModelPickerOpen(false);
 		if (providerId.startsWith("custom:")) {
@@ -154,7 +164,7 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 		if (!next) return;
 		const firstModel = next.models[0]?.value ?? "";
 		const firstVoice = next.voices[0] ?? "";
-		persist({ providerId, model: firstModel, voiceName: firstVoice });
+		persist({ providerId, model: firstModel, voiceName: firstVoice, ...duplexMicDefault(providerId) });
 	};
 
 	const addCustomModel = () => {
@@ -190,6 +200,7 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 				patch.providerId = fallback.id;
 				patch.model = fallback.models[0]?.value ?? "";
 				patch.voiceName = fallback.voices[0] ?? "";
+				Object.assign(patch, duplexMicDefault(fallback.id));
 			}
 		}
 		persist(patch);
@@ -218,7 +229,10 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 				description="When on, Keating can call its voice tool to speak short learner-facing lines through the active provider."
 				className={css({ scrollMarginTop: "5rem" })}
 			>
-				<Toggle checked={settings.enabled} onChange={(checked) => persist({ enabled: checked })} />
+				<Toggle
+					checked={settings.enabled}
+					onChange={(checked) => persist({ enabled: checked, ...(checked ? duplexMicDefault(settings.providerId) : {}) })}
+				/>
 			</SettingRow>
 
 			<div id="settings-section-speech-provider" className={sectionClass}>
@@ -384,7 +398,7 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 			<SettingRow
 				id="settings-section-speech-mic"
 				title="Microphone (duplex providers)"
-				description="When enabled, duplex providers like OpenAI Realtime may capture your microphone for back-and-forth voice. TTS-only providers ignore this."
+				description="Duplex providers like GPT Live and OpenAI Realtime hold a live conversation, so the microphone turns on with them. TTS-only providers ignore this."
 				className={css({ scrollMarginTop: "5rem" })}
 			>
 				<Toggle checked={settings.microphoneEnabled} onChange={(checked) => persist({ microphoneEnabled: checked })} />

@@ -2,12 +2,14 @@ import { describe, expect, it } from "bun:test";
 import { mockEvent } from "h3";
 import {
 	NOTORGANIC_DEFAULT_MODEL,
+	NOTORGANIC_IMAGE_MODEL_ALIAS,
 	NOTORGANIC_MODEL_ALIAS,
 	NOTORGANIC_PROVIDER_ID,
 	createNotOrganicCheckout,
 	getNotOrganicUsage,
 	isNotOrganicProvider,
 	notOrganicOpenAiBaseUrl,
+	notOrganicOpenAiImageEndpoint,
 } from "../notorganic-provider";
 import {
 	NOTORGANIC_IDEMPOTENCY_HEADER,
@@ -27,6 +29,10 @@ describe("Not Organic provider definition", () => {
 		expect(NOTORGANIC_DEFAULT_MODEL.provider).toBe(NOTORGANIC_PROVIDER_ID);
 		expect(notOrganicOpenAiBaseUrl("https://keating.test/")).toBe(
 			"https://keating.test/api/notorganic/openai/v1",
+		);
+		expect(NOTORGANIC_IMAGE_MODEL_ALIAS).toBe("image");
+		expect(notOrganicOpenAiImageEndpoint("https://keating.test/")).toBe(
+			"https://keating.test/api/notorganic/openai/v1/images/generations",
 		);
 		expect(isNotOrganicProvider("notorganic")).toBe(true);
 		expect(isNotOrganicProvider("dio")).toBe(false);
@@ -256,6 +262,35 @@ describe("Not Organic Nitro routing", () => {
 			expect(observed.headers?.get("authorization")).not.toContain("browser-placeholder");
 			expect(observed.headers?.get(NOTORGANIC_MAX_COST_HEADER)).toBe("75000");
 			expect(observed.headers?.get(NOTORGANIC_IDEMPOTENCY_HEADER)).toMatch(/^keating_/);
+			expect(feature).toBe("keating:web-chat");
+
+			observed = {};
+			const imageEvent = mockEvent(
+				new Request("https://keating.test/api/notorganic/openai/v1/images/generations", {
+					method: "POST",
+					headers: {
+						"content-type": "application/json",
+						authorization: "Bearer browser-placeholder",
+					},
+					body: JSON.stringify({ model: "image", prompt: "A labeled anatomy diagram", n: 1 }),
+				}),
+			);
+			imageEvent.context.notOrganicSessionAdapter = {
+				getProductSession: async (_event: unknown, request: { feature: string }) => {
+					feature = request.feature;
+					return {
+						accountId: "did:plc:alice",
+						accessToken: "server-capability",
+						createDpopProof: async () => "server-proof",
+					};
+				},
+			};
+			const imageResponse = await handler(imageEvent) as Response;
+			expect(imageResponse.status).toBe(200);
+			expect(observed.url).toBe("https://provider.test/v1/images/generations");
+			expect(observed.headers?.get("authorization")).toBe("DPoP server-capability");
+			expect(observed.headers?.get("authorization")).not.toContain("browser-placeholder");
+			expect(observed.headers?.get(NOTORGANIC_MAX_COST_HEADER)).toBe("75000");
 			expect(feature).toBe("keating:web-chat");
 		} finally {
 			globalThis.fetch = originalFetch;

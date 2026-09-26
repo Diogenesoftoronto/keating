@@ -1,0 +1,79 @@
+{
+  "$comment": "Spotlight: explainer — numbered three-step diagram, 'how it works'. Canonical narration; edit a line and re-run produce.sh (unchanged lines hit the TTS cache).",
+  "label": "KEATING // JUDGEMENTS",
+  "format": "explainer — numbered three-step diagram, 'how it works'",
+  "tts": {
+    "engine": "fal",
+    "model": "google/gemini-3.8-flash-tts",
+    "voice": "Charon",
+    "instructions": "Voice: a warm, grounded teacher who genuinely likes their students. Tone: calm, curious and a little wry; never salesy. Pacing: unhurried and conversational, with a small breath at each em dash and a real pause after questions. Pronounce 'Keating' as KEE-ting. "
+  },
+  "timing": {
+    "lead": 0.35,
+    "tail": 0.55,
+    "fps": 30
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "min": 4,
+      "text": "Who checks the checker?",
+      "captions": true,
+      "art": [
+        "judge-3-referee"
+      ]
+    },
+    {
+      "id": "step1",
+      "min": 5.5,
+      "text": "Step one: your answer comes first. It's saved — with the question and the task — before any review begins.",
+      "captions": true,
+      "art": [
+        "judge-1-write",
+        "judge-2-seal"
+      ],
+      "shots": [
+        "answer"
+      ]
+    },
+    {
+      "id": "step2",
+      "min": 5,
+      "text": "Step two: an independent judge checks it against the rubric.",
+      "captions": true,
+      "art": [
+        "judge-4-scale"
+      ],
+      "shots": [
+        "checking"
+      ]
+    },
+    {
+      "id": "step3",
+      "min": 5.5,
+      "text": "Step three: the result lands beside your work, with a reason you can open. If the review missed something, flag it.",
+      "captions": true,
+      "shots": [
+        "released"
+      ]
+    },
+    {
+      "id": "practice",
+      "min": 5.5,
+      "text": "Judgements also decide what you practise next — tuned on two hundred and eighty-eight practice states.",
+      "captions": true,
+      "shots": [
+        "queue"
+      ]
+    },
+    {
+      "id": "close",
+      "min": 5,
+      "text": "A second opinion — not the final word. Keating: judgement you can check.",
+      "captions": true,
+      "shots": [
+        "exam"
+      ]
+    }
+  ]
+}

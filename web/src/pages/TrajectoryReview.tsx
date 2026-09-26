@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import { Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, LoaderCircle } from "lucide-react";
@@ -13,6 +13,8 @@ import type {
 	TrajectorySelectionIntent,
 } from "../components/trajectory/types";
 import { useTrajectoryReview } from "../hooks/use-trajectory-review";
+import { keatingStorage } from "../hooks/keating-storage";
+import type { TeachingDraftReceiptRecord } from "../keating/storage";
 import { critiqueProposalTarget, useReviewPasses } from "../hooks/use-review-passes";
 import { markPassDrafted, overallAuthorship } from "../keating/annotation-provenance";
 import { rubricProposalMatchesTrajectory, type CritiqueProposal, type RubricSweepProposal } from "../keating/trajectory-passes";
@@ -52,8 +54,9 @@ function labelForRole(role: string): string {
 	return role.replaceAll(/([a-z])([A-Z])/g, "$1 $2");
 }
 
-function normalizedMessages(sessionId: string, messages: readonly AgentMessage[]): TrajectorySessionMessage[] {
+function normalizedMessages(sessionId: string, messages: readonly AgentMessage[], receipts: readonly TeachingDraftReceiptRecord[] = []): TrajectorySessionMessage[] {
 	const toolOutcomes = collectReviewToolOutcomes(messages);
+	const receiptByTimestamp = new Map(receipts.map((receipt) => [receipt.messageTimestamp, receipt]));
 	return messages.map((message, ordinal) => {
 		const anchor = messageReviewAnchor(sessionId, message, ordinal);
 		const entry = message as { role?: string; model?: string; stopReason?: string; errorMessage?: string };
@@ -71,6 +74,9 @@ function normalizedMessages(sessionId: string, messages: readonly AgentMessage[]
 			label: labelForRole(anchor.role),
 			model: entry.model,
 			status: entry.stopReason === "error" || entry.stopReason === "aborted" ? "failed" : "complete",
+			...(entry.role === "assistant" && anchor.timestamp !== undefined && receiptByTimestamp.has(anchor.timestamp)
+				? { draftReview: receiptByTimestamp.get(anchor.timestamp) }
+				: {}),
 		};
 	});
 }
@@ -197,9 +203,19 @@ export function TrajectoryReview() {
 		};
 	}, [sessionId]);
 
+	const [draftReceipts, setDraftReceipts] = useState<TeachingDraftReceiptRecord[]>([]);
+	useEffect(() => {
+		const reviewedSessionId = reviewState.session?.id;
+		if (!reviewedSessionId) return;
+		let cancelled = false;
+		keatingStorage.getTeachingDraftReceipts(reviewedSessionId)
+			.then((receipts) => { if (!cancelled) setDraftReceipts(receipts); })
+			.catch(() => { if (!cancelled) setDraftReceipts([]); });
+		return () => { cancelled = true; };
+	}, [reviewState.session]);
 	const messages = useMemo(
-		() => reviewState.session ? normalizedMessages(reviewState.session.id, reviewState.session.messages) : [],
-		[reviewState.session],
+		() => reviewState.session ? normalizedMessages(reviewState.session.id, reviewState.session.messages, draftReceipts) : [],
+		[draftReceipts, reviewState.session],
 	);
 	const artifacts = useMemo<NormalizedTrajectoryArtifact[]>(
 		() => reviewState.artifacts.map((snapshot) => ({

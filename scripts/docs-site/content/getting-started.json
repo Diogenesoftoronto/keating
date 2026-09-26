@@ -38,7 +38,7 @@
               "src": "/assets/tapes/web-landing.mp4",
               "poster": "/assets/tapes/posters/web-landing.jpg",
               "title": "Web classroom entry",
-              "caption": "Elena Chen navigating the browser learning space, model capabilities, and interactive workspace."
+              "caption": "The Keating landing page: the problem it answers, a try-it-yourself card, the films, and a goal planner."
             }
           },
           {
@@ -57,7 +57,7 @@
               "src": "/assets/tapes/tui-onboarding.mp4",
               "poster": "/assets/tapes/posters/tui-onboarding.jpg",
               "title": "Terminal UI first-minute launch",
-              "caption": "Elena Chen launching the terminal interface, configuring her learner handle and avatar portrait, and inspecting sidepanel shortcuts."
+              "caption": "Running keating tui for the first time: the eight-step tour, then a learner name, a local portrait, thinking effort, and runtime behaviour."
             }
           },
           {
@@ -75,8 +75,8 @@
             "video": {
               "src": "/assets/tapes/cli-artifacts.mp4",
               "poster": "/assets/tapes/posters/cli-artifacts.jpg",
-              "title": "CLI hyperteacher initialization",
-              "caption": "Elena Chen running Keating CLI commands to compile structured plans and verify concept invariants."
+              "title": "CLI plan, map, and verify",
+              "caption": "Running keating plan, map, and verify on Special Relativity, then reading the saved plan and its trace."
             }
           }
         ],
@@ -192,7 +192,7 @@
               "src": "/assets/tapes/tui-collaborative.mp4",
               "poster": "/assets/tapes/posters/tui-collaborative.jpg",
               "title": "Terminal UI session walkthrough",
-              "caption": "Elena Chen navigating a live Socratic session in OpenTUI: message frames, model inspection, and interactive turn branching."
+              "caption": "Asking keating tui why proof by contradiction works, following up for an example, and forking the whole branch into a new session."
             }
           },
           {
@@ -210,8 +210,8 @@
             "video": {
               "src": "/assets/tapes/cli-artifacts.mp4",
               "poster": "/assets/tapes/posters/cli-artifacts.jpg",
-              "title": "CLI verification and Socratic loop",
-              "caption": "Elena verifying Raft consensus invariants and generating inspectable Markdown checklists via the CLI."
+              "title": "CLI verification",
+              "caption": "Generating and verifying Special Relativity artifacts with plain keating commands; each one is saved as Markdown you can read."
             }
           }
         ],
@@ -254,8 +254,8 @@
             "video": {
               "src": "/assets/tapes/tui-collaborative.mp4",
               "poster": "/assets/tapes/posters/tui-collaborative.jpg",
-              "title": "Terminal session tree and resume",
-              "caption": "Browsing historical sessions, viewing fork paths, and switching between active threads in the TUI."
+              "title": "Terminal session browser and fork",
+              "caption": "Opening the session browser in keating tui and forking the active branch. The original session stays saved."
             }
           },
           {
@@ -289,29 +289,39 @@
   {
     "slug": "visual-guide",
     "title": "Visual guide and walkthroughs",
-    "description": "Watch video walkthroughs of every layer of Keating: classroom, terminal UI, onboarding, CLI artifacts, and the full app tour.",
+    "description": "Watch the Keating 4.0 launch film, the narrated introduction, and walkthroughs of every layer: classroom, terminal UI, onboarding, CLI artifacts, and the surface tour.",
     "group": "Getting started",
     "sections": [
       {
-        "heading": "1. Full surface walkthrough",
+        "heading": "1. Keating 4.0 and the surface tour",
         "paragraphs": [
           "Keating is organized into multiple interconnected surfaces, each designed for a different aspect of independent study, pedagogical verification, and course creation. You can move seamlessly between the browser classroom, the terminal, and command-line compilation.",
-          "The surface tour demonstrates every route in the current release in order: capability-based model selection, the live multimodal duplex room, the review desk runway, course and study plan assembly, and AT Protocol release publishing."
+          "Start with the 4.0 launch film. It covers the Socratic lesson, learner-owned models and data, GPT Live voice sessions, local recall, independent reviews, and the terminal. Then watch the silent surface tour for the parts of Keating that are not the chat box. Every beat is a capture of the real component."
         ],
         "videos": [
           {
+            "src": "/assets/tapes/keating-4-launch.mp4",
+            "poster": "/assets/tapes/posters/keating-4-launch.jpg",
+            "captions": "/assets/tapes/captions/keating-4-launch.vtt",
+            "title": "Keating 4.0 in 70 seconds",
+            "caption": "The narrated 4.0 launch film, from a wall of text to a question you can answer, with GPT Live, local recall, and reviews you decide on. English captions included."
+          },
+          {
             "src": "/assets/tapes/keating-surface-tour.mp4",
             "poster": "/assets/tapes/posters/keating-surface-tour.jpg",
-            "title": "The whole room in 32 seconds",
-            "caption": "A 32-second end-to-end tour covering model routing, live media, review workspace, return runway, courses, and publishing."
+            "title": "More than a chat in 32 seconds",
+            "caption": "A silent eight-beat tour: simulate, code, speak, recall, sit an exam, plan, search sessions, and work in a local desktop workspace."
           }
         ],
         "bullets": [
-          "Classroom (/chat): conversational inquiry, visible model reasoning, and interactive study objects.",
-          "Live room (/live): duplex audio, camera input, and live response timing metrics.",
-          "Review desk (/review): whole-turn annotations, signal flags, and rationale evaluation.",
-          "Return runway (/coming-up): spaced repetition cards with Anki import and export.",
-          "Courses (/courses): multi-session curriculum structure and artifact tray."
+          "Simulate: move a control in the base-rate simulation and watch the chart redraw.",
+          "Code: write a TypeScript solution in the code lab and run the sample tests.",
+          "Speak: record a pronunciation attempt and compare it with the target.",
+          "Recall: review flashcards on a spaced schedule.",
+          "Exam: sit a timed exam, flag questions, and review the grading.",
+          "Plan: follow a nested study plan with linked lessons.",
+          "Sessions: search past sessions without losing fork ancestry.",
+          "Desktop: run a local workspace with real files and processes."
         ],
         "links": [
           { "label": "Start your first lesson", "href": "/start-here/" },
@@ -354,7 +364,7 @@
             "src": "/assets/tapes/tui-collaborative.mp4",
             "poster": "/assets/tapes/posters/tui-collaborative.jpg",
             "title": "Terminal workspace and branching",
-            "caption": "Branching dialogue in the terminal with sidepanel controls, model picker, message frames, and session fork trees."
+            "caption": "A short keating tui session: a question, the side panel and model picker, a follow-up, and a fork of the whole branch."
           }
         ],
         "bullets": [
@@ -379,7 +389,7 @@
             "src": "/assets/tapes/tui-onboarding.mp4",
             "poster": "/assets/tapes/posters/tui-onboarding.jpg",
             "title": "First-minute terminal onboarding",
-            "caption": "Customizing learner identity, avatar portraits, and mastering terminal shortcuts without needing provider credentials."
+            "caption": "The first-run tour and profile setup in keating tui: learner name, local portrait, thinking effort, and runtime behaviour, with no provider key needed."
           }
         ],
         "bullets": [
@@ -422,15 +432,16 @@
     {
         "heading": "6. Hyperteacher architecture and narrated film",
         "paragraphs": [
-          "Keating is designed as a Socratic AI scaffold for people who still want to own their understanding. The fully narrated documentary film below explores the pedagogy, philosophy, and systems architecture behind Keating: why models should gather around the learner like scaffolding rather than a throne, and how plans, maps, practice, and verification keep the learner in control.",
-          "Alongside the documentary film, the interactive tutorial walkthrough demonstrates the complete guided learning flow: from initial inquiry to progressive hint generation, concept mapping, and knowledge transfer."
+          "Keating is designed as a Socratic AI scaffold for people who still want to own their understanding. The narrated introduction below walks through ten real screens: how onboarding asks the way you learn, what the learner profile remembers, sources you can open, simulations, fieldwork away from the screen, timed recall, word-order practice, an honestly graded exam, and the apps you can take anywhere.",
+          "Alongside the introduction, the interactive tutorial walkthrough demonstrates the complete guided learning flow: from initial inquiry to progressive hint generation, concept mapping, and knowledge transfer."
         ],
         "videos": [
           {
             "src": "/assets/tapes/keating-intro.mp4",
             "poster": "/assets/tapes/posters/keating-intro.jpg",
-            "title": "Keating: A lantern for understanding",
-            "caption": "The complete narrated film introducing the hyperteacher scaffold, why it exists, and how plans, practice, and verification surround the learner."
+            "captions": "/assets/tapes/captions/keating-intro.vtt",
+            "title": "A teacher for the age of answering machines",
+            "caption": "A 76-second narrated introduction over real product captures: it does not hand you the mountain, it teaches you to climb. English captions included."
           },
           {
             "src": "/assets/tapes/web-tutorial.mp4",
@@ -443,7 +454,7 @@
           "Predict before reveal: test your mental model before the explanation confirms or reframes it.",
           "Reconstruction in your own words: Keating verifies comprehension by asking you to apply principles to fresh scenarios.",
           "Branching sessions: fork a question into a sub-investigation without polluting your primary study path.",
-          "Full documentary narration: Kore voiceover detailing pedagogy, evaluation, and the metaharness."
+          "Narrated introduction: a Gemini Kore voiceover timed to each screen, with an English caption track."
         ],
         "links": [
           { "label": "Learn with Keating", "href": "/learning-with-keating/" },
@@ -466,8 +477,8 @@
           {
             "src": "/assets/tapes/web-landing.mp4",
             "poster": "/assets/tapes/posters/web-landing.jpg",
-            "title": "Browser application and live teacher",
-            "caption": "A 60fps tour of the responsive web UI, live teacher controls, and visible pedagogical steps."
+            "title": "The Keating landing page",
+            "caption": "Scrolling keating.help: the problem, a try-it-yourself card, the films, shared courses, and a goal planner."
           }
         ],
         "bullets": [
@@ -479,6 +490,76 @@
         "links": [
           { "label": "Sessions and the review desk", "href": "/sessions-and-review/" },
           { "label": "Troubleshooting guide", "href": "/troubleshooting/" }
+        ]
+      },
+      {
+        "heading": "8. Keating 4.0 feature spotlights",
+        "paragraphs": [
+          "Four short narrated films, each on one part of Keating 4.0: judgements you can check, local recall, GPT Live, and the first run with the teacher persona. Each has English captions."
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/keating-spotlight-judgements.mp4",
+            "poster": "/assets/tapes/posters/keating-spotlight-judgements.jpg",
+            "title": "Judgements you can check",
+            "caption": "Your answer is saved first, an independent judge checks it against the rubric, and you can flag a review that missed something.",
+            "captions": "/assets/tapes/captions/keating-spotlight-judgements.vtt"
+          },
+          {
+            "src": "/assets/tapes/keating-spotlight-recall.mp4",
+            "poster": "/assets/tapes/posters/keating-spotlight-recall.jpg",
+            "title": "Local recall",
+            "caption": "Keating brings back earlier work with its source: Needle on desktop, Search by meaning on your phone, and recall in the browser.",
+            "captions": "/assets/tapes/captions/keating-spotlight-recall.vtt"
+          },
+          {
+            "src": "/assets/tapes/keating-spotlight-live.mp4",
+            "poster": "/assets/tapes/posters/keating-spotlight-live.jpg",
+            "title": "GPT Live",
+            "caption": "Choosing GPT Live in the voice picker: your conversation comes with you, and each session has a visible spending ceiling.",
+            "captions": "/assets/tapes/captions/keating-spotlight-live.vtt"
+          },
+          {
+            "src": "/assets/tapes/keating-spotlight-onboarding.mp4",
+            "poster": "/assets/tapes/posters/keating-spotlight-onboarding.jpg",
+            "title": "First run and the teacher persona",
+            "caption": "Telling Keating how to teach you, which accessibility needs to treat as requirements, and how to shape the teacher's persona.",
+            "captions": "/assets/tapes/captions/keating-spotlight-onboarding.vtt"
+          }
+        ],
+        "links": [
+          { "label": "Use quizzes and practice", "href": "/quizzes-and-practice/" },
+          { "label": "Use voice and attachments", "href": "/voice-and-attachments/" }
+        ]
+      },
+      {
+        "heading": "9. Why Keating, a lesson and the changelog",
+        "paragraphs": [
+          "Three shorter films in other shapes: a brand film on what Keating is for, a vertical one-minute lesson that shows the Socratic method at work, and a square 4.0 changelog set to music."
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/keating-manifesto.mp4",
+            "poster": "/assets/tapes/posters/keating-manifesto.jpg",
+            "title": "Why Keating",
+            "caption": "Every answer is one tap away. Keating asks before it tells, lets you get stuck, and checks your work honestly.",
+            "captions": "/assets/tapes/captions/keating-manifesto.vtt"
+          },
+          {
+            "src": "/assets/tapes/keating-lesson.mp4",
+            "poster": "/assets/tapes/posters/keating-lesson.jpg",
+            "title": "A one-minute lesson",
+            "caption": "Why is winter cold? Keating asks questions until the learner works it out; it never gives the answer.",
+            "captions": "/assets/tapes/captions/keating-lesson.vtt",
+            "aspect": "9:16"
+          },
+          {
+            "src": "/assets/tapes/keating-changelog.mp4",
+            "poster": "/assets/tapes/posters/keating-changelog.jpg",
+            "title": "Keating 4.0 in twenty seconds",
+            "caption": "What's new in 4.0 as kinetic type: judgements, local recall, search by meaning, GPT Live and the first run. Music only, no narration.",
+            "aspect": "1:1"
+          }
         ]
       }
     ]
@@ -661,7 +742,7 @@
               "src": "/assets/tapes/tui-onboarding.mp4",
               "poster": "/assets/tapes/posters/tui-onboarding.jpg",
               "title": "Terminal installation and onboarding",
-              "caption": "Running keating tui after installation: profile configuration, avatar monogram, and panel preview."
+              "caption": "Running keating tui after installing: the first-run tour, a learner name and portrait, then the side panel."
             }
           },
           {
@@ -679,8 +760,8 @@
             "video": {
               "src": "/assets/tapes/cli-artifacts.mp4",
               "poster": "/assets/tapes/posters/cli-artifacts.jpg",
-              "title": "CLI installation check",
-              "caption": "Verifying global installation and running keating doctor to check provider detection."
+              "title": "First CLI commands",
+              "caption": "A first run after installing: keating plan, map, verify, and trace on Special Relativity."
             }
           }
         ],
@@ -721,7 +802,7 @@
             "src": "/assets/tapes/tui-onboarding.mp4",
             "poster": "/assets/tapes/posters/tui-onboarding.jpg",
             "title": "Terminal onboarding walkthrough",
-            "caption": "Setting up your learner handle and profile during initial terminal startup."
+            "caption": "Setting your learner name and portrait during the first terminal startup."
           }
         ],
         "links": [

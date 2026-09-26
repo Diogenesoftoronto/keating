@@ -45,7 +45,7 @@ export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
   showToolUi: true,
   showReasoning: true,
   autoExpandReasoning: false,
-  showToolDetails: true,
+  showToolDetails: false,
   showRawErrors: false,
   reasoningLevel: "medium",
 };

@@ -20,6 +20,15 @@ function data(group = 0): PortableLearnerData {
     const deck = { id, title: id, topic: "Math", createdAt: iso(1), updatedAt: iso(1), cards: [card] };
     value.decks.push(deck);
     for (let day = 2; day <= 12; day++) {
+      // Recent lapses keep the risky deck's due date newer than the good deck's.
+      // Both schedule incumbents must then use prior recall evidence to improve.
+      if (id === "b-risk") {
+        const before = card.srs, at = new Date(Date.UTC(2026 + day, 0, 1, 12)).toISOString(), applied = applyReview(before, rating, at);
+        card.srs = applied.next;
+        value.cardReviews.push({ id: `${id}-${group}-${day}-prior`, deckId: id, cardId: card.id, rating, createdAt: at,
+          appliedIntervalDays: applied.next.intervalDays, easeAfter: applied.next.ease, previousIntervalDays: before.intervalDays,
+          nextDueAt: applied.next.dueAt, repetitionsAfter: applied.next.repetitions, lapsesAfter: applied.next.lapses, isLapse: applied.isLapse });
+      }
       const before = card.srs, at = new Date(Date.UTC(2026 + day, 0, 2, 12)).toISOString(), applied = applyReview(before, rating, at);
       card.srs = applied.next; deck.updatedAt = at;
       value.cardReviews.push({ id: `${id}-${group}-${day}`, deckId: id, cardId: card.id, rating, createdAt: at,

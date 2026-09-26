@@ -23,7 +23,9 @@ describe("independent judgement settings UI", () => {
     expect(html).toContain("separate from your tutor model");
     expect(html).toContain("Scoring with browser models is not available yet");
     expect(html).toContain("Automatic grading stays with the existing checks");
-    expect(html).not.toContain("Connect Not Organic");
+    expect(html).toContain('value="hosted" selected=""');
+    expect(html).toContain("Connect Not Organic");
+    expect(html).toContain('disabled=""');
   });
   test("off hides model and account controls while keeping built-in checks", () => {
     const html = render({ settings: { ...initial.settings, backend: "off" } });
@@ -34,7 +36,7 @@ describe("independent judgement settings UI", () => {
   test("hosted selection discloses transfer and costs and requires a separate authorization action", () => {
     const html = render({ settings: { ...initial.settings, backend: "hosted" },
       account: { configured: true, connected: true, judgementAuthorized: false } });
-    expect(html).toContain("Usage may incur account charges");
+    expect(html).toContain("usage may incur account charges");
     expect(html).toContain("Authorize judgement access");
     expect(html).not.toContain("judgement access is connected");
   });

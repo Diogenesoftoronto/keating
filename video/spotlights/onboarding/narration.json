@@ -1,0 +1,90 @@
+{
+  "$comment": "Spotlight: kinetic poster — fast cuts, huge type, poster frames slam in. Canonical narration; edit a line and re-run produce.sh (unchanged lines hit the TTS cache).",
+  "label": "KEATING // FIRST RUN",
+  "format": "kinetic poster — fast cuts, huge type, poster frames slam in",
+  "tts": {
+    "engine": "fal",
+    "model": "google/gemini-3.8-flash-tts",
+    "voice": "Zephyr",
+    "instructions": "Voice: a warm, grounded teacher who genuinely likes their students. Tone: calm, curious and a little wry; never salesy. Pacing: unhurried and conversational, with a small breath at each em dash and a real pause after questions. Pronounce 'Keating' as KEE-ting. This film is brisk: keep each line crisp with short pauses, a touch more energy than usual."
+  },
+  "timing": {
+    "lead": 0.35,
+    "tail": 0.55,
+    "fps": 30
+  },
+  "scenes": [
+    {
+      "id": "hello",
+      "min": 3.5,
+      "text": "Keating 4.0 starts by getting to know you.",
+      "captions": true,
+      "art": [
+        "first-1-door"
+      ]
+    },
+    {
+      "id": "optional",
+      "min": 3.5,
+      "text": "Every step is optional. Chat is one click away.",
+      "captions": true,
+      "shots": [
+        "welcome"
+      ]
+    },
+    {
+      "id": "dials",
+      "min": 6,
+      "text": "Tell it how much to ask before it tells. What to do when you're stuck. Where its analogies come from.",
+      "captions": true,
+      "art": [
+        "first-2-dials"
+      ],
+      "shots": [
+        "teach"
+      ]
+    },
+    {
+      "id": "access",
+      "min": 5.5,
+      "text": "Accessibility choices are requirements: plain language, captions, easier type, less motion.",
+      "captions": true,
+      "shots": [
+        "access"
+      ]
+    },
+    {
+      "id": "pursuit",
+      "min": 5,
+      "text": "Longer goals become pursuits — close by, while today's question still leads.",
+      "captions": true,
+      "art": [
+        "first-4-desk"
+      ],
+      "shots": [
+        "pursuit"
+      ]
+    },
+    {
+      "id": "teacher",
+      "min": 4.5,
+      "text": "Reshape the teacher itself: its persona, its voice, how it speaks.",
+      "captions": true,
+      "art": [
+        "first-3-teachers"
+      ],
+      "shots": [
+        "persona"
+      ]
+    },
+    {
+      "id": "tour",
+      "min": 5,
+      "text": "Then choose Show me around — on the screen you're actually using.",
+      "captions": true,
+      "shots": [
+        "tour"
+      ]
+    }
+  ]
+}

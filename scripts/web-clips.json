@@ -1,0 +1,190 @@
+[
+  {
+    "name": "web-landing",
+    "steps": [
+      {
+        "kind": "goto",
+        "path": "/"
+      },
+      {
+        "kind": "waitFor",
+        "selector": "#landing-title",
+        "timeout": 15000
+      },
+      {
+        "kind": "wait",
+        "ms": 700
+      },
+      {
+        "kind": "scroll",
+        "to": ".landing-intro",
+        "ms": 1900
+      },
+      {
+        "kind": "wait",
+        "ms": 900
+      },
+      {
+        "kind": "scroll",
+        "to": "#keating-lesson",
+        "ms": 1100
+      },
+      {
+        "kind": "wait",
+        "ms": 900
+      },
+      {
+        "kind": "scroll",
+        "to": ".landing-closing",
+        "ms": 3200
+      },
+      {
+        "kind": "wait",
+        "ms": 1100
+      },
+      {
+        "kind": "scroll",
+        "to": "footer",
+        "ms": 2000
+      },
+      {
+        "kind": "wait",
+        "ms": 350
+      }
+    ]
+  },
+  {
+    "name": "web-tutorial",
+    "steps": [
+      {
+        "kind": "goto",
+        "path": "/chat"
+      },
+      {
+        "kind": "waitFor",
+        "text": "local-tutor",
+        "timeout": 15000
+      },
+      {
+        "kind": "waitFor",
+        "selector": "textarea[placeholder='Message Keating']",
+        "timeout": 15000
+      },
+      {
+        "kind": "wait",
+        "ms": 700
+      },
+      {
+        "kind": "type",
+        "selector": "textarea[placeholder='Message Keating']",
+        "text": "Explain why this stopping rule fails when the input is negative.",
+        "delay": 65
+      },
+      {
+        "kind": "press",
+        "key": "Enter"
+      },
+      {
+        "kind": "waitFor",
+        "text": "What do you predict happens for n = -3?",
+        "timeout": 15000
+      },
+      {
+        "kind": "wait",
+        "ms": 3200
+      },
+      {
+        "kind": "type",
+        "selector": "textarea[placeholder='Message Keating']",
+        "text": "It never reaches zero, so it loops forever?",
+        "delay": 65
+      },
+      {
+        "kind": "press",
+        "key": "Enter"
+      },
+      {
+        "kind": "waitFor",
+        "text": "Can you restate the fix in your own words?",
+        "timeout": 15000
+      },
+      {
+        "kind": "wait",
+        "ms": 4200
+      }
+    ],
+    "provider": "demo",
+    "seed": "localStorage.setItem('keating:judgement-model',JSON.stringify({backend:'off'})); localStorage.setItem('keating_ui_settings',JSON.stringify({schemaVersion:3,alternativeResponseChance:0})); localStorage.setItem('keating:onboarding:v1', JSON.stringify({version:2,outcome:'completed',step:7})); localStorage.setItem('keating_model_prefs', JSON.stringify({hiddenProviders:[],recentModels:[{key:'Keating Demo::openai-completions::local-tutor',timestamp:Date.now()}],customModels:[]})); const db = await new Promise((resolve,reject) => {const request=indexedDB.open('keating',2); request.onupgradeneeded=()=>{const db=request.result; for(const name of ['settings','provider-keys','custom-providers']) db.createObjectStore(name); for(const name of ['sessions','sessions-metadata']) {const store=db.createObjectStore(name,{keyPath:'id'}); store.createIndex('lastModified','lastModified');}}; request.onsuccess=()=>resolve(request.result); request.onerror=()=>reject(request.error);}); await new Promise((resolve,reject)=>{const tx=db.transaction(['custom-providers','provider-keys'],'readwrite'); tx.objectStore('custom-providers').put({id:'web-clip-demo',name:'Keating Demo',type:'openai-completions',baseUrl:providerUrl+'/v1'},'web-clip-demo'); tx.objectStore('provider-keys').put('local-demo-no-secret','Keating Demo'); tx.oncomplete=resolve; tx.onerror=()=>reject(tx.error);}); db.close();"
+  },
+  {
+    "name": "web-paper",
+    "steps": [
+      {
+        "kind": "goto",
+        "path": "/paper"
+      },
+      {
+        "kind": "waitFor",
+        "text": "ABSTRACT",
+        "timeout": 15000
+      },
+      {
+        "kind": "wait",
+        "ms": 1600
+      },
+      {
+        "kind": "scroll",
+        "to": "footer",
+        "ms": 8500
+      },
+      {
+        "kind": "wait",
+        "ms": 400
+      }
+    ]
+  },
+  {
+    "name": "web-classroom",
+    "seed": "localStorage.setItem('keating:judgement-model',JSON.stringify({backend:'off'})); localStorage.setItem('keating_ui_settings',JSON.stringify({schemaVersion:3,alternativeResponseChance:0})); localStorage.setItem('keating:onboarding:v1', JSON.stringify({version:2,outcome:'completed',step:7})); localStorage.setItem('keating_model_prefs', JSON.stringify({hiddenProviders:[],recentModels:[{key:'Keating Demo::openai-completions::local-tutor',timestamp:Date.now()}],customModels:[]})); const db = await new Promise((resolve,reject) => {const request=indexedDB.open('keating',2); request.onupgradeneeded=()=>{const db=request.result; for(const name of ['settings','provider-keys','custom-providers']) db.createObjectStore(name); for(const name of ['sessions','sessions-metadata']) {const store=db.createObjectStore(name,{keyPath:'id'}); store.createIndex('lastModified','lastModified');}}; request.onsuccess=()=>resolve(request.result); request.onerror=()=>reject(request.error);}); await new Promise((resolve,reject)=>{const tx=db.transaction(['custom-providers','provider-keys'],'readwrite'); tx.objectStore('custom-providers').put({id:'web-clip-demo',name:'Keating Demo',type:'openai-completions',baseUrl:providerUrl+'/v1'},'web-clip-demo'); tx.objectStore('provider-keys').put('local-demo-no-secret','Keating Demo'); tx.oncomplete=resolve; tx.onerror=()=>reject(tx.error);}); db.close();",
+    "steps": [
+      {
+        "kind": "goto",
+        "path": "/chat"
+      },
+      {
+        "kind": "waitFor",
+        "text": "local-tutor",
+        "timeout": 15000
+      },
+      {
+        "kind": "waitFor",
+        "selector": "textarea[placeholder='Message Keating']",
+        "timeout": 15000
+      },
+      {
+        "kind": "wait",
+        "ms": 700
+      },
+      {
+        "kind": "type",
+        "selector": "textarea[placeholder='Message Keating']",
+        "text": "Why do cities form where they do?",
+        "delay": 65
+      },
+      {
+        "kind": "press",
+        "key": "Enter"
+      },
+      {
+        "kind": "waitFor",
+        "text": "which of those advantages would matter most, and why?",
+        "timeout": 15000
+      },
+      {
+        "kind": "wait",
+        "ms": 3200
+      }
+    ],
+    "provider": "demo"
+  }
+]

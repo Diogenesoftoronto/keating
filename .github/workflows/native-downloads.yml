@@ -7,6 +7,10 @@ on:
         required: true
         type: string
     secrets:
+      KEATING_WINDOWS_CERTIFICATE_BASE64:
+        required: false
+      KEATING_WINDOWS_CERTIFICATE_PASSWORD:
+        required: false
       KEATING_ANDROID_KEYSTORE_BASE64:
         required: true
       KEATING_ANDROID_KEYSTORE_PASSWORD:
@@ -43,8 +47,24 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
+      windows_signing: ${{ steps.signing.outputs.windows_signing }}
     steps:
       - uses: actions/checkout@v6
+      - name: Check optional Windows signing availability
+        id: signing
+        env:
+          CERTIFICATE: ${{ secrets.KEATING_WINDOWS_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.KEATING_WINDOWS_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$CERTIFICATE" ] && [ -z "$CERTIFICATE_PASSWORD" ]; then
+            echo 'windows_signing=false' >> "$GITHUB_OUTPUT"
+            echo 'Windows desktop omitted: Authenticode credentials are not configured. No unsigned installer will be published.' >> "$GITHUB_STEP_SUMMARY"
+          elif [ -n "$CERTIFICATE" ] && [ -n "$CERTIFICATE_PASSWORD" ]; then
+            echo 'windows_signing=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'Incomplete Windows signing configuration; refusing release.' >&2
+            exit 1
+          fi
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.13
@@ -63,16 +83,22 @@ jobs:
 
   build-desktop-windows:
     needs: validate-native-version
-    if: ${{ !inputs.platform || inputs.platform == 'all' || inputs.platform == 'windows' }}
+    if: ${{ needs.validate-native-version.outputs.windows_signing == 'true' && (!inputs.platform || inputs.platform == 'all' || inputs.platform == 'windows') }}
     runs-on: windows-latest
     timeout-minutes: 45
     defaults:
       run:
         shell: bash
     env:
-      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      WIN_CSC_LINK: ${{ secrets.KEATING_WINDOWS_CERTIFICATE_BASE64 }}
+      WIN_CSC_KEY_PASSWORD: ${{ secrets.KEATING_WINDOWS_CERTIFICATE_PASSWORD }}
     steps:
       - uses: actions/checkout@v6
+      - name: Require Windows Authenticode credentials
+        run: |
+          for name in WIN_CSC_LINK WIN_CSC_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then echo "Missing Windows signing credential: ${name}" >&2; exit 1; fi
+          done
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
@@ -100,6 +126,15 @@ jobs:
           $installer = Join-Path $PWD "desktop/release/Keating-$env:RELEASE_VERSION-windows-x64-setup.exe"
           if (!(Test-Path $installer) -or (Get-Item $installer).Length -eq 0) { throw 'Missing Windows installer' }
           $exe = Join-Path $unpacked 'Keating.exe'
+          # Require trusted Authenticode signatures, including an RFC3161 timestamp,
+          # on the installer and every packaged executable/native library.
+          $signedFiles = @((Get-Item $installer)) + @(Get-ChildItem $unpacked -Recurse -File | Where-Object { $_.Extension -in '.exe', '.dll', '.node' })
+          foreach ($file in $signedFiles) {
+            $signature = Get-AuthenticodeSignature -FilePath $file.FullName
+            if ($signature.Status -ne 'Valid' -or !$signature.SignerCertificate -or !$signature.TimeStamperCertificate) {
+              throw "Missing valid timestamped Authenticode signature: $($file.FullName) ($($signature.Status))"
+            }
+          }
           $asar = Join-Path $unpacked 'resources/app.asar'
           if (!(Test-Path $exe) -or !(Test-Path (Join-Path $unpacked 'resources/nitro/server/index.mjs'))) { throw 'Missing packaged application/runtime' }
           $env:ELECTRON_RUN_AS_NODE = '1'

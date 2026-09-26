@@ -1,0 +1,245 @@
+{
+  "model": "gemini-3.8-flash-tts",
+  "voices": [
+    {
+      "key": "en-warm-teacher",
+      "name": "Warm Teacher",
+      "language": "en-US",
+      "languageLabel": "English · North American",
+      "gender": "neutral",
+      "prompt": "A warm, grounded adult teacher with a medium register and a clear North American accent. Friendly, thoughtful, quietly confident, close-mic studio narration; never salesy or theatrical.",
+      "id": "voice_g7j0l4ejxkxz",
+      "sample": "samples/en-warm-teacher.wav"
+    },
+    {
+      "key": "en-calm-guide",
+      "name": "Calm Guide",
+      "language": "en-US",
+      "languageLabel": "English · North American",
+      "gender": "female",
+      "prompt": "A mature woman with a low, smooth voice and a subtle Canadian English accent. Calm and reassuring, with precise diction and a measured pace suited to a documentary guide.",
+      "id": "voice_1mku9uu7q5t5",
+      "sample": "samples/en-calm-guide.wav"
+    },
+    {
+      "key": "en-bright-mentor",
+      "name": "Bright Mentor",
+      "language": "en-US",
+      "languageLabel": "English · North American",
+      "gender": "female",
+      "prompt": "An adult woman with a bright medium-high voice and natural North American English. Curious and encouraging, energetic in a restrained way, like a teacher enjoying a student's insight.",
+      "id": "voice_23vgmiwyqe8g",
+      "sample": "samples/en-bright-mentor.wav"
+    },
+    {
+      "key": "en-quiet-storyteller",
+      "name": "Quiet Storyteller",
+      "language": "en-US",
+      "languageLabel": "English · North American",
+      "gender": "male",
+      "prompt": "A middle-aged man with a gentle low-mid register and a soft Canadian English accent. Intimate, reflective storybook narration with warm resonance and unhurried phrasing.",
+      "id": "voice_fb22wb1y6zu7",
+      "sample": "samples/en-quiet-storyteller.wav"
+    },
+    {
+      "key": "en-clear-narrator",
+      "name": "Clear Narrator",
+      "language": "en-US",
+      "languageLabel": "English · North American",
+      "gender": "male",
+      "prompt": "An adult man with a clear medium register and neutral North American English. Polished, articulate studio narration, calm and direct without sounding like an announcer.",
+      "id": "voice_ab4g2kgrffnl",
+      "sample": "samples/en-clear-narrator.wav"
+    },
+    {
+      "key": "en-wry-professor",
+      "name": "Wry Professor",
+      "language": "en-US",
+      "languageLabel": "English · North American",
+      "gender": "male",
+      "prompt": "A thoughtful older man with a lightly gravelly low voice and North American English. Dry warmth, a hint of wry humor, patient pacing, and the presence of a beloved professor.",
+      "id": "voice_fdxweqmetzvo",
+      "sample": "samples/en-wry-professor.wav"
+    },
+    {
+      "key": "en-soft-conversational",
+      "name": "Soft Conversational",
+      "language": "en-US",
+      "languageLabel": "English · North American",
+      "gender": "female",
+      "prompt": "A young adult woman with a soft medium register, relaxed North American English, and close conversational delivery. Natural and sincere, with light breath and no exaggerated acting.",
+      "id": "voice_uazq9b9gm9h8",
+      "sample": "samples/en-soft-conversational.wav"
+    },
+    {
+      "key": "en-steady-broadcaster",
+      "name": "Steady Broadcaster",
+      "language": "en-US",
+      "languageLabel": "English · North American",
+      "gender": "neutral",
+      "prompt": "An adult nonbinary voice with a lower medium register and crisp North American English. Even, composed, slightly textured, and highly intelligible at a steady documentary pace.",
+      "id": "voice_yc68t73rdj6u",
+      "sample": "samples/en-steady-broadcaster.wav"
+    },
+    {
+      "key": "en-curious-student",
+      "name": "Curious Student",
+      "language": "en-US",
+      "languageLabel": "English · North American",
+      "gender": "female",
+      "prompt": "A young adult woman with a light, quick voice and natural Canadian English. Curious, casual, and responsive, thinking out loud with a little hesitation before an idea clicks.",
+      "id": "voice_j2d5akxn8nsc",
+      "sample": "samples/en-curious-student.wav"
+    },
+    {
+      "key": "en-confident-student",
+      "name": "Confident Student",
+      "language": "en-US",
+      "languageLabel": "English · North American",
+      "gender": "male",
+      "prompt": "A young adult man with an easy medium voice and contemporary North American English. Bright, informal, confident but not cocky, with a quick conversational rhythm.",
+      "id": "voice_3kj80thmz8h7",
+      "sample": "samples/en-confident-student.wav"
+    },
+    {
+      "key": "en-velvet-documentary",
+      "name": "Velvet Documentary",
+      "language": "en-US",
+      "languageLabel": "English · North American",
+      "gender": "female",
+      "prompt": "A mature woman with a rounded low-mid voice and neutral North American English. Velvety, elegant, documentary narration with gentle emphasis and restrained emotion.",
+      "id": "voice_zuuo3htk5pgz",
+      "sample": "samples/en-velvet-documentary.wav"
+    },
+    {
+      "key": "en-open-hearted",
+      "name": "Open-Hearted",
+      "language": "en-US",
+      "languageLabel": "English · North American",
+      "gender": "neutral",
+      "prompt": "An adult nonbinary speaker with a warm medium voice and subtle Canadian English. Open, humane, quietly passionate, and grounded, speaking to one learner rather than a crowd.",
+      "id": "voice_ey570llapegw",
+      "sample": "samples/en-open-hearted.wav"
+    },
+    {
+      "key": "frca-prof-accueillant",
+      "name": "Prof accueillant",
+      "language": "fr-CA",
+      "languageLabel": "Français canadien · accent québécois",
+      "gender": "neutral",
+      "prompt": "Voix adulte francophone du Québec, registre moyen, timbre chaleureux et posé. Accent québécois naturel et clairement reconnaissable, français contemporain de Montréal sans caricature. Enseignant curieux, bienveillant et crédible, diction nette.",
+      "id": "voice_i5gv5jf4zwif",
+      "sample": "samples/frca-prof-accueillant.wav"
+    },
+    {
+      "key": "frca-guide-calme",
+      "name": "Guide calme",
+      "language": "fr-CA",
+      "languageLabel": "Français canadien · accent québécois",
+      "gender": "female",
+      "prompt": "Femme adulte francophone du Québec, voix grave et veloutée, accent québécois naturel de la région de Québec. Narration documentaire calme, précise et rassurante, débit mesuré, sans emphase publicitaire.",
+      "id": "voice_bwxj9kce7jlv",
+      "sample": "samples/frca-guide-calme.wav"
+    },
+    {
+      "key": "frca-mentore-vive",
+      "name": "Mentore vive",
+      "language": "fr-CA",
+      "languageLabel": "Français canadien · accent québécois",
+      "gender": "female",
+      "prompt": "Femme adulte francophone québécoise, registre moyen-aigu, accent montréalais contemporain authentique. Curieuse, lumineuse et encourageante, avec une énergie contenue et une articulation soignée.",
+      "id": "voice_bc16b42mfzgp",
+      "sample": "samples/frca-mentore-vive.wav"
+    },
+    {
+      "key": "frca-conteur-doux",
+      "name": "Conteur doux",
+      "language": "fr-CA",
+      "languageLabel": "Français canadien · accent québécois",
+      "gender": "male",
+      "prompt": "Homme d'âge mûr, francophone du Québec, registre grave-moyen, accent québécois chaleureux et naturel. Conteur intime et réfléchi, rythme tranquille, résonance douce, aucune imitation folklorique.",
+      "id": "voice_rnp841qkubsm",
+      "sample": "samples/frca-conteur-doux.wav"
+    },
+    {
+      "key": "frca-narrateur-clair",
+      "name": "Narrateur clair",
+      "language": "fr-CA",
+      "languageLabel": "Français canadien · accent québécois",
+      "gender": "male",
+      "prompt": "Homme adulte francophone québécois, registre moyen, accent de Montréal clair et actuel. Narration soignée et directe, articulation précise, ton calme et humain, sans voix de présentateur.",
+      "id": "voice_s8vmiav6ud3h",
+      "sample": "samples/frca-narrateur-clair.wav"
+    },
+    {
+      "key": "frca-prof-wry",
+      "name": "Prof avec un sourire",
+      "language": "fr-CA",
+      "languageLabel": "Français canadien · accent québécois",
+      "gender": "male",
+      "prompt": "Homme québécois plus âgé, voix basse légèrement rauque, français québécois naturel. Professeur patient et apprécié, humour sec très subtil, chaleur discrète, débit posé.",
+      "id": "voice_9lk7e94o9am5",
+      "sample": "samples/frca-prof-wry.wav"
+    },
+    {
+      "key": "frca-conversation-douce",
+      "name": "Conversation douce",
+      "language": "fr-CA",
+      "languageLabel": "Français canadien · accent québécois",
+      "gender": "female",
+      "prompt": "Jeune femme adulte francophone du Québec, voix moyenne douce, accent québécois naturel et non exagéré. Ton conversationnel proche et sincère, léger souffle, jeu sobre, français idiomatique.",
+      "id": "voice_q3jkdbtujekc",
+      "sample": "samples/frca-conversation-douce.wav"
+    },
+    {
+      "key": "frca-voix-assuree",
+      "name": "Voix assurée",
+      "language": "fr-CA",
+      "languageLabel": "Français canadien · accent québécois",
+      "gender": "neutral",
+      "prompt": "Voix non binaire adulte, registre moyen-grave, français québécois contemporain et nettement régional. Présence stable, diction limpide, débit régulier et narration documentaire sans froideur.",
+      "id": "voice_fm7nhmdf1kts",
+      "sample": "samples/frca-voix-assuree.wav"
+    },
+    {
+      "key": "frca-eleve-curieuse",
+      "name": "Élève curieuse",
+      "language": "fr-CA",
+      "languageLabel": "Français canadien · accent québécois",
+      "gender": "female",
+      "prompt": "Jeune femme adulte francophone québécoise, voix légère et vive, accent montréalais naturel. Élève curieuse qui réfléchit à voix haute, hésite légèrement puis s'enthousiasme quand l'idée devient claire.",
+      "id": "voice_ysmqjybo4twg",
+      "sample": "samples/frca-eleve-curieuse.wav"
+    },
+    {
+      "key": "frca-eleve-confiant",
+      "name": "Élève confiant",
+      "language": "fr-CA",
+      "languageLabel": "Français canadien · accent québécois",
+      "gender": "male",
+      "prompt": "Jeune homme adulte francophone du Québec, voix moyenne décontractée, accent québécois actuel et naturel. Élève spontané, brillant et sûr de lui sans arrogance, rythme de conversation rapide.",
+      "id": "voice_8qe2tjgt3mdh",
+      "sample": "samples/frca-eleve-confiant.wav"
+    },
+    {
+      "key": "frca-documentaire-velours",
+      "name": "Documentaire velours",
+      "language": "fr-CA",
+      "languageLabel": "Français canadien · accent québécois",
+      "gender": "female",
+      "prompt": "Femme québécoise d'âge mûr, timbre rond et grave-moyen, français québécois authentique. Narration documentaire élégante et veloutée, emphase délicate, émotion retenue.",
+      "id": "voice_74t6aom12x90",
+      "sample": "samples/frca-documentaire-velours.wav"
+    },
+    {
+      "key": "frca-chaleur-franche",
+      "name": "Chaleur franche",
+      "language": "fr-CA",
+      "languageLabel": "Français canadien · accent québécois",
+      "gender": "neutral",
+      "prompt": "Voix adulte non binaire francophone du Québec, registre moyen chaleureux, accent québécois naturel. Parle avec humanité et conviction tranquille à une seule personne, avec un français clair et vivant.",
+      "id": "voice_ynn3wd904bhx",
+      "sample": "samples/frca-chaleur-franche.wav"
+    }
+  ]
+}

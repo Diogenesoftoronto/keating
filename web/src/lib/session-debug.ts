@@ -332,6 +332,7 @@ export function subscribeLifecycleDebug(lifecycle: KeatingLifecycle): () => void
 		"session_idle",
 		"session_end",
 		"topic_shift",
+		"plan_revised",
 	];
 	const unsubscribers = types.map((type) => lifecycle.on(type, (lifecycleEvent) => {
 		if (!enabled) return;

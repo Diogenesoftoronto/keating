@@ -56,6 +56,7 @@ type Screenshot = {
 type Video = {
   src: string;
   poster?: string;
+  captions?: string;
   title?: string;
   caption: string;
 };
@@ -164,18 +165,19 @@ Place video walkthroughs in sections where they demonstrate interactive flows, t
 
 ```json
 {
-  "src": "/assets/tapes/keating-surface-tour.mp4",
-  "poster": "/assets/tapes/posters/keating-surface-tour.jpg",
-  "title": "The whole room in 32 seconds",
-  "caption": "A 32-second end-to-end tour covering model routing, live media, review workspace, return runway, courses, and publishing."
+  "src": "/assets/tapes/keating-4-launch.mp4",
+  "poster": "/assets/tapes/posters/keating-4-launch.jpg",
+  "captions": "/assets/tapes/captions/keating-4-launch.vtt",
+  "title": "Keating 4.0 in 70 seconds",
+  "caption": "The narrated 4.0 launch film. English captions included."
 }
 ```
 
-`src` must use `/assets/tapes/lowercase-name.mp4`. When provided, `poster` must use `/assets/tapes/posters/lowercase-name.jpg` (or `.png` / `.webp`). External video URLs and unvalidated paths are rejected. `caption` is required nonempty plain text; `title` is an optional heading label.
+`src` must use `/assets/tapes/lowercase-name.mp4`. When provided, `poster` must use `/assets/tapes/posters/lowercase-name.jpg` (or `.png` / `.webp`). When provided, `captions` must use `/assets/tapes/captions/lowercase-name.vtt` and renders as an English `<track kind="captions">`; give every narrated video one. External video URLs and unvalidated paths are rejected. `caption` is required nonempty plain text; `title` is an optional heading label.
 
 Videos render in semantic `<figure class="app-video">` elements with native controls, metadata preloading, and responsive 16:9 aspect ratio preservation. They do not autoplay, respecting user preferences and reduced motion settings. Each figure includes an accessible **Watch or download raw video** link to the original MP4. Captions and titles are included in the search index.
 
-The MP4s and poster JPGs live in `assets/tapes/` and `assets/tapes/posters/`. The build stages and validates all referenced video and poster assets, ensuring non-zero byte size before replacing generated output.
+The MP4s, poster JPGs and WebVTT captions live in `assets/tapes/`, `assets/tapes/posters/` and `assets/tapes/captions/`, mirrored from `web/public/tapes/` at build time. `node video/shared/captions.mjs` regenerates the narrated films' caption files. The build stages and validates all referenced video and poster assets, ensuring non-zero byte size before replacing generated output.
 
 ## Design and implementation
 

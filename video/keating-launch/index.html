@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<!--
+  Keating 4.0 launch — composition TEMPLATE.
+  Do not edit index.html directly: scripts/build.mjs fills this template from
+  build/timing.json (scene starts/durations measured from the voiced narration).
+  Double-brace placeholders (start:, dur:, total, captions…) become scene times in
+  seconds; the timeline script reads the same data from TIMING and keys motion to
+  spoken words.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1920, height=1080">
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      /* latin */
+      @font-face {
+        font-family: 'JetBrains Mono';
+        font-style: normal;
+        font-weight: 400;
+        font-display: block;
+        src: url(assets/fonts/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      /* latin */
+      @font-face {
+        font-family: 'JetBrains Mono';
+        font-style: normal;
+        font-weight: 500;
+        font-display: block;
+        src: url(assets/fonts/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      /* latin */
+      @font-face {
+        font-family: 'JetBrains Mono';
+        font-style: normal;
+        font-weight: 700;
+        font-display: block;
+        src: url(assets/fonts/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      /* latin */
+      @font-face {
+        font-family: 'Roboto';
+        font-style: normal;
+        font-weight: 500;
+        font-stretch: 100%;
+        font-display: block;
+        src: url(assets/fonts/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      /* latin */
+      @font-face {
+        font-family: 'Roboto';
+        font-style: normal;
+        font-weight: 900;
+        font-stretch: 100%;
+        font-display: block;
+        src: url(assets/fonts/KFO7CnqEu92Fr1ME7kSn66aGLdTylUAMa3yUBA.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      /* latin */
+      @font-face {
+        font-family: 'Space Mono';
+        font-style: normal;
+        font-weight: 400;
+        font-display: block;
+        src: url(assets/fonts/i7dPIFZifjKcF5UAWdDRYEF8RQ.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+      /* latin */
+      @font-face {
+        font-family: 'Space Mono';
+        font-style: normal;
+        font-weight: 700;
+        font-display: block;
+        src: url(assets/fonts/i7dMIFZifjKcF5UAWdDRaPpZUFWaHg.woff2) format('woff2');
+        unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+      }
+
+      :root {
+        --paper: #f1ece0;
+        --paper-deep: #e9e2d2;
+        --card: #f6f2e8;
+        --ink: #1c211b;
+        --ink-soft: #4a5247;
+        --accent: #1e9b50;
+        --accent-dim: #14743c;
+        --green-wash: #ddebdd;
+        --terminal: #0c1510;
+        --terminal-edge: #1b2a1f;
+        --phosphor: #4be388;
+        --phosphor-dim: #2e9a5c;
+        --amber: #e8a33d;
+        --red: #d5604b;
+        --display: "Space Mono", monospace;
+        --body: "JetBrains Mono", monospace;
+        --loud: "Roboto", sans-serif;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--terminal); }
+      #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--terminal); font-family: var(--body); color: var(--ink); }
+
+      /* ---------- shared ---------- */
+      .scene { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; z-index: 1; }
+      .paper { background-color: var(--paper); background-image: radial-gradient(rgba(28, 33, 27, 0.09) 1.2px, transparent 1.6px); background-size: 26px 26px; }
+      .crt { background: radial-gradient(ellipse at 50% 40%, #13241a 0%, var(--terminal) 70%); }
+      /* Shader layers: #fx-bg paints the living paper/terminal ground under every scene,
+         #fx-over adds light, glitch and CRT texture on top. Without WebGL (.no-gl) the
+         flat CSS grounds come back. */
+      .fx { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; }
+      #fx-bg { z-index: 0; }
+      #fx-over { z-index: 4; }
+      .scene.paper { background-color: transparent; }
+      .scene.crt { background: none; }
+      .no-gl .scene.paper { background-color: var(--paper); }
+      .no-gl .scene.crt { background: radial-gradient(ellipse at 50% 40%, #13241a 0%, var(--terminal) 70%); }
+      .no-gl .fx { display: none; }
+      .scan { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 3px); }
+      .abs { position: absolute; }
+      .label { display: inline-block; font: 700 22px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; padding: 9px 14px; background: var(--ink); color: var(--paper); }
+      .label.green { background: var(--accent); }
+      .label.ghost { background: transparent; color: var(--phosphor); padding: 0; }
+      .frame { position: absolute; border: 3px solid var(--ink); background: var(--terminal); box-shadow: 16px 16px 0 var(--accent); overflow: hidden; }
+      .frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+      .card { position: absolute; background: var(--card); border: 3px solid var(--ink); box-shadow: 10px 10px 0 var(--ink); }
+
+      /* KeatingBot: 1024x512 atlas, 4x2 frames, stepped by the timeline. */
+      .bot { position: absolute; }
+      .bot .sway { position: absolute; left: 0; top: 0; width: 100%; height: 100%; transform-origin: 50% 88%; }
+      .bot .atlas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background-repeat: no-repeat; background-size: 400% 200%; background-position: 0% 0%; }
+      .bot .atlas.alt { opacity: 0; }
+
+      /* ---------- 1 hook ---------- */
+      .hook-art { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; opacity: 0.55; }
+      .hook-shade { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: linear-gradient(90deg, rgba(12, 21, 16, 0.96) 0%, rgba(12, 21, 16, 0.85) 42%, rgba(12, 21, 16, 0.2) 70%, rgba(12, 21, 16, 0.55) 100%); }
+      .feed { position: absolute; left: 1040px; top: 0; width: 760px; height: 1080px; overflow: hidden; -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 12%, #000 86%, transparent 100%); mask-image: linear-gradient(180deg, transparent 0, #000 12%, #000 86%, transparent 100%); }
+      .feed-col { position: absolute; left: 0; top: 90px; width: 760px; display: flex; flex-direction: column; gap: 26px; }
+      .answer { background: rgba(12, 21, 16, 0.9); border: 1.5px solid var(--phosphor-dim); padding: 26px 30px; }
+      .answer .who { font: 700 20px/1 var(--display); letter-spacing: 0.08em; color: var(--phosphor); text-transform: uppercase; }
+      .answer .ask { font: 500 24px/1.3 var(--body); color: var(--paper); margin-top: 16px; }
+      .answer .said { font: 400 21px/1.6 var(--body); color: rgba(241, 236, 224, 0.72); margin-top: 14px; }
+      .hook-copy { position: absolute; left: 120px; top: 250px; width: 900px; }
+      .hook-h1 { font: 900 128px/0.98 var(--loud); color: var(--paper); letter-spacing: -0.035em; }
+      .hook-l { font: 700 56px/1.2 var(--display); color: var(--paper); letter-spacing: -0.02em; margin-top: 44px; }
+      .hook-l + .hook-l { margin-top: 10px; }
+      .hook-l .hl { position: relative; color: var(--red); }
+      .hook-rule { position: absolute; left: 0; bottom: -6px; width: 100%; height: 8px; background: var(--red); transform-origin: 0 50%; }
+
+      /* ---------- 2 stuck ---------- */
+      .stuck-feed { filter: grayscale(1) blur(2px); opacity: 0.35; }
+      .stuck-art { filter: grayscale(1); opacity: 0.18; }
+      .stuck-line { position: absolute; left: 0; top: 470px; width: 1920px; text-align: center; font: 500 76px/1.2 var(--body); color: var(--paper); letter-spacing: -0.02em; }
+      .stuck-line .ch { opacity: 0; }
+      .cursor { display: inline-block; width: 0.55em; height: 0.95em; background: var(--phosphor); vertical-align: -0.12em; margin-left: 6px; }
+
+      /* ---------- 3 reveal ---------- */
+      .reveal-copy { position: absolute; left: 900px; top: 330px; display: flex; flex-direction: column; align-items: flex-start; }
+      .reveal-a { font: 700 104px/1 var(--display); letter-spacing: -0.05em; color: var(--ink); }
+      .reveal-b { font: 700 196px/1 var(--display); letter-spacing: -0.06em; color: var(--accent); margin-top: 14px; }
+      /* inline-block keeps each glyph box to the line height (Space Mono's tall ascent
+         otherwise makes the two lines' boxes overlap); pre keeps the spaces. */
+      .reveal-copy .ch { opacity: 0; display: inline-block; white-space: pre; }
+
+      /* ---------- 4 promise ---------- */
+      .promise-copy { position: absolute; left: 120px; top: 190px; width: 1180px; }
+      .promise-a { font: 700 80px/1.1 var(--display); letter-spacing: -0.04em; color: var(--ink); }
+      .promise-b { font: 700 80px/1.1 var(--display); letter-spacing: -0.04em; color: var(--accent); margin-top: 18px; }
+      .promise-rule { width: 220px; height: 6px; background: var(--ink); margin-top: 56px; }
+      .promise-sub { font: 400 36px/1.5 var(--body); color: var(--ink-soft); margin-top: 44px; }
+      .chips { display: flex; gap: 22px; margin-top: 40px; }
+      .chip { font: 500 28px/1 var(--body); padding: 16px 22px; border: 2.5px solid var(--ink); background: var(--green-wash); color: var(--ink); box-shadow: 5px 5px 0 var(--ink); }
+      .chip b { font-weight: 700; color: var(--accent-dim); margin-right: 12px; }
+
+      /* ---------- 6 quiz ---------- */
+      .wall { position: absolute; left: 80px; top: 40px; width: 1760px; font: 400 30px/1.55 var(--body); color: rgba(28, 33, 27, 0.26); }
+      .wall-strike { position: absolute; left: 60px; top: 520px; width: 1800px; height: 14px; background: var(--red); transform-origin: 0 50%; }
+      .quiz { left: 300px; top: 70px; width: 1020px; padding: 34px 40px; }
+      .quiz-head { display: flex; justify-content: space-between; align-items: center; }
+      .quiz-topic { font: 500 22px/1 var(--body); color: var(--ink-soft); }
+      .code { margin-top: 26px; background: var(--terminal); border: 2px solid var(--terminal-edge); padding: 24px 28px; font: 500 30px/1.5 var(--body); color: var(--phosphor); white-space: pre; font-variant-ligatures: none; }
+      .quiz-q { font: 700 40px/1.2 var(--display); letter-spacing: -0.02em; margin-top: 30px; }
+      .opts { display: flex; flex-direction: column; gap: 14px; margin-top: 24px; }
+      .opt { position: relative; display: flex; align-items: center; gap: 24px; padding: 14px 20px; border: 2.5px solid var(--ink); background: var(--paper); font: 500 32px/1 var(--body); }
+      .opt .k { display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border: 2.5px solid var(--ink); font: 700 24px/1 var(--display); background: var(--card); }
+      .opt .hover { position: absolute; left: -2px; top: -2px; right: -2px; bottom: -2px; border: 4px solid var(--accent); opacity: 0; }
+      .opt .fill { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: var(--accent); opacity: 0; }
+      .opt .k, .opt .v { position: relative; }
+      .opt .k { color: var(--ink); }
+      .verdict { display: flex; align-items: center; gap: 16px; margin-top: 22px; padding: 16px 20px; background: var(--green-wash); border: 2.5px solid var(--accent); font: 700 30px/1 var(--body); color: var(--accent-dim); opacity: 0; }
+      .verdict svg { flex: none; }
+
+      /* ---------- 7 own ---------- */
+      .tile { position: absolute; width: 520px; }
+      .tile .body { margin-top: 14px; }
+      .tile-img { width: 520px; height: 560px; border: 3px solid var(--ink); background: #6b6b6b; box-shadow: 10px 10px 0 var(--ink); overflow: hidden; }
+      .tile-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .persona { position: relative; height: 560px; padding: 34px 32px; }
+      .persona-row { display: flex; flex-direction: column; gap: 6px; padding: 18px 0; border-bottom: 2px dashed rgba(28, 33, 27, 0.25); }
+      .persona-row .k { font: 700 18px/1 var(--display); letter-spacing: 0.08em; color: var(--ink-soft); text-transform: uppercase; }
+      .persona-row .v { font: 500 30px/1.25 var(--body); color: var(--ink); }
+      .persona-row .v.name { font: 700 40px/1.1 var(--display); letter-spacing: -0.03em; }
+      .edit { position: absolute; right: 30px; bottom: 30px; font: 700 20px/1 var(--display); letter-spacing: 0.06em; color: var(--accent-dim); border: 2.5px solid var(--accent); padding: 10px 14px; background: var(--green-wash); }
+      .export { position: relative; height: 560px; padding: 34px 32px; background: var(--terminal); border-color: var(--ink); }
+      .export pre { font: 400 25px/1.55 var(--body); color: rgba(241, 236, 224, 0.82); }
+      .export pre .k2 { color: var(--phosphor); }
+      .dl { position: absolute; left: 32px; bottom: 32px; display: flex; align-items: center; gap: 14px; font: 700 28px/1 var(--body); color: var(--terminal); background: var(--phosphor); padding: 16px 22px; }
+      .stamp { position: absolute; left: 560px; top: 380px; width: 800px; text-align: center; font: 700 96px/1 var(--display); letter-spacing: 0.02em; color: var(--accent); border: 8px solid var(--accent); padding: 26px 0; background: rgba(241, 236, 224, 0.92); opacity: 0; }
+
+      /* ---------- 8 live ---------- */
+      .badge { position: absolute; left: 110px; top: 84px; font: 700 40px/1 var(--display); letter-spacing: 0.04em; color: var(--paper); background: var(--accent); padding: 16px 24px; box-shadow: 6px 6px 0 var(--phosphor); }
+      .crt-panel { position: absolute; left: 110px; top: 200px; width: 1060px; height: 663px; border: 3px solid var(--phosphor-dim); box-shadow: 0 0 60px rgba(75, 227, 136, 0.18), 12px 12px 0 var(--terminal-edge); overflow: hidden; }
+      .crt-panel img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .live-tag { position: absolute; left: 1290px; top: 240px; font: 700 26px/1 var(--display); letter-spacing: 0.08em; color: var(--phosphor); }
+      .live-state { position: absolute; left: 1290px; top: 800px; width: 560px; text-align: center; font: 500 24px/1 var(--body); color: var(--phosphor-dim); letter-spacing: 0.1em; }
+      .wave { position: absolute; left: 1290px; top: 700px; width: 560px; height: 80px; display: flex; align-items: center; justify-content: space-between; }
+      .wave i { display: block; width: 14px; height: 80px; background: var(--phosphor); transform: scaleY(0.08); }
+
+      /* ---------- 9 memory ---------- */
+      .device { position: absolute; left: 100px; top: 150px; width: 720px; height: 470px; border: 4px solid var(--ink); border-radius: 18px; background: var(--card); box-shadow: 10px 10px 0 var(--ink); overflow: hidden; }
+      .device-bar { display: flex; align-items: center; gap: 12px; padding: 16px 22px; background: var(--ink); color: var(--paper); font: 700 20px/1 var(--display); letter-spacing: 0.08em; }
+      .device-base { position: absolute; left: 60px; top: 628px; width: 800px; height: 26px; background: var(--ink); border-radius: 0 0 16px 16px; }
+      .recall { display: flex; flex-direction: column; gap: 16px; padding: 24px 22px; }
+      .quote { padding: 16px 20px; border: 2.5px solid var(--ink); background: var(--paper); border-left: 10px solid var(--accent); }
+      .quote .q { font: 500 25px/1.35 var(--body); color: var(--ink); }
+      .quote .m { font: 400 18px/1 var(--body); color: var(--ink-soft); margin-top: 10px; }
+      .mem-frame { left: 980px; top: 190px; width: 840px; height: 525px; }
+      .mem-frame img { position: absolute; left: 0; top: 0; }
+      .mem-label { position: absolute; left: 980px; top: 136px; }
+
+      /* ---------- 10 judge ---------- */
+      .proposal { left: 420px; top: 150px; width: 1080px; }
+      .proposal-bar { display: flex; justify-content: space-between; align-items: center; padding: 18px 28px; background: var(--ink); color: var(--paper); font: 700 22px/1 var(--display); letter-spacing: 0.08em; }
+      .proposal-bar span:last-child { color: var(--phosphor); }
+      .proposal-body { padding: 34px 40px 40px; }
+      .proposal-kicker { font: 500 26px/1 var(--body); color: var(--ink-soft); }
+      .proposal-title { font: 700 62px/1.1 var(--display); letter-spacing: -0.04em; margin-top: 16px; }
+      .proposal-why { font: 400 27px/1.5 var(--body); color: var(--ink-soft); margin-top: 22px; }
+      .buttons { display: flex; gap: 26px; margin-top: 36px; }
+      .btn { font: 700 30px/1 var(--display); letter-spacing: 0.06em; padding: 20px 34px; border: 3px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); }
+      .btn.go { background: var(--accent); color: var(--paper); }
+      .btn.no { background: var(--paper); color: var(--ink); }
+      .proposal-note { font: 400 22px/1 var(--body); color: var(--ink-soft); margin-top: 30px; }
+      .pointer { position: absolute; left: 1500px; top: 900px; width: 56px; height: 56px; }
+      .decide { position: absolute; left: 1210px; top: 640px; font: 700 64px/1 var(--display); color: var(--accent); border: 7px solid var(--accent); padding: 16px 26px; background: rgba(241, 236, 224, 0.94); opacity: 0; }
+
+      /* ---------- 11 anywhere ---------- */
+      .any-web { left: 100px; top: 170px; width: 1040px; height: 585px; }
+      .any-t { width: 620px; height: 349px; left: 1200px; }
+      .any-lab { position: absolute; }
+
+      /* ---------- 12 close ---------- */
+      .close-art { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; }
+      .close-copy { position: absolute; left: 110px; top: 96px; width: 900px; }
+      .close-kicker { font: 500 40px/1 var(--body); color: var(--ink-soft); }
+      .close-h { font: 700 96px/1.02 var(--display); letter-spacing: -0.05em; color: var(--ink); margin-top: 24px; }
+      .endcard { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+      .end-logo { position: absolute; left: 900px; top: 200px; width: 640px; }
+      .end-url { position: absolute; left: 900px; top: 610px; font: 700 124px/1 var(--display); letter-spacing: -0.05em; color: var(--accent); }
+      .end-meta { position: absolute; left: 906px; top: 780px; font: 500 36px/1 var(--body); color: var(--ink-soft); }
+
+      /* ---------- media wrappers (root level, never timed themselves) ---------- */
+      .vwrap { position: absolute; z-index: 2; }
+      .art-wrap { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; z-index: 1; }
+      .no-gl #s-close { background-color: transparent; }
+      .vwrap video { position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+      .overlay { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 3; pointer-events: none; }
+
+      /* ---------- captions ---------- */
+      .cap { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5; pointer-events: none; }
+      .cap .pill { position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%); white-space: nowrap; font: 500 34px/1 var(--body); color: var(--paper); background: var(--ink); border: 2px solid var(--ink); padding: 16px 28px; box-shadow: 5px 5px 0 var(--accent); }
+      .cap .cw { color: var(--paper); }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-ur66" id="root" data-composition-id="main" data-start="0" data-duration="69.5" data-width="1920" data-height="1080">
+      <canvas data-hf-id="hf-86fp" id="fx-bg" class="fx" width="1920" height="1080"></canvas>
+
+
+      <!-- 1 hook ------------------------------------------------------------------ -->
+      <section data-hf-id="hf-etr6" id="s-hook" class="clip scene crt" data-start="0" data-duration="6" data-track-index="0">
+        <img data-hf-id="hf-0lqe" id="hook-art" data-layout-allow-overflow="" class="hook-art" src="assets/gen/hook-scrolls.png" alt="">
+        <div data-hf-id="hf-i6wl" class="hook-shade"></div>
+        <div data-hf-id="hf-oal9" class="feed" data-layout-allow-overflow=""><div data-hf-id="hf-69ka" id="hook-col" data-layout-allow-overflow="" class="feed-col"><div data-hf-id="hf-rpyu" class="answer"><div data-hf-id="hf-rc75" class="who">chat answer · 1,204 words</div><div data-hf-id="hf-0bw0" class="ask">› how does recursion work?</div><div data-hf-id="hf-mtb4" class="said" data-layout-allow-overlap="">Recursion is a fundamental concept in computer science in which a function calls itself in order to solve smaller instances of the same problem. To fully understand recursion, it is important to first consider the call stack, the base case, the recursive case, tail-call optimisation, and…</div></div><div data-hf-id="hf-98ka" class="answer"><div data-hf-id="hf-31t9" class="who">chat answer · 986 words</div><div data-hf-id="hf-qmac" class="ask">› explain photosynthesis simply</div><div data-hf-id="hf-onsu" class="said" data-layout-allow-overlap="">Great question! Photosynthesis is the process by which plants, algae and some bacteria convert light energy into chemical energy. It occurs in two main stages: the light-dependent reactions and the Calvin cycle. Let's break each of these down in detail, starting with the thylakoid…</div></div><div data-hf-id="hf-9mvb" class="answer"><div data-hf-id="hf-4s0j" class="who">chat answer · 1,530 words</div><div data-hf-id="hf-tivx" class="ask">› i don't get probability</div><div data-hf-id="hf-0pi8" class="said" data-layout-allow-overlap="">Probability can be understood from several perspectives, including the classical, frequentist, and Bayesian interpretations. Before we dive in, here are twelve key terms you will need: sample space, event, outcome, random variable, distribution, expectation, variance…</div></div><div data-hf-id="hf-a16c" class="answer"><div data-hf-id="hf-a3rp" class="who">chat answer · 1,204 words</div><div data-hf-id="hf-pr0o" class="ask">› how does recursion work?</div><div data-hf-id="hf-flqw" class="said" data-layout-allow-overlap="">Recursion is a fundamental concept in computer science in which a function calls itself in order to solve smaller instances of the same problem. To fully understand recursion, it is important to first consider the call stack, the base case, the recursive case, tail-call optimisation, and…</div></div><div data-hf-id="hf-afhd" class="answer"><div data-hf-id="hf-nxy9" class="who">chat answer · 986 words</div><div data-hf-id="hf-9oj0" class="ask">› explain photosynthesis simply</div><div data-hf-id="hf-iu76" class="said" data-layout-allow-overlap="">Great question! Photosynthesis is the process by which plants, algae and some bacteria convert light energy into chemical energy. It occurs in two main stages: the light-dependent reactions and the Calvin cycle. Let's break each of these down in detail, starting with the thylakoid…</div></div><div data-hf-id="hf-atse" class="answer"><div data-hf-id="hf-9nw3" class="who">chat answer · 1,530 words</div><div data-hf-id="hf-ldrl" class="ask">› i don't get probability</div><div data-hf-id="hf-v4t4" class="said" data-layout-allow-overlap="">Probability can be understood from several perspectives, including the classical, frequentist, and Bayesian interpretations. Before we dive in, here are twelve key terms you will need: sample space, event, outcome, random variable, distribution, expectation, variance…</div></div><div data-hf-id="hf-b83f" class="answer"><div data-hf-id="hf-baos" class="who">chat answer · 1,204 words</div><div data-hf-id="hf-ok3l" class="ask">› how does recursion work?</div><div data-hf-id="hf-eett" class="said" data-layout-allow-overlap="">Recursion is a fundamental concept in computer science in which a function calls itself in order to solve smaller instances of the same problem. To fully understand recursion, it is important to first consider the call stack, the base case, the recursive case, tail-call optimisation, and…</div></div><div data-hf-id="hf-bmeg" class="answer"><div data-hf-id="hf-p4vc" class="who">chat answer · 986 words</div><div data-hf-id="hf-8hlx" class="ask">› explain photosynthesis simply</div><div data-hf-id="hf-j8i7" class="said" data-layout-allow-overlap="">Great question! Photosynthesis is the process by which plants, algae and some bacteria convert light energy into chemical energy. It occurs in two main stages: the light-dependent reactions and the Calvin cycle. Let's break each of these down in detail, starting with the thylakoid…</div></div><div data-hf-id="hf-c0ph" class="answer"><div data-hf-id="hf-99l2" class="who">chat answer · 1,530 words</div><div data-hf-id="hf-mkoo" class="ask">› i don't get probability</div><div data-hf-id="hf-txw1" class="said" data-layout-allow-overlap="">Probability can be understood from several perspectives, including the classical, frequentist, and Bayesian interpretations. Before we dive in, here are twelve key terms you will need: sample space, event, outcome, random variable, distribution, expectation, variance…</div></div><div data-hf-id="hf-cf0i" class="answer"><div data-hf-id="hf-awdr" class="who">chat answer · 1,204 words</div><div data-hf-id="hf-oyem" class="ask">› how does recursion work?</div><div data-hf-id="hf-et4u" class="said" data-layout-allow-overlap="">Recursion is a fundamental concept in computer science in which a function calls itself in order to solve smaller instances of the same problem. To fully understand recursion, it is important to first consider the call stack, the base case, the recursive case, tail-call optimisation, and…</div></div><div data-hf-id="hf-fpni" class="answer"><div data-hf-id="hf-oqkb" class="who">chat answer · 986 words</div><div data-hf-id="hf-8vwy" class="ask">› explain photosynthesis simply</div><div data-hf-id="hf-jmt8" class="said" data-layout-allow-overlap="">Great question! Photosynthesis is the process by which plants, algae and some bacteria convert light energy into chemical energy. It occurs in two main stages: the light-dependent reactions and the Calvin cycle. Let's break each of these down in detail, starting with the thylakoid…</div></div><div data-hf-id="hf-fbch" class="answer"><div data-hf-id="hf-8va1" class="who">chat answer · 1,530 words</div><div data-hf-id="hf-m6dn" class="ask">› i don't get probability</div><div data-hf-id="hf-uc72" class="said" data-layout-allow-overlap="">Probability can be understood from several perspectives, including the classical, frequentist, and Bayesian interpretations. Before we dive in, here are twelve key terms you will need: sample space, event, outcome, random variable, distribution, expectation, variance…</div></div></div></div>
+        <div data-hf-id="hf-az1f" class="scan"></div>
+        <div data-hf-id="hf-xc1l" class="hook-copy">
+          <div data-hf-id="hf-smrp" id="hook-h1" class="hook-h1">Seen this before?</div>
+          <div data-hf-id="hf-mzxt" id="hook-l1" class="hook-l">You asked to learn.</div>
+          <div data-hf-id="hf-tt3p" id="hook-l2" class="hook-l">You got <span data-hf-id="hf-drbz" class="hl">more to read.<span data-hf-id="hf-9x3c" id="hook-rule" data-layout-allow-overflow="" class="hook-rule"></span></span></div>
+        </div>
+      </section>
+
+      <!-- 2 stuck ----------------------------------------------------------------- -->
+      <section data-hf-id="hf-jzbb" id="s-stuck" class="clip scene crt" data-start="6" data-duration="2.767" data-track-index="0">
+        <img data-hf-id="hf-8zmx" data-layout-allow-overflow="" class="hook-art stuck-art" src="assets/gen/hook-scrolls.png" alt="">
+        <div data-hf-id="hf-a2he" class="feed stuck-feed" data-layout-allow-overflow="" data-layout-allow-overlap=""><div data-hf-id="hf-aqvd" id="stuck-col" data-layout-allow-overflow="" data-layout-allow-overlap="" class="feed-col"><div data-hf-id="hf-gi9k" class="answer"><div data-hf-id="hf-c3au" class="who">chat answer · 1,204 words</div><div data-hf-id="hf-nrhj" class="ask">› how does recursion work?</div><div data-hf-id="hf-dm7r" class="said" data-layout-allow-overlap="">Recursion is a fundamental concept in computer science in which a function calls itself in order to solve smaller instances of the same problem. To fully understand recursion, it is important to first consider the call stack, the base case, the recursive case, tail-call optimisation, and…</div></div><div data-hf-id="hf-g3yj" class="answer"><div data-hf-id="hf-mr16" class="who">chat answer · 986 words</div><div data-hf-id="hf-avg3" class="ask">› explain photosynthesis simply</div><div data-hf-id="hf-k149" class="said" data-layout-allow-overlap="">Great question! Photosynthesis is the process by which plants, algae and some bacteria convert light energy into chemical energy. It occurs in two main stages: the light-dependent reactions and the Calvin cycle. Let's break each of these down in detail, starting with the thylakoid…</div></div><div data-hf-id="hf-e4fe" class="answer"><div data-hf-id="hf-8gz0" class="who">chat answer · 1,530 words</div><div data-hf-id="hf-k6ui" class="ask">› i don't get probability</div><div data-hf-id="hf-t59z" class="said" data-layout-allow-overlap="">Probability can be understood from several perspectives, including the classical, frequentist, and Bayesian interpretations. Before we dive in, here are twelve key terms you will need: sample space, event, outcome, random variable, distribution, expectation, variance…</div></div><div data-hf-id="hf-dq4d" class="answer"><div data-hf-id="hf-bozt" class="who">chat answer · 1,204 words</div><div data-hf-id="hf-o5sk" class="ask">› how does recursion work?</div><div data-hf-id="hf-e0is" class="said" data-layout-allow-overlap="">Recursion is a fundamental concept in computer science in which a function calls itself in order to solve smaller instances of the same problem. To fully understand recursion, it is important to first consider the call stack, the base case, the recursive case, tail-call optimisation, and…</div></div><div data-hf-id="hf-ex1g" class="answer"><div data-hf-id="hf-mcq5" class="who">chat answer · 986 words</div><div data-hf-id="hf-b9r4" class="ask">› explain photosynthesis simply</div><div data-hf-id="hf-kffa" class="said" data-layout-allow-overlap="">Great question! Photosynthesis is the process by which plants, algae and some bacteria convert light energy into chemical energy. It occurs in two main stages: the light-dependent reactions and the Calvin cycle. Let's break each of these down in detail, starting with the thylakoid…</div></div><div data-hf-id="hf-eiqf" class="answer"><div data-hf-id="hf-82nz" class="who">chat answer · 1,530 words</div><div data-hf-id="hf-jsjh" class="ask">› i don't get probability</div><div data-hf-id="hf-tjl0" class="said" data-layout-allow-overlap="">Probability can be understood from several perspectives, including the classical, frequentist, and Bayesian interpretations. Before we dive in, here are twelve key terms you will need: sample space, event, outcome, random variable, distribution, expectation, variance…</div></div><div data-hf-id="hf-iw3q" class="answer"><div data-hf-id="hf-cvww" class="who">chat answer · 1,204 words</div><div data-hf-id="hf-myvh" class="ask">› how does recursion work?</div><div data-hf-id="hf-ctlp" class="said" data-layout-allow-overlap="">Recursion is a fundamental concept in computer science in which a function calls itself in order to solve smaller instances of the same problem. To fully understand recursion, it is important to first consider the call stack, the base case, the recursive case, tail-call optimisation, and…</div></div><div data-hf-id="hf-ihsp" class="answer"><div data-hf-id="hf-njn8" class="who">chat answer · 986 words</div><div data-hf-id="hf-a2u1" class="ask">› explain photosynthesis simply</div><div data-hf-id="hf-ktqb" class="said" data-layout-allow-overlap="">Great question! Photosynthesis is the process by which plants, algae and some bacteria convert light energy into chemical energy. It occurs in two main stages: the light-dependent reactions and the Calvin cycle. Let's break each of these down in detail, starting with the thylakoid…</div></div><div data-hf-id="hf-exzp" class="answer"><div data-hf-id="hf-7ocy" class="who">chat answer · 1,530 words</div><div data-hf-id="hf-kzgk" class="ask">› i don't get probability</div><div data-hf-id="hf-scnx" class="said" data-layout-allow-overlap="">Probability can be understood from several perspectives, including the classical, frequentist, and Bayesian interpretations. Before we dive in, here are twelve key terms you will need: sample space, event, outcome, random variable, distribution, expectation, variance…</div></div><div data-hf-id="hf-fcaq" class="answer"><div data-hf-id="hf-chlv" class="who">chat answer · 1,204 words</div><div data-hf-id="hf-nd6i" class="ask">› how does recursion work?</div><div data-hf-id="hf-d7wq" class="said" data-layout-allow-overlap="">Recursion is a fundamental concept in computer science in which a function calls itself in order to solve smaller instances of the same problem. To fully understand recursion, it is important to first consider the call stack, the base case, the recursive case, tail-call optimisation, and…</div></div><div data-hf-id="hf-fqlr" class="answer"><div data-hf-id="hf-n5c7" class="who">chat answer · 986 words</div><div data-hf-id="hf-ah52" class="ask">› explain photosynthesis simply</div><div data-hf-id="hf-l81c" class="said" data-layout-allow-overlap="">Great question! Photosynthesis is the process by which plants, algae and some bacteria convert light energy into chemical energy. It occurs in two main stages: the light-dependent reactions and the Calvin cycle. Let's break each of these down in detail, starting with the thylakoid…</div></div><div data-hf-id="hf-g4ws" class="answer"><div data-hf-id="hf-7a1x" class="who">chat answer · 1,530 words</div><div data-hf-id="hf-kl5j" class="ask">› i don't get probability</div><div data-hf-id="hf-sqyy" class="said" data-layout-allow-overlap="">Probability can be understood from several perspectives, including the classical, frequentist, and Bayesian interpretations. Before we dive in, here are twelve key terms you will need: sample space, event, outcome, random variable, distribution, expectation, variance…</div></div></div></div>
+        <div data-hf-id="hf-51b7" class="scan"></div>
+        <div data-hf-id="hf-77gy" id="stuck-line" data-layout-allow-overlap="" class="stuck-line"><span data-hf-id="hf-vxza" class="ch">…</span><span data-hf-id="hf-bsid" class="ch">s</span><span data-hf-id="hf-eknk" class="ch">t</span><span data-hf-id="hf-frkn" class="ch">i</span><span data-hf-id="hf-hr3s" class="ch">l</span><span data-hf-id="hf-yvyo" class="ch">l</span><span data-hf-id="hf-5eis" class="ch"> </span><span data-hf-id="hf-gyhq" class="ch">n</span><span data-hf-id="hf-gk6p" class="ch">o</span><span data-hf-id="hf-slbc" class="ch">t</span><span data-hf-id="hf-6zuk" class="ch"> </span><span data-hf-id="hf-i5et" class="ch">c</span><span data-hf-id="hf-xp1l" class="ch">l</span><span data-hf-id="hf-fo0n" class="ch">i</span><span data-hf-id="hf-hb95" class="ch">c</span><span data-hf-id="hf-eyyl" class="ch">k</span><span data-hf-id="hf-f9pm" class="ch">i</span><span data-hf-id="hf-j79e" class="ch">n</span><span data-hf-id="hf-nsm1" class="ch">g</span><span data-hf-id="hf-rivy" class="ch">.</span><span data-hf-id="hf-zzai" id="stuck-cursor" class="cursor"></span></div>
+      </section>
+
+      <!-- 3 reveal ---------------------------------------------------------------- -->
+      <section data-hf-id="hf-xuok" id="s-reveal" class="clip scene paper" data-start="8.767" data-duration="3.4" data-track-index="0">
+        <div data-hf-id="hf-zvmo" id="reveal-bot" class="bot" style="left: 190px; top: 190px; width: 640px; height: 640px">
+          <div data-hf-id="hf-zcs0" class="sway"><div data-hf-id="hf-k1go" class="atlas" style="background-image: url(assets/bot/body-waving.avif)"></div></div>
+        </div>
+        <div data-hf-id="hf-3obz" class="reveal-copy">
+          <div data-hf-id="hf-gwqk" id="reveal-label" class="label green">Keating 4.0</div>
+          <div data-hf-id="hf-ylgs" class="reveal-a" style="margin-top: 34px"><span data-hf-id="hf-ftc9" class="ch">s</span><span data-hf-id="hf-raqt" class="ch">o</span><span data-hf-id="hf-5sxh" class="ch"> </span><span data-hf-id="hf-ddqh" class="ch">w</span><span data-hf-id="hf-ol83" class="ch">e</span><span data-hf-id="hf-678i" class="ch"> </span><span data-hf-id="hf-hcsr" class="ch">m</span><span data-hf-id="hf-mzzz" class="ch">a</span><span data-hf-id="hf-ozj4" class="ch">d</span><span data-hf-id="hf-7x77" class="ch">e</span></div>
+          <div data-hf-id="hf-n7fu" class="reveal-b"><span data-hf-id="hf-o9e9" class="ch">k</span><span data-hf-id="hf-7iw6" class="ch">e</span><span data-hf-id="hf-hwov" class="ch">a</span><span data-hf-id="hf-ree9" class="ch">t</span><span data-hf-id="hf-evel" class="ch">i</span><span data-hf-id="hf-jlkf" class="ch">n</span><span data-hf-id="hf-yfzh" class="ch">g</span></div>
+        </div>
+      </section>
+
+      <!-- 4 promise --------------------------------------------------------------- -->
+      <section data-hf-id="hf-k6w5" id="s-promise" class="clip scene paper" data-start="12.167" data-duration="8.467" data-track-index="0">
+        <div data-hf-id="hf-9k6z" class="promise-copy">
+          <div data-hf-id="hf-1g69" id="promise-a" class="promise-a">You do the thinking.</div>
+          <div data-hf-id="hf-kfdw" id="promise-b" class="promise-b">Keating helps it click.</div>
+          <div data-hf-id="hf-f44a" id="promise-rule" class="promise-rule"></div>
+          <div data-hf-id="hf-bh9r" id="promise-sub1" class="promise-sub">A teacher that starts with your goals,</div>
+          <div data-hf-id="hf-326x" id="promise-sub2" class="promise-sub" style="margin-top: 0">and builds on what you already know.</div>
+          <div data-hf-id="hf-exrd" class="chips">
+            <div data-hf-id="hf-fwtk" id="chip-goal" class="chip"><b data-hf-id="hf-3pue">goal</b>understand recursion</div>
+            <div data-hf-id="hf-wzcv" id="chip-know" class="chip"><b data-hf-id="hf-hki7">you know</b>functions</div>
+          </div>
+        </div>
+        <div data-hf-id="hf-izli" id="promise-bot" class="bot" style="left: 1320px; top: 240px; width: 560px; height: 560px">
+          <div data-hf-id="hf-0oy0" class="sway"><div data-hf-id="hf-3t9i" class="atlas" style="background-image: url(assets/bot/body-thinking.avif)"></div></div>
+        </div>
+      </section>
+
+      <!-- 5 socratic (frame; the footage and head-bot sit above at root level) ---- -->
+      <section data-hf-id="hf-nwy3" id="s-socratic" class="clip scene paper" data-start="20.633" data-duration="5" data-track-index="0">
+        <div data-hf-id="hf-2y2x" id="soc-label" class="label abs" style="left: 210px; top: 40px">[classroom]</div>
+        <div data-hf-id="hf-zo6d" id="soc-frame" class="frame" style="left: 210px; top: 82px; width: 1500px; height: 844px"></div>
+      </section>
+
+      <!-- 6 quiz ------------------------------------------------------------------ -->
+      <section data-hf-id="hf-ug6c" id="s-quiz" class="clip scene paper" data-start="25.633" data-duration="5.5" data-track-index="0">
+        <div data-hf-id="hf-7jdh" id="wall" data-layout-allow-overflow="" data-layout-allow-overlap="" class="wall">Recursion occurs when the definition of a concept or process depends on a simpler or previous version of itself. It is used in a variety of disciplines ranging from linguistics to logic, and most commonly in mathematics and computer science, where a function being defined is applied within its own definition. While this apparently defines an infinite number of instances, it is often done in such a way that no infinite loop or infinite chain of references can occur. Recursion occurs when the definition of a concept or process depends on a simpler or previous version of itself. It is used in a variety of disciplines ranging from linguistics to logic, and most commonly in mathematics and computer science, where a function being defined is applied within its own definition. While this apparently defines an infinite number of instances, it is often done in such a way that no infinite loop or infinite chain of references can occur. Recursion occurs when the definition of a concept or process depends on a simpler or previous version of itself. It is used in a variety of disciplines ranging from linguistics to logic, and most commonly in mathematics and computer science, where a function being defined is applied within its own definition. While this apparently defines an infinite number of instances, it is often done in such a way that no infinite loop or infinite chain of references can occur. Recursion occurs when the definition of a concept or process depends on a simpler or previous version of itself. It is used in a variety of disciplines ranging from linguistics to logic, and most commonly in mathematics and computer science, where a function being defined is applied within its own definition. While this apparently defines an infinite number of instances, it is often done in such a way that no infinite loop or infinite chain of references can occur. </div>
+        <div data-hf-id="hf-1ajc" id="wall-strike" class="wall-strike"></div>
+        <div data-hf-id="hf-ta7w" id="quiz" class="card quiz">
+          <div data-hf-id="hf-l3n6" class="quiz-head"><span data-hf-id="hf-jjr7" class="label green">[try it yourself]</span><span data-hf-id="hf-hf1h" class="quiz-topic">recursion · check</span></div>
+          <div data-hf-id="hf-jb5n" class="code">function sum(n) {
+  return n === 0 ? 0 : n + sum(n - 1);
+}</div>
+          <div data-hf-id="hf-w323" class="quiz-q">What does the base case return?</div>
+          <div data-hf-id="hf-a4xe" class="opts">
+            <div data-hf-id="hf-3dqy" id="opt-a" class="opt"><span data-hf-id="hf-s5oi" class="fill"></span><span data-hf-id="hf-768l" class="hover"></span><span data-hf-id="hf-7ui7" class="k">A</span><span data-hf-id="hf-iov7" class="v">0</span></div>
+            <div data-hf-id="hf-x815" id="opt-b" class="opt"><span data-hf-id="hf-ngva" class="fill"></span><span data-hf-id="hf-6op5" class="hover"></span><span data-hf-id="hf-7g76" class="k">B</span><span data-hf-id="hf-j368" class="v">1</span></div>
+            <div data-hf-id="hf-wgdc" id="opt-c" class="opt"><span data-hf-id="hf-nv6b" class="fill"></span><span data-hf-id="hf-7vm8" class="hover"></span><span data-hf-id="hf-71w5" class="k">C</span><span data-hf-id="hf-iak6" class="v">3</span></div>
+          </div>
+          <div data-hf-id="hf-6ykw" id="verdict" class="verdict">
+            <svg data-hf-id="hf-w17s" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#14743c" stroke-width="3.2" stroke-linecap="square"><path data-hf-id="hf-ubsc" d="M4 12.5l5 5L20 6.5" /></svg>
+            <span data-hf-id="hf-umck">sum(0) returns 0</span>
+          </div>
+        </div>
+        <div data-hf-id="hf-g5qn" id="quiz-bot" class="bot" style="left: 1390px; top: 330px; width: 500px; height: 500px">
+          <div data-hf-id="hf-zi0x" class="sway"><div data-hf-id="hf-f5qx" class="atlas" style="background-image: url(assets/bot/body-success.avif)"></div></div>
+        </div>
+      </section>
+
+      <!-- 7 own ------------------------------------------------------------------- -->
+      <section data-hf-id="hf-t92p" id="s-own" class="clip scene paper" data-start="31.133" data-duration="6" data-track-index="0">
+        <div data-hf-id="hf-v56a" id="tile-models" class="tile" style="left: 110px; top: 110px">
+          <span data-hf-id="hf-6qfv" class="label">[models]</span>
+          <div data-hf-id="hf-o9ea" class="body tile-img"><img data-hf-id="hf-ircu" src="assets/stills/feature-models.jpg" alt=""></div>
+        </div>
+        <div data-hf-id="hf-79cy" id="tile-persona" class="tile" style="left: 700px; top: 160px">
+          <span data-hf-id="hf-2jm7" class="label">[teacher persona]</span>
+          <div data-hf-id="hf-f32d" class="body card persona" style="position: relative">
+            <div data-hf-id="hf-pgo3" class="persona-row"><span data-hf-id="hf-a433" class="k">name</span><span data-hf-id="hf-cfg8" class="v name">John Keating</span></div>
+            <div data-hf-id="hf-in4z" class="persona-row"><span data-hf-id="hf-y6dq" class="k">voice</span><span data-hf-id="hf-rbpv" class="v">warm, curious, a little wry</span></div>
+            <div data-hf-id="hf-i8ty" class="persona-row"><span data-hf-id="hf-ow1l" class="k">style</span><span data-hf-id="hf-16mj" class="v">asks before it tells</span></div>
+            <span data-hf-id="hf-iup3" class="edit">✎ EDITABLE</span>
+          </div>
+        </div>
+        <div data-hf-id="hf-q4fn" id="tile-data" class="tile" style="left: 1290px; top: 210px">
+          <span data-hf-id="hf-bpye" class="label">[your data]</span>
+          <div data-hf-id="hf-b2cr" class="body card export" style="position: relative">
+            <pre data-hf-id="hf-rm7j">{
+  <span data-hf-id="hf-hunm" class="k2">"goals"</span>: [
+    "understand recursion"
+  ],
+  <span data-hf-id="hf-yu02" class="k2">"knows"</span>: ["functions"],
+  <span data-hf-id="hf-jcmx" class="k2">"reviews"</span>: [ … ]
+}</pre>
+            <div data-hf-id="hf-5pdn" class="dl">learner.json <svg data-hf-id="hf-p1e4" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0c1510" stroke-width="3" stroke-linecap="square"><path data-hf-id="hf-6oe6" d="M12 3v13M6 11l6 6 6-6M4 21h16" /></svg></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-jq55" id="stamp" data-layout-allow-overlap="" class="stamp">[OPEN SOURCE]</div>
+      </section>
+
+      <!-- 8 live ------------------------------------------------------------------ -->
+      <section data-hf-id="hf-19cm" id="s-live" class="clip scene crt" data-start="37.133" data-duration="6.033" data-track-index="0">
+        <div data-hf-id="hf-8y69" id="badge" class="badge">KEATING 4.0</div>
+        <div data-hf-id="hf-yq2u" id="crt-panel" class="crt-panel"><img data-hf-id="hf-ua5e" src="assets/stills/feature-live.jpg" alt=""><div data-hf-id="hf-4n06" class="scan"></div></div>
+        <div data-hf-id="hf-pj49" id="live-tag" class="live-tag">[GPT LIVE]</div>
+        <div data-hf-id="hf-hic7" id="live-bot" class="bot" style="left: 1350px; top: 270px; width: 440px; height: 440px">
+          <div data-hf-id="hf-zwby" class="sway">
+            <div data-hf-id="hf-nizz" id="live-listen" class="atlas" style="background-image: url(assets/bot/head-listening.avif)"></div>
+            <div data-hf-id="hf-an9q" id="live-speak" class="atlas alt" style="background-image: url(assets/bot/head-speaking.avif)"></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-hsfu" id="wave" class="wave"><i data-hf-id="hf-wt6k"></i><i data-hf-id="hf-zeb8"></i><i data-hf-id="hf-y7e5"></i><i data-hf-id="hf-ylp6"></i><i data-hf-id="hf-0l8b"></i><i data-hf-id="hf-0zjc"></i><i data-hf-id="hf-zsm9"></i><i data-hf-id="hf-06xa"></i><i data-hf-id="hf-26gf"></i><i data-hf-id="hf-2krg"></i><i data-hf-id="hf-oz7w"></i><i data-hf-id="hf-okwv"></i><i data-hf-id="hf-o6lu"></i><i data-hf-id="hf-jqbp"></i><i data-hf-id="hf-qkg0"></i><i data-hf-id="hf-q64z"></i><i data-hf-id="hf-prty"></i><i data-hf-id="hf-pdix"></i><i data-hf-id="hf-hqsk"></i><i data-hf-id="hf-hchj"></i><i data-hf-id="hf-8d0n"></i><i data-hf-id="hf-8rbo"></i><i data-hf-id="hf-7kel"></i><i data-hf-id="hf-7ypm"></i></div>
+        <div data-hf-id="hf-78t6" class="live-state"><span data-hf-id="hf-oz89" id="state-listen">● LISTENING</span><span data-hf-id="hf-tte0" id="state-speak" style="position: absolute; left: 0; width: 100%; opacity: 0">● SPEAKING</span></div>
+        <div data-hf-id="hf-48p5" class="scan"></div>
+      </section>
+
+      <!-- 9 memory ---------------------------------------------------------------- -->
+      <section data-hf-id="hf-83t3" id="s-memory" class="clip scene paper" data-start="43.167" data-duration="9.033" data-track-index="0">
+        <div data-hf-id="hf-rbcy" id="device" class="device">
+          <div data-hf-id="hf-u5cy" class="device-bar">
+            <svg data-hf-id="hf-0r8k" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f1ece0" stroke-width="2.6"><rect data-hf-id="hf-reng" x="4" y="10" width="16" height="11" /><path data-hf-id="hf-apke" d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
+            LOCAL RECALL · ON THIS DEVICE
+          </div>
+          <div data-hf-id="hf-wbdj" class="recall">
+            <div data-hf-id="hf-k8wc" id="q1" class="quote"><div data-hf-id="hf-cz97" class="q">“I think recursion is a loop that calls itself.”</div><div data-hf-id="hf-yx55" class="m">you · last week</div></div>
+            <div data-hf-id="hf-sws7" id="q2" class="quote"><div data-hf-id="hf-0me4" class="q">“So the base case is where it stops?”</div><div data-hf-id="hf-2exp" class="m">you · three days ago</div></div>
+            <div data-hf-id="hf-oyo6" id="q3" class="quote"><div data-hf-id="hf-fmfb" class="q">“I keep losing track of the stack.”</div><div data-hf-id="hf-le5l" class="m">you · yesterday</div></div>
+          </div>
+        </div>
+        <div data-hf-id="hf-txg2" id="device-base" class="device-base"></div>
+        <div data-hf-id="hf-zahi" class="mem-label"><span data-hf-id="hf-luck" id="mem-lab-a" data-layout-allow-overlap="" class="label">[coming up]</span><span data-hf-id="hf-5gd4" id="mem-lab-b" data-layout-allow-overlap="" class="label green" style="position: absolute; left: 0; top: 0; opacity: 0; white-space: nowrap">[courses]</span></div>
+        <div data-hf-id="hf-sbit" id="mem-frame" class="frame mem-frame">
+          <img data-hf-id="hf-ft3v" src="assets/stills/feature-coming-up.jpg" alt="">
+          <img data-hf-id="hf-kbch" id="mem-b" src="assets/stills/feature-courses.jpg" alt="" style="opacity: 0">
+        </div>
+        <div data-hf-id="hf-hjms" id="mem-bot" class="bot" style="left: 770px; top: 600px; width: 320px; height: 320px">
+          <div data-hf-id="hf-ypev" class="sway"><div data-hf-id="hf-415e" class="atlas" style="background-image: url(assets/bot/body-understanding.avif)"></div></div>
+        </div>
+      </section>
+
+      <!-- 10 judge ---------------------------------------------------------------- -->
+      <section data-hf-id="hf-ey97" id="s-judge" class="clip scene paper" data-start="52.2" data-duration="5.6" data-track-index="0">
+        <div data-hf-id="hf-ks48" id="proposal" class="card proposal">
+          <div data-hf-id="hf-651e" class="proposal-bar"><span data-hf-id="hf-fpk7">[INDEPENDENT REVIEW]</span><span data-hf-id="hf-f78j">PROPOSAL</span></div>
+          <div data-hf-id="hf-o9kr" class="proposal-body">
+            <div data-hf-id="hf-l7dj" class="proposal-kicker">Review suggests:</div>
+            <div data-hf-id="hf-5535" class="proposal-title">Slow down on base cases.</div>
+            <div data-hf-id="hf-jj6e" class="proposal-why">Why: the base-case answers were hesitant; the recursive step was solid.</div>
+            <div data-hf-id="hf-xe1z" class="buttons"><div data-hf-id="hf-v5wx" id="btn-accept" class="btn go">[ACCEPT]</div><div data-hf-id="hf-u7e9" class="btn no">[DISMISS]</div></div>
+            <div data-hf-id="hf-9y37" class="proposal-note">Nothing changes until you accept it.</div>
+          </div>
+        </div>
+        <svg data-hf-id="hf-owbk" id="pointer" class="pointer" viewBox="0 0 24 24"><path data-hf-id="hf-rwzm" d="M4 2l15 11-6.5 1.2 3.8 7.3-3 1.5-3.8-7.3L4 20z" fill="#1c211b" stroke="#f1ece0" stroke-width="1.4" stroke-linejoin="round" /></svg>
+        <div data-hf-id="hf-l9rl" id="decide" data-layout-allow-overlap="" class="decide">you decide</div>
+      </section>
+
+      <!-- 11 anywhere (frames; footage above at root level) ----------------------- -->
+      <section data-hf-id="hf-hmg7" id="s-anywhere" class="clip scene paper" data-start="57.8" data-duration="4.2" data-track-index="0">
+        <div data-hf-id="hf-xas9" id="any-web" class="frame any-web"><img data-hf-id="hf-n1mz" src="assets/stills/web-classroom.jpg" alt=""></div>
+        <div data-hf-id="hf-t84d" id="any-web-lab" class="label any-lab" style="left: 100px; top: 116px">[web]</div>
+        <div data-hf-id="hf-yahb" id="any-tui" class="frame any-t" style="top: 170px; box-shadow: 12px 12px 0 var(--ink)"></div>
+        <div data-hf-id="hf-pvv1" id="any-tui-lab" class="label any-lab" style="left: 1200px; top: 116px">[tui]</div>
+        <div data-hf-id="hf-m7ox" id="any-cli" class="frame any-t" style="top: 590px; box-shadow: 12px 12px 0 var(--ink)"></div>
+        <div data-hf-id="hf-4d0n" id="any-cli-lab" class="label any-lab" style="left: 1200px; top: 536px">[cli]</div>
+      </section>
+
+      <!-- 12 close ---------------------------------------------------------------- -->
+      <section data-hf-id="hf-n0su" id="s-close" class="clip scene paper" data-start="62" data-duration="7.5" data-track-index="0">
+        <img data-hf-id="hf-2pq8" id="close-art" data-layout-allow-overflow="" class="close-art" src="assets/gen/close-summit.png" alt="">
+        <div data-hf-id="hf-x4gu" class="close-copy">
+          <div data-hf-id="hf-biic" id="close-k" class="close-kicker">Done offloading?</div>
+          <div data-hf-id="hf-9k45" id="close-h" class="close-h">Ready to think for yourself?</div>
+        </div>
+        <div data-hf-id="hf-nxpq" id="endcard" class="endcard paper">
+          <div data-hf-id="hf-s5w1" id="end-bot" class="bot" style="left: 200px; top: 230px; width: 640px; height: 640px">
+            <div data-hf-id="hf-z3pw" class="sway">
+              <div data-hf-id="hf-doxb" id="end-wave" class="atlas" style="background-image: url(assets/bot/body-waving.avif)"></div>
+              <div data-hf-id="hf-5ryf" id="end-idle" class="atlas alt" style="background-image: url(assets/bot/body-idle.avif)"></div>
+            </div>
+          </div>
+          <img data-hf-id="hf-y275" id="end-logo" class="end-logo" src="assets/brand/logo-lockup.png" alt="Keating">
+          <div data-hf-id="hf-4g58" id="end-url" class="end-url">keating.help</div>
+          <div data-hf-id="hf-n17f" id="end-meta" class="end-meta">Keating 4.0 · open source</div>
+        </div>
+      </section>
+
+      <!-- root-level footage: timed on the video itself, moved via untimed wrappers -->
+      <div data-hf-id="hf-9eft" id="w-classroom" class="vwrap" style="left: 213px; top: 85px; width: 1494px; height: 838px">
+        <video data-hf-id="hf-ybye" id="v-classroom" class="clip" src="assets/clips/classroom.mp4" data-start="20.633" data-duration="5" data-track-index="1" muted playsinline></video>
+      </div>
+      <div data-hf-id="hf-fbxq" id="w-tui" class="vwrap" style="left: 1203px; top: 173px; width: 614px; height: 343px">
+        <video data-hf-id="hf-ra5p" id="v-tui" class="clip" src="assets/clips/tui.mp4" data-start="57.8" data-duration="4.2" data-track-index="1" muted playsinline></video>
+      </div>
+      <div data-hf-id="hf-3srs" id="w-cli" class="vwrap" style="left: 1203px; top: 593px; width: 614px; height: 343px">
+        <video data-hf-id="hf-w4sa" id="v-cli" class="clip" src="assets/clips/cli.mp4" data-start="57.8" data-duration="4.2" data-track-index="2" muted playsinline></video>
+      </div>
+
+      <!-- root-level overlay above the classroom footage -->
+      <div data-hf-id="hf-zolu" id="o-socratic" class="clip overlay" data-start="20.633" data-duration="5" data-track-index="3">
+        <div data-hf-id="hf-ww00" id="soc-bot" class="bot" style="left: 1560px; top: 660px; width: 320px; height: 320px">
+          <div data-hf-id="hf-xwst" class="sway"><div data-hf-id="hf-1ude" class="atlas" style="background-image: url(assets/bot/head-speaking.avif)"></div></div>
+        </div>
+      </div>
+
+      <canvas data-hf-id="hf-6mxi" id="fx-over" class="fx" width="1920" height="1080" data-layout-allow-occlusion=""></canvas>
+
+      <div data-hf-id="hf-omjs" id="cap-socratic-1" class="clip cap" data-start="20.92" data-duration="1.98" data-track-index="4"><div data-hf-id="hf-kndt" class="pill"><span data-hf-id="hf-e1s4" class="cw" data-s="21" data-e="21.4">Ask</span> <span data-hf-id="hf-1v1i" class="cw" data-s="21.4" data-e="21.6">it</span> <span data-hf-id="hf-itpp" class="cw" data-s="21.6" data-e="22.9">anything,</span></div></div>
+      <div data-hf-id="hf-rma0" id="cap-socratic-2" class="clip cap" data-start="22.9" data-duration="2.41" data-track-index="4"><div data-hf-id="hf-ndrp" class="pill"><span data-hf-id="hf-tzu3" class="cw" data-s="22.98" data-e="23.16">and</span> <span data-hf-id="hf-y4p9" class="cw" data-s="23.16" data-e="23.44">it</span> <span data-hf-id="hf-ko51" class="cw" data-s="23.44" data-e="23.8">asks</span> <span data-hf-id="hf-i9qj" class="cw" data-s="23.8" data-e="24.24">you</span> <span data-hf-id="hf-bnx8" class="cw" data-s="24.24" data-e="24.58">something</span> <span data-hf-id="hf-9tow" class="cw" data-s="24.58" data-e="25.31">back.</span></div></div>
+      <div data-hf-id="hf-6ukr" id="cap-quiz-1" class="clip cap" data-start="25.92" data-duration="2.38" data-track-index="4"><div data-hf-id="hf-okos" class="pill"><span data-hf-id="hf-9nwb" class="cw" data-s="26" data-e="26.34">Not</span> <span data-hf-id="hf-d8x1" class="cw" data-s="26.34" data-e="26.66">another</span> <span data-hf-id="hf-42bm" class="cw" data-s="26.66" data-e="27.04">wall</span> <span data-hf-id="hf-xzut" class="cw" data-s="27.04" data-e="27.32">of</span> <span data-hf-id="hf-ik8v" class="cw" data-s="27.32" data-e="28.3">text.</span></div></div>
+      <div data-hf-id="hf-xitj" id="cap-quiz-2" class="clip cap" data-start="28.3" data-duration="2.21" data-track-index="4"><div data-hf-id="hf-o6dr" class="pill"><span data-hf-id="hf-am7q" class="cw" data-s="28.38" data-e="28.54">A</span> <span data-hf-id="hf-drzc" class="cw" data-s="28.54" data-e="28.84">question</span> <span data-hf-id="hf-g2q0" class="cw" data-s="28.84" data-e="29.12">you</span> <span data-hf-id="hf-g3of" class="cw" data-s="29.12" data-e="29.34">can</span> <span data-hf-id="hf-vcqm" class="cw" data-s="29.34" data-e="29.78">actually</span> <span data-hf-id="hf-sqn0" class="cw" data-s="29.78" data-e="30.51">answer.</span></div></div>
+      <div data-hf-id="hf-hfe6" id="cap-own-1" class="clip cap" data-start="31.42" data-duration="1.62" data-track-index="4"><div data-hf-id="hf-pdau" class="pill"><span data-hf-id="hf-6r1k" class="cw" data-s="31.5" data-e="31.92">Choose</span> <span data-hf-id="hf-yu5m" class="cw" data-s="31.92" data-e="32.2">your</span> <span data-hf-id="hf-wl7f" class="cw" data-s="32.2" data-e="33.04">model.</span></div></div>
+      <div data-hf-id="hf-cj0i" id="cap-own-2" class="clip cap" data-start="33.04" data-duration="1.16" data-track-index="4"><div data-hf-id="hf-oyzt" class="pill"><span data-hf-id="hf-4gke" class="cw" data-s="33.12" data-e="33.12">Shape</span> <span data-hf-id="hf-jxew" class="cw" data-s="33.12" data-e="33.3">your</span> <span data-hf-id="hf-p65b" class="cw" data-s="33.3" data-e="34.2">teacher.</span></div></div>
+      <div data-hf-id="hf-7d10" id="cap-own-3" class="clip cap" data-start="34.2" data-duration="1.36" data-track-index="4"><div data-hf-id="hf-q5ww" class="pill"><span data-hf-id="hf-mnoh" class="cw" data-s="34.28" data-e="34.32">Take</span> <span data-hf-id="hf-k8f2" class="cw" data-s="34.32" data-e="34.52">your</span> <span data-hf-id="hf-1uk6" class="cw" data-s="34.52" data-e="34.64">data</span> <span data-hf-id="hf-m7rg" class="cw" data-s="34.64" data-e="34.92">with</span> <span data-hf-id="hf-rc1p" class="cw" data-s="34.92" data-e="35.56">you.</span></div></div>
+      <div data-hf-id="hf-xxlr" id="cap-own-4" class="clip cap" data-start="35.56" data-duration="0.99" data-track-index="4"><div data-hf-id="hf-prlv" class="pill"><span data-hf-id="hf-qg29" class="cw" data-s="35.64" data-e="35.78">It's</span> <span data-hf-id="hf-y1u7" class="cw" data-s="35.78" data-e="35.98">open</span> <span data-hf-id="hf-koaq" class="cw" data-s="35.98" data-e="36.55">source.</span></div></div>
+      <div data-hf-id="hf-l3cl" id="cap-live-1" class="clip cap" data-start="37.42" data-duration="1.94" data-track-index="4"><div data-hf-id="hf-klmi" class="pill"><span data-hf-id="hf-qyl2" class="cw" data-s="37.5" data-e="37.84">New</span> <span data-hf-id="hf-ldrd" class="cw" data-s="37.84" data-e="38.06">in</span> <span data-hf-id="hf-szpc" class="cw" data-s="38.06" data-e="38.28">Keating</span> <span data-hf-id="hf-9i0x" class="cw" data-s="38.28" data-e="39.36">4:</span></div></div>
+      <div data-hf-id="hf-nedl" id="cap-live-2" class="clip cap" data-start="39.36" data-duration="2.04" data-track-index="4"><div data-hf-id="hf-k7bh" class="pill"><span data-hf-id="hf-vqgm" class="cw" data-s="39.44" data-e="39.74">talk</span> <span data-hf-id="hf-d4n5" class="cw" data-s="39.74" data-e="40">it</span> <span data-hf-id="hf-guex" class="cw" data-s="40" data-e="40.32">through</span> <span data-hf-id="hf-7thr" class="cw" data-s="40.32" data-e="40.7">out</span> <span data-hf-id="hf-n7ct" class="cw" data-s="40.7" data-e="41.4">loud,</span></div></div>
+      <div data-hf-id="hf-yuqi" id="cap-live-3" class="clip cap" data-start="41.4" data-duration="1.45" data-track-index="4"><div data-hf-id="hf-0ecf" class="pill"><span data-hf-id="hf-dv5b" class="cw" data-s="41.48" data-e="41.64">with</span> <span data-hf-id="hf-zxsz" class="cw" data-s="41.64" data-e="42.2">GPT</span> <span data-hf-id="hf-8xhe" class="cw" data-s="42.2" data-e="42.85">Live.</span></div></div>
+      <div data-hf-id="hf-pc1v" id="cap-memory-1" class="clip cap" data-start="43.453" data-duration="1.9" data-track-index="4"><div data-hf-id="hf-0sng" class="pill"><span data-hf-id="hf-ld6o" class="cw" data-s="43.533" data-e="43.933">Local</span> <span data-hf-id="hf-1wfj" class="cw" data-s="43.933" data-e="44.393">recall</span> <span data-hf-id="hf-crvf" class="cw" data-s="44.393" data-e="44.853">brings</span> <span data-hf-id="hf-a8sw" class="cw" data-s="44.853" data-e="45.173">back</span> <span data-hf-id="hf-firu" class="cw" data-s="45.173" data-e="45.293">what</span> <span data-hf-id="hf-5syj" class="cw" data-s="45.293" data-e="45.353">you</span></div></div>
+      <div data-hf-id="hf-z3v7" id="cap-memory-2" class="clip cap" data-start="45.353" data-duration="1.1" data-track-index="4"><div data-hf-id="hf-zlqd" class="pill"><span data-hf-id="hf-k1o0" class="cw" data-s="45.433" data-e="45.653">said</span> <span data-hf-id="hf-5jpp" class="cw" data-s="45.653" data-e="46.453">before,</span></div></div>
+      <div data-hf-id="hf-mwwl" id="cap-memory-3" class="clip cap" data-start="46.453" data-duration="2.7" data-track-index="4"><div data-hf-id="hf-001e" class="pill"><span data-hf-id="hf-540n" class="cw" data-s="46.533" data-e="46.673">on</span> <span data-hf-id="hf-ggdb" class="cw" data-s="46.673" data-e="46.993">your</span> <span data-hf-id="hf-jd5w" class="cw" data-s="46.993" data-e="47.333">own</span> <span data-hf-id="hf-w989" class="cw" data-s="47.333" data-e="48.273">device</span> <span data-hf-id="hf-gqa9" class="cw" data-s="48.273" data-e="48.473">so</span> <span data-hf-id="hf-mj5k" class="cw" data-s="48.473" data-e="49.153">reviews</span></div></div>
+      <div data-hf-id="hf-zf7s" id="cap-memory-4" class="clip cap" data-start="49.153" data-duration="1.86" data-track-index="4"><div data-hf-id="hf-1zkj" class="pill"><span data-hf-id="hf-t3ts" class="cw" data-s="49.233" data-e="49.613">and</span> <span data-hf-id="hf-tqvv" class="cw" data-s="49.613" data-e="50.213">courses</span> <span data-hf-id="hf-tjz7" class="cw" data-s="50.213" data-e="50.553">pick</span> <span data-hf-id="hf-xgf2" class="cw" data-s="50.553" data-e="50.793">up</span> <span data-hf-id="hf-uf04" class="cw" data-s="50.793" data-e="50.933">where</span> <span data-hf-id="hf-0kde" class="cw" data-s="50.933" data-e="51.013">you</span></div></div>
+      <div data-hf-id="hf-f7bo" id="cap-memory-5" class="clip cap" data-start="51.013" data-duration="0.93" data-track-index="4"><div data-hf-id="hf-2dvk" class="pill"><span data-hf-id="hf-ehv2" class="cw" data-s="51.093" data-e="51.293">left</span> <span data-hf-id="hf-t3sk" class="cw" data-s="51.293" data-e="51.943">off.</span></div></div>
+      <div data-hf-id="hf-zdp9" id="cap-judge-1" class="clip cap" data-start="52.487" data-duration="3.24" data-track-index="4"><div data-hf-id="hf-16yh" class="pill"><span data-hf-id="hf-kbgs" class="cw" data-s="52.567" data-e="53.187">Independent</span> <span data-hf-id="hf-0a27" class="cw" data-s="53.187" data-e="53.607">reviews</span> <span data-hf-id="hf-e9uk" class="cw" data-s="53.607" data-e="54.207">propose</span> <span data-hf-id="hf-dwno" class="cw" data-s="54.207" data-e="54.507">what</span> <span data-hf-id="hf-9udp" class="cw" data-s="54.507" data-e="54.667">could</span> <span data-hf-id="hf-qug5" class="cw" data-s="54.667" data-e="55.727">change.</span></div></div>
+      <div data-hf-id="hf-9euw" id="cap-judge-2" class="clip cap" data-start="55.727" data-duration="1.71" data-track-index="4"><div data-hf-id="hf-1l9i" class="pill"><span data-hf-id="hf-8mqb" class="cw" data-s="55.807" data-e="55.947">You</span> <span data-hf-id="hf-p2q8" class="cw" data-s="55.947" data-e="56.527">decide</span> <span data-hf-id="hf-4c38" class="cw" data-s="56.527" data-e="56.807">what</span> <span data-hf-id="hf-jpb6" class="cw" data-s="56.807" data-e="57.437">sticks.</span></div></div>
+      <div data-hf-id="hf-9h63" id="cap-anywhere-1" class="clip cap" data-start="58.087" data-duration="2.14" data-track-index="4"><div data-hf-id="hf-x7w7" class="pill"><span data-hf-id="hf-sgg8" class="cw" data-s="58.167" data-e="58.367">In</span> <span data-hf-id="hf-ar3e" class="cw" data-s="58.367" data-e="58.507">your</span> <span data-hf-id="hf-356r" class="cw" data-s="58.507" data-e="59.627">browser</span> <span data-hf-id="hf-2uho" class="cw" data-s="59.627" data-e="59.847">or</span> <span data-hf-id="hf-jsci" class="cw" data-s="59.847" data-e="60.187">right</span> <span data-hf-id="hf-u38r" class="cw" data-s="60.187" data-e="60.227">in</span></div></div>
+      <div data-hf-id="hf-cy1c" id="cap-anywhere-2" class="clip cap" data-start="60.227" data-duration="0.75" data-track-index="4"><div data-hf-id="hf-xm78" class="pill"><span data-hf-id="hf-sbu8" class="cw" data-s="60.307" data-e="60.507">your</span> <span data-hf-id="hf-3idi" class="cw" data-s="60.507" data-e="60.977">terminal.</span></div></div>
+
+      <audio data-hf-id="hf-f6tt" id="mix" src="assets/audio/mix.wav" data-start="0" data-duration="69.5" data-volume="1"></audio>
+    </div>
+
+    <script>
+      const TIMING = {"total":69.5,"fps":30,"env":{"live":{"t0":37.5,"step":0.0667,"v":[0.589,0.865,0.906,0.808,0.772,0.747,0.766,0.307,0.565,0.704,0.614,0.675,0.48,0.177,0.874,0.83,0.784,0.617,0.286,0.066,0.059,0.037,0.039,0.033,0.038,0.067,0.08,0.048,0.221,0.316,0.521,0.685,0.405,0.408,0.717,0.284,0.129,0.561,0.753,0.819,0.58,0.077,0.524,0.641,0.734,0.524,0.409,0.474,0.709,0.702,0.882,0.501,0.419,0.23,0.074,0.038,0.047,0.063,0.597,1,0.506,0.121,0.515,0.785,0.514,0.575,0.743,0.338,0.759,0.754,0.956,0.929,0.952,0.683,0.189,0.137,0.071,0.048,0]}},"scenes":[{"id":"hook","text":"Seen this before? You asked to learn — and you got more to read.","start":0,"duration":6,"voStart":0.36666666666666664,"voDuration":4.623,"words":[{"w":"Seen","s":0.367,"e":0.687},{"w":"this","s":0.687,"e":0.907},{"w":"before?","s":0.907,"e":1.267},{"w":"You","s":1.967,"e":2.107},{"w":"asked","s":2.107,"e":2.387},{"w":"to","s":2.387,"e":2.847},{"w":"learn","s":2.847,"e":2.847},{"w":"and","s":3.547,"e":3.767},{"w":"you","s":3.767,"e":4.007},{"w":"got","s":4.007,"e":4.127},{"w":"more","s":4.127,"e":4.347},{"w":"to","s":4.347,"e":4.667},{"w":"read.","s":4.667,"e":4.747}],"voice":"Kore"},{"id":"stuck","text":"And it's still not clicking.","start":6,"duration":2.7666666666666666,"voStart":6.366666666666666,"voDuration":1.869,"words":[{"w":"And","s":6.367,"e":6.727},{"w":"it's","s":6.727,"e":7.127},{"w":"still","s":7.127,"e":7.507},{"w":"not","s":7.507,"e":7.767},{"w":"clicking.","s":7.767,"e":7.987}],"voice":"Kore"},{"id":"reveal","text":"So we made Keating.","start":8.766666666666667,"duration":3.4,"voStart":9.133333333333333,"voDuration":1.742,"words":[{"w":"So","s":9.133,"e":9.513},{"w":"we","s":9.513,"e":9.873},{"w":"made","s":9.873,"e":10.293},{"w":"Keating.","s":10.293,"e":10.653}],"voice":"Kore"},{"id":"promise","text":"You do the thinking. Keating helps it click — a teacher that starts with your goals, and builds on what you already know.","start":12.166666666666666,"duration":8.466666666666667,"voStart":12.533333333333333,"voDuration":7.559,"words":[{"w":"You","s":12.533,"e":12.893},{"w":"do","s":12.893,"e":13.133},{"w":"the","s":13.133,"e":13.353},{"w":"thinking.","s":13.353,"e":13.673},{"w":"Keating","s":14.533,"e":14.633},{"w":"helps","s":14.633,"e":14.953},{"w":"it","s":14.953,"e":15.153},{"w":"click","s":15.153,"e":15.393},{"w":"a","s":16.113,"e":16.213},{"w":"teacher","s":16.213,"e":16.373},{"w":"that","s":16.373,"e":16.713},{"w":"starts","s":16.713,"e":17.093},{"w":"with","s":17.093,"e":17.333},{"w":"your","s":17.333,"e":17.673},{"w":"goals,","s":17.673,"e":17.993},{"w":"and","s":18.253,"e":18.653},{"w":"builds","s":18.653,"e":18.813},{"w":"on","s":18.813,"e":19.093},{"w":"what","s":19.093,"e":19.253},{"w":"you","s":19.253,"e":19.373},{"w":"already","s":19.373,"e":19.773},{"w":"know.","s":19.773,"e":19.973}],"voice":"Kore"},{"id":"socratic","text":"Ask it anything, and it asks you something back.","start":20.633333333333333,"duration":5,"voStart":21,"voDuration":4.089,"words":[{"w":"Ask","s":21,"e":21.4},{"w":"it","s":21.4,"e":21.6},{"w":"anything,","s":21.6,"e":22.32},{"w":"and","s":22.98,"e":23.16},{"w":"it","s":23.16,"e":23.44},{"w":"asks","s":23.44,"e":23.8},{"w":"you","s":23.8,"e":24.24},{"w":"something","s":24.24,"e":24.58},{"w":"back.","s":24.58,"e":24.96}],"voice":"Kore"},{"id":"quiz","text":"Not another wall of text. A question you can actually answer.","start":25.633333333333333,"duration":5.5,"voStart":26,"voDuration":4.369,"words":[{"w":"Not","s":26,"e":26.34},{"w":"another","s":26.34,"e":26.66},{"w":"wall","s":26.66,"e":27.04},{"w":"of","s":27.04,"e":27.32},{"w":"text.","s":27.32,"e":27.82},{"w":"A","s":28.38,"e":28.54},{"w":"question","s":28.54,"e":28.84},{"w":"you","s":28.84,"e":29.12},{"w":"can","s":29.12,"e":29.34},{"w":"actually","s":29.34,"e":29.78},{"w":"answer.","s":29.78,"e":30.16}],"voice":"Kore"},{"id":"own","text":"Choose your model. Shape your teacher. Take your data with you. It's open source.","start":31.133333333333333,"duration":6,"voStart":31.5,"voDuration":4.895,"words":[{"w":"Choose","s":31.5,"e":31.92},{"w":"your","s":31.92,"e":32.2},{"w":"model.","s":32.2,"e":32.38},{"w":"Shape","s":33.12,"e":33.12},{"w":"your","s":33.12,"e":33.3},{"w":"teacher.","s":33.3,"e":33.62},{"w":"Take","s":34.28,"e":34.32},{"w":"your","s":34.32,"e":34.52},{"w":"data","s":34.52,"e":34.64},{"w":"with","s":34.64,"e":34.92},{"w":"you.","s":34.92,"e":35.08},{"w":"It's","s":35.64,"e":35.78},{"w":"open","s":35.78,"e":35.98},{"w":"source.","s":35.98,"e":36.2}],"voice":"Kore"},{"id":"live","text":"New in Keating 4: talk it through out loud, with GPT Live.","start":37.13333333333333,"duration":6.033333333333333,"voStart":37.5,"voDuration":5.142,"words":[{"w":"New","s":37.5,"e":37.84},{"w":"in","s":37.84,"e":38.06},{"w":"Keating","s":38.06,"e":38.28},{"w":"4:","s":38.28,"e":38.72},{"w":"talk","s":39.44,"e":39.74},{"w":"it","s":39.74,"e":40},{"w":"through","s":40,"e":40.32},{"w":"out","s":40.32,"e":40.7},{"w":"loud,","s":40.7,"e":41.06},{"w":"with","s":41.48,"e":41.64},{"w":"GPT","s":41.64,"e":42.2},{"w":"Live.","s":42.2,"e":42.5}],"voice":"Kore"},{"id":"memory","text":"Local recall brings back what you said before, on your own device — so reviews and courses pick up where you left off.","start":43.166666666666664,"duration":9.033333333333333,"voStart":43.53333333333333,"voDuration":8.136,"words":[{"w":"Local","s":43.533,"e":43.933},{"w":"recall","s":43.933,"e":44.393},{"w":"brings","s":44.393,"e":44.853},{"w":"back","s":44.853,"e":45.173},{"w":"what","s":45.173,"e":45.293},{"w":"you","s":45.293,"e":45.433},{"w":"said","s":45.433,"e":45.653},{"w":"before,","s":45.653,"e":46.073},{"w":"on","s":46.533,"e":46.673},{"w":"your","s":46.673,"e":46.993},{"w":"own","s":46.993,"e":47.333},{"w":"device","s":47.333,"e":47.693},{"w":"so","s":48.273,"e":48.473},{"w":"reviews","s":48.473,"e":49.233},{"w":"and","s":49.233,"e":49.613},{"w":"courses","s":49.613,"e":50.213},{"w":"pick","s":50.213,"e":50.553},{"w":"up","s":50.553,"e":50.793},{"w":"where","s":50.793,"e":50.933},{"w":"you","s":50.933,"e":51.093},{"w":"left","s":51.093,"e":51.293},{"w":"off.","s":51.293,"e":51.593}],"voice":"Kore"},{"id":"judge","text":"Independent reviews propose what could change. You decide what sticks.","start":52.2,"duration":5.6,"voStart":52.56666666666667,"voDuration":4.71,"words":[{"w":"Independent","s":52.567,"e":53.187},{"w":"reviews","s":53.187,"e":53.607},{"w":"propose","s":53.607,"e":54.207},{"w":"what","s":54.207,"e":54.507},{"w":"could","s":54.507,"e":54.667},{"w":"change.","s":54.667,"e":55.047},{"w":"You","s":55.807,"e":55.947},{"w":"decide","s":55.947,"e":56.527},{"w":"what","s":56.527,"e":56.807},{"w":"sticks.","s":56.807,"e":57.087}],"voice":"Kore"},{"id":"anywhere","text":"In your browser — or right in your terminal.","start":57.8,"duration":4.2,"voStart":58.166666666666664,"voDuration":2.827,"words":[{"w":"In","s":58.167,"e":58.367},{"w":"your","s":58.367,"e":58.507},{"w":"browser","s":58.507,"e":58.927},{"w":"or","s":59.627,"e":59.847},{"w":"right","s":59.847,"e":60.187},{"w":"in","s":60.187,"e":60.307},{"w":"your","s":60.307,"e":60.507},{"w":"terminal.","s":60.507,"e":60.627}],"voice":"Kore"},{"id":"close","text":"Done offloading? Ready to think for yourself? Start at keating.help.","start":62,"duration":7.5,"voStart":62.36666666666667,"voDuration":5.66,"words":[{"w":"Done","s":62.367,"e":62.927},{"w":"offloading?","s":62.927,"e":63.827},{"w":"Ready","s":64.487,"e":64.487},{"w":"to","s":64.487,"e":64.707},{"w":"think","s":64.707,"e":64.827},{"w":"for","s":64.827,"e":65.047},{"w":"yourself?","s":65.047,"e":65.387},{"w":"Start","s":66.327,"e":66.547},{"w":"at","s":66.547,"e":67.027},{"w":"keating.help.","s":67.027,"e":67.347}],"voice":"Kore"}]};
+      const S = Object.fromEntries(TIMING.scenes.map((s) => [s.id, s]));
+      const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const st = (id) => S[id].start;
+      const en = (id) => S[id].start + S[id].duration;
+      // Time a spoken word starts (n-th occurrence) / ends, in root seconds.
+      function word(id, w, n = 1) {
+        let c = 0;
+        for (const x of S[id].words) if (norm(x.w) === norm(w) && ++c === n) return x;
+        throw new Error(`word "${w}" not in ${id}`);
+      }
+      const at = (id, w, n) => word(id, w, n).s;
+      const upto = (id, w, n) => word(id, w, n).e;
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+      const tl = gsap.timeline({ paused: true });
+
+      // ---- KeatingBot stop-motion cadences (mirrors web/src/components/keating-bot.css) ----
+      const even = (n) => Array.from({ length: n }, (_, i) => [i / n, i]);
+      const CAD = {
+        idle: { period: 6, keys: [[0, 0], [0.74, 1], [0.78, 2], [0.82, 3], [0.86, 4], [0.9, 5], [0.94, 6], [0.98, 7]] },
+        waving: { period: 4, keys: [[0, 0], [0.04, 1], [0.08, 2], [0.12, 3], [0.16, 4], [0.2, 5], [0.24, 6], [0.28, 7]] },
+        thinking: { period: 3.6, keys: [[0, 0], [0.28, 1], [0.36, 2], [0.44, 3], [0.6, 4], [0.68, 5], [0.76, 6], [0.84, 7]] },
+        speaking: { period: 1, keys: even(8) },
+        listening: { period: 3.2, keys: [[0, 0], [0.38, 1], [0.46, 2], [0.54, 3], [0.62, 4], [0.7, 5], [0.78, 6], [0.86, 7]] },
+        understanding: { period: 6, keys: [[0, 0], [0.12, 1], [0.24, 2], [0.38, 3], [0.48, 4], [0.6, 5], [0.8, 6], [0.9, 7]] },
+        success: { period: 1.05, once: true, keys: Array.from({ length: 8 }, (_, i) => [i / 7, i]) },
+      };
+      const framePos = (i) => `${((i % 4) / 3) * 100}% ${Math.floor(i / 4) * 100}%`;
+      function animateSprite(el, state, t0, t1) {
+        const c = CAD[state];
+        for (let p = t0; p < t1; p += c.period) {
+          for (const [k, f] of c.keys) {
+            const t = p + k * c.period;
+            if (t >= t1) break;
+            tl.set(el, { backgroundPosition: framePos(f) }, t);
+          }
+          if (c.once) break;
+        }
+      }
+      function sway(el, t0, t1) {
+        const n = Math.max(1, Math.ceil((t1 - t0) / 4.8));
+        tl.to(el, {
+          keyframes: [
+            { xPercent: -1, yPercent: 0, rotation: -1.8 },
+            { xPercent: 0, yPercent: -1.5, rotation: -0.4 },
+            { xPercent: 1, yPercent: 0, rotation: 1.8 },
+            { xPercent: 0, yPercent: -1, rotation: 0.4 },
+            { xPercent: 0, yPercent: 0, rotation: 0 },
+          ],
+          duration: 4.8, ease: "sine.inOut", repeat: n - 1,
+        }, t0);
+      }
+      function typeChars(sel, t0, t1) {
+        const chars = $$(sel + " .ch");
+        chars.forEach((c, i) => tl.set(c, { opacity: 1 }, t0 + ((t1 - t0) * i) / chars.length));
+      }
+      const pop = (sel, t, from = { y: 40 }) =>
+        tl.fromTo(sel, { opacity: 0, ...from }, { opacity: 1, x: 0, y: 0, scale: 1, rotation: 0, duration: 0.5, ease: "power3.out" }, t);
+
+      // ---- 1 hook -----------------------------------------------------------------
+      {
+        const t = st("hook");
+        tl.fromTo("#hook-art", { scale: 1.02 }, { scale: 1.1, duration: S.hook.duration, ease: "none" }, t);
+        tl.fromTo("#hook-col .answer", { opacity: 0, x: 160 }, { opacity: 1, x: 0, duration: 0.35, ease: "power4.out", stagger: 0.16 }, t + 0.05);
+        tl.fromTo("#hook-col", { y: 0 }, { y: -1700, duration: S.hook.duration - 0.8, ease: "power2.in" }, t + 0.8);
+        tl.fromTo("#hook-h1", { opacity: 0, y: 30, scale: 0.94 }, { opacity: 1, y: 0, scale: 1, duration: 0.35, ease: "back.out(2)" }, at("hook", "Seen") - 0.1);
+        pop("#hook-l1", at("hook", "You") - 0.08);
+        pop("#hook-l2", at("hook", "and") - 0.08);
+        tl.fromTo("#hook-rule", { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: "power2.out" }, at("hook", "more"));
+      }
+
+      // ---- 2 stuck ----------------------------------------------------------------
+      {
+        const t = st("stuck");
+        tl.set("#stuck-col", { y: -1700 }, t);
+        typeChars("#stuck-line", at("stuck", "still") - 0.25, upto("stuck", "clicking."));
+        for (let b = t; b < en("stuck"); b += 0.5) tl.set("#stuck-cursor", { opacity: Math.round((b - t) / 0.5) % 2 ? 0 : 1 }, b);
+        tl.to("#s-stuck .stuck-feed", { y: 1100, duration: 0.5, ease: "power2.in" }, en("stuck") - 0.55);
+      }
+
+      // ---- 3 reveal ---------------------------------------------------------------
+      {
+        const t = st("reveal");
+        tl.fromTo("#reveal-bot", { yPercent: 70, scaleY: 0.82, opacity: 0 }, { yPercent: 0, scaleY: 1, opacity: 1, duration: 0.6, ease: "back.out(1.7)" }, t + 0.2);
+        animateSprite("#reveal-bot .atlas", "waving", t + 0.35, en("reveal"));
+        pop("#reveal-label", t + 0.3, { y: -20 });
+        typeChars("#s-reveal .reveal-copy", at("reveal", "So"), upto("reveal", "Keating."));
+      }
+
+      // ---- 4 promise --------------------------------------------------------------
+      {
+        const t = st("promise");
+        tl.fromTo("#promise-bot", { x: 260, opacity: 0 }, { x: 0, opacity: 1, duration: 0.55, ease: "power3.out" }, t);
+        animateSprite("#promise-bot .atlas", "thinking", t, en("promise"));
+        sway("#promise-bot .sway", t, en("promise"));
+        pop("#promise-a", at("promise", "You") - 0.1, { x: -60 });
+        pop("#promise-b", at("promise", "Keating") - 0.1, { x: -60 });
+        tl.fromTo("#promise-rule", { scaleX: 0, transformOrigin: "0 50%" }, { scaleX: 1, duration: 0.4, ease: "power2.out" }, at("promise", "click"));
+        pop("#promise-sub1", at("promise", "a") - 0.1, { y: 20 });
+        pop("#chip-goal", at("promise", "goals,") - 0.1, { y: 30 });
+        pop("#promise-sub2", at("promise", "and") - 0.1, { y: 20 });
+        pop("#chip-know", at("promise", "already") - 0.1, { y: 30 });
+      }
+
+      // ---- 5 socratic -------------------------------------------------------------
+      {
+        const t = st("socratic");
+        tl.fromTo(["#soc-frame", "#w-classroom"], { y: 160, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, t);
+        pop("#soc-label", t + 0.25, { y: 20 });
+        tl.fromTo("#soc-bot", { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.45, ease: "back.out(2)" }, t + 0.5);
+        const w = S.socratic.words;
+        animateSprite("#soc-bot .atlas", "speaking", w[0].s, w[w.length - 1].e);
+        tl.set("#soc-bot .atlas", { backgroundPosition: framePos(0) }, w[w.length - 1].e);
+      }
+
+      // ---- 6 quiz -----------------------------------------------------------------
+      {
+        const t = st("quiz");
+        tl.fromTo("#wall", { y: 0 }, { y: -160, duration: S.quiz.duration, ease: "none" }, t);
+        tl.fromTo("#wall-strike", { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "power2.inOut" }, at("quiz", "wall"));
+        tl.to(["#wall", "#wall-strike"], { opacity: 0.25, filter: "blur(3px)", duration: 0.4 }, at("quiz", "A") - 0.35);
+        tl.fromTo("#quiz", { rotationX: -80, opacity: 0, transformPerspective: 1400, transformOrigin: "50% 0%" }, { rotationX: 0, opacity: 1, duration: 0.6, ease: "back.out(1.3)" }, at("quiz", "A") - 0.35);
+        tl.fromTo("#quiz-bot", { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, at("quiz", "A"));
+        const hov = (id, a, b) => tl.fromTo(id + " .hover", { opacity: 0 }, { opacity: 1, duration: 0.12, yoyo: true, repeat: 1, repeatDelay: Math.max(0.1, b - a - 0.24) }, a);
+        const pick = at("quiz", "actually");
+        hov("#opt-c", pick - 1.3, pick - 0.9);
+        hov("#opt-b", pick - 0.85, pick - 0.45);
+        tl.fromTo("#opt-a .hover", { opacity: 0 }, { opacity: 1, duration: 0.12 }, pick - 0.4);
+        tl.to("#opt-a .fill", { opacity: 1, duration: 0.15 }, pick);
+        tl.to("#opt-a", { color: "#f1ece0", duration: 0.15 }, pick);
+        tl.fromTo("#verdict", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.35, ease: "back.out(2)" }, pick + 0.1);
+        animateSprite("#quiz-bot .atlas", "success", pick, en("quiz"));
+      }
+
+      // ---- 7 own ------------------------------------------------------------------
+      {
+        const t = st("own");
+        pop("#tile-models", at("own", "Choose") - 0.15, { y: 90, rotation: -3 });
+        pop("#tile-persona", at("own", "Shape") - 0.15, { y: 90, rotation: 3 });
+        pop("#tile-data", at("own", "Take") - 0.15, { y: 90, rotation: -2 });
+        tl.fromTo("#stamp", { opacity: 0, scale: 1.8, rotation: -2 }, { opacity: 1, scale: 1, rotation: -7, duration: 0.3, ease: "power4.in" }, at("own", "open") - 0.2);
+        tl.fromTo(["#tile-models", "#tile-persona", "#tile-data"], { x: 0 }, { x: 6, duration: 0.05, yoyo: true, repeat: 3, ease: "none" }, at("own", "open") + 0.1);
+      }
+
+      // ---- 8 live -----------------------------------------------------------------
+      {
+        const t = st("live");
+        tl.fromTo("#badge", { clipPath: "inset(0% 100% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.45, ease: "power3.out" }, t + 0.1);
+        tl.fromTo("#crt-panel", { opacity: 0, scaleY: 0.02 }, { opacity: 1, scaleY: 1, duration: 0.45, ease: "power4.out" }, t + 0.25);
+        pop("#live-tag", t + 0.4, { y: -16 });
+        tl.fromTo("#live-bot", { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "back.out(1.8)" }, t + 0.35);
+        const flip = at("live", "with") - 0.1;
+        animateSprite("#live-listen", "listening", t + 0.35, flip);
+        tl.set("#live-listen", { opacity: 0 }, flip);
+        tl.set("#live-speak", { opacity: 1 }, flip);
+        tl.set("#state-listen", { opacity: 0 }, flip);
+        tl.set("#state-speak", { opacity: 1 }, flip);
+        animateSprite("#live-speak", "speaking", flip, en("live"));
+        // Waveform: 24 bars driven by the narration's own loudness envelope.
+        const env = TIMING.env.live, bars = $$("#wave i");
+        env.v.forEach((v, k) => {
+          const time = env.t0 + k * env.step;
+          if (time >= en("live")) return;
+          bars.forEach((bar, i) => {
+            const shape = 0.55 + 0.45 * Math.abs(Math.sin(i * 1.93 + k * 0.61));
+            tl.to(bar, { scaleY: Math.max(0.08, v * shape), duration: env.step, ease: "none" }, time);
+          });
+        });
+      }
+
+      // ---- 9 memory ---------------------------------------------------------------
+      {
+        const t = st("memory");
+        pop("#device", t, { x: -80 });
+        pop("#device-base", t + 0.05, { x: -80 });
+        pop("#mem-frame", t + 0.25, { x: 120 });
+        pop(".mem-label", t + 0.35, { y: 16 });
+        tl.fromTo("#mem-bot", { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "back.out(1.6)" }, t + 0.4);
+        animateSprite("#mem-bot .atlas", "understanding", t + 0.4, en("memory"));
+        pop("#q1", at("memory", "brings") - 0.1, { x: -40 });
+        pop("#q2", at("memory", "said"), { x: -40 });
+        pop("#q3", at("memory", "before,"), { x: -40 });
+        const swap = at("memory", "courses") - 0.3;
+        tl.to("#mem-b", { opacity: 1, duration: 0.5, ease: "power1.inOut" }, swap);
+        tl.to("#mem-lab-a", { opacity: 0, duration: 0.2 }, swap);
+        tl.to("#mem-lab-b", { opacity: 1, duration: 0.2 }, swap);
+      }
+
+      // ---- 10 judge ---------------------------------------------------------------
+      {
+        const t = st("judge");
+        tl.fromTo("#proposal", { y: -700, rotation: -2 }, { y: 0, rotation: 0, duration: 0.7, ease: "bounce.out" }, t);
+        const aim = at("judge", "You") - 0.2, click = at("judge", "sticks.") - 0.25;
+        tl.fromTo("#pointer", { x: 0, y: 0, opacity: 0 }, { opacity: 1, duration: 0.2 }, aim - 0.2);
+        tl.to("#pointer", { x: -930, y: -375, duration: Math.max(0.5, click - aim - 0.1), ease: "power2.inOut" }, aim);
+        tl.to("#pointer", { scale: 0.82, duration: 0.08, yoyo: true, repeat: 1 }, click);
+        tl.to("#btn-accept", { x: 6, y: 6, boxShadow: "0px 0px 0 #1c211b", duration: 0.08 }, click);
+        tl.to("#proposal", { borderColor: "#1e9b50", boxShadow: "10px 10px 0 #1e9b50", duration: 0.2 }, click + 0.05);
+        tl.fromTo("#decide", { opacity: 0, scale: 1.7, rotation: 0 }, { opacity: 1, scale: 1, rotation: -6, duration: 0.28, ease: "power4.in" }, click + 0.2);
+      }
+
+      // ---- 11 anywhere ------------------------------------------------------------
+      {
+        const t = st("anywhere");
+        tl.fromTo(["#any-web", "#any-web-lab"], { x: -260, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, t);
+        const tt = at("anywhere", "or") - 0.2;
+        tl.fromTo(["#any-tui", "#any-tui-lab", "#w-tui"], { x: 320, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, tt);
+        tl.fromTo(["#any-cli", "#any-cli-lab", "#w-cli"], { x: 320, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, tt + 0.25);
+      }
+
+      // ---- 12 close ---------------------------------------------------------------
+      {
+        const t = st("close");
+        tl.fromTo("#s-close", { clipPath: "inset(100% 0% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.5, ease: "power3.inOut" }, t);
+        tl.fromTo("#close-art", { scale: 1.12 }, { scale: 1.0, duration: S.close.duration, ease: "power1.out" }, t);
+        pop("#close-k", at("close", "Done") - 0.1, { y: 20 });
+        pop("#close-h", at("close", "Ready") - 0.1, { y: 30 });
+        const card = at("close", "Start") - 0.2;
+        tl.fromTo("#endcard", { clipPath: "inset(100% 0% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.5, ease: "power3.inOut" }, card);
+        tl.fromTo("#end-bot", { yPercent: 60, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.6, ease: "back.out(1.6)" }, card + 0.25);
+        pop("#end-logo", card + 0.35, { y: 30 });
+        pop("#end-url", at("close", "keating.help.") - 0.1, { y: 30 });
+        pop("#end-meta", at("close", "keating.help.") + 0.3, { y: 16 });
+        const idle = card + 0.25 + 2.2;
+        animateSprite("#end-wave", "waving", card + 0.25, idle);
+        tl.set("#end-wave", { opacity: 0 }, idle);
+        tl.set("#end-idle", { opacity: 1 }, idle);
+        animateSprite("#end-idle", "idle", idle, en("close"));
+        sway("#end-bot .sway", idle, en("close"));
+      }
+
+      // ---- shaders --------------------------------------------------------------------
+      // Two WebGL layers. Both are pure functions of timeline time, drawn from one tween's
+      // onUpdate (never requestAnimationFrame), so Studio scrubbing and the frame-by-frame
+      // render produce the same pixels.
+      //   #fx-bg   the ground under every scene: paper, or the terminal's phosphor field.
+      //            It is a domain-warped noise field that drifts slowly, and each cut
+      //            stirs it briefly. When the ground changes between paper and terminal,
+      //            it burns through with a glowing phosphor edge.
+      //   #fx-over light sweeps on key beats, the glitch into "stuck", the flash at the
+      //            turn, plus a rolling scan band, grain and a vignette on terminal scenes.
+      //            It writes premultiplied alpha: rgb adds light, alpha darkens.
+      {
+        const TERMINAL = new Set(["hook", "stuck", "live"]);
+        const ground = (i) => (TERMINAL.has(TIMING.scenes[i].id) ? 1 : 0);
+        const burns = [];
+        TIMING.scenes.forEach((sc, i) => {
+          if (i && ground(i) !== ground(i - 1))
+            burns.push({ t: sc.start, from: ground(i - 1), to: ground(i), dur: sc.id === "reveal" ? 0.95 : 0.7, down: ground(i) });
+        });
+        const cuts = TIMING.scenes.slice(1).map((s) => s.start);
+        const sweeps = [
+          [st("reveal") + 0.55, 1], [at("quiz", "actually"), 0.7], [at("own", "open") - 0.1, 0.7],
+          [st("live") + 0.05, 0.9], [at("judge", "sticks.") - 0.1, 0.7], [at("close", "Start") + 0.1, 1],
+        ];
+        const glitches = [[st("stuck"), 1], [st("live"), 0.5]];
+        const flashes = [[st("reveal"), 1]];
+        // Rises over `a` seconds to t0, then decays with time constant `d`.
+        const pulse = (t, t0, a, d) => (t < t0 - a ? 0 : t < t0 ? (t - t0 + a) / a : Math.exp(-(t - t0) / d));
+        const ease = (x) => (x < 0.5 ? 2 * x * x : 1 - (-2 * x + 2) ** 2 / 2);
+
+        function state(t) {
+          let i = 0;
+          while (i + 1 < TIMING.scenes.length && TIMING.scenes[i + 1].start <= t) i++;
+          const s = { t, from: ground(i), to: ground(i), p: 1, edge: 0, down: 0, kick: 0, sweep: 0, sweepAmp: 0, glitch: 0, flash: 0, frame: Math.floor(t * TIMING.fps + 1e-4) };
+          for (const b of burns) {
+            if (t >= b.t && t < b.t + b.dur) {
+              const x = (t - b.t) / b.dur;
+              Object.assign(s, { from: b.from, to: b.to, p: ease(x), edge: 1 - x ** 4, down: b.down });
+            }
+          }
+          for (const c of cuts) if (t >= c) s.kick = Math.max(s.kick, Math.exp(-(t - c) / 0.7));
+          for (const [t0, amp] of sweeps) {
+            if (t >= t0 && t < t0 + 0.9) Object.assign(s, { sweep: (t - t0) / 0.9, sweepAmp: amp * Math.sin(Math.PI * ((t - t0) / 0.9)) });
+          }
+          for (const [t0, amp] of glitches) if (t < t0 + 0.45) s.glitch = Math.max(s.glitch, amp * pulse(t, t0, 0.14, 0.14));
+          for (const [t0, amp] of flashes) s.flash = Math.max(s.flash, amp * pulse(t, t0, 0.06, 0.3));
+          s.crt = s.from + (s.to - s.from) * s.p;
+          return s;
+        }
+
+        const NOISE = `
+          precision highp float;
+          varying vec2 v_uv;
+          uniform float u_t;
+          float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+          float noise(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
+          }
+          float fbm(vec2 p) {
+            float v = 0.0, a = 0.5;
+            mat2 R = mat2(0.8, 0.6, -0.6, 0.8);
+            for (int i = 0; i < 5; i++) { v += a * noise(p); p = R * p * 2.02; a *= 0.5; }
+            return v;
+          }
+          const vec3 PAPER = vec3(0.945, 0.925, 0.878);
+          const vec3 WASH = vec3(0.925, 0.965, 0.925);
+          const vec3 TERM = vec3(0.047, 0.082, 0.063);
+          const vec3 PHOS = vec3(0.294, 0.890, 0.533);
+          const vec3 PHOS_DIM = vec3(0.180, 0.604, 0.361);
+        `;
+        const BG = NOISE + `
+          uniform float u_from, u_to, u_p, u_edge, u_down, u_kick;
+          void main() {
+            vec2 uv = v_uv, p = uv * vec2(1.7778, 1.0) * 2.2;
+            float t = u_t;
+            vec2 q = vec2(fbm(p + t * 0.05), fbm(p + vec2(5.2, 1.3) - t * 0.04));
+            float n = fbm(p + (1.6 + 1.4 * u_kick) * q + vec2(1.7, 9.2) + t * 0.03);
+            // Paper only ever lightens from its base, so ink and green type keep their contrast.
+            vec3 paper = mix(PAPER, vec3(1.0), 0.16 * smoothstep(0.3, 0.8, n));
+            paper = mix(paper, WASH, smoothstep(0.6, 0.9, n) * (0.25 + 0.45 * u_kick));
+            float v = 1.0 - smoothstep(0.2, 1.1, length((uv - vec2(0.5, 0.6)) * vec2(1.6, 1.0)));
+            vec3 term = TERM + PHOS_DIM * (pow(n, 2.5) * 0.38 + 0.04) * (0.5 + 0.7 * v) + vec3(0.03, 0.06, 0.04) * v;
+            vec3 a = mix(paper, term, u_from), b = mix(paper, term, u_to);
+            // Burn: a noisy front sweeps up the frame (down when entering the terminal).
+            float y = u_down > 0.5 ? 1.0 - uv.y : uv.y;
+            float field = 0.72 * y + 0.45 * fbm(uv * vec2(1.7778, 1.0) * 4.0 + 3.0);
+            float front = u_p * 1.4 - 0.12;
+            float gone = smoothstep(front + 0.012, front - 0.012, field);
+            vec3 col = mix(a, b, gone);
+            float beyond = field - front;
+            col = mix(col, vec3(0.05, 0.04, 0.03), u_edge * 0.55 * smoothstep(0.0, 0.015, beyond) * (1.0 - smoothstep(0.02, 0.07, beyond)));
+            float glow = exp(-abs(beyond) * 55.0) * u_edge;
+            col += (mix(PHOS, vec3(1.0, 0.97, 0.82), exp(-abs(beyond) * 220.0)) * 1.1) * glow;
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `;
+        const OVER = NOISE + `
+          uniform float u_crt, u_sweep, u_sweepAmp, u_glitch, u_flash, u_frame;
+          void main() {
+            vec2 uv = v_uv;
+            vec3 add = vec3(0.0);
+            float dark = 0.0;
+            if (u_crt > 0.001) {
+              float band = exp(-pow(1.0 - uv.y - fract(u_t * 0.12), 2.0) * 140.0);
+              add += PHOS * band * 0.05 * u_crt;
+              float g = hash(floor(uv * vec2(960.0, 540.0)) + u_frame * 1.37);
+              add += PHOS * max(g - 0.5, 0.0) * 0.1 * u_crt;
+              dark = smoothstep(0.45, 0.95, length((uv - 0.5) * vec2(1.25, 1.0))) * 0.45 * u_crt;
+            }
+            if (u_sweepAmp > 0.001) {
+              vec2 p = (uv - 0.5) * vec2(1.7778, 1.0);
+              float d = dot(p, normalize(vec2(1.0, 0.45))) - mix(-1.3, 1.3, u_sweep);
+              add += (vec3(1.0, 0.97, 0.88) * exp(-d * d * 60.0) * 0.26 + PHOS * exp(-d * d * 6.0) * 0.07) * u_sweepAmp;
+            }
+            if (u_glitch > 0.001) {
+              float row = floor(uv.y * 54.0);
+              float h = hash(vec2(row, u_frame));
+              float on = step(1.0 - 0.45 * u_glitch, h);
+              float h2 = hash(vec2(row * 1.7, u_frame + 3.1));
+              vec3 tint = h2 < 0.33 ? vec3(0.84, 0.38, 0.29) : h2 < 0.66 ? vec3(0.1, 0.85, 0.9) : PHOS;
+              float seg = step(hash(vec2(floor(uv.x * 12.0 + h * 40.0), row)), 0.6);
+              add += tint * on * seg * 0.38 * u_glitch;
+              dark = max(dark, on * (1.0 - seg) * 0.55 * u_glitch);
+            }
+            float r = length((uv - 0.5) * vec2(1.7778, 1.0));
+            add += mix(PHOS, vec3(1.0), 0.35) * u_flash * (0.55 - 0.3 * r);
+            gl_FragColor = vec4(add, dark);
+          }
+        `;
+
+        function layer(id, fs) {
+          const gl = document.getElementById(id).getContext("webgl", { preserveDrawingBuffer: true, premultipliedAlpha: true, antialias: false });
+          if (!gl) throw new Error("no webgl");
+          const compile = (type, src) => {
+            const sh = gl.createShader(type);
+            gl.shaderSource(sh, src);
+            gl.compileShader(sh);
+            if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+            return sh;
+          };
+          const prog = gl.createProgram();
+          gl.attachShader(prog, compile(gl.VERTEX_SHADER, "attribute vec2 p; varying vec2 v_uv; void main() { v_uv = p * 0.5 + 0.5; gl_Position = vec4(p, 0.0, 1.0); }"));
+          gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fs));
+          gl.linkProgram(prog);
+          gl.useProgram(prog);
+          gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+          const loc = gl.getAttribLocation(prog, "p");
+          gl.enableVertexAttribArray(loc);
+          gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+          const uni = {};
+          return (vals) => {
+            for (const k in vals) {
+              if (!(k in uni)) uni[k] = gl.getUniformLocation(prog, "u_" + k);
+              if (uni[k]) gl.uniform1f(uni[k], vals[k]);
+            }
+            gl.viewport(0, 0, 1920, 1080);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          };
+        }
+
+        try {
+          const bg = layer("fx-bg", BG), over = layer("fx-over", OVER);
+          const draw = (t) => { const s = state(t); bg(s); over(s); };
+          const clock = { t: 0 };
+          tl.to(clock, { t: TIMING.total, duration: TIMING.total, ease: "none", onUpdate: () => draw(clock.t) }, 0);
+          draw(0);
+        } catch (err) {
+          console.warn("[fx] shader layers off:", err.message);
+          document.getElementById("root").classList.add("no-gl");
+        }
+
+        // The glitch also splits the picture itself: chromatic ghosts and a sideways jolt.
+        const split = (sel, t0, k) => {
+          tl.fromTo(sel,
+            { x: 16 * k, filter: `drop-shadow(${12 * k}px 0 0 rgba(213,96,75,0.75)) drop-shadow(${-12 * k}px 0 0 rgba(75,227,136,0.6))` },
+            { x: 0, filter: "drop-shadow(0px 0 0 rgba(213,96,75,0)) drop-shadow(0px 0 0 rgba(75,227,136,0))", duration: 0.4, ease: "power3.out" }, t0);
+          tl.set(sel, { filter: "none" }, t0 + 0.42);
+        };
+        tl.to("#s-hook", { x: -18, duration: 1 / 30, yoyo: true, repeat: 3, ease: "none" }, st("stuck") - 0.14);
+        split("#s-stuck", st("stuck"), 1);
+        split("#s-live", st("live"), 0.5);
+      }
+
+      // ---- captions: highlight the word being spoken --------------------------------
+      $$(".cap .cw").forEach((el) => {
+        tl.set(el, { color: "#4be388" }, Number(el.dataset.s));
+        tl.set(el, { color: "#f1ece0" }, Number(el.dataset.e));
+      });
+
+      tl.set({}, {}, TIMING.total);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

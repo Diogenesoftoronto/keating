@@ -1,0 +1,8 @@
+assets/
+audio/cache/
+build/
+index.html
+renders/
+snapshots/
+node_modules/
+.hyperframes/

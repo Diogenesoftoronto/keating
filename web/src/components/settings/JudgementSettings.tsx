@@ -1,7 +1,7 @@
 import { JudgementCalibrationSettings } from "./JudgementCalibrationSettings";
 import { useEffect, useId, useState } from "react";
 import {
-  loadJudgementModelSettings, saveJudgementModelSettings, subscribeJudgementModelSettings,
+  JEV_REQUEST_TOKEN_LIMIT, JEV_STATE_QUESTION_TOKEN_LIMIT, loadJudgementModelSettings, saveJudgementModelSettings, subscribeJudgementModelSettings,
   type JudgementBackendPreference, type JudgementModelSettings,
 } from "../../keating/judgement-model";
 import { judgementAccountStatus, judgementAuthorizationUrl } from "../../keating/judgement/public-account";
@@ -61,7 +61,7 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
     <p id={`${id}-privacy`}>
       {settings.backend === "off" ? "Model reviews are off. Built-in checks remain available."
         : settings.backend === "local" ? "Model reviews stay on this device. Work is not sent to a hosted judge."
-          : "Allows relevant work to be sent through Not Organic to its hosted judgement service. Usage may incur account charges."}
+        : "Tries Not Organic's hosted judgement service first, then local scoring when available. Relevant work is sent through Not Organic; usage may incur account charges."}
     </p>
     {settings.backend !== "off" && <>
       <label className="judgement-settings__field" htmlFor={`${id}-model`}>
@@ -72,6 +72,31 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
         </select>
       </label>
       <p id={`${id}-local-status`} role="status">{localStatus}</p>
+      <label className="judgement-settings__field" htmlFor={`${id}-request-tokens`}>
+        <span>Maximum tokens per judge request</span>
+        <input id={`${id}-request-tokens`} type="number" min={512} max={2_000_000} step={512}
+          value={settings.requestTokens ?? (settings.backend === "hosted" ? JEV_REQUEST_TOKEN_LIMIT : "")} disabled={connecting}
+          placeholder={nativeSelected ? String(DESKTOP_OFFLINE_MODEL.contextWindow) : "Model default"}
+          aria-describedby={`${id}-context-window-help`}
+          onChange={(event) => {
+            const raw = event.target.value;
+            onChange({ ...settings, requestTokens: raw === "" ? null : Number(raw) });
+          }} />
+      </label>
+      <label className="judgement-settings__field" htmlFor={`${id}-state-question-tokens`}>
+        <span>State plus longest question (tokens)</span>
+        <input id={`${id}-state-question-tokens`} type="number" min={512} max={2_000_000} step={512}
+          value={settings.stateQuestionTokens ?? (settings.backend === "hosted" ? JEV_STATE_QUESTION_TOKEN_LIMIT : "")} disabled={connecting}
+          placeholder={nativeSelected ? String(DESKTOP_OFFLINE_MODEL.contextWindow) : "Model default"}
+          aria-describedby={`${id}-context-window-help`}
+          onChange={(event) => {
+            const raw = event.target.value;
+            onChange({ ...settings, stateQuestionTokens: raw === "" ? null : Number(raw) });
+          }} />
+      </label>
+      <p id={`${id}-context-window-help`}>
+        Hosted Jev allows 64,000 tokens for state plus all questions and 32,000 for state plus the longest question. At 80% of the 32,000-token limit, Keating drops the oldest conversation turns until state is below 65%. It keeps the current message, evidence and sources. Local model metadata caps both limits during fallback.
+      </p>
       <p>Automatic grading stays with the existing checks until calibration and validation are complete.</p>
     </>}
     {settings.backend === "hosted" && <div className="judgement-settings__account">
@@ -130,7 +155,9 @@ export function JudgementSettings() {
     saveJudgementModelSettings(next);
     const saved = loadJudgementModelSettings();
     setSettings(saved);
-    if (saved.backend !== next.backend || saved.localModelId !== next.localModelId) {
+    if (saved.backend !== next.backend || saved.localModelId !== next.localModelId
+      || saved.requestTokens !== (next.requestTokens ?? null)
+      || saved.stateQuestionTokens !== (next.stateQuestionTokens ?? null)) {
       setError("This browser could not save the judgement setting. Allow local storage and try again.");
     }
   };

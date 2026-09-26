@@ -11,8 +11,10 @@ type Screenshot = {
 type Video = {
   src: string;
   poster?: string;
+  captions?: string;
   title?: string;
   caption: string;
+  aspect?: "16:9" | "9:16" | "1:1";
 };
 type Section = {
   heading: string;
@@ -80,9 +82,22 @@ function validateVideo(value: unknown, location: string): asserts value is Video
       throw Error(`${location}.poster: expected /assets/tapes/posters/lowercase-name.jpg`);
     }
   }
+  if (value.captions !== undefined) {
+    requireText(value.captions, `${location}.captions`);
+    if (!/^\/assets\/tapes\/captions\/[a-z0-9]+(?:-[a-z0-9]+)*\.vtt$/.test(value.captions as string)) {
+      throw Error(`${location}.captions: expected /assets/tapes/captions/lowercase-name.vtt`);
+    }
+  }
   if (value.title !== undefined) {
     requireText(value.title, `${location}.title`);
   }
+  if (value.aspect !== undefined && !["16:9", "9:16", "1:1"].includes(value.aspect as string)) {
+    throw Error(`${location}.aspect: expected 16:9, 9:16 or 1:1`);
+  }
+}
+function videoFigure(video: Video): string {
+  const track = video.captions ? `<track kind="captions" src="${escape(video.captions)}" srclang="en" label="English">` : "";
+  return `<figure class="app-video${video.aspect && video.aspect !== "16:9" ? ` app-video--${video.aspect === "9:16" ? "portrait" : "square"}` : ""}"><video src="${escape(video.src)}"${video.poster ? ` poster="${escape(video.poster)}"` : ""} controls preload="metadata" playsinline>${track}</video><figcaption>${video.title ? `<strong>${escape(video.title)}:</strong> ` : ""}${escape(video.caption)} <a href="${escape(video.src)}" aria-label="${escape(`Watch or download raw video: ${video.title || video.caption}`)}">Watch or download raw video <span aria-hidden="true">↗</span></a></figcaption></figure>`;
 }
 function validateSurfaceTab(value: unknown, location: string): asserts value is SurfaceTab {
   requireRecord(value, location);
@@ -258,7 +273,7 @@ function renderSurfaceTabs(tabs: SurfaceTab[] | undefined, sectionId: string): s
 ${tab.summary ? `<p class="surface-tab-summary">${escape(tab.summary)}</p>` : ""}
 ${tab.bullets?.length ? `<ul class="surface-tab-bullets">${tab.bullets.map(bullet => `<li>${escape(bullet)}</li>`).join("")}</ul>` : ""}
 ${tab.code ? `<figure class="code-block"><figcaption>${escape(tab.language || (tab.surface === "cli" ? "Terminal command" : "Command / navigation"))}</figcaption><pre tabindex="0" aria-label="${escape(tab.label)} code example"><code>${escape(tab.code)}</code></pre></figure>` : ""}
-${tab.video ? `<figure class="app-video"><video src="${escape(tab.video.src)}"${tab.video.poster ? ` poster="${escape(tab.video.poster)}"` : ""} controls preload="metadata" playsinline></video><figcaption>${tab.video.title ? `<strong>${escape(tab.video.title)}:</strong> ` : ""}${escape(tab.video.caption)} <a href="${escape(tab.video.src)}" aria-label="${escape(`Watch or download raw video: ${tab.video.title || tab.video.caption}`)}">Watch or download raw video <span aria-hidden="true">↗</span></a></figcaption></figure>` : ""}
+${tab.video ? videoFigure(tab.video) : ""}
 </div>`;
   }).join("");
 
@@ -272,7 +287,7 @@ ${renderSurfaceTabs(section.surfaceTabs, section.id)}
 ${section.bullets?.length ? `<ul>${section.bullets.map(text => `<li>${escape(text)}</li>`).join("")}</ul>` : ""}
 ${section.code ? `<figure class="code-block"><figcaption>${escape(section.language || "Example")}</figcaption><pre tabindex="0" aria-label="${escape(section.heading)} code example"><code>${escape(section.code)}</code></pre></figure>` : ""}
 ${(section.screenshots ?? []).map(shot => `<figure class="app-screenshot"><img src="${escape(shot.src)}" alt="${escape(shot.alt)}" width="${shot.width}" height="${shot.height}" loading="lazy" decoding="async"><figcaption>${escape(shot.caption)} <a href="${escape(shot.src)}" aria-label="${escape(`View full-size screenshot: ${shot.alt}`)}">View full-size screenshot <span aria-hidden="true">↗</span></a></figcaption></figure>`).join("")}
-${(section.videos ?? []).map(video => `<figure class="app-video"><video src="${escape(video.src)}"${video.poster ? ` poster="${escape(video.poster)}"` : ""} controls preload="metadata" playsinline></video><figcaption>${video.title ? `<strong>${escape(video.title)}:</strong> ` : ""}${escape(video.caption)} <a href="${escape(video.src)}" aria-label="${escape(`Watch or download raw video: ${video.title || video.caption}`)}">Watch or download raw video <span aria-hidden="true">↗</span></a></figcaption></figure>`).join("")}
+${(section.videos ?? []).map(videoFigure).join("")}
 ${section.links?.length ? `<ul class="section-links">${section.links.map(link => `<li><a href="${escape(link.href)}">${escape(link.label)}<span aria-hidden="true"> ${link.href.startsWith("https://") ? "↗" : "→"}</span></a></li>`).join("")}</ul>` : ""}</section>`;
 }
 function adjacent(page: Article | undefined, direction: "Previous" | "Next"): string {

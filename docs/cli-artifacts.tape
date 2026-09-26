@@ -38,7 +38,7 @@ Enter
 Sleep 3s
 
 # 2. Inspect the generated lesson plan in the terminal
-Type "sed -n '1,18p' .keating/outputs/plans/special-relativity.md"
+Type "head -n 18 .keating/outputs/plans/special-relativity.md"
 Sleep 1500ms
 Enter
 

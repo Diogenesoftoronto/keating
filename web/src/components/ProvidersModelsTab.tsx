@@ -7,7 +7,7 @@ import {
 	addCustomModel,
 	toggleProviderVisibility,
 } from "../keating/ui-settings";
-import { setProvidersVisibility } from "../keating/model-prefs";
+import { notifyProviderCredentialsChanged, setProvidersVisibility } from "../keating/model-prefs";
 import { useKeatingUiSettings } from "../hooks/use-ui-settings";
 import { useModelPrefs } from "../hooks/use-model-prefs";
 import { SettingsSectionNav, type SettingsSection } from "./SettingsSectionNav";
@@ -167,6 +167,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 		});
 		if (model.apiKey.trim()) {
 			await getAppStorage().providerKeys.set(model.provider, model.apiKey.trim());
+			notifyProviderCredentialsChanged(model.provider);
 		}
 	};
 
@@ -213,6 +214,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 			} else {
 				await storage.providerKeys.delete(provider.name);
 			}
+			notifyProviderCredentialsChanged(provider.name);
 			await loadCustomProviders().then(setCustomProviders);
 			dispatchProviderEditor({
 				type: "save-finished",
@@ -234,6 +236,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 			const storage = getAppStorage();
 			await storage.customProviders.delete(provider.id);
 			await storage.providerKeys.delete(provider.name);
+			notifyProviderCredentialsChanged(provider.name);
 			await loadCustomProviders().then(setCustomProviders);
 		} catch (error) {
 			console.error("Failed to delete provider:", error);
@@ -265,7 +268,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 			/>
 
 			<OfflineTutorSettings />
-			<CloudProviderKeysSection providers={providers.filter((p) => !modelPrefs.hiddenProviders.includes(p))} />
+			<CloudProviderKeysSection providers={providers} />
 
 			<div className={dividerClass} />
 			<JudgementSettings />

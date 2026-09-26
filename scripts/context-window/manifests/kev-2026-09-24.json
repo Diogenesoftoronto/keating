@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "sourceRepo": "https://github.com/jaredpalmer/kev",
+  "sourceRevision": "569ea449b1033c5aa8f149ec5e20d0c7a296d24a",
+  "sourceFilesSha256": {
+    "kev/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "kev/anchors.py": "6963eafdb276db5a6c94d939eae675c761555553b8d0f963ffd803448beaabbb",
+    "kev/api.py": "7bffacfb762c626b8bc2f670f350295af5ccb0883dbe90239c7d2f8e5ef56582",
+    "kev/autoresearch.py": "7dfda463d6cfc48662c35265279c119b2c2c39417ef6f9e038957ea152503e78",
+    "kev/benchmark.py": "10a892d76cb4c200e94d0a68ee74054aa1870d7f484c0530a531cacfa75032ed",
+    "kev/budget.py": "100fbc5f69433fa1c27fb72db1a307fc553488ef32a2da4d9d071ddaac32945c",
+    "kev/calibrate.py": "c1eff4744fabd349e8abca86777a7aa0cbea44904c8223d3b61fca3d43741519",
+    "kev/checkpoint.py": "fea1fdccc16b3607c1aabb4b0174154c72a18693c07f926f13c8ce8d3b93b036",
+    "kev/compare.py": "3606dbf98bb305d66420158498cb837304d2edb8dab01cdaf2ec42964bef3435",
+    "kev/composition.py": "f335ed17e18e0a544893db5e22b9a059e6ce1b2e14dbb863ac7d7bbf8f3e0536",
+    "kev/contrastive.py": "cbb979aa5d40265ad0e64695f94b281d91751fa405811ddfa8212fede111edcf",
+    "kev/cuda_graphs.py": "5ce84f0e4e5ad2177314ed3ecc9564d45d14ad9eb422e0fb079c9e1cbbb011b6",
+    "kev/data.py": "e77a2fffeb8ee7e05b118893be8e38b8358aef97c3ca2e143cdce208201b92f9",
+    "kev/device.py": "d1677fd98ec0979c7284546306e34e0d09298ca4042fc39eb2b32a74f4e975c4",
+    "kev/evaluate.py": "999264f2837dcfbf2ec93601aa4745e701698ab850a43ad89324672a6604965c",
+    "kev/experiment.py": "05b508a08a6508c964cd0ec8c9de7a8d9d437458c21005a0a0d9b1fcb055e9c2",
+    "kev/fused_qwen35.py": "5d2e587808822ce539ff52f63024357630b67a65f88cd734b82fd488655aebed",
+    "kev/jev.py": "acd4cc3f1844e438cc83a8d409c15ef78a5ef64d39ea10f583d75a6c7646b243",
+    "kev/metrics.py": "dba8d90550999edcd642581fb4da0367bd4b39d08471815184fa732d11e137b9",
+    "kev/mlx_model.py": "a7c14db03de70fc43857a025ddfcd17e3876f1445aacbcf9607ec23ef61ca3dd",
+    "kev/model.py": "de7de6bfc5616ccfd9ef2d01f1a7be3954fc892366a6607b14a39ef659cc839f",
+    "kev/plot.py": "0874bcff2885d8155a1cceade0de8a275a7163d3c3fd6aa0c294e8ccf5ff7e02",
+    "kev/predictors.py": "4d02906c285d78bcbd91908f4fc86577ccc95c320d704817f6444aabbc4fcd4f",
+    "kev/publish.py": "8abc9bcf4a01365697b05cf3c5ad0013462bd92d005f5616954e40ab1100c7aa",
+    "kev/rounds.py": "b6c02c094c0c4d08ebca0d8bd82b3305eaf91fa36759c564ebb4bbfa15ab1128",
+    "kev/serve.py": "d98b911289840bbb5f7a709240884b0b534c19207d9d1c7d9df84d459dc5b863",
+    "kev/study_v3.py": "7891150aa623e4479c7c789d4dc4662f186132b37b7bac1e1f072b9e08ee13e3",
+    "kev/suite.py": "707fe4520e93e63f833834080b1d4271a69df8a234814445ca3eeb2a5d0605bc",
+    "kev/train.py": "5434b08862026af2b959ecc43df893cd03f1ae0bf451b511616897130ed88ea1",
+    "kev/transfer_v9.py": "0902409742151250a28af1fd8f42258b70fcc161f3deed3ee35fe3f473f3c763",
+    "pyproject.toml": "7c17fbe9efcadda3eb488b59adf1b6db5938cd33af4d3bd389ce4359b73fcc7d",
+    "uv.lock": "a9922dbb89acdef78299fd2b4a8c3f7f0fa1b2bc08b55595b6926fa785a9c466"
+  },
+  "responseModel": "kev-latest",
+  "context": {
+    "stateTokens": 8192,
+    "rowTokens": 8192,
+    "truncationAllowed": false
+  },
+  "runtime": {
+    "python": "3.12 or 3.13",
+    "device": "cuda",
+    "dtype": "bf16",
+    "backend": "torch",
+    "merge": true,
+    "fused": false,
+    "cudaGraphs": false,
+    "dateFacts": false,
+    "prefixCache": 1
+  },
+  "dependencies": {
+    "torch": "2.9.0",
+    "transformers": "5.17.0",
+    "peft": "0.21.0",
+    "accelerate": "1.15.0",
+    "tokenizers": "0.23.2",
+    "safetensors": "0.8.0",
+    "huggingface-hub": "1.32.0",
+    "pydantic": "2.13.5",
+    "fastapi": "0.141.1",
+    "uvicorn": "0.53.0"
+  },
+  "variants": [
+    {
+      "id": "kev-0.5b",
+      "checkpointRepo": "jaredpalmer/kev-0.5b",
+      "checkpointRevision": "9ce2fd39db3a397c89733f94af948e3d1fdfffcd",
+      "baseRepo": "Qwen/Qwen2.5-0.5B",
+      "baseRevision": "060db6499f32faf8b98477b0a26969ef7d8b9987",
+      "temperature": 1.0,
+      "baseRevisionOverride": true,
+      "weightsSha256": {
+        "adapter_model.safetensors": "04facd5e97cebce2f00c6525136ff21ac96623c3a9e44b4c590e138dd7587318",
+        "head.pt": "0d59bd4608e38f32b4f86c85eb29e8187e14f2117ca99fe765e799b290c52a66"
+      }
+    },
+    {
+      "id": "kev-0.6b",
+      "checkpointRepo": "jaredpalmer/kev-0.6b",
+      "checkpointRevision": "dece6dba8d43f0f7ded45e9f5b9df12474d90843",
+      "baseRepo": "Qwen/Qwen3-0.6B-Base",
+      "baseRevision": "da87bfb608c14b7cf20ba1ce41287e8de496c0cd",
+      "temperature": 1.0,
+      "baseRevisionOverride": false,
+      "weightsSha256": {
+        "adapter_model.safetensors": "deaab63b61f95d628503831e8b336e1c3e334b9a42d3530d979a5149b429c492",
+        "head.pt": "ce6cd9ffc54db41c179b65a33d60973dc8280c29e886218eb3ec07dc28d6f28b"
+      }
+    },
+    {
+      "id": "kev-0.8b",
+      "checkpointRepo": "jaredpalmer/kev-0.8b",
+      "checkpointRevision": "9a45d25eb2ab761841196625383fa1dff0e56c1e",
+      "baseRepo": "Qwen/Qwen3.5-0.8B-Base",
+      "baseRevision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+      "temperature": 2.3510958125672174,
+      "baseRevisionOverride": false,
+      "weightsSha256": {
+        "adapter_model.safetensors": "9b908623acb162118575f4e7a94524f9c139c335be4bfb74d6cfceca01e1885a",
+        "head.pt": "f400bd12802b2b105ae45d6b03774a158a3db4fccff42413734ddca2e5c920b6"
+      }
+    },
+    {
+      "id": "kev-4b-qwen3",
+      "checkpointRepo": "jaredpalmer/kev-4b",
+      "checkpointRevision": "c4bfa11b0dc07691884f2d97f1c4c4c05c92e416",
+      "baseRepo": "Qwen/Qwen3-4B-Base",
+      "baseRevision": "906bfd4b4dc7f14ee4320094d8b41684abff8539",
+      "temperature": 1.0,
+      "baseRevisionOverride": false,
+      "weightsSha256": {
+        "adapter_model.safetensors": "3fa10d8646f567e884ea47841b2f3d5f2d135b81a4447a8ea79a6fc94e9c6ae1",
+        "head.pt": "dad87f7e60c8b3f1eec8bee83858a5429c6ab06dc96385a935bc88e6b468a45d"
+      }
+    },
+    {
+      "id": "kev-4b",
+      "checkpointRepo": "jaredpalmer/kev-4b",
+      "checkpointRevision": "139fdd94f1b6a6ad80cc15e08fcb99cac885a101",
+      "baseRepo": "Qwen/Qwen3.5-4B-Base",
+      "baseRevision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+      "temperature": 2.406050072164233,
+      "baseRevisionOverride": false,
+      "weightsSha256": {
+        "adapter_model.safetensors": "90e817356246e7f18bfa7ca3d31794cd4fbeb3332a66a84cb51d9ceae925f2b2",
+        "head.pt": "dd633435998ecc751ac538717a3742e32149500fabf7d7276287dbf0693f347c"
+      }
+    },
+    {
+      "id": "kev-8b",
+      "checkpointRepo": "jaredpalmer/kev-8b",
+      "checkpointRevision": "c80773da7f383f93c4dbff0c0b008e0463f9145a",
+      "baseRepo": "Qwen/Qwen3-8B-Base",
+      "baseRevision": "49e3418fbbbca6ecbdf9608b4d22e5a407081db4",
+      "temperature": 1.0,
+      "baseRevisionOverride": false,
+      "weightsSha256": {
+        "adapter_model.safetensors": "fee56a07b92adbf151887142adde89d75f7979f00afd46960a5d2b4e65524a5f",
+        "head.pt": "35ebe2a18c16ebd74f8c2090e7b2de8c2b007856fde96908c3a83459a2ca32bd"
+      }
+    },
+    {
+      "id": "kev-9b",
+      "checkpointRepo": "jaredpalmer/kev-9b",
+      "checkpointRevision": "2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c",
+      "baseRepo": "Qwen/Qwen3.5-9B-Base",
+      "baseRevision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+      "temperature": 2.2973967099940698,
+      "baseRevisionOverride": false,
+      "weightsSha256": {
+        "adapter_model.safetensors": "c02d0d1a70367b5779deb23b28153284b59c067038323cc17ddab5b92dfce72f",
+        "head.pt": "5528f777437f561cb4a9d56b0278a42b6ae6edd373e7921e52b13adaac988c9f"
+      }
+    }
+  ],
+  "notes": [
+    "Seven lineage variants, not every historical training revision. Historical Qwen3 4B is separate from current Qwen3.5 4B.",
+    "Prototype0.5 head lacks base revision; runtime explicitly pins currently published Qwen2.5 base. This is not a claim of recovered historical training revision.",
+    "Checkpoint temperatures read without executing pickle, via pickletools; missing temperature defaults1.0 per upstream Meta.",
+    "Source/weights/base must be pinned; response model echoes caller and does not prove identity.",
+    "No quantization. bf16 is serving default, not exactfp32 evaluation path. Calibration may not transfer to Keating.",
+    "Retain base-image numpy/scipy compatibility; numpy2.5.3 is upstream lockfile metadata, not required for the isolated inference imports. No datasets/scikit-learn training imports needed.",
+    "Uniform prefix cache size1 uses official exact state-prefix reuse: hybrid models compute a state once per request instead of repeating it for every question. No context/question change.",
+    "Runtime exception: observed GPU image torch2.9.0+cu129 is pinned as2.9.0 (CUDA local suffix recorded in receipts). Upstream source pyproject declares torch>=2.6,<2.9 and lockfile2.8.0; this run intentionally retains image CUDA/Torch stack. Actual inference, not dependency installation, establishes operational compatibility. Weights/source unchanged."
+  ]
+}

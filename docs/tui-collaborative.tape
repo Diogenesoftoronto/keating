@@ -18,23 +18,21 @@ Set TypingSpeed 28ms
 Set Theme "Catppuccin Mocha"
 
 # Keep transient sessions out of the repository and never show a home path.
+# Plumbing stays hidden; on camera only plain `keating` commands are typed.
 Hide
-Type "KEATING_CAPTURE_REPO=$PWD; KEATING_CAPTURE_TMP=$(mktemp -d); KEATING_DEMO_PORT=$((49152 + RANDOM % 10000)); mkdir -p $KEATING_CAPTURE_TMP/.keating/pi-config; sed s/58173/$KEATING_DEMO_PORT/ $KEATING_CAPTURE_REPO/docs/fixtures/tui-demo-models.json >$KEATING_CAPTURE_TMP/.keating/pi-config/models.json; cp $KEATING_CAPTURE_REPO/docs/fixtures/tui-demo-auth.json $KEATING_CAPTURE_TMP/.keating/pi-config/auth.json; cp $KEATING_CAPTURE_REPO/docs/fixtures/tui-demo-config.json $KEATING_CAPTURE_TMP/keating.config.json; bun $KEATING_CAPTURE_REPO/scripts/tui-demo-provider.mjs $KEATING_DEMO_PORT >$KEATING_CAPTURE_TMP/provider.log 2>&1 & KEATING_DEMO_PID=$!; KEATING_DEMO_READY=; for attempt in 1 2 3 4 5 6 7 8 9 10; do kill -0 $KEATING_DEMO_PID 2>/dev/null || break; if curl -fsS http://127.0.0.1:$KEATING_DEMO_PORT/health >/dev/null; then KEATING_DEMO_READY=1; break; fi; sleep 0.1; done; test $KEATING_DEMO_READY = 1 || { cat $KEATING_CAPTURE_TMP/provider.log; exit 1; }; trap 'kill $KEATING_DEMO_PID 2>/dev/null || true; wait $KEATING_DEMO_PID 2>/dev/null || true; case $KEATING_CAPTURE_TMP in /tmp/tmp.*) rm -rf -- $KEATING_CAPTURE_TMP;; esac' EXIT; cd $KEATING_CAPTURE_TMP"
+Type "KEATING_CAPTURE_REPO=$PWD; KEATING_CAPTURE_TMP=$(mktemp -d); KEATING_DEMO_PORT=$((49152 + RANDOM % 10000)); mkdir -p $KEATING_CAPTURE_TMP/.keating/pi-config; sed s/58173/$KEATING_DEMO_PORT/ $KEATING_CAPTURE_REPO/docs/fixtures/tui-demo-models.json >$KEATING_CAPTURE_TMP/.keating/pi-config/models.json; cp $KEATING_CAPTURE_REPO/docs/fixtures/tui-demo-auth.json $KEATING_CAPTURE_TMP/.keating/pi-config/auth.json; cp $KEATING_CAPTURE_REPO/docs/fixtures/tui-demo-config.json $KEATING_CAPTURE_TMP/keating.config.json; bun $KEATING_CAPTURE_REPO/scripts/tui-demo-provider.mjs $KEATING_DEMO_PORT >$KEATING_CAPTURE_TMP/provider.log 2>&1 & KEATING_DEMO_PID=$!; KEATING_DEMO_READY=; for attempt in 1 2 3 4 5 6 7 8 9 10; do kill -0 $KEATING_DEMO_PID 2>/dev/null || break; if curl -fsS http://127.0.0.1:$KEATING_DEMO_PORT/health >/dev/null; then KEATING_DEMO_READY=1; break; fi; sleep 0.1; done; test $KEATING_DEMO_READY = 1 || { cat $KEATING_CAPTURE_TMP/provider.log; exit 1; }; trap 'kill $KEATING_DEMO_PID 2>/dev/null || true; wait $KEATING_DEMO_PID 2>/dev/null || true; case $KEATING_CAPTURE_TMP in /tmp/tmp.*) rm -rf -- $KEATING_CAPTURE_TMP;; esac' EXIT; cd $KEATING_CAPTURE_TMP; keating() { bun $KEATING_CAPTURE_REPO/src/cli/main.ts $@; }; clear"
 Enter
 Sleep 1s
 Show
 
 # An initial learner turn makes the outgoing message layer, phase-specific
 # loader, streaming tutor layer, avatar, and activity stack visible together.
-Type "bun $KEATING_CAPTURE_REPO/src/cli/main.ts tui 'In three sentences, explain why proof by contradiction works.'"
+Type "keating tui 'In three sentences, explain why proof by contradiction works.'"
 Enter
-Sleep 4s
-Sleep 14s
+Sleep 8s
 
-# Collapse and restore the layered side panel. Restoring it moves focus into
-# ACTIONS, making keyboard selection visible without a mouse-only demo.
-Ctrl+B
-Sleep 2s
+# Open the layered side panel. Opening it moves focus into ACTIONS, making
+# keyboard selection visible without a mouse-only demo.
 Ctrl+B
 Sleep 2s
 
@@ -60,8 +58,7 @@ Escape
 # with the selected provider/model context still visible in the header.
 Type "Give me one tiny numerical example."
 Enter
-Sleep 4s
-Sleep 14s
+Sleep 8s
 
 # Open the production session browser, choose the active transcript, and clone
 # its whole branch. Text filtering makes the action deterministic.

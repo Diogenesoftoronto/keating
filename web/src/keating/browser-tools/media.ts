@@ -3,7 +3,20 @@ import type { KeatingStorage } from "../storage";
 import { resolveTopic } from "../core";
 import { getProviderApiKey } from "../../lib/provider-models";
 import { proxiedProviderRequestUrl } from "../../lib/provider-proxy";
-import { DEFAULT_IMAGE_GENERATOR_ID, getImageGenerator, localImageEndpoint } from "../../lib/image-generators";
+import {
+	DEFAULT_IMAGE_GENERATOR_ID,
+	geminiAspectRatio,
+	geminiImageSize,
+	getImageGenerator,
+	localImageEndpoint,
+	resolveImageGeneratorEndpoint,
+	resolveImageQuality,
+} from "../../lib/image-generators";
+import {
+	notOrganicOpenAiImageEndpoint,
+	notOrganicPublicClient,
+} from "../../notorganic-provider";
+import { publicClientMaxCostMicrousd } from "../../notorganic-provider/public-client";
 import { loadKeatingUiSettings } from "../ui-settings";
 import type { StoryboardScene } from "../storyboard";
 import {
@@ -229,6 +242,114 @@ async function generateImageViaEndpoint(params: {
 	return { dataUrl: pngDataUrl(b64), mimeType: "image/png" };
 }
 
+/**
+ * Gemini image generation runs through generateContent with an IMAGE response
+ * modality, so the request body, auth header, and response shape all differ
+ * from the Images API. Text parts the model returns alongside the image are
+ * ignored — only the inline image data is used.
+ */
+async function generateImageViaGemini(params: {
+	endpoint: string;
+	apiKey?: string;
+	prompt: string;
+	size: string;
+	quality: string;
+}): Promise<{ dataUrl: string; mimeType: string }> {
+	const proxied = proxiedProviderRequestUrl(params.endpoint);
+	const headers: Record<string, string> = {
+		"content-type": "application/json",
+		"x-target-url": proxied.targetBaseUrl,
+	};
+	if (params.apiKey) headers["x-goog-api-key"] = params.apiKey;
+
+	const response = await fetch(proxied.url, {
+		method: "POST",
+		headers,
+		body: JSON.stringify({
+			contents: [{ role: "user", parts: [{ text: params.prompt }] }],
+			generationConfig: {
+				responseModalities: ["IMAGE"],
+				imageConfig: {
+					aspectRatio: geminiAspectRatio(params.size),
+					imageSize: geminiImageSize(params.quality),
+				},
+			},
+		}),
+	});
+
+	if (!response.ok) {
+		const payload = await response.json().catch(async () => ({
+			error: { message: await response.text().catch(() => response.statusText) },
+		}));
+		const message = payload?.error?.message ?? response.statusText;
+		throw new Error(`Image generation failed (${response.status}): ${String(message).slice(0, 500)}`);
+	}
+
+	const payload = await response.json().catch(async () => ({
+		error: { message: await response.text().catch(() => response.statusText) },
+	}));
+	const parts: Array<{ inlineData?: { data?: unknown; mimeType?: unknown } }> =
+		payload?.candidates?.[0]?.content?.parts ?? [];
+	const imagePart = parts.find((part) => typeof part?.inlineData?.data === "string");
+	const b64 = imagePart?.inlineData?.data;
+	if (typeof b64 !== "string" || !b64) {
+		throw new Error("Image generation returned no inline image data.");
+	}
+	const mimeType = typeof imagePart?.inlineData?.mimeType === "string"
+		? imagePart.inlineData.mimeType
+		: "image/png";
+	return { dataUrl: `data:${mimeType};base64,${b64}`, mimeType };
+}
+
+/**
+ * Not Organic speaks the OpenAI Images shape, but its browser requests use the
+ * account's PKCE/DPoP session rather than a provider key. Keep this transport
+ * direct to the runtime issuer so the DPoP `htu` matches the signed request.
+ */
+async function generateImageViaNotOrganic(params: {
+	endpoint: string;
+	prompt: string;
+	model: string;
+	size: string;
+	quality: string;
+}): Promise<{ dataUrl: string; mimeType: string }> {
+	const client = notOrganicPublicClient();
+	if (!client) throw new Error("This Keating deployment has not enabled Not Organic sign-in.");
+	if (!client.getSession()) throw new Error("Connect your Not Organic account to generate images.");
+	const providerPath = new URL(params.endpoint).pathname;
+	const response = await client.request(providerPath, {
+		method: "POST",
+		headers: {
+			accept: "application/json",
+			"content-type": "application/json",
+			"x-notorganic-max-cost-microusd": String(publicClientMaxCostMicrousd()),
+			"idempotency-key": `keating_image_${crypto.randomUUID()}`,
+		},
+		body: JSON.stringify({
+			model: params.model,
+			prompt: params.prompt,
+			size: params.size,
+			quality: params.quality,
+			n: 1,
+		}),
+	});
+	if (!response.ok) {
+		const payload = await response.json().catch(async () => ({
+			error: { message: await response.text().catch(() => response.statusText) },
+		}));
+		const message = payload?.error?.message ?? response.statusText;
+		throw new Error(`Image generation failed (${response.status}): ${String(message).slice(0, 500)}`);
+	}
+	const payload = await response.json().catch(async () => ({
+		error: { message: await response.text().catch(() => response.statusText) },
+	}));
+	const b64 = payload?.data?.[0]?.b64_json;
+	if (!b64 || typeof b64 !== "string") {
+		throw new Error("Not Organic image generation returned no base64 image data.");
+	}
+	return { dataUrl: pngDataUrl(b64), mimeType: "image/png" };
+}
+
 export function createMediaTools(storage: KeatingStorage): AgentTool[] {
 	return [
 		createTool(
@@ -320,15 +441,15 @@ export function createMediaTools(storage: KeatingStorage): AgentTool[] {
 
 		createTool(
 			"generate_image",
-			"Generate a real raster learning image with the image generator the learner has configured in Settings → Image generation (OpenAI, or a local OpenAI-compatible server). You MUST author the content yourself by passing `title`, `subtitle`, and at least 3 `points` describing what the visual should communicate — generic titles like 'Learning visual' or empty point lists are rejected. Use `kind` to shape the prompt: 'anatomy' for labeled structures, 'comparison' for size/category bars, 'process' for ordered step-by-step flows, 'cards' for grouped concepts. If no image generator is configured/available, the tool returns a short message instead of an image — there is no template fallback.",
+			"Generate a real raster learning image with the image generator the learner has configured in Settings → Image generation (Not Organic, OpenAI, Google Gemini, or a local OpenAI-compatible server). You MUST author the content yourself by passing `title`, `subtitle`, and at least 3 `points` describing what the visual should communicate — generic titles like 'Learning visual' or empty point lists are rejected. Use `kind` to shape the prompt: 'anatomy' for labeled structures, 'comparison' for size/category bars, 'process' for ordered step-by-step flows, 'cards' for grouped concepts. If no image generator is configured/available, the tool returns a short message instead of an image — there is no template fallback.",
 			{
 				title: { type: "string", description: "REQUIRED. Short, specific title for the visual that reflects THIS topic (e.g. 'DNS resolution steps' or 'IgG antibody anatomy'), not 'Learning visual'." },
 				subtitle: { type: "string", description: "REQUIRED. One-sentence framing caption that names the specific idea being illustrated." },
 				prompt: { type: "string", description: "Optional explicit image-model prompt. If omitted, one is composed from title/subtitle/points/labels/kind/style." },
 				kind: { type: "string", description: "cards, anatomy, comparison, or process. Shapes the composed prompt. Use 'process' for ordered step-by-step flows; 'anatomy' for labeled structures; 'comparison' for size/category bars; 'cards' for grouped concepts." },
 				imageModel: { type: "string", description: "Optional override for the image model. Defaults to the model selected in Settings → Image generation, then the generator's default." },
-				size: { type: "string", description: "Optional size override (e.g. 1024x1024, 1536x1024, 1024x1536). Defaults to the configured size." },
-				quality: { type: "string", description: "Optional quality override: low, medium, or high. Defaults to the configured quality." },
+				size: { type: "string", description: "Optional size override. OpenAI and local servers take pixels (e.g. 1024x1024, 1536x1024, 1024x1536); Gemini takes an aspect ratio (e.g. 1:1, 3:2, 2:3, 16:9). Defaults to the configured size." },
+				quality: { type: "string", description: "Optional quality override: low, medium, or high (Gemini maps these onto the 1K, 2K, and 4K resolution tiers). Defaults to the configured quality." },
 				points: {
 					type: "array",
 					description: "REQUIRED (>=3). Concrete teaching points to visualize. For 'process' these become the steps; for 'anatomy' the label callouts; for 'comparison' the bar values; for 'cards' the card body text. Generic points like 'Core idea' are rejected.",
@@ -385,28 +506,50 @@ export function createMediaTools(storage: KeatingStorage): AgentTool[] {
 				const settings = loadKeatingUiSettings();
 				const generator = getImageGenerator(settings.imageGenerator) ?? getImageGenerator(DEFAULT_IMAGE_GENERATOR_ID)!;
 
-				const endpoint = generator.needsBaseUrl
-					? localImageEndpoint(settings.localImageBaseUrl)
-					: generator.fixedEndpoint ?? "";
-				const apiKey = await getProviderApiKey(generator.providerKey);
-
 				// No image generator available → return a plain message, never an image.
-				if (generator.needsBaseUrl && !endpoint) {
+				if (generator.needsBaseUrl && !localImageEndpoint(settings.localImageBaseUrl)) {
 					return `No image generation model is available. Set a base URL for the local image server in Settings → Image generation (selected generator: ${generator.label}).`;
 				}
-				if (!generator.needsBaseUrl && !apiKey) {
-					return `No image generation model is available. Add an API key for ${generator.label} in Settings → Providers & Models, or pick a different generator in Settings → Image generation.`;
+				const notOrganic = generator.auth === "notorganic-session";
+				let apiKey: string | undefined;
+				if (notOrganic) {
+					const client = notOrganicPublicClient();
+					const session = client?.getSession();
+					if (!client) return "Not Organic image generation is unavailable on this deployment. Connect a deployment with the Not Organic account service enabled, or pick a different generator.";
+					if (!session) return "Connect your Not Organic account in Account settings before generating an image.";
+					if (!session.scope.split(/\s+/u).includes("infer:image")) {
+						return "Your Not Organic session does not include image generation. Sign out and connect again after image access is enabled.";
+					}
+				} else {
+					apiKey = await getProviderApiKey(generator.providerKey ?? "");
+					if (!generator.needsBaseUrl && !apiKey) {
+						return `No image generation model is available. Add an API key for ${generator.label} in Settings → Providers & Models, or pick a different generator in Settings → Image generation.`;
+					}
 				}
 
-				const imageModel = (settings.imageModel || String(params.imageModel ?? "")).trim() || generator.models[0] || "";
+				// Not Organic exposes a capability alias, not a user-selectable raw
+				// upstream id. Keep overrides bounded to the provider's canonical alias.
+				const imageModel = notOrganic
+					? generator.models[0] || ""
+					: (settings.imageModel || String(params.imageModel ?? "")).trim() || generator.models[0] || "";
 				if (!imageModel) {
 					return `No image model is configured for ${generator.label}. Set one in Settings → Image generation.`;
 				}
 
+				// Resolved after the model so `{model}`-templated endpoints
+				// (Gemini) carry the selected id.
+				const endpoint = notOrganic
+					? notOrganicOpenAiImageEndpoint()
+					: resolveImageGeneratorEndpoint({
+						generator,
+						model: imageModel,
+						localBaseUrl: settings.localImageBaseUrl,
+					});
+
 				const sizeCandidate = (String(params.size ?? "") || settings.imageSize).trim();
 				const size = generator.sizes.includes(sizeCandidate) ? sizeCandidate : generator.sizes[0];
 				const qualityCandidate = (String(params.quality ?? "") || settings.imageQuality).trim().toLowerCase();
-				const quality = generator.qualities.includes(qualityCandidate) ? qualityCandidate : generator.qualities[0];
+				const quality = resolveImageQuality(generator, qualityCandidate);
 
 				const prompt = String(params.prompt ?? "").trim() || [
 					`Create a clear educational ${kind === "cards" ? "infographic" : `${kind} diagram`} titled "${finalTitle}".`,
@@ -425,16 +568,20 @@ export function createMediaTools(storage: KeatingStorage): AgentTool[] {
 				emitImageProgress({ requestId, title: finalTitle, status: "started" });
 				let generated: { dataUrl: string; mimeType: string };
 				try {
-					generated = await generateImageViaEndpoint({
-						endpoint,
-						apiKey,
-						prompt,
-						model: imageModel,
-						size,
-						quality,
-						onPartial: (dataUrl, index) =>
-							emitImageProgress({ requestId, title: finalTitle, dataUrl, index, status: "partial" }),
-					});
+					generated = notOrganic
+						? await generateImageViaNotOrganic({ endpoint, prompt, model: imageModel, size, quality })
+						: generator.protocol === "gemini-generate-content"
+						? await generateImageViaGemini({ endpoint, apiKey, prompt, size, quality })
+						: await generateImageViaEndpoint({
+							endpoint,
+							apiKey,
+							prompt,
+							model: imageModel,
+							size,
+							quality,
+							onPartial: (dataUrl, index) =>
+								emitImageProgress({ requestId, title: finalTitle, dataUrl, index, status: "partial" }),
+						});
 				} catch (error) {
 					emitImageProgress({ requestId, title: finalTitle, status: "error" });
 					throw error;

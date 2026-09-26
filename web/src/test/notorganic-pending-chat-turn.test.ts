@@ -23,7 +23,7 @@ describe("chat send across Not Organic sign-in", () => {
     expect(pendingChatTurn()?.ready).toBe(false);
     authorizePendingChatTurn();
     expect(claimPendingChatTurn("another-chat", [user()])).toBeNull();
-    expect(claimPendingChatTurn("original-chat", [user()])).toEqual([user()]);
+    expect(claimPendingChatTurn("original-chat", [user()])).toEqual({ messages: [user()], undelivered: true });
     expect(claimPendingChatTurn("original-chat", [user()])).toBeNull();
   });
   it("does not resend a turn that was answered or superseded", () => {
@@ -38,7 +38,7 @@ describe("chat send across Not Organic sign-in", () => {
     const messages = [user(), { role: "assistant", stopReason: "error", errorMessage: "Authentication required" } as any];
     rememberChatTurn("chat", messages);
     authorizePendingChatTurn();
-    expect(claimPendingChatTurn("chat", messages)).toEqual([user()]);
+    expect(claimPendingChatTurn("chat", messages)).toEqual({ messages: [user()], undelivered: false });
   });
   it("never auto-sends after cancellation", () => {
     rememberChatTurn("chat", [user()]);

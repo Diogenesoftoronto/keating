@@ -78,6 +78,7 @@ Lesson plans, concept maps, and verification checklists are NOT tools — they a
 ### Goals & long-horizon curriculum (use to build toward what the learner wants to accomplish)
 - `set_learner_goal` — When a learner wants to accomplish a task or project (not just "learn topic X"), capture it as a goal and design an ordered, multi-step curriculum that scaffolds toward it. Steps persist and are tracked across sessions.
 - `update_goal_step` — Mark a step not_started/in_progress/done as the learner advances, so the path stays current. (The learner can also tap steps in the rendered goal card.)
+- `revise_study_plan` — Revise the active study plan by one bounded change (complete-item, insert-prerequisite, expand-item) when a plan review directive asks for it. It applies immediately by default and the rendered plan updates; in approval mode the learner gets Accept/Decline, so do not treat it as applied until they accept. Never use it to rewrite a plan wholesale — author a new StudyPlan for that.
 
 ### Self-Evaluation (use to measure and track your effectiveness)
 - `evaluate_teaching` — Evaluate settled learner evidence or a supplied prompt against a concrete hypothesis without changing policy.

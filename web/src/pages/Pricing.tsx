@@ -163,7 +163,7 @@ export function Pricing() {
 				window.location.assign(await publicClient.authorizationUrl(`/pricing?pack=${pack.id}`));
 				return;
 			}
-			const result = await createNotOrganicCheckout(pack.id, "https://keating.help/pricing?checkout=returned");
+			const result = await createNotOrganicCheckout(pack.id, `${window.location.origin}/pricing?checkout=returned`);
 			const checkoutUrl = typeof result?.url === "string" ? result.url : typeof result?.checkout_url === "string" ? result.checkout_url : null;
 			if (!checkoutUrl || new URL(checkoutUrl).protocol !== "https:") throw new Error("Checkout unavailable");
 			window.location.assign(checkoutUrl);
@@ -190,7 +190,7 @@ export function Pricing() {
 				return;
 			}
 			if (!planAvailable) throw new Error("Subscription checkout is not available yet.");
-			const result = await createNotOrganicSubscriptionCheckout(KEATING_PERSONAL_PLAN.id, "https://keating.help/pricing?checkout=returned");
+			const result = await createNotOrganicSubscriptionCheckout(KEATING_PERSONAL_PLAN.id, `${window.location.origin}/pricing?checkout=returned`);
 			const url = result.url ?? result.checkout_url;
 			if (!url || new URL(url).protocol !== "https:") throw new Error("Checkout unavailable");
 			window.location.assign(url);

@@ -1,0 +1,32 @@
+{
+  "schema": "hyperframes.capture.icons.v1",
+  "headline": {
+    "file": "assets/favicon.png",
+    "source": "assets/icon-icon-64x64.png",
+    "rank": 1,
+    "shape": "bare-mark",
+    "reason": "bare mark preferred over 1 badge(s)"
+  },
+  "icons": [
+    {
+      "file": "assets/icon-apple-touch-icon-180x180.png",
+      "url": "https://keating.help/apple-touch-icon-lockup.png",
+      "rel": "apple-touch-icon",
+      "sizes": "180x180",
+      "type": null,
+      "rank": 0,
+      "shape": "badge",
+      "shapeReason": "4 of 4 edge midpoints are opaque, so the drawing carries a backdrop"
+    },
+    {
+      "file": "assets/icon-icon-64x64.png",
+      "url": "https://keating.help/favicon-bot.png",
+      "rel": "icon",
+      "sizes": "64x64",
+      "type": "image/png",
+      "rank": 1,
+      "shape": "bare-mark",
+      "shapeReason": "0 of 4 edge midpoints are opaque, so the drawing has transparent margins"
+    }
+  ]
+}
