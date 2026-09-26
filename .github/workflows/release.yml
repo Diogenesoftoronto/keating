@@ -4,19 +4,33 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      artifact_run_id:
+        description: Completed release build run to recover after a signing-only fix
+        required: false
+        type: string
 
 permissions:
   contents: write
+  actions: read
   id-token: write
+
+concurrency:
+  group: keating-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     outputs:
       apple_signing: ${{ steps.signing.outputs.apple_signing }}
+      artifact_run_id: ${{ steps.recovery.outputs.artifact_run_id }}
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Check optional Apple signing availability
         id: signing
@@ -61,6 +75,13 @@ jobs:
           test "${TAG_VERSION}" = "${PACKAGE_VERSION}"
           bun scripts/sync-version.ts --check
 
+      - name: Verify completed artifacts for signing recovery
+        id: recovery
+        env:
+          ARTIFACT_RUN_ID: ${{ inputs.artifact_run_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/verify-release-recovery.mjs
+
       - name: Test and build
         run: |
           bun run build
@@ -75,6 +96,7 @@ jobs:
 
   build:
     needs: validate
+    if: ${{ needs.validate.outputs.artifact_run_id == '' }}
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
@@ -149,6 +171,7 @@ jobs:
 
   build-desktop-linux:
     needs: validate
+    if: ${{ needs.validate.outputs.artifact_run_id == '' }}
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
@@ -246,7 +269,7 @@ jobs:
 
   build-desktop-macos:
     needs: validate
-    if: ${{ needs.validate.outputs.apple_signing == 'true' }}
+    if: ${{ needs.validate.outputs.artifact_run_id == '' && needs.validate.outputs.apple_signing == 'true' }}
     # LiteRT currently ships a macOS arm64 library only; never bundle an
     # arm64 native runtime into an Intel installer.
     runs-on: macos-latest
@@ -310,6 +333,7 @@ jobs:
 
   build-native:
     needs: validate
+    if: ${{ needs.validate.outputs.artifact_run_id == '' }}
     uses: ./.github/workflows/native-downloads.yml
     with:
       release_tag: ${{ github.ref_name }}
@@ -319,7 +343,7 @@ jobs:
     needs: [validate, build, build-desktop-linux, build-desktop-macos, build-native]
     # An intentionally omitted desktop platform must not suppress the release;
     # configured builds and signing failures must still block publication.
-    if: ${{ always() && needs.validate.result == 'success' && needs.build.result == 'success' && needs.build-desktop-linux.result == 'success' && needs.build-native.result == 'success' && (needs.build-desktop-macos.result == 'success' || needs.build-desktop-macos.result == 'skipped') }}
+    if: ${{ always() && needs.validate.result == 'success' && (needs.validate.outputs.artifact_run_id != '' || (needs.build.result == 'success' && needs.build-desktop-linux.result == 'success' && needs.build-native.result == 'success' && (needs.build-desktop-macos.result == 'success' || needs.build-desktop-macos.result == 'skipped'))) }}
     runs-on: ubuntu-latest
     env:
       GNUPGHOME: ${{ github.workspace }}/.keating-release-signing
@@ -334,11 +358,16 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+          run-id: ${{ needs.validate.outputs.artifact_run_id || github.run_id }}
+          github-token: ${{ github.token }}
 
       - name: Install Linux signing tools
         run: |
           sudo apt-get update
           sudo apt-get install -y gpg rpm
+
+      - name: Verify the RPM signer with an ephemeral protected key
+        run: node desktop/test/rpm-signing-smoke.mjs
 
       - name: Prepare pinned release signing key
         env:
