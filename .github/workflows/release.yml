@@ -10,6 +10,10 @@ on:
         description: Completed release build run to recover after a signing-only fix
         required: false
         type: string
+      npm_release_tag:
+        description: Already-published release tag to finish npm publication
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -26,11 +30,13 @@ jobs:
     outputs:
       apple_signing: ${{ steps.signing.outputs.apple_signing }}
       artifact_run_id: ${{ steps.recovery.outputs.artifact_run_id }}
+      release_tag: ${{ steps.version.outputs.release_tag }}
 
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ inputs.npm_release_tag || github.ref }}
 
       - name: Check optional Apple signing availability
         id: signing
@@ -69,11 +75,24 @@ jobs:
           bun install --frozen-lockfile
 
       - name: Verify tag and synchronized versions
+        id: version
+        env:
+          RELEASE_TAG: ${{ inputs.npm_release_tag || github.ref_name }}
+          NPM_RELEASE_TAG: ${{ inputs.npm_release_tag }}
+          ARTIFACT_RUN_ID: ${{ inputs.artifact_run_id }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           PACKAGE_VERSION="$(node -p "require('./package.json').version")"
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          TAG_VERSION="${RELEASE_TAG#v}"
           test "${TAG_VERSION}" = "${PACKAGE_VERSION}"
           bun scripts/sync-version.ts --check
+          if [ -n "$NPM_RELEASE_TAG" ]; then
+            test -z "$ARTIFACT_RUN_ID"
+            test "$(git rev-parse HEAD)" = "$(git rev-parse "$NPM_RELEASE_TAG^{commit}")"
+            test "$(gh release view "$NPM_RELEASE_TAG" --json tagName,isDraft,isPrerelease --jq 'select(.isDraft == false and .isPrerelease == false) | .tagName')" = "$NPM_RELEASE_TAG"
+          fi
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Verify completed artifacts for signing recovery
         id: recovery
@@ -96,7 +115,7 @@ jobs:
 
   build:
     needs: validate
-    if: ${{ needs.validate.outputs.artifact_run_id == '' }}
+    if: ${{ !inputs.npm_release_tag && needs.validate.outputs.artifact_run_id == '' }}
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
@@ -171,7 +190,7 @@ jobs:
 
   build-desktop-linux:
     needs: validate
-    if: ${{ needs.validate.outputs.artifact_run_id == '' }}
+    if: ${{ !inputs.npm_release_tag && needs.validate.outputs.artifact_run_id == '' }}
     runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
@@ -269,7 +288,7 @@ jobs:
 
   build-desktop-macos:
     needs: validate
-    if: ${{ needs.validate.outputs.artifact_run_id == '' && needs.validate.outputs.apple_signing == 'true' }}
+    if: ${{ !inputs.npm_release_tag && needs.validate.outputs.artifact_run_id == '' && needs.validate.outputs.apple_signing == 'true' }}
     # LiteRT currently ships a macOS arm64 library only; never bundle an
     # arm64 native runtime into an Intel installer.
     runs-on: macos-latest
@@ -333,7 +352,7 @@ jobs:
 
   build-native:
     needs: validate
-    if: ${{ needs.validate.outputs.artifact_run_id == '' }}
+    if: ${{ !inputs.npm_release_tag && needs.validate.outputs.artifact_run_id == '' }}
     uses: ./.github/workflows/native-downloads.yml
     with:
       release_tag: ${{ github.ref_name }}
@@ -343,7 +362,7 @@ jobs:
     needs: [validate, build, build-desktop-linux, build-desktop-macos, build-native]
     # An intentionally omitted desktop platform must not suppress the release;
     # configured builds and signing failures must still block publication.
-    if: ${{ always() && needs.validate.result == 'success' && (needs.validate.outputs.artifact_run_id != '' || (needs.build.result == 'success' && needs.build-desktop-linux.result == 'success' && needs.build-native.result == 'success' && (needs.build-desktop-macos.result == 'success' || needs.build-desktop-macos.result == 'skipped'))) }}
+    if: ${{ always() && !inputs.npm_release_tag && needs.validate.result == 'success' && (needs.validate.outputs.artifact_run_id != '' || (needs.build.result == 'success' && needs.build-desktop-linux.result == 'success' && needs.build-native.result == 'success' && (needs.build-desktop-macos.result == 'success' || needs.build-desktop-macos.result == 'skipped'))) }}
     runs-on: ubuntu-latest
     env:
       GNUPGHOME: ${{ github.workspace }}/.keating-release-signing
@@ -404,10 +423,13 @@ jobs:
           generate_release_notes: true
 
   publish-npm:
-    needs: release
+    needs: [validate, release]
+    if: ${{ always() && needs.validate.result == 'success' && (inputs.npm_release_tag != '' || needs.release.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.validate.outputs.release_tag }}
 
       - name: Setup Node for npm trusted publishing
         uses: actions/setup-node@v6
@@ -445,6 +467,7 @@ jobs:
 
   deploy-web:
     needs: release
+    if: ${{ always() && needs.release.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to Railway
