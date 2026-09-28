@@ -1,3 +1,4 @@
+import { browserTemplateMessages, decodeBrowserAudio, type BrowserInputMessage } from "../lib/browser-model-input";
 // Dynamic imports keep @huggingface/transformers out of the main bundle: the
 // library plus its ONNX runtime is ~100MB and is only needed once a browser
 // model is actually selected.
@@ -71,7 +72,7 @@ export const BROWSER_MODELS: readonly BrowserModelSpec[] = [
 		downloadLabel: "~5.2 GB",
 		kind: "multimodal",
 		dtype: "q4f16",
-		blurb: "Largest and most capable. Needs a discrete GPU and a stable connection.",
+		blurb: "Text, images and short audio. Large browser download; native LiteRT is the smaller phone option.",
 	},
 	{
 		id: "onnx-community/gemma-4-E2B-it-ONNX",
@@ -79,7 +80,7 @@ export const BROWSER_MODELS: readonly BrowserModelSpec[] = [
 		downloadLabel: "~3.4 GB",
 		kind: "multimodal",
 		dtype: "q4f16",
-		blurb: "Same generation as E4B, roughly two thirds the download.",
+		blurb: "Text, images and short audio; roughly two thirds the E4B browser download.",
 	},
 	// Models evaluated and not shipped — the ones that load but were held back,
 	// and the ones that cannot load at all — are recorded with their measured
@@ -499,7 +500,7 @@ class LocalModelStore {
 
 	async generate(
 		prompt: string,
-		options?: { max_length?: number; temperature?: number },
+		options?: { max_length?: number; temperature?: number; messages?: BrowserInputMessage[] },
 		onToken?: (token: string) => void,
 	): Promise<string> {
 		const { model, processor, tokenizer, modelId } = this.state;
@@ -515,38 +516,28 @@ class LocalModelStore {
 			const { TextStreamer, env } = await import("@huggingface/transformers");
 			diagnostics.transformersVersion = env.version;
 			await diagnostics.attach(env.backends.onnx);
-				// Multimodal templates expect typed content parts; text-only templates
-				// take a plain string.
-				const messages = [
-					{
-						role: "user",
-						content:
-							spec.kind === "multimodal" ? [{ type: "text", text: prompt }] : prompt,
-				},
-			];
 
-			const formattedPrompt = tokenizer.apply_chat_template(messages, {
-				add_generation_prompt: true,
-				// Gemma 4 ships a thinking channel that is on unless disabled. Keating
-				// renders the reply directly, so the raw thinking tokens are noise.
-				enable_thinking: false,
-				tokenize: false,
+			const messages = options?.messages ?? [{ role: "user" as const, content: [{ type: "text" as const, text: prompt }] }];
+			const template = processor ?? tokenizer;
+			const formattedPrompt = template.apply_chat_template(browserTemplateMessages(messages, spec.kind === "multimodal"), {
+				add_generation_prompt: true, enable_thinking: false, tokenize: false,
 			});
-
-			// The chat template already inserted the special tokens.
-			// Processors vary across Transformers.js versions; try both the explicit
-			// multimodal argument shape and the legacy single-signature shape.
-			const processMultimodal = async () => {
-				try {
-					return await processor(formattedPrompt, null, null, { add_special_tokens: false });
-				} catch (error) {
-					return await processor(formattedPrompt, { add_special_tokens: false });
-				}
-			};
-			const inputs =
-				spec.kind === "multimodal" ? await processMultimodal() : tokenizer(formattedPrompt, { add_special_tokens: false });
+			const media = messages.flatMap(message => message.content).filter(part => part.type !== "text");
+			if (media.length && spec.kind !== "multimodal") throw new Error("This browser model accepts text only.");
+			const { RawImage } = await import("@huggingface/transformers");
+			const imageParts = media.filter(part => part.type === "image");
+			const images = imageParts.length ? await Promise.all(imageParts.map(part => RawImage.fromURL(`data:${part.mimeType};base64,${part.data}`))) : null;
+			const audioParts = media.filter(part => part.type === "audio");
+			if (audioParts.length > 1) throw new Error("Send one recording at a time to browser Gemma.");
+			const audio = audioParts.length ? await decodeBrowserAudio(audioParts[0]) : null;
+			const inputs = spec.kind === "multimodal"
+				? await processor(formattedPrompt, images, audio, { add_special_tokens: false })
+				: tokenizer(formattedPrompt, { add_special_tokens: false });
 
 			diagnostics.inputTokens = inputs.input_ids.dims.at(-1) ?? null;
+			if (spec.kind === "multimodal" && (diagnostics.inputTokens ?? 0) + diagnostics.maxNewTokens > 4096) {
+				throw new Error("The browser Gemma lesson is too long for the 4,096 token device budget. Start a new lesson or shorten your input.");
+			}
 
 			const streamer = new TextStreamer(tokenizer, {
 				skip_prompt: true,

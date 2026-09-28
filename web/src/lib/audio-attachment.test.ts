@@ -40,3 +40,10 @@ test("audio size and empty input errors happen before any decoder use", async ()
 test("unsupported browser gives an actionable conversion error", async () => {
 	await expect(prepareAudioAttachment(new File(["audio"], "recording.webm", { type: "audio/webm" }))).rejects.toThrow("WAV or MP3");
 });
+
+
+test("offline WAV requirement does not silently pass MP3 bytes to the native encoder", async () => {
+  const mp3 = new File(["audio"], "voice.mp3", { type: "audio/mpeg" });
+  expect(await prepareAudioAttachment(mp3)).toBe(mp3);
+  await expect(prepareAudioAttachment(mp3, { forceWav: true })).rejects.toThrow("convert");
+});

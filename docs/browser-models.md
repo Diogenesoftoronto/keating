@@ -46,8 +46,8 @@ external-data and fp16 KV-cache configuration, plus a compatible chat template.
 The graph and weights total 1,834,210,185 bytes before tokenizer/config files.
 The publisher reports WebGPU generation with Transformers.js 4.2.0; this is
 publisher evidence, not a Keating browser smoke test. Requires `shader-f16`.
-LFM 2.5 remains a smaller-download alternative. All entries are exposed as
-text-only because Keating's current browser generation path sends text only.
+LFM 2.5 remains a smaller-download text alternative. MiniCPM5 and LFM are
+text-only. Gemma E2B/E4B now forward actual image and audio data through their processor and encoder sessions; their reply is text.
 
 ## Diagnosing WebGPU failures
 
@@ -157,3 +157,12 @@ quantization script, emitting the `onnx/model_q4f16.onnx` layout and a
 `transformers.js_config` with correct chunk counts. Publishing is a separate
 step and belongs to whoever owns the Hugging Face account — it pushes under
 their name and needs their token via `huggingface-cli login`.
+
+
+## Gemma media path (September 28, 2026)
+
+The pinned Transformers.js 4.2 runtime registers Gemma4ForCausalLM, whose multimodal forward path loads `vision_encoder` and `audio_encoder` sessions. The E4B ONNX artifact was checked through the Hugging Face blob API at revision `843f250f23bc91754def1e0f0db390dacd1e6b05`: both q4f16 encoder graphs and external weight files exist. Gemma input is rendered with the processor's own chat template and actual decoded images/audio. System, user and assistant turns are retained. Text-only browser models reject media instead of silently dropping it.
+
+Bound the complete browser lesson to two images, one recording and 16 MiB of encoded media before decoding. The pinned Gemma processor extracts only the first audio waveform, so a second recording is rejected explicitly. Audio is decoded to mono 16 kHz with a 30-second limit and the decoder is closed. Text is bounded before decoding and the processor's actual input token count plus output allowance must fit a 4,096 token device budget. Output defaults to at most 512 tokens with thinking disabled. Video and generated speech are not implemented.
+
+This remains the larger ONNX/WebGPU path, separate from the full native LiteRT model. LiteRT-LM's browser preview supports text-in/text-out only and uses a distinct web artifact; it does not establish native Gemma multimodal availability in a PWA. Pixel testing is deferred. Native host smoke verified actual Gemma text, image and WAV audio inference; browser media preprocessing/routing tests verify the integration boundary, not GPU inference or measured memory on Pixel. An actual AutoProcessor smoke with synthetic image and one-second audio emitted pixel_values, image_position_ids, input_features and input_features_mask alongside the tokenized prompt; no browser weights or GPU session were loaded.

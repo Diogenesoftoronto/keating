@@ -1,7 +1,7 @@
 import { providerDefinition } from "./provider-config";
 import type { ProviderId, ProviderSettings } from "./types";
 import type { ReasoningLevel } from "./ui-settings";
-import { OFFLINE_MODEL } from "./offline-model-contract";
+import { OFFLINE_MODELS } from "./offline-model-contract";
 
 export const MODELS_DEV_CATALOG_URL = "https://models.dev/api.json";
 export const LONG_CONTEXT_THRESHOLD = 256_000;
@@ -423,14 +423,14 @@ function compareModels(left: CatalogModel, right: CatalogModel): number {
 }
 
 export const BUILT_IN_MODEL_CATALOG: readonly CatalogModel[] = [
-  {
-    key: `litert::${OFFLINE_MODEL.id}`, provider: "litert", providerLabel: "On this device",
-    id: OFFLINE_MODEL.id, name: OFFLINE_MODEL.name,
-    description: "Offline text tutor. Download 1.55 GB in Settings → Offline tutor. Images need a vision model; dictation needs configured transcription.",
-    reasoning: false, reasoningLevels: ["off"], temperature: true, toolCall: false, vision: false,
-    contextWindow: 4096, maxOutputTokens: 1024, nativeProvider: "litert", transport: "native-litert",
+  ...OFFLINE_MODELS.map((model): CatalogModel => ({
+    key: `litert::${model.id}`, provider: "litert", providerLabel: "On this device",
+    id: model.id, name: model.name,
+    description: model.id === "gemma-4-e4b" ? "Offline text, images and audio. Optional 3.66 GB download; needs more memory than MiniCPM5." : "Offline text tutor. Optional 1.55 GB download in Settings.",
+    reasoning: false, reasoningLevels: ["off"], temperature: true, toolCall: false, vision: model.id === "gemma-4-e4b",
+    contextWindow: 4096, maxOutputTokens: 512, nativeProvider: "litert", transport: "native-litert",
     callable: true, unavailabilityReason: null, recoveryHint: null, source: "built-in",
-  },
+  })),
   {
     key: "openai::gpt-5.4",
     provider: "openai",

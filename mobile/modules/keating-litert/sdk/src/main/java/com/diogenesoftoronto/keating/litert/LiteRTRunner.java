@@ -53,13 +53,26 @@ public final class LiteRTRunner {
   private void initialize(String path) {
     if (engine != null && path.equals(enginePath)) return;
     close();
-    Engine gpu = new Engine(new EngineConfig(path, new Backend.GPU(), null, null, 4096, null, ":nocache"));
-    try { gpu.initialize(); engine = gpu; }
-    catch (Exception failure) {
-      try { gpu.close(); } catch (Exception ignored) {}
-      Engine cpu = new Engine(new EngineConfig(path, new Backend.CPU(null, null), null, null, 4096, null, ":nocache"));
+    boolean multimodal = path.contains("gemma4-");
+    ExperimentalFlags.INSTANCE.setEnableSpeculativeDecoding(multimodal ? Boolean.TRUE : null);
+    ExperimentalFlags.INSTANCE.setVisualTokenBudget(multimodal ? 280 : null);
+    Backend vision = multimodal ? new Backend.CPU(4, null) : null;
+    Backend audio = multimodal ? new Backend.CPU(4, null) : null;
+    if (multimodal) {
+      // Conservative Pixel 10/Tensor G5 profile. A failed GPU initialization is
+      // not a reliable capability probe: driver crashes may occur on first send.
+      Engine cpu = new Engine(new EngineConfig(path, new Backend.CPU(4, null), vision, audio, 4096, 2, ":nocache"));
       try { cpu.initialize(); engine = cpu; }
       catch (Exception error) { try { cpu.close(); } catch (Exception ignored) {} throw error; }
+    } else {
+      Engine gpu = new Engine(new EngineConfig(path, new Backend.GPU(), null, null, 4096, null, ":nocache"));
+      try { gpu.initialize(); engine = gpu; }
+      catch (Exception failure) {
+        try { gpu.close(); } catch (Exception ignored) {}
+        Engine cpu = new Engine(new EngineConfig(path, new Backend.CPU(4, null), null, null, 4096, null, ":nocache"));
+        try { cpu.initialize(); engine = cpu; }
+        catch (Exception error) { try { cpu.close(); } catch (Exception ignored) {} throw error; }
+      }
     }
     enginePath = path;
   }
@@ -72,16 +85,34 @@ public final class LiteRTRunner {
     for (int i = 0; i < input.length(); i++) {
       JSONObject item = input.getJSONObject(i);
       String role = item.getString("role");
-      String content = item.getString("content");
+      Contents content;
+      Object value = item.get("content");
+      if (value instanceof String) content = Contents.Companion.of((String) value);
+      else {
+        JSONArray parts = item.getJSONArray("content");
+        List<Content> contents = new ArrayList<>();
+        for (int j = 0; j < parts.length(); j++) {
+          JSONObject part = parts.getJSONObject(j);
+          String type = part.getString("type");
+          if (type.equals("text")) contents.add(new Content.Text(part.getString("text")));
+          else if (path.contains("gemma4-") && (type.equals("image") || type.equals("audio"))) {
+            String blob = part.getString("blob");
+            if (blob.length() > 24 * 1024 * 1024) throw new IllegalArgumentException("Offline attachment is too large.");
+            byte[] bytes = android.util.Base64.decode(blob, android.util.Base64.DEFAULT);
+            contents.add(type.equals("image") ? new Content.ImageBytes(bytes) : new Content.AudioBytes(bytes));
+          } else throw new IllegalArgumentException("Unsupported offline media");
+        }
+        content = Contents.Companion.of(contents);
+      }
       if (role.equals("user")) messages.add(Message.Companion.user(content));
-      else if (role.equals("assistant")) messages.add(Message.Companion.model(content));
+      else if (role.equals("assistant")) messages.add(Message.Companion.model(content, Collections.emptyList(), Collections.emptyMap()));
       else throw new IllegalArgumentException("Unsupported message role");
     }
     Map<String, Object> context = Collections.singletonMap("enable_thinking", false);
     ThinkingConfig thinking = new ThinkingConfig(false, -1);
     ConversationConfig config = new ConversationConfig(
       Contents.Companion.of(system), messages.subList(0, messages.size() - 1), Collections.emptyList(),
-      new SamplerConfig(40, 0.95, temperature, 0), false, null, context, null, false, 1024, thinking, false);
+      new SamplerConfig(path.contains("gemma4-") ? 64 : 40, 0.95, temperature, 0), false, null, context, null, false, 512, thinking, false);
     Conversation chat = engine.createConversation(config);
     try {
       CountDownLatch done = new CountDownLatch(1);
@@ -99,7 +130,7 @@ public final class LiteRTRunner {
           }
           @Override public void onDone() { done.countDown(); }
           @Override public void onError(Throwable error) { failure.set(error); done.countDown(); }
-        }, context, null, null, null, 1024, thinking);
+        }, context, null, null, null, 512, thinking);
       }
       try {
         done.await();

@@ -108,10 +108,10 @@ export function makeBrowserModels(availableIds?: ReadonlySet<string>): Model<Api
 		provider: "browser",
 		baseUrl: "",
 		reasoning: false,
-		input: ["text"],
+		input: spec.kind === "multimodal" ? ["text", "image", "audio"] as Model<Api>["input"] : ["text"],
 		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-		contextWindow: 0,
-		maxTokens: 0,
+		contextWindow: spec.kind === "multimodal" ? 4096 : 0,
+		maxTokens: spec.kind === "multimodal" ? 512 : 0,
 	}));
 }
 

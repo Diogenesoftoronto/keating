@@ -55,7 +55,7 @@ import {
   type CommittedMobileToolCall,
 } from "@/lib/provider-tool-loop";
 import { clearComposerAttachmentFiles, hydrateMessageAttachments } from "@/lib/composer-attachments";
-import { assertOfflineMedia } from "@/lib/offline-model-contract";
+import { assertOfflineModelMedia } from "@/lib/offline-model-contract";
 import { clearAllComposerDrafts } from "@/lib/composer-draft-storage";
 import { DEFAULT_TEACHER_PERSONA } from "@/lib/persona";
 import { loadPersona, resetPersona, savePersona } from "@/lib/persona-storage";
@@ -753,7 +753,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
     let recalledMemory: { result: NeedleSearchResult; current: () => boolean } | null = null;
 
     try {
-      if (settings.provider === "litert") assertOfflineMedia(messages.slice(-40));
+      if (settings.provider === "litert") assertOfflineModelMedia(messages.slice(-40), settings.model);
       const providerMessages = await Promise.all(messages.slice(-40).map(async (message) => (
         message.attachments?.length
           ? { ...message, attachments: await hydrateMessageAttachments(message.attachments) }

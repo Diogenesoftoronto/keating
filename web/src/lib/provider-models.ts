@@ -9,7 +9,7 @@ import {
 } from "../notorganic-provider";
 import { getOAuthAccessToken, providerToOAuthId } from "../keating/oauth";
 import { withApiRetry } from "../keating/api-retry";
-import { desktopOfflineBridge, DESKTOP_OFFLINE_PROVIDER, installedDesktopOfflineModel } from "./desktop-offline";
+import { desktopOfflineBridge, DESKTOP_OFFLINE_PROVIDER, installedDesktopOfflineModel, installedDesktopOfflineModels } from "./desktop-offline";
 import {
 	checkWebGpuAvailable,
 	DEFAULT_BROWSER_MODEL_ID,
@@ -511,8 +511,7 @@ export async function getSelectableModels(
 ): Promise<Array<Model<Api>>> {
 	const models: Array<Model<Api>> = [];
 	if (!filter || filter(DESKTOP_OFFLINE_PROVIDER)) {
-		const offline = await installedDesktopOfflineModel();
-		if (offline) models.push(offline);
+		models.push(...await installedDesktopOfflineModels());
 	}
 
 	if (isNotOrganicFeatureEnabled() && (!filter || filter(NOTORGANIC_PROVIDER_ID))) {

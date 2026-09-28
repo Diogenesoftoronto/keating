@@ -1333,6 +1333,27 @@ function ChatContent() {
 
                 Learning usage
               </button>
+              <Link
+                to="/bench"
+                className={menuItemClass}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Model benchmark
+              </Link>
+              <Link
+                to="/coming-up"
+                className={menuItemClass}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Coming up
+              </Link>
+              <Link
+                to="/live"
+                className={menuItemClass}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Live sessions
+              </Link>
               <button
                 className={menuItemClass}
                 onClick={() => {

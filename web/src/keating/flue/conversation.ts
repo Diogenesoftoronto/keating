@@ -54,7 +54,17 @@ export function supportsAudioProviderRoute(model: Pick<Model<Api>, "api">, mimeT
 
 /** Pi and Flue currently type their inputs as text/image only. Audio stays audio
  * in saved messages; only the provider request copy gets native audio parts. */
-export function prepareAudioModelInput(messages: AgentMessage[], model: Pick<Model<Api>, "api">) {
+export function prepareAudioModelInput(messages: AgentMessage[], model: Pick<Model<Api>, "api"> & Partial<Pick<Model<Api>, "id" | "provider">>) {
+  if ((model.provider === "desktop-offline" && model.id === "litert-community/gemma-4-E4B-it-litert-lm")
+    || (model.provider === "browser" && /^onnx-community\/gemma-4-E[24]B-it-ONNX$/.test(model.id ?? ""))) {
+    // Local runtimes consume original audio bytes, not cloud request markers.
+    const prepared = messages.map(message => {
+      if (message.role !== "user" || !Array.isArray(message.content)) return message;
+      const content = (message.content as unknown[]).filter(part => !audioContent(part) || part.sendToModel !== false);
+      return { ...message, content } as AgentMessage;
+    });
+    return { messages: prepared, applyPayload: (payload: unknown) => payload };
+  }
   const attachments = new Map<string, KeatingAudioContent>();
   const prepared = messages.map((message) => {
     if (message.role !== "user" || !("content" in message) || !Array.isArray(message.content)) return message;

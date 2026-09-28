@@ -1,6 +1,6 @@
 {
   "name": "keating-mobile",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "private": true,
   "main": "expo-router/entry",
   "expo": {

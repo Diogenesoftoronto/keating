@@ -1,6 +1,6 @@
 # Keating LiteRT native module
 
-This local Expo module bundles LiteRT-LM 0.16.0 into Android/iOS builds. Model weights are downloaded separately from the pinned MiniCPM5 int4 URL in `src/lib/offline-model-contract.ts` (relative to the mobile project), checked with SHA-256, and retained in private storage excluded from device backups.
+This local Expo module bundles LiteRT-LM 0.16.0 into Android/iOS builds. MiniCPM5 int4 and Gemma 4 E4B weights are downloaded separately from their pinned URLs in `src/lib/offline-model-contract.ts` (relative to the mobile project), checked with SHA-256, and retained in private storage excluded from device backups.
 
 Local judgements use CPU candidate likelihood scoring through the official C API. Each decimal candidate gets a fresh session with the same rendered prompt; the pinned runtime's log likelihood is converted to nonnegative NLL. This shares the verified model and exclusive inference lease with the offline tutor. Local judgement selection and hosted network consent are separate Settings controls. Calibration binds the complete model checksum and `litert-0.16.0-cpu-candidate-nll-v1` scorer identity.
 
@@ -27,3 +27,12 @@ For iOS, the config plugin adds the local binary podspec, which pins the officia
 Downloads commit bounded byte ranges to disk, pause when backgrounded, and resume from the existing file length. Corrupt or incomplete files remain unusable and can be removed from Settings. Native file creation is scoped to the model directory, including Android's no-backup storage; inference only accepts model files inside that directory. Generation events and cancellation use request IDs. Images, audio, and unsupported binary documents fail before model loading.
 
 Native device checks still need to exercise an actual download, interrupted resume, offline generation, history, cancellation, and removal. The local deterministic tests cover those lifecycle boundaries with injected file/runtime implementations; they do not substitute for a device run.
+
+
+Gemma 4 E4B uses the full 3.66 GB LiteRT bundle, including vision and audio encoders. MiniCPM5 remains the smaller text-only default and the independent local judgement model. The two downloads have separate files, SHA checks, resumable progress and removal controls; selecting Gemma never changes the judgement calibration identity.
+
+The conservative Android profile targets the 2025 Pixel 10 (Tensor G5, 12 GB RAM): Gemma uses CPU with four threads, a 4,096 token context, 512 output tokens, disabled thinking and the pinned runtime's speculative decoding flag. The image budget is 280 visual tokens per image. GPU initialization alone is not proof that a driver can complete Gemma inference, so this profile does not guess GPU support or silently send requests to a hosted model. The iOS runtime keeps its GPU/CPU fallback but uses the same context/output/image budgets.
+
+Gemma accepts images and WAV recordings through the attachment picker. Documents exposes WAV when Gemma is selected; the microphone's Dictation control continues to use configured online transcription and says so. Full lesson history is limited to two images, four media attachments and 16 MiB of media before hydration. Text input plus system instructions is bounded separately. Oversized lessons are rejected with recovery instructions rather than silently truncated. PDF, video, speech output and live voice are not implemented by this native offline path.
+
+The download size is storage, not a guaranteed runtime memory measurement. Pixel execution and iOS native compilation still need real-device verification. Google publishes device-dependent memory results in the [Gemma LiteRT model card](https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm); its results do not validate Keating on every phone. Pixel specs: [Google Pixel 10](https://store.google.com/product/pixel_10_specs).

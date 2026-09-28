@@ -73,8 +73,18 @@ public final class KeatingLiteRTModule: Module {
     if engine != nil && enginePath == path { return }
     closeEngine()
     for backend in ["GPU", "CPU"] {
-      guard let settings = litert_lm_engine_settings_create(path, backend, nil, nil) else { continue }
+      let multimodal = path.contains("gemma4-")
+      let configured = multimodal
+        ? litert_lm_engine_settings_create(path, backend, "CPU", "CPU")
+        : litert_lm_engine_settings_create(path, backend, nil, nil)
+      guard let settings = configured else { continue }
       litert_lm_engine_settings_set_max_num_tokens(settings, 4096)
+      litert_lm_engine_settings_set_num_threads(settings, 4)
+      litert_lm_engine_settings_set_audio_num_threads(settings, 4)
+      if multimodal {
+        litert_lm_engine_settings_set_enable_speculative_decoding(settings, true)
+        litert_lm_engine_settings_set_max_num_images(settings, 2)
+      }
       litert_lm_engine_settings_set_cache_dir(settings, ":nocache")
       engine = litert_lm_engine_create(settings)
       litert_lm_engine_settings_delete(settings)
@@ -93,10 +103,23 @@ public final class KeatingLiteRTModule: Module {
       throw Exception(name: "E_MISSING_MODEL", description: "Download the offline tutor in Settings first.")
     }
     try initialize(file.path)
-    guard let messages = try JSONSerialization.jsonObject(with: Data(history.utf8)) as? [[String: String]],
-      let last = messages.last, last["role"] == "user",
-      messages.allSatisfy({ ["user", "assistant"].contains($0["role"] ?? "") && $0["content"] != nil }) else {
+    guard let messages = try JSONSerialization.jsonObject(with: Data(history.utf8)) as? [[String: Any]],
+      let last = messages.last, last["role"] as? String == "user",
+      messages.allSatisfy({ ["user", "assistant"].contains($0["role"] as? String ?? "") && $0["content"] != nil }) else {
       throw Exception(name: "E_MESSAGES", description: "Send a text message first.")
+    }
+    for message in messages {
+      if let parts = message["content"] as? [[String: Any]] {
+        for part in parts {
+          let type = part["type"] as? String ?? ""
+          guard type == "text" || (file.path.contains("gemma4-") && ["image", "audio"].contains(type)
+            && ((part["blob"] as? String)?.utf8.count ?? Int.max) <= 24 * 1024 * 1024) else {
+            throw Exception(name: "E_MEDIA", description: "Unsupported or oversized offline attachment.")
+          }
+        }
+      } else if !(message["content"] is String) {
+        throw Exception(name: "E_MESSAGES", description: "Invalid offline message.")
+      }
     }
     guard let config = litert_lm_conversation_config_create() else {
       throw Exception(name: "E_CONFIG", description: "Could not create the offline conversation.")
@@ -114,11 +137,11 @@ public final class KeatingLiteRTModule: Module {
       throw Exception(name: "E_CONFIG", description: "Could not configure the offline tutor.")
     }
     defer { litert_lm_thinking_config_delete(thinking) }
-    litert_lm_sampler_params_set_top_k(sampler, 40)
+    litert_lm_sampler_params_set_top_k(sampler, file.path.contains("gemma4-") ? 64 : 40)
     litert_lm_sampler_params_set_top_p(sampler, 0.95)
     litert_lm_sampler_params_set_temperature(sampler, Float(temperature))
     litert_lm_session_config_set_sampler_params(session, sampler)
-    litert_lm_session_config_set_max_output_tokens(session, 1024)
+    litert_lm_session_config_set_max_output_tokens(session, 512)
     litert_lm_conversation_config_set_session_config(config, session)
     litert_lm_conversation_config_set_system_message(config, try json([["type": "text", "text": system]]))
     litert_lm_conversation_config_set_messages(config, try json(Array(messages.dropLast())))
@@ -134,10 +157,15 @@ public final class KeatingLiteRTModule: Module {
     }
     let stream = LiteRTStream { [weak self] text in self?.sendEvent("onDelta", ["requestId": requestId, "text": text]) }
     let message = try json(last)
+    guard let mediaOptions = litert_lm_conversation_optional_args_create() else {
+      throw Exception(name: "E_CONFIG", description: "Could not configure offline media.")
+    }
+    if file.path.contains("gemma4-") { litert_lm_conversation_optional_args_set_visual_token_budget(mediaOptions, 280) }
+    defer { litert_lm_conversation_optional_args_delete(mediaOptions) }
     lock.lock()
     conversation = chat
     if cancelled { lock.unlock(); throw CancellationError() }
-    let status = litert_lm_conversation_send_message_stream(chat, message, "{\"enable_thinking\":false}", nil,
+    let status = litert_lm_conversation_send_message_stream(chat, message, "{\"enable_thinking\":false}", mediaOptions,
       keatingStreamCallback, Unmanaged.passUnretained(stream).toOpaque())
     lock.unlock()
     guard status == 0 else { throw Exception(name: "E_GENERATION", description: "The offline lesson may be too long. Start a new lesson or shorten your message.") }

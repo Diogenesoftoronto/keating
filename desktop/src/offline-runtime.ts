@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { mkdir, stat, open, rename, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, writeFile, stat, open, rename, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
 import { OFFLINE_MODEL, offlineRequest, offlineMessages, offlineLabelRequest, type OfflineLabelScores, type OfflineStatus, type KeatingOfflineBridge } from "./offline-contract.js";
@@ -54,6 +55,7 @@ export class OfflineRuntime implements KeatingOfflineBridge {
     executable: string;
     bundledModel?: string;
     model?: typeof OFFLINE_MODEL;
+    multimodal?: boolean;
     fetch?: typeof fetch;
     /** Deterministic availability boundary for lifecycle tests. Production probes the bundled executable. */
     probe?: () => Promise<void>;
@@ -159,6 +161,7 @@ export class OfflineRuntime implements KeatingOfflineBridge {
   }
   generate(value: unknown): Promise<string> {
     const input = offlineRequest(value);
+    if (input.media?.length && !this.options.multimodal) return Promise.reject(new Error("Choose Gemma 4 E4B for offline images and WAV recordings."));
     if (this.generation || this.scoring || this.removing || this.closed) return Promise.reject(new Error("Offline tutor is busy or stopping."));
     this.cancelled = false;
     this.generation = (async () => {
@@ -166,8 +169,18 @@ export class OfflineRuntime implements KeatingOfflineBridge {
       if (this.cancelled) throw new Error("Offline generation cancelled.");
       if (!this.available) throw new Error(this.error);
       if (!this.installed) throw new Error("Download the offline tutor in Settings before sending a message.");
-      const output = await this.run([this.bundled ? this.options.bundledModel! : this.path, String(input.maxTokens), String(input.temperature)], offlineMessages(input.prompt), 600000);
-      return responseText(output);
+      const mediaDirectory = input.media?.length ? await mkdtemp(join(tmpdir(), "keating-offline-media-")) : undefined;
+      try {
+        const media = await Promise.all((input.media ?? []).map(async (item, index) => {
+          const path = join(mediaDirectory!, `${index}.${item.type === "audio" ? "wav" : item.mimeType.split("/")[1]}`);
+          await writeFile(path, Buffer.from(item.data, "base64"), { mode: 0o600 });
+          return { turn: item.turn, type: item.type, path };
+        }));
+        const args = [this.bundled ? this.options.bundledModel! : this.path, String(input.maxTokens), String(input.temperature)];
+        if (this.options.multimodal) args.push("--multimodal");
+        const output = await this.run(args, offlineMessages(input.prompt, media), 600000);
+        return responseText(output);
+      } finally { if (mediaDirectory) await rm(mediaDirectory, { recursive: true, force: true }); }
     })().finally(() => { this.generation = undefined; });
     return this.generation;
   }

@@ -161,10 +161,11 @@ const desktopBridge: KeatingDesktopBridge = {
 contextBridge.exposeInMainWorld("keatingDesktop", desktopBridge);
 
 const offlineBridge: KeatingOfflineBridge = {
-  status: () => ipcRenderer.invoke("keating:offline:rpc", "status"),
-  download: () => ipcRenderer.invoke("keating:offline:rpc", "download"),
-  cancelDownload: () => ipcRenderer.invoke("keating:offline:rpc", "cancelDownload"),
-  remove: () => ipcRenderer.invoke("keating:offline:rpc", "remove"),
+  supportedModels: ["mlboydaisuke/MiniCPM5-2B-LiteRT", "litert-community/gemma-4-E4B-it-litert-lm", "prism-ml/Ternary-Bonsai-2-27B-gguf"],
+  status: (modelId) => ipcRenderer.invoke("keating:offline:rpc", "status", modelId),
+  download: (modelId) => ipcRenderer.invoke("keating:offline:rpc", "download", modelId),
+  cancelDownload: (modelId) => ipcRenderer.invoke("keating:offline:rpc", "cancelDownload", modelId),
+  remove: (modelId) => ipcRenderer.invoke("keating:offline:rpc", "remove", modelId),
   generate: (request) => ipcRenderer.invoke("keating:offline:rpc", "generate", request),
   cancelGeneration: () => ipcRenderer.invoke("keating:offline:rpc", "cancelGeneration"),
   scoreLabels: (request) => ipcRenderer.invoke("keating:offline:rpc", "scoreLabels", request),

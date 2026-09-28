@@ -14,7 +14,7 @@ export const PROVIDERS: readonly ProviderDefinition[] = [
   {
     id: "litert",
     label: "On this device",
-    description: "MiniCPM5 2B, text only. Optional 1.55 GB download in Offline tutor settings.",
+    description: "MiniCPM5 text tutor or Gemma 4 E4B with images and audio. Optional downloads in Offline tutor settings.",
     defaultModel: OFFLINE_MODEL.id,
     defaultBaseUrl: "",
     requiresKey: false,
