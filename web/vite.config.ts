@@ -476,6 +476,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Site and app upgrades must never reuse the other target's SPA shell.
+        // Workbox removes obsolete precaches; downloaded model caches remain.
+        cacheId: `keating-${webBuildTarget()}`,
         // Install the app shell, not every tutorial, poster, and source artwork.
         // Images are cached on demand below; visiting chat should not download
         // tens of megabytes of unrelated PNGs in the background.

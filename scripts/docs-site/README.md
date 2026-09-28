@@ -1,8 +1,13 @@
 # Keating learner documentation
 
 Independent static documentation for `https://docs.keating.help`. The working
-app remains at `https://keating.help/chat`; developer documentation remains at
+app remains at `https://chat.keating.help/`; developer documentation remains at
 `https://dev.keating.help`. The learner tutorials live here.
+
+Use the chat origin for application links, including `/usage`, `/bench`,
+`/courses`, `/coming-up`, `/review`, and `/live`. Its homepage opens the tutor
+directly; `/chat` remains a compatibility route. Keep product, downloads,
+pricing, and privacy links on `https://keating.help/`.
 
 ## Build and preview
 
@@ -209,6 +214,12 @@ reduced motion, visible search status, and a no-JavaScript message are included.
 
 Use service `keating-docs` with `scripts/docs-site` as its root. The coordinator
 owns deployment and the `docs.keating.help` domain, targeting port 8080.
+
+Deploy the documentation independently from the application:
+
+```sh
+rtk railway up scripts/docs-site --path-as-root --service keating-docs --environment production
+```
 
 `Staticfile`, `railpack.json`, and `railway.toml` match the developer site's
 native Railpack setup exactly. Bun 1.3.13 is pinned as a build-only package;

@@ -1,3 +1,5 @@
+import { AppLink as Link } from "../components/AppLink";
+import { applicationRootHref, WEBSITE_ORIGIN, APP_ORIGIN } from "../lib/hosted-navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePostHog } from "@posthog/react";
 import {
@@ -23,7 +25,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { DOCUMENTATION_URL } from "../lib/tutorial-links";
 import { BLOG_URL } from "../lib/blog-links";
 import { css, cx } from "../../styled-system/css";
@@ -777,7 +779,7 @@ function ChatContent() {
     title: "Keating Chat — Socratic AI Tutor Session",
     description:
       "Start a Socratic tutoring session with Keating. Diagnose what you know, reconstruct understanding from memory, and test transfer to new contexts.",
-    canonical: "https://keating.help/chat",
+    canonical: `${APP_ORIGIN}/`,
   });
   const posthog = usePostHog();
   const navigate = useNavigate();
@@ -1108,7 +1110,7 @@ function ChatContent() {
           )}
         </button>
         <Link
-          to="/"
+          to={applicationRootHref(window.location.hostname, import.meta.env.KEATING_WEB_BUILD_TARGET === "app")}
           className={cx(
             "chat-brand",
             css({
@@ -1122,7 +1124,7 @@ function ChatContent() {
               paddingBlock: "0.25rem",
             }),
           )}
-          aria-label="Go to Keating home"
+          aria-label="Go to Keating chat"
         >
           <img
 								src="/brand/logo-lockup-compact.avif"
@@ -1378,11 +1380,11 @@ function ChatContent() {
                 )}
               />
               <Link
-                to="/"
+                to={`${WEBSITE_ORIGIN}/`}
                 className={menuItemClass}
                 onClick={() => setMobileMenuOpen(false)}
               >
-                Home
+                Keating website
               </Link>
               <a
                 href={DOCUMENTATION_URL}
@@ -1495,8 +1497,7 @@ function ChatContent() {
             >
               {courseContext.activeCourseId && (
                 <Link
-                  to="/courses/$courseId"
-                  params={{ courseId: courseContext.activeCourseId }}
+                  to={`/courses/${encodeURIComponent(courseContext.activeCourseId)}`}
                   className={css({
                     fontWeight: 650,
                     textDecoration: "underline",

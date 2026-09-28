@@ -13,6 +13,13 @@ code and interactive Mermaid renderer are not included; code fences remain
 readable code. No application navigation, authentication, or provider runtime is
 needed by this service.
 
+Navigation opens the tutor at `https://chat.keating.help/` and sends the Keating
+brand and footer to the public landing page at `https://keating.help/`. The
+renderer also resolves application links in existing published posts to the
+chat origin, preserving their query strings and fragments. Article links stay
+on the blog; archived images and films stay on the website origin. This does
+not rewrite historical AT records.
+
 ## Build and run
 
 From this directory:

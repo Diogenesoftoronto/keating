@@ -237,7 +237,7 @@ The new retention and urgency fits measure agreement with Jev on source-grounded
 
 ## Try a lesson
 
-Open [keating.help](https://keating.help), set the preferences that matter to you, and bring a question you have been working on. Save an answer and request a review, or build a plan and examine it before starting. If you are developing with Keating, open the judgement diagnostics alongside that session and follow the request through.
+Open [chat.keating.help](https://chat.keating.help/), set the preferences that matter to you, and bring a question you have been working on. Save an answer and request a review, or build a plan and examine it before starting. If you are developing with Keating, open the judgement diagnostics alongside that session and follow the request through.
 
 For the CLI, install or update with npm:
 

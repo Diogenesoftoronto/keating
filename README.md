@@ -81,12 +81,17 @@ It is designed around five influences:
 
 ### From the Web
 
-Visit **[keating.help](https://keating.help)** to use Keating directly in your browser with:
+Visit **[chat.keating.help](https://chat.keating.help/)** to use Keating directly in your browser with:
 - Your own API keys (stored locally)
 - Local model inference via WebGPU (Gemma 4 E4B)
 - Optional Gemini 3.1 Flash Live speech from the speaker button in the chat header
 - Browser-only agent execution by default for the free surface
 - Clear fallback errors when a task needs native binaries, server-side secrets, durable compute, public inbound networking, or microVM isolation
+
+The application opens directly at `https://chat.keating.help/`. Learning usage,
+benchmarks, courses, review, and live sessions stay on that origin. The public
+landing page, downloads, and pricing remain at `https://keating.help/`; learner
+guides, the developer handbook, and the blog use their own documentation sites.
 
 ### From the Command Line
 

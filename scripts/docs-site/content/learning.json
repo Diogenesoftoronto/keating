@@ -11,7 +11,7 @@
           "Open chat and describe your goal, what you already know, and where you get stuck. A concrete goal gives Keating more to work with than a subject name alone. You can ask for an explanation, a lesson plan, a concept map, a quiz, or flashcards in ordinary language.",
           "For example: I understand fractions, but I get lost when solving equations. Help me solve a simple equation, then give me a new one to try without showing the answer."
         ],
-        "links": [{ "label": "Open Keating chat", "href": "https://keating.help/chat" }]
+        "links": [{ "label": "Open Keating chat", "href": "https://chat.keating.help/" }]
       },
       {
         "heading": "Choose a useful first prompt",
@@ -296,7 +296,7 @@
           "Courses brings lessons, source material, practice, notes, and assignments together. Open an existing course or follow the invitation link supplied by its organiser. Which editing and collaboration controls you see depends on your course role and permissions.",
           "If an access screen appears, read its message. Retry course access checks a failed connection again; Check account is shown when account access is needed. Hosted course workspaces may be unavailable in the running deployment. These controls do not establish that a hosted subscription is available to buy."
         ],
-        "links": [{ "label": "Open Courses", "href": "https://keating.help/courses" }]
+        "links": [{ "label": "Open Courses", "href": "https://chat.keating.help/courses" }]
       },
       {
         "heading": "Use a course to organise repeated study",
@@ -320,11 +320,11 @@
             "summary": "Assemble structured courses visually with the Course Builder, incorporating plans, decks, and assignments.",
             "shortcut": "/courses",
             "bullets": [
-              "Open https://keating.help/courses to view and create courses.",
+              "Open https://chat.keating.help/courses to view and create courses.",
               "Add modules, flashcard decks, and OpenUI practice activities.",
               "Track submission states and invite peer reviewers with role-based link invites."
             ],
-            "code": "https://keating.help/courses",
+            "code": "https://chat.keating.help/courses",
             "language": "Browser URL"
           },
           {
@@ -477,7 +477,7 @@
               "Click 'Start due review' to launch a flashcard session on due cards.",
               "Visual retention bars indicate mastery decay and next recommended review dates."
             ],
-            "code": "https://keating.help/coming-up",
+            "code": "https://chat.keating.help/coming-up",
             "language": "Browser URL"
           },
           {
@@ -598,7 +598,7 @@
               "Use Assess to record rubric ratings, qualitative verdicts, and evidence summaries.",
               "Export reviews to JSON for audit trails and offline study portfolios."
             ],
-            "code": "https://keating.help/review",
+            "code": "https://chat.keating.help/review",
             "language": "Browser URL",
             "video": {
               "src": "/assets/tapes/keating-surface-tour.mp4",
@@ -765,7 +765,7 @@
       {
         "heading": "Sessions are missing or local saving fails",
         "paragraphs": [
-          "Return to the same browser profile and https://keating.help/chat, then use Search sessions. A new browser profile or private window may have an empty local history. Do not clear site data as the first troubleshooting step: it can remove the records you are trying to recover.",
+          "Return to the same browser profile and https://chat.keating.help/, then use Search sessions. A new browser profile or private window may have an empty local history. Do not clear site data as the first troubleshooting step: it can remove the records you are trying to recover.",
           "If the storage persistence warning appears, choose Try again. Browser settings determine whether persistence is granted. If saving fails because storage is full, keep copies of important text and files, free device space without deleting Keating's site data, and retry the save.",
           "For a file attachment failure, read the message and use the offered Retry file or Retry files control. Check the file size and type. Scanned PDFs need readable text, and course submission attachments have a limit of 10 files and 25 MB per file."
         ],

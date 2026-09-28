@@ -5,7 +5,11 @@
 > Staging now snapshots the current checkout on `devenv up`; Railway runs the
 > hourly promotion check independently of the developer's computer.
 
-## Current status and remaining verification
+## September 24 snapshot and remaining verification
+
+This snapshot records the initial staging checks. Section D records the later
+DNS/TLS and production separation; its routing contract describes the current
+direct application entry.
 
 [Staging chat](https://keating-staging.up.railway.app/chat) is deployed.
 Deployment `7fe59e0f-300f-43f5-95a5-56bf04c0302f` reached Railway `SUCCESS` and
@@ -40,8 +44,8 @@ Outstanding deployment work:
   start command and hourly schedule were restored after the diagnostic. Do not
   interpret absence from `railway variable list` as absence of a sealed variable:
   query variable metadata or verify inside the container.
-- Complete the `chat.keating.help` DNS records below and verify TLS, root
-  redirect, sign-in, and shared content on the new origin.
+- DNS and TLS for `chat.keating.help` were subsequently completed as recorded
+  below. Verify direct root rendering, sign-in, and shared content on that origin.
 - Validate a clean snapshot's full eight-hour promotion path, production health,
   and retained-archive rollback before calling the promotion system operational.
 
@@ -197,9 +201,15 @@ Both provider gates include `https://keating-staging.up.railway.app` and
 Authorization-page rendering alone does not prove either gate. The deployed CORS
 204 check is confirmed; PKCE/DPoP token exchange and inference remain to be tried.
 
-The application redirects `/` on `chat.keating.help` to `/chat`. Checkout return
-URLs use the current browser origin; server validation allows apex, chat, and
-explicit `NOTORGANIC_CHECKOUT_RETURN_ORIGINS`. Canonicals stay on the apex.
+The application renders the tutor directly at `https://chat.keating.help/`.
+`/chat` remains a compatibility entry, preserving query strings and fragments.
+Application links for usage, benchmarks, courses, review, and live sessions
+stay on the chat origin. The apex homepage renders the public landing page;
+its navigation sends application actions to chat and keeps product, downloads,
+pricing, and legal pages on the apex. Learner documentation, the developer
+handbook, and the blog retain their dedicated origins. Checkout return URLs use
+the current browser origin; server validation allows apex, chat, and explicit
+`NOTORGANIC_CHECKOUT_RETURN_ORIGINS`. Public page canonicals stay on the apex.
 
 The production custom domain uses these DNS records at `keating.help`:
 
@@ -219,8 +229,8 @@ judgement remain separate checks.
 
 The subsequent production deployment `efb8427e-d4b1-4be4-ae41-ddae40e90b64`
 separated the two hosted outputs. The existing chat domain was updated to port
-8081 without replacing its certificate binding. HTTPS `/` now returns a 307 to
-`/chat`; `/usage` and `/bench` remain application routes. The benchmark page was
+8081 without replacing its certificate binding. That deployment returned a 307
+from HTTPS `/` to `/chat`; `/usage` and `/bench` remain application routes. The benchmark page was
 verified in a browser. A landing video returns 404 on chat and 200 on the apex.
 Sign-in and hosted inference still require their own live checks.
 
@@ -228,7 +238,9 @@ Sign-in and hosted inference still require their own live checks.
 
 - Try the deployed staging chat, complete real sign-in, and send a hosted message.
 - Authorize `judgement:evaluate` and obtain a real hosted judgement response.
-- Verify chat-domain DNS/TLS, `/` redirect, checkout return origin, and shares/courses.
+- Verify chat-domain DNS/TLS, direct `/` tutor rendering, `/chat` compatibility,
+  apex landing rendering, navigation across both origins, checkout return origin,
+  and shares/courses.
 - Provision both scheduler tokens and verify the clean-candidate promotion cycle.
 - Exercise manual promotion, retained-archive rollback, and lease recovery using
   the hosted state; keep dirty previews ineligible throughout.

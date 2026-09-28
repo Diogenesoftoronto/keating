@@ -42,7 +42,7 @@ type Article = Omit<Page, "sections"> & { sections: (Section & { id: string })[]
 
 const root = import.meta.dir;
 const origin = "https://docs.keating.help";
-const app = "https://keating.help/chat";
+const app = "https://chat.keating.help/";
 const developerDocs = "https://dev.keating.help";
 const contentFiles = ["getting-started.json", "learning.json"];
 const reserved = new Set(["assets", "index", "404", "search", "robots", "sitemap", "favicon"]);

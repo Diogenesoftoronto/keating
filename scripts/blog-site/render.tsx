@@ -5,9 +5,11 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import { blueskyPostUrl, type AtprotoBlogFeed, type AtprotoBlogPost } from "../../web/src/keating/standard-site";
+import { APP_ORIGIN, WEBSITE_ORIGIN, hostedNavigationHref } from "../../web/src/lib/hosted-navigation";
+
+export { APP_ORIGIN };
 
 export const BLOG_ORIGIN = "https://blog.keating.help";
-export const APP_ORIGIN = "https://keating.help";
 
 export function documentUrl(feed: AtprotoBlogFeed, post: AtprotoBlogPost): string {
   return `${feed.publication.url.replace(/\/$/, "")}${post.path}`;
@@ -46,13 +48,13 @@ function Layout({ title, description, canonical, feed, post, children }: {
   </head><body>
     <a className="skip" href="#main">Skip to content</a>
     <header className="site-header"><nav aria-label="Main navigation">
-      <a className="brand" href={APP_ORIGIN}><img src="/assets/logo-lockup-compact.avif" alt="Keating" width="144" height="30" /></a>
-      <div className="nav-links"><a href="/" aria-current="page">[BLOG]</a><a href="https://docs.keating.help">[DOCS]</a><a href="https://dev.keating.help">[DEVELOPERS]</a><a className="open-app" href={`${APP_ORIGIN}/chat`}>OPEN KEATING ↗</a>
+      <a className="brand" href={WEBSITE_ORIGIN}><img src="/assets/logo-lockup-compact.avif" alt="Keating" width="144" height="30" /></a>
+      <div className="nav-links"><a href="/" aria-current="page">[BLOG]</a><a href="https://docs.keating.help">[DOCS]</a><a href="https://dev.keating.help">[DEVELOPERS]</a><a className="open-app" href={`${APP_ORIGIN}/`}>OPEN KEATING ↗</a>
         <button type="button" className="theme-toggle" aria-label="Switch color theme" hidden>◐</button>
       </div>
     </nav></header>
     <main id="main" tabIndex={-1}>{children}</main>
-    <footer className="site-footer"><a href={APP_ORIGIN}>Keating</a><span>Carpe diem.</span><a href="https://github.com/Diogenesoftoronto/keating">GitHub ↗</a></footer>
+    <footer className="site-footer"><a href={WEBSITE_ORIGIN}>Keating</a><span>Carpe diem.</span><a href="https://github.com/Diogenesoftoronto/keating">GitHub ↗</a></footer>
   </body></html>;
 }
 
@@ -81,16 +83,19 @@ export function renderIndex(feed: AtprotoBlogFeed, query = "", selectedTag = "")
   </Layout>);
 }
 
-// Posts can still reference assets and app pages on keating.help. Keep article
-// links on this site, resolve content assets against their original app origin.
+// Resolve archived assets against the website; move application links to chat
+// without changing public product destinations or the published AT records.
 export function contentUrl(value: string, key: string, post: AtprotoBlogPost): string {
   const safe = defaultUrlTransform(value);
   if (!safe || safe.startsWith("#")) return safe;
   let url: URL;
-  try { url = new URL(safe, `${APP_ORIGIN}${post.path}`); }
+  try { url = new URL(safe, `${WEBSITE_ORIGIN}${post.path}`); }
   catch { return ""; }
-  if (key === "href" && [APP_ORIGIN, BLOG_ORIGIN].includes(url.origin) && /^\/blog(?:\/|$)/.test(url.pathname)) {
+  if (key === "href" && [WEBSITE_ORIGIN, BLOG_ORIGIN].includes(url.origin) && /^\/blog(?:\/|$)/.test(url.pathname)) {
     return `${url.pathname}${url.search}${url.hash}`;
+  }
+  if (key === "href" && [WEBSITE_ORIGIN, APP_ORIGIN].includes(url.origin)) {
+    return new URL(hostedNavigationHref(`${url.pathname}${url.search}${url.hash}`, url.hostname, url.origin === APP_ORIGIN), url.origin).toString();
   }
   return url.toString();
 }

@@ -29,7 +29,7 @@ export function Landing() {
   });
   return (
     <div className="retro-layout retro-page landing-page">
-      <Nav primaryAction="download" />
+      <Nav />
       <main ref={root}>
         <section id="seen-this-before" className="landing-overload-act" aria-labelledby="landing-title">
           <div className="landing-wrap landing-opening">
