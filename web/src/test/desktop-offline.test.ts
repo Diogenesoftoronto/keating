@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from "bun:test";
 import { desktopOfflineStream } from "../keating/desktop-offline-stream";
-import { DESKTOP_OFFLINE_MODEL, installedDesktopOfflineModel, type DesktopOfflineBridge } from "../lib/desktop-offline";
+import { DESKTOP_OFFLINE_MODEL, DESKTOP_GEMMA_OFFLINE_MODEL, DESKTOP_BONSAI_OFFLINE_MODEL, installedDesktopOfflineModels, installedDesktopOfflineModel, type DesktopOfflineBridge } from "../lib/desktop-offline";
 import { getProviderApiKey, resolveAvailableChatModel } from "../lib/provider-models";
 
 const originalWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
@@ -53,4 +53,38 @@ test("pre-aborted requests do not start native generation", async () => {
 	const controller = new AbortController(); controller.abort();
 	const result = await desktopOfflineStream({ messages: [] }, { signal: controller.signal }).result();
 	expect(result.stopReason).toBe("aborted"); expect(called).toBe(false);
+});
+
+
+test("Gemma is offered only by capable desktop bridges and its identity reaches native media inference", async () => {
+  bridge();
+  expect(await installedDesktopOfflineModels()).toEqual([DESKTOP_OFFLINE_MODEL]);
+  let request: Parameters<DesktopOfflineBridge["generate"]>[0] | undefined;
+  bridge({ supportedModels: [DESKTOP_OFFLINE_MODEL.id, DESKTOP_GEMMA_OFFLINE_MODEL.id], generate: async input => { request = input; return "Red."; } });
+  expect(await installedDesktopOfflineModels()).toEqual([DESKTOP_OFFLINE_MODEL, DESKTOP_GEMMA_OFFLINE_MODEL]);
+  const stream = desktopOfflineStream({ messages: [{ role: "user", timestamp: 1, content: [{ type: "text", text: "What colour?" }, { type: "image", data: "aGk=", mimeType: "image/png" }] }] }, undefined, DESKTOP_GEMMA_OFFLINE_MODEL);
+  const result = await stream.result();
+  expect(result.model).toBe(DESKTOP_GEMMA_OFFLINE_MODEL.id);
+  expect(request?.modelId).toBe(DESKTOP_GEMMA_OFFLINE_MODEL.id);
+  expect(request?.media).toEqual([{ turn: 0, type: "image", data: "aGk=", mimeType: "image/png" }]);
+  expect(JSON.parse(request!.prompt).conversation[0].content).toBe("What colour?");
+});
+
+
+test("Gemma-only installation supplies an offline first-run fallback", async () => {
+  bridge({ supportedModels: [DESKTOP_OFFLINE_MODEL.id, DESKTOP_GEMMA_OFFLINE_MODEL.id], status: async id => ({ available: true, installed: id === DESKTOP_GEMMA_OFFLINE_MODEL.id, downloading: false, downloadedBytes: 0, totalBytes: 0 }) });
+  expect(await installedDesktopOfflineModel()).toEqual(DESKTOP_GEMMA_OFFLINE_MODEL);
+  expect(await resolveAvailableChatModel({ ...DESKTOP_OFFLINE_MODEL, provider: "openai", id: "missing-credentials" })).toEqual(DESKTOP_GEMMA_OFFLINE_MODEL);
+});
+
+
+test("Bonsai selection routes to its exact native runtime with compact output and image bytes", async () => {
+  let request: Parameters<DesktopOfflineBridge["generate"]>[0] | undefined;
+  bridge({ supportedModels: [DESKTOP_BONSAI_OFFLINE_MODEL.id], status: async id => ({ available: true, installed: id === DESKTOP_BONSAI_OFFLINE_MODEL.id, downloading: false, downloadedBytes: 0, totalBytes: 0 }), generate: async input => { request = input; return "Red."; } });
+  expect(await installedDesktopOfflineModels()).toEqual([DESKTOP_BONSAI_OFFLINE_MODEL]);
+  const stream = desktopOfflineStream({ messages: [{ role: "user", timestamp: 1, content: [{ type: "image", data: "aGk=", mimeType: "image/png" }] }] }, undefined, DESKTOP_BONSAI_OFFLINE_MODEL);
+  expect((await stream.result()).model).toBe(DESKTOP_BONSAI_OFFLINE_MODEL.id);
+  expect(request?.modelId).toBe(DESKTOP_BONSAI_OFFLINE_MODEL.id);
+  expect(request?.maxTokens).toBe(512);
+  expect(request?.media).toEqual([{ turn: 0, type: "image", data: "aGk=", mimeType: "image/png" }]);
 });

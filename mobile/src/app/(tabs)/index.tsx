@@ -166,6 +166,7 @@ export default function TutorScreen() {
     setAttachmentError(null);
     try {
       const added = await pickComposerAttachments({
+        allowAudio: state.providerSettings.provider === "litert" && state.providerSettings.model === "gemma-4-e4b",
         kind,
         remainingSlots: MAX_COMPOSER_ATTACHMENTS - attachments.length,
         existingBytes: attachments.reduce((total, attachment) => total + attachment.size, 0),

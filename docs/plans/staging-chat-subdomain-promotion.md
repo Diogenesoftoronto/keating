@@ -217,6 +217,13 @@ returned 200 for `https://chat.keating.help/chat` and `https://keating.help/`.
 This verifies DNS/TLS and HTTP serving; browser redirect, sign-in, and hosted
 judgement remain separate checks.
 
+The subsequent production deployment `efb8427e-d4b1-4be4-ae41-ddae40e90b64`
+separated the two hosted outputs. The existing chat domain was updated to port
+8081 without replacing its certificate binding. HTTPS `/` now returns a 307 to
+`/chat`; `/usage` and `/bench` remain application routes. The benchmark page was
+verified in a browser. A landing video returns 404 on chat and 200 on the apex.
+Sign-in and hosted inference still require their own live checks.
+
 ## Completion checks
 
 - Try the deployed staging chat, complete real sign-in, and send a hosted message.

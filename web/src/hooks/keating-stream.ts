@@ -1,3 +1,4 @@
+import { browserInputMessages } from "../lib/browser-model-input";
 import {
 	createAssistantMessageEventStream,
 	type Api,
@@ -40,7 +41,7 @@ import {
 // prefer applyProviderWebSearch so capability negotiation stays centralized.
 export { applyGoogleSearchGrounding, applyProviderWebSearch };
 import { getProviderApiKey } from "../lib/provider-models";
-import { localModel, DEFAULT_BROWSER_MODEL_ID } from "../stores/local-model";
+import { localModel, DEFAULT_BROWSER_MODEL_ID, getBrowserModel } from "../stores/local-model";
 import { DESKTOP_OFFLINE_PROVIDER } from "../lib/desktop-offline";
 import { desktopOfflineStream } from "../keating/desktop-offline-stream";
 
@@ -250,6 +251,8 @@ function createBrowserStreamFn() {
 					return;
 				}
 
+				const browserMessages = browserInputMessages(context, Boolean(getBrowserModel(modelId)?.kind === "multimodal"));
+
 				// Selecting a different browser model has to swap the loaded weights
 				// before any tokens are generated.
 				if (localModel.getState().modelId !== modelId || !localModel.getState().loaded) {
@@ -290,7 +293,7 @@ function createBrowserStreamFn() {
 
 				const response = await localModel.generate(
 					fullPrompt,
-					{ max_length: options?.maxTokens ?? 1024, temperature: options?.temperature ?? 0.7 },
+					{ max_length: Math.min(options?.maxTokens ?? 512, 512), temperature: options?.temperature ?? 0.7, messages: browserMessages },
 					(token: string) => {
 						const textBlock = partialMessage.content[0];
 						if (textBlock.type === "text") textBlock.text += token;
@@ -355,7 +358,7 @@ export function normalizeProviderStreamOptions(
 }
 
 export async function hybridStreamFn(model: Model<Api>, context: Context, options?: KeatingStreamOptions) {
-	if (model.provider === DESKTOP_OFFLINE_PROVIDER) return desktopOfflineStream(context, options);
+	if (model.provider === DESKTOP_OFFLINE_PROVIDER) return desktopOfflineStream(context, options, model);
 	const { hostedWebSearch = true, ...requestOptions } = options ?? {};
 	const cleanOptions = normalizeProviderStreamOptions(model, requestOptions);
 	captureSessionModelContext(model, context);

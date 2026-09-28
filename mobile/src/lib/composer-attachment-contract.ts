@@ -12,7 +12,7 @@ const TEXT_EXTENSIONS = new Set([
 ]);
 
 const MIME_BY_EXTENSION: Record<string, string> = {
-  pdf: "application/pdf", json: "application/json", jsonl: "application/x-ndjson",
+  wav: "audio/wav", pdf: "application/pdf", json: "application/json", jsonl: "application/x-ndjson",
   csv: "text/csv", tsv: "text/tab-separated-values", md: "text/markdown",
   markdown: "text/markdown", xml: "application/xml", html: "text/html", css: "text/css",
   js: "text/javascript", jsx: "text/javascript", ts: "text/typescript", tsx: "text/typescript",
@@ -31,23 +31,25 @@ export function attachmentMimeType(name: string, reportedType: string): string {
 }
 
 export function attachmentEncoding(attachment: Pick<ChatAttachment, "kind" | "name" | "mimeType">): "text" | "base64" {
-  return attachment.kind === "image" || attachment.mimeType === "application/pdf" ? "base64" : "text";
+  return attachment.kind === "image" || attachment.mimeType === "application/pdf" || attachment.mimeType.startsWith("audio/") ? "base64" : "text";
 }
 
 export function validateComposerAttachment(
   file: { name: string; type: string; size: number },
   requestedKind: ChatAttachmentKind,
+  allowAudio = false,
 ): { kind: ChatAttachmentKind; mimeType: string } {
   const mimeType = attachmentMimeType(file.name, file.type);
   const extension = extensionOf(file.name);
   const isImage = mimeType.startsWith("image/");
+  const isAudio = allowAudio && ["audio/wav", "audio/x-wav", "audio/wave"].includes(mimeType);
   const isPdf = mimeType === "application/pdf" || extension === "pdf";
   const isText = mimeType.startsWith("text/")
     || TEXT_EXTENSIONS.has(extension)
     || ["application/json", "application/xml", "application/yaml", "application/toml", "application/x-ndjson"].includes(mimeType);
 
   if (requestedKind === "image" && !isImage) throw new Error(`${file.name} is not an image.`);
-  if (requestedKind === "document" && !isPdf && !isText) {
+  if (requestedKind === "document" && !isPdf && !isText && !isAudio) {
     throw new Error(`${file.name} is not a readable text or PDF document.`);
   }
 

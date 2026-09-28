@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.3] - 2026-09-28
+
+### Added
+- Gemma 4 E4B as a native offline tutor alongside MiniCPM5, with verified model downloads and image/WAV input through LiteRT.
+- Bonsai 2 27B as a desktop offline option with its pinned Prism runtime, verified weights and image projector, cancellable generation, and model unloading when switching tutors.
+- Direct chat-menu links to benchmarks, upcoming learning, and live sessions.
+
+### Changed
+- Serve separate app and landing builds in production; keep usage, benchmarks, courses, and learner tools on the chat hostname.
+- Bound Android offline context, output, CPU threads, and attachment memory for a Pixel 10 baseline; keep local model downloads explicit.
+
+### Fixed
+- Retain the benchmark route in bundled app builds.
+
 ## [4.0.2] - 2026-09-28
 
 ### Added
@@ -1004,7 +1018,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pi agent integration
 - Teaching policy system
 
-[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v4.0.1...HEAD
+[Unreleased]: https://github.com/Diogenesoftoronto/keating/compare/v4.0.3...HEAD
+[4.0.3]: https://github.com/Diogenesoftoronto/keating/compare/v4.0.2...v4.0.3
+[4.0.2]: https://github.com/Diogenesoftoronto/keating/compare/v4.0.1...v4.0.2
 [4.0.1]: https://github.com/Diogenesoftoronto/keating/compare/v4.0.0...v4.0.1
 [3.11.0]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.2...v3.11.0
 [3.10.2]: https://github.com/Diogenesoftoronto/keating/compare/v3.10.1...v3.10.2

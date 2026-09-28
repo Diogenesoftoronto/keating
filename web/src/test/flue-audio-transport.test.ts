@@ -48,3 +48,12 @@ it("handles provider-joined text without leaving attachment markers in requests"
  expect(payload.messages[0].content.at(-1)).toEqual({ type: "input_audio", input_audio: { data: recording.data, format: "wav" } });
  expect(JSON.stringify(payload)).not.toContain("keating-audio-");
 });
+
+
+it("native Gemma receives audio bytes without cloud payload markers", () => {
+  const original = [{ role: "user", content: [{ type: "audio", data: "aGk=", mimeType: "audio/wav" }], timestamp: 1 }] as any;
+  const input = prepareAudioModelInput(original, { api: "openai-completions", provider: "desktop-offline", id: "litert-community/gemma-4-E4B-it-litert-lm" });
+  expect(input.messages).toEqual(original);
+  expect(input.applyPayload({ unchanged: true })).toEqual({ unchanged: true });
+  expect(prepareAudioModelInput([{ ...original[0], content: [{ ...original[0].content[0], mimeType: "audio/webm" }] }], { api: "openai-completions", provider: "desktop-offline", id: "litert-community/gemma-4-E4B-it-litert-lm" }).messages[0]).toHaveProperty("content");
+});

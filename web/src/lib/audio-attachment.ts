@@ -21,7 +21,7 @@ export function encodeMonoPcm16Wav(samples: Float32Array, sampleRate = TARGET_SA
 }
 
 /** Keep provider-supported WAV/MP3; normalize browser recordings and other audio to mono 16 kHz WAV. */
-export async function prepareAudioAttachment(file: File): Promise<File> {
+export async function prepareAudioAttachment(file: File, options: { forceWav?: boolean } = {}): Promise<File> {
 	if (file.size > MAX_AUDIO_ATTACHMENT_BYTES) throw new Error("Audio attachments must be 25 MB or smaller.");
 	if (file.size === 0) throw new Error("The audio file is empty. Record or choose audio before attaching it.");
 	const mime = file.type.toLowerCase().split(";")[0].trim();
@@ -29,7 +29,7 @@ export async function prepareAudioAttachment(file: File): Promise<File> {
 	const normalizedMime = ["audio/wav", "audio/wave", "audio/x-wav", "audio/vnd.wave"].includes(mime) || extension === "wav"
 		? "audio/wav"
 		: ["audio/mpeg", "audio/mp3", "audio/x-mp3"].includes(mime) || extension === "mp3" ? "audio/mpeg" : undefined;
-	if (normalizedMime) return file.type === normalizedMime ? file : new File([file], file.name, { type: normalizedMime, lastModified: file.lastModified });
+	if (normalizedMime && !(options.forceWav && normalizedMime !== "audio/wav")) return file.type === normalizedMime ? file : new File([file], file.name, { type: normalizedMime, lastModified: file.lastModified });
 	if (typeof AudioContext === "undefined" || typeof OfflineAudioContext === "undefined") throw new Error("This browser cannot convert this audio format. Attach a WAV or MP3 file instead.");
 	let context: AudioContext | undefined;
 	try {

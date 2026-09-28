@@ -13,6 +13,7 @@ export interface PickComposerAttachmentsOptions {
   kind: ChatAttachmentKind;
   remainingSlots: number;
   existingBytes: number;
+  allowAudio?: boolean;
 }
 
 function safeFileName(name: string): string {
@@ -24,11 +25,12 @@ export async function pickComposerAttachments({
   kind,
   remainingSlots,
   existingBytes,
+  allowAudio = false,
 }: PickComposerAttachmentsOptions): Promise<ChatAttachment[]> {
   if (remainingSlots <= 0) throw new Error(`You can attach up to ${MAX_COMPOSER_ATTACHMENTS} files.`);
   const mimeTypes = kind === "image"
     ? "image/*"
-    : ["text/*", "application/pdf", "application/json", "application/xml", "application/yaml"];
+    : ["text/*", "application/pdf", "application/json", "application/xml", "application/yaml", ...(allowAudio ? ["audio/wav", "audio/x-wav"] : [])];
   const result = remainingSlots > 1
     ? await File.pickFileAsync({ multipleFiles: true, mimeTypes })
     : await File.pickFileAsync({ multipleFiles: false, mimeTypes });
@@ -38,7 +40,7 @@ export async function pickComposerAttachments({
     throw new Error(`Choose no more than ${remainingSlots} more attachment${remainingSlots === 1 ? "" : "s"}.`);
   }
 
-  const validated = picked.map((file) => ({ file, ...validateComposerAttachment(file, kind) }));
+  const validated = picked.map((file) => ({ file, ...validateComposerAttachment(file, kind, allowAudio) }));
   const totalBytes = existingBytes + validated.reduce((total, entry) => total + entry.file.size, 0);
   if (totalBytes > MAX_TOTAL_ATTACHMENT_BYTES) {
     throw new Error("Attachments can total up to 16 MB. Remove a file or choose smaller ones.");

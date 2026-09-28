@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
     puts("keating-litert-0.16.0");
     return 0;
   }
-  if (argc != 4) { fputs("Invalid native argument count.\n", stderr); return 2; }
+  if (argc != 4 && !(argc == 5 && strcmp(argv[4], "--multimodal") == 0)) { fputs("Invalid native argument count.\n", stderr); return 2; }
 #ifndef _WIN32
   // Some process hosts (including Bun) inherit nonblocking pipe descriptors.
   int flags = fcntl(STDIN_FILENO, F_GETFL);
@@ -39,12 +39,12 @@ int main(int argc, char **argv) {
   char *turn = strchr(history, '\n');
   if (!turn) { fputs("Missing user turn frame.\n", stderr); return 2; }
   *turn++ = '\0';
-  LiteRtLmEngineSettings *settings = litert_lm_engine_settings_create(argv[1], "cpu", NULL, NULL);
+  LiteRtLmEngineSettings *settings = litert_lm_engine_settings_create(argv[1], "cpu", argc == 5 ? "cpu" : NULL, argc == 5 ? "cpu" : NULL);
   if (!settings) return 3;
   litert_lm_engine_settings_set_max_num_tokens(settings, 8192);
   LiteRtLmEngine *engine = litert_lm_engine_create(settings);
   litert_lm_engine_settings_delete(settings);
-  if (!engine) { fputs("LiteRT could not initialize MiniCPM. Check available memory.\n", stderr); return 3; }
+  if (!engine) { fputs("LiteRT could not initialize the offline model. Check available memory.\n", stderr); return 3; }
   LiteRtLmSessionConfig *session = litert_lm_session_config_create();
   litert_lm_session_config_set_max_output_tokens(session, atoi(argv[2]));
   float temperature = (float)atof(argv[3]);
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
   // implements deterministic selection without the unsupported Greedy enum.
   LiteRtLmSamplerParams *sampler = litert_lm_sampler_params_create(kLiteRtLmSamplerTypeTopP);
   litert_lm_sampler_params_set_temperature(sampler, temperature == 0 ? 1.0f : temperature);
-  litert_lm_sampler_params_set_top_k(sampler, temperature == 0 ? 1 : 40);
+  litert_lm_sampler_params_set_top_k(sampler, temperature == 0 ? 1 : argc == 5 ? 64 : 40);
   litert_lm_sampler_params_set_top_p(sampler, 0.95f);
   litert_lm_session_config_set_sampler_params(session, sampler);
   LiteRtLmConversationConfig *config = litert_lm_conversation_config_create();
@@ -64,12 +64,15 @@ int main(int argc, char **argv) {
   litert_lm_thinking_config_set_thinking_token_budget(thinking, 0);
   litert_lm_conversation_config_set_thinking_config(config, thinking);
   LiteRtLmConversation *conversation = litert_lm_conversation_create(engine, config);
-  LiteRtLmJsonResponse *response = conversation ? litert_lm_conversation_send_message(conversation, turn, NULL, NULL) : NULL;
+  LiteRtLmConversationOptionalArgs *optional = litert_lm_conversation_optional_args_create();
+  if (argc == 5) litert_lm_conversation_optional_args_set_visual_token_budget(optional, 280);
+  LiteRtLmJsonResponse *response = conversation ? litert_lm_conversation_send_message(conversation, turn, NULL, optional) : NULL;
   const char *json = response ? litert_lm_json_response_get_string(response) : NULL;
   int result = json ? 0 : 4;
   if (json) puts(json);
   else fputs("LiteRT could not generate a response. Try a shorter conversation.\n", stderr);
   if (response) litert_lm_json_response_delete(response);
+  litert_lm_conversation_optional_args_delete(optional);
   if (conversation) litert_lm_conversation_delete(conversation);
   litert_lm_thinking_config_delete(thinking);
   litert_lm_conversation_config_delete(config);

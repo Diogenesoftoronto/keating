@@ -2,12 +2,24 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import { Alert, AppState, StyleSheet, Text, View } from "react-native";
 import { Button } from "./Buttons";
 import { useKeatingTheme, spacing } from "../constants/theme";
-import { offlineDownload, removeOfflineModel } from "../lib/offline-model";
-import { OFFLINE_MODEL } from "../lib/offline-model-contract";
+import { offlineDownloadFor, removeOfflineModel } from "../lib/offline-model";
+import { OFFLINE_MODEL, OFFLINE_MODELS, type OfflineModelSpec } from "../lib/offline-model-contract";
+
+import { useKeating } from "../state/KeatingProvider";
+import { BUILT_IN_MODEL_CATALOG } from "../lib/model-catalog";
 
 export function OfflineTutorSettings({ selected, onUse, disabled = false }: {
   selected: boolean; onUse: () => void; disabled?: boolean;
 }) {
+  const { state: appState, selectProviderModel } = useKeating();
+  return <View style={styles.root}>{OFFLINE_MODELS.map(model => <OfflineTutorRow key={model.id} model={model}
+    selected={selected && appState.providerSettings.model === model.id} disabled={disabled} onUse={() => {
+      if (model.id === OFFLINE_MODEL.id) onUse();
+      selectProviderModel(BUILT_IN_MODEL_CATALOG.find(entry => entry.provider === "litert" && entry.id === model.id)!);
+    }} />)}</View>;
+}
+function OfflineTutorRow({ model, selected, onUse, disabled }: { model: OfflineModelSpec; selected: boolean; onUse: () => void; disabled: boolean }) {
+  const offlineDownload = offlineDownloadFor(model.id);
   const { colors, type } = useKeatingTheme();
   const state = useSyncExternalStore(offlineDownload.subscribe, offlineDownload.snapshot);
   const [busy, setBusy] = useState(false);
@@ -26,15 +38,15 @@ export function OfflineTutorSettings({ selected, onUse, disabled = false }: {
   const downloading = state.phase === "downloading";
   const verifying = state.phase === "verifying";
   const ready = state.phase === "ready";
-  const progress = Math.min(100, Math.floor(state.bytes / OFFLINE_MODEL.bytes * 100));
+  const progress = Math.min(100, Math.floor(state.bytes / model.bytes * 100));
   const muted = { ...type.body, color: colors.textMuted };
   return (
     <View style={styles.root}>
-      <Text style={{ ...type.label, color: colors.text }}>{OFFLINE_MODEL.name} · Text only</Text>
+      <Text style={{ ...type.label, color: colors.text }}>{model.name} · {model.id === OFFLINE_MODEL.id ? "Text only" : "Text, images and audio"}</Text>
       <Text style={muted}>
-        Download 1.55 GB once to chat without an account or internet. Kept through app updates; you can remove it here. Wi-Fi recommended.
+        Download {(model.bytes / 1e9).toFixed(2)} GB once to chat without an account or internet. Kept through app updates; you can remove it here. Wi-Fi recommended.
       </Text>
-      <Text style={muted}>Images need a vision model. Dictation uses online transcription when an OpenAI or Google key is configured. Type messages for fully offline use.</Text>
+      <Text style={muted}>{model.id === OFFLINE_MODEL.id ? "Images need a vision model." : "Attach images with Images and WAV audio with Documents for Gemma to understand them on this device. Up to two images and 16 MiB of media per lesson. It needs more memory; try MiniCPM5 if loading fails."} Dictation uses online transcription when an OpenAI or Google key is configured. Type messages for fully offline use.</Text>
       {state.phase === "unavailable" ? (
         <Text accessibilityRole="alert" style={muted}>{state.error ? "Choose a configured online model to chat on this device." : "Install the native Keating app to use the offline tutor. Expo Go and the mobile web preview do not include LiteRT."}</Text>
       ) : (
@@ -47,10 +59,10 @@ export function OfflineTutorSettings({ selected, onUse, disabled = false }: {
               <View style={[styles.track, { backgroundColor: colors.border }]}>
                 <View style={[styles.fill, { backgroundColor: colors.primary, width: `${progress}%` }]} />
               </View>
-              <Text style={muted}>{(state.bytes / 1e9).toFixed(2)} / 1.55 GB ({progress}%) saved</Text>
+              <Text style={muted}>{(state.bytes / 1e9).toFixed(2)} / {(model.bytes / 1e9).toFixed(2)} GB ({progress}%) saved</Text>
             </View>
           ) : null}
-          <Text style={muted}>{(state.freeBytes / 1e9).toFixed(2)} GB free on this device. Running the tutor also needs additional memory.</Text>
+          <Text style={muted}>{(state.freeBytes / 1e9).toFixed(2)} GB free on this device. Running the tutor also needs additional memory. Phone responses use a 4,096 token context and up to 512 output tokens.</Text>
           <View style={styles.actions}>
             {ready ? <Button compact disabled={selected || disabled || busy} onPress={onUse}>{selected ? "Offline tutor selected" : "Use offline tutor"}</Button> : null}
             {!ready && !downloading && !verifying ? (
@@ -61,10 +73,10 @@ export function OfflineTutorSettings({ selected, onUse, disabled = false }: {
             {downloading ? <Button compact variant="secondary" disabled={busy} onPress={() => action(() => offlineDownload.pause())}>Pause download</Button> : null}
             {(state.bytes > 0 || downloading || verifying || ready || state.phase === "error") ? (
               <Button compact variant="quiet" disabled={busy || disabled} onPress={() => {
-                if (!ready && state.phase !== "error" && state.bytes < OFFLINE_MODEL.bytes) { action(() => removeOfflineModel(false)); return; }
+                if (!ready && state.phase !== "error" && state.bytes < model.bytes) { action(() => removeOfflineModel(false, model.id)); return; }
                 Alert.alert("Remove offline tutor?", "Free the model's storage. Your lessons and saved notes will stay. You can download the tutor again later.", [
                   { text: "Keep tutor", style: "cancel" },
-                  { text: "Remove tutor", style: "destructive", onPress: () => action(() => removeOfflineModel(true)) },
+                  { text: "Remove tutor", style: "destructive", onPress: () => action(() => removeOfflineModel(true, model.id)) },
                 ]);
               }}>{ready || state.phase === "error" ? "Remove offline tutor" : "Cancel download"}</Button>
             ) : null}

@@ -12,11 +12,12 @@ export interface DesktopOfflineStatus {
 	generating?: boolean;
 }
 export interface DesktopOfflineBridge {
-	status(): Promise<DesktopOfflineStatus>;
-	download(): Promise<void>;
-	cancelDownload(): Promise<void>;
-	remove(): Promise<void>;
-	generate(input: { prompt: string; maxTokens?: number; temperature?: number }): Promise<string>;
+  supportedModels?: readonly string[];
+	status(modelId?: string): Promise<DesktopOfflineStatus>;
+	download(modelId?: string): Promise<void>;
+	cancelDownload(modelId?: string): Promise<void>;
+	remove(modelId?: string): Promise<void>;
+	generate(input: { prompt: string; maxTokens?: number; temperature?: number; modelId?: string; media?: Array<{ turn: number; type: "image" | "audio"; data: string; mimeType: string }> }): Promise<string>;
 	cancelGeneration(): Promise<void>;
 	/** Optional for older desktop builds. Scores decimal candidate indices. */
 	scoreLabels?(input: { requestId: string; modelId: string; prompt: string; labelCount: number }): Promise<{
@@ -43,7 +44,33 @@ export const DESKTOP_OFFLINE_MODEL: Model<Api> = {
 	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
 };
 
+export const DESKTOP_GEMMA_OFFLINE_MODEL: Model<Api> & { inputModalities: string[] } = {
+  ...DESKTOP_OFFLINE_MODEL,
+  id: "litert-community/gemma-4-E4B-it-litert-lm",
+  name: "Gemma 4 E4B (Offline)",
+  input: ["text", "image"],
+  inputModalities: ["text", "image", "audio"],
+};
+export const DESKTOP_BONSAI_OFFLINE_MODEL: Model<Api> = {
+  ...DESKTOP_OFFLINE_MODEL,
+  id: "prism-ml/Ternary-Bonsai-2-27B-gguf",
+  name: "Bonsai 2 27B (Offline)",
+  input: ["text", "image"],
+  maxTokens: 512,
+};
+export const DESKTOP_OFFLINE_MODELS = [DESKTOP_OFFLINE_MODEL, DESKTOP_GEMMA_OFFLINE_MODEL, DESKTOP_BONSAI_OFFLINE_MODEL] as const;
+
+export async function installedDesktopOfflineModels(): Promise<Model<Api>[]> {
+  const bridge = desktopOfflineBridge();
+  if (!bridge) return [];
+  const supported = DESKTOP_OFFLINE_MODELS.filter(model => model.id === DESKTOP_OFFLINE_MODEL.id || bridge.supportedModels?.includes(model.id));
+  const result = await Promise.all(supported.map(async model => {
+    const status = await bridge.status(model.id).catch(() => undefined);
+    return status?.available && status.installed ? model : undefined;
+  }));
+  return result.filter((model): model is Model<Api> => model !== undefined);
+}
+
 export async function installedDesktopOfflineModel(): Promise<Model<Api> | undefined> {
-	const status = await desktopOfflineBridge()?.status().catch(() => undefined);
-	return status?.available && status.installed ? DESKTOP_OFFLINE_MODEL : undefined;
+	return (await installedDesktopOfflineModels())[0];
 }
