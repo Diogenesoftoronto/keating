@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.5] - 2026-09-28
+
+### Fixed
+- Resolve the shared Julia tokenizer from the web package in isolated hosted builds.
+- Stage the installed ONNX runtime dependency closure correctly when Bun hoists desktop dependencies.
+
 ## [4.0.4] - 2026-09-28
 
 ### Added
