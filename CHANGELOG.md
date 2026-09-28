@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.2] - 2026-09-28
+
+### Added
+- Judgement model setup guidance, direct setup links from unavailable reviews, and clearer hosted and on-device choices.
+- An app-only build target for chat and learner features, CLI, and TUI, with runtime asset allowlisting and package size validation.
+
+### Changed
+- Build npm and desktop packages without landing pages, publication routes, videos, reports, or duplicate browser output.
+- Preserve the full hosted website as the default build target.
+
+### Fixed
+- Configure the chat subdomain's explicit DNS and ownership records and verify its Railway TLS certificate.
+
 ## [4.0.1] - 2026-09-26
 
 ### Added

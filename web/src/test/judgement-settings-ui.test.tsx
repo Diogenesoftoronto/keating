@@ -31,7 +31,7 @@ describe("independent judgement settings UI", () => {
     const html = render({ settings: { ...initial.settings, backend: "off" } });
     expect(html).toContain("Model reviews are off. Built-in checks remain available");
     expect(html).not.toContain("Local judgement model");
-    expect(html).not.toContain("Connect Not Organic");
+    expect(html).not.toContain(">Connect Not Organic</button>");
   });
   test("hosted selection discloses transfer and costs and requires a separate authorization action", () => {
     const html = render({ settings: { ...initial.settings, backend: "hosted" },
@@ -47,7 +47,7 @@ describe("independent judgement settings UI", () => {
     expect(expired).toContain("Connect Not Organic");
     const connected = render({ settings, account: { configured: true, connected: true, judgementAuthorized: true } });
     expect(connected).toContain("judgement access is connected");
-    expect(connected).not.toContain("Connect Not Organic");
+    expect(connected).not.toContain(">Connect Not Organic</button>");
   });
   test("loading and unavailable account states cannot trigger connection", () => {
     const settings = { ...initial.settings, backend: "hosted" as const };

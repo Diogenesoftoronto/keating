@@ -37,11 +37,14 @@ export function DraftReviewStatus({ sessionId, status }: { sessionId: string; st
   const active = teachingDraftIsActive(status);
   const canFeedback = snapshot.phase === "released" || snapshot.phase === "withheld";
   const notes = issues(snapshot);
+  const reviewerUnavailable = snapshot.phase === "withheld" &&
+    ["backend-unavailable", "backend-unauthorized", "review-unavailable"].includes(snapshot.reason ?? "");
   const description = snapshot.phase === "released"
     ? `${snapshot.attempts.length} ${snapshot.attempts.length === 1 ? "draft reviewed" : "drafts reviewed"}. You can flag a missed problem below.`
     : snapshot.phase === "withheld"
       ? snapshot.reason === "unsupported-evidence" ? "The reviewer needs the attachment's text or a transcript. Send it in a new conversation to continue."
         : snapshot.reason === "time-budget" ? "The review reached its time limit. Try a more focused request or another model."
+        : reviewerUnavailable ? "The reviewer is unavailable. Set up a judgement model, then retry."
         : snapshot.attempts.length ? "The drafts did not pass all checks. Try a more focused request or another model."
         : "The reviewer is unavailable. Check the judgement model in Settings → Providers & Models, then retry."
       : descriptions[snapshot.phase];
@@ -57,6 +60,8 @@ export function DraftReviewStatus({ sessionId, status }: { sessionId: string; st
         {active && snapshot.attempt > 0 && <span className={muted}>Draft {snapshot.attempt} of {snapshot.maxAttempts}</span>}
       </div>
       <p className={muted}>{description}</p>
+      {reviewerUnavailable &&
+        <a href="/chat?settings=judgement" target="_blank" rel="noopener noreferrer" className={button}>Set up judgement model</a>}
     </div>
     {!active && snapshot.phase !== "cancelled" && <details>
       <summary className={detail}>About this review</summary>

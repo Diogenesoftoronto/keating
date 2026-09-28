@@ -1,5 +1,6 @@
 import { defineNitroConfig } from "nitro/config";
 import { readdirSync } from "node:fs";
+import { webBuildTarget } from "./scripts/web-build-target";
 
 const crossOriginIsolationHeaders: Record<string, string> = {
   "Cross-Origin-Opener-Policy": "same-origin",
@@ -20,6 +21,7 @@ const publicAssetFiles = readdirSync(new URL("./public/", import.meta.url), { wi
   .map((entry) => entry.name);
 
 export default defineNitroConfig({
+  ignore: webBuildTarget() === "app" ? ["**/routes/blog/**", "**/api/blog/**", "**/routes/tutorial.ts", "**/routes/well-known/site-standard-publication.ts"] : [],
   features: {
     websocket: true,
   },
@@ -103,6 +105,9 @@ export default defineNitroConfig({
     },
   },
   publicAssets: [
+    // Register the source directory explicitly to suppress Nitro's automatic
+    // unfiltered public/ copy; app assets were already allowlisted by Vite.
+    ...(webBuildTarget() === "app" ? [{ dir: "public", ignore: ["**"], maxAge: 0 }] : []),
     {
       dir: "dist",
       maxAge: 0, // Cache policy comes from explicit routes, never the whole SPA.
@@ -123,20 +128,20 @@ export default defineNitroConfig({
       "/sw.js", "/__sw__.js",
     ].map((route) => ({ route, handler: "server/routes/assets/[...path].ts" })),
     { route: "/api/**", handler: "server/api-not-found.ts" },
-    { route: "/api/credit-waitlist", method: "POST", handler: "server/api/credit-waitlist/index.post.ts" },
+    { route: "/api/credit-waitlist", method: "POST" as const, handler: "server/api/credit-waitlist/index.post.ts" },
     {
       route: "/api/training-datasets",
-      method: "POST",
+      method: "POST" as const,
       handler: "server/api/training-datasets/index.post.ts",
     },
     {
       route: "/api/tavus/conversations",
-      method: "POST",
+      method: "POST" as const,
       handler: "server/api/tavus/conversations/index.post.ts",
     },
     {
       route: "/api/tavus/conversations/:conversationId/end",
-      method: "POST",
+      method: "POST" as const,
       handler: "server/api/tavus/conversations/[conversationId]/end.post.ts",
     },
 	{
@@ -268,5 +273,5 @@ export default defineNitroConfig({
       route: "/s/**",
       handler: "server/routes/s/[...path].ts",
     },
-  ],
+  ].filter((handler) => webBuildTarget() !== "app" || !["/tutorial", "/tutorial/", "/blog", "/blog/**", "/api/blog", "/.well-known/site.standard.publication"].includes(handler.route)),
 });

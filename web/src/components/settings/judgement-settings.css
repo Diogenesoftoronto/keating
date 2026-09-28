@@ -14,3 +14,7 @@
 .judgement-settings summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 
 .judgement-settings__hash { overflow-wrap: anywhere; word-break: break-word; user-select: text; }
+.judgement-settings a { text-decoration: underline; text-underline-offset: .2em; }
+.judgement-settings a:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
+.judgement-settings ol { margin: 0; padding-inline-start: 1.5rem; max-width: 65ch; line-height: 1.5; }
+.judgement-settings li + li { margin-top: .5rem; }

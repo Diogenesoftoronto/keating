@@ -47,6 +47,7 @@ if (!json) {
 
 const pack = JSON.parse(json);
 const files = new Set(pack.flatMap((entry) => entry.files.map((file) => file.path)));
+const appOnly = process.argv.includes("--app-only");
 
 const required = [
   "bin/keating.js",
@@ -65,6 +66,7 @@ const required = [
   "pi/prompts/learn.md",
   "SYSTEM.md",
   "package.json",
+  ...(appOnly ? ["dist/src/tui/opentui-host.js", "web/.output/server/index.mjs", "web/.output/public/index.html"] : []),
 ];
 
 const forbidden = [
@@ -78,9 +80,16 @@ const leaked = [...files].filter((path) =>
   forbidden.includes(path) ||
   path.startsWith("bin/.keating/") ||
   path.startsWith(".keating/") ||
+  (appOnly && (path.startsWith("web/dist/") ||
+    /^web\/\.output\/public\/(tapes|posters|reports|tutorial|downloads)\//.test(path))) ||
   path.endsWith("/.env") ||
   path.endsWith("/.env.local")
 );
+
+if (appOnly && pack.some(entry => entry.size > 70 * 1024 * 1024)) {
+  console.error("App-only archive exceeds the 70 MiB npm upload budget.");
+  process.exit(1);
+}
 
 if (missing.length > 0 || leaked.length > 0) {
   if (missing.length > 0) {

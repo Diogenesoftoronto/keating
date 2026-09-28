@@ -1,6 +1,7 @@
 import { defineConfig, Plugin } from "vite";
 import { flueBrowserRuntime } from "./scripts/flue/vite-plugin";
 import { resolve } from "path";
+import { applicationPublicAssetsPlugin, webBuildTarget } from "./scripts/web-build-target";
 import { VitePWA } from "vite-plugin-pwa";
 import react from "@vitejs/plugin-react";
 import nodepod from "@scelar/nodepod/vite";
@@ -430,10 +431,12 @@ const analyzePlugins: Plugin[] = process.env.ANALYZE
 export default defineConfig({
   define: {
     "import.meta.env.APP_VERSION": JSON.stringify(pkg.version),
+    "import.meta.env.KEATING_WEB_BUILD_TARGET": JSON.stringify(webBuildTarget()),
   },
   root: ".",
-  publicDir: "public",
+  publicDir: webBuildTarget() === "app" ? false : "public",
   plugins: [
+    applicationPublicAssetsPlugin(),
     flueBrowserRuntime(),
     react(),
     nodepod(),
@@ -596,6 +599,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "src"),
+      ...(webBuildTarget() === "app" ? { "./pages/Landing": resolve(__dirname, "src/app-landing-placeholder.tsx") } : {}),
     },
   },
   optimizeDeps: {

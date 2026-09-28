@@ -451,15 +451,12 @@ jobs:
           cd ../../web
           bun install --frozen-lockfile
           cd ..
-          bun run build
+          bun run build:app
 
       - name: Publish to npm
         run: |
-          # Nitro includes the browser assets in .output/public. Shipping the
-          # Vite intermediate copy too exceeds npm's JSON upload string limit.
-          node --input-type=module -e 'import fs from "node:fs"; const path = "package.json"; const pkg = JSON.parse(fs.readFileSync(path, "utf8")); pkg.files = pkg.files.filter(file => file !== "web/dist/"); fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + "\n");'
           npm pack --ignore-scripts --dry-run --json > npm-pack.json
-          node scripts/verify-package-manifest.mjs npm-pack.json
+          node scripts/verify-package-manifest.mjs npm-pack.json --app-only
           npm pack --ignore-scripts --json > npm-packed.json
           PACKAGE_ARCHIVE=$(node -p "JSON.parse(require('fs').readFileSync('npm-packed.json', 'utf8'))[0].filename")
           INSTALL_CHECK_DIR=$(mktemp -d)

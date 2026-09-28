@@ -201,6 +201,9 @@ in
   # This block, web/.env.example, and OPERATIONS.md must agree. That is enforced:
   #   devenv tasks run keating:check-env
   env = {
+    # Hosted development defaults to the full site. build:app explicitly selects
+    # the chat/learner app without landing or publication assets for packaging.
+    KEATING_WEB_BUILD_TARGET = lib.mkDefault "site";
     KEATING_STAGING_ENABLED = lib.mkDefault "true";
     # Direct judgement is local-only and opt-in. Credentials stay server-side.
     KEATING_JUDGEMENT_DEV_DIRECT = lib.mkDefault "false";
@@ -373,6 +376,14 @@ in
       bun scripts/sync-version.ts --check
       bun x tsc -p tsconfig.json
       bun scripts/copy-core-templates.ts
+    '';
+  };
+
+  tasks."keating:build-app" = {
+    description = "Build CLI, TUI, and chat app for npm and desktop packages";
+    exec = ''
+      bun scripts/sync-version.ts --check
+      bun run build:app
     '';
   };
 
