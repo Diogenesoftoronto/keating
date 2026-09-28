@@ -612,6 +612,9 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "src"),
+      // Shared sources live outside web/, so resolve their tokenizer from
+      // this package's install even when the repository root has no modules.
+      "@huggingface/tokenizers": resolve(__dirname, "node_modules/@huggingface/tokenizers/dist/tokenizers.mjs"),
       ...(webBuildTarget() === "app" ? { "./pages/Landing": resolve(__dirname, "src/app-landing-placeholder.tsx") } : {}),
     },
   },
