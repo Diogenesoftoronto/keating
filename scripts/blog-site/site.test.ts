@@ -35,7 +35,7 @@ describe("standalone blog HTTP contract", () => {
     expect(html).toContain("<strong>Real Markdown</strong>");
     expect(html).toContain("<table>");
     expect(html).toContain('class="katex"');
-    expect(html).toContain('href="https://keating.help/chat"');
+    expect(html).toContain('href="https://chat.keating.help/"');
     expect(html).toContain('src="https://keating.help/capture.png"');
     expect(html).not.toContain('href="javascript:');
     expect(html).not.toContain("<script>alert(1)</script>");
@@ -123,6 +123,19 @@ describe("standalone blog HTTP contract", () => {
     expect(contentUrl("https://keating.help/blog/next#part", "href", feed.posts[0])).toBe("/blog/next#part");
     expect(contentUrl("#part", "href", feed.posts[0])).toBe("#part");
     expect(contentUrl("http://", "href", feed.posts[0])).toBe("");
+  });
+
+  it("routes published application links to chat while keeping product and assets on the website", () => {
+    for (const entry of ["/chat?courseMode=create#composer", "https://keating.help/chat?courseMode=create#composer", "https://chat.keating.help/chat?courseMode=create#composer"]) {
+      expect(contentUrl(entry, "href", feed.posts[0])).toBe("https://chat.keating.help/?courseMode=create#composer");
+    }
+    for (const path of ["/usage", "/bench", "/courses/lesson-1", "/coming-up", "/review", "/live", "/s/shared-session"]) {
+      expect(contentUrl(path, "href", feed.posts[0])).toBe(`https://chat.keating.help${path}`);
+    }
+    expect(contentUrl("/pricing", "href", feed.posts[0])).toBe("https://keating.help/pricing");
+    expect(contentUrl("https://chat.keating.help/download", "href", feed.posts[0])).toBe("https://keating.help/download");
+    expect(contentUrl("/capture.png", "src", feed.posts[0])).toBe("https://keating.help/capture.png");
+    expect(contentUrl("https://example.com/chat", "href", feed.posts[0])).toBe("https://example.com/chat");
   });
 
   it("uses the shared PDS reader for belonging, Markdown, and chronological ordering", async () => {

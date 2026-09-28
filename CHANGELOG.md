@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.6] - 2026-09-28
+
+### Fixed
+- Render the chat application directly at `chat.keating.help/` while preserving existing `/chat` links.
+- Separate landing-site and application navigation, including documentation and blog app-entry links.
+- Keep site and app service-worker shells in separate caches while retaining offline model downloads.
+
 ## [4.0.5] - 2026-09-28
 
 ### Fixed

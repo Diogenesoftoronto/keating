@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { AppLink as Link } from "./AppLink";
 import { DOCUMENTATION_URL } from "../lib/tutorial-links";
 import { BLOG_URL } from "../lib/blog-links";
+import { applicationRootHref, hostedNavigationHref } from "../lib/hosted-navigation";
 import { desktopMarketingUrl, isDesktopShell } from "../lib/desktop-navigation";
 import { T, useGT } from "gt-react";
 import { ThemeToggle } from "./ThemeToggle";
@@ -47,13 +48,24 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
   const navigate = useNavigate();
   const gt = useGT();
   const closeMenus = () => dispatch({ type: "close-all" });
+  const hostname = typeof window !== "undefined" ? window.location?.hostname ?? "" : "";
+  const appOnly = import.meta.env.KEATING_WEB_BUILD_TARGET === "app";
+  const appNavigation = appOnly || hostname === "chat.keating.help" || isDesktopShell();
+  const chatHref = applicationRootHref(hostname, appOnly);
+  const primaryLinks = appNavigation
+    ? [[chatHref, "Chat"], ["/courses", "Courses"], ["/usage", "Usage"], ["/bench", "Bench"], ["/coming-up", "Coming up"], ["/live", "Live"]]
+    : [["/download", "Download"], ["/pricing", "Pricing"], [DOCUMENTATION_URL, "Documentation"], [BLOG_URL, "Blog"], ["/paper", "Paper"]].filter(([to]) => primaryAction !== "download" || to !== "/download");
+  const secondaryLinks = appNavigation
+    ? [["https://keating.help/", "Keating website"], ["/download", "Download"], ["/pricing", "Pricing"], [DOCUMENTATION_URL, "Documentation"], [BLOG_URL, "Blog"], ["/paper", "Paper"], ["/training-data", "Training data"]]
+    : [["/courses", "Courses"], ["/coming-up", "Coming up"], ["/live", "Live"], ["/usage", "Usage"], ["/bench", "Bench"], ["/training-data", "Training data"]];
   const openPrimaryAction = () => {
     closeMenus();
-    if (primaryAction === "download" && isDesktopShell()) {
-      window.open(desktopMarketingUrl("/download")!, "_blank", "noopener,noreferrer");
-      return;
-    }
-    void navigate({ to: primaryAction === "download" ? "/download" : "/chat" });
+    const path = primaryAction === "download" ? "/download" : chatHref;
+    const destination = hostedNavigationHref(path, hostname, appOnly);
+    const external = isDesktopShell() ? desktopMarketingUrl(destination) : null;
+    if (external) window.open(external, "_blank", "noopener,noreferrer");
+    else if (destination.startsWith("https://")) window.location.assign(destination);
+    else void navigate({ to: destination });
   };
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
@@ -113,7 +125,7 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
       >
         {/* Logo */}
         <Link
-          to={isDesktopShell() ? "/chat" : "/"}
+          to={appNavigation ? chatHref : "/"}
           className="nav-logo"
           style={{
             display: "flex",
@@ -135,21 +147,7 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
 
         {/* Desktop links — visible only when the full navigation has reliable room. */}
         <div className="nav-desktop" style={{ alignItems: "center", gap: "1rem" }}>
-          <Link to="/pricing" className="nav-link glitch-hover font-terminal nav-desktop-link">
-            <T>[PRICING]</T>
-          </Link>
-          <Link to="/courses" className="nav-link glitch-hover font-terminal nav-desktop-link">
-            <T>[COURSES]</T>
-          </Link>
-          <Link to="/coming-up" className="nav-link glitch-hover font-terminal nav-desktop-link">
-            <T>[COMING UP]</T>
-          </Link>
-          <Link to={BLOG_URL} className="nav-link glitch-hover font-terminal nav-desktop-link">
-            <T>[BLOG]</T>
-          </Link>
-          <Link to="/live" className="nav-link glitch-hover font-terminal nav-desktop-link">
-            <T>[LIVE]</T>
-          </Link>
+          {primaryLinks.map(([to, label]) => <Link key={to} to={to} className="nav-link glitch-hover font-terminal nav-desktop-link">{gt(label)}</Link>)}
           <div ref={moreMenuRef} className={css({ position: "relative" })}>
             <button
               type="button"
@@ -183,12 +181,7 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
                   }
                 })}
               >
-                {primaryAction !== "download" && <Link to="/download" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[DOWNLOAD]</T></Link>}
-                <Link to={DOCUMENTATION_URL} className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[DOCS]</T></Link>
-                <Link to="/paper" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[PAPER]</T></Link>
-                <Link to="/usage" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[USAGE]</T></Link>
-                <Link to="/training-data" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[TRAINING DATA]</T></Link>
-                <Link to="/bench" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[BENCH]</T></Link>
+                {secondaryLinks.map(([to, label]) => <Link key={to} to={to} className="nav-link glitch-hover font-terminal" onClick={closeMenus}>{gt(label)}</Link>)}
                 <a href="https://github.com/Diogenesoftoronto/keating" target="_blank" rel="noreferrer" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[GITHUB]</T></a>
               </div>
             )}
@@ -204,7 +197,7 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
             }}
             onClick={openPrimaryAction}
           >
-            {primaryAction === "download" ? <T>Download Keating</T> : isDesktopShell() ? <T>Open chat</T> : <T>TRY_KEATING</T>}
+            {primaryAction === "download" ? <T>Download Keating</T> : appNavigation ? <T>Open chat</T> : <T>Open Keating</T>}
           </button>
         </div>
 
@@ -269,87 +262,7 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
               onToggled={closeMenus}
               className={css({ width: "100%", marginBottom: "0.25rem" })}
             />
-            {primaryAction !== "download" && <Link
-              to="/download"
-              className="nav-link glitch-hover"
-              style={{ padding: "0.75rem 0.5rem" }}
-              onClick={closeMenus}
-            >
-              <T>[DOWNLOAD]</T>
-            </Link>}
-            <Link
-              to="/pricing"
-              className="nav-link glitch-hover"
-              style={{ padding: "0.75rem 0.5rem" }}
-              onClick={closeMenus}
-            >
-              <T>[PRICING]</T>
-            </Link>
-            <Link
-              to="/courses"
-              className="nav-link glitch-hover"
-              style={{ padding: "0.75rem 0.5rem" }}
-              onClick={closeMenus}
-            >
-              <T>[COURSES]</T>
-            </Link>
-            <Link
-              to="/coming-up"
-              className="nav-link glitch-hover"
-              style={{ padding: "0.75rem 0.5rem" }}
-              onClick={closeMenus}
-            >
-              <T>[COMING UP]</T>
-            </Link>
-            <Link
-              to={DOCUMENTATION_URL}
-              className="nav-link glitch-hover"
-              style={{ padding: "0.75rem 0.5rem" }}
-              onClick={closeMenus}
-            >
-              <T>[DOCS]</T>
-            </Link>
-            <Link
-              to={BLOG_URL}
-              className="nav-link glitch-hover"
-              style={{ padding: "0.75rem 0.5rem" }}
-              onClick={closeMenus}
-            >
-              <T>[BLOG]</T>
-            </Link>
-            <Link
-              to="/paper"
-              className="nav-link glitch-hover"
-              style={{ padding: "0.75rem 0.5rem" }}
-              onClick={closeMenus}
-            >
-              <T>[PAPER]</T>
-            </Link>
-            <Link
-              to="/usage"
-              className="nav-link glitch-hover"
-              style={{ padding: "0.75rem 0.5rem" }}
-              onClick={closeMenus}
-            >
-              <T>[USAGE]</T>
-            </Link>
-            <Link to="/training-data" className="nav-link glitch-hover font-terminal" onClick={closeMenus}><T>[TRAINING DATA]</T></Link>
-            <Link
-              to="/bench"
-              className="nav-link glitch-hover"
-              style={{ padding: "0.75rem 0.5rem" }}
-              onClick={closeMenus}
-            >
-              <T>[BENCH]</T>
-            </Link>
-            <Link
-              to="/live"
-              className="nav-link glitch-hover"
-              style={{ padding: "0.75rem 0.5rem" }}
-              onClick={closeMenus}
-            >
-              <T>[LIVE]</T>
-            </Link>
+            {[...primaryLinks, ...secondaryLinks].map(([to, label]) => <Link key={to} to={to} className="nav-link glitch-hover" style={{ padding: "0.75rem 0.5rem" }} onClick={closeMenus}>{gt(label)}</Link>)}
             <a
               href="https://github.com/Diogenesoftoronto/keating"
               target="_blank"
@@ -372,7 +285,7 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
               }}
               onClick={openPrimaryAction}
             >
-              {primaryAction === "download" ? <T>Download Keating</T> : isDesktopShell() ? <T>Open chat</T> : <T>TRY_KEATING</T>}
+              {primaryAction === "download" ? <T>Download Keating</T> : appNavigation ? <T>Open chat</T> : <T>Open Keating</T>}
             </button>
           </div>
         </div>

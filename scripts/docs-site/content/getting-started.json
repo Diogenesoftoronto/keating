@@ -18,6 +18,7 @@
         ],
         "paragraphs": [
           "Open Keating in your browser. You can begin on a phone, tablet, or computer without installing an app. Use the browser profile where you want to keep your lessons: browser sessions and settings are saved locally.",
+          "The tutor opens directly at https://chat.keating.help/. Learning usage, benchmarks, courses, review, and live sessions stay in that application. The public landing page, downloads, and pricing remain at https://keating.help/.",
           "On your first visit, Welcome to Keating walks you through model access, setup, and a starting point. Choose Next to continue. Go straight to chat skips the walkthrough; you can still connect a model from the chat header or Settings.",
           "To understand how Keating works in practice, follow learner Elena Chen throughout these guides. Elena is a backend engineer mastering distributed consensus algorithms, focusing on Raft leader election and log replication invariants. She switches seamlessly between the Web UI for visual deep dives, the Terminal UI inside tmux while writing Go code, and the CLI shell for rapid spaced quizzes. Use the tabs below to explore each step across your preferred surface:"
         ],
@@ -28,11 +29,11 @@
             "summary": "Access Keating in any modern browser. Zero installation required, with full support for visual diagrams, OpenUI quiz cards, and audio duplex.",
             "shortcut": "Browser",
             "bullets": [
-              "Navigate to https://keating.help/chat on desktop, tablet, or phone.",
+              "Navigate to https://chat.keating.help/ on desktop, tablet, or phone.",
               "Conversations, settings, and learning progress persist locally in your browser storage.",
               "Interactive OpenUI cards render Socratic checks and retrieval practice directly in the chat stream."
             ],
-            "code": "https://keating.help/chat",
+            "code": "https://chat.keating.help/",
             "language": "Browser URL",
             "video": {
               "src": "/assets/tapes/web-landing.mp4",
@@ -81,7 +82,7 @@
           }
         ],
         "links": [
-          { "label": "Open Keating", "href": "https://keating.help/chat" },
+          { "label": "Open Keating", "href": "https://chat.keating.help/" },
           { "label": "Watch the visual guide and walkthroughs", "href": "/visual-guide/" }
         ]
       },
@@ -280,7 +281,7 @@
           "Open Learning usage, find Portable data, and choose Export portable JSON to download a copy. Do this before clearing site data, moving browsers, or removing an app. The privacy and data guide explains what the export includes and how to restore it."
         ],
         "links": [
-          { "label": "Open Learning usage", "href": "https://keating.help/usage" },
+          { "label": "Open Learning usage", "href": "https://chat.keating.help/usage" },
           { "label": "Save and move your learning data", "href": "/privacy-and-data/" }
         ]
       }
@@ -325,7 +326,7 @@
         ],
         "links": [
           { "label": "Start your first lesson", "href": "/start-here/" },
-          { "label": "Open Keating", "href": "https://keating.help/chat" }
+          { "label": "Open Keating", "href": "https://chat.keating.help/" }
         ]
       },
       {
@@ -716,14 +717,14 @@
           {
             "surface": "web",
             "label": "Web UI",
-            "summary": "Run instantly with zero installation by visiting keating.help/chat in Chrome, Safari, Firefox, or Edge.",
+            "summary": "Run instantly with zero installation by visiting chat.keating.help/ in Chrome, Safari, Firefox, or Edge.",
             "shortcut": "No install",
             "bullets": [
-              "Visit https://keating.help/chat directly from any modern desktop or mobile browser.",
+              "Visit https://chat.keating.help/ directly from any modern desktop or mobile browser.",
               "Supports WebGPU for client-side local offline models.",
               "Local storage holds session transcripts, settings, and active learning state."
             ],
-            "code": "https://keating.help/chat",
+            "code": "https://chat.keating.help/",
             "language": "Browser URL"
           },
           {
@@ -766,7 +767,7 @@
           }
         ],
         "links": [
-          { "label": "Open Keating in your browser", "href": "https://keating.help/chat" },
+          { "label": "Open Keating in your browser", "href": "https://chat.keating.help/" },
           { "label": "Follow the first-lesson walkthrough", "href": "/start-here/" }
         ]
       },
@@ -1084,7 +1085,7 @@
           "Wait for the export confirmation and check that the file downloaded before clearing any data. The JSON contains your learning content as readable text; store it as carefully as the original notes."
         ],
         "links": [
-          { "label": "Open Portable data on Learning usage", "href": "https://keating.help/usage" }
+          { "label": "Open Portable data on Learning usage", "href": "https://chat.keating.help/usage" }
         ]
       },
       {

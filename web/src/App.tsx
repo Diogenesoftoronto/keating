@@ -111,6 +111,7 @@ import {
 } from "./keating/ui-settings";
 import { loadRouteChunk } from "./lib/stale-build-recovery";
 import { desktopMarketingUrl, isDesktopShell } from "./lib/desktop-navigation";
+import { hostedNavigationHref } from "./lib/hosted-navigation";
 import { tutorialRedirectBeforeLoad } from "./lib/tutorial-redirect";
 import { blogRedirectBeforeLoad } from "./lib/blog-redirect";
 import { AppStatusScreen, RouteLoadingScreen, RouteNotFoundScreen } from "./components/AppStatusScreen";
@@ -119,13 +120,11 @@ import { BrowserModelDownloadStatus } from "./components/ModelDownloadBar";
 const rootRoute = createRootRoute({
   component: () => <Outlet />,
   beforeLoad: ({ location, preload }) => {
-    if (
-      typeof window !== "undefined" &&
-      (APP_ONLY || window.location.hostname === "chat.keating.help") &&
-      location.pathname === "/"
-    ) {
-      throw redirect({ to: "/chat", replace: true });
+    if (!APP_ONLY && typeof window !== "undefined" && window.location.hostname === "keating.help") {
+      const destination = hostedNavigationHref(location.href, window.location.hostname, false);
+      if (destination !== location.href) throw redirect({ href: destination, replace: true });
     }
+    if (APP_ONLY && location.pathname === "/") return;
     if (!APP_ONLY && !isDesktopShell()) return;
     const websiteUrl = APP_ONLY && location.pathname === "/coming-up"
       ? null : desktopMarketingUrl(location.href);
@@ -134,36 +133,37 @@ const rootRoute = createRootRoute({
       if (isDesktopShell()) window.open(websiteUrl, "_blank", "noopener,noreferrer");
       else window.location.replace(websiteUrl);
     }
-    throw redirect({ to: "/chat", replace: true });
+    throw redirect({ to: APP_ONLY ? "/" : "/chat", replace: true });
   },
 });
+
+const chatSearchSchema = z
+  .object({
+    settings: z.string().max(128).optional(),
+    session: z.string().min(1).max(256).optional(),
+    course: z
+      .string()
+      .min(2)
+      .max(96)
+      .regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/)
+      .optional(),
+    courseMode: z.enum(["create", "edit"]).optional(),
+    /** A request handed over from a course workspace; lands in the composer. */
+    ask: z.string().max(2_000).optional(),
+  })
+  .passthrough();
 
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: Landing,
+  component: APP_ONLY ? Chat : Landing,
+  validateSearch: APP_ONLY ? chatSearchSchema.parse : undefined,
 });
 
 const chatRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/chat",
-  validateSearch: (search) =>
-    z
-      .object({
-        settings: z.string().max(128).optional(),
-        session: z.string().min(1).max(256).optional(),
-        course: z
-          .string()
-          .min(2)
-          .max(96)
-          .regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/)
-          .optional(),
-        courseMode: z.enum(["create", "edit"]).optional(),
-        /** A request handed over from a course workspace; lands in the composer. */
-        ask: z.string().max(2_000).optional(),
-      })
-      .passthrough()
-      .parse(search),
+  validateSearch: chatSearchSchema.parse,
   component: Chat,
 });
 

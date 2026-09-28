@@ -54,7 +54,6 @@ export default defineNitroConfig({
   // Ensure that /assets/* requests return 404 if not found, 
   // rather than falling back to index.html (SPA fallback).
   routeRules: {
-    ...(webBuildTarget() === "app" ? { "/": { redirect: "/chat" } } : {}),
     // Only the retired page redirects; /tutorial/* screenshots remain assets.
     "/tutorial": { static: false, headers: { "Cache-Control": "no-store" } },
     "/tutorial/": { static: false, headers: { "Cache-Control": "no-store" } },
