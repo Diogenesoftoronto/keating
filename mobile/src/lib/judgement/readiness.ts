@@ -5,7 +5,7 @@ import { buildLearnerProgress } from "../learner-progress";
 import { buildComingUp } from "../learner-study";
 import type { MobileJudgementRuntime } from "./runtime";
 
-export interface MobileReadinessSnapshot { data: PortableLearnerData; nowIso: string; hostedEnabled: boolean; localEnabled?: boolean; calibrationRevision?: number; localCalibrationRevision?: number }
+export interface MobileReadinessSnapshot { data: PortableLearnerData; nowIso: string; hostedEnabled: boolean; localEnabled?: boolean; localModel?: string; calibrationRevision?: number; localCalibrationRevision?: number }
 export interface MobileReadinessResult { sourceKey: string | null; candidates: StudyCandidate[]; review: ReadinessReview }
 interface Graph { requirements: string[]; prerequisites: string[] }
 const normalized = (value: string) => value.trim().toLocaleLowerCase().replace(/[^a-z0-9]+/gu, "-").replace(/^-|-$/gu, "");

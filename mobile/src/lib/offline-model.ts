@@ -93,6 +93,7 @@ export async function withOfflineModel<T>(use: (uri: string, runtime: NonNullabl
   if (inferenceBusy || removing) throw new Error("The offline tutor is busy. Wait for the current operation to finish.");
   inferenceBusy = true;
   try {
+    await (await import("./judgement/julia-runtime")).unloadMobileJulia();
     const runtime = native();
     const model = getOfflineModel(modelId);
     const { storage, download, files } = models.get(model.id)!;
@@ -104,4 +105,12 @@ export async function withOfflineModel<T>(use: (uri: string, runtime: NonNullabl
     if (AppState.currentState !== "active") await nativeLiteRT?.unloadAsync().catch(() => undefined);
     inferenceBusy = false;
   }
+}
+
+/** A single native inference lease prevents Julia and the much larger tutor weights from co-residing. */
+export async function withOfflineJudgement<T>(use: () => Promise<T>): Promise<T> {
+  if (inferenceBusy || removing) throw new Error("The offline tutor is busy. Wait for the current operation to finish.");
+  inferenceBusy = true;
+  try { await native().unloadAsync(); return await use(); }
+  finally { inferenceBusy = false; }
 }

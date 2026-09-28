@@ -199,6 +199,7 @@ async function createWindow(): Promise<void> {
 				directory: join(app.getPath("userData"), "offline-tutor"),
 				executable: join(app.isPackaged ? process.resourcesPath : __dirname, "offline", process.platform === "win32" ? "keating-offline.exe" : "keating-offline"),
 				bundledModel: join(app.isPackaged ? process.resourcesPath : __dirname, "offline", OFFLINE_MODEL.file),
+				bundledJuliaDirectory: join(app.isPackaged ? process.resourcesPath : __dirname, "offline", "julia-1"),
 			}), renderer.origin),
 		];
 		credentialService ??= new DesktopCredentialService(new CredentialVault({

@@ -1,6 +1,6 @@
 {
   "name": "@keating/desktop",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "type": "module",
   "private": true,
   "description": "Keating desktop (Electron) app — P2P, local-first teaching client.",
@@ -9,9 +9,9 @@
   "license": "MPL-2.0",
   "main": "dist/main.js",
   "scripts": {
-    "build:main": "bun run --cwd ../packages/p2p-core build && tsc -p tsconfig.json && bun scripts/build-needle-runtime.mjs && KEATING_WEB_BUILD_TARGET=app bun run --cwd ../web build && node scripts/stage-nitro.mjs",
+    "build:main": "bun run --cwd ../packages/p2p-core build && tsc -p tsconfig.json && bun scripts/build-needle-runtime.mjs && bun scripts/build-julia-runtime.mjs && KEATING_WEB_BUILD_TARGET=app bun run --cwd ../web build && node scripts/stage-nitro.mjs",
     "setup:electron": "node scripts/ensure-electron.mjs",
-    "dev": "bun run setup:electron && bun run --cwd ../packages/p2p-core build && tsc -p tsconfig.json && bun scripts/build-needle-runtime.mjs && KEATING_DEV_SERVER=${KEATING_DEV_SERVER:-http://localhost:3000} electron .",
+    "dev": "bun run setup:electron && bun run --cwd ../packages/p2p-core build && tsc -p tsconfig.json && bun scripts/build-needle-runtime.mjs && bun scripts/build-julia-runtime.mjs && KEATING_DEV_SERVER=${KEATING_DEV_SERVER:-http://localhost:3000} electron .",
     "start": "bun run setup:electron && electron .",
     "test": "bun test ./test/*.test.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
@@ -23,7 +23,8 @@
     "dist:mac": "electron-builder --mac dmg zip --arm64"
   },
   "dependencies": {
-    "@keating/p2p-core": "workspace:*"
+    "@keating/p2p-core": "workspace:*",
+    "onnxruntime-node": "1.29.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -93,7 +94,8 @@
       "node_modules/**/rocksdb-native/**/*",
       "node_modules/**/fs-native-extensions/**/*",
       "node_modules/**/simdle-native/**/*",
-      "node_modules/**/quickbit-native/**/*"
+      "node_modules/**/quickbit-native/**/*",
+      "node_modules/onnxruntime-node/bin/**/*"
     ],
     "directories": { "app": "dist/app", "output": "release" }
   }

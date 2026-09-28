@@ -6,7 +6,7 @@ import { Button } from "@/components/Buttons";
 import { useKeatingTheme } from "@/constants/theme";
 import { mobileReadinessSourceKey, reviewMobileStudyReadiness, type MobileReadinessResult, type MobileReadinessSnapshot } from "@/lib/judgement/readiness";
 import { useUiSettings } from "@/state/UiSettingsProvider";
-import { mobileJudgementCalibrationStore, mobileLocalJudgementCalibrationStore } from "@/lib/judgement/calibration";
+import { mobileJudgementCalibrationStore, mobileLocalJudgementCalibrationStore, mobileJuliaCalibrationStore } from "@/lib/judgement/calibration";
 
 const BLOCKED = { "not-due": "Not due", "not-covered": "No recorded exposure", "unknown-prerequisites": "Prerequisite graph unknown", "unmet-prerequisite": "Prerequisite exposure missing", "no-work": "No saved answers" } as const;
 
@@ -15,9 +15,10 @@ export function MobileStudyReadiness({ data, nowIso, onStudy }: { data: Portable
   const { settings, loaded } = useUiSettings();
   const theme = useKeatingTheme();
   const calibrationRevision = useSyncExternalStore(mobileJudgementCalibrationStore.subscribe, mobileJudgementCalibrationStore.getRevision, mobileJudgementCalibrationStore.getRevision);
-  const localCalibrationRevision = useSyncExternalStore(mobileLocalJudgementCalibrationStore.subscribe, mobileLocalJudgementCalibrationStore.getRevision, mobileLocalJudgementCalibrationStore.getRevision);
+  const localStore = settings.judgementLocalModel === "julia-1" ? mobileJuliaCalibrationStore : mobileLocalJudgementCalibrationStore;
+  const localCalibrationRevision = useSyncExternalStore(localStore.subscribe, localStore.getRevision, localStore.getRevision);
   const snapshot = useMemo<MobileReadinessSnapshot>(() => ({ data, nowIso, hostedEnabled: loaded && settings.judgementHosted,
-    localEnabled: loaded && settings.judgementLocalModel === "minicpm5-2b-int4", calibrationRevision, localCalibrationRevision }),
+    localEnabled: loaded && settings.judgementLocalModel !== "off", localModel: settings.judgementLocalModel, calibrationRevision, localCalibrationRevision }),
     [data, nowIso, loaded, settings.judgementHosted, settings.judgementLocalModel, calibrationRevision, localCalibrationRevision]);
   const key = useMemo(() => mobileReadinessSourceKey(snapshot), [snapshot]);
   const current = useRef<MobileReadinessSnapshot | null>(snapshot);

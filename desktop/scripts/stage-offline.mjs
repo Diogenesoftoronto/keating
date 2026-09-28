@@ -69,6 +69,15 @@ export async function stageOffline(platform = process.platform, arch = process.a
   if (windowsCrossBuild) run(process.env.KEATING_WINE || "wine", [executable, "--probe"]);
   else run(executable, ["--probe"]);
   if (process.env.KEATING_OFFLINE_EDITION === "1") {
+    // Node stages artifacts with the same pinned manifest consumed by Electron.
+    // Build uses Bun, while inference and installation use the native Node addon.
+    run("bun", ["scripts/build-julia-runtime.mjs"]);
+    const { JuliaRuntime } = await import("../dist/julia-native.js");
+    const juliaDirectory = join(cache, "julia-1");
+    const julia = new JuliaRuntime({ directory: juliaDirectory });
+    try { await julia.download(); } finally { await julia.stop(); }
+    await cp(juliaDirectory, join(output, "julia-1"), { recursive: true });
+    await download("https://huggingface.co/SupersonicLabs/Julia-1-ONNX/resolve/82a2fadf8fccfccdc5fd4e1009ba8f1a265eb7a8/README.md", join(output, "julia-1", "MODEL-CARD.md"), "c1d8a0add2cf5ab63f124f36cdfb22f4a5ab3df261e7412cf3c147e00fd47241");
     const { OFFLINE_MODEL } = await import("../dist/offline-contract.js");
     const model = join(cache, OFFLINE_MODEL.file);
     await download(OFFLINE_MODEL.url, model, OFFLINE_MODEL.sha256);

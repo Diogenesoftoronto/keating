@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.4] - 2026-09-28
+
+### Added
+- Julia 1 as an experimental, separately selected local decision model for typed Choice, Score, and Noul reviews, with pinned verified downloads, independent runtime identities, and local previews.
+- Julia CPU execution for desktop and Android, browser WASM execution, and model weights bundled with the offline desktop edition.
+- A reproducible Julia comparison against retained decision-model runs, preserving full distributions, failed-request denominators, and authored-label provenance.
+
+### Changed
+- Keep tutor and decision-model memory use exclusive on mobile and desktop; bound phone decisions to a strict 1,024-token context with four CPU threads.
+- Retain matching calibration and validation requirements before local decisions can change learner records.
+
 ## [4.0.3] - 2026-09-28
 
 ### Added

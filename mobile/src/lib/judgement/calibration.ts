@@ -2,6 +2,7 @@ import type { CalibrationTable, JudgementBackendKey } from "@keating/learner-con
 import { thresholdKey } from "@keating/learner-contracts";
 import { MAX_CALIBRATION_BYTES, verifyJudgementCalibrationText } from "../../../../packages/learner-contracts/src/judgement/calibration-artifact";
 import { MOBILE_LOCAL_JUDGEMENT_MODEL } from "./local-scorer";
+import { MOBILE_JULIA_MODEL } from "./julia-contract";
 
 const STORAGE_KEY = "keating.mobile.judgement-calibration.v1";
 const FAILURE = "Calibration could not be verified or saved.";
@@ -52,8 +53,8 @@ export class MobileJudgementCalibrationStore {
   private lastStored: string | null | undefined;
   private readonly listeners = new Set<() => void>();
   constructor(private readonly storage: CalibrationStorage = nativeStorage, private readonly digest: Digest = nativeDigest,
-    private readonly backendKind: "system-one" | "local" = "system-one") {}
-  private get storageKey() { return this.backendKind === "local" ? `${STORAGE_KEY}.local` : STORAGE_KEY; }
+    private readonly backendKind: "system-one" | "local" = "system-one", private readonly localModel = MOBILE_LOCAL_JUDGEMENT_MODEL) {}
+  private get storageKey() { return this.backendKind === "local" ? `${STORAGE_KEY}.local${this.localModel === MOBILE_JULIA_MODEL ? ".julia-1" : ""}` : STORAGE_KEY; }
   getRevision = (): number => this.revision;
   isCurrent = (revision: number): boolean => this.pending === 0 && revision === this.revision;
   subscribe = (callback: () => void): (() => void) => { this.listeners.add(callback); return () => { this.listeners.delete(callback); }; };
@@ -68,7 +69,7 @@ export class MobileJudgementCalibrationStore {
     const models = new Set(hosted.map(group => group.backend.model));
     if (models.size !== 1) throw new Error(FAILURE);
     const backend = { ...hosted[0]!.backend };
-    if (this.backendKind === "local" && backend.model !== MOBILE_LOCAL_JUDGEMENT_MODEL) throw new Error(FAILURE);
+    if (this.backendKind === "local" && backend.model !== this.localModel) throw new Error(FAILURE);
     const prefix = thresholdKey(backend, "");
     const entries = Object.fromEntries(Object.entries(artifact.table.entries).filter(([key]) => key.startsWith(prefix))
       .map(([key, thresholds]) => [key, Object.freeze({ ...thresholds })]));
@@ -124,6 +125,7 @@ export class MobileJudgementCalibrationStore {
 
 export const mobileJudgementCalibrationStore = new MobileJudgementCalibrationStore();
 export const mobileLocalJudgementCalibrationStore = new MobileJudgementCalibrationStore(nativeStorage, nativeDigest, "local");
+export const mobileJuliaCalibrationStore = new MobileJudgementCalibrationStore(nativeStorage, nativeDigest, "local", MOBILE_JULIA_MODEL);
 
 /** Native selection is injected so import limits and persistence are code-testable. */
 export async function importMobileJudgementCalibration(expectedSha256: string, options: {

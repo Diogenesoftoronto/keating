@@ -1,7 +1,8 @@
 import { createSystemOneCaller, createLocalJudgementCaller, type LocalLabelScorer, type JudgementCaller, type JudgementOutcome, type RouterPolicy } from "@keating/learner-contracts";
 import { notOrganicJudgementRequest } from "../notorganic-account/client";
-import { mobileJudgementCalibrationStore, mobileLocalJudgementCalibrationStore, type InstalledMobileCalibration, type MobileJudgementCalibrationStore } from "./calibration";
+import { mobileJudgementCalibrationStore, mobileLocalJudgementCalibrationStore, mobileJuliaCalibrationStore, type InstalledMobileCalibration, type MobileJudgementCalibrationStore } from "./calibration";
 import { createMobileLocalLabelScorer, MOBILE_LOCAL_JUDGEMENT_MODEL } from "./local-scorer";
+import { MOBILE_JULIA_MODEL } from "./julia-contract";
 
 export interface MobileJudgementRuntime {
   readonly hostedEnabled: boolean;
@@ -15,6 +16,7 @@ export interface MobileJudgementRuntime {
 export function createMobileJudgementRuntime(options: {
   hostedEnabled: boolean;
   localEnabled?: boolean;
+  localModel?: string;
   localScorer?: LocalLabelScorer;
   localCalibration?: InstalledMobileCalibration | null;
   localConsent?: () => Promise<boolean>;
@@ -27,8 +29,9 @@ export function createMobileJudgementRuntime(options: {
   if (options.localEnabled) {
     const hosted = createMobileJudgementRuntime({ ...options, localEnabled: false });
     const installed = options.localCalibration ? structuredClone(options.localCalibration) : null;
-    const valid = !installed || installed.backend.backend === "local" && installed.backend.model === MOBILE_LOCAL_JUDGEMENT_MODEL;
-    const key = Object.freeze({ backend: "local" as const, model: MOBILE_LOCAL_JUDGEMENT_MODEL, calibrationSha256: installed?.backend.calibrationSha256 ?? null });
+    const localModel = options.localModel ?? MOBILE_LOCAL_JUDGEMENT_MODEL;
+    const valid = !installed || installed.backend.backend === "local" && installed.backend.model === localModel;
+    const key = Object.freeze({ backend: "local" as const, model: localModel, calibrationSha256: installed?.backend.calibrationSha256 ?? null });
     const local = createLocalJudgementCaller({ model: key.model, calibrationSha256: key.calibrationSha256, scoreLabels: options.localScorer ?? createMobileLocalLabelScorer() });
     const current = () => !options.configuration || options.configuration.store.isCurrent(options.configuration.revision);
     const call: JudgementCaller = async (request, signal) => {
@@ -118,10 +121,11 @@ export async function configuredMobileJudgementRuntime(options: {
 } = {}): Promise<MobileJudgementRuntime> {
   const loadSettings = options.loadSettings ?? (await import("../ui-settings-storage")).loadUiSettings;
   const settings = await loadSettings();
-  const localEnabled = settings.judgementLocalModel === "minicpm5-2b-int4";
+  const julia = settings.judgementLocalModel === "julia-1";
+  const localEnabled = julia || settings.judgementLocalModel === "minicpm5-2b-int4";
   if (!settings.judgementHosted && !localEnabled) return createMobileJudgementRuntime({ hostedEnabled: false });
   const store = options.calibrationStore ?? mobileJudgementCalibrationStore;
-  const localStore = options.localCalibrationStore ?? mobileLocalJudgementCalibrationStore;
+  const localStore = options.localCalibrationStore ?? (julia ? mobileJuliaCalibrationStore : mobileLocalJudgementCalibrationStore);
   let calibration: InstalledMobileCalibration | null;
   let localCalibration: InstalledMobileCalibration | null;
   try { calibration = settings.judgementHosted ? await store.load() : null; localCalibration = localEnabled ? await localStore.load() : null; }
@@ -136,7 +140,10 @@ export async function configuredMobileJudgementRuntime(options: {
     subscribe: (callback: () => void) => { const a = store.subscribe(callback), b = localStore.subscribe(callback); return () => { a(); b(); }; },
   } };
   return createMobileJudgementRuntime({ hostedEnabled: settings.judgementHosted, calibration, localEnabled, localCalibration,
-    localScorer: options.localScorer, localConsent: currentSettings,
+    localModel: julia ? MOBILE_JULIA_MODEL : MOBILE_LOCAL_JUDGEMENT_MODEL,
+    localScorer: options.localScorer ?? (julia ? async input => {
+      try { return await (await import("./julia-runtime")).createMobileJuliaScorer()(input); } catch { return null; }
+    } : undefined), localConsent: currentSettings,
     request: options.request, configuration,
     consent: async () => settings.judgementHosted && await currentSettings() });
 }

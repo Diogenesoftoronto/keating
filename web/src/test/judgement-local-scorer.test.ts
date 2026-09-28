@@ -5,7 +5,8 @@ import { DESKTOP_OFFLINE_MODEL, type DesktopOfflineBridge } from "../lib/desktop
 
 const question: JudgementQuestion = { type: "choice", instructions: "Choose evidence.", criteria: { opaque_a: "independent solution", opaque_b: "needed help" } };
 const input: Parameters<LocalLabelScorer>[0] = { state: { work: "independent solution" }, question, instructions: question.instructions, labels: ["opaque_a", "opaque_b"] };
-const bridge = (scoreLabels: NonNullable<DesktopOfflineBridge["scoreLabels"]>, cancelScoring?: DesktopOfflineBridge["cancelScoring"]) => ({ scoreLabels, cancelScoring }) as DesktopOfflineBridge;
+type MiniScoreRequest = Extract<Parameters<NonNullable<DesktopOfflineBridge["scoreLabels"]>>[0], { prompt: string }>;
+const bridge = (scoreLabels: (request: MiniScoreRequest) => ReturnType<NonNullable<DesktopOfflineBridge["scoreLabels"]>>, cancelScoring?: DesktopOfflineBridge["cancelScoring"]) => ({ scoreLabels, cancelScoring }) as DesktopOfflineBridge;
 
 test("full semantics reach native scoring and NLL converts in the correct direction", async () => {
   const scorer = createDesktopLocalLabelScorer({ modelId: DESKTOP_OFFLINE_MODEL.id, bridge: bridge(async request => {

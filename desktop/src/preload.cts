@@ -161,6 +161,7 @@ const desktopBridge: KeatingDesktopBridge = {
 contextBridge.exposeInMainWorld("keatingDesktop", desktopBridge);
 
 const offlineBridge: KeatingOfflineBridge = {
+  supportedJudgementModels: ["mlboydaisuke/MiniCPM5-2B-LiteRT", "SupersonicLabs/Julia-1-ONNX@82a2fadf8fccfccdc5fd4e1009ba8f1a265eb7a8/keating-scorer-v1/ort-1.29.0-cpu/tokenizers-0.1.3-metaspace-split-strict-v1/context2048-head512/threads4"],
   supportedModels: ["mlboydaisuke/MiniCPM5-2B-LiteRT", "litert-community/gemma-4-E4B-it-litert-lm", "prism-ml/Ternary-Bonsai-2-27B-gguf"],
   status: (modelId) => ipcRenderer.invoke("keating:offline:rpc", "status", modelId),
   download: (modelId) => ipcRenderer.invoke("keating:offline:rpc", "download", modelId),
@@ -170,5 +171,6 @@ const offlineBridge: KeatingOfflineBridge = {
   cancelGeneration: () => ipcRenderer.invoke("keating:offline:rpc", "cancelGeneration"),
   scoreLabels: (request) => ipcRenderer.invoke("keating:offline:rpc", "scoreLabels", request),
   cancelScoring: (requestId) => ipcRenderer.invoke("keating:offline:rpc", "cancelScoring", requestId),
+  unloadJudgement: () => ipcRenderer.invoke("keating:offline:rpc", "unloadJudgement"),
 };
 contextBridge.exposeInMainWorld("keatingOffline", offlineBridge);
