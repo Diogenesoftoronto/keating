@@ -198,12 +198,21 @@ The application redirects `/` on `chat.keating.help` to `/chat`. Checkout return
 URLs use the current browser origin; server validation allows apex, chat, and
 explicit `NOTORGANIC_CHECKOUT_RETURN_ORIGINS`. Canonicals stay on the apex.
 
-The production custom domain still needs these DNS records at `keating.help`:
+The production custom domain uses these DNS records at `keating.help`:
 
 | Type | Name | Value |
 | --- | --- | --- |
 | CNAME | `chat` | `j0huj6qp.up.railway.app` |
 | TXT | `_railway-verify.chat` | `railway-verify=dfaa19d0dcbd8ef7825a346d91ed72659bd174c7766520005358d5fae4ca702c` |
+
+On September 28, 2026, both explicit records were added at Porkbun while
+preserving all 23 existing records. All four authoritative nameservers and
+Cloudflare/Google public resolvers returned the required values. Railway
+verified ownership and completed certificate issuance after a public API
+`customDomainIssueCertificate` request. Normal certificate-validated HTTPS
+returned 200 for `https://chat.keating.help/chat` and `https://keating.help/`.
+This verifies DNS/TLS and HTTP serving; browser redirect, sign-in, and hosted
+judgement remain separate checks.
 
 ## Completion checks
 

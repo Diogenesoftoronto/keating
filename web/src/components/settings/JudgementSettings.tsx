@@ -2,7 +2,7 @@ import { JudgementCalibrationSettings } from "./JudgementCalibrationSettings";
 import { useEffect, useId, useState } from "react";
 import {
   JEV_REQUEST_TOKEN_LIMIT, JEV_STATE_QUESTION_TOKEN_LIMIT, loadJudgementModelSettings, saveJudgementModelSettings, subscribeJudgementModelSettings,
-  type JudgementBackendPreference, type JudgementModelSettings,
+  type JudgementModelSettings,
 } from "../../keating/judgement-model";
 import { judgementAccountStatus, judgementAuthorizationUrl } from "../../keating/judgement/public-account";
 import { BROWSER_MODELS } from "../../stores/local-model";
@@ -49,13 +49,23 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
       <p>Choose how Keating reviews work. This choice is separate from your tutor model.</p>
     </div>
     <label className="judgement-settings__field" htmlFor={`${id}-backend`}>
-      <span>Review mode</span>
-      <select id={`${id}-backend`} value={settings.backend} disabled={connecting}
-        aria-describedby={`${id}-privacy`} onChange={(event) => onChange({ ...settings,
-          backend: event.target.value as JudgementBackendPreference })}>
+      <span>Choose a judgement model</span>
+      <select id={`${id}-backend`} value={settings.backend === "local" ? `local:${settings.localModelId}` : settings.backend} disabled={connecting}
+        aria-describedby={`${id}-privacy`} onChange={(event) => {
+          const value = event.target.value;
+          onChange(value.startsWith("local:")
+            ? { ...settings, backend: "local", localModelId: value.slice(6) }
+            : { ...settings, backend: value === "off" ? "off" : "hosted" });
+        }}>
+        <option value="hosted">Jev · Not Organic · Recommended</option>
+        <optgroup label="On this device">
+          {!desktop && !localModels.some(model => model.id === DESKTOP_OFFLINE_MODEL.id) && <option value={`local:${DESKTOP_OFFLINE_MODEL.id}`} disabled>MiniCPM5 2B · requires desktop app</option>}
+          {localModels.map(model => <option key={model.id} value={`local:${model.id}`}
+            disabled={model.id !== DESKTOP_OFFLINE_MODEL.id || !desktop || !scoringAvailable}>
+            {model.name}{model.id !== DESKTOP_OFFLINE_MODEL.id ? " · scoring unavailable" : !scoringAvailable ? " · scoring unavailable in this build" : ""}
+          </option>)}
+        </optgroup>
         <option value="off">Off · built-in checks only</option>
-        <option value="local">On this device</option>
-        <option value="hosted">Hosted · Not Organic</option>
       </select>
     </label>
     <p id={`${id}-privacy`}>
@@ -63,15 +73,31 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
         : settings.backend === "local" ? "Model reviews stay on this device. Work is not sent to a hosted judge."
         : "Tries Not Organic's hosted judgement service first, then local scoring when available. Relevant work is sent through Not Organic; usage may incur account charges."}
     </p>
+    <p>We recommend <a href="https://typesafe.ai/" target="_blank" rel="noopener noreferrer">Jev by TypeSafe</a> for focused reviews. Connect it through your Not Organic account; no API key is needed here.</p>
+    <details className="judgement-settings__account">
+      <summary>How to set up a judgement model</summary>
+      <ol>
+        <li>Choose Jev above, then use Connect Not Organic or Authorize judgement access below. Return here after signing in.</li>
+        <li>Wait for the connected status below, then retry the review. Hosted requests send relevant work and may incur account charges.</li>
+        <li>For on-device reviews, use the desktop app, download the offline tutor, then choose MiniCPM5 2B here. Browser models can tutor but cannot score judgements yet.</li>
+      </ol>
+      <p>If hosted access is unavailable in this app configuration, use a build with Not Organic enabled or the desktop local option. Changing the tutor model does not configure the reviewer.</p>
+      <p><a href="https://docs.typesafe.ai/introduction" target="_blank" rel="noopener noreferrer">Read the Jev documentation</a></p>
+    </details>
     {settings.backend !== "off" && <>
+      {settings.backend === "hosted" && <>
       <label className="judgement-settings__field" htmlFor={`${id}-model`}>
-        <span>Local judgement model</span>
+        <span>Local judgement model · fallback</span>
         <select id={`${id}-model`} value={settings.localModelId} disabled={connecting}
           aria-describedby={`${id}-local-status`} onChange={(event) => onChange({ ...settings, localModelId: event.target.value })}>
           {localModels.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}
         </select>
       </label>
+      </>}
       <p id={`${id}-local-status`} role="status">{localStatus}</p>
+      {nativeSelected && desktop && scoringAvailable && !offlineStatus?.installed && <a href="#offline-tutor">Set up the offline tutor</a>}
+      <details className="judgement-settings__account">
+      <summary>Advanced review options</summary>
       <label className="judgement-settings__field" htmlFor={`${id}-request-tokens`}>
         <span>Maximum tokens per judge request</span>
         <input id={`${id}-request-tokens`} type="number" min={512} max={2_000_000} step={512}
@@ -97,6 +123,7 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
       <p id={`${id}-context-window-help`}>
         Hosted Jev allows 64,000 tokens for state plus all questions and 32,000 for state plus the longest question. At 80% of the 32,000-token limit, Keating drops the oldest conversation turns until state is below 65%. It keeps the current message, evidence and sources. Local model metadata caps both limits during fallback.
       </p>
+      </details>
       <p>Automatic grading stays with the existing checks until calibration and validation are complete.</p>
     </>}
     {settings.backend === "hosted" && <div className="judgement-settings__account">

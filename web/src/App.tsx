@@ -15,6 +15,9 @@ import {
 // Landing is the entry page — keep it eager so first paint needs no extra
 // round-trip. (Its heavy 3D hero is already lazy-loaded inside the page.)
 import { Landing } from "./pages/Landing";
+// Vite aliases the eager landing entry and replaces this flag at build time.
+// Marketing dependencies disappear from the packaged application graph.
+const APP_ONLY = import.meta.env.KEATING_WEB_BUILD_TARGET === "app";
 // Every other route is code-split into its own chunk, fetched on navigation, so
 // the entry bundle no longer ships Chat, the assistant panel, markdown/KaTeX, etc.
 const Chat = lazyRouteComponent(
@@ -25,7 +28,7 @@ const RenderingSmoke = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/RenderingSmoke")),
   "RenderingSmoke",
 );
-const Paper = lazyRouteComponent(
+const Paper = APP_ONLY ? () => null : lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/Paper")),
   "Paper",
 );
@@ -49,7 +52,7 @@ const EvolutionDetail = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/EvolutionDetail")),
   "EvolutionDetail",
 );
-const KeatingBench = lazyRouteComponent(
+const KeatingBench = APP_ONLY ? () => null : lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/KeatingBench")),
   "KeatingBench",
 );
@@ -57,19 +60,19 @@ const OAuthCallback = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/OAuthCallback")),
   "OAuthCallback",
 );
-const Download = lazyRouteComponent(
+const Download = APP_ONLY ? () => null : lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/Download")),
   "Download",
 );
-const Terms = lazyRouteComponent(
+const Terms = APP_ONLY ? () => null : lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/Terms")),
   "Terms",
 );
-const Privacy = lazyRouteComponent(
+const Privacy = APP_ONLY ? () => null : lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/Privacy")),
   "Privacy",
 );
-const Pricing = lazyRouteComponent(
+const Pricing = APP_ONLY ? () => null : lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/Pricing")),
   "Pricing",
 );
@@ -77,7 +80,7 @@ const NotOrganicCallback = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/NotOrganicCallback")),
   "NotOrganicCallback",
 );
-const LatestCommitReview = lazyRouteComponent(
+const LatestCommitReview = APP_ONLY ? () => null : lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/LatestCommitReview")),
   "LatestCommitReview",
 );
@@ -118,16 +121,18 @@ const rootRoute = createRootRoute({
   beforeLoad: ({ location, preload }) => {
     if (
       typeof window !== "undefined" &&
-      window.location.hostname === "chat.keating.help" &&
+      (APP_ONLY || window.location.hostname === "chat.keating.help") &&
       location.pathname === "/"
     ) {
       throw redirect({ to: "/chat", replace: true });
     }
-    if (!isDesktopShell()) return;
-    const websiteUrl = desktopMarketingUrl(location.href);
+    if (!APP_ONLY && !isDesktopShell()) return;
+    const websiteUrl = APP_ONLY && location.pathname === "/coming-up"
+      ? null : desktopMarketingUrl(location.href);
     if (!websiteUrl) return;
     if (!preload && location.pathname !== "/") {
-      window.open(websiteUrl, "_blank", "noopener,noreferrer");
+      if (isDesktopShell()) window.open(websiteUrl, "_blank", "noopener,noreferrer");
+      else window.location.replace(websiteUrl);
     }
     throw redirect({ to: "/chat", replace: true });
   },
@@ -309,26 +314,17 @@ const routeTree = rootRoute.addChildren([
   liveRoute,
   usageRoute,
   trainingDataRoute,
-  comingUpRoute,
   evolutionDetailRoute,
-  benchRoute,
   sharedSessionRoute,
-  tutorialRoute,
-  blogRoute,
-  blogPostRoute,
-  paperRoute,
   oauthCallbackRoute,
-  downloadRoute,
-  termsRoute,
-  privacyRoute,
-  pricingRoute,
   notOrganicCallbackRoute,
-  latestCommitReviewRoute,
-  trajectoryReviewIndexRoute,
-  trajectoryReviewRoute,
   coursesRoute,
   courseJoinRoute,
   courseWorkspaceRoute,
+  comingUpRoute,
+  trajectoryReviewIndexRoute,
+  trajectoryReviewRoute,
+  ...(!APP_ONLY ? [benchRoute, tutorialRoute, blogRoute, blogPostRoute, paperRoute, downloadRoute, termsRoute, privacyRoute, pricingRoute, latestCommitReviewRoute] : []),
 ]);
 
 // Shown while a lazily-loaded route chunk is in flight (after defaultPendingMs)
