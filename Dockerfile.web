@@ -67,7 +67,10 @@ ENV VITE_POSTHOG_PROJECT_TOKEN=$VITE_POSTHOG_PROJECT_TOKEN \
     VITE_NOTORGANIC_SCOPE=$VITE_NOTORGANIC_SCOPE \
     VITE_NOTORGANIC_MAX_COST_MICROUSD=$VITE_NOTORGANIC_MAX_COST_MICROUSD \
     NITRO_PRESET=node-server
-RUN bun run build
+# Each hostname gets its own build: the chat server contains only application
+# routes and assets, while the apex retains the public landing site.
+RUN KEATING_WEB_BUILD_TARGET=site bun run build && mv .output .output-site
+RUN KEATING_WEB_BUILD_TARGET=app bun run build && mv .output .output-app
 
 # Serve stage. Nitro's node-server preset wires the Node crossws adapter, which
 # intentionally refuses to run under Bun. Keep Bun in the builder, then run the
@@ -75,13 +78,17 @@ RUN bun run build
 FROM node:24-bookworm-slim
 
 WORKDIR /app
-# Copy the entire Nitro output which includes static assets and the server
-COPY --from=builder /app/web/.output ./.output
+# Keep the servers in the same working directory so persistent storage paths
+# and account configuration retain their existing meaning.
+COPY --from=builder /app/web/.output-site ./.output-site
+COPY --from=builder /app/web/.output-app ./.output-app
+COPY web/scripts/start-hosted.mjs ./start-hosted.mjs
 
 ENV PORT=3000
+ENV KEATING_CHAT_PORT=8081
 ENV HOST=0.0.0.0
 ENV NODE_ENV=production
-EXPOSE 3000
+EXPOSE 3000 8081
 
-# Run the Nitro server entry point
-CMD ["node", ".output/server/index.mjs"]
+# Railway maps the apex to PORT and chat.keating.help to KEATING_CHAT_PORT.
+CMD ["node", "start-hosted.mjs"]

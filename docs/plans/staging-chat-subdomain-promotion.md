@@ -48,9 +48,12 @@ Outstanding deployment work:
 ## Decisions retained
 
 - Staging uses its Railway-generated domain and the production Not Organic issuer.
-- `chat.keating.help` is an additional domain on the existing production web
-  service, with the same Nitro server and share/course volumes. Apex URLs remain
-  canonical for SEO.
+- `chat.keating.help` serves the bundled application's route set: chat, usage,
+  benchmarks, courses, live sessions, and related tools. The hosted container
+  builds separate site and app Nitro outputs, sharing the existing account
+  configuration and share/course volumes. The apex targets port 8080; chat
+  targets the app server on port 8081. Public landing and marketing pages remain
+  on the apex, which retains the existing SEO canonicals.
 - No origin migration bridge or sign-in notice. The planning-time production
   query found three Keating accounts; users sign in again on the new origin.
 - Per-origin local storage, IndexedDB, PWA installations, and analytics identities
