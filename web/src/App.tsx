@@ -52,7 +52,7 @@ const EvolutionDetail = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/EvolutionDetail")),
   "EvolutionDetail",
 );
-const KeatingBench = APP_ONLY ? () => null : lazyRouteComponent(
+const KeatingBench = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/KeatingBench")),
   "KeatingBench",
 );
@@ -313,6 +313,7 @@ const routeTree = rootRoute.addChildren([
   ...(import.meta.env.DEV ? [renderingSmokeRoute] : []),
   liveRoute,
   usageRoute,
+  benchRoute,
   trainingDataRoute,
   evolutionDetailRoute,
   sharedSessionRoute,
@@ -324,7 +325,7 @@ const routeTree = rootRoute.addChildren([
   comingUpRoute,
   trajectoryReviewIndexRoute,
   trajectoryReviewRoute,
-  ...(!APP_ONLY ? [benchRoute, tutorialRoute, blogRoute, blogPostRoute, paperRoute, downloadRoute, termsRoute, privacyRoute, pricingRoute, latestCommitReviewRoute] : []),
+  ...(!APP_ONLY ? [tutorialRoute, blogRoute, blogPostRoute, paperRoute, downloadRoute, termsRoute, privacyRoute, pricingRoute, latestCommitReviewRoute] : []),
 ]);
 
 // Shown while a lazily-loaded route chunk is in flight (after defaultPendingMs)
