@@ -479,7 +479,7 @@ export default defineConfig({
         // Install the app shell, not every tutorial, poster, and source artwork.
         // Images are cached on demand below; visiting chat should not download
         // tens of megabytes of unrelated PNGs in the background.
-        globPatterns: ["assets/**/*.{js,cjs,css,woff2,woff,svg,png,webp,avif}", "index.html", "registerSW.js", "favicon.svg", "pwa-*.png"],
+        globPatterns: ["assets/**/*.{js,mjs,cjs,css,woff2,woff,svg,png,webp,avif}", "index.html", "registerSW.js", "favicon.svg", "pwa-*.png"],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
@@ -509,6 +509,17 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6MB
         runtimeCaching: [
           {
+            // Explicit Julia installation saves both local runtime assets.
+            // Keep this before generic asset rules so a first offline preview
+            // uses that installation cache, including the module worker.
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && /\/assets\/ort-wasm-.*\.(?:wasm|mjs)$/i.test(url.pathname),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "keating-julia-runtime-v1",
+              cacheableResponse: { statuses: [200] },
+            },
+          },
+          {
             urlPattern: ({ url, sameOrigin }) => sameOrigin &&
               /^\/(?:brand|tutorial|avatars|posters|downloads|tapes|textures|landing)\/.*\.(?:avif|webp|png|jpe?g|svg)$/i.test(url.pathname),
             handler: "StaleWhileRevalidate",
@@ -522,7 +533,7 @@ export default defineConfig({
             // Content-hashed build assets: filename changes on every build, so
             // CacheFirst is safe and gives offline support for chunks that were
             // too large to precache.
-            urlPattern: /\/assets\/.*\.(?:js|css|woff2?|ttf)$/i,
+            urlPattern: /\/assets\/.*\.(?:m?js|css|woff2?|ttf)$/i,
             handler: "CacheFirst",
             options: {
               cacheName: "asset-cache",
@@ -556,7 +567,9 @@ export default defineConfig({
             },
           },
           {
-            urlPattern: /^https:\/\/huggingface\.co\/.*/i,
+            // Julia owns a verified chunk cache. Do not duplicate its large
+            // external weights in one unverified Workbox cache entry.
+            urlPattern: /^https:\/\/huggingface\.co\/(?!SupersonicLabs\/Julia-1-ONNX\/resolve\/).*/i,
             handler: "CacheFirst",
             options: {
               cacheName: "model-cache",

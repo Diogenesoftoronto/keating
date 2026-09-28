@@ -46,6 +46,7 @@ await writeFile(
 			main: "main.js",
 			dependencies: {
 				"@keating/p2p-core": "file:node_modules/@keating/p2p-core",
+				"onnxruntime-node": "1.29.0",
 			},
 		},
 		null,
@@ -63,6 +64,14 @@ await Promise.all([
 		dereference: true,
 	}),
 ]);
+
+
+// ONNX Runtime uses a stable Node-API binding; keep its external data and shared libraries beside the addon.
+for (const name of ["onnxruntime-node", "onnxruntime-common"]) {
+  const from = resolve(desktopRoot, "node_modules", name);
+  await cp(from, join(appDestination, "node_modules", name), { recursive: true, dereference: true });
+}
+await cp(resolve(desktopRoot, "../node_modules/@huggingface/tokenizers/LICENSE"), join(appDestination, "JULIA-TOKENIZER-LICENSE.txt"));
 
 console.log(`Staged packaged Nitro runtime: ${destination}`);
 console.log(`Staged self-contained Electron app: ${appDestination}`);

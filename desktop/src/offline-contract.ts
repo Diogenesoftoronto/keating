@@ -22,14 +22,16 @@ export interface OfflineLabelRequest {
 export interface OfflineLabelScores { modelId: string; negativeLogLikelihoods: readonly number[] }
 export interface KeatingOfflineBridge {
   supportedModels?: readonly string[];
+  supportedJudgementModels?: readonly string[];
   status(modelId?: string): Promise<OfflineStatus>;
   download(modelId?: string): Promise<void>;
   cancelDownload(modelId?: string): Promise<void>;
   remove(modelId?: string): Promise<void>;
   generate(request: OfflineRequest): Promise<string>;
   cancelGeneration(): Promise<void>;
-  scoreLabels(request: OfflineLabelRequest): Promise<OfflineLabelScores | null>;
+  scoreLabels(request: OfflineLabelRequest | import("./julia-runtime.js").JuliaLabelRequest): Promise<OfflineLabelScores | import("./julia-runtime.js").JuliaLabelScores | null>;
   cancelScoring(requestId: string): Promise<void>;
+  unloadJudgement?(): Promise<void>;
 }
 export const OFFLINE_MODEL = {
   file: "MiniCPM5-2B_int4.litertlm",

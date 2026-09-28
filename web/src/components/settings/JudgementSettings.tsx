@@ -8,6 +8,9 @@ import { judgementAccountStatus, judgementAuthorizationUrl } from "../../keating
 import { BROWSER_MODELS } from "../../stores/local-model";
 import { desktopOfflineBridge, DESKTOP_OFFLINE_MODEL, type DesktopOfflineStatus } from "../../lib/desktop-offline";
 import "./judgement-settings.css";
+import { JULIA_BROWSER_MODEL_ID, JULIA_MODEL_ID, JULIA_MODEL } from "../../../../shared/julia/manifest.js";
+import type { DesktopOfflineBridge } from "../../lib/desktop-offline";
+import { JuliaLocalModelSettings } from "./JuliaLocalModelSettings";
 
 interface AccountStatus { configured: boolean; connected: boolean; judgementAuthorized: boolean }
 export interface JudgementSettingsViewProps {
@@ -21,13 +24,16 @@ export interface JudgementSettingsViewProps {
   error: string;
   onChange: (settings: JudgementModelSettings) => void;
   onConnect: () => void;
+  juliaId?: string;
+  juliaBridge?: DesktopOfflineBridge;
 }
 
 /** Separate rendering keeps loading, unavailable, and expired-account states reviewable. */
 export function JudgementSettingsView({ settings, desktop, scoringAvailable, offlineStatus, account,
-  checkingAccount, connecting, error, onChange, onConnect }: JudgementSettingsViewProps) {
+  checkingAccount, connecting, error, onChange, onConnect, juliaId, juliaBridge }: JudgementSettingsViewProps) {
   const id = useId();
   const localModels = [
+    ...(juliaId ? [{ id: juliaId, name: "Julia 1 · local decision model" }] : []),
     ...(desktop ? [{ id: DESKTOP_OFFLINE_MODEL.id, name: "MiniCPM5 2B · desktop" }] : []),
     ...BROWSER_MODELS.map(({ id, name }) => ({ id, name })),
   ];
@@ -35,7 +41,9 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
     localModels.push({ id: settings.localModelId, name: `${settings.localModelId} · saved selection` });
   }
   const nativeSelected = settings.localModelId === DESKTOP_OFFLINE_MODEL.id;
-  const localStatus = !nativeSelected
+  const juliaSelected = Boolean(juliaId && settings.localModelId === juliaId);
+  const localStatus = juliaSelected ? "Install Julia below to preview local decisions. Automatic reviews require matching verified calibration."
+    : !nativeSelected
     ? "Scoring with browser models is not available yet. Your selected model is saved."
     : !desktop || !scoringAvailable
       ? "This app build does not provide local judgement scoring."
@@ -61,8 +69,8 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
         <optgroup label="On this device">
           {!desktop && !localModels.some(model => model.id === DESKTOP_OFFLINE_MODEL.id) && <option value={`local:${DESKTOP_OFFLINE_MODEL.id}`} disabled>MiniCPM5 2B · requires desktop app</option>}
           {localModels.map(model => <option key={model.id} value={`local:${model.id}`}
-            disabled={model.id !== DESKTOP_OFFLINE_MODEL.id || !desktop || !scoringAvailable}>
-            {model.name}{model.id !== DESKTOP_OFFLINE_MODEL.id ? " · scoring unavailable" : !scoringAvailable ? " · scoring unavailable in this build" : ""}
+            disabled={model.id !== juliaId && (model.id !== DESKTOP_OFFLINE_MODEL.id || !desktop || !scoringAvailable)}>
+            {model.name}{model.id === juliaId ? "" : model.id !== DESKTOP_OFFLINE_MODEL.id ? " · scoring unavailable" : !scoringAvailable ? " · scoring unavailable in this build" : ""}
           </option>)}
         </optgroup>
         <option value="off">Off · built-in checks only</option>
@@ -79,7 +87,7 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
       <ol>
         <li>Choose Jev above, then use Connect Not Organic or Authorize judgement access below. Return here after signing in.</li>
         <li>Wait for the connected status below, then retry the review. Hosted requests send relevant work and may incur account charges.</li>
-        <li>For on-device reviews, use the desktop app, download the offline tutor, then choose MiniCPM5 2B here. Browser models can tutor but cannot score judgements yet.</li>
+        <li>For on-device reviews, choose Julia 1 and download it below, or use MiniCPM5 2B in the desktop app. These reviewers are separate from the tutor. Generative browser models do not provide judgement scoring.</li>
       </ol>
       <p>If hosted access is unavailable in this app configuration, use a build with Not Organic enabled or the desktop local option. Changing the tutor model does not configure the reviewer.</p>
       <p><a href="https://docs.typesafe.ai/introduction" target="_blank" rel="noopener noreferrer">Read the Jev documentation</a></p>
@@ -95,6 +103,7 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
       </label>
       </>}
       <p id={`${id}-local-status`} role="status">{localStatus}</p>
+      {juliaSelected && <JuliaLocalModelSettings bridge={juliaBridge} />}
       {nativeSelected && desktop && scoringAvailable && !offlineStatus?.installed && <a href="#offline-tutor">Set up the offline tutor</a>}
       <details className="judgement-settings__account">
       <summary>Advanced review options</summary>
@@ -102,7 +111,7 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
         <span>Maximum tokens per judge request</span>
         <input id={`${id}-request-tokens`} type="number" min={512} max={2_000_000} step={512}
           value={settings.requestTokens ?? (settings.backend === "hosted" ? JEV_REQUEST_TOKEN_LIMIT : "")} disabled={connecting}
-          placeholder={nativeSelected ? String(DESKTOP_OFFLINE_MODEL.contextWindow) : "Model default"}
+          placeholder={juliaSelected ? String(JULIA_MODEL.contextTokens) : nativeSelected ? String(DESKTOP_OFFLINE_MODEL.contextWindow) : "Model default"}
           aria-describedby={`${id}-context-window-help`}
           onChange={(event) => {
             const raw = event.target.value;
@@ -113,7 +122,7 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
         <span>State plus longest question (tokens)</span>
         <input id={`${id}-state-question-tokens`} type="number" min={512} max={2_000_000} step={512}
           value={settings.stateQuestionTokens ?? (settings.backend === "hosted" ? JEV_STATE_QUESTION_TOKEN_LIMIT : "")} disabled={connecting}
-          placeholder={nativeSelected ? String(DESKTOP_OFFLINE_MODEL.contextWindow) : "Model default"}
+          placeholder={juliaSelected ? String(JULIA_MODEL.contextTokens) : nativeSelected ? String(DESKTOP_OFFLINE_MODEL.contextWindow) : "Model default"}
           aria-describedby={`${id}-context-window-help`}
           onChange={(event) => {
             const raw = event.target.value;
@@ -152,7 +161,7 @@ export function JudgementSettings() {
   const bridge = desktopOfflineBridge();
   useEffect(() => subscribeJudgementModelSettings(setSettings), []);
   useEffect(() => {
-    if (!bridge || settings.backend === "off") return;
+    if (!bridge || settings.backend === "off" || settings.localModelId !== DESKTOP_OFFLINE_MODEL.id) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     const refresh = async () => {
@@ -162,7 +171,7 @@ export function JudgementSettings() {
     };
     void refresh();
     return () => { active = false; clearTimeout(timer); };
-  }, [bridge, settings.backend]);
+  }, [bridge, settings.backend, settings.localModelId]);
   useEffect(() => {
     if (settings.backend !== "hosted") return;
     let active = true;
@@ -203,6 +212,7 @@ export function JudgementSettings() {
     }
   };
   return <JudgementSettingsView settings={settings} desktop={!!bridge} scoringAvailable={typeof bridge?.scoreLabels === "function"}
+    juliaId={bridge?.supportedJudgementModels?.includes(JULIA_MODEL_ID) ? JULIA_MODEL_ID : JULIA_BROWSER_MODEL_ID} juliaBridge={bridge ?? undefined}
     offlineStatus={offlineStatus} account={account} checkingAccount={checkingAccount} connecting={connecting}
     error={error} onChange={change} onConnect={() => void connect()} />;
 }

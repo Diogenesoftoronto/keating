@@ -13,6 +13,7 @@ export interface DesktopOfflineStatus {
 }
 export interface DesktopOfflineBridge {
   supportedModels?: readonly string[];
+  supportedJudgementModels?: readonly string[];
 	status(modelId?: string): Promise<DesktopOfflineStatus>;
 	download(modelId?: string): Promise<void>;
 	cancelDownload(modelId?: string): Promise<void>;
@@ -20,10 +21,11 @@ export interface DesktopOfflineBridge {
 	generate(input: { prompt: string; maxTokens?: number; temperature?: number; modelId?: string; media?: Array<{ turn: number; type: "image" | "audio"; data: string; mimeType: string }> }): Promise<string>;
 	cancelGeneration(): Promise<void>;
 	/** Optional for older desktop builds. Scores decimal candidate indices. */
-	scoreLabels?(input: { requestId: string; modelId: string; prompt: string; labelCount: number }): Promise<{
-		modelId: string; negativeLogLikelihoods: readonly number[];
+	scoreLabels?(input: { requestId: string; modelId: string; prompt: string; labelCount: number } | (import("../../../shared/julia/encoder.js").JuliaDecisionRequest & { requestId: string; modelId: string })): Promise<{
+		modelId: string; negativeLogLikelihoods?: readonly number[]; weights?: readonly number[];
 	} | null>;
 	cancelScoring?(requestId: string): Promise<void>;
+  unloadJudgement?(): Promise<void>;
 }
 declare global { interface Window { keatingOffline?: DesktopOfflineBridge } }
 

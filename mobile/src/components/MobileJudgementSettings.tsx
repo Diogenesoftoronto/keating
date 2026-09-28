@@ -5,6 +5,7 @@ import { useUiSettings } from "@/state/UiSettingsProvider";
 import { useNotOrganicAccount } from "@/state/NotOrganicAccountProvider";
 import { MobileJudgementCalibrationSettings } from "./MobileJudgementCalibrationSettings";
 import { MobileDecisionPolicySettings } from "./MobileDecisionPolicySettings";
+import { JuliaJudgementSettings } from "./JuliaJudgementSettings";
 
 export function MobileJudgementSettings() {
   const { settings, updateSettings } = useUiSettings();
@@ -16,6 +17,7 @@ export function MobileJudgementSettings() {
     <Switch accessibilityLabel="Use MiniCPM5 for local judgement" value={settings.judgementLocalModel === "minicpm5-2b-int4"}
       onValueChange={enabled => updateSettings({ judgementLocalModel: enabled ? "minicpm5-2b-int4" : "off" })} />
     <Text style={{ color: colors.textMuted }}>Uses the model downloaded under Offline tutor. This selection is independent of your tutor model. Local review keeps saved answers on this device; uncalibrated estimates keep grades pending.</Text>
+    <JuliaJudgementSettings />
     <Text style={{ color: colors.text }}>Review saved work with Not Organic</Text>
     <Switch accessibilityLabel="Allow hosted judgement of saved answers" value={settings.judgementHosted}
       onValueChange={judgementHosted => updateSettings({ judgementHosted })} />
@@ -27,7 +29,7 @@ export function MobileJudgementSettings() {
         onPress={() => void account.login({ judgement: true })}>{permitted ? "Renew judgement permission" : "Authorize judgement"}</Button>
     </> : null}
     <MobileJudgementCalibrationSettings />
-    <MobileJudgementCalibrationSettings local />
+    <MobileJudgementCalibrationSettings local localModel={settings.judgementLocalModel} />
     <Text style={{ color: colors.text }}>Remember relevant learner notes</Text>
     <Switch accessibilityLabel="Save reviewed learner notes" value={settings.judgementMemory}
       onValueChange={judgementMemory => updateSettings({ judgementMemory })} />

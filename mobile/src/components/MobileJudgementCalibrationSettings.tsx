@@ -2,11 +2,12 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Text, TextInput, View } from "react-native";
 import { Button } from "./Buttons";
 import { radii, spacing, useKeatingTheme } from "@/constants/theme";
-import { importMobileJudgementCalibration, mobileJudgementCalibrationStore, mobileLocalJudgementCalibrationStore, type InstalledMobileCalibration } from "@/lib/judgement/calibration";
+import { importMobileJudgementCalibration, mobileJudgementCalibrationStore, mobileLocalJudgementCalibrationStore, mobileJuliaCalibrationStore, type InstalledMobileCalibration } from "@/lib/judgement/calibration";
 
 /** Device-local measured calibration installation; importing never enables hosted review. */
-export function MobileJudgementCalibrationSettings({ local = false }: { local?: boolean } = {}) {
-  const store = local ? mobileLocalJudgementCalibrationStore : mobileJudgementCalibrationStore;
+export function MobileJudgementCalibrationSettings({ local = false, localModel }: { local?: boolean; localModel?: string } = {}) {
+  const julia = local && localModel === "julia-1";
+  const store = local ? julia ? mobileJuliaCalibrationStore : mobileLocalJudgementCalibrationStore : mobileJudgementCalibrationStore;
   const { colors, type } = useKeatingTheme();
   const revision = useSyncExternalStore(store.subscribe, store.getRevision, store.getRevision);
   const [installed, setInstalled] = useState<InstalledMobileCalibration | null>(null);
@@ -51,7 +52,7 @@ export function MobileJudgementCalibrationSettings({ local = false }: { local?: 
     <TextInput accessibilityLabel="Expected calibration file SHA256" value={pin} onChangeText={setPin}
       editable={!busy} autoCapitalize="none" autoCorrect={false} maxLength={64}
       style={{ ...type.body, color: colors.text, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radii.sm, padding: spacing.sm }} />
-    <Text style={{ ...type.caption, color: colors.textMuted }}>Use the file hash supplied with the calibration report. Select a JSON file for {local ? "this exact MiniCPM5 model and native scorer" : "one hosted model"}, up to 5 MiB.</Text>
+    <Text style={{ ...type.caption, color: colors.textMuted }}>Use the file hash supplied with the calibration report. Select a JSON file for {local ? julia ? "this exact Julia model, encoder, Android runtime and context" : "this exact MiniCPM5 model and native scorer" : "one hosted model"}, up to 5 MiB.</Text>
     <Button compact variant="secondary" loading={busy} disabled={busy || !/^[a-f0-9]{64}$/iu.test(pin.trim())} onPress={() => void importArtifact()}>Import calibration file</Button>
     {installed || error || loadError ? <Button compact variant="quiet" disabled={busy} onPress={() => void remove()}>Remove device calibration</Button> : null}
     {(error || loadError) && !busy ? <Text accessibilityRole="alert" style={{ color: colors.text }}>{error || loadError}</Text> : null}

@@ -36,3 +36,43 @@ The conservative Android profile targets the 2025 Pixel 10 (Tensor G5, 12 GB RAM
 Gemma accepts images and WAV recordings through the attachment picker. Documents exposes WAV when Gemma is selected; the microphone's Dictation control continues to use configured online transcription and says so. Full lesson history is limited to two images, four media attachments and 16 MiB of media before hydration. Text input plus system instructions is bounded separately. Oversized lessons are rejected with recovery instructions rather than silently truncated. PDF, video, speech output and live voice are not implemented by this native offline path.
 
 The download size is storage, not a guaranteed runtime memory measurement. Pixel execution and iOS native compilation still need real-device verification. Google publishes device-dependent memory results in the [Gemma LiteRT model card](https://huggingface.co/litert-community/gemma-4-E4B-it-litert-lm); its results do not validate Keating on every phone. Pixel specs: [Google Pixel 10](https://store.google.com/product/pixel_10_specs).
+# Julia 1 local judgement on Android
+
+Julia is a separate, non-generative decision model under Settings → Local
+judgement, independent of the selected tutor. Its four pinned files (ONNX graph,
+external FP32 weights, tokenizer and configuration) download only after an
+explicit action, in bounded resumable ranges, and require exact sizes and SHA256
+verification before use. The approximately 614 MB download is not a memory
+estimate: tokenization and inference need additional working memory.
+
+The native path uses `onnxruntime-react-native` and Maven ONNX Runtime **1.24.3**,
+with the CPU provider, four intra-op threads, one inter-op thread, sequential
+execution, no CPU arena, one decision per call, and a strict **1,024-token**
+context / **256-token** question-and-option budget. There are 2–20 options,
+each at most 48 tokens; oversized evidence, reserved `<mask>` markers and
+lossy inputs are rejected. A shared pure JavaScript encoder restores the
+official Metaspace splitting behavior and matches the publisher's Rust encoder.
+Inference accepts all five native tensors and uses raw logits with stable
+softmax; it does not use the upstream display-only rounding.
+
+Julia and the larger LiteRT tutor share an exclusive inference lease. The
+tutor is unloaded before Julia inference; Julia is unloaded before tutoring.
+Backgrounding pauses downloads, unloads idle inference, and discards an in-flight
+result. Cancellation prevents applying a result; it does not promise to
+interrupt a native forward pass immediately. No hosted request occurs unless
+hosted judgement is separately enabled.
+
+Downloading/selecting Julia and installing calibration are separate actions.
+Julia's calibration identity includes the artifact revision, native runtime,
+encoder and context configuration, and its device store is separate from
+MiniCPM's. Without independently measured matching thresholds, automatic grading
+and recommendations abstain and grades remain pending. Existing MiniCPM
+calibration cannot authorize Julia results.
+
+Verification: Android arm64 native ONNX/JSI compilation passed against RN 0.85.3;
+the resulting AAR contains both `libonnxruntime.so` and `libonnxruntimejsi.so`.
+Shared encoding matched all 100 published parity cases plus 21 Unicode,
+whitespace, structured-state and numeric cases against official Rust WASM.
+Mobile type checking and 486 mobile tests passed. Pixel inference, memory,
+latency and battery measurements are deferred; Julia is currently enabled on
+native Android, not Expo Go, mobile web, or iOS.

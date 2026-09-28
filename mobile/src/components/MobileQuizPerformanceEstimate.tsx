@@ -34,8 +34,8 @@ export function useMobileQuizPerformance(options: {
   const epoch = useRef(0);
   const exportEpoch = useRef(0);
   const key = JSON.stringify([options.document, options.nodeId]);
-  const latest = useRef({ key, consent: loaded && (settings.judgementHosted || settings.judgementLocalModel === "minicpm5-2b-int4") });
-  latest.current = { key, consent: loaded && (settings.judgementHosted || settings.judgementLocalModel === "minicpm5-2b-int4") };
+  const latest = useRef({ key, consent: loaded && (settings.judgementHosted || settings.judgementLocalModel !== "off") });
+  latest.current = { key, consent: loaded && (settings.judgementHosted || settings.judgementLocalModel !== "off") };
   const cancelEstimate = () => {
     epoch.current++; estimating.current = false; setBusy(false); active.current?.dispose();
   };
@@ -117,10 +117,10 @@ export function useMobileQuizPerformance(options: {
     <Button compact variant="quiet" onPress={() => setExpanded(value => !value)}>{expanded ? "Hide quiz estimate" : "Quiz estimate"}</Button>
     {expanded && <>
       {!options.completed && <>
-        <Button compact variant="secondary" disabled={options.disabled || !options.ready || !loaded || !(settings.judgementHosted || settings.judgementLocalModel === "minicpm5-2b-int4") || started || savedEstimate} loading={busy} onPress={() => void estimate()}>
+        <Button compact variant="secondary" disabled={options.disabled || !options.ready || !loaded || !(settings.judgementHosted || settings.judgementLocalModel !== "off") || started || savedEstimate} loading={busy} onPress={() => void estimate()}>
           {savedEstimate ? "Prediction saved" : "Estimate before answering"}
         </Button>
-        <Text style={textStyle}>{!loaded || !options.ready ? "Restoring this quiz…" : !(settings.judgementHosted || settings.judgementLocalModel === "minicpm5-2b-int4") ? "Choose local or hosted judgement in Settings to request an estimate." : started && !savedEstimate ? "Estimates are available before you start answering." : "Uses your selected judgement model with this quiz and recent assessed work. Saves the prediction on this device to compare with your submitted answers."}</Text>
+        <Text style={textStyle}>{!loaded || !options.ready ? "Restoring this quiz…" : !(settings.judgementHosted || settings.judgementLocalModel !== "off") ? "Choose local or hosted judgement in Settings to request an estimate." : started && !savedEstimate ? "Estimates are available before you start answering." : "Uses your selected judgement model with this quiz and recent assessed work. Saves the prediction on this device to compare with your submitted answers."}</Text>
       </>}
       {message ? <Text accessibilityLiveRegion="polite" style={textStyle}>{message}</Text> : null}
       {evidenceStatus === "saved" && <Text accessibilityLiveRegion="polite" style={textStyle}>The prediction and submitted result are saved on this device. Hint tracking covers hints opened in this quiz.</Text>}

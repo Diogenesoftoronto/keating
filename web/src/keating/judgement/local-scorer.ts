@@ -41,7 +41,7 @@ export function createDesktopLocalLabelScorer(options: {
       const result = await bridge.scoreLabels({ requestId, modelId: options.modelId, prompt, labelCount: labels.length });
       if (signal?.aborted || result?.modelId !== options.modelId) return null;
       const nll = result.negativeLogLikelihoods;
-      if (nll.length !== labels.length || nll.some(value => !Number.isFinite(value) || value < 0)) return null;
+      if (!nll || nll.length !== labels.length || nll.some(value => !Number.isFinite(value) || value < 0)) return null;
       const minimum = Math.min(...nll);
       // LiteRT returns SUM negative log probability. Lower is more likely.
       // The local backend normalizes these genuine relative likelihoods.

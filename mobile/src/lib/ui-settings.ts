@@ -19,7 +19,7 @@ export type ReasoningLevel = "off" | "minimal" | "low" | "medium" | "high" | "xh
 export interface KeatingUiSettings {
   /** Explicit network consent, independent of local judgement and the tutor provider. */
   judgementHosted: boolean;
-  judgementLocalModel: "off" | "minicpm5-2b-int4";
+  judgementLocalModel: "off" | "minicpm5-2b-int4" | "julia-1";
   judgementMemory: boolean;
   theme: ThemePreference;
   fontFamily: UiFontFamily;
@@ -88,7 +88,7 @@ export function normalizeUiSettings(value: unknown): KeatingUiSettings {
   const record = (typeof value === "object" && value !== null ? value : {}) as Partial<KeatingUiSettings>;
   return {
     judgementHosted: record.judgementHosted === true,
-    judgementLocalModel: record.judgementLocalModel === "minicpm5-2b-int4" ? "minicpm5-2b-int4" : "off",
+    judgementLocalModel: record.judgementLocalModel === "julia-1" ? "julia-1" : record.judgementLocalModel === "minicpm5-2b-int4" ? "minicpm5-2b-int4" : "off",
     judgementMemory: record.judgementMemory === true,
     theme: THEME_VALUES.has(record.theme as ThemePreference) ? record.theme as ThemePreference : DEFAULT_UI_SETTINGS.theme,
     fontFamily: FONT_VALUES.has(record.fontFamily as UiFontFamily)

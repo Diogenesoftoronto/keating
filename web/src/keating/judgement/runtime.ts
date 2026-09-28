@@ -16,6 +16,9 @@ import { createDesktopLocalLabelScorer } from "./local-scorer";
 import { createWebJudgementCaller, WEB_JUDGEMENT_MODEL_ALIAS, type WebJudgementCallerOptions } from "./transport";
 import { createPublicAccountJudgementBackend, type JudgementAccountClient } from "./public-account";
 import { observeJudgementCaller } from "./diagnostics";
+import { JULIA_BROWSER_MODEL_ID, JULIA_MODEL, JULIA_MODEL_ID } from "../../../../shared/julia/manifest.js";
+import { createBrowserJuliaScorer, createDesktopJuliaScorer } from "./julia-scorer";
+import { juliaBrowserModel } from "../../stores/julia-model";
 
 /** A measured table belongs to one exact backend/model/calibration identity. */
 export interface WebJudgementCalibration {
@@ -117,12 +120,16 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
     const supplied = options.localScorer;
     const scorer = supplied?.modelId === settings.localModelId ? supplied.scoreLabels
       : settings.localModelId === DESKTOP_OFFLINE_MODEL.id && typeof bridge?.scoreLabels === "function"
-        ? createDesktopLocalLabelScorer({ modelId: settings.localModelId, bridge }) : undefined;
+        ? createDesktopLocalLabelScorer({ modelId: settings.localModelId, bridge })
+        : settings.localModelId === JULIA_MODEL_ID && bridge?.supportedJudgementModels?.includes(JULIA_MODEL_ID) && bridge.scoreLabels
+          ? createDesktopJuliaScorer(bridge)
+          : settings.localModelId === JULIA_BROWSER_MODEL_ID && juliaBrowserModel.status().available ? createBrowserJuliaScorer() : undefined;
     const local = createWebJudgementCaller({
       localScorer: scorer ?? (async () => null), localModel: key.model,
       calibrationSha256: key.calibrationSha256, gateway: "none",
     });
-    tiers.push(Object.freeze({ key, call: local.call, isAvailable: () => scorer !== undefined }));
+    tiers.push(Object.freeze({ key, call: local.call, isAvailable: () => scorer !== undefined
+      && (settings.localModelId !== JULIA_BROWSER_MODEL_ID || juliaBrowserModel.status().installed) }));
     Object.assign(entries, calibratedEntries(key, calibration?.local));
   }
 
@@ -154,7 +161,8 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   const hostedModel = options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;
   const isJevModel = hostedModel === "jev-latest" || hostedModel === "jev-preview" || /^jev-\d/.test(hostedModel);
   const localNativeContextWindow = options.localScorer?.contextWindowTokens
-    ?? (settings.localModelId === DESKTOP_OFFLINE_MODEL.id && typeof (options.desktopBridge ?? desktopOfflineBridge())?.scoreLabels === "function"
+    ?? (settings.localModelId === JULIA_MODEL_ID || settings.localModelId === JULIA_BROWSER_MODEL_ID ? JULIA_MODEL.contextTokens
+      : settings.localModelId === DESKTOP_OFFLINE_MODEL.id && typeof (options.desktopBridge ?? desktopOfflineBridge())?.scoreLabels === "function"
       ? DESKTOP_OFFLINE_MODEL.contextWindow : null);
   const localRequestTokens = localNativeContextWindow ?? settings.requestTokens ?? null;
   const localStateQuestionTokens = localNativeContextWindow ?? settings.stateQuestionTokens ?? null;
@@ -163,7 +171,9 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   const hostedStateQuestionTokens = options.hosted?.stateQuestionTokens ?? options.hosted?.contextWindowTokens ?? settings.stateQuestionTokens
     ?? (isJevModel ? JEV_STATE_QUESTION_TOKEN_LIMIT : null);
   const localFallbackAvailable = options.localScorer?.modelId === settings.localModelId
-    || settings.localModelId === DESKTOP_OFFLINE_MODEL.id && typeof (options.desktopBridge ?? desktopOfflineBridge())?.scoreLabels === "function";
+    || settings.localModelId === DESKTOP_OFFLINE_MODEL.id && typeof (options.desktopBridge ?? desktopOfflineBridge())?.scoreLabels === "function"
+    || settings.localModelId === JULIA_MODEL_ID && Boolean((options.desktopBridge ?? desktopOfflineBridge())?.supportedJudgementModels?.includes(JULIA_MODEL_ID))
+    || settings.localModelId === JULIA_BROWSER_MODEL_ID && juliaBrowserModel.status().installed;
   const activeRequestLimits = settings.backend === "hosted"
     ? [hostedRequestTokens, ...(localFallbackAvailable ? [localRequestTokens] : [])]
     : settings.backend === "local" ? [localRequestTokens] : [];
