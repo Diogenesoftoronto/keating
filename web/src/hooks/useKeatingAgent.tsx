@@ -25,6 +25,7 @@ import { useDialogState } from "./useDialogState";
 import { type Model, type Api, type Context } from "@earendil-works/pi-ai";
 import { toModelMessages } from "../keating/flue/model-messages";
 import { SettingsDialog } from "../components/SettingsDialog";
+import { StartTab } from "../components/settings/StartTab";
 import {
   MODELS_TAB_ALL_SECTION_IDS,
   SETTINGS_DIALOG_TAB_IDS,
@@ -62,7 +63,8 @@ import { createWebMemoryAdmission, withWebMemoryBank } from "../keating/judgemen
 import { NOTORGANIC_DEFAULT_MODEL, isNotOrganicProvider, notOrganicPublicClient } from "../notorganic-provider";
 import { hasNotOrganicProductSession, promptNotOrganicAccess } from "../components/NotOrganicAccessPromptDialog";
 import { rememberChatTurn, clearPendingChatTurn, claimPendingChatTurn, pendingChatTurn } from "../notorganic-provider/pending-chat-turn";
-import { addRecentModel, getRecentModels } from "../keating/model-prefs";
+import { applyGptLiveDefaultIfUnset } from "../keating/speech-default";
+import { PROVIDER_CREDENTIALS_CHANGED_EVENT, addRecentModel, getRecentModels, loadModelPrefs } from "../keating/model-prefs";
 import { modelKey } from "../lib/model-catalog";
 import {
   captureSessionModelContext,
@@ -554,6 +556,15 @@ export function useKeatingAgent(
   const speechSettings = useKeatingAgentStore((state) => state.speechSettings);
   const speechEnabledRef = useRef(speechSettings.enabled);
   speechEnabledRef.current = speechSettings.enabled;
+  // Signed-in Not Organic accounts start with GPT Live as their voice, unless a voice was already chosen.
+  useEffect(() => {
+    const apply = () => {
+      try { applyGptLiveDefaultIfUnset(Boolean(notOrganicPublicClient()?.getSession())); } catch { /* session storage unavailable */ }
+    };
+    apply();
+    window.addEventListener(PROVIDER_CREDENTIALS_CHANGED_EVENT, apply);
+    return () => window.removeEventListener(PROVIDER_CREDENTIALS_CHANGED_EVENT, apply);
+  }, []);
   const syncSpeechSettings = useKeatingAgentStore(
     (state) => state.syncSpeechSettings,
   );
@@ -1366,7 +1377,8 @@ export function useKeatingAgent(
     // Restore an explicit model choice after account redirects, even before the
     // first message creates a saved session. Existing sessions keep their model.
     if (!initialState?.model && !agentRef.current && !explicitModelSelectionRef.current) {
-      const recent = getRecentModels()[0];
+      const defaultKey = loadModelPrefs().defaultChatModelKey;
+      const recent = defaultKey ? { key: defaultKey } : getRecentModels()[0];
       if (recent) {
         const models = recent.key === modelKey(NOTORGANIC_DEFAULT_MODEL)
           ? [NOTORGANIC_DEFAULT_MODEL]
@@ -2593,13 +2605,27 @@ export function useKeatingAgent(
       defaultTabId={settingsDeepLinkRef.current?.tabId}
       tabs={[
         {
+          id: "start",
+          label: "Get started",
+          group: "Basics",
+          description: "The few things worth doing first.",
+          docsPath: "start-here/",
+          component: <StartTab />,
+        },
+        {
           id: "models",
           label: "Models & Providers",
+          group: "Connect",
+          description: "API keys, local models, web search and proxy.",
+          docsPath: "choose-a-model/",
           component: <ModelsProvidersTab />,
         },
         {
           id: "learning",
           label: "Learning",
+          group: "Personalize",
+          description: "Your profile, the teacher's persona, and voice.",
+          docsPath: "learning-with-keating/",
           component: (
             <LearningTab
               onStartTour={() => {
@@ -2611,8 +2637,21 @@ export function useKeatingAgent(
             />
           ),
         },
-        { id: "app", label: "App", component: <KeatingUiSettingsTab /> },
-        { id: "diagnostics", label: "Diagnostics", component: <DiagnosticsTab /> },
+        {
+          id: "app",
+          label: "Appearance & Privacy",
+          group: "Personalize",
+          description: "Chat display, sharing, images and analytics.",
+          component: <KeatingUiSettingsTab />,
+        },
+        {
+          id: "diagnostics",
+          label: "Diagnostics",
+          group: "Support",
+          description: "Troubleshoot problems and report issues.",
+          docsPath: "troubleshooting/",
+          component: <DiagnosticsTab />,
+        },
       ]}
     />
   );

@@ -414,6 +414,7 @@ export function SessionBrowserDesktop({
               type="button"
               className="session-panel__icon"
               aria-label="Clear search"
+      title="Clear search"
               onClick={() => store.setQuery("")}
             >
               <KeatingIcon icon={Xmark} size={16} />

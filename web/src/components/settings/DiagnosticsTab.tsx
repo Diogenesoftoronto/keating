@@ -18,6 +18,11 @@ import {
 import { Toggle } from "../Toggle";
 import { JudgementDiagnostics } from "../JudgementDiagnostics";
 import { CopyDiagnosticButton } from "./CopyDiagnosticButton";
+import { explainDiagnostic, buildHealthChecks, buildHealthText, groupProblems, overallStatus, type CheckStatus } from "../../lib/diagnostics-insights";
+import { diagnosticReportMailto, readDiagnosticRuntimeSnapshot, sendDiagnosticReport } from "../../lib/diagnostics";
+import { PROVIDER_CREDENTIALS_CHANGED_EVENT } from "../../keating/model-prefs";
+import { useConnectedProviders } from "./ProviderConnectPanel";
+import { getProviders } from "@earendil-works/pi-ai/compat";
 
 const stackClass = css({ display: "flex", flexDirection: "column", gap: "1.5rem" });
 const sectionClass = css({ display: "flex", flexDirection: "column", gap: "0.75rem" });
@@ -254,6 +259,103 @@ function SanitizedDiagnostics() {
 	);
 }
 
+const STATUS_TONE: Record<CheckStatus, string> = { ok: "var(--success, #16a34a)", warning: "#d97706", problem: "var(--destructive)" };
+const STATUS_GLYPH: Record<CheckStatus, string> = { ok: "✓", warning: "!", problem: "✕" };
+const BANNER: Record<CheckStatus, string> = {
+	ok: "Everything looks healthy",
+	warning: "Working, with a few things worth a look",
+	problem: "Something needs your attention",
+};
+const openTab = (tab: string) => window.dispatchEvent(new CustomEvent("keating:settings-tab", { detail: tab }));
+const PROVIDER_LIST = [...getProviders(), "notorganic"];
+
+function HealthSummary() {
+	const entries = useSyncExternalStore(subscribeDiagnostics, getDiagnosticsSnapshot, getDiagnosticsSnapshot);
+	const connected = useConnectedProviders(PROVIDER_LIST);
+	const [status, setStatus] = useState("");
+	const [sending, setSending] = useState(false);
+	const checks = buildHealthChecks({ runtime: readDiagnosticRuntimeSnapshot(), entries, connectedProviderCount: connected.size });
+	const overall = overallStatus(checks);
+	const problems = groupProblems(entries);
+
+	const sendReport = async () => {
+		setSending(true);
+		const summary = problems[0]?.explanation.title ?? "Diagnostics from settings";
+		const delivery = await sendDiagnosticReport({ summary });
+		setSending(false);
+		if (delivery) { setStatus("Report sent. Thank you."); return; }
+		window.location.href = diagnosticReportMailto({ summary });
+		setStatus("Couldn't send automatically, so your email app was opened with the report instead.");
+	};
+
+	return (
+		<section className={sectionClass} aria-labelledby="health-heading">
+			<div className={cx(cardClass, css({ flexDirection: "row", alignItems: "center", gap: "0.75rem" }))}>
+				<span aria-hidden className={css({ fontSize: "1.25rem", fontWeight: 700 })} style={{ color: STATUS_TONE[overall] }}>{STATUS_GLYPH[overall]}</span>
+				<div>
+					<h3 id="health-heading" className={headingClass}>{BANNER[overall]}</h3>
+					<p className={mutedClass}>A quick check of the things that most often stop Keating from working.</p>
+				</div>
+				<div className={css({ marginLeft: "auto" })}>
+					<CopyDiagnosticButton label="Copy summary" text={() => buildHealthText({ checks, problems })} />
+				</div>
+			</div>
+			<ul className={cx(cardClass, css({ listStyle: "none", gap: "0.5rem" }))}>
+				{checks.map((c) => (
+					<li key={c.id} className={css({ display: "flex", alignItems: "center", gap: "0.625rem", flexWrap: "wrap" })}>
+						<span aria-hidden style={{ color: STATUS_TONE[c.status], width: "1rem", textAlign: "center", fontWeight: 700 }}>{STATUS_GLYPH[c.status]}</span>
+						<div className={css({ flex: 1, minWidth: "12rem" })}>
+							<div className={css({ fontSize: "0.8125rem", fontWeight: 500 })}>{c.label}</div>
+							<div className={mutedClass}>{c.detail}</div>
+						</div>
+						{c.fix && <button type="button" className={buttonClass} onClick={() => (c.fix!.reload ? window.location.reload() : c.fix!.tab && openTab(c.fix!.tab))}>{c.fix.label}</button>}
+					</li>
+				))}
+			</ul>
+			{problems.length > 0 && (
+				<div className={cardClass}>
+					<h4 className={headingClass}>What happened</h4>
+					<ul className={css({ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.75rem" })}>
+						{problems.map((g) => (
+							<li key={`${g.level}-${g.explanation.title}-${g.lastSeen}`} className={css({ display: "flex", flexDirection: "column", gap: "0.25rem" })}>
+								<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
+									<div className={css({ fontSize: "0.8125rem", fontWeight: 500, minWidth: 0 })}>
+										{g.explanation.title}{g.count > 1 ? ` · ${g.count}×` : ""}
+										<span className={mutedClass}> · last at {new Date(g.lastSeen).toLocaleTimeString()}</span>
+									</div>
+									<CopyDiagnosticButton label="Copy details" text={() => buildDiagnosticReport({ entries: entries.filter((e) => e.level === g.level && explainDiagnostic(e).title === g.explanation.title) })} />
+								</div>
+								<div className={cx(mutedClass, css({ overflowWrap: "anywhere" }))}>{g.explanation.meaning}</div>
+								{g.explanation.fix && <button type="button" className={cx(buttonClass, css({ alignSelf: "flex-start", marginTop: "0.25rem" }))} onClick={() => (g.explanation.fix!.reload ? window.location.reload() : g.explanation.fix!.tab && openTab(g.explanation.fix!.tab))}>{g.explanation.fix.label}</button>}
+							</li>
+						))}
+					</ul>
+				</div>
+			)}
+			<div className={cardClass}>
+				<h4 className={headingClass}>Still stuck?</h4>
+				<p className={mutedClass}>Send us a sanitized report. It never includes your prompts, replies, or keys.</p>
+				<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
+					<button type="button" className={buttonClass} disabled={sending} onClick={() => void sendReport()}>{sending ? "Sending…" : "Send report to Keating"}</button>
+					<CopyDiagnosticButton label="Copy errors only" disabled={!entries.some((e) => e.level === "error")} text={() => buildDiagnosticReport({ entries: entries.filter((e) => e.level === "error") })} />
+					<CopyDiagnosticButton label="Copy everything" text={() => buildDiagnosticReport()} />
+				</div>
+				{status && <p role="status" className={mutedClass}>{status}</p>}
+			</div>
+		</section>
+	);
+}
+
 export function DiagnosticsTab() {
-	return <div className={stackClass}><JudgementDiagnostics controls /><SessionInspector /><SanitizedDiagnostics /></div>;
+	return (
+		<div className={stackClass}>
+			<HealthSummary />
+			<details>
+				<summary className={summaryClass}>Advanced: technical logs and session inspector</summary>
+				<div className={cx(stackClass, css({ marginTop: "1rem" }))}>
+					<JudgementDiagnostics controls /><SessionInspector /><SanitizedDiagnostics />
+				</div>
+			</details>
+		</div>
+	);
 }

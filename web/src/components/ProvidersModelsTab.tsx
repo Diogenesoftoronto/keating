@@ -19,9 +19,9 @@ import {
 	isNotOrganicFeatureEnabled,
 	NOTORGANIC_PROVIDER_ID,
 } from "../notorganic-provider";
-import { CloudProviderKeysSection } from "./settings/CloudProviderKeysSection";
+import { ModelRolesPanel } from "./settings/ModelRolesPanel";
+import { ProviderConnectPanel } from "./settings/ProviderConnectPanel";
 import { WebSearchSection } from "./settings/WebSearchSection";
-import { ProviderVisibilitySection } from "./settings/ProviderVisibilitySection";
 import { MyModelsSection } from "./settings/MyModelsSection";
 import { OfflineTutorSettings } from "./OfflineTutorSettings";
 import { JudgementSettings } from "./settings/JudgementSettings";
@@ -257,10 +257,10 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 			<SettingsSectionNav
 				sections={[
 					...(desktopOfflineBridge() ? [{ id: "offline-tutor", label: "Offline tutor" }] : []),
-					{ id: "cloud-providers", label: "Cloud" },
+					{ id: "model-roles", label: "Your models" },
+					{ id: "cloud-providers", label: "Providers" },
 					{ id: "judgement", label: "Judgement" },
 					{ id: "web-search", label: "Web Search" },
-					{ id: "provider-visibility", label: "Visibility" },
 					{ id: "my-models", label: "My Models" },
 					{ id: "custom-providers", label: "Custom Providers" },
 					...(extraNavSections ?? []),
@@ -268,7 +268,15 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 			/>
 
 			<OfflineTutorSettings />
-			<CloudProviderKeysSection providers={providers} />
+			<ModelRolesPanel />
+
+			<div className={dividerClass} />
+
+			<ProviderConnectPanel
+				providers={providers}
+				modelPrefs={modelPrefs}
+				onToggleVisibility={handleToggleProvider}
+			/>
 
 			<div className={dividerClass} />
 			<JudgementSettings />
@@ -276,15 +284,6 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 			<div className={dividerClass} />
 
 			<WebSearchSection settings={settings} onPatch={patch} />
-
-			<div className={dividerClass} />
-
-			<ProviderVisibilitySection
-				providers={providers}
-				modelPrefs={modelPrefs}
-				onToggle={handleToggleProvider}
-				onSetAllHidden={handleSetAllProvidersHidden}
-			/>
 
 			<div className={dividerClass} />
 

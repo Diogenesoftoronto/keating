@@ -56,6 +56,9 @@ Browser gate:
   wallet, usage, checkout, and inference requests; omit `/v1`.
 - `VITE_NOTORGANIC_AUTHORIZATION_URL` — provider authorization endpoint used to
   begin the PKCE redirect flow.
+- `VITE_NOTORGANIC_ACCOUNT_URL` — optional HTTPS page for credits and account
+  details, linked from Settings. When blank, uses `/account` on the
+  authorization URL's origin.
 - `VITE_NOTORGANIC_CLIENT_ID` — public Keating OAuth client identifier. When
   blank, uses the current HTTPS or HTTP loopback browser origin.
 - `VITE_NOTORGANIC_REDIRECT_URI` — exact callback URL for this Keating deployment.

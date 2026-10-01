@@ -11,16 +11,14 @@ export const MODELS_TAB_SECTION_IDS = [
 	"cloud-providers",
 	"judgement",
 	"web-search",
-	"provider-visibility",
 	"my-models",
 	"custom-providers",
 ] as const;
 
 export const MODELS_TAB_SECTION_LABELS: Record<typeof MODELS_TAB_SECTION_IDS[number], string> = {
-	"cloud-providers": "Cloud",
+	"cloud-providers": "Providers",
 	"judgement": "Judgement",
 	"web-search": "Web Search",
-	"provider-visibility": "Visibility",
 	"my-models": "My Models",
 	"custom-providers": "Custom Providers",
 };
@@ -33,4 +31,4 @@ export const MODELS_TAB_ALL_SECTION_IDS = [
 ] as const;
 
 /** Top-level settings dialog tab ids, used for `?settings=<id>` deep links. */
-export const SETTINGS_DIALOG_TAB_IDS = ["models", "learning", "app", "diagnostics"] as const;
+export const SETTINGS_DIALOG_TAB_IDS = ["start", "models", "learning", "app", "diagnostics"] as const;

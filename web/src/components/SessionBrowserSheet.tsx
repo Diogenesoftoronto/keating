@@ -195,6 +195,7 @@ export function SessionBrowserSheet(props: SessionBrowserSurfaceProps) {
             type="button"
             className="session-library__icon-button"
             aria-label="Close sessions"
+      title="Close sessions"
             onClick={onMobileClose}
           >
             <X size={22} />

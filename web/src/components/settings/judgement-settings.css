@@ -18,3 +18,7 @@
 .judgement-settings a:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 .judgement-settings ol { margin: 0; padding-inline-start: 1.5rem; max-width: 65ch; line-height: 1.5; }
 .judgement-settings li + li { margin-top: .5rem; }
+.judgement-settings__hint { color: var(--muted-foreground); font-size: .8125rem; }
+.judgement-settings__account button + button { margin-inline-start: .5rem; }
+.judgement-settings__actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.judgement-settings__account { gap: .75rem; }
