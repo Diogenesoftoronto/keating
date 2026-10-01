@@ -184,6 +184,7 @@ export const SessionCard = memo(function SessionCard({
             type="button"
             className="session-library__icon-button"
             aria-label={`Actions for ${session.title}`}
+            title="More actions"
             aria-expanded={panel !== null}
             aria-controls={panelId}
             disabled={busy}
@@ -225,16 +226,19 @@ export const SessionCard = memo(function SessionCard({
             <div className="session-entry__actions">
               <button
                 type="button"
+                title="Fork session"
+                aria-label="Fork session"
                 disabled={busy || forking}
                 onClick={() => void run(() => onFork(session.id))}
               >
                 <Spinner size={16} loading={forking}>
                   <GitBranch size={16} />
                 </Spinner>
-                Fork session
               </button>
               <button
                 type="button"
+                title="Rename"
+                aria-label="Rename"
                 disabled={busy}
                 onClick={() => {
                   setDraft(session.title);
@@ -243,11 +247,12 @@ export const SessionCard = memo(function SessionCard({
                 }}
               >
                 <Pencil size={16} />
-                Rename
               </button>
               {onSuggestTitle ? (
                 <button
                   type="button"
+                  title="Suggest title"
+                  aria-label="Suggest title"
                   disabled={busy}
                   onClick={() =>
                     void run(async () => {
@@ -259,17 +264,17 @@ export const SessionCard = memo(function SessionCard({
                   }
                 >
                   <Sparkles size={16} />
-                  Suggest title
                 </button>
               ) : null}
               <button
                 type="button"
                 className="session-entry__destructive"
+                title="Delete"
+                aria-label="Delete"
                 disabled={busy}
                 onClick={() => setPanel("delete")}
               >
                 <Trash2 size={16} />
-                Delete
               </button>
             </div>
           ) : null}

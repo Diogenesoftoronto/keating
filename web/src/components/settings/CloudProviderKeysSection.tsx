@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getModels } from "@earendil-works/pi-ai/compat";
+import { testProviderKey } from "../../lib/provider-key-test";
 import { getAppStorage } from "../../keating/app-storage";
 import { handleTutorialLinkClick, tutorialApiKeyHref } from "../../lib/tutorial-links";
 import {
@@ -21,6 +23,7 @@ import {
 	notOrganicPublicClient,
 } from "../../notorganic-provider";
 import { recordDiagnostic } from "../../lib/diagnostics";
+import { formatCreditBalance, normalizeCreditWallet } from "../../notorganic-provider/credit-wallet";
 import { notifyProviderCredentialsChanged } from "../../keating/model-prefs";
 import { css } from "../../../styled-system/css";
 
@@ -103,6 +106,83 @@ export function CloudProviderKeysSection({ providers }: { providers: string[] })
 	);
 }
 
+const TEST_LABELS: Record<string, string> = {
+	checking: "Checking key…",
+	ok: "Key works",
+	invalid: "Key rejected",
+	error: "Couldn't verify",
+	unsupported: "Not verified",
+};
+
+/** API-key input that saves on blur and verifies the key automatically while you type or paste. */
+function ApiKeyField({ provider, value, error, onChange, onSave }: {
+	provider: string;
+	value: string;
+	error?: string;
+	onChange: (value: string) => void;
+	onSave: (value: string) => Promise<void>;
+}) {
+	const [result, setResult] = useState<{ status: string; detail?: string } | null>(null);
+	const lastTested = useRef("");
+
+	useEffect(() => {
+		const key = value.trim();
+		if (!key) { setResult(null); lastTested.current = ""; return; }
+		if (key === lastTested.current) return;
+		const model = getModels(provider as never)[0] as { api: string; baseUrl: string } | undefined;
+		const target = model ? { provider, api: model.api, baseUrl: model.baseUrl } : { provider, api: "", baseUrl: "" };
+		const controller = new AbortController();
+		const timer = setTimeout(() => {
+			lastTested.current = key;
+			setResult({ status: "checking" });
+			testProviderKey(target, key, { signal: controller.signal })
+				.then((r) => { setResult(r); if (r.status === "ok") void onSave(key); })
+				.catch(() => {});
+		}, 700);
+		return () => { clearTimeout(timer); controller.abort(); };
+	}, [provider, value]);
+
+	const status = result?.status;
+	const tone = status === "ok" ? "var(--success, #16a34a)" : status === "invalid" ? "var(--destructive)" : "var(--muted-foreground)";
+	return (
+		<div className={providerStackClass}>
+			<div className={labelRowClass}>
+				<label className={labelClass} htmlFor={`key-${provider}`}>{provider} API Key</label>
+				<a
+					href={tutorialApiKeyHref(provider)}
+					target="_blank"
+					rel="noopener noreferrer"
+					onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(provider))}
+					className={linkClass}
+				>
+					Get a key
+				</a>
+			</div>
+			<input
+				id={`key-${provider}`}
+				type="password"
+				autoComplete="off"
+				spellCheck={false}
+				className={inputClass}
+				placeholder={`Paste your ${provider} API key`}
+				value={value}
+				onChange={(e) => onChange(e.target.value)}
+				onBlur={(e) => void onSave(e.target.value)}
+			/>
+			{status && (
+				<p role="status" className={css({ fontSize: "0.75rem" })} style={{ color: tone }}>
+					{TEST_LABELS[status]}{result?.detail ? ` — ${result.detail}` : ""}
+				</p>
+			)}
+			{error && (
+				<p role="alert" className={css({ fontSize: "0.75rem", color: "var(--destructive)" })}>
+					{error} Your entered key remains in this field; restore OS credential storage and blur the field to retry.
+				</p>
+			)}
+		</div>
+	);
+}
+
 function OAuthProviderKeys({ providers }: { providers: string[] }) {
 	const [keys, setKeys] = useState<Record<string, string>>({});
 	const [keyErrors, setKeyErrors] = useState<Record<string, string>>({});
@@ -180,9 +260,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 						]);
 						status[provider] = true;
 						notifyProviderCredentialsChanged(provider);
-						const balance = typeof wallet.balance_microusd === "number"
-							? `$${(wallet.balance_microusd / 1_000_000).toFixed(2)} available`
-							: "Wallet connected";
+						const balance = `${formatCreditBalance(normalizeCreditWallet(wallet).availableMicros)} available`;
 						setHostedSummary(`${account.did ?? account.id} · ${balance}`);
 					} catch {
 						status[provider] = false;
@@ -276,7 +354,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			setOAuthErrors((prev) => ({ ...prev, [provider]: "" }));
 			setOauthLoading((prev) => ({ ...prev, [provider]: true }));
 			if (!notOrganicPublicClient()?.getSession()) {
-				void beginNotOrganicAuthorization(window.location.pathname)
+				void beginNotOrganicAuthorization(`${window.location.pathname}${window.location.search}`)
 					.catch((error) => {
 						setOAuthErrors((prev) => ({ ...prev, [provider]: error instanceof Error ? error.message : "Not Organic sign-in could not start." }));
 						setOauthLoading((prev) => ({ ...prev, [provider]: false }));
@@ -286,9 +364,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			void Promise.all([getNotOrganicAccount(), getNotOrganicWallet()])
 				.then(([account, wallet]) => {
 					setOAuthStatus((prev) => ({ ...prev, [provider]: true }));
-					const balance = typeof wallet.balance_microusd === "number"
-						? `$${(wallet.balance_microusd / 1_000_000).toFixed(2)} available`
-						: "Wallet connected";
+					const balance = `${formatCreditBalance(normalizeCreditWallet(wallet).availableMicros)} available`;
 					setHostedSummary(`${account.did ?? account.id} · ${balance}`);
 				})
 				.catch((error) => {
@@ -435,25 +511,27 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 							</div>
 							<div className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
 								<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-									Hosted sign-in uses a five-minute, device-bound Not Organic capability. The non-extractable DPoP key stays in this browser.
+									Sign in to use hosted models with your Not Organic credit.
 								</p>
 								{hasSession && hostedSummary && (
 									<p className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--foreground)" })}>
 										{hostedSummary}
 									</p>
 								)}
-								<button
-									className={smallButtonClass}
-									disabled={loading}
-									onClick={() => handleSignIn(provider)}
-								>
-									{loading ? "Checking session…" : hasSession ? "Refresh account" : "Connect Not Organic"}
-								</button>
-								{hasSession && (
-									<button className={smallButtonClass} type="button" onClick={() => void handleSignOut(provider)}>
-										Sign out
+								<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.75rem", marginTop: "0.75rem" })}>
+									<button
+										className={smallButtonClass}
+										disabled={loading}
+										onClick={() => handleSignIn(provider)}
+									>
+										{loading ? "Checking session…" : hasSession ? "Refresh account" : "Connect Not Organic"}
 									</button>
-								)}
+									{hasSession && (
+										<button className={smallButtonClass} type="button" onClick={() => void handleSignOut(provider)}>
+											Sign out
+										</button>
+									)}
+								</div>
 								{oauthErrors[provider] && (
 									<p className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--destructive)" })}>
 										{oauthErrors[provider]}
@@ -576,33 +654,14 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 				}
 
 				return (
-					<div key={provider} className={providerStackClass}>
-						<div className={labelRowClass}>
-							<label className={labelClass}>{provider} API Key</label>
-							<a
-								href={tutorialApiKeyHref(provider)}
-								target="_blank"
-								rel="noopener noreferrer"
-								onClick={(event) => handleTutorialLinkClick(event.nativeEvent, tutorialApiKeyHref(provider))}
-								className={linkClass}
-							>
-								Get a key
-							</a>
-						</div>
-						<input
-							type="password"
-							className={inputClass}
-							placeholder={`${provider} API key`}
-							value={keys[provider] ?? ""}
-							onChange={(e) => setKeys((prev) => ({ ...prev, [provider]: e.target.value }))}
-							onBlur={(e) => void save(provider, e.target.value)}
-						/>
-						{keyErrors[provider] && (
-							<p role="alert" className={css({ fontSize: "0.75rem", color: "var(--destructive)" })}>
-								{keyErrors[provider]} Your entered key remains in this field; restore OS credential storage and blur the field to retry.
-							</p>
-						)}
-					</div>
+					<ApiKeyField
+						key={provider}
+						provider={provider}
+						value={keys[provider] ?? ""}
+						error={keyErrors[provider]}
+						onChange={(value) => setKeys((prev) => ({ ...prev, [provider]: value }))}
+						onSave={(value) => save(provider, value)}
+					/>
 				);
 			})}
 		</>
@@ -622,4 +681,9 @@ function setProviderAliases<T>(prev: Record<string, T>, providers: string[] | st
 		next[provider] = value;
 	}
 	return next;
+}
+
+/** Sign-in / API-key form for a single provider, without the section chrome. */
+export function ProviderCredentialForm({ provider }: { provider: string }) {
+	return <OAuthProviderKeys providers={[provider]} />;
 }

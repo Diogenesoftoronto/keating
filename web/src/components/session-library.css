@@ -490,7 +490,14 @@ dialog.session-library .session-library__categories button {
 .session-entry__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem 0.5rem;
+  gap: 0.25rem;
+}
+/* Icon-only: the tooltip names the action, so the buttons stay small. */
+.session-entry__actions button {
+  min-width: 2.75rem;
+  min-height: 2.25rem;
+  height: 2.25rem;
+  padding: 0 0.875rem;
 }
 .session-entry__actions button,
 .session-entry__form-actions

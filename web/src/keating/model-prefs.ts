@@ -20,6 +20,8 @@ export interface ModelPrefs {
 	hiddenProviders: string[];
 	recentModels: Array<{ key: string; timestamp: number }>;
 	customModels: SavedModel[];
+	/** Model new chats start with; wins over the most recently used one. */
+	defaultChatModelKey?: string;
 }
 
 export const DEFAULT_MODEL_PREFS: ModelPrefs = {
@@ -87,6 +89,9 @@ function normalizeModelPrefs(value: LegacyModelPrefsInput | null | undefined): M
 		customModels: Array.isArray(value?.customModels)
 			? value.customModels.map(normalizeSavedModel).filter((item): item is SavedModel => item !== null)
 			: DEFAULT_MODEL_PREFS.customModels,
+		defaultChatModelKey: typeof value?.defaultChatModelKey === "string" && value.defaultChatModelKey.trim()
+			? value.defaultChatModelKey
+			: undefined,
 	};
 }
 
@@ -199,4 +204,9 @@ export function setProvidersVisibility(providers: string[], hidden: boolean) {
 	};
 	saveModelPrefs(next);
 	return next;
+}
+
+/** Pass null to clear the default and fall back to the most recently used model. */
+export function setDefaultChatModel(key: string | null): void {
+	saveModelPrefs({ ...loadModelPrefs(), defaultChatModelKey: key ?? undefined });
 }

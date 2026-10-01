@@ -1,10 +1,17 @@
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { BookOpen, Brain, Bug, Cpu, Settings2, X } from "lucide-react";
+import { Fragment, useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { BookOpen, Brain, Bug, Cpu, ExternalLink, Rocket, Settings2, X } from "lucide-react";
+import { DOCUMENTATION_URL } from "../lib/tutorial-links";
 import { css, cx } from "../../styled-system/css";
 
 export interface SettingsTabDef {
 	id: string;
 	label: string;
+	/** Sidebar group heading; consecutive tabs sharing a group are listed together. */
+	group?: string;
+	/** One-line summary shown under the title so a newcomer knows what the tab is for. */
+	description?: string;
+	/** Docs page (relative to the docs site) for this tab. */
+	docsPath?: string;
 	component: React.ReactNode;
 }
 
@@ -73,6 +80,39 @@ const sidebarListClass = css({
 	padding: "0.5rem",
 	gap: "0.25rem",
 	overflowY: "auto",
+});
+const sidebarGroupClass = css({
+	paddingInline: "0.75rem",
+	paddingTop: "0.75rem",
+	paddingBottom: "0.25rem",
+	fontSize: "0.6875rem",
+	fontWeight: 600,
+	letterSpacing: "0.06em",
+	textTransform: "uppercase",
+	color: "var(--muted-foreground)",
+});
+const sidebarFooterClass = css({
+	marginTop: "auto",
+	padding: "0.75rem",
+	borderTop: "1px solid var(--border)",
+});
+const docsLinkClass = css({
+	display: "inline-flex",
+	alignItems: "center",
+	gap: "0.5rem",
+	fontSize: "0.8125rem",
+	color: "var(--muted-foreground)",
+	_hover: { color: "var(--foreground)" },
+});
+const titleBlockClass = css({
+	display: "none",
+	minWidth: 0,
+	flexDirection: "column",
+	lg: { display: "flex" },
+});
+const titleDescriptionClass = css({
+	fontSize: "0.75rem",
+	color: "var(--muted-foreground)",
 });
 const sidebarTabBaseClass = css({
 	display: "inline-flex",
@@ -196,6 +236,17 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 		setActiveTab(idx >= 0 ? idx : 0);
 	}, [open, defaultTabId, tabs]);
 
+	// Lets in-panel content (e.g. the Get started checklist) jump to another tab.
+	useEffect(() => {
+		if (!open) return;
+		const onNavigate = (e: Event) => {
+			const idx = tabs.findIndex((t) => t.id === (e as CustomEvent<string>).detail);
+			if (idx >= 0) setActiveTab(idx);
+		};
+		window.addEventListener("keating:settings-tab", onNavigate);
+		return () => window.removeEventListener("keating:settings-tab", onNavigate);
+	}, [open, tabs]);
+
 	useEffect(() => {
 		if (!open) return;
 		const handleEscape = (e: KeyboardEvent) => {
@@ -231,6 +282,7 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 	if (!open) return null;
 
 	const iconForTab = (id: string) => {
+		if (id === "start") return <Rocket size={15} />;
 		if (id === "models") return <Cpu size={15} />;
 		if (id === "learning") return <Brain size={15} />;
 		if (id === "app") return <Settings2 size={15} />;
@@ -257,15 +309,27 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 					</div>
 					<div className={sidebarListClass}>
 						{tabs.map((tab, i) => (
-							<button
-								key={tab.id}
-								onClick={() => selectTab(i)}
-								className={cx(sidebarTabBaseClass, i === activeTab ? sidebarTabActiveClass : sidebarTabIdleClass)}
-							>
-								{iconForTab(tab.id)}
-								<span>{tab.label}</span>
-							</button>
+							<Fragment key={tab.id}>
+								{tab.group && tab.group !== tabs[i - 1]?.group && (
+									<div className={sidebarGroupClass}>{tab.group}</div>
+								)}
+								<button
+									onClick={() => selectTab(i)}
+									aria-current={i === activeTab ? "page" : undefined}
+									className={cx(sidebarTabBaseClass, i === activeTab ? sidebarTabActiveClass : sidebarTabIdleClass)}
+								>
+									{iconForTab(tab.id)}
+									<span>{tab.label}</span>
+								</button>
+							</Fragment>
 						))}
+					</div>
+					<div className={sidebarFooterClass}>
+						<a href={DOCUMENTATION_URL} target="_blank" rel="noreferrer" className={docsLinkClass}>
+							<BookOpen size={14} />
+							Documentation
+							<ExternalLink size={12} />
+						</a>
 					</div>
 				</aside>
 
@@ -316,7 +380,22 @@ export function SettingsDialog({ open, tabs, onClose, defaultTabId }: SettingsDi
 								</button>
 							))}
 						</div>
-						<span className={desktopTitleClass}>{tabs[activeTab]?.label}</span>
+						<div className={titleBlockClass}>
+							<span className={desktopTitleClass} style={{ display: "block" }}>{tabs[activeTab]?.label}</span>
+							{tabs[activeTab]?.description && (
+								<span className={titleDescriptionClass}>
+									{tabs[activeTab]?.description}
+									{tabs[activeTab]?.docsPath && (
+										<>
+											{" "}
+											<a href={`${DOCUMENTATION_URL}${tabs[activeTab]?.docsPath}`} target="_blank" rel="noreferrer" className={css({ textDecoration: "underline" })}>
+												Learn more
+											</a>
+										</>
+									)}
+								</span>
+							)}
+						</div>
 						<button
 							onClick={onClose}
 							className={closeButtonClass}

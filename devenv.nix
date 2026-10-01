@@ -232,6 +232,7 @@ in
     # retains its separate disabled gate.
     VITE_NOTORGANIC_PUBLIC_ISSUER = "https://api.notorganic.info";
     VITE_NOTORGANIC_AUTHORIZATION_URL = "https://id.notorganic.info/authorize";
+    VITE_NOTORGANIC_ACCOUNT_URL = "";
     VITE_NOTORGANIC_CLIENT_ID = "";
     VITE_NOTORGANIC_REDIRECT_URI = "";
     VITE_NOTORGANIC_SCOPE = "wallet:read usage:read billing:checkout infer:balanced realtime:connect";
