@@ -115,6 +115,7 @@ export type JudgementErrorCode =
   | "request-invalid"
   | "backend-unavailable"
   | "backend-unauthorized"
+  | "backend-payment-required"
   | "backend-rate-limited"
   | "backend-overloaded"
   | "backend-timeout"

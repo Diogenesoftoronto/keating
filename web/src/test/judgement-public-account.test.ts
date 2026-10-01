@@ -37,6 +37,16 @@ test("browser judgement uses the account client, exact route, and intact structu
   expect(JSON.stringify(calls)).not.toContain("opaque-account-capability");
 });
 
+test("a funded-account failure is distinct from missing configuration and is not retried", async () => {
+  const { client } = fixture();
+  let calls = 0;
+  client.request = async () => { calls++; return new Response("private upstream error", { status: 402 }); };
+  const backend = createPublicAccountJudgementBackend({ client })!;
+  expect(backend.isAvailable?.()).toBe(true);
+  expect(await backend.call(request)).toEqual({ ok: false, error: { code: "backend-payment-required", retryable: false } });
+  expect(calls).toBe(1);
+});
+
 test("session authority and expiry are checked again after runtime construction", async () => {
   const f = fixture();
   const backend = createPublicAccountJudgementBackend({ client: f.client })!;

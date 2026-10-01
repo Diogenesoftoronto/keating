@@ -40,6 +40,40 @@ describe("independent judgement settings UI", () => {
     expect(html).toContain("Authorize judgement access");
     expect(html).not.toContain("judgement access is connected");
   });
+  test("TypeSafe selection exposes an independent model and key without account authorization", () => {
+    const html = render({ settings: { ...initial.settings, backend: "hosted", hostedProvider: "typesafe" },
+      account: { configured: true, connected: true, judgementAuthorized: false } });
+    expect(html).toContain('value="typesafe" selected=""');
+    expect(html).toContain("Model ID");
+    expect(html).toContain('value="jev-latest"');
+    expect(html).toContain("TypeSafe API key");
+    expect(html).toContain('type="password"');
+    expect(html).toContain("No TypeSafe API key saved");
+    expect(html).toContain("TypeSafe bills you directly");
+    expect(html).toContain("relayed through Keating only for requests");
+    expect(html).not.toContain("Checking Not Organic access");
+    expect(html).not.toContain("Your account is connected");
+    expect(html).not.toContain(">Authorize judgement access</button>");
+  });
+  test("saved TypeSafe credentials expose update and remove actions without filling the saved secret", () => {
+    const html = render({ settings: { ...initial.settings, backend: "hosted", hostedProvider: "typesafe", customModel: "my-jev-model" }, keySaved: true });
+    expect(html).toContain('value="my-jev-model"');
+    expect(html).toContain("Enter a replacement key");
+    expect(html).toContain("Update API key");
+    expect(html).toContain("Remove API key");
+    expect(html).toContain("API key saved on this device");
+    expect(html).toMatch(/type="password"[^>]*value=""/);
+  });
+  test("TypeSafe key loading, updates and errors have accessible feedback", () => {
+    const settings = { ...initial.settings, backend: "hosted" as const, hostedProvider: "typesafe" as const };
+    expect(render({ settings, checkingKey: true })).toContain("Checking saved API key");
+    const updating = render({ settings, keySaved: true, savingKey: true });
+    expect(updating).toContain("Updating API key");
+    expect(updating).toContain('disabled=""');
+    const failed = render({ settings, keyError: "Could not save the API key" });
+    expect(failed).toContain('role="alert"');
+    expect(failed).toContain("Could not save the API key");
+  });
   test("expired account offers reconnect and an authorized account shows actual access", () => {
     const settings = { ...initial.settings, backend: "hosted" as const };
     const expired = render({ settings, account: { configured: true, connected: false, judgementAuthorized: false } });

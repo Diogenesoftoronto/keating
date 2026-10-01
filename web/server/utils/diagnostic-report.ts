@@ -1,3 +1,5 @@
+import { readBoundedBody } from "./bounded-body";
+
 /**
  * Receives sanitized crash diagnostics and delivers them to the Keating team.
  *
@@ -20,6 +22,7 @@ export interface DiagnosticReportOptions {
 	to?: string;
 	fetcher?: typeof fetch;
 	logger?: (message: string) => void;
+	beforeEmail?: () => Promise<void>;
 }
 
 export type DiagnosticDelivery = "email" | "log";
@@ -54,27 +57,18 @@ function sanitizeDiagnosticText(value: unknown, maximum: number): string {
 }
 
 async function readJsonBody(request: Request): Promise<Record<string, unknown>> {
-	const reader = request.body?.getReader();
-	if (!reader) throw new DiagnosticReportError(400, "Expected a diagnostics report.");
-	const chunks: Uint8Array[] = [];
-	let size = 0;
+	let bytes: Uint8Array;
 	try {
-		while (true) {
-			const chunk = await reader.read();
-			if (chunk.done) break;
-			size += chunk.value.length;
-			if (size > MAX_BODY_BYTES) {
-				await reader.cancel();
-				throw new DiagnosticReportError(413, "The diagnostics report is too large.");
-			}
-			chunks.push(chunk.value);
-		}
-	} finally {
-		reader.releaseLock();
+		bytes = await readBoundedBody(request, MAX_BODY_BYTES);
+	} catch (error) {
+		const status = Number((error as { statusCode?: number }).statusCode);
+		if (status === 413) throw new DiagnosticReportError(413, "The diagnostics report is too large.");
+		if (status === 408) throw new DiagnosticReportError(408, "The diagnostics report timed out.");
+		throw error;
 	}
 	let parsed: unknown;
 	try {
-		parsed = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+		parsed = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
 	} catch {
 		throw new DiagnosticReportError(400, "Expected a diagnostics report.");
 	}
@@ -117,6 +111,7 @@ export async function deliverDiagnosticReport(
 	const fetcher = options.fetcher ?? fetch;
 	let response: Response;
 	try {
+		await options.beforeEmail?.();
 		response = await fetcher("https://api.resend.com/emails", {
 			method: "POST",
 			headers: {

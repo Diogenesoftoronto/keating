@@ -31,7 +31,7 @@ export async function promptKeatingApiKey(
 	if (typeof window === "undefined") return false;
 	if (isNotOrganicProvider(provider)) {
 		// Keating uses an account session, never a stored provider API key.
-		const connected = await promptNotOrganicAccess({ force: options.force, allowSignIn: true });
+		const connected = await promptNotOrganicAccess({ force: options.force, reconnect: options.force, allowSignIn: true });
 		if (connected) notifyProviderCredentialsChanged(provider);
 		return connected;
 	}

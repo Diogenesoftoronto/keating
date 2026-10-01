@@ -1,7 +1,7 @@
 import { access, cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createRequire } from "node:module";
+import { stageOnnxRuntime } from "./stage-onnx-runtime.mjs";
 
 const desktopRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const source = resolve(desktopRoot, "../web/.output");
@@ -68,21 +68,7 @@ await Promise.all([
 
 
 // ONNX Runtime uses a stable Node-API binding; keep its external data and shared libraries beside the addon.
-const desktopRequire = createRequire(join(desktopRoot, "package.json"));
-for (const name of ["onnxruntime-node", "onnxruntime-common"]) {
-  // Bun may hoist workspace dependencies to the repository root. Resolve the
-  // installed entry and find its package instead of assuming a local folder.
-  let from = dirname(desktopRequire.resolve(name));
-  while (true) {
-    let manifest;
-    try { manifest = JSON.parse(await readFile(join(from, "package.json"), "utf8")); } catch {}
-    if (manifest?.name === name) break;
-    const parent = dirname(from);
-    if (parent === from) throw new Error(`Cannot locate installed package ${name}`);
-    from = parent;
-  }
-  await cp(from, join(appDestination, "node_modules", name), { recursive: true, dereference: true });
-}
+await stageOnnxRuntime({ appDirectory: appDestination });
 await cp(resolve(desktopRoot, "../node_modules/@huggingface/tokenizers/LICENSE"), join(appDestination, "JULIA-TOKENIZER-LICENSE.txt"));
 
 console.log(`Staged packaged Nitro runtime: ${destination}`);

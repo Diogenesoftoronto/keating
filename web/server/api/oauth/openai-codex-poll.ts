@@ -1,10 +1,11 @@
-import { assertMethod, createError, defineEventHandler, readBody, setResponseHeader, setResponseStatus } from "h3";
+import { readBoundedJsonBody } from "../../utils/bounded-body";
+import { assertMethod, createError, defineEventHandler, setResponseHeader, setResponseStatus } from "h3";
 import { CodexDeviceAuthError, pollCodexDeviceAuth } from "./openai-codex-device-flow";
 
 export default defineEventHandler(async (event) => {
 	setResponseHeader(event, "Cache-Control", "no-store");
 	assertMethod(event, "POST");
-	const body: unknown = await readBody(event);
+	const body: unknown = await readBoundedJsonBody(event.req, 32 * 1024);
 	try {
 		const result = await pollCodexDeviceAuth(body);
 		if (result.status === "pending") setResponseStatus(event, 202);

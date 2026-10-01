@@ -1,4 +1,5 @@
 import { isNotOrganicDesktop, NOTORGANIC_DESKTOP_ORIGIN, NOTORGANIC_DESKTOP_CALLBACK } from "../keating/notorganic-desktop";
+import { APP_ORIGIN, WEBSITE_ORIGIN, isApplicationPath } from "../lib/hosted-navigation";
 
 /**
  * Browser-only Not Organic public-client boundary.
@@ -56,7 +57,7 @@ interface AuthorizationReceipt extends Omit<AuthorizationTransaction, "verifier"
 export function safeAuthorizationReturnTo(value: string | undefined): string {
 	if (!value?.startsWith("/") || value.startsWith("//")) return "/pricing";
 	const url = new URL(value, "https://keating.help");
-	return url.origin === "https://keating.help" && ["/chat", "/pricing"].includes(url.pathname)
+	return url.origin === WEBSITE_ORIGIN && (["/", "/pricing"].includes(url.pathname) || isApplicationPath(url.pathname))
 		? `${url.pathname}${url.search}` : "/pricing";
 }
 
@@ -259,8 +260,11 @@ export function publicClientConfig(
 	// Derive these together so localhost, 127.0.0.1, and custom dev ports return
 	// to the exact origin holding the PKCE transaction and DPoP key.
 	const browserOrigin = publicClientOrigin(origin);
-	const clientId = desktop ? NOTORGANIC_DESKTOP_ORIGIN : env.VITE_NOTORGANIC_CLIENT_ID?.trim() || browserOrigin;
-	const redirectUri = desktop ? NOTORGANIC_DESKTOP_CALLBACK : env.VITE_NOTORGANIC_REDIRECT_URI?.trim()
+	// The same hosted build serves the website and chat subdomain. A pinned
+	// callback on the other host loses the tab's PKCE state and device-bound key.
+	const hostedOrigin = browserOrigin === APP_ORIGIN || browserOrigin === WEBSITE_ORIGIN;
+	const clientId = desktop ? NOTORGANIC_DESKTOP_ORIGIN : hostedOrigin ? browserOrigin : env.VITE_NOTORGANIC_CLIENT_ID?.trim() || browserOrigin;
+	const redirectUri = desktop ? NOTORGANIC_DESKTOP_CALLBACK : hostedOrigin ? `${browserOrigin}/notorganic/callback` : env.VITE_NOTORGANIC_REDIRECT_URI?.trim()
 		|| (browserOrigin ? `${browserOrigin}/notorganic/callback` : undefined);
 	if (!issuer || !authorizationUrl || !clientId || !redirectUri) return null;
 	return {
@@ -464,15 +468,16 @@ export class NotOrganicPublicClient {
 	async signOut(): Promise<void> {
 		const refreshToken = readSession()?.refreshToken;
 		clearSession();
+		// Invalidate callback authority immediately, even if revocation is slow.
+		requireBrowserStorage().removeItem(TRANSACTION_KEY);
+		requireBrowserStorage().removeItem(RECEIPT_KEY);
 		if (refreshToken) {
 			// Best effort: the local session is already gone, and the key is deleted below.
 			const url = `${this.config.issuer}/v1/public/device/revoke`;
 			await dpopProof({ method: "POST", url, accessToken: refreshToken })
-				.then(dpop => this.fetcher(url, { method: "POST", headers: { "content-type": "application/json", dpop }, body: JSON.stringify({ refresh_token: refreshToken }) }))
+				.then(dpop => this.fetcher(url, { method: "POST", headers: { "content-type": "application/json", dpop }, body: JSON.stringify({ refresh_token: refreshToken }), signal: AbortSignal.timeout(5_000) }))
 				.catch(() => undefined);
 		}
-		requireBrowserStorage().removeItem(TRANSACTION_KEY);
-		requireBrowserStorage().removeItem(RECEIPT_KEY);
 		await deleteDpopKey();
 	}
 }

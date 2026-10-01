@@ -28,10 +28,12 @@ const answers = Array.from({ length: 12 }, (_, i) => ANSWERS[i % 3])
   .map(([who, ask, said]) => `<div class="answer"><div class="who">${esc(who)}</div><div class="ask">› ${esc(ask)}</div><div class="said" data-layout-allow-overlap>${esc(said)}</div></div>`)
   .join("");
 
-const WALL = ("Recursion occurs when the definition of a concept or process depends on a simpler or previous version of itself. " +
-  "It is used in a variety of disciplines ranging from linguistics to logic, and most commonly in mathematics and computer science, " +
-  "where a function being defined is applied within its own definition. While this apparently defines an infinite number of instances, " +
-  "it is often done in such a way that no infinite loop or infinite chain of references can occur. ").repeat(4);
+const WALL = `<p>Absolutely! Let's break it down step by step. Recursion is a programming technique in which a function calls itself to solve smaller instances of the same problem.</p>
+  <h3>Understanding the key concepts</h3>
+  <ol><li><strong>Base case:</strong> the condition that stops the function from calling itself.</li><li><strong>Recursive case:</strong> the part where the function calls itself with a smaller input.</li><li><strong>Call stack:</strong> each function call waits for the next one to return.</li></ol>
+  <p>To understand how these pieces work together, let's walk through an example in detail. Consider a function that adds every number from 1 to n. First, we need to define our stopping condition...</p>
+  <h3>A step-by-step walkthrough</h3>
+  <p>When n is greater than zero, the function adds n to the result of another call with n minus one. Each new call creates another stack frame, which keeps track of its local variables and return address...</p>`;
 
 const chars = (text) => [...text].map((c) => `<span class="ch">${c === " " ? "&#32;" : esc(c)}</span>`).join("");
 
@@ -92,7 +94,9 @@ let html = readFileSync(join(ROOT, "src/index.template.html"), "utf8")
   .replace(/\{\{dur:(\w+)\}\}/g, (_, id) => fx(need(id).duration))
   .replace(/\{\{total\}\}/g, fx(timing.total))
   .replace(/\{\{answers\}\}/g, answers)
-  .replace(/\{\{wall\}\}/g, esc(WALL))
+  // These text nodes intentionally sit beneath the transparent shader and red X.
+  .replace(/\{\{wall\}\}/g, WALL.replace(/<(p|h3|li|strong)>/g, '<$1 data-layout-allow-occlusion="">'))
+  .replace("{{musicfx}}", () => readFileSync(join(ROOT, "assets/audio/music-fx.html"), "utf8").trim())
   .replace(/\{\{chars:([^}]+)\}\}/g, (_, t) => chars(t))
   .replace(/\{\{art:([\w-]+):([\w-]+):(\w+)\}\}/g, (_, name, id, scene) => art(name, id, need(scene)))
   .replace("{{artclips}}", () => artClips.join("\n"))
@@ -118,5 +122,5 @@ function need(id) {
 const left = html.match(/\{\{[^}]*\}\}|\/\*TIMING\*\//g);
 if (left) throw new Error(`unfilled placeholders: ${[...new Set(left)].join(", ")}`);
 
-writeFileSync(join(ROOT, "index.html"), html);
+writeFileSync(join(ROOT, "index.html"), html.replace(/[\t ]+$/gm, ""));
 console.log(`[build] index.html · ${fx(timing.total)}s · ${timing.scenes.length} scenes · ${captions.length} caption groups`);

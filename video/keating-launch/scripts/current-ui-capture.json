@@ -1,0 +1,33 @@
+{
+  "capturedAt": "2026-09-29",
+  "sourceVersion": "4.0.7",
+  "sourceCommit": "6514b0fc3ecef30fd0e3f1e6a2b1e57a0069b833",
+  "classroom": {
+    "url": "http://127.0.0.1:3000/chat",
+    "artifact": "assets/clips/classroom-current.mp4",
+    "original": "assets/clips/classroom-current-original.mp4",
+    "proof": "assets/clips/classroom-current-proof.png",
+    "width": 1920,
+    "height": 1080,
+    "durationSeconds": 6,
+    "capture": "Fresh Playwriter browser screenshots of the actual current application, encoded as a held response shot at 30 fps.",
+    "responseProvenance": "Illustrative authored transcript saved using the current AppStorage.sessions.save API and displayed by the normal session loader. No model inference was completed.",
+    "visibleModelLabel": "Example transcript",
+    "prompt": "Why does a recursive function need a base case?",
+    "response": "Let’s trace a countdown together.\n\nIf countdown(3) calls countdown(2), then countdown(1), what should happen at countdown(0)?\n\nThe base case gives the function a place to stop. Without it, the next call would be countdown(-1), then countdown(-2), and so on.\n\nWhat condition would you write to stop the countdown?",
+    "liveCaptureBoundary": "The deployed chat requested account sign-in. The normal OAuth consent completed but the callback displayed 'Not Organic could not finish sign-in. Try connecting again.' with HTTP 401. The local existing loopback demo capture also failed during assistant rendering with useClientLookup: Index 1 out of bounds. Neither failed route is represented as successful inference."
+  },
+  "gptLive": {
+    "url": "http://127.0.0.1:6006/iframe.html?id=live-liveconversation--gpt-live&viewMode=story",
+    "artifact": "assets/stills/feature-live-current.png",
+    "width": 1060,
+    "height": 832,
+    "component": "web/src/components/live/LiveConversation.tsx",
+    "scenario": "web/src/components/live/LiveConversation.stories.tsx:GptLive",
+    "provider": "gpt-live",
+    "model": "gpt-live-1",
+    "responseProvenance": "Current real component rendered with a Storybook example transcript; no live connection, microphone permission, or provider call.",
+    "capabilities": "Audio only. No image sharing, camera, native video, or live tools.",
+    "displayFit": "contain"
+  }
+}

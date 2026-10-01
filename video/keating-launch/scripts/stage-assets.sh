@@ -18,7 +18,7 @@ done
 fresh assets/brand/logo-lockup.png && cp "$BRAND/logo-lockup-hd.png" assets/brand/logo-lockup.png
 fresh assets/brand/logo-k.png && cp "$BRAND/logo-badge.png" assets/brand/logo-k.png
 
-for s in feature-models feature-live feature-coming-up feature-courses; do
+for s in feature-models feature-coming-up feature-courses; do
   fresh "assets/stills/$s.jpg" && cp "$TOUR/$s.jpg" "assets/stills/$s.jpg"
 done
 
@@ -28,7 +28,14 @@ cut() { # out src start speed
   ffmpeg -v error -y -ss "$3" -i "$2" -an -vf "setpts=PTS/$4,fps=30,scale=1920:-2:flags=lanczos" \
     -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -movflags +faststart "assets/clips/$1.mp4"
 }
-cut classroom "$TOUR/web-classroom.mp4" 0 2.1
+# Current classroom and Live captures are frozen from today's UI. Never replace
+# them with the historical surface-tour assets when staging or FORCE=1 is used.
+for current in assets/clips/classroom-current.mp4 assets/stills/feature-live-current.png; do
+  if [[ ! -s "$current" ]]; then
+    echo "[stage] missing current product capture: $current" >&2
+    exit 1
+  fi
+done
 cut tui "$TOUR/tui-collaborative.mp4" 3 1.6
 cut cli "$TOUR/cli-artifacts.mp4" 0 2.4
 fresh assets/stills/web-classroom.jpg &&

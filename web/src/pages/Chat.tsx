@@ -36,6 +36,8 @@ import { ChatOnboarding, hasCompletedChatOnboarding } from "../components/ChatOn
 import { TourSpotlight } from "../components/tour/TourSpotlight";
 import { hasSeenInterfaceTour, subscribeInterfaceTourRequests } from "../keating/interface-tour";
 import { promptNotOrganicAccess } from "../components/NotOrganicAccessPromptDialog";
+import { NotOrganicAccountMenuItem } from "../components/NotOrganicAccountMenuItem";
+import { notOrganicCheckoutReturn } from "../notorganic-provider/checkout-return";
 import { useSeo } from "../hooks/useSeo";
 import { useMediaQuery } from "../hooks/use-media-query";
 import { isCanvasFeatureEnabled } from "../lib/feature-flags";
@@ -792,6 +794,17 @@ function ChatContent() {
   const pendingPrompt = search.ask?.trim() || onboardingGoal;
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const checkoutReturnHandled = useRef(false);
+  useEffect(() => {
+    if (checkoutReturnHandled.current) return;
+    const returned = notOrganicCheckoutReturn(window.location.href);
+    if (!returned) return;
+    checkoutReturnHandled.current = true;
+    void promptNotOrganicAccess({ force: true, allowSignIn: true, checkoutReturned: true }).finally(() => {
+      const current = notOrganicCheckoutReturn(window.location.href);
+      if (current) window.history.replaceState(window.history.state, "", current.cleanHref);
+    });
+  }, []);
   // Replaying the tour from Settings arrives as a request, because Settings has
   // to close before there is anything to point at.
   useEffect(() => subscribeInterfaceTourRequests(() => setShowTour(true)), []);
@@ -1247,6 +1260,7 @@ function ChatContent() {
                 padding: "0.25rem",
               })}
             >
+              <NotOrganicAccountMenuItem className={menuItemClass} onSignIn={() => setMobileMenuOpen(false)} />
               <button
                 className={cx(menuItemClass, "")}
                 disabled={isPending}

@@ -110,10 +110,6 @@ import {
 } from "../keating/ui-settings";
 import { modelSupportsAudio } from "../lib/provider-models";
 import { getProviderApiKey } from "../lib/provider-models";
-import {
-  handleTutorialLinkClick,
-  tutorialApiKeyHref,
-} from "../lib/tutorial-links";
 import { isOpenEnded, QuizRenderer } from "./QuizRenderer";
 import { formatQuizDuration, isQuickQuizAnswer } from "./quiz/game";
 import {
@@ -185,6 +181,7 @@ import { WebSearchPart } from "./WebSearchPart";
 import { isWebSearchToolName, splitSearchSources } from "./web-search-result";
 import { FailedResponseRecovery } from "./FailedResponseRecovery";
 import { NotOrganicCreditRecovery } from "./NotOrganicCreditRecovery";
+import { ProviderAuthRecovery } from "./ProviderAuthRecovery";
 import { ErrorDiagnosticsActions } from "./ErrorDiagnosticsActions";
 import { FlashcardRenderer } from "./FlashcardRenderer";
 import type { FlashcardDeck } from "../keating/srs";
@@ -4618,7 +4615,8 @@ function AssistantThread({
 
   const runtime = useExternalStoreRuntime<ThreadMessageLike>(storeAdapter);
   const modelLabel = modelRef.current?.name ?? modelRef.current?.id ?? "Model";
-  const usingGoogleModel = modelRef.current?.provider === "google";
+  const selectedProvider = modelRef.current?.provider;
+  const usingGoogleModel = selectedProvider === "google";
 
   useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
 
@@ -4667,12 +4665,13 @@ function AssistantThread({
     () => (
       <AssistantMessage
         components={components}
+        selectedProvider={selectedProvider}
         onFork={callbacks.onFork}
         onModelSelect={callbacks.onModelSelect}
         onRetry={callbacks.onRetry}
       />
     ),
-    [components, callbacks.onFork, callbacks.onModelSelect, callbacks.onRetry],
+    [components, selectedProvider, callbacks.onFork, callbacks.onModelSelect, callbacks.onRetry],
   );
   const threadComponents = useMemo(
     () => ({
@@ -5266,11 +5265,13 @@ function FeedbackModal({
 
 function AssistantMessage({
   components,
+  selectedProvider,
   onFork,
   onModelSelect,
   onRetry,
 }: {
   components: ReturnType<typeof messagePartComponents>;
+  selectedProvider?: string;
   onFork?: (forkPoint?: number) => void | Promise<void>;
   onModelSelect?: () => void;
   onRetry?: () => void | Promise<void>;
@@ -5325,8 +5326,6 @@ function AssistantMessage({
     const ts = createdAt?.getTime() ?? Number(messageId.slice(messageId.lastIndexOf("-") + 1));
     onFork?.(Number.isFinite(ts) ? ts : undefined);
   };
-  const [retrying, setRetrying] = useState(false);
-
   const handleFeedbackClick = (type: "up" | "down") => {
     setFeedbackType(type);
     setFeedbackModalOpen(true);
@@ -5351,16 +5350,6 @@ function AssistantMessage({
       );
     } catch {
       /* noop */
-    }
-  };
-
-  const handleAuthRetry = async () => {
-    if (!authError) return;
-    setRetrying(true);
-    try {
-      await onAuthError(authError.provider);
-    } finally {
-      setRetrying(false);
     }
   };
 
@@ -5402,112 +5391,12 @@ function AssistantMessage({
                 onModelSelect={onModelSelect}
                 details={failureMessage}
               /> : <p>This response paused because credits were unavailable.</p> : <MessagePrimitive.Content components={components} />}
-              {authError && (
-                <div
-                  className={css({
-                    marginBlock: "0.5rem",
-                    borderRadius: "0.5rem",
-                    border:
-                      "1px solid color-mix(in srgb, var(--destructive) 50%, transparent)",
-                    backgroundColor:
-                      "color-mix(in srgb, var(--destructive) 10%, transparent)",
-                    padding: "0.75rem",
-                    fontSize: "0.875rem",
-                  })}
-                >
-                  <div
-                    className={css({
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "0.5rem",
-                    })}
-                  >
-                    <KeyRound
-                      size={16}
-                      className={css({
-                        marginTop: "0.125rem",
-                        flexShrink: 0,
-                        color: "var(--destructive)",
-                      })}
-                    />
-                    <div className={css({ minWidth: 0, flex: 1 })}>
-                      <p
-                        className={css({
-                          marginBottom: "0.25rem",
-                          fontWeight: 500,
-                          color: "var(--destructive)",
-                        })}
-                      >
-                        Authentication failed
-                      </p>
-                      <p
-                        className={css({
-                          marginBottom: "0.5rem",
-                          fontSize: "0.75rem",
-                          color: "var(--muted-foreground)",
-                        })}
-                      >
-                        {llmFailure?.recovery ??
-                          "Re-enter the provider credentials, then Keating can retry the same turn."}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={handleAuthRetry}
-                        disabled={retrying}
-                        className={cx(
-                          srInteractiveClass,
-                          css({
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "0.375rem",
-                            borderRadius: "0.375rem",
-                            backgroundColor: "var(--primary)",
-                            paddingInline: "0.75rem",
-                            paddingBlock: "0.375rem",
-                            fontSize: "0.75rem",
-                            fontWeight: 500,
-                            color: "var(--primary-foreground)",
-                            _hover: {
-                              backgroundColor:
-                                "color-mix(in srgb, var(--primary) 90%, transparent)",
-                            },
-                            _disabled: { opacity: 0.5 },
-                          }),
-                        )}
-                      >
-                        {retrying ? (
-                          <Spinner size={12} />
-                        ) : (
-                          <KeyRound size={12} />
-                        )}
-                        Re-enter API key
-                      </button>
-                      <a
-                        href={tutorialApiKeyHref(authError.provider)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(event) =>
-                          handleTutorialLinkClick(
-                            event.nativeEvent,
-                            tutorialApiKeyHref(authError.provider),
-                          )
-                        }
-                        className={css({
-                          marginLeft: "0.5rem",
-                          display: "inline-flex",
-                          alignItems: "center",
-                          fontSize: "0.75rem",
-                          color: "var(--primary)",
-                          textDecoration: "underline",
-                          textUnderlineOffset: "2px",
-                        })}
-                      >
-                        Need a key?
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {authError && <ProviderAuthRecovery
+                selectedProvider={selectedProvider}
+                failedProvider={authError.provider}
+                recovery={llmFailure?.recovery}
+                onRecover={onAuthError}
+              />}
             </div>
             {llmFailure && canRetry && onRetry && (
               <FailedResponseRecovery

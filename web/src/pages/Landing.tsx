@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { AppLink as Link } from "../components/AppLink";
 import { LandingIntro } from "../components/LandingIntro";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";

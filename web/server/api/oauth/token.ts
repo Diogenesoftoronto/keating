@@ -1,4 +1,5 @@
-import { defineEventHandler, readBody, createError, assertMethod, setResponseHeader } from "h3";
+import { readBoundedJsonBody } from "../../utils/bounded-body";
+import { defineEventHandler, createError, assertMethod, setResponseHeader } from "h3";
 import { getOAuthServerConfigs, type OAuthServerProviderId } from "./config";
 
 interface TokenRequestBody {
@@ -12,7 +13,7 @@ interface TokenRequestBody {
 export default defineEventHandler(async (event) => {
 	setResponseHeader(event, "Cache-Control", "no-store");
 	assertMethod(event, "POST");
-	const body = await readBody<TokenRequestBody>(event);
+	const body = await readBoundedJsonBody(event.req, 32 * 1024) as TokenRequestBody;
 
 	if (!body?.provider || !body?.code || !body?.redirect_uri || !body?.code_verifier) {
 		throw createError({

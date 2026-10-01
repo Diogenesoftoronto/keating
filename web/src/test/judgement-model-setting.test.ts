@@ -37,6 +37,14 @@ afterEach(() => {
 });
 
 describe("the judgement model is configured independently of the tutor model", () => {
+  test("direct TypeSafe model persists separately from credentials and survives switching back", () => {
+    saveJudgementModelSettings({ ...DEFAULT_JUDGEMENT_MODEL_SETTINGS, hostedProvider: "typesafe", customModel: "jev-1.13" });
+    expect(loadJudgementModelSettings()).toMatchObject({ hostedProvider: "typesafe", customModel: "jev-1.13" });
+    expect(values.get(KEY)).not.toContain("apiKey");
+    saveJudgementModelSettings({ ...loadJudgementModelSettings(), hostedProvider: "notorganic" });
+    expect(loadJudgementModelSettings().hostedProvider).toBeUndefined();
+    expect(loadJudgementModelSettings().customModel).toBe("jev-1.13");
+  });
   test("defaults to hosted review while retaining the selected local fallback model", () => {
     const settings = loadJudgementModelSettings();
     expect(settings.backend).toBe("hosted");

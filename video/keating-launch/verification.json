@@ -1,0 +1,73 @@
+{
+  "verifiedAt": "2026-09-29",
+  "hyperframesVersion": "0.8.92",
+  "render": {
+    "artifact": "renders/keating-4-launch.mp4",
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "durationSeconds": 69.5,
+    "videoCodec": "h264",
+    "audioCodec": "aac",
+    "audioSampleRate": 48000,
+    "audioChannels": 2,
+    "captureMode": "screenshot",
+    "gpuMode": "software",
+    "fullDecode": "passed",
+    "sampledFrameReview": "passed",
+    "frameProof": "renders/final-proof.jpg"
+  },
+  "websiteCopies": {
+    "artifacts": [
+      "../../web/public/tapes/keating-4-launch.mp4",
+      "../../scripts/docs-site/assets/tapes/keating-4-launch.mp4"
+    ],
+    "bytesEach": 13180856,
+    "sha256": "bf5957f16e1c1e38eb8702de2d5aae5f8ce037bc481029f844880be86fb05e71",
+    "fullDecode": "passed",
+    "identical": true
+  },
+  "sceneChecks": {
+    "atSeconds": [
+      23,
+      27.4,
+      29.6,
+      40,
+      67
+    ],
+    "runtimeErrors": 0,
+    "layoutErrors": 0,
+    "contrastErrors": 0,
+    "lintErrors": 0,
+    "lintWarnings": 38
+  },
+  "captureProvenance": "scripts/current-ui-capture.json",
+  "responseBoundary": "Current real UI with illustrative transcripts; no successful model inference or live provider connection was captured.",
+  "publication": "Deployed to the production landing site.",
+  "deployment": {
+    "id": "e6eb53cb-2d88-4f91-84dd-ba696012198f",
+    "service": "keating",
+    "environment": "production",
+    "status": "SUCCESS",
+    "baseCommit": "6514b0fc3ecef30fd0e3f1e6a2b1e57a0069b833",
+    "changedSourceFiles": [
+      "web/public/tapes/keating-4-launch.mp4",
+      "web/src/components/LandingIntro.tsx"
+    ],
+    "url": "https://keating.help/",
+    "videoUrl": "https://keating.help/tapes/keating-4-launch.mp4?v=bf5957f16e1c",
+    "publicVideoSha256": "bf5957f16e1c1e38eb8702de2d5aae5f8ce037bc481029f844880be86fb05e71",
+    "publicVideoMatchesLocal": true,
+    "browser": {
+      "mode": "headless",
+      "watchButtonStartsPlayback": true,
+      "durationSeconds": 69.5,
+      "observedPlaybackSeconds": 17.774444,
+      "muted": false,
+      "volume": 1,
+      "mediaError": null,
+      "versionedSourceWithNormalCache": true
+    },
+    "chatRootHttpStatus": 200
+  }
+}

@@ -177,6 +177,19 @@ describe("private teaching draft stream", () => {
     expect(JSON.stringify(events)).not.toMatch(/NEVER DISPLAY|PRIVATE THINKING|PRIVATE STREAM/);
   });
 
+  test("unfunded judgement stops before generation and explains credit or spending limits", async () => {
+    let calls = 0;
+    const updates: TeachingDraftSnapshot[] = [];
+    const { result } = await collect(await gate(() => { calls++; return streamOf(message("unreviewed")); }, {
+      makeCaller: () => async () => ({ ok: false, error: { code: "backend-payment-required", retryable: false } }),
+      onProgress: value => updates.push(value),
+    })(MODEL, context()));
+    expect(calls).toBe(0);
+    expect(updates.at(-1)?.reason).toBe("backend-payment-required");
+    expect(text(result)).toContain("account credit and request spending limit");
+    expect(text(result)).not.toContain("Configure one");
+  });
+
   test("missing judgement backend stops before generation and gives a setup action", async () => {
     let calls = 0;
     const { result } = await collect(await gate(() => { calls++; return streamOf(message("unreviewed")); }, {

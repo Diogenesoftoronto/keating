@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { AppLink as Link } from "./AppLink";
 import { usePostHog } from "@posthog/react";
 import { ArrowDown, ArrowUpRight } from "lucide-react";
 import { KeatingBot } from "./KeatingBot";

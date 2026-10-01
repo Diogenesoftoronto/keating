@@ -82,8 +82,14 @@
           }
         ],
         "links": [
-          { "label": "Open Keating", "href": "https://chat.keating.help/" },
-          { "label": "Watch the visual guide and walkthroughs", "href": "/visual-guide/" }
+          {
+            "label": "Open Keating",
+            "href": "https://chat.keating.help/"
+          },
+          {
+            "label": "Watch the visual guide and walkthroughs",
+            "href": "/visual-guide/"
+          }
         ]
       },
       {
@@ -138,8 +144,14 @@
           "For a model that runs on your device, follow the offline tutor guide. Browser models need a compatible browser and a substantial initial download. Use an offline tutor appears in supported desktop builds."
         ],
         "links": [
-          { "label": "Choose a model", "href": "/choose-a-model/" },
-          { "label": "Set up an offline tutor", "href": "/offline-tutor/" }
+          {
+            "label": "Choose a model",
+            "href": "/choose-a-model/"
+          },
+          {
+            "label": "Set up an offline tutor",
+            "href": "/offline-tutor/"
+          }
         ]
       },
       {
@@ -217,7 +229,10 @@
           }
         ],
         "links": [
-          { "label": "Resolve account and credit prompts", "href": "/accounts-and-credits/" }
+          {
+            "label": "Resolve account and credit prompts",
+            "href": "/accounts-and-credits/"
+          }
         ]
       },
       {
@@ -281,8 +296,14 @@
           "Open Learning usage, find Portable data, and choose Export portable JSON to download a copy. Do this before clearing site data, moving browsers, or removing an app. The privacy and data guide explains what the export includes and how to restore it."
         ],
         "links": [
-          { "label": "Open Learning usage", "href": "https://chat.keating.help/usage" },
-          { "label": "Save and move your learning data", "href": "/privacy-and-data/" }
+          {
+            "label": "Open Learning usage",
+            "href": "https://chat.keating.help/usage"
+          },
+          {
+            "label": "Save and move your learning data",
+            "href": "/privacy-and-data/"
+          }
         ]
       }
     ]
@@ -325,8 +346,14 @@
           "Desktop: run a local workspace with real files and processes."
         ],
         "links": [
-          { "label": "Start your first lesson", "href": "/start-here/" },
-          { "label": "Open Keating", "href": "https://chat.keating.help/" }
+          {
+            "label": "Start your first lesson",
+            "href": "/start-here/"
+          },
+          {
+            "label": "Open Keating",
+            "href": "https://chat.keating.help/"
+          }
         ]
       },
       {
@@ -350,8 +377,14 @@
           "Session rail: search, fork, rename, or resume previous learning branches at any time."
         ],
         "links": [
-          { "label": "Learn with Keating", "href": "/learning-with-keating/" },
-          { "label": "Quizzes and practice", "href": "/quizzes-and-practice/" }
+          {
+            "label": "Learn with Keating",
+            "href": "/learning-with-keating/"
+          },
+          {
+            "label": "Quizzes and practice",
+            "href": "/quizzes-and-practice/"
+          }
         ]
       },
       {
@@ -375,8 +408,14 @@
           "Instant /shell switch: drop into the raw Pi extension shell at any time while retaining active session state."
         ],
         "links": [
-          { "label": "Install Keating", "href": "/install-keating/" },
-          { "label": "Sessions and the review desk", "href": "/sessions-and-review/" }
+          {
+            "label": "Install Keating",
+            "href": "/install-keating/"
+          },
+          {
+            "label": "Sessions and the review desk",
+            "href": "/sessions-and-review/"
+          }
         ]
       },
       {
@@ -399,8 +438,14 @@
           "Custom portraits: choose between procedural pixel art, monogram initials, or local image paths."
         ],
         "links": [
-          { "label": "Install Keating", "href": "/install-keating/" },
-          { "label": "Privacy and your data", "href": "/privacy-and-data/" }
+          {
+            "label": "Install Keating",
+            "href": "/install-keating/"
+          },
+          {
+            "label": "Privacy and your data",
+            "href": "/privacy-and-data/"
+          }
         ]
       },
       {
@@ -426,11 +471,17 @@
           "keating verify: executes a Chain-of-Verification check against the core claims before teaching begins."
         ],
         "links": [
-          { "label": "Install Keating", "href": "/install-keating/" },
-          { "label": "Read the developer handbook", "href": "https://dev.keating.help" }
+          {
+            "label": "Install Keating",
+            "href": "/install-keating/"
+          },
+          {
+            "label": "Read the developer handbook",
+            "href": "https://dev.keating.help"
+          }
         ]
       },
-    {
+      {
         "heading": "6. Hyperteacher architecture and narrated film",
         "paragraphs": [
           "Keating is designed as a Socratic AI scaffold for people who still want to own their understanding. The narrated introduction below walks through ten real screens: how onboarding asks the way you learn, what the learner profile remembers, sources you can open, simulations, fieldwork away from the screen, timed recall, word-order practice, an honestly graded exam, and the apps you can take anywhere.",
@@ -458,8 +509,14 @@
           "Narrated introduction: a Gemini Kore voiceover timed to each screen, with an English caption track."
         ],
         "links": [
-          { "label": "Learn with Keating", "href": "/learning-with-keating/" },
-          { "label": "Quizzes and practice", "href": "/quizzes-and-practice/" }
+          {
+            "label": "Learn with Keating",
+            "href": "/learning-with-keating/"
+          },
+          {
+            "label": "Quizzes and practice",
+            "href": "/quizzes-and-practice/"
+          }
         ]
       },
       {
@@ -489,8 +546,14 @@
           "Multi-surface parity: seamless continuity across web, mobile, desktop, and terminal."
         ],
         "links": [
-          { "label": "Sessions and the review desk", "href": "/sessions-and-review/" },
-          { "label": "Troubleshooting guide", "href": "/troubleshooting/" }
+          {
+            "label": "Sessions and the review desk",
+            "href": "/sessions-and-review/"
+          },
+          {
+            "label": "Troubleshooting guide",
+            "href": "/troubleshooting/"
+          }
         ]
       },
       {
@@ -529,8 +592,14 @@
           }
         ],
         "links": [
-          { "label": "Use quizzes and practice", "href": "/quizzes-and-practice/" },
-          { "label": "Use voice and attachments", "href": "/voice-and-attachments/" }
+          {
+            "label": "Use quizzes and practice",
+            "href": "/quizzes-and-practice/"
+          },
+          {
+            "label": "Use voice and attachments",
+            "href": "/voice-and-attachments/"
+          }
         ]
       },
       {
@@ -602,7 +671,10 @@
           "A hosted model needs a connection, permission to use the service, and sufficient account credit. If sign-in succeeds but a response does not, read the account or credit message before retrying."
         ],
         "links": [
-          { "label": "Understand accounts and credits", "href": "/accounts-and-credits/" }
+          {
+            "label": "Understand accounts and credits",
+            "href": "/accounts-and-credits/"
+          }
         ]
       },
       {
@@ -613,8 +685,14 @@
           "MiniCPM5 2B (Offline) is a separate choice in supported native apps. It uses the native offline tutor download, rather than the browser's model cache."
         ],
         "links": [
-          { "label": "Prepare a model for offline tutoring", "href": "/offline-tutor/" },
-          { "label": "Connect Ollama, llama.cpp, or LiteLLM", "href": "/connect-local-models/" }
+          {
+            "label": "Prepare a model for offline tutoring",
+            "href": "/offline-tutor/"
+          },
+          {
+            "label": "Connect Ollama, llama.cpp, or LiteLLM",
+            "href": "/connect-local-models/"
+          }
         ]
       },
       {
@@ -648,7 +726,10 @@
           "Your own provider bills requests made through your provider connection. Keating credits apply to hosted services through Not Organic. Connecting one route does not pay for usage on the other."
         ],
         "links": [
-          { "label": "Compare model access options", "href": "/choose-a-model/" }
+          {
+            "label": "Compare model access options",
+            "href": "/choose-a-model/"
+          }
         ]
       },
       {
@@ -686,7 +767,10 @@
           "If the app says Credit purchases aren't available right now, a pricing description is not an active checkout. You can refresh your balance, use any confirmed starter credit, or choose another model."
         ],
         "links": [
-          { "label": "View current pricing and availability", "href": "https://keating.help/pricing" }
+          {
+            "label": "View current pricing and availability",
+            "href": "https://keating.help/pricing"
+          }
         ]
       },
       {
@@ -696,7 +780,10 @@
           "Your local lesson library and provider-key settings are separate. Signing in on a new browser does not automatically restore them. Export your learning data from the original browser and import it on the new one, then reconnect the providers you need."
         ],
         "links": [
-          { "label": "Move your learning data", "href": "/privacy-and-data/" }
+          {
+            "label": "Move your learning data",
+            "href": "/privacy-and-data/"
+          }
         ]
       }
     ]
@@ -767,8 +854,14 @@
           }
         ],
         "links": [
-          { "label": "Open Keating in your browser", "href": "https://chat.keating.help/" },
-          { "label": "Follow the first-lesson walkthrough", "href": "/start-here/" }
+          {
+            "label": "Open Keating in your browser",
+            "href": "https://chat.keating.help/"
+          },
+          {
+            "label": "Follow the first-lesson walkthrough",
+            "href": "/start-here/"
+          }
         ]
       },
       {
@@ -779,7 +872,10 @@
           "If the page says Not published yet, use the browser app. Availability can differ by platform, architecture, and release."
         ],
         "links": [
-          { "label": "Check Keating downloads", "href": "https://keating.help/download" }
+          {
+            "label": "Check Keating downloads",
+            "href": "https://keating.help/download"
+          }
         ]
       },
       {
@@ -807,7 +903,10 @@
           }
         ],
         "links": [
-          { "label": "Watch the terminal and branching walkthrough", "href": "/visual-guide/#section-3-terminal-ui-and-branching-dialogue" }
+          {
+            "label": "Watch the terminal and branching walkthrough",
+            "href": "/visual-guide/#section-3-terminal-ui-and-branching-dialogue"
+          }
         ]
       },
       {
@@ -818,7 +917,10 @@
         "code": "bun add -g keating\nkeating setup\nkeating doctor\nkeating shell",
         "language": "sh",
         "links": [
-          { "label": "Developer and self-hosting documentation", "href": "https://dev.keating.help" }
+          {
+            "label": "Developer and self-hosting documentation",
+            "href": "https://dev.keating.help"
+          }
         ]
       },
       {
@@ -828,8 +930,14 @@
           "For supported native apps, the offline tutor is an additional model download. Check for Offline tutor in the installed app and follow that guide. An ordinary installer does not include the tutor's model weights. A separate full offline edition is available only if a release explicitly offers it."
         ],
         "links": [
-          { "label": "Save and restore your learning data", "href": "/privacy-and-data/" },
-          { "label": "Prepare the offline tutor", "href": "/offline-tutor/" }
+          {
+            "label": "Save and restore your learning data",
+            "href": "/privacy-and-data/"
+          },
+          {
+            "label": "Prepare the offline tutor",
+            "href": "/offline-tutor/"
+          }
         ]
       }
     ]
@@ -847,7 +955,10 @@
           "In the desktop app, look for Offline tutor in Settings → Models & Providers. If the panel is absent or says Offline runtime unavailable in this build, check the download page for a package that supports your device. If none is offered, use the browser app and check whether a browser model is available."
         ],
         "links": [
-          { "label": "Choose a Keating download", "href": "/install-keating/" }
+          {
+            "label": "Choose a Keating download",
+            "href": "/install-keating/"
+          }
         ]
       },
       {
@@ -883,7 +994,10 @@
           "Browser model files are cached in that browser. Model details shows the cached size and Delete download controls. Clearing browser data can remove the download. Keep your work exported, and check that the page and model still work in the conditions you plan to use: cached weights alone do not guarantee that the website can reopen without a connection."
         ],
         "links": [
-          { "label": "Find and manage browser models", "href": "/choose-a-model/" }
+          {
+            "label": "Find and manage browser models",
+            "href": "/choose-a-model/"
+          }
         ]
       },
       {
@@ -951,8 +1065,14 @@
           }
         ],
         "links": [
-          { "label": "Set up a browser or native offline model", "href": "/offline-tutor/" },
-          { "label": "Local hosting and developer setup", "href": "https://dev.keating.help" }
+          {
+            "label": "Set up a browser or native offline model",
+            "href": "/offline-tutor/"
+          },
+          {
+            "label": "Local hosting and developer setup",
+            "href": "https://dev.keating.help"
+          }
         ]
       },
       {
@@ -976,8 +1096,14 @@
         "code": "ollama pull qwen3:4b\nollama run qwen3:4b",
         "language": "sh",
         "links": [
-          { "label": "Ollama installation and server settings", "href": "https://docs.ollama.com/faq" },
-          { "label": "Ollama qwen3:4b model details", "href": "https://ollama.com/library/qwen3:4b" }
+          {
+            "label": "Ollama installation and server settings",
+            "href": "https://docs.ollama.com/faq"
+          },
+          {
+            "label": "Ollama qwen3:4b model details",
+            "href": "https://ollama.com/library/qwen3:4b"
+          }
         ]
       },
       {
@@ -989,7 +1115,10 @@
         "code": "llama-server -m /path/to/model.gguf --alias tutor --host 127.0.0.1 --port 8080",
         "language": "sh",
         "links": [
-          { "label": "llama.cpp server installation and options", "href": "https://github.com/ggml-org/llama.cpp/tree/master/tools/server" }
+          {
+            "label": "llama.cpp server installation and options",
+            "href": "https://github.com/ggml-org/llama.cpp/tree/master/tools/server"
+          }
         ]
       },
       {
@@ -1002,7 +1131,10 @@
         "code": "uv tool install 'litellm[proxy]'\nlitellm --model ollama/qwen3:4b --host 127.0.0.1 --port 4000",
         "language": "sh",
         "links": [
-          { "label": "LiteLLM proxy setup", "href": "https://docs.litellm.ai/docs/proxy/quick_start" }
+          {
+            "label": "LiteLLM proxy setup",
+            "href": "https://docs.litellm.ai/docs/proxy/quick_start"
+          }
         ]
       },
       {
@@ -1085,7 +1217,10 @@
           "Wait for the export confirmation and check that the file downloaded before clearing any data. The JSON contains your learning content as readable text; store it as carefully as the original notes."
         ],
         "links": [
-          { "label": "Open Portable data on Learning usage", "href": "https://chat.keating.help/usage" }
+          {
+            "label": "Open Portable data on Learning usage",
+            "href": "https://chat.keating.help/usage"
+          }
         ]
       },
       {
@@ -1096,7 +1231,10 @@
           "Reconnect model providers on the destination device and download any local models again. A successful data import does not sign you in to those services or restore model downloads."
         ],
         "links": [
-          { "label": "Reconnect a model", "href": "/choose-a-model/" }
+          {
+            "label": "Reconnect a model",
+            "href": "/choose-a-model/"
+          }
         ]
       },
       {
@@ -1106,7 +1244,66 @@
           "Use browser site-data controls to remove the website's local data after exporting anything you want to keep. Removing a local copy does not remove shared copies or information already sent to a model provider. Sign out of connected accounts and remove saved credentials when retiring a device."
         ],
         "links": [
-          { "label": "Keating privacy policy", "href": "https://keating.help/privacy" }
+          {
+            "label": "Keating privacy policy",
+            "href": "https://keating.help/privacy"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "judgement-model",
+    "title": "Set up a judgement model",
+    "description": "Choose who reviews your work: Jev through Not Organic, Jev with your own TypeSafe key, or a model on your device.",
+    "group": "Getting started",
+    "sections": [
+      {
+        "heading": "What the judgement model does",
+        "paragraphs": [
+          "The judgement model reviews your work separately from the tutor. Changing your chat model does not change the reviewer. Find it in Settings, Models & Providers, Judgement."
+        ]
+      },
+      {
+        "heading": "Jev through Not Organic (recommended)",
+        "bullets": [
+          "Choose Jev · Not Organic · Recommended in the picker.",
+          "Choose Connect Not Organic, or Authorize judgement access if your account is already connected.",
+          "Finish sign-in. Settings should show that judgement access is connected, then retry the review.",
+          "Hosted reviews send relevant work through Not Organic and may use account credit. If access is unavailable in your build, use your own key or a local model."
+        ],
+        "links": [
+          {
+            "label": "Jev by TypeSafe",
+            "href": "https://typesafe.ai/"
+          },
+          {
+            "label": "Jev documentation",
+            "href": "https://docs.typesafe.ai/introduction"
+          }
+        ]
+      },
+      {
+        "heading": "Jev with your own TypeSafe key",
+        "paragraphs": [
+          "Choose Jev · your TypeSafe API key, enter your model ID (default jev-latest), paste your key and save it. TypeSafe bills you directly, and this option needs no Not Organic account or credit. The key stays on this device and is relayed through Keating only while a review runs."
+        ]
+      },
+      {
+        "heading": "On this device",
+        "paragraphs": [
+          "In the desktop app, download MiniCPM5 2B from Offline tutor, then select it in the picker. Julia 1 is a small local decision model you can install from the same settings. Browser models currently support tutoring but not judgement scoring."
+        ]
+      },
+      {
+        "heading": "Other options",
+        "bullets": [
+          "Off keeps built-in checks only.",
+          "Advanced review options set request-token limits. Hosted Jev defaults to 64,000 and 32,000 tokens.",
+          "Calibration takes a verified calibration file. Installing a model does not calibrate it, so automatic grading waits for verified calibration."
+        ],
+        "paragraphs": [
+          "Reviews can be unavailable or uncertain, and connecting a reviewer does not guarantee a draft passes."
         ]
       }
     ]

@@ -1,4 +1,5 @@
-import { createError, defineEventHandler, readBody, setResponseStatus } from "h3";
+import { readBoundedJsonBody } from "../../utils/bounded-body";
+import { createError, defineEventHandler, setResponseStatus } from "h3";
 import { pollGitHubCopilotDeviceFlow } from "./github-copilot";
 
 interface PollRequestBody {
@@ -6,7 +7,7 @@ interface PollRequestBody {
 }
 
 export default defineEventHandler(async (event) => {
-	const body = await readBody<PollRequestBody>(event);
+	const body = await readBoundedJsonBody(event.req, 32 * 1024) as PollRequestBody;
 	if (!body?.device_code) {
 		throw createError({ statusCode: 400, statusMessage: "Missing device_code" });
 	}

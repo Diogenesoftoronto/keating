@@ -2,7 +2,7 @@
 
 - **Goal**: announce Keating 4.0 and restate the product thesis — *you do the thinking, Keating helps it click*.
 - **Audience**: curious self-learners and developers who've felt "AI answers" become more reading, not more understanding.
-- **Format**: 1920×1080, 30 fps, ~70 s, narrated (OpenAI `gpt-4o-mini-tts`, steerable "warm teacher" voice), burned-in word-timed captions, soft synthesized pad bed.
+- **Format**: 1920×1080, 30 fps, ~70 s, narrated (Gemini/fal, warm teacher delivery), burned-in word-timed captions, warm instrumental felt piano, plucked strings and light percussion beneath the voice.
 - **Call to action**: `keating.help` — start a session in the browser or download the app.
 - **Tone**: calm, wry, anti-hype. Mirrors the landing page copy. No invented stats; 4.0 features are described as capabilities, never outcomes (release notes: benchmarks ≠ human learning effectiveness).
 - **Look**: Keating's own system, not a generic SaaS preset —

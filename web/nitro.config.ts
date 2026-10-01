@@ -118,6 +118,9 @@ export default defineNitroConfig({
   // Nitro reserves "server" for its automatically mounted assets directory.
   serverAssets: [{ baseName: "keating-og", dir: "server/assets" }],
   handlers: [
+    // Register admission explicitly: this Nitro build relies on hand-declared
+    // server handlers rather than automatic server/middleware discovery.
+    { route: "/**", middleware: true, handler: "server/middleware/public-oauth-limits.ts" },
     { route: "/tutorial", handler: "server/routes/tutorial.ts" },
     { route: "/tutorial/", handler: "server/routes/tutorial.ts" },
     // Nitro serves existing static files before these handlers. A missing image
@@ -128,6 +131,7 @@ export default defineNitroConfig({
       "/sw.js", "/__sw__.js",
     ].map((route) => ({ route, handler: "server/routes/assets/[...path].ts" })),
     { route: "/api/**", handler: "server/api-not-found.ts" },
+    { route: "/api/judgement/typesafe", method: "POST" as const, handler: "server/api/judgement/typesafe.post.ts" },
     { route: "/api/credit-waitlist", method: "POST" as const, handler: "server/api/credit-waitlist/index.post.ts" },
     {
       route: "/api/training-datasets",

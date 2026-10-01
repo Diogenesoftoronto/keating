@@ -80,6 +80,7 @@ describe('a malformed answer is rejected rather than coerced', () => {
 describe('http statuses map to stable codes without reading the body', () => {
   test('auth and validation failures are terminal, pressure is retryable', () => {
     expect(errorForStatus(401)).toEqual({ code: 'backend-unauthorized', retryable: false });
+    expect(errorForStatus(402)).toEqual({ code: 'backend-payment-required', retryable: false });
     expect(errorForStatus(422)).toEqual({ code: 'request-invalid', retryable: false });
     expect(errorForStatus(429)).toEqual({ code: 'backend-rate-limited', retryable: true });
     expect(errorForStatus(529)).toEqual({ code: 'backend-overloaded', retryable: true });

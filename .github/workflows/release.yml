@@ -270,6 +270,16 @@ jobs:
           test -s "${PREFIX}-${{ matrix.appimage_arch }}.AppImage"
           test -s "${PREFIX}-${{ matrix.deb_arch }}.deb"
           test -s "${PREFIX}-${{ matrix.rpm_arch }}.rpm"
+          # GitHub release assets must stay below 2 GiB; check every installer
+          # before transferring build artifacts or attempting publication.
+          for installer in "${PREFIX}-${{ matrix.appimage_arch }}.AppImage" "${PREFIX}-${{ matrix.deb_arch }}.deb" "${PREFIX}-${{ matrix.rpm_arch }}.rpm"; do
+            bytes=$(stat -c '%s' "$installer")
+            if [ "$bytes" -ge 2147483648 ]; then
+              echo "Release installer exceeds the 2 GiB asset limit: $installer ($bytes bytes)" >&2
+              exit 1
+            fi
+            echo "$installer: $bytes bytes"
+          done
           dpkg-deb --info "${PREFIX}-${{ matrix.deb_arch }}.deb"
           rpm -qip "${PREFIX}-${{ matrix.rpm_arch }}.rpm"
 

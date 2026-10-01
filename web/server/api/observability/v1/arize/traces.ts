@@ -1,7 +1,7 @@
-import { createError, defineEventHandler, getHeader, getRequestIP, getRequestURL, readRawBody, setResponseStatus } from "h3";
-import { exportAgentTrace, IpRateLimiter, readServerArizeConfig, requestWithinLimit, validateTracePayload } from "../../../../utils/arize-observability";
-
-const rateLimiter = new IpRateLimiter();
+import { createError, defineEventHandler, getHeader, getRequestURL, setResponseStatus } from "h3";
+import { exportAgentTrace, readServerArizeConfig, requestWithinLimit, validateTracePayload } from "../../../../utils/arize-observability";
+import { readBoundedJsonBody } from "../../../../utils/bounded-body";
+import { consumePublicRateLimit } from "../../../../utils/public-abuse";
 
 export default defineEventHandler(async (event) => {
 	if (event.method !== "POST") throw createError({ statusCode: 405, statusMessage: "Use POST for Arize traces." });
@@ -13,14 +13,11 @@ export default defineEventHandler(async (event) => {
 	const origin = getHeader(event, "origin");
 	const url = getRequestURL(event);
 	if (!origin || origin !== url.origin) throw createError({ statusCode: 403, statusMessage: "Same-origin request required." });
-	if (!rateLimiter.allow(getRequestIP(event, { xForwardedFor: config.trustProxyIp }) ?? "unknown", config.rateLimitPerMinute)) throw createError({ statusCode: 429, statusMessage: "Try again later." });
+	await consumePublicRateLimit(event, { bucket: "arize-global", key: "global", limit: 600, windowSeconds: 60 });
+	await consumePublicRateLimit(event, { bucket: "arize-client", limit: config.rateLimitPerMinute, windowSeconds: 60 });
 	let payload: unknown;
 	try {
-		const rawBody = await readRawBody(event);
-		if (rawBody === undefined || Buffer.byteLength(rawBody, "utf8") > 64 * 1024) {
-			throw createError({ statusCode: 413, statusMessage: "Trace is too large." });
-		}
-		payload = JSON.parse(rawBody);
+		payload = await readBoundedJsonBody(event.req, 64 * 1024);
 	} catch (error) {
 		if (error && typeof error === "object" && "statusCode" in error) throw error;
 		throw createError({ statusCode: 400, statusMessage: "Invalid JSON." });

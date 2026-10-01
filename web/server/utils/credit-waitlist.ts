@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
 import { getNotOrganicPack } from "../../src/notorganic-provider/packs";
+import { readBoundedBody } from "./bounded-body";
 
 export class CreditWaitlistError extends Error {
   constructor(public statusCode: number, message: string) { super(message); }
 }
 export type WaitlistResult = { joined: true; confirmation: "sent" | "unavailable" | "already_registered" };
-type Options = { apiKey?: string; segmentId?: string; from?: string; origin?: string; fetcher?: typeof fetch; sleep?: (ms: number) => Promise<void>; limitEmail?: (identity: string) => void };
+type Options = { apiKey?: string; segmentId?: string; from?: string; origin?: string; fetcher?: typeof fetch; sleep?: (ms: number) => Promise<void>; limitEmail?: (identity: string) => void | Promise<void>; acquireEmail?: (identity: string) => Promise<() => Promise<void>>; reserveConfirmationSend?: () => Promise<void> };
 export function createWaitlistRateLimiter(now = Date.now, maxAttempts = 5) {
   const buckets = new Map<string, { count: number; until: number }>();
   return (identity: string) => {
@@ -22,24 +23,27 @@ export async function joinCreditWaitlist(request: Request, options: Options): Pr
   const expectedOrigin = options.origin ?? new URL(request.url).origin;
   if (request.headers.get("origin") !== expectedOrigin) throw new CreditWaitlistError(403, "Please submit the form from the Keating website.");
   if (!request.headers.get("content-type")?.startsWith("application/json")) throw new CreditWaitlistError(415, "Expected a JSON form.");
-  const reader = request.body?.getReader();
-  if (!reader) throw new CreditWaitlistError(400, "Complete the email form.");
-  const chunks: Uint8Array[] = []; let size = 0;
-  try { while (true) { const chunk = await reader.read(); if (chunk.done) break; size += chunk.value.length; if (size > 2048) { await reader.cancel(); throw new CreditWaitlistError(413, "The form is too large."); } chunks.push(chunk.value); } } finally { reader.releaseLock(); }
+  const bytes = await readBoundedBody(request, 2048, 10_000);
   let body: Record<string, unknown>;
-  try { body = JSON.parse(Buffer.concat(chunks).toString("utf8")); } catch { throw new CreditWaitlistError(400, "Complete the email form."); }
+  try { body = JSON.parse(Buffer.from(bytes).toString("utf8")); } catch { throw new CreditWaitlistError(400, "Complete the email form."); }
   if (!body || typeof body !== "object" || body.consent !== true || typeof body.email !== "string" || typeof body.packId !== "string" || body.website) throw new CreditWaitlistError(400, "Enter your email and agree to the launch notification.");
   const email = body.email.trim().toLowerCase();
   const pack = getNotOrganicPack(body.packId);
   if (!pack || email.length > 254 || !/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email)) throw new CreditWaitlistError(400, "Enter a valid email address and credit pack.");
-  options.limitEmail?.(email);
+  await options.limitEmail?.(email);
   if (!options.apiKey || !options.segmentId || !options.from) throw new CreditWaitlistError(503, "The email waitlist is temporarily unavailable. Please try again later.");
+  const releaseEmail = await options.acquireEmail?.(email);
+  try {
   const fetcher = options.fetcher ?? fetch;
   const sleep = options.sleep ?? (ms => new Promise(resolve => setTimeout(resolve, ms)));
+  // Keep provider retries and segment pagination inside the admission lease.
+  const deadline = Date.now() + 60_000;
   async function api(path: string, method = "GET", value?: unknown, key?: string): Promise<{ status: number; data: any }> {
     for (let attempt = 0; attempt < 3; attempt++) {
+      const remaining = deadline - Date.now();
+      if (remaining <= 0) throw new CreditWaitlistError(503, "The email waitlist could not be reached. Please try again.");
       try {
-        const response = await fetcher(`https://api.resend.com${path}`, { method, headers: { Authorization: `Bearer ${options.apiKey}`, "User-Agent": "Keating-waitlist/1.0", "Content-Type": "application/json", ...(key ? { "Idempotency-Key": key } : {}) }, body: value === undefined ? undefined : JSON.stringify(value), signal: AbortSignal.timeout(8000) });
+        const response = await fetcher(`https://api.resend.com${path}`, { method, headers: { Authorization: `Bearer ${options.apiKey}`, "User-Agent": "Keating-waitlist/1.0", "Content-Type": "application/json", ...(key ? { "Idempotency-Key": key } : {}) }, body: value === undefined ? undefined : JSON.stringify(value), signal: AbortSignal.timeout(Math.min(8000, remaining)) });
         if ((response.status === 429 || response.status >= 500) && attempt < 2) { await sleep(600 * (attempt + 1)); continue; }
         const data = await response.json().catch(() => null);
         return { status: response.status, data };
@@ -72,7 +76,15 @@ export async function joinCreditWaitlist(request: Request, options: Options): Pr
   // Membership is durable before confirmation; an email outage never loses signup.
   const key = createHash("sha256").update(`keating-credit-waitlist-v1:${email}:${options.segmentId}`).digest("hex");
   try {
+    // Reserve immediately before the paid operation. Exhaustion must not undo
+    // the durable contact and membership already saved above.
+    await options.reserveConfirmationSend?.();
     const sent = await api("/emails", "POST", { from: options.from, to: [email], subject: "You're on the Keating credits waitlist", text: `You're on the Keating hosted credits waitlist.\n\nYou asked to hear when hosted credit packs become available, starting with the ${pack.label} pack. Nothing has been purchased or charged. We'll email you when they're ready.\n\nKeating is available today with your own provider keys.\n\nIf you didn't request this, reply to this email to let us know.`, tags: [{ name: "purpose", value: "credits_waitlist_v1" }, { name: "pack", value: pack.id }] }, `credit-waitlist/${key}`);
     return { joined: true, confirmation: ok(sent) && typeof sent.data?.id === "string" ? "sent" : "unavailable" };
   } catch { return { joined: true, confirmation: "unavailable" }; }
+  } finally {
+    // Expiring leases recover even if the backing store is briefly unavailable.
+    // Cleanup failure must not turn a durable signup into a reported failure.
+    if (releaseEmail) await Promise.allSettled([releaseEmail()]);
+  }
 }

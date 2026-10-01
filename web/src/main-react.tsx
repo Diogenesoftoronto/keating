@@ -19,11 +19,15 @@ import { initThemeSync } from "./theme-sync";
 
 installBrowserDiagnosticsCapture();
 
-if (import.meta.env.DEV) {
-  void import("react-grab")
-    .then(() => recordDiagnostic("info", "devtools", "React Grab loaded", { version: "0.2.0" }))
-    .catch((error) => console.warn("React Grab failed to load:", error));
-}
+let DeveloperToolsProvider: typeof import("@popmelt.com/core").PopmeltProvider | undefined;
+const developerToolsReady = import.meta.env.DEV
+  ? import("@popmelt.com/core")
+    .then(({ PopmeltProvider }) => {
+      DeveloperToolsProvider = PopmeltProvider;
+      recordDiagnostic("info", "devtools", "Popmelt loaded", { version: "0.24.2" });
+    })
+    .catch((error) => console.warn("Popmelt failed to load:", error))
+  : Promise.resolve();
 
 const stopSubmissionSync = startSubmissionSync();
 if (import.meta.hot) import.meta.hot.dispose(stopSubmissionSync);
@@ -46,19 +50,22 @@ const posthogClient = initPostHog();
 const root = ReactDOM.createRoot(document.getElementById("root")!);
 
 function renderApp() {
-  root.render(
+  const app = (
     <KeatingGTProvider>
       {posthogClient ? (
         <PostHogProvider client={posthogClient}>
           <App />
         </PostHogProvider>
       ) : <App />}
-    </KeatingGTProvider>,
+    </KeatingGTProvider>
   );
+  root.render(DeveloperToolsProvider
+    ? <DeveloperToolsProvider enabled navigate={(url) => window.location.assign(url)}>{app}</DeveloperToolsProvider>
+    : app);
 }
 
-initializeKeatingGT()
+const translationReady = initializeKeatingGT()
   .catch((error) => {
     if (import.meta.env.DEV) console.warn("General Translation failed to initialize:", error);
-  })
-  .finally(renderApp);
+  });
+void Promise.all([translationReady, developerToolsReady]).finally(renderApp);

@@ -2,10 +2,13 @@
   "name": "keating-launch",
   "private": true,
   "type": "module",
+  "devDependencies": {
+    "@hyperframes/core": "0.8.92"
+  },
   "scripts": {
-    "dev": "npx --yes hyperframes@0.8.78 preview",
-    "check": "npx --yes hyperframes@0.8.78 check",
-    "render": "npx --yes hyperframes@0.8.78 render",
-    "publish": "npx --yes hyperframes@0.8.78 publish"
+    "dev": "npx --yes hyperframes@0.8.92 preview",
+    "check": "npx --yes hyperframes@0.8.92 check",
+    "render": "npx --yes hyperframes@0.8.92 render",
+    "publish": "npx --yes hyperframes@0.8.92 publish"
   }
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { ArrowUpRight, RefreshCw } from "lucide-react";
 import { createNotOrganicCheckout, getNotOrganicWallet } from "../notorganic-provider";
 import { publicClientMaxCostMicrousd } from "../notorganic-provider/public-client";
+import { notOrganicCheckoutReturnUrl } from "../notorganic-provider/checkout-return";
 import type { NotOrganicPackId } from "../notorganic-provider/packs";
 import { availableCreditPacks, canRetryWithWallet, formatCreditBalance, normalizeCreditWallet, type CreditWallet } from "../notorganic-provider/credit-wallet";
 import { KeatingCreditSprite } from "./KeatingCreditSprite";
@@ -18,6 +19,7 @@ export interface CreditRecoveryCardProps {
   details?: string;
   initialPackId?: NotOrganicPackId;
   preserveMessage?: boolean;
+  checkoutReturned?: boolean;
   onRefresh(): void;
   onRetry?(): void;
   onCheckout(packId: NotOrganicPackId): void;
@@ -25,7 +27,7 @@ export interface CreditRecoveryCardProps {
 }
 
 export function CreditRecoveryCard({ wallet, refreshing = false, checkingOut = false, retrying = false, error,
-  checkoutUrl, requiredMicros = 100_000, checkoutEnabled = false, details, initialPackId, preserveMessage = true,
+  checkoutUrl, requiredMicros = 100_000, checkoutEnabled = false, details, initialPackId, preserveMessage = true, checkoutReturned = false,
   onRefresh, onRetry, onCheckout, onModelSelect }: CreditRecoveryCardProps) {
   const [showPacks, setShowPacks] = useState(!!initialPackId);
   const [selected, setSelected] = useState<NotOrganicPackId>(initialPackId ?? "keating_pack_10");
@@ -41,9 +43,10 @@ export function CreditRecoveryCard({ wallet, refreshing = false, checkingOut = f
     <KeatingCreditSprite refreshing={refreshing} ready={ready} balanceMicros={wallet?.availableMicros} />
     <div className="keating-credit-recovery__body">
       <h3 id={titleId}>{ready ? hasStarter ? "Your starter credit is ready" : "Ready to keep learning" : preserveMessage ? "Your message is safe" : "Your Keating credits"}</h3>
-      <p>{ready ? "Your wallet has enough credit. You can retry your saved message."
+      <p>{ready ? preserveMessage ? "Your wallet has enough credit. You can retry your saved message." : "Your wallet has enough credit to continue."
         : preserveMessage ? "Keating needs a little more credit to answer. You won’t need to type your message again." : "Choose a one-time balance for Inkling Small, or check your current credits."}</p>
       <div aria-live="polite" role="status">
+        {checkoutReturned && <p>You’re back from checkout. Payment may still be processing. Your wallet shows confirmed credit; refresh your balance if it hasn’t changed yet.</p>}
         {refreshing ? <p>Checking your wallet…</p> : wallet
           ? <div className="keating-credit-recovery__balance"><p><strong>{formatCreditBalance(wallet.availableMicros)}</strong> available</p>
             {ready && <button type="button" disabled={busy} onClick={() => setShowPacks(value => !value)} aria-expanded={showPacks}>Top up</button>}</div>
@@ -79,12 +82,13 @@ export function CreditRecoveryCard({ wallet, refreshing = false, checkingOut = f
   </section>;
 }
 
-export function NotOrganicCreditRecovery({ onRetry, onModelSelect, details, initialPackId, preserveMessage = true }: {
+export function NotOrganicCreditRecovery({ onRetry, onModelSelect, details, initialPackId, preserveMessage = true, checkoutReturned = false }: {
   onRetry?: () => void | Promise<void>;
   onModelSelect?: () => void;
   details?: string;
   initialPackId?: NotOrganicPackId;
   preserveMessage?: boolean;
+  checkoutReturned?: boolean;
 }) {
   const [wallet, setWallet] = useState<CreditWallet>();
   const [refreshing, setRefreshing] = useState(false);
@@ -138,10 +142,7 @@ export function NotOrganicCreditRecovery({ onRetry, onModelSelect, details, init
     try {
       const verified = await readWallet();
       if (!availableCreditPacks(verified, checkoutEnabled).some(pack => pack.id === packId)) throw new Error("Credit purchases aren’t available right now. Your message is still saved.");
-      // Stay on the signed-in web origin. Desktop uses a local origin, so its
-      // checkout still returns to the secure website in the system browser.
-      const returnOrigin = window.location.protocol === "https:" ? window.location.origin : "https://keating.help";
-      const result = await createNotOrganicCheckout(packId, `${returnOrigin}/pricing?checkout=returned`);
+      const result = await createNotOrganicCheckout(packId, notOrganicCheckoutReturnUrl(window.location.href, packId));
       const url = new URL(result.url ?? result.checkout_url ?? "");
       if (url.protocol !== "https:" || url.username || url.password) throw new Error("Checkout could not be opened. Please try again.");
       if (mounted.current) {
@@ -154,6 +155,6 @@ export function NotOrganicCreditRecovery({ onRetry, onModelSelect, details, init
   };
   return <CreditRecoveryCard wallet={wallet} refreshing={refreshing} checkingOut={checkingOut} retrying={retrying}
     requiredMicros={requiredMicros} checkoutEnabled={checkoutEnabled} error={error} checkoutUrl={checkoutUrl} details={details}
-    initialPackId={initialPackId} preserveMessage={preserveMessage} onRefresh={() => void refresh()} onRetry={onRetry ? () => void retry() : undefined}
+    initialPackId={initialPackId} preserveMessage={preserveMessage} checkoutReturned={checkoutReturned} onRefresh={() => void refresh()} onRetry={onRetry ? () => void retry() : undefined}
     onCheckout={packId => void checkout(packId)} onModelSelect={onModelSelect} />;
 }

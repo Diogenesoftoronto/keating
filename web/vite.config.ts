@@ -4,6 +4,7 @@ import { resolve } from "path";
 import { applicationPublicAssetsPlugin, webBuildTarget } from "./scripts/web-build-target";
 import { VitePWA } from "vite-plugin-pwa";
 import react from "@vitejs/plugin-react";
+import { popmelt } from "@popmelt.com/core/vite";
 import nodepod from "@scelar/nodepod/vite";
 import posthog from "@posthog/rollup-plugin";
 import { visualizer } from "rollup-plugin-visualizer";
@@ -439,6 +440,7 @@ export default defineConfig({
     applicationPublicAssetsPlugin(),
     flueBrowserRuntime(),
     react(),
+    popmelt({ projectRoot: resolve(__dirname, "..") }),
     nodepod(),
     chatProxyPlugin(),
     ...analyzePlugins,

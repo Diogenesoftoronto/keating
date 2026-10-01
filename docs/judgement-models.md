@@ -13,6 +13,12 @@ The judgement model reviews work independently of the tutor model. Changing your
 
 If account access is unavailable in this app configuration, model selection cannot enable it. Use a build configured for Not Organic or the desktop local option. If authorization expires, reconnect. If a review still fails, check account access and available funds before retrying.
 
+## Your TypeSafe API key
+
+Choose **Jev · your TypeSafe API key** in **Settings → Providers & Models → Judgement**. Enter your TypeSafe model ID (default `jev-latest`), paste your API key, and choose **Save API key**. You can replace or remove it there later. This reviewer is independent of your tutor and does not require Not Organic authorization or credit.
+
+The key is saved in this device's provider credential store, separately from the model settings. Reviews pass through Keating's same-origin relay to TypeSafe's fixed API endpoint; the server uses your key only for the request. TypeSafe bills your account directly. Model estimates still require matching verified calibration before automatic grading can use them.
+
 ## On this device
 
 In the desktop app, download **MiniCPM5 2B** from **Offline tutor**, then select it in the judgement picker. This option requires a build that provides local scoring. The settings show download and runtime availability; choosing a model does not download it automatically. Hosted mode also lets you choose a separate local fallback.
