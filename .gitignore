@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+.popmelt/
 
 # GitNexus Ladybug in-memory extension probe session lock.
 /:memory:.ses

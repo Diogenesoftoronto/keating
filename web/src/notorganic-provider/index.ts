@@ -98,7 +98,7 @@ export function notOrganicPublicClient(): NotOrganicPublicClient | null {
 	return config ? new NotOrganicPublicClient(config) : null;
 }
 
-export async function beginNotOrganicAuthorization(returnTo = window.location.pathname): Promise<void> {
+export async function beginNotOrganicAuthorization(returnTo = `${window.location.pathname}${window.location.search}`): Promise<void> {
 	const client = notOrganicPublicClient();
 	if (!client) throw new Error("This Keating deployment has not enabled Not Organic sign-in.");
 	const url = await client.authorizationUrl(returnTo);
@@ -108,8 +108,18 @@ export async function beginNotOrganicAuthorization(returnTo = window.location.pa
 	window.location.assign(url);
 }
 
-export function getNotOrganicAccount(fetcher?: typeof fetch): Promise<NotOrganicAccount> {
-	return providerJson("account", undefined, fetcher);
+export async function getNotOrganicAccount(fetcher?: typeof fetch): Promise<NotOrganicAccount> {
+	const response = await providerJson<unknown>("account", undefined, fetcher);
+	if (!response || typeof response !== "object") throw new Error("Your Not Organic account could not be verified.");
+	const envelope = response as Record<string, unknown>;
+	const value = "account" in envelope ? envelope.account : response;
+	if (!value || typeof value !== "object") throw new Error("Your Not Organic account could not be verified.");
+	const account = value as Record<string, unknown>;
+	const did = typeof account.did === "string" && account.did.trim() ? account.did : undefined;
+	const id = typeof account.id === "string" && account.id.trim() ? account.id
+		: typeof account._id === "string" && account._id.trim() ? account._id : did;
+	if (!id) throw new Error("Your Not Organic account could not be verified.");
+	return { ...account, id, ...(did ? { did } : {}) };
 }
 
 export function getNotOrganicWallet(fetcher?: typeof fetch): Promise<NotOrganicWallet> {

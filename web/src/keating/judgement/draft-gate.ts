@@ -354,7 +354,9 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         publish(approvedMessage(result.value, result.reply, usage));
       } else {
         const setup = result.receipt.reason === "backend-unavailable" || result.receipt.reason === "backend-unauthorized";
-        publish(safeMessage(setup
+        publish(safeMessage(result.receipt.reason === "backend-payment-required"
+          ? "The review provider couldn't fund this review. Check your account credit and request spending limit, then try again."
+          : setup
           ? "Keating needs an available judgement model to check this reply. Configure one in Settings, then try again."
           : "I couldn't verify a useful reply within this attempt. Please try again or make the request more specific."));
       }

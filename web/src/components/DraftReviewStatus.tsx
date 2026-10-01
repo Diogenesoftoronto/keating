@@ -43,6 +43,7 @@ export function DraftReviewStatus({ sessionId, status }: { sessionId: string; st
     ? `${snapshot.attempts.length} ${snapshot.attempts.length === 1 ? "draft reviewed" : "drafts reviewed"}. You can flag a missed problem below.`
     : snapshot.phase === "withheld"
       ? snapshot.reason === "unsupported-evidence" ? "The reviewer needs the attachment's text or a transcript. Send it in a new conversation to continue."
+        : snapshot.reason === "backend-payment-required" ? "The review provider couldn't fund this review. Check your account credit and request spending limit, then retry."
         : snapshot.reason === "time-budget" ? "The review reached its time limit. Try a more focused request or another model."
         : reviewerUnavailable ? "The reviewer is unavailable. Set up a judgement model, then retry."
         : snapshot.attempts.length ? "The drafts did not pass all checks. Try a more focused request or another model."

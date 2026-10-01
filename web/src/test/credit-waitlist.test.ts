@@ -1,5 +1,8 @@
 import { expect, test } from "bun:test";
 import { createWaitlistRateLimiter, joinCreditWaitlist } from "../../server/utils/credit-waitlist";
+import { H3 } from "h3";
+import waitlistRoute from "../../server/api/credit-waitlist/index.post";
+import { MemoryPublicAbuseStore, setPublicAbuseStoreForTests } from "../../server/utils/public-abuse";
 const body = { email: "Learner@example.com", packId: "keating_pack_25", consent: true, website: "" };
 const request = (value: unknown = body, origin = "https://keating.test") => new Request("https://keating.test/api/credit-waitlist", { method: "POST", headers: { origin, "Content-Type": "application/json" }, body: JSON.stringify(value) });
 function fixture(responses: Array<[number, unknown]>) {
@@ -43,4 +46,59 @@ test("rate limiting uses the validated normalized email before provider access",
   await expect(joinCreditWaitlist(request(), { ...f.options, limitEmail: identity => { identities.push(identity); throw new Error("limited"); } })).rejects.toThrow("limited");
   expect(identities).toEqual(["learner@example.com"]);
   expect(f.calls).toHaveLength(0);
+});
+
+test("daily send ceiling preserves signup without calling the email provider", async () => {
+  const f = fixture([[200, { id: "contact" }], [200, { data: [] }], [200, {}]]);
+  let reservations = 0;
+  const result = await joinCreditWaitlist(request(), { ...f.options, reserveConfirmationSend: async () => { reservations++; throw Object.assign(new Error("Daily ceiling"), { statusCode: 429 }); } });
+  expect(result).toEqual({ joined: true, confirmation: "unavailable" });
+  expect(reservations).toBe(1);
+  expect(f.calls.map(call => call.path)).not.toContain("https://api.resend.com/emails");
+  expect(f.calls.at(-1)?.path).toEndWith("/segments/waitlist");
+});
+
+test("existing membership does not reserve daily email quota", async () => {
+  const f = fixture([[200, { id: "contact" }], [200, { data: [{ id: "waitlist" }] }]]);
+  expect(await joinCreditWaitlist(request(), { ...f.options, reserveConfirmationSend: async () => { throw new Error("Must not reserve"); } })).toEqual({ joined: true, confirmation: "already_registered" });
+});
+
+test("async email admission is awaited before accessing provider", async () => {
+  const f = fixture([]);
+  await expect(joinCreditWaitlist(request(), { ...f.options, limitEmail: async () => { await Promise.resolve(); throw Object.assign(new Error("limited"), { statusCode: 429 }); } })).rejects.toMatchObject({ statusCode: 429 });
+  expect(f.calls).toHaveLength(0);
+});
+
+test("email operation lease is released on provider failure", async () => {
+  const f = fixture([[200, { id: "contact" }], [200, { data: [] }], [400, {}]]);
+  let releases = 0;
+  await expect(joinCreditWaitlist(request(), { ...f.options, acquireEmail: async email => { expect(email).toBe("learner@example.com"); return async () => { releases++; }; } })).rejects.toMatchObject({ statusCode: 503 });
+  expect(releases).toBe(1);
+});
+
+test("send reservation happens after membership and is retained across retries", async () => {
+  const f = fixture([[200, { id: "contact" }], [200, { data: [] }], [200, {}], [500, {}], [200, { id: "email" }]]);
+  let reservations = 0;
+  expect(await joinCreditWaitlist(request(), { ...f.options, reserveConfirmationSend: async () => { expect(f.calls).toHaveLength(3); reservations++; } })).toEqual({ joined: true, confirmation: "sent" });
+  expect(reservations).toBe(1);
+});
+
+test("HTTP waitlist rate limits clients independently and preserves body errors", async () => {
+  const oldTrust = process.env.KEATING_ABUSE_TRUST_PROXY_IP;
+  process.env.KEATING_ABUSE_TRUST_PROXY_IP = "true";
+  setPublicAbuseStoreForTests(new MemoryPublicAbuseStore());
+  const app = new H3().post("/api/credit-waitlist", waitlistRoute);
+  const call = (ip: string, value = "{}") => app.fetch(new Request("https://keating.test/api/credit-waitlist", { method: "POST", headers: { origin: "https://keating.test", "content-type": "application/json", "x-real-ip": ip }, body: value }));
+  try {
+    for (let attempt = 0; attempt < 10; attempt++) expect((await call("192.0.2.1")).status).toBe(400);
+    const limited = await call("192.0.2.1");
+    expect(limited.status).toBe(429);
+    expect(Number(limited.headers.get("retry-after"))).toBeGreaterThan(0);
+    expect((await call("192.0.2.2")).status).toBe(400);
+    expect((await call("192.0.2.3", "x".repeat(2049))).status).toBe(413);
+  } finally {
+    if (oldTrust === undefined) delete process.env.KEATING_ABUSE_TRUST_PROXY_IP;
+    else process.env.KEATING_ABUSE_TRUST_PROXY_IP = oldTrust;
+    setPublicAbuseStoreForTests();
+  }
 });

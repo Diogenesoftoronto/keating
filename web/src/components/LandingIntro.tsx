@@ -26,7 +26,7 @@ export function LandingIntro() {
   return (
     <section className={`landing-intro${watching ? " landing-intro--film" : ""}`} aria-labelledby="landing-intro-title">
       <video ref={film} className="landing-intro__film" hidden={!watching}
-        src="/tapes/keating-4-launch.mp4" poster="/tapes/posters/keating-4-launch.jpg"
+        src="/tapes/keating-4-launch.mp4?v=bf5957f16e1c" poster="/tapes/posters/keating-4-launch.jpg"
         controls playsInline preload="none" aria-label="Keating 4.0 launch film">
         <track kind="captions" src="/tapes/captions/keating-4-launch.vtt" srcLang="en" label="English" />
       </video>

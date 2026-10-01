@@ -24,7 +24,9 @@ export default defineEventHandler(() => {
     (process.env.KEATING_WEB_LOCAL_EXEC === "1" || process.env.KEATING_WEB_LOCAL_EXEC === "true");
 
   return buildAgentRuntimeConfig({
-    mode,
+    // Managed cloud execution is not launched until its allowance is enforced.
+    // Preserve local project access and execution in the meantime.
+    mode: mode === "cloud" ? "browser-only" : mode,
     projectRoot,
     localExecEnabled,
     remote: mode === "remote"

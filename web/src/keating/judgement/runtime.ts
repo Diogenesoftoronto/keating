@@ -15,6 +15,7 @@ import { DEFAULT_JUDGEMENT_MODEL_SETTINGS, JEV_REQUEST_TOKEN_LIMIT, JEV_STATE_QU
 import { createDesktopLocalLabelScorer } from "./local-scorer";
 import { createWebJudgementCaller, WEB_JUDGEMENT_MODEL_ALIAS, type WebJudgementCallerOptions } from "./transport";
 import { createPublicAccountJudgementBackend, type JudgementAccountClient } from "./public-account";
+import { createStoredTypesafeJudgementBackend } from "./typesafe-key";
 import { observeJudgementCaller } from "./diagnostics";
 import { JULIA_BROWSER_MODEL_ID, JULIA_MODEL, JULIA_MODEL_ID } from "../../../../shared/julia/manifest.js";
 import { createBrowserJuliaScorer, createDesktopJuliaScorer } from "./julia-scorer";
@@ -98,6 +99,7 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   const requested = options.settings ?? loadJudgementModelSettings();
   const settings: JudgementModelSettings = Object.freeze({
     backend: requested.backend === "hosted" || requested.backend === "off" ? requested.backend : "local",
+    ...(requested.hostedProvider === "typesafe" ? { hostedProvider: "typesafe" as const, customModel: requested.customModel?.trim() || "jev-latest" } : {}),
     localModelId: requested.localModelId,
     gatewayPath: gatewayPath(requested.gatewayPath),
     requestTokens: typeof requested.requestTokens === "number" && Number.isSafeInteger(requested.requestTokens)
@@ -134,7 +136,8 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   }
 
   if (settings.backend === "hosted") {
-    const model = options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;
+    const model = settings.hostedProvider === "typesafe" ? settings.customModel ?? "jev-latest"
+      : options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;
     const key = calibrationKey("system-one", model, calibration?.hosted);
     const sameOrigin = import.meta.env?.VITE_KEATING_JUDGEMENT_SAME_ORIGIN === "true";
     const account = !sameOrigin && (!options.hosted?.fetch || options.hosted?.accountClient)
@@ -145,8 +148,8 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
       model: key.model, calibrationSha256: key.calibrationSha256,
       fetch: options.hosted?.fetch, sleep: options.hosted?.sleep,
     });
-    tiers.push(Object.freeze(account ?? { key, call: hosted.call }));
-    Object.assign(entries, calibratedEntries(key, calibration?.hosted));
+    tiers.push(Object.freeze(settings.hostedProvider === "typesafe" ? createStoredTypesafeJudgementBackend(model) : account ?? { key, call: hosted.call }));
+    if (settings.hostedProvider !== "typesafe") Object.assign(entries, calibratedEntries(key, calibration?.hosted));
   }
 
   const orderedTiers = settings.backend === "hosted" ? [...tiers].reverse() : tiers;
@@ -158,7 +161,8 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
     calibration: Object.freeze({ entries: Object.freeze(entries) }),
     ...(options.pinnedBackend ? { pinnedBackend: Object.freeze({ ...options.pinnedBackend }) } : {}),
   });
-  const hostedModel = options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;
+  const hostedModel = settings.hostedProvider === "typesafe" ? settings.customModel ?? "jev-latest"
+    : options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;
   const isJevModel = hostedModel === "jev-latest" || hostedModel === "jev-preview" || /^jev-\d/.test(hostedModel);
   const localNativeContextWindow = options.localScorer?.contextWindowTokens
     ?? (settings.localModelId === JULIA_MODEL_ID || settings.localModelId === JULIA_BROWSER_MODEL_ID ? JULIA_MODEL.contextTokens

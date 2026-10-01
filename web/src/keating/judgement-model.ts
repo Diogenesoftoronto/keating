@@ -30,6 +30,9 @@ export interface JudgementModelSettings {
    * constant — §1.1 of the plan is explicit that this is the user's call.
    */
   readonly backend: JudgementBackendPreference;
+  /** Direct BYOK is independent of Not Organic account authorization. */
+  readonly hostedProvider?: "notorganic" | "typesafe";
+  readonly customModel?: string;
   /** Local model id used for judgement, independent of the tutor model. */
   readonly localModelId: string;
   /**
@@ -105,6 +108,10 @@ const judgementModelSetting = createLocalSetting<JudgementModelSettings>({
     if (!parsed) return defaults;
     return {
       backend: normalizeBackend(parsed.backend),
+      ...(parsed.hostedProvider === "typesafe" ? {
+        hostedProvider: "typesafe" as const,
+      } : {}),
+      ...(parsed.customModel !== undefined || parsed.hostedProvider === "typesafe" ? { customModel: cleanString(parsed.customModel).slice(0, 200) || "jev-latest" } : {}),
       localModelId: cleanString(parsed.localModelId) || defaults.localModelId,
       gatewayPath: normalizeGatewayPath(parsed.gatewayPath),
       requestTokens: normalizeContextWindow(parsed.requestTokens),

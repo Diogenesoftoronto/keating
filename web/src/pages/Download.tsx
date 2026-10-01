@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { usePostHog } from "@posthog/react";
-import { Link } from "@tanstack/react-router";
+import { AppLink as Link } from "../components/AppLink";
 import { ArrowDown, ArrowDownToLine, ArrowRight, Globe, Terminal } from "lucide-react";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";

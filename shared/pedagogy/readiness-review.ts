@@ -90,7 +90,7 @@ export async function reviewStudyCandidates(candidates: readonly StudyCandidate[
       if (!serialized || new TextEncoder().encode(serialized).byteLength > 96_000
         || !returned || typeof returned !== "object" || typeof returned.ok !== "boolean"
         || (!returned.ok && (!returned.error || typeof returned.error.retryable !== "boolean"
-          || !["request-invalid", "backend-unavailable", "backend-unauthorized", "backend-rate-limited", "backend-overloaded", "backend-timeout", "response-malformed", "cancelled"].includes(returned.error.code)))
+          || !["request-invalid", "backend-unavailable", "backend-unauthorized", "backend-payment-required", "backend-rate-limited", "backend-overloaded", "backend-timeout", "response-malformed", "cancelled"].includes(returned.error.code)))
         || (returned.ok && (!returned.response || !returned.response.backend || !returned.response.answers
           || typeof returned.response.backend.model !== "string" || typeof returned.response.answers !== "object" || Array.isArray(returned.response.answers)))) {
         result = { ok: false, error: { code: "response-malformed", retryable: false } };

@@ -1,4 +1,5 @@
-import { defineEventHandler, readBody, createError, assertMethod, setResponseHeader } from "h3";
+import { readBoundedJsonBody } from "../../utils/bounded-body";
+import { defineEventHandler, createError, assertMethod, setResponseHeader } from "h3";
 import { getOAuthServerConfigs, type OAuthServerProviderId } from "./config";
 import { OAuthUpstreamError, refreshGitHubCopilotToken } from "./github-copilot";
 
@@ -10,7 +11,7 @@ interface RefreshRequestBody {
 export default defineEventHandler(async (event) => {
 	setResponseHeader(event, "Cache-Control", "no-store");
 	assertMethod(event, "POST");
-	const body = await readBody<RefreshRequestBody>(event);
+	const body = await readBoundedJsonBody(event.req, 32 * 1024) as RefreshRequestBody;
 
 	if (!body?.provider || !body?.refresh_token) {
 		throw createError({

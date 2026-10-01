@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { AppLink as Link } from "./AppLink";
 import { usePostHog } from "@posthog/react";
 import { ArrowRight, ArrowUp, Check, MessageSquare } from "lucide-react";
 import { KeatingBot } from "./KeatingBot";
@@ -43,7 +43,7 @@ export function LandingLearning() {
                 <button type="button" aria-pressed={method === "experiments"} onClick={() => { setMethod("experiments"); posthog?.capture("landing_plan_changed", { control: "method", value: "experiments" }); }}>Try experiments</button>
                 <button type="button" aria-pressed={method === "questions"} onClick={() => { setMethod("questions"); posthog?.capture("landing_plan_changed", { control: "method", value: "questions" }); }}>Work through questions</button>
               </div></fieldset>
-              <Link to="/chat" search={{ ask }} className="landing-learning__button" onClick={() => posthog?.capture("start_session_clicked", { source: "landing_direction", depth, method })}>Shape this plan with Keating <ArrowRight size={18} aria-hidden="true" /></Link>
+              <Link to={`/chat?ask=${encodeURIComponent(ask)}`} className="landing-learning__button" onClick={() => posthog?.capture("start_session_clicked", { source: "landing_direction", depth, method })}>Shape this plan with Keating <ArrowRight size={18} aria-hidden="true" /></Link>
               <p className="landing-plan__note">Opens this request in chat. You can edit it before sending.</p>
             </div>
             <div className="landing-plan__preview">
@@ -100,7 +100,7 @@ function LandingSharedLearning() {
         <div className="landing-course__body" aria-live="polite">
           {view === "lessons" ? <ol className="landing-course__lessons"><li><Check size={18} aria-hidden="true" /><div><strong>Start with a sound</strong><span>Listen, change the oscillator, compare.</span></div></li><li><span className="landing-course__step">02</span><div><strong>Make it your own</strong><span>Shape the filter and envelope. Share your patch.</span></div></li><li><span className="landing-course__step">03</span><div><strong>Learn from each other</strong><span>Try someone else’s approach. Explain what changed.</span></div></li></ol> : <div className="landing-course__discussion"><MessageSquare size={24} aria-hidden="true" /><div><p><strong>Maya</strong> “My patch sounds dull. What should I try changing?”</p><p><strong>Sam</strong> “Try opening the cutoff, then compare it with your original.”</p><span>Example discussion, not a live conversation.</span></div></div>}
         </div>
-        <footer className="landing-course__actions"><Link to="/chat" search={{ courseMode: "create" }} className="landing-learning__button" onClick={() => { posthog?.capture("start_session_clicked", { source: "landing_courses", intent: "create_course" }); posthog?.capture("landing_cta_clicked", { section: "courses", action: "create_course", destination: "chat" }); }}>Build a course <ArrowRight size={18} aria-hidden="true" /></Link><div><Link to="/courses" className="landing-learning__link" onClick={() => posthog?.capture("landing_cta_clicked", { section: "courses", action: "open_courses", destination: "courses" })}>Open your courses <ArrowRight size={18} aria-hidden="true" /></Link><p>Have an invitation? Follow its link to join.</p></div></footer>
+        <footer className="landing-course__actions"><Link to="/chat?courseMode=create" className="landing-learning__button" onClick={() => { posthog?.capture("start_session_clicked", { source: "landing_courses", intent: "create_course" }); posthog?.capture("landing_cta_clicked", { section: "courses", action: "create_course", destination: "chat" }); }}>Build a course <ArrowRight size={18} aria-hidden="true" /></Link><div><Link to="/courses" className="landing-learning__link" onClick={() => posthog?.capture("landing_cta_clicked", { section: "courses", action: "open_courses", destination: "courses" })}>Open your courses <ArrowRight size={18} aria-hidden="true" /></Link><p>Have an invitation? Follow its link to join.</p></div></footer>
       </div>
     </div>
   </section>;

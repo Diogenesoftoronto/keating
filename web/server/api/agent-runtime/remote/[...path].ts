@@ -1,4 +1,5 @@
 import { createError, defineEventHandler, getHeaders, getRequestURL, proxyRequest } from "h3";
+import { requireKeatingSubscriberBenefit } from "../../../utils/subscriber-benefits";
 
 type Mode = "browser-only" | "host" | "remote" | "cloud";
 
@@ -28,6 +29,15 @@ export default defineEventHandler(async (event) => {
         ? `Remote agent runtime is disabled in ${mode} mode.`
         : "Remote agent runtime endpoint is not configured.",
     });
+  }
+
+  if (mode === "cloud") {
+    // Managed compute is a subscriber benefit. User-configured remote runtimes
+    // remain separate from the managed service.
+    await requireKeatingSubscriberBenefit(event, "cloud-sandbox");
+    // An entitlement is not a compute budget. Keep dispatch disabled until the
+    // managed runner provides durable allowance reservation and settlement.
+    throw createError({ statusCode: 503, statusMessage: "The subscriber cloud sandbox is not available yet." });
   }
 
   const requestUrl = getRequestURL(event);

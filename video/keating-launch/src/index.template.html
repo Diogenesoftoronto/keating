@@ -109,9 +109,19 @@
       .chip b { font-weight: 700; color: var(--accent-dim); margin-right: 12px; }
 
       /* ---------- 6 quiz ---------- */
-      .wall { position: absolute; left: 80px; top: 40px; width: 1760px; font: 400 30px/1.55 var(--body); color: rgba(28, 33, 27, 0.26); }
-      .wall-strike { position: absolute; left: 60px; top: 520px; width: 1800px; height: 14px; background: var(--red); transform-origin: 0 50%; }
+      .wall { position: absolute; left: 200px; top: 65px; width: 1520px; height: 820px; padding: 32px 44px; background: var(--card); border: 3px solid var(--ink); box-shadow: 12px 12px 0 var(--ink); font: 400 28px/1.5 var(--body); color: var(--ink); overflow: hidden; }
+      .wall-prompt { margin-left: auto; width: 840px; padding: 20px 28px; background: var(--paper-deep); border-radius: 22px; font-size: 32px; }
+      .wall-assistant { display: flex; align-items: center; gap: 18px; margin: 30px 0 18px; font-weight: 700; }
+      .wall-avatar { display: grid; place-items: center; width: 48px; height: 48px; background: var(--ink); color: var(--card); border-radius: 50%; font-size: 21px; }
+      .wall-response { height: 565px; overflow: hidden; padding-left: 66px; }
+      .wall-response p { margin-bottom: 22px; }
+      .wall-response h3 { font: 700 32px/1.4 var(--body); margin-bottom: 16px; }
+      .wall-response ol { padding-left: 42px; margin-bottom: 22px; }
+      .wall-strike { position: absolute; left: 350px; top: 255px; width: 1220px; height: 565px; pointer-events: none; }
+      .wall-strike path { fill: none; stroke: var(--red); stroke-width: 32px; stroke-linecap: round; }
       .quiz { left: 300px; top: 70px; width: 1020px; padding: 34px 40px; }
+      .quiz .label.green { background: var(--accent-dim); }
+      .quiz .opt .fill { background: var(--accent-dim); }
       .quiz-head { display: flex; justify-content: space-between; align-items: center; }
       .quiz-topic { font: 500 22px/1 var(--body); color: var(--ink-soft); }
       .code { margin-top: 26px; background: var(--terminal); border: 2px solid var(--terminal-edge); padding: 24px 28px; font: 500 30px/1.5 var(--body); color: var(--phosphor); white-space: pre; font-variant-ligatures: none; }
@@ -145,8 +155,8 @@
 
       /* ---------- 8 live ---------- */
       .badge { position: absolute; left: 110px; top: 84px; font: 700 40px/1 var(--display); letter-spacing: 0.04em; color: var(--paper); background: var(--accent); padding: 16px 24px; box-shadow: 6px 6px 0 var(--phosphor); }
-      .crt-panel { position: absolute; left: 110px; top: 200px; width: 1060px; height: 663px; border: 3px solid var(--phosphor-dim); box-shadow: 0 0 60px rgba(75, 227, 136, 0.18), 12px 12px 0 var(--terminal-edge); overflow: hidden; }
-      .crt-panel img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .crt-panel { position: absolute; left: 110px; top: 180px; width: 1060px; height: 740px; border: 3px solid var(--phosphor-dim); box-shadow: 0 0 60px rgba(75, 227, 136, 0.18), 12px 12px 0 var(--terminal-edge); overflow: hidden; }
+      .crt-panel img { width: 100%; height: 100%; object-fit: contain; background: var(--terminal); display: block; }
       .live-tag { position: absolute; left: 1290px; top: 240px; font: 700 26px/1 var(--display); letter-spacing: 0.08em; color: var(--phosphor); }
       .live-state { position: absolute; left: 1290px; top: 800px; width: 560px; text-align: center; font: 500 24px/1 var(--body); color: var(--phosphor-dim); letter-spacing: 0.1em; }
       .wave { position: absolute; left: 1290px; top: 700px; width: 560px; height: 80px; display: flex; align-items: center; justify-content: space-between; }
@@ -249,7 +259,7 @@
       <!-- 4 promise --------------------------------------------------------------- -->
       <section data-hf-id="hf-wk54" id="s-promise" class="clip scene paper" data-start="{{start:promise}}" data-duration="{{dur:promise}}" data-track-index="0">
         <div data-hf-id="hf-9k6z" class="promise-copy">
-          <div data-hf-id="hf-1g69" id="promise-a" class="promise-a">You do the thinking.</div>
+          <div data-hf-id="hf-1g69" id="promise-a" class="promise-a" data-layout-allow-occlusion="">You do the thinking.</div>
           <div data-hf-id="hf-kfdw" id="promise-b" class="promise-b">Keating helps it click.</div>
           <div data-hf-id="hf-f44a" id="promise-rule" class="promise-rule"></div>
           <div data-hf-id="hf-bh9r" id="promise-sub1" class="promise-sub">A teacher that starts with your goals,</div>
@@ -272,8 +282,16 @@
 
       <!-- 6 quiz ------------------------------------------------------------------ -->
       <section data-hf-id="hf-wnu0" id="s-quiz" class="clip scene paper" data-start="{{start:quiz}}" data-duration="{{dur:quiz}}" data-track-index="0">
-        <div data-hf-id="hf-h2br" id="wall" data-layout-allow-overflow="" data-layout-allow-overlap="" class="wall">{{wall}}</div>
-        <div data-hf-id="hf-1ajc" id="wall-strike" class="wall-strike"></div>
+        <div data-hf-id="hf-h2br" id="wall" data-layout-allow-overlap="" data-layout-allow-occlusion="" class="wall">
+          <div data-hf-id="hf-04fy" class="wall-prompt" data-layout-allow-occlusion="">Can you explain recursion simply?</div>
+          <div data-hf-id="hf-64lv" class="wall-assistant"><span data-hf-id="hf-w20t" class="wall-avatar" data-layout-allow-occlusion="">AI</span><span data-hf-id="hf-giwa" data-layout-allow-occlusion="">AI assistant</span></div>
+          <div data-hf-id="hf-fqto" class="wall-response">{{wall}}</div>
+        </div>
+        <!-- Two measured SVG traces, adapted from svg-stroke-trace. -->
+        <svg data-hf-id="hf-1ajc" id="wall-strike" class="wall-strike" viewBox="0 0 1220 565" aria-label="Crossed-out AI response">
+          <path data-hf-id="hf-n4je" id="wall-x-first" d="M65 50 Q540 255 1150 510" />
+          <path data-hf-id="hf-rzwd" id="wall-x-second" d="M1145 50 Q650 250 70 510" />
+        </svg>
         <div data-hf-id="hf-ta7w" id="quiz" class="card quiz">
           <div data-hf-id="hf-l3n6" class="quiz-head"><span data-hf-id="hf-jjr7" class="label green">[try it yourself]</span><span data-hf-id="hf-hf1h" class="quiz-topic">recursion · check</span></div>
           <div data-hf-id="hf-jb5n" class="code">function sum(n) {
@@ -329,7 +347,7 @@
       <!-- 8 live ------------------------------------------------------------------ -->
       <section data-hf-id="hf-vd8e" id="s-live" class="clip scene crt" data-start="{{start:live}}" data-duration="{{dur:live}}" data-track-index="0">
         <div data-hf-id="hf-8y69" id="badge" class="badge">KEATING 4.0</div>
-        <div data-hf-id="hf-yq2u" id="crt-panel" class="crt-panel"><img data-hf-id="hf-ua5e" src="assets/stills/feature-live.jpg" alt=""><div data-hf-id="hf-4n06" class="scan"></div></div>
+        <div data-hf-id="hf-yq2u" id="crt-panel" class="crt-panel"><img data-hf-id="hf-ua5e" src="assets/stills/feature-live-current.png" alt=""><div data-hf-id="hf-4n06" class="scan"></div></div>
         <div data-hf-id="hf-pj49" id="live-tag" class="live-tag">[GPT LIVE]</div>
         <div data-hf-id="hf-hic7" id="live-bot" class="bot" style="left: 1350px; top: 270px; width: 440px; height: 440px">
           <div data-hf-id="hf-zwby" class="sway">
@@ -345,14 +363,14 @@
       <!-- 9 memory ---------------------------------------------------------------- -->
       <section data-hf-id="hf-ldom" id="s-memory" class="clip scene paper" data-start="{{start:memory}}" data-duration="{{dur:memory}}" data-track-index="0">
         <div data-hf-id="hf-rbcy" id="device" class="device">
-          <div data-hf-id="hf-u5cy" class="device-bar">
+          <div data-hf-id="hf-u5cy" class="device-bar" data-layout-allow-occlusion="">
             <svg data-hf-id="hf-0r8k" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f1ece0" stroke-width="2.6"><rect data-hf-id="hf-reng" x="4" y="10" width="16" height="11" /><path data-hf-id="hf-apke" d="M8 10V7a4 4 0 0 1 8 0v3" /></svg>
             LOCAL RECALL · ON THIS DEVICE
           </div>
           <div data-hf-id="hf-wbdj" class="recall">
-            <div data-hf-id="hf-k8wc" id="q1" class="quote"><div data-hf-id="hf-cz97" class="q">“I think recursion is a loop that calls itself.”</div><div data-hf-id="hf-yx55" class="m">you · last week</div></div>
-            <div data-hf-id="hf-sws7" id="q2" class="quote"><div data-hf-id="hf-0me4" class="q">“So the base case is where it stops?”</div><div data-hf-id="hf-2exp" class="m">you · three days ago</div></div>
-            <div data-hf-id="hf-oyo6" id="q3" class="quote"><div data-hf-id="hf-fmfb" class="q">“I keep losing track of the stack.”</div><div data-hf-id="hf-le5l" class="m">you · yesterday</div></div>
+            <div data-hf-id="hf-k8wc" id="q1" class="quote"><div data-hf-id="hf-cz97" class="q" data-layout-allow-occlusion="">“I think recursion is a loop that calls itself.”</div><div data-hf-id="hf-yx55" class="m" data-layout-allow-occlusion="">you · last week</div></div>
+            <div data-hf-id="hf-sws7" id="q2" class="quote"><div data-hf-id="hf-0me4" class="q" data-layout-allow-occlusion="">“So the base case is where it stops?”</div><div data-hf-id="hf-2exp" class="m" data-layout-allow-occlusion="">you · three days ago</div></div>
+            <div data-hf-id="hf-oyo6" id="q3" class="quote"><div data-hf-id="hf-fmfb" class="q" data-layout-allow-occlusion="">“I keep losing track of the stack.”</div><div data-hf-id="hf-le5l" class="m" data-layout-allow-occlusion="">you · yesterday</div></div>
           </div>
         </div>
         <div data-hf-id="hf-txg2" id="device-base" class="device-base"></div>
@@ -414,7 +432,7 @@
 
       <!-- root-level footage: timed on the video itself, moved via untimed wrappers -->
       <div data-hf-id="hf-9eft" id="w-classroom" class="vwrap" style="left: 213px; top: 85px; width: 1494px; height: 838px">
-        <video data-hf-id="hf-c32w" id="v-classroom" class="clip" src="assets/clips/classroom.mp4" data-start="{{start:socratic}}" data-duration="{{dur:socratic}}" data-track-index="1" muted playsinline></video>
+        <video data-hf-id="hf-c32w" id="v-classroom" class="clip" src="assets/clips/classroom-current.mp4" data-start="{{start:socratic}}" data-duration="{{dur:socratic}}" data-track-index="1" muted playsinline></video>
       </div>
       <div data-hf-id="hf-fbxq" id="w-tui" class="vwrap" style="left: 1203px; top: 173px; width: 614px; height: 343px">
         <video data-hf-id="hf-hys6" id="v-tui" class="clip" src="assets/clips/tui.mp4" data-start="{{start:anywhere}}" data-duration="{{dur:anywhere}}" data-track-index="1" muted playsinline></video>
@@ -434,7 +452,8 @@
 
 {{captions}}
 
-      <audio data-hf-id="hf-fjyn" id="mix" src="assets/audio/mix.wav" data-start="0" data-duration="{{total}}" data-volume="1"></audio>
+      <audio data-hf-id="hf-fjyn" id="narration" src="assets/audio/narration.wav" data-start="0" data-duration="{{total}}" data-volume="1" data-audio-group="voiceover"></audio>
+      <audio data-hf-id="hf-8b0n" id="music-bed" src="assets/audio/music-bed.wav" data-start="0" data-duration="{{total}}" data-volume="0.22" data-audio-group="music" {{musicfx}}></audio>
     </div>
 
     <script>
@@ -558,9 +577,15 @@
       // ---- 6 quiz -----------------------------------------------------------------
       {
         const t = st("quiz");
-        tl.fromTo("#wall", { y: 0 }, { y: -160, duration: S.quiz.duration, ease: "none" }, t);
-        tl.fromTo("#wall-strike", { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "power2.inOut" }, at("quiz", "wall"));
-        tl.to(["#wall", "#wall-strike"], { opacity: 0.25, filter: "blur(3px)", duration: 0.4 }, at("quiz", "A") - 0.35);
+        tl.fromTo("#wall", { y: 32, opacity: 0 }, { y: 0, opacity: 1, duration: 0.25, ease: "power2.out" }, t);
+        for (const [i, id] of ["#wall-x-first", "#wall-x-second"].entries()) {
+          const path = document.querySelector(id);
+          const length = path.getTotalLength();
+          tl.set(path, { strokeDasharray: `${length} ${length}`, strokeDashoffset: length, opacity: 0 }, 0);
+          tl.set(path, { opacity: 1 }, at("quiz", "wall") + i * 0.24);
+          tl.to(path, { strokeDashoffset: 0, duration: 0.3, ease: "power2.inOut" }, at("quiz", "wall") + i * 0.24);
+        }
+        tl.to(["#wall", "#wall-strike"], { opacity: 0, duration: 0.3 }, at("quiz", "A") - 0.35);
         tl.fromTo("#quiz", { rotationX: -80, opacity: 0, transformPerspective: 1400, transformOrigin: "50% 0%" }, { rotationX: 0, opacity: 1, duration: 0.6, ease: "back.out(1.3)" }, at("quiz", "A") - 0.35);
         tl.fromTo("#quiz-bot", { y: 120, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, at("quiz", "A"));
         const hov = (id, a, b) => tl.fromTo(id + " .hover", { opacity: 0 }, { opacity: 1, duration: 0.12, yoyo: true, repeat: 1, repeatDelay: Math.max(0.1, b - a - 0.24) }, a);

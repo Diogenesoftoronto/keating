@@ -32,6 +32,10 @@ const callback = (authorize: string, code = "one-time-code") => new URLSearchPar
 
 describe("Not Organic public client", () => {
 	it("returns to the originating setup page without accepting external redirects", () => {
+		expect(safeAuthorizationReturnTo("/")).toBe("/");
+		expect(safeAuthorizationReturnTo("/?session=learner-session")).toBe("/?session=learner-session");
+		expect(safeAuthorizationReturnTo("/live")).toBe("/live");
+		expect(safeAuthorizationReturnTo("/courses/my-course?lesson=intro")).toBe("/courses/my-course?lesson=intro");
 		expect(safeAuthorizationReturnTo("/chat")).toBe("/chat");
 		expect(safeAuthorizationReturnTo("/pricing?pack=keating_pack_10")).toBe("/pricing?pack=keating_pack_10");
 		for (const path of ["https://example.com", "//example.com", "/\\example.com", "/notorganic/callback", undefined]) expect(safeAuthorizationReturnTo(path)).toBe("/pricing");
@@ -54,7 +58,7 @@ describe("Not Organic public client", () => {
 			VITE_NOTORGANIC_CLIENT_ID: "",
 			VITE_NOTORGANIC_REDIRECT_URI: "",
 		};
-		for (const origin of ["http://localhost:3000", "http://127.0.0.1:4321", "http://[::1]:3000", "https://keating.help"]) {
+		for (const origin of ["http://localhost:3000", "http://127.0.0.1:4321", "http://[::1]:3000", "https://keating.help", "https://chat.keating.help"]) {
 			expect(publicClientConfig(env, origin)).toMatchObject({ clientId: origin, redirectUri: `${origin}/notorganic/callback` });
 		}
 		for (const origin of ["http://example.com", "file://", "null", "not a URL"]) {
@@ -65,6 +69,43 @@ describe("Not Organic public client", () => {
 			redirectUri: "http://localhost:3000/notorganic/callback",
 		});
 		expect(publicClientConfig({}, "http://localhost:3000")).toBeNull();
+	});
+
+	it("keeps first-party browser authorization on its origin despite legacy deployment pins", () => {
+		for (const pinnedOrigin of ["https://keating.help", "https://chat.keating.help"]) {
+			const env = {
+				VITE_NOTORGANIC_PUBLIC_ISSUER: "https://api.notorganic.info",
+				VITE_NOTORGANIC_AUTHORIZATION_URL: "https://id.notorganic.info/authorize",
+				VITE_NOTORGANIC_CLIENT_ID: pinnedOrigin,
+				VITE_NOTORGANIC_REDIRECT_URI: `${pinnedOrigin}/notorganic/callback`,
+			};
+			for (const origin of ["https://keating.help", "https://chat.keating.help"]) {
+				expect(publicClientConfig(env, origin, false)).toMatchObject({ clientId: origin, redirectUri: `${origin}/notorganic/callback` });
+			}
+			expect(publicClientConfig(env, "http://127.0.0.1:5173", true)).toMatchObject({
+				clientId: "http://127.0.0.1:53693", redirectUri: "http://127.0.0.1:53693/notorganic/callback",
+			});
+		}
+	});
+
+	it("returns a successful app-root sign-in to the same origin with its session intact", async () => {
+		installBrowser();
+		const origin = "https://chat.keating.help";
+		const appConfig = publicClientConfig({
+			VITE_NOTORGANIC_PUBLIC_ISSUER: "https://provider.test",
+			VITE_NOTORGANIC_AUTHORIZATION_URL: "https://portal.test/authorize",
+			VITE_NOTORGANIC_CLIENT_ID: "https://keating.help",
+			VITE_NOTORGANIC_REDIRECT_URI: "https://keating.help/notorganic/callback",
+		}, origin, false)!;
+		const client = new NotOrganicPublicClient(appConfig, stubFetch(async (_input, init) => {
+			expect(JSON.parse(String(init?.body))).toMatchObject({ client_id: origin, redirect_uri: `${origin}/notorganic/callback` });
+			return deviceToken("app-access", "app-refresh");
+		}));
+		const authorize = new URL(await client.authorizationUrl("/?session=learner-session"));
+		expect(new URL(authorize.searchParams.get("redirect_uri")!).origin).toBe(origin);
+		const session = await client.completeAuthorization(callback(authorize.toString()));
+		expect(new URL(safeAuthorizationReturnTo(session.returnTo), origin).href).toBe(`${origin}/?session=learner-session`);
+		expect(new NotOrganicPublicClient(appConfig).getSession()).toMatchObject({ accessToken: "app-access", refreshToken: "app-refresh" });
 	});
 
 	it("uses a state-bound PKCE handoff and exchanges it with a DPoP public key", async () => {
@@ -282,5 +323,30 @@ describe("Not Organic public client", () => {
 		const revoke = calls.at(-1)!;
 		expect(revoke).toMatchObject({ url: "https://provider.test/v1/public/device/revoke", body: { refresh_token: "refresh-1" } });
 		expect(proofClaims(revoke.dpop).ath).toBe(await sha256("refresh-1"));
+	});
+
+	it("cancels pending sign-in before waiting for device revocation", async () => {
+		installBrowser();
+		const revoking = Promise.withResolvers<void>();
+		const release = Promise.withResolvers<void>();
+		const client = new NotOrganicPublicClient(config, stubFetch(async (input) => {
+			if (String(input).endsWith("/revoke")) {
+				revoking.resolve();
+				await release.promise;
+				return new Response(null, { status: 204 });
+			}
+			return deviceToken("access-1", "refresh-1");
+		}));
+		await client.completeAuthorization(callback(await client.authorizationUrl()));
+		const pendingCallback = callback(await client.authorizationUrl());
+		const signingOut = client.signOut();
+		await revoking.promise;
+		try {
+			await expect(client.completeAuthorization(pendingCallback)).rejects.toThrow("could not be verified");
+			expect(client.getSession()).toBeNull();
+		} finally {
+			release.resolve();
+			await signingOut;
+		}
 	});
 });

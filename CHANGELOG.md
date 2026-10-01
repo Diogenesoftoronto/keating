@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.7] - 2026-09-28
+
+### Fixed
+- Send landing, pricing, and download app-entry links directly to the chat homepage, preserving course and lesson queries.
+- Stage only the actual desktop target's ONNX native runtime, including cross-architecture packaging.
+- Compress offline installers with maximum compression and reject Linux assets at or above the release size limit before upload.
+
 ## [4.0.6] - 2026-09-28
 
 ### Fixed

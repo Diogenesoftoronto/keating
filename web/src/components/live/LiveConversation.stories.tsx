@@ -132,3 +132,20 @@ export const MobileTavus: Story = {
 	parameters: { viewport: { defaultViewport: "mobile1" } },
 	globals: { viewport: { value: "mobile1", isRotated: false } },
 };
+
+/** Current Not Organic GPT Live surface; example transcript, no provider call. */
+export const GptLive: Story = {
+	args: {
+		connectEmbeddedSurface: false,
+		session: controller("openai-realtime", {
+			providerId: "gpt-live",
+			model: liveModelsFor("gpt-live")[0],
+			models: liveModelsFor("gpt-live"),
+			transcript,
+			tierLabel: "Audio only",
+			videoCapable: false,
+			imageCapable: false,
+			sharedImage: null,
+		}),
+	},
+};

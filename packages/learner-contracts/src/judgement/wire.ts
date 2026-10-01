@@ -163,6 +163,7 @@ export function decodeSystemOneResponse(
  * text back, so it must not reach a log line, a screen, or a telemetry span.
  */
 export function errorForStatus(status: number): JudgementError {
+  if (status === 402) return { code: "backend-payment-required", retryable: false };
   if (status === 401 || status === 403) return { code: "backend-unauthorized", retryable: false };
   if (status === 422) return { code: "request-invalid", retryable: false };
   if (status === 429) return { code: "backend-rate-limited", retryable: true };
