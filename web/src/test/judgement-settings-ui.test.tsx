@@ -36,7 +36,7 @@ describe("independent judgement settings UI", () => {
   test("hosted selection discloses transfer and costs and requires a separate authorization action", () => {
     const html = render({ settings: { ...initial.settings, backend: "hosted" },
       account: { configured: true, connected: true, judgementAuthorized: false } });
-    expect(html).toContain("usage may incur account charges");
+    expect(html).toContain("may use credit");
     expect(html).toContain("Authorize judgement access");
     expect(html).not.toContain("judgement access is connected");
   });
