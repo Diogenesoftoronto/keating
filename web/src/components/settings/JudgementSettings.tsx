@@ -104,7 +104,7 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
     <p id={`${id}-privacy`}>
       {settings.backend === "off" ? "Model reviews are off. Built-in checks remain available."
         : settings.backend === "local" ? "Reviews stay on this device."
-        : typesafeSelected ? "Reviews go to TypeSafe with your own key. TypeSafe bills you directly."
+        : typesafeSelected ? "Reviews go to TypeSafe with your own key. TypeSafe bills you directly. Your key is relayed through Keating only for requests you trigger."
         : "Reviews go through your Not Organic account and may use credit."}
     </p>
     <p className="judgement-settings__hint">New to this? <a href="https://docs.keating.help/" target="_blank" rel="noopener noreferrer">Read the judgement setup guide</a> for Jev, your own TypeSafe key, and on-device options.</p>
