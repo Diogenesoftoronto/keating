@@ -71,6 +71,7 @@ describe("Not Organic mobile account", () => {
     const request = await createAuthorizationRequest(config);
     const url = new URL(request.url);
     expect(url.origin + url.pathname).toBe(config.authorizationUrl);
+    expect(url.searchParams.get("prompt")).toBe("select_account");
     expect(url.searchParams.get("client_id")).toBe(NOTORGANIC_MOBILE_CLIENT_ID);
     expect(url.searchParams.get("redirect_uri")).toBe(NOTORGANIC_MOBILE_REDIRECT_URI);
     expect(url.searchParams.get("code_challenge_method")).toBe("S256");
