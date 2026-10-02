@@ -1,4 +1,4 @@
-import { useComposerRuntime } from "@assistant-ui/react";
+import { useAui } from "@assistant-ui/react";
 import { createPortal } from "react-dom";
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { KeatingBot, type KeatingBotState } from "./KeatingBot";
@@ -10,7 +10,7 @@ const STUDY_CHOICES = [
 ] as const;
 
 export function ChatMascotMenu({ state, busy }: { state: KeatingBotState; busy: boolean }) {
-  const composer = useComposerRuntime();
+  const composer = useAui().composer();
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const menuId = useId();

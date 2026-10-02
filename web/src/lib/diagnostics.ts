@@ -178,8 +178,8 @@ export function buildDiagnosticReport(options: {
 	return `${JSON.stringify(report, null, 2)}\n`;
 }
 
-/** The published support address; the desktop external-link allowlist matches it. */
-export const DIAGNOSTIC_SUPPORT_EMAIL = "help@keating.help";
+/** Support address shared by contact links and diagnostic mailto fallbacks. */
+export const DIAGNOSTIC_SUPPORT_EMAIL = "support@keating.help";
 
 const REPORT_ENDPOINT = "/api/diagnostics/report";
 /** Matches the server route's own cap so the two ends agree on the limit. */
