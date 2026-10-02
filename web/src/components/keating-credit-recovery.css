@@ -1,5 +1,5 @@
 .keating-credit-recovery { display: flex; align-items: flex-start; gap: 1rem; margin-block: .75rem; padding: 1rem; border: 1px solid var(--border); border-radius: .625rem; background: var(--background); color: var(--foreground); }
-.keating-credit-sprite { display: block; flex: 0 0 84px; width: 84px; height: 112px; border-radius: .375rem; background-color: #101a15; background-size: 400% 200%; background-position: 0 0; background-repeat: no-repeat; animation: keating-credit-frames 2s steps(1, end) 1; }
+.keating-credit-sprite { display: block; flex: 0 0 84px; width: 84px; height: 112px; border-radius: .375rem; background-color: transparent; background-size: 400% 200%; background-position: 0 0; background-repeat: no-repeat; animation: keating-credit-frames 2s steps(1, end) 1; }
 .keating-credit-sprite[data-state="wallet-refresh"] { animation: keating-credit-frames 1.2s steps(1, end) infinite; }
 .keating-credit-sprite[data-animated="false"] { animation: none; }
 .keating-credit-recovery__balance { display: flex; align-items: center; flex-wrap: wrap; gap: .625rem; }
