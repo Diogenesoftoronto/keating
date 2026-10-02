@@ -15,7 +15,7 @@ export function KeatingCreditSprite({ refreshing = false, ready = false, balance
     lastConfirmed.current = balanceMicros;
   }, [ready, refreshing, balanceMicros]);
   const state = refreshing ? "wallet-refresh" : ready ? "credits-ready" : "insufficient-funds";
-  const version = state === "insufficient-funds" ? "v2" : "v1";
+  const version = state === "insufficient-funds" ? "v3" : "v1";
   return <span key={`${state}:${celebration}`} className="keating-credit-sprite" data-state={state}
     data-animated={state !== "credits-ready" || celebrating} aria-hidden="true" onAnimationEnd={() => setCelebrating(false)}
     style={{ backgroundImage: `url("/brand/keatingbot-${state}-${version}.png")` }} />;
