@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
+import { DIAGNOSTIC_SUPPORT_EMAIL } from "../lib/diagnostics";
 import { DownloadPdfButton } from "../components/DownloadPdfButton";
 import { useSeo } from "../hooks/useSeo";
 import { cx } from "../../styled-system/css";
@@ -231,8 +232,8 @@ export function Terms() {
           <section>
             <h2>18. Contact</h2>
             <p>
-              For questions about these Terms, open an issue in the Keating repository or use the
-              contact channel listed on the project site.
+              For questions about these Terms, email{" "}
+              <a href={`mailto:${DIAGNOSTIC_SUPPORT_EMAIL}`}>{DIAGNOSTIC_SUPPORT_EMAIL}</a>.
             </p>
           </section>
         </article>
