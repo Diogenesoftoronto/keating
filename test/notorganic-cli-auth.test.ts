@@ -200,6 +200,7 @@ describe("Not Organic CLI public-client login", () => {
     expect(authorization.origin).toBe("https://portal.test");
     expect(authorization.pathname).toBe("/authorize");
     expect(authorization.searchParams.get("response_type")).toBe("code");
+    expect(authorization.searchParams.get("prompt")).toBe("select_account");
     expect(authorization.searchParams.get("code_challenge_method")).toBe("S256");
     expect(authorization.searchParams.get("code_challenge")).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(authorization.searchParams.get("scope")).toBe("infer:balanced");

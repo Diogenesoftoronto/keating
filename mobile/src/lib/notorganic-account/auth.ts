@@ -18,6 +18,7 @@ export async function createAuthorizationRequest(config = defaultNotOrganicAccou
   const challenge = await sha256Base64Url(verifier);
   await savePendingAuthorization({ state, verifier, redirectUri: config.redirectUri, createdAt: Date.now() });
   const url = new URL(config.authorizationUrl);
+  url.searchParams.set("prompt", "select_account");
   url.searchParams.set("response_type", "code");
   url.searchParams.set("client_id", config.clientId);
   url.searchParams.set("redirect_uri", config.redirectUri);
