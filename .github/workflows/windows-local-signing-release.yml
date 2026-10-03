@@ -1,0 +1,103 @@
+name: Windows release with local signing
+
+on:
+  workflow_dispatch:
+    inputs:
+      preflight_only:
+        description: Exercise native verifier and run-scoped public transport without building or private signing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-local-signing-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows-release:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+      - name: Bind build to the existing source tag and draft preview
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREFLIGHT_ONLY: ${{ inputs.preflight_only }}
+        run: |
+          set -euo pipefail
+          version=$(node -p 'require("./package.json").version')
+          tag="windows-selfsigned-v$version"
+          RELEASE_TAG="$tag" PUBLISH=false node desktop/scripts/windows-selfsigned.mjs source
+          git merge-base --is-ancestor a98f9ce07a48a8ac2ee02e95ca7d217d276680cf HEAD
+          if [ "$PREFLIGHT_ONLY" != true ]; then
+            test "$(git rev-parse "$tag^{commit}")" = "$GITHUB_SHA"
+            gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" > "$RUNNER_TEMP/relay-release.json"
+            node -e '
+              const r = require(process.env.RUNNER_TEMP + "/relay-release.json");
+              if (!r.draft || !r.prerelease || !/self.signed/i.test(r.name) || r.target_commitish !== process.env.GITHUB_SHA) throw new Error("Exact self-signed draft/source required");
+              require("node:fs").appendFileSync(process.env.GITHUB_ENV, `KEATING_RELAY_RELEASE_ID=${r.id}\n`);
+            '
+          fi
+          echo "RELEASE_TAG=$tag" >> "$GITHUB_ENV"
+          bun scripts/sync-version.ts --check
+      - name: Test signature and exchange failure gates
+        shell: bash
+        run: bun test desktop/test/windows-selfsigned.test.ts desktop/test/windows-preview-build.test.ts desktop/test/windows-signing-relay.test.ts desktop/test/windows-signing-artifact.test.ts
+      - name: Prepare pinned native verifier without private credentials
+        shell: pwsh
+        run: ./desktop/scripts/verify-windows-selfsigned.ps1 -Preflight -PrepareLocalRelay
+      - name: Verify authenticated public artifact transport
+        uses: ./.github/actions/windows-local-build
+        with:
+          preflight: 'true'
+      - name: Install locked dependencies
+        if: ${{ !inputs.preflight_only }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bun install --frozen-lockfile
+          bun install --cwd spikes/flue-host --frozen-lockfile
+          bun install --cwd web --frozen-lockfile
+      - name: Build Windows application and installer with local owner signatures
+        if: ${{ !inputs.preflight_only }}
+        uses: ./.github/actions/windows-local-build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEATING_LOCAL_SIGNING_RELAY: 'true'
+      - name: Independently verify signatures, timestamps, NSIS uninstaller and native runtimes
+        if: ${{ !inputs.preflight_only }}
+        shell: pwsh
+        run: |
+          $version = (Get-Content -Raw package.json | ConvertFrom-Json).version
+          ./desktop/scripts/verify-windows-selfsigned.ps1 -Version $version -SourceCommit $env:GITHUB_SHA -ReleaseTag $env:RELEASE_TAG
+      - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.preflight_only }}
+        with:
+          name: keating-windows-x64-selfsigned-preview
+          if-no-files-found: error
+          path: |
+            desktop/release/selfsigned-preview/*.exe
+            desktop/release/selfsigned-preview/windows-selfsigned-public.pem
+            desktop/release/selfsigned-preview/signing-report.json
+            desktop/release/selfsigned-preview/SHA256SUMS
+      - name: Clean temporary public verifier tools
+        if: always()
+        shell: pwsh
+        run: |
+          if ($env:KEATING_RELAY_TEMP -and (Test-Path $env:KEATING_RELAY_TEMP)) {
+            Remove-Item -Recurse -Force $env:KEATING_RELAY_TEMP
+          }

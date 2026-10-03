@@ -11,6 +11,12 @@ const buildSteps = [
   ['run', '--cwd', 'desktop', 'dist:windows', '--publish', 'never'],
 ];
 
+export function previewBuildSteps(localRelay = false) {
+  return buildSteps.map((args, index) => localRelay && index === 2
+    ? [...args, '--config.win.sign', resolve(import.meta.dirname, 'windows-signing-relay.cjs')]
+    : [...args]);
+}
+
 function git(repo, ...args) {
   const result = spawnSync('git', ['-C', repo, ...args], { encoding: 'utf8' });
   if (result.error || result.status !== 0) throw new Error('Source checkout inspection failed');
@@ -75,11 +81,11 @@ export async function verifyBuildReceipt(repo, expected) {
     if (receipt[key] !== source[key]) throw new Error('Fresh-build receipt belongs to another source');
   }
   if (receipt.schema !== 1 || receipt.nativeWindowsBuild !== true
-      || JSON.stringify(receipt.buildSteps) !== JSON.stringify(buildSteps)
+      || JSON.stringify(receipt.buildSteps) !== JSON.stringify(previewBuildSteps(receipt.localSigningRelay === true))
       || JSON.stringify(receipt.files) !== JSON.stringify(await snapshotBuildFiles(directory))) {
     throw new Error('Fresh-build receipt is invalid or packaged files changed');
   }
-  return { sourceCommit: source.sourceCommit, cleanSourceChecked: true, freshOutputChecked: true, outputFileCount: receipt.files.length };
+  return { sourceCommit: source.sourceCommit, cleanSourceChecked: true, freshOutputChecked: true, outputFileCount: receipt.files.length, localSigningRelay: receipt.localSigningRelay === true };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
@@ -93,7 +99,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     const directory = resolve(repo, 'desktop/release');
     assertFreshBuildInputs(repo);
     const startedAt = new Date().toISOString();
-    for (const args of buildSteps) {
+    const localSigningRelay = process.env.KEATING_LOCAL_SIGNING_RELAY === 'true';
+    const steps = previewBuildSteps(localSigningRelay);
+    for (const args of steps) {
       const result = spawnSync('bun', args, { cwd: repo, stdio: 'inherit' });
       if (result.error || result.status !== 0) throw new Error('Signed Windows preview build failed');
     }
@@ -102,7 +110,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     }
     const files = await snapshotBuildFiles(directory);
     writeFileSync(resolve(directory, receiptName), JSON.stringify({ schema: 1, ...source,
-      nativeWindowsBuild: true, startedAt, completedAt: new Date().toISOString(), buildSteps, files }, null, 2) + '\n', { flag: 'wx' });
+      nativeWindowsBuild: true, localSigningRelay, startedAt, completedAt: new Date().toISOString(), buildSteps: steps, files }, null, 2) + '\n', { flag: 'wx' });
     console.log(`Recorded fresh Windows build for ${source.sourceCommit}; ${files.length} output files`);
   } else throw new Error('Use build or verify <version> <source-commit> <preview-tag>');
 }

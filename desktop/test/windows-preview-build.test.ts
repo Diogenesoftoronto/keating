@@ -1,9 +1,9 @@
 import { afterEach, expect, test } from 'bun:test';
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { assertFreshBuildDirectory, assertFreshBuildInputs, inspectBuildSource, snapshotBuildFiles, verifyBuildReceipt } from '../scripts/windows-preview-build.mjs';
+import { assertFreshBuildDirectory, assertFreshBuildInputs, inspectBuildSource, previewBuildSteps, snapshotBuildFiles, verifyBuildReceipt } from '../scripts/windows-preview-build.mjs';
 
 const temporary: string[] = [];
 afterEach(() => { for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true }); });
@@ -96,4 +96,17 @@ test('detects additional packaged files and source changes after building', asyn
   rmSync(join(directory, 'injected.dll'));
   writeFileSync(join(repo, 'package.json'), JSON.stringify({ version: '4.0.8' }));
   await expect(verifyBuildReceipt(repo, expected)).rejects.toThrow('clean checkout');
+});
+
+test('permits the pinned local relay recipe and rejects an unsigned recipe', async () => {
+  const { repo, directory, expected } = await receiptFixture();
+  const receiptPath = join(directory, '.selfsigned-build.json');
+  const receipt = JSON.parse(readFileSync(receiptPath, 'utf8'));
+  receipt.localSigningRelay = true;
+  receipt.buildSteps = previewBuildSteps(true);
+  writeFileSync(receiptPath, JSON.stringify(receipt));
+  expect((await verifyBuildReceipt(repo, expected)).localSigningRelay).toBe(true);
+  receipt.buildSteps[2].push('--config.win.forceCodeSigning=false');
+  writeFileSync(receiptPath, JSON.stringify(receipt));
+  await expect(verifyBuildReceipt(repo, expected)).rejects.toThrow('receipt is invalid');
 });
