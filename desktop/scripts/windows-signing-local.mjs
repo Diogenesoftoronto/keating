@@ -30,7 +30,8 @@ const certificateSHA256 = readFileSync(join(repo, 'desktop/signing/windows-selfs
 assertPreviewCertificate(readFileSync(publicCertificate), certificateSHA256);
 const source = inspectBuildSource(repo, releaseTag);
 if (!run(tool, ['--version']).includes('osslsigncode 2.10')) throw new Error('Pinned local osslsigncode 2.10 required');
-const initialRelease = api(`releases/tags/${releaseTag}`);
+const releaseId = JSON.parse(run('gh', ['release', 'view', releaseTag, '--repo', ghRepo, '--json', 'databaseId'])).databaseId;
+const initialRelease = api(`releases/${releaseId}`);
 const workflow = api(`actions/runs/${runId}`);
 const expected = { ...source, runId, runAttempt: String(workflow.run_attempt), certificateSHA256, releaseId: initialRelease.id };
 assertRelayRelease(initialRelease, expected);

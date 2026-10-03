@@ -45,7 +45,8 @@ jobs:
           git merge-base --is-ancestor a98f9ce07a48a8ac2ee02e95ca7d217d276680cf HEAD
           if [ "$PREFLIGHT_ONLY" != true ]; then
             test "$(git rev-parse "$tag^{commit}")" = "$GITHUB_SHA"
-            gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" > "$RUNNER_TEMP/relay-release.json"
+            release_id=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json databaseId --jq .databaseId)
+            gh api "repos/$GITHUB_REPOSITORY/releases/$release_id" > "$RUNNER_TEMP/relay-release.json"
             node -e '
               const r = require(process.env.RUNNER_TEMP + "/relay-release.json");
               if (!r.draft || !r.prerelease || !/self.signed/i.test(r.name) || r.target_commitish !== process.env.GITHUB_SHA) throw new Error("Exact self-signed draft/source required");
