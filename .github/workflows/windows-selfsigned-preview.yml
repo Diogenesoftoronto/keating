@@ -1,0 +1,147 @@
+name: Windows self-signed preview
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing preview tag matching the source version
+        required: true
+        default: windows-selfsigned-v4.0.7
+        type: string
+      preflight_only:
+        description: Validate public identity and Windows verifier without credentials or packaging
+        required: true
+        default: true
+        type: boolean
+      publish:
+        description: Attach verified assets to an existing draft self-signed prerelease
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-selfsigned-preview-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+jobs:
+  windows-preview:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+      - name: Bind the preview to its source version and exact tag
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          PREFLIGHT_ONLY: ${{ inputs.preflight_only }}
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          set -euo pipefail
+          bun scripts/sync-version.ts --check
+          node desktop/scripts/windows-selfsigned.mjs source
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          git merge-base --is-ancestor a98f9ce07a48a8ac2ee02e95ca7d217d276680cf HEAD
+          if [ "$PREFLIGHT_ONLY" != true ]; then
+            test "$(git rev-parse "${RELEASE_TAG}^{commit}")" = "$GITHUB_SHA"
+          fi
+      - name: Exercise verification failure gates
+        shell: bash
+        run: bun test desktop/test/windows-selfsigned.test.ts desktop/test/windows-preview-build.test.ts
+      - name: Native Windows verifier preflight without private credentials
+        shell: pwsh
+        run: ./desktop/scripts/verify-windows-selfsigned.ps1 -Preflight
+      - name: Require owner-configured preview credentials
+        if: ${{ !inputs.preflight_only }}
+        shell: bash
+        env:
+          PREVIEW_CERTIFICATE: ${{ secrets.KEATING_WINDOWS_SELF_SIGNED_CERTIFICATE_BASE64 }}
+          PREVIEW_PASSWORD: ${{ secrets.KEATING_WINDOWS_SELF_SIGNED_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [ -z "$PREVIEW_CERTIFICATE" ] || [ -z "$PREVIEW_PASSWORD" ]; then
+            echo 'Owner credential handoff is incomplete. Configure both dedicated self-signed preview secrets; no unsigned fallback is allowed.' >&2
+            exit 1
+          fi
+      - name: Install locked build dependencies
+        if: ${{ !inputs.preflight_only }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          bun install --frozen-lockfile
+          bun install --cwd spikes/flue-host --frozen-lockfile
+          bun install --cwd web --frozen-lockfile
+      - name: Build and sign the Windows application and NSIS installer
+        if: ${{ !inputs.preflight_only }}
+        shell: bash
+        env:
+          WIN_CSC_LINK: ${{ secrets.KEATING_WINDOWS_SELF_SIGNED_CERTIFICATE_BASE64 }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.KEATING_WINDOWS_SELF_SIGNED_CERTIFICATE_PASSWORD }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          node desktop/scripts/windows-preview-build.mjs build
+      - name: Verify pinned signatures, timestamps and packaged native runtimes
+        if: ${{ !inputs.preflight_only }}
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          $version = (Get-Content -Raw package.json | ConvertFrom-Json).version
+          ./desktop/scripts/verify-windows-selfsigned.ps1 -Version $version -SourceCommit $env:GITHUB_SHA -ReleaseTag $env:RELEASE_TAG
+      - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.preflight_only }}
+        with:
+          name: keating-windows-x64-selfsigned-preview
+          if-no-files-found: error
+          path: |
+            desktop/release/selfsigned-preview/*.exe
+            desktop/release/selfsigned-preview/windows-selfsigned-public.pem
+            desktop/release/selfsigned-preview/signing-report.json
+            desktop/release/selfsigned-preview/SHA256SUMS
+
+  attach-draft-preview:
+    needs: windows-preview
+    if: ${{ inputs.publish && !inputs.preflight_only }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: keating-windows-x64-selfsigned-preview
+          path: preview
+      - name: Verify exact evidence and attach to the existing draft prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd preview
+          sha256sum --check --strict SHA256SUMS
+          node -e '
+            const r = require("./signing-report.json");
+            if (r.sourceCommit !== process.env.GITHUB_SHA || r.releaseTag !== process.env.RELEASE_TAG || !r.selfSigned || r.publisherTrusted !== false || !r.packagedElectronRuntimeVerified || !r.packagedOfflineProbeVerified || r.buildProvenance?.sourceCommit !== process.env.GITHUB_SHA || !r.buildProvenance?.cleanSourceChecked || !r.buildProvenance?.freshOutputChecked) throw new Error("Preview evidence mismatch");
+          '
+          gh release view "$RELEASE_TAG" --json isDraft,isPrerelease,tagName,name > "$RUNNER_TEMP/preview-release.json"
+          node -e '
+            const r = require(process.env.RUNNER_TEMP + "/preview-release.json");
+            if (!r.isDraft || !r.isPrerelease || r.tagName !== process.env.RELEASE_TAG || !/self.signed/i.test(r.name)) throw new Error("Only an explicitly self-signed draft prerelease may receive these assets");
+          '
+          actual_tag=$(gh api "repos/$GH_REPO/commits/$RELEASE_TAG" --jq .sha)
+          test "$actual_tag" = "$GITHUB_SHA"
+          # Existing assets are never overwritten. Final publication remains
+          # gated on independently downloading and checking the attached files.
+          gh release upload "$RELEASE_TAG" ./*.exe ./windows-selfsigned-public.pem ./signing-report.json ./SHA256SUMS
