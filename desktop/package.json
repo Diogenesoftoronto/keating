@@ -37,6 +37,7 @@
     "compression": "maximum",
     "productName": "Keating",
     "beforePack": "scripts/offline-before-pack.cjs",
+    "afterExtract": "scripts/native-after-extract.cjs",
     "win": {
       "forceCodeSigning": true,
       "signDlls": true,

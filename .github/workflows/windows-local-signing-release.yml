@@ -73,6 +73,10 @@ jobs:
           bun install --frozen-lockfile
           bun install --cwd spikes/flue-host --frozen-lockfile
           bun install --cwd web --frozen-lockfile
+      - name: Verify target filtering with the locked dependency collector
+        if: ${{ !inputs.preflight_only }}
+        shell: bash
+        run: KEATING_REQUIRE_PACKAGER_TEST=1 bun test desktop/test/native-prebuild-packaging.test.ts
       - name: Build Windows application and installer with local owner signatures
         if: ${{ !inputs.preflight_only }}
         uses: ./.github/actions/windows-local-build
