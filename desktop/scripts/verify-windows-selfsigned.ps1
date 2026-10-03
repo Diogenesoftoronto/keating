@@ -1,5 +1,6 @@
 param(
   [switch]$Preflight,
+  [switch]$PrepareLocalRelay,
   [string]$Version,
   [string]$SourceCommit,
   [string]$ReleaseTag
@@ -17,6 +18,7 @@ if ($LASTEXITCODE -ne 0) { throw 'Pinned public signing identity validation fail
 $certificateMetadata = $certificateMetadata | ConvertFrom-Json
 $temporary = Join-Path ([System.IO.Path]::GetTempPath()) ('keating-selfsigned-verify-' + [guid]::NewGuid())
 New-Item -ItemType Directory -Path $temporary | Out-Null
+$retainRelayTools = $false
 try {
   $archive = Join-Path $temporary 'osslsigncode.zip'
   Invoke-WebRequest -Uri 'https://github.com/mtrojnar/osslsigncode/releases/download/2.10/osslsigncode-2.10-windows-x64-mingw.zip' -OutFile $archive
@@ -48,6 +50,13 @@ try {
     $systemBinary = Join-Path $env:WINDIR 'System32/cmd.exe'
     $negativeOutput = (& $verifier verify -CAfile $certificatePath -TSA-CAfile $tsaRoots -require-leaf-hash "sha256:$fingerprint" -index 0 -in $systemBinary 2>&1 | Out-String)
     if ($LASTEXITCODE -eq 0 -or $negativeOutput -notmatch 'Leaf hash match: failed|No signature found') { throw 'Expected rejection of another binary was not demonstrated' }
+    if ($PrepareLocalRelay) {
+      if (!$env:GITHUB_ENV) { throw 'Local relay tool preparation requires a GitHub Windows runner' }
+      "KEATING_RELAY_VERIFIER=$verifier" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      "KEATING_RELAY_TSA_ROOTS=$tsaRoots" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      "KEATING_RELAY_TEMP=$temporary" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      $retainRelayTools = $true
+    }
     Write-Host 'Windows preflight passed: public identity, pinned verifier and rejection of another binary. No signing or packaged-runtime proof yet.'
     exit 0
   }
@@ -78,6 +87,11 @@ try {
   $nativeFiles = @(Get-ChildItem $unpacked -Recurse -File | Where-Object { $_.Extension -in '.exe', '.dll', '.node' })
   if (@($nativeFiles | Where-Object Extension -eq '.node').Count -eq 0) { throw 'No packaged native Node modules found' }
   $signedFiles = @((Get-Item $installer)) + $nativeFiles
+  if ($buildProvenance.localSigningRelay) {
+    $retainedUninstallers = @(Get-ChildItem (Join-Path $repo 'desktop/release/.relay-uninstallers') -File -Filter '*.exe')
+    if ($retainedUninstallers.Count -ne 1) { throw 'The signed NSIS uninstaller must be retained for independent verification' }
+    $signedFiles += $retainedUninstallers
+  }
   $records = [System.Collections.Generic.List[object]]::new()
   $index = 0
   foreach ($file in $signedFiles) {
@@ -146,5 +160,5 @@ try {
   $sums | Set-Content (Join-Path $outputDirectory 'SHA256SUMS') -Encoding utf8NoBOM
   Write-Host "Verified $($records.Count) timestamped signatures and both packaged runtime checks. Preview assets: $outputDirectory"
 } finally {
-  Remove-Item -Recurse -Force $temporary
+  if (!$retainRelayTools) { Remove-Item -Recurse -Force $temporary }
 }

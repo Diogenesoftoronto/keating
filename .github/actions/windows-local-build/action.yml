@@ -1,0 +1,9 @@
+name: Build Windows with local owner signing
+description: Run the builder with the current job's run-scoped artifact capability; no signing key is sent to the runner.
+inputs:
+  preflight:
+    description: Exercise authenticated public artifact transport before building
+    default: 'false'
+runs:
+  using: node24
+  main: index.cjs

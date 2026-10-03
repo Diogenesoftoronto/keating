@@ -96,7 +96,33 @@ Clear the signing password from the process environment afterward. Run the
 same credential-free preflight beforehand with
 `./desktop/scripts/verify-windows-selfsigned.ps1 -Preflight`.
 
-### Optional owner handoff for GitHub's Windows runner
+### Windows runner with signing kept on the owner computer
+
+`windows-local-signing-release.yml` builds and tests on native Windows while
+`windows-signing-local.mjs` signs on the owner's computer. Neither the PFX nor
+its keyring password enters GitHub. The runner's custom signing hook uploads
+public PE requests as run-scoped Actions artifacts; the local signer accepts
+only the exact source commit, workflow run and attempt, validates the ZIP and
+PE digests, and returns timestamped signed binaries through the existing draft
+prerelease. The password reaches only the local signing tool's standard input.
+
+The hook verifies each returned payload, pinned signer and timestamp before
+replacing the build output. It retains the signed NSIS uninstaller for the
+independent final Windows verifier. The public request/response files are
+temporary; final publication still requires the successful native workflow,
+independently downloaded artifacts and matching checksums/source identity.
+
+Run the local signing controller from a clean checkout at the exact preview
+tag, using the locally built osslsigncode 2.10 executable and a private state
+directory. The controller binds to an explicitly selected workflow run:
+
+```sh
+node desktop/scripts/windows-signing-local.mjs --run-id <run-id> \
+  --release-tag windows-selfsigned-v4.0.7 --tool <local-osslsigncode> \
+  --state-dir <private-local-state-directory>
+```
+
+### Optional owner credential handoff
 
 If the owner chooses this route, configure **only** these two repository
 Actions secrets at
