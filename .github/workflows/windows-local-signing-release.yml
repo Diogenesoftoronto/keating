@@ -57,7 +57,7 @@ jobs:
           bun scripts/sync-version.ts --check
       - name: Test signature and exchange failure gates
         shell: bash
-        run: bun test desktop/test/windows-selfsigned.test.ts desktop/test/windows-preview-build.test.ts desktop/test/windows-signing-relay.test.ts desktop/test/windows-signing-artifact.test.ts
+        run: bun test desktop/test/windows-selfsigned.test.ts desktop/test/windows-preview-build.test.ts desktop/test/windows-signing-relay.test.ts desktop/test/windows-signing-artifact.test.ts desktop/test/native-prebuild-packaging.test.ts
       - name: Prepare pinned native verifier without private credentials
         shell: pwsh
         run: ./desktop/scripts/verify-windows-selfsigned.ps1 -Preflight -PrepareLocalRelay
