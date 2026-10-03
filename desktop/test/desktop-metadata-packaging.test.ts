@@ -21,6 +21,21 @@ async function put(path: string, contents: string) {
   await writeFile(path, contents);
 }
 
+function repositoryInfoInNode(cases: unknown[][]) {
+  const script = `
+    const { getRepositoryInfo } = require(process.argv[1]);
+    const fs = require("node:fs");
+    const cases = JSON.parse(fs.readFileSync(0, "utf8"));
+    Promise.all(cases.map(args => getRepositoryInfo(...args)))
+      .then(results => fs.writeSync(1, JSON.stringify(results)))
+      .catch(error => { fs.writeSync(2, String(error.stack || error)); process.exitCode = 1; });
+  `;
+  const result = spawnSync("node", ["-e", script, repositoryHelper!], { input: JSON.stringify(cases), encoding: "utf8" });
+  expect(result.error).toBeUndefined();
+  expect(result.status, result.stderr).toBe(0);
+  return JSON.parse(result.stdout);
+}
+
 test("staging carries the verified repository into the generated app manifest", async () => {
   const desktop = fileURLToPath(new URL("..", import.meta.url));
   const source = JSON.parse(await readFile(join(desktop, "package.json"), "utf8"));
@@ -46,7 +61,7 @@ test("staging carries the verified repository into the generated app manifest", 
     for (const script of ["stage-nitro.mjs", "stage-onnx-runtime.mjs"]) {
       await cp(join(desktop, "scripts", script), join(project, "scripts", script));
     }
-    const result = spawnSync(process.execPath, [join(project, "scripts", "stage-nitro.mjs")], { cwd: project, encoding: "utf8" });
+    const result = spawnSync("node", [join(project, "scripts", "stage-nitro.mjs")], { cwd: project, encoding: "utf8" });
     expect(result.error).toBeUndefined();
     expect(result.status, result.stderr).toBe(0);
     const app = join(project, "dist", "app");
@@ -54,10 +69,8 @@ test("staging carries the verified repository into the generated app manifest", 
     expect(generated.repository).toEqual(source.repository);
     await access(join(project, "dist", "nitro", "server", "index.mjs"));
     if (repositoryHelper) {
-      const { getRepositoryInfo } = require(repositoryHelper);
       // Neither fixture project has .git/config: success must come from metadata.
-      for (const [directory, metadata, devMetadata] of [[project, generated, source], [app, generated, null]]) {
-        const info = await getRepositoryInfo(directory, metadata, devMetadata);
+      for (const info of repositoryInfoInNode([[project, generated, source], [app, generated, null]])) {
         expect(info).toMatchObject({ type: "github", user: "Diogenesoftoronto", project: "keating" });
       }
     }
@@ -67,6 +80,6 @@ test("staging carries the verified repository into the generated app manifest", 
 test.skipIf(!repositoryHelper)("registered desktop metadata resolves GitHub without a Git checkout", async () => {
   const desktop = fileURLToPath(new URL("..", import.meta.url));
   const metadata = JSON.parse(await readFile(join(desktop, "package.json"), "utf8"));
-  const { getRepositoryInfo } = require(repositoryHelper!);
-  expect(await getRepositoryInfo(join(tmpdir(), "keating-no-git-metadata-fixture"), metadata, metadata)).toMatchObject({ type: "github", user: "Diogenesoftoronto", project: "keating" });
+  const [info] = repositoryInfoInNode([[join(tmpdir(), "keating-no-git-metadata-fixture"), metadata, metadata]]);
+  expect(info).toMatchObject({ type: "github", user: "Diogenesoftoronto", project: "keating" });
 });
