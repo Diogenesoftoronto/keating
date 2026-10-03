@@ -41,6 +41,7 @@ await writeFile(
 			description: desktopPackage.description,
 			author: desktopPackage.author,
 			homepage: desktopPackage.homepage,
+			repository: desktopPackage.repository,
 			license: desktopPackage.license,
 			private: true,
 			type: "module",

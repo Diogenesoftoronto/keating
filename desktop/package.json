@@ -6,6 +6,10 @@
   "description": "Keating desktop (Electron) app — P2P, local-first teaching client.",
   "author": "Diogenes of Toronto",
   "homepage": "https://keating.help",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Diogenesoftoronto/keating.git"
+  },
   "license": "MPL-2.0",
   "main": "dist/main.js",
   "scripts": {
