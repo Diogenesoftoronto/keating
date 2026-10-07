@@ -1,0 +1,14 @@
+{
+  "tag_name": "windows-selfsigned-v4.0.7",
+  "draft": false,
+  "prerelease": true,
+  "assets": [
+    {
+      "name": "Keating-4.0.7-windows-x64-selfsigned-setup.exe",
+      "browser_download_url": "https://github.com/Diogenesoftoronto/keating/releases/download/windows-selfsigned-v4.0.7/Keating-4.0.7-windows-x64-selfsigned-setup.exe",
+      "size": 154613280,
+      "state": "uploaded",
+      "digest": "sha256:914c30443f5657e4b3e8be6116dc7d6491b8102bfa4f84fea33ac5e6aea73214"
+    }
+  ]
+}
