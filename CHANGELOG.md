@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.11] - 2026-10-12
+
+### Fixed
+- Prepare the pinned Android ONNX dependency for Gradle 9 without the removed VersionNumber API.
+- Includes all changes from 4.0.8 through 4.0.10; native build compatibility blocked their downloadable releases.
+
 ## [4.0.10] - 2026-10-12
 
 ### Fixed
