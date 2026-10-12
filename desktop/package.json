@@ -1,6 +1,6 @@
 {
   "name": "@keating/desktop",
-  "version": "4.0.9",
+  "version": "4.0.10",
   "type": "module",
   "private": true,
   "description": "Keating desktop (Electron) app — P2P, local-first teaching client.",
@@ -44,9 +44,8 @@
     "afterExtract": "scripts/native-after-extract.cjs",
     "win": {
       "forceCodeSigning": true,
-      "signDlls": true,
-      "signExts": [".node"],
-      "signingHashAlgorithms": ["sha256"],
+      "signExts": [".dll", ".node"],
+      "signtoolOptions": { "signingHashAlgorithms": ["sha256"] },
       "target": [{ "target": "nsis", "arch": ["x64"] }],
       "artifactName": "Keating-${version}-windows-${arch}-setup.${ext}",
       "icon": "../web/public/brand/logo-badge.png"
