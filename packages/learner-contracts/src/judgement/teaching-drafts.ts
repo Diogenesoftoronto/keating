@@ -98,6 +98,8 @@ export interface TeachingDraftReceipt extends TeachingDraftSnapshot {
   readonly selectionOmittedForBudget: readonly number[];
 }
 export interface TeachingDraftGenerationInput {
+  /** Last-budget recovery when no usable response exists; hosts must disable tool dispatch. */
+  readonly textOnlyRecovery?: true;
   /** Private, untrusted source material. Never publish or copy into diagnostics. */
   readonly synthesis?: { readonly sources: readonly {
     readonly attempt: number;
@@ -351,6 +353,8 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
   const stateHistory: TeachingStateSample[] = [];
   let requestIndex = 0;
   const candidates: { attempt: number; reply: TeachingPolicyReply; value: T; quality: number }[] = [];
+  // Semantic rejections remain honest in the receipt, but must not discard every useful answer.
+  const usableDrafts: typeof candidates = [];
   let synthesisUsed = false;
   let synthesisSourceAttempts: number[] | undefined;
   const snapshot = (): TeachingDraftSnapshot => ({ phase, attempt, maxAttempts, reasoning, standard, elapsedMs: Math.max(0, now() - start), attempts: structuredClone(attempts), judgeModel, selectedAttempt, reason,
@@ -502,11 +506,13 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
       const provenance = synthesisSourceAttempts ? { synthesisSourceAttempts: [...synthesisSourceAttempts] } : {};
       publish(synthesis || feedback.length ? "revising" : "drafting");
       const started = now();
+      const textOnlyRecovery = attempt === maxAttempts && !candidates.length && !usableDrafts.length;
       let generated: { reply: TeachingPolicyReply; value: T };
       try {
         generated = structuredClone(await bounded(() => options.generate({ attempt, reasoning,
           systemPrompt: `${variantPrompt(plan, variant)}\n\nResponse scope: ${standardInstructions[standard]}`,
-          feedback: structuredClone(feedback), ...(synthesis ? { synthesis: structuredClone(synthesis) } : {}), signal: controller.signal })));
+          feedback: structuredClone(feedback),
+          ...(textOnlyRecovery ? { textOnlyRecovery: true as const } : {}), ...(synthesis ? { synthesis: structuredClone(synthesis) } : {}), signal: controller.signal })));
       } catch {
         if (controller.signal.aborted) throw new Error("draft-interrupted");
         attempts.push({ attempt, reasoning, standard, generationMs: now() - started, judgementMs: 0, status: "generation-error", checks: [], variant, ...provenance });
@@ -526,7 +532,12 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
       // the draft. A later completed review supersedes an earlier failure.
       reason = judged && !judged.ok ? judged.error.code : null;
       const assessment = assessTeachingPolicyAdherence(turn, generated.reply, judged, options.ruleIds);
-      const checks: TeachingPolicyCheck[] = [...assessment.checks, ...(options.check?.(generated.reply) ?? [])];
+      const hostChecks: readonly TeachingPolicyCheck[] = [
+        ...(options.check?.(generated.reply) ?? []),
+        ...(textOnlyRecovery && generated.reply.toolCalls.length ? [{ id: "text_only_recovery", source: "deterministic" as const,
+          severity: "critical" as const, status: "fail" as const, probability: 1 }] : []),
+      ];
+      const checks: TeachingPolicyCheck[] = [...assessment.checks, ...hostChecks];
       for (const [id, question] of Object.entries(extra)) {
         const answer = judged?.ok ? decodeAnswer(question, judged.response.answers[id]) : null;
         const probability = answer?.type === "noul" ? answer.noul : null;
@@ -537,6 +548,16 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
       const revisionChecks = checks.filter(blocksDraft);
       const status = blocking.some((check) => check.status === "fail") ? "fail" : blocking.length ? "unknown" : "pass";
       attempts.push({ attempt, reasoning, standard, generationMs, judgementMs: now() - checkStarted, status, checks, variant, ...provenance });
+      // Retain only complete prose with passing schema/host checks. Executable
+      // payloads cannot escape authorization through a semantic best-effort path.
+      // Semantic violations lower rank; they do not certify truth or veto all prose.
+      if (generated.reply.text.trim() && generated.reply.toolCalls.length === 0
+        && assessment.checks.filter(check => check.source === "deterministic").every(check => check.status === "pass")
+        && hostChecks.every(check => check.status === "pass")) {
+        const criticalPenalty = checks.filter(check => check.source === "jev" && check.severity === "critical")
+          .reduce((sum, check) => sum + (check.status === "fail" ? 2 : 0) + (check.probability ?? 0), 0);
+        usableDrafts.push({ attempt, ...generated, quality: draftQuality(checks) - criticalPenalty });
+      }
       if (status === "pass") {
         approvedVariants.add(variant);
         candidates.push({ attempt, ...generated, quality: draftQuality(checks) });
@@ -549,7 +570,17 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
       if (feedback.length) reasoning = effort[Math.min(ceiling, effort.indexOf(reasoning) + 1)]!;
     }
     attempt = Math.min(attempt, maxAttempts);
-    if (!candidates.length) { reason = reason ?? "no-approved-draft"; return result("withheld"); }
+    if (!candidates.length) {
+      if (options.signal?.aborted) throw new Error("draft-interrupted");
+      const best = [...usableDrafts].sort((a, b) => b.quality - a.quality || a.attempt - b.attempt)[0];
+      if (best) {
+        selectedAttempt = best.attempt;
+        selectionCandidateAttempts = usableDrafts.map(entry => entry.attempt);
+        reason = "best-effort-draft";
+        return result("released", best.value, best.reply);
+      }
+      reason = reason ?? "no-approved-draft"; return result("withheld");
+    }
     publish("selecting");
     // Keep the full turn and complete candidates. When their combination exceeds
     // the wire budget, select from the largest quality-ranked prefix that
@@ -642,6 +673,13 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
       attempt = Math.min(attempt, maxAttempts);
       return result("released", candidate.value, candidate.reply);
     }
+    if (!options.signal?.aborted && usableDrafts.length) {
+      const best = [...usableDrafts].sort((a, b) => b.quality - a.quality || a.attempt - b.attempt)[0]!;
+      selectedAttempt = best.attempt;
+      reason = "best-effort-draft";
+      attempt = Math.min(attempt, maxAttempts);
+      return result("released", best.value, best.reply);
+    }
     reason = options.signal?.aborted ? "cancelled" : controller.signal.aborted ? "time-budget" : "review-unavailable";
     return result(options.signal?.aborted ? "cancelled" : "withheld");
   } finally {
@@ -649,5 +687,6 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
     options.signal?.removeEventListener("abort", cancel);
     controller.abort();
     candidates.length = 0;
+    usableDrafts.length = 0;
   }
 }

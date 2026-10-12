@@ -9,6 +9,14 @@ const snapshot: TeachingDraftSnapshot = { phase: "checking", attempt: 1, maxAtte
   elapsedMs: 500, attempts: [], judgeModel: "jev-1.13.0", selectedAttempt: null, reason: null };
 afterEach(clearTeachingDraftStatuses);
 
+test("best available release does not imply every review concern passed", () => {
+  publishTeachingDraftStatus("best-effort", { ...snapshot, phase: "released", reason: "best-effort-draft", selectedAttempt: 2 });
+  const html = renderToStaticMarkup(<DraftReviewStatus sessionId="best-effort" status={getTeachingDraftStatus("best-effort")} />);
+  expect(html).toContain("Best available response");
+  expect(html).toContain("Some review concerns remain");
+  expect(html).not.toContain("Response checked");
+});
+
 test("synthesis diagnostics retain only two distinct bounded preceding attempt numbers", () => {
   publishTeachingDraftStatus("synthesis", { ...snapshot, phase: "revising", attempt: 4,
     synthesisSourceAttempts: ["PRIVATE_DRAFT", { text: "PRIVATE_SOURCE" }, 0, 1.5, 11, 4, 1, 1, 2, 3],

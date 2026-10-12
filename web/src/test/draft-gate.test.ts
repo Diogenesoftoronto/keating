@@ -301,16 +301,15 @@ describe("private teaching draft stream", () => {
     }
   });
 
-  test.each(["fail", "unknown"] as const)("withholds %s drafts without exposing their content", async (mode) => {
+  test.each(["fail", "unknown"] as const)("releases text with an honest receipt after %s semantic review", async (mode) => {
     const output = await gate(() => streamOf(message("NEVER DISPLAY THIS")), {
       maxAttempts: 1,
       makeCaller: () => async (request) => answer(request, { violation: mode === "fail" ? 1 : 0.5 }),
     })(MODEL, context());
     const { events, result } = await collect(output);
     expect(events.map((event) => event.type)).toEqual(["start", "text_start", "text_delta", "text_end", "done"]);
-    expect(text(result)).toContain("couldn't verify");
-    expect(text(result)).not.toContain("make the request more specific");
-    expect(JSON.stringify(events)).not.toMatch(/NEVER DISPLAY|PRIVATE THINKING|PRIVATE STREAM/);
+    expect(text(result)).toBe("NEVER DISPLAY THIS");
+    expect(JSON.stringify(events)).not.toMatch(/PRIVATE THINKING|PRIVATE STREAM/);
   });
 
   test("unfunded judgement stops before generation and explains credit or spending limits", async () => {
@@ -344,7 +343,7 @@ describe("private teaching draft stream", () => {
     ["backend-payment-required", "account credit and request spending limit"],
     ["response-malformed", "invalid or inconsistent response"],
     ["request-invalid", "valid review request"],
-  ] as const)("preserves %s during draft checking", async (code, explanation) => {
+  ] as const)("retains a usable answer when %s interrupts draft checking", async (code, _explanation) => {
     const updates: TeachingDraftSnapshot[] = [];
     const { result } = await collect(await gate(() => streamOf(message("PRIVATE DRAFT")), {
       maxAttempts: 1,
@@ -352,11 +351,9 @@ describe("private teaching draft stream", () => {
         ? { ok: false, error: { code, retryable: false } } : answer(request),
       onProgress: value => updates.push(value),
     })(MODEL, context()));
-    expect(updates.at(-1)?.reason).toBe(code);
-    expect(text(result)).toContain(explanation);
-    expect(text(result)).toContain(`Failure: ${code}`);
-    expect(text(result)).toContain("Draft attempts: 1; completed drafts: 1");
-    expect(text(result)).not.toContain("PRIVATE");
+    expect(updates.at(-1)?.reason).toBe("best-effort-draft");
+    expect(updates.at(-1)?.attempts[0]?.status).not.toBe("pass");
+    expect(text(result)).toBe("PRIVATE DRAFT");
   });
 
   test("reports context loading failures without exposing exception text", async () => {
@@ -374,9 +371,8 @@ describe("private teaching draft stream", () => {
       if (++calls === 1) throw new Error("PRIVATE provider failure");
       return streamOf(message("REJECTED PRIVATE DRAFT"));
     }, { maxAttempts: 2 })(MODEL, context()));
-    expect(text(result)).toContain("Failure: no-approved-draft");
-    expect(text(result)).toContain("Draft attempts: 2; completed drafts: 1");
-    expect(text(result)).not.toContain("PRIVATE");
+    expect(text(result)).toBe("REJECTED PRIVATE DRAFT");
+    expect(calls).toBe(2);
   });
 
   test("a deadline supersedes an earlier provider failure and publishes a withheld receipt", async () => {
@@ -489,7 +485,7 @@ describe("private teaching draft stream", () => {
     const proposed = invalid.content.find((part) => part.type === "toolCall")!;
     proposed.arguments = { wrong: "PRIVATE INVALID ARGUMENT" };
     const withheld = await collect(await gate(() => streamOf(invalid), { maxAttempts: 1 })(MODEL, input));
-    expect(text(withheld.result)).toContain("couldn't verify");
+    expect(text(withheld.result)).toContain("Failure: generation-unavailable");
     expect(withheld.result.content.every((part) => part.type === "text")).toBe(true);
     expect(JSON.stringify(withheld.events)).not.toContain("PRIVATE INVALID ARGUMENT");
   });

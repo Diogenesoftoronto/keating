@@ -1,6 +1,6 @@
 {
   "name": "keating-web",
-  "version": "4.0.11",
+  "version": "4.0.12",
   "type": "module",
   "private": true,
   "scripts": {

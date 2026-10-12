@@ -41,8 +41,10 @@ export function DraftReviewStatus({ sessionId, status }: { sessionId: string; st
     ["backend-unavailable", "backend-unauthorized", "review-unavailable"].includes(snapshot.reason ?? "");
   const reviewedCount = snapshot.attempts.filter(attempt => attempt.status !== "generation-error").length;
   const combining = snapshot.phase === "revising" && !!snapshot.synthesisSourceAttempts?.length;
+  const bestEffort = snapshot.phase === "released" && snapshot.reason === "best-effort-draft";
   const description = snapshot.phase === "released"
-    ? `${reviewedCount} ${reviewedCount === 1 ? "draft reviewed" : "drafts reviewed"}. You can flag a missed problem below.`
+    ? bestEffort ? "The best available response is shown. Some review concerns remain; you can flag a problem below."
+      : `${reviewedCount} ${reviewedCount === 1 ? "draft reviewed" : "drafts reviewed"}. You can flag a missed problem below.`
     : snapshot.phase === "withheld"
       ? snapshot.reason === "unsupported-evidence" ? "The reviewer needs the attachment's text or a transcript. Send it in a new conversation to continue."
         : snapshot.reason === "backend-payment-required" ? "The review provider couldn't fund this review. Check your account credit and request spending limit, then retry."
@@ -60,7 +62,7 @@ export function DraftReviewStatus({ sessionId, status }: { sessionId: string; st
   return <section aria-label="Response review" className={css({ width: "100%", maxWidth: "56rem", marginInline: "auto", paddingBlock: ".75rem", minWidth: 0 })}>
     <div role="status" aria-live="polite" aria-atomic="true">
       <div className={css({ display: "flex", alignItems: "baseline", gap: ".75rem", flexWrap: "wrap" })}>
-        <span className={css({ fontSize: ".8rem", fontWeight: 600 })}>{combining ? "Combining completed drafts" : titles[snapshot.phase]}</span>
+        <span className={css({ fontSize: ".8rem", fontWeight: 600 })}>{bestEffort ? "Best available response" : combining ? "Combining completed drafts" : titles[snapshot.phase]}</span>
         {active && snapshot.attempt > 0 && <span className={muted}>Attempt {snapshot.attempt} of {snapshot.maxAttempts}</span>}
       </div>
       <p className={muted}>{description}</p>

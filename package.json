@@ -1,6 +1,6 @@
 {
   "name": "keating",
-  "version": "4.0.11",
+  "version": "4.0.12",
   "packageManager": "bun@1.4.2",
   "type": "module",
   "description": "A Pi-powered hyperteacher package with self-improving teaching policies, lesson maps, and animated visual teaching artifacts.",
