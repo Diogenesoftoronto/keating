@@ -8,7 +8,7 @@ import { TerminalInstall } from "../components/TerminalInstall";
 import { AndroidLogo, AppleLogo, IosLogo, LinuxLogo, WindowsLogo } from "../components/platform-logos";
 import { useSeo } from "../hooks/useSeo";
 import { detectDownloadArchitecture, detectPlatform, type DetectedPlatform, type DownloadArchitecture } from "../lib/detect-platform";
-import { downloadArchitectureLabel, downloadButtonLabel, downloadFormatLabel, downloadSize, fetchDownloadRelease, recommendedDownload, VERIFIED_DOWNLOAD_RELEASE, type DownloadAsset } from "../lib/download-release";
+import { downloadArchitectureLabel, downloadButtonLabel, downloadFormatLabel, downloadSize, fetchDownloadRelease, recommendedDownload, VERIFIED_DOWNLOAD_RELEASE, VERIFIED_WINDOWS_PREVIEW_RELEASE, type DownloadAsset } from "../lib/download-release";
 import "./download.css";
 
 const PLATFORMS = [
@@ -68,7 +68,7 @@ export function Download() {
   }, []);
 
   const captureDownload = (asset: DownloadAsset, source: "hero" | "platform_card") => {
-    posthog?.capture("download_intent", { source, platform: asset.platform, architecture: asset.architecture, destination: "release_asset", artifact: asset.kind, release: release.tag });
+    posthog?.capture("download_intent", { source, platform: asset.platform, architecture: asset.architecture, destination: "release_asset", artifact: asset.kind, release: asset.releaseTag ?? release.tag });
   };
   const captureBrowser = () => posthog?.capture("download_try_browser_click", { platform });
 
@@ -124,6 +124,7 @@ export function Download() {
                         <PlatformIcon size={20} aria-hidden="true" /> {downloadButtonLabel(recommended)}<ArrowDownToLine size={18} aria-hidden="true" />
                       </a>
                       <p>{recommended.edition === "offline" ? "Offline app installer" : recommended.kind === "terminal" ? "Terminal app" : downloadFormatLabel(recommended.format)} · {downloadArchitectureLabel(platform, recommended.architecture)} · {downloadSize(recommended.size)}</p>
+                      {recommended.selfSigned && <p>Windows 4.0.7 self-signed preview. Windows may show an unknown publisher warning. <a href={VERIFIED_WINDOWS_PREVIEW_RELEASE.url}>Signing details</a></p>}
                       {platform === "android" && <p>Android 8 or later. Open the downloaded APK to install Keating.</p>}
                     </>
                   ) : needsArchitecture ? (
@@ -174,7 +175,7 @@ export function Download() {
                 const terminalOnly = assets.length > 0 && assets.every((asset) => asset.kind === "terminal");
                 return (
                   <article key={id} className="downloads-file-row">
-                    <div className="downloads-file-platform"><Logo size={30} aria-hidden="true" /><div><h3>{label}</h3><p>{terminalOnly ? "Terminal app" : assets.length ? "App installer" : "Native app"}</p></div>{id === detected && <span className="downloads-detected">Your device</span>}</div>
+                    <div className="downloads-file-platform"><Logo size={30} aria-hidden="true" /><div><h3>{label}</h3><p>{assets.some((asset) => asset.selfSigned) ? "Self-signed preview" : terminalOnly ? "Terminal app" : assets.length ? "App installer" : "Native app"}</p></div>{id === detected && <span className="downloads-detected">Your device</span>}</div>
                     {assets.length ? (
                       <ul aria-label={`${label} downloads`} className="downloads-files">
                         {assets.map((asset) => <li key={asset.name}><a href={asset.url} aria-label={`Download Keating ${asset.edition === "offline" ? "offline app" : asset.kind === "terminal" ? "terminal" : "app"} for ${label}, ${downloadArchitectureLabel(id, asset.architecture)}, ${asset.format}, ${downloadSize(asset.size)}`} onClick={() => captureDownload(asset, "platform_card")}><span>{asset.edition === "offline" ? "Offline · " : ""}{id === "android" ? "Android APK" : id === "windows" ? `Windows ${asset.format.slice(1).toUpperCase()} · ` : ""}{id !== "android" && downloadArchitectureLabel(id, asset.architecture)}<small>{asset.format} · {downloadSize(asset.size)}</small></span><ArrowDownToLine size={18} aria-hidden="true" /></a></li>)}
@@ -184,7 +185,8 @@ export function Download() {
                 );
               })}
             </div>
-            <p className="downloads-catalog-note" role="status">{releaseCheck === "unavailable" ? `Showing verified ${release.tag} files. The latest release check is temporarily unavailable.` : releaseCheck === "checking" ? `Showing verified ${release.tag} files. Checking for a newer release…` : "Files from the latest published release."}</p>
+            <p className="downloads-catalog-note" role="status">{releaseCheck === "unavailable" ? "Showing verified downloads. The latest stable release check is temporarily unavailable." : releaseCheck === "checking" ? "Showing verified downloads. Checking for a newer stable release…" : `Files from ${release.tag}${release.assets.some((asset) => asset.selfSigned) ? " and the verified Windows preview" : ""}.`}</p>
+            {release.assets.some((asset) => asset.selfSigned) && <p className="downloads-catalog-note">Windows 4.0.7 is a self-signed preview; Windows may show an unknown publisher warning. <a href={VERIFIED_WINDOWS_PREVIEW_RELEASE.url}>Windows release notes and signing details</a>.</p>}
             <details className="downloads-install-help"><summary><Terminal size={18} aria-hidden="true" /> Installing the terminal app</summary><div><p>The macOS and Linux <code>.tar.gz</code> files contain Keating’s terminal app and its runtime. Extract the archive, open a terminal in the extracted folder, and run <code>./install.sh</code>. Then start a lesson with <code>keating shell</code>.</p><p>For the visual workspace shown above, <Link to="/chat">open the browser app</Link>. Developers can also <a href="https://github.com/Diogenesoftoronto/keating/tree/main/desktop" target="_blank" rel="noreferrer">build the desktop app from source</a>.</p></div></details>
           </div>
         </section>
