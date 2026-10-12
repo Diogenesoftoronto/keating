@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.12] - 2026-10-12
+
+### Fixed
+- Return the best usable response when draft reviews exhaust their attempt budget, retaining review concerns in diagnostics.
+- Reserve the final attempt for a text-only answer when earlier drafts contain unusable tool calls, without exceeding ten generations.
+- Preserve cancellation and tool validation across web and mobile recovery.
+
 ## [4.0.11] - 2026-10-12
 
 ### Fixed

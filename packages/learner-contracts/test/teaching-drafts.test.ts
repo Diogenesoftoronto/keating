@@ -204,16 +204,16 @@ describe("private draft loop", () => {
     expect(result.receipt.maxAttempts).toBe(10);
   });
 
-  test.each([undefined, 50])("exhausted retries stop at ten even with budget %s", async maxAttempts => {
+  test.each([undefined, 50])("exhausted semantic retries release best effort at ten even with budget %s", async maxAttempts => {
     let generated = 0;
     const result = await runTeachingDrafts({ turn, maxAttempts,
       judge: makeJudge(() => ({ retention_overclaimed: 0.99 })),
       generate: async () => ({ reply: { text: "PRIVATE rejected draft", toolCalls: [] }, value: ++generated }),
     });
     expect(generated).toBe(10);
-    expect(result.status).toBe("withheld");
+    expect(result.status).toBe("released");
     expect(result.receipt.attempts).toHaveLength(10);
-    expect(result.value).toBeUndefined();
+    expect(result.value).toBe(1);
   });
 
   test("uncertain teaching style does not veto useful replies; raw scores remain visible", async () => {
@@ -230,16 +230,16 @@ describe("private draft loop", () => {
 
   test.each([
     { identity_invented: 0.5 }, { profile_evidence_invented: 0.21 },
-  ] as Record<string, number>[])("still blocks evidence uncertainty, clear violations and unhelpful drafts: %j", async scores => {
+  ] as Record<string, number>[])("records semantic uncertainty without rejecting all usable drafts: %j", async scores => {
     const result = await runTeachingDrafts({ turn: { ...turn, domain: "unknown" }, maxAttempts: 1,
       judge: makeJudge(() => scores),
       generate: async () => ({ reply: { text: "PRIVATE", toolCalls: [] }, value: "PRIVATE" }),
     });
-    expect(result.status).toBe("withheld");
-    expect(result.value).toBeUndefined();
+    expect(result.status).toBe("released");
+    expect(result.value).toBe("PRIVATE");
   });
 
-  test("missing stylistic review answers remain blocking", async () => {
+  test("missing stylistic review answers remain honest in best effort", async () => {
     const judge = makeJudge();
     const result = await runTeachingDrafts({ turn, maxAttempts: 1,
       judge: async (request, signal) => {
@@ -249,7 +249,7 @@ describe("private draft loop", () => {
       },
       generate: async () => ({ reply: { text: "PRIVATE", toolCalls: [] }, value: "PRIVATE" }),
     });
-    expect(result.status).toBe("withheld");
+    expect(result.status).toBe("released");
   });
 
   test("preflight rebuilds the window and diagnostics measure each actual batch", async () => {
@@ -310,7 +310,7 @@ describe("private draft loop", () => {
     expect(result.receipt.judgeUsage).toEqual({ inputTokens: 30, outputTokens: 6 });
   });
 
-  test("failed candidates cannot enter the selector and exhausted retries return no draft", async () => {
+  test("failed semantic candidates bypass selector and exhaustion returns best effort", async () => {
     const calls: JudgementRequest[] = [];
     let generated = 0;
     const base = makeJudge((request): Record<string, string | number> => request.questions.retention_overclaimed ? { retention_overclaimed: 0.99 } : {});
@@ -318,9 +318,9 @@ describe("private draft loop", () => {
       generated++; return { reply: { text: "hidden", toolCalls: [] }, value: "MUST_NOT_ESCAPE" };
     } });
     expect(generated).toBe(2);
-    expect(result.status).toBe("withheld");
-    expect(result.value).toBeUndefined();
-    expect(JSON.stringify(result)).not.toContain("MUST_NOT_ESCAPE");
+    expect(result.status).toBe("released");
+    expect(result.value).toBe("MUST_NOT_ESCAPE");
+    expect(result.receipt.reason).toBe("best-effort-draft");
     expect(calls.some((request) => request.questions.draft_choice)).toBe(false);
   });
 
