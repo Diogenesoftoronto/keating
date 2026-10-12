@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
+import { prepareAndroidDependencies } from "./prepare-android-dependencies.mjs";
 
 const COMPATIBLE_GRADLE_VERSION = "9.3.1";
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -16,4 +17,5 @@ if (next === current && !current.includes(`gradle-${COMPATIBLE_GRADLE_VERSION}-b
 }
 
 await writeFile(wrapperPath, next, "utf8");
+await prepareAndroidDependencies();
 console.log(`Pinned generated Android wrapper to Gradle ${COMPATIBLE_GRADLE_VERSION}.`);
