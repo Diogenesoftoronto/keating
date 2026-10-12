@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.9] - 2026-10-12
+
+### Fixed
+- Resolve shared P2P runtime dependencies from the installed workspace when staging desktop installers on clean release runners.
+- Includes the complete 4.0.8 changes; its downloadable release was blocked by the packaging prerequisite.
+
 ## [4.0.8] - 2026-10-12
 
 ### Added
@@ -23,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Publish reviewed replies as content events so they appear in durable chat history instead of leaving only a review receipt.
 - Review complete model responses rather than truncated or empty generations, preserve eligible replies when later attempts time out, and explain generation or review failures.
 - Improve account credit recovery, diagnostic routing, and learner-policy evidence handling.
+- Read hosted provider connection status from the refreshed Not Organic session and list the hosted model in settings.
+- Hide unavailable course tools and preserve actionable course-service errors.
 
 ## [4.0.7] - 2026-09-28
 
