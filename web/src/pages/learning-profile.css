@@ -1,0 +1,14 @@
+.learning-profile { max-width: 42rem; margin: 0 auto; padding: 3rem 1.25rem; color: var(--foreground); }
+.learning-profile h1 { font-size: clamp(1.75rem, 5vw, 2.5rem); line-height: 1.2; margin: 1.5rem 0 1rem; }
+.learning-profile p { margin-block: 1rem; line-height: 1.6; }
+.learning-profile-note { color: var(--muted-foreground); font-size: .875rem; }
+.learning-profile code { overflow-wrap: anywhere; }
+.learning-profile form { display: grid; gap: 1rem; margin-top: 1.5rem; }
+.learning-profile textarea { width: 100%; box-sizing: border-box; padding: .75rem; border: 1px solid var(--border); border-radius: .375rem; background: var(--background); color: var(--foreground); font: inherit; }
+.learning-profile-choice { display: flex; gap: .75rem; align-items: flex-start; line-height: 1.5; }
+.learning-profile-choice input { margin-top: .25rem; flex-shrink: 0; }
+.learning-profile-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.learning-profile button { border: 1px solid var(--border); border-radius: .375rem; padding: .6rem .85rem; color: var(--foreground); background: var(--background); cursor: pointer; }
+.learning-profile button:hover:enabled { background: var(--accent); }
+.learning-profile button:disabled { opacity: .5; cursor: default; }
+.learning-profile :focus-visible { outline: 2px solid var(--ring, currentColor); outline-offset: 3px; }

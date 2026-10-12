@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["tinker==0.27.1"]
+# dependencies = ["tinker==0.31.0"]
 # ///
 """One bounded update from validated native exports; planning is network-free.
 
@@ -28,11 +28,11 @@ import native_training as nt
 from sdpo_math import prepare_advantages
 
 VERSION = "native-tinker-update/v1"
-SDK_VERSION = "0.27.1"
+SDK_VERSION = "0.31.0"
 SDK_SOURCE_HASHES = {
-    "tinker/lib/public_interfaces/service_client.py": "cd54efc12ce8982f26a49a9bab67e14db6606a5ca7681c6671ef77ab319e0efe",
-    "tinker/lib/public_interfaces/training_client.py": "92a0b666a1006fe648e985c85c71e63d8eedaa114b0e91167ae14a029bbf31d6",
-    "tinker/lib/internal_client_holder.py": "b74b910177bdc9724707d7e8a8496fb805c07c86baaf0fb68a740c020013e785",
+    "tinker/lib/public_interfaces/service_client.py": "b8e63b7970ac2ae9461d7fd8d1939d15d64dc5a5d9526acf7d82b217637744f8",
+    "tinker/lib/public_interfaces/training_client.py": "d2f3dfa2c7dbf6a2cfd3912cd03418686ad79db5c6fb6ba477ffe4f38aa89c4b",
+    "tinker/lib/internal_client_holder.py": "78bfe7a113f5b36191fd9e72f715e98b86e8fd74d125fcdf612732109e9d5492",
 }
 BUDGET_KIND = "native-research-budget/v1"
 CONDITIONING = "original_context_then_feedback_then_original_completion"
@@ -454,7 +454,7 @@ async def _single_attempt(operation, *args, **kwargs):
 
 
 def disable_internal_retries(client):
-    """Instance-only 0.27.1 seam, installed BEFORE create/load of weights.
+    """Instance-only 0.31.0 seam, installed BEFORE create/load of weights.
 
     ServiceClient's holder is also used by its trainer. This covers load, gradient,
     optimizer and save submission loops above HTTP; future polling remains intact.

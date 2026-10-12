@@ -87,13 +87,11 @@ test("explicit estimate precedes answer interaction and collection follows durab
   expect(h.entries.some((text) => text.includes("0.7 of 1"))).toBe(true);
 });
 
-test("fitted terminal estimate names its method and preserves the raw comparison", async () => {
+test("terminal estimate displays the configured judgement model prediction", async () => {
   const h = harness(); h.activate();
-  h.predictions[0]!.controller.estimate = async () => ({ ok: true, expectedCorrect: 0.4, itemCount: 1,
-    rawExpectedCorrect: 0.8, estimateMethod: "boosting", fitSha256: "a".repeat(64) });
+  h.predictions[0]!.controller.estimate = async () => ({ ok: true, expectedCorrect: 0.4, itemCount: 1 });
   await h.run("quiz-estimate-quiz");
-  expect(h.entries.some(text => text.includes("Fitted ensemble estimate") && text.includes("0.4 of 1")
-    && text.includes("Raw model estimate: 0.8 of 1"))).toBe(true);
+  expect(h.entries.some(text => text.includes("Model estimate, correct without in-app hints: 0.4 of 1."))).toBe(true);
 });
 
 test("opening and cancelling an answer permanently closes estimate eligibility for that source", async () => {

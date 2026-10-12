@@ -1,6 +1,7 @@
 import { css } from "../../../styled-system/css";
 import { ProvidersModelsTab } from "../ProvidersModelsTab";
 import { ProxyTab } from "../ProxyTab";
+import { KnowledgeSources } from "./KnowledgeSources";
 import { MODELS_TAB_EXTRA_SECTION_IDS } from "./section-ids";
 
 const stackClass = css({ display: "flex", flexDirection: "column", gap: "2rem" });
@@ -17,6 +18,7 @@ const sectionTitleClass = css({ fontSize: "1rem", fontWeight: 600, color: "var(-
 export function ModelsProvidersTab() {
 	return (
 		<div className={stackClass}>
+			<KnowledgeSources />
 			<ProvidersModelsTab
 				extraNavSections={MODELS_TAB_EXTRA_SECTION_IDS.map((id) => ({ id, label: "Proxy" }))}
 			/>

@@ -58,9 +58,9 @@ import {
   type AppendMessage,
   type AttachmentAdapter,
   type ThreadMessageLike,
-  useComposerRuntime,
+  useAui,
+  useAuiState,
   useExternalStoreRuntime,
-  useMessage,
 } from "@assistant-ui/react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
@@ -140,6 +140,7 @@ import { KeatingStorage } from "../keating/storage";
 import type { PlanRevisionProposal } from "../keating/plan-revisions";
 import { PlanRevisionCard } from "./PlanRevisionCard";
 import { recordAssistantPresentations } from "../keating/judgement/active-work-host";
+import { recordWebActivityPresentation } from "../keating/judgement/activity-learning";
 import {
   QuizGradesContext,
   type QuizGradesContextValue,
@@ -419,14 +420,14 @@ async function readPdfAsAttachmentText(file: File): Promise<string> {
     import.meta.url,
   ).toString();
 
-  const pdf = await pdfjs.getDocument({
+  const loadingTask = pdfjs.getDocument({
     data: new Uint8Array(await file.arrayBuffer()),
-    isEvalSupported: false,
-  }).promise;
+  });
 
   let extractedText = `<pdf filename="${file.name}">`;
   let hasReadableText = false;
   try {
+    const pdf = await loadingTask.promise;
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
       const page = await pdf.getPage(pageNumber);
       const textContent = await page.getTextContent();
@@ -439,7 +440,7 @@ async function readPdfAsAttachmentText(file: File): Promise<string> {
       page.cleanup();
     }
   } finally {
-    await pdf.destroy();
+    await loadingTask.destroy();
   }
   extractedText += "\n</pdf>";
 
@@ -540,7 +541,7 @@ interface AssistantChatPanelProps {
  * Never overwrites what the learner has already typed, and never sends.
  */
 function ComposerPrefill({ text }: { text?: string }) {
-  const composer = useComposerRuntime();
+  const composer = useAui().composer;
   const appliedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!text || appliedRef.current === text) return;
@@ -563,8 +564,8 @@ function StreamingTextPart({
   showRawErrors?: boolean;
 }) {
   const posthog = usePostHog();
-  const messageId = useMessage((message) => message.id);
-  const messageCreatedAt = useMessage((message) => message.createdAt);
+  const messageId = useAuiState(({ message }) => message.id);
+  const messageCreatedAt = useAuiState(({ message }) => message.createdAt);
 	const sessionId = useContext(OpenUISessionScopeContext);
   const isMarkedError = text.startsWith(ERROR_TEXT_PREFIX);
   // Only turns completed while this view is open link to the current plan
@@ -640,12 +641,16 @@ function StreamingTextPart({
   useEffect(() => {
     if (!sessionId || isMarkedError || status?.type === "running" || !liveTurnRef.current) return;
     liveTurnRef.current = false;
+    const presentationText = stripArtifactLinks(splitSearchSources(displayText).text);
+    if (messageCreatedAt) {
+      recordWebActivityPresentation(displayText, { sessionId, messageId }, messageCreatedAt.getTime(), presentationText);
+    }
     void recordAssistantPresentations(
       quizGradeStorage,
-      stripArtifactLinks(splitSearchSources(displayText).text),
+      presentationText,
       { sessionId, messageId },
     ).catch((error) => console.warn("[keating] could not record OpenUI presentations", error));
-  }, [displayText, isMarkedError, messageId, sessionId, status?.type]);
+  }, [displayText, isMarkedError, messageCreatedAt, messageId, sessionId, status?.type]);
 
   if (isMarkedError) {
     const classified = classifyError(visibleText);
@@ -906,7 +911,7 @@ function SpeechComposerControl({
   onConversationComplete: (turns: LiveTranscriptTurn[]) => void | Promise<void>;
   onRequestCredential?: (provider: string) => Promise<boolean>;
 }) {
-  const composer = useComposerRuntime();
+  const composer = useAui().composer;
   const [available, setAvailable] = useState<boolean | null>(null);
   const [recording, setRecording] = useState(false);
   useEffect(() => {
@@ -5026,7 +5031,7 @@ function UserMessage({
   components: ReturnType<typeof messagePartComponents>;
   profileImage?: string | null;
 }) {
-  const ownText = useMessage(message => message.content.filter(part => part.type === "text").map(part => part.type === "text" ? part.text : "").join("\n\n"));
+  const ownText = useAuiState(({ message }) => message.content.filter(part => part.type === "text").map(part => part.type === "text" ? part.text : "").join("\n\n"));
   return (
     <MessagePrimitive.Root
       className={css({
@@ -5280,35 +5285,35 @@ function AssistantMessage({
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [feedbackType, setFeedbackType] = useState<"up" | "down">("up");
   const onAuthError = useContext(AuthErrorContext);
-  const authError = useMessage(
-    (message) =>
+  const authError = useAuiState(
+    ({ message }) =>
       message.metadata.custom?.keatingAuthError as AuthErrorEntry | undefined,
   );
-  const canRetry = useMessage(
-    (message) => message.metadata.custom?.keatingRetryable === true,
+  const canRetry = useAuiState(
+    ({ message }) => message.metadata.custom?.keatingRetryable === true,
   );
-  const llmFailure = useMessage(
-    (message) =>
+  const llmFailure = useAuiState(
+    ({ message }) =>
       message.metadata.custom?.keatingLlmFailure as LlmErrorDetails | undefined,
   );
-  const provider = useMessage(message => message.metadata.custom?.keatingProvider as string | undefined);
-  const failureMessage = useMessage(message => message.metadata.custom?.keatingFailureMessage as string | undefined);
-  const failedLastTurn = useMessage(message => message.metadata.custom?.keatingFailedLastTurn === true);
+  const provider = useAuiState(({ message }) => message.metadata.custom?.keatingProvider as string | undefined);
+  const failureMessage = useAuiState(({ message }) => message.metadata.custom?.keatingFailureMessage as string | undefined);
+  const failedLastTurn = useAuiState(({ message }) => message.metadata.custom?.keatingFailedLastTurn === true);
   const creditFailure = provider === "notorganic" && llmFailure?.category === "billing";
-  const retryAttempts = useMessage(
-    (message) =>
+  const retryAttempts = useAuiState(
+    ({ message }) =>
       message.metadata.custom?.keatingRetryAttempts as number | undefined,
   );
-  const retryExhausted = useMessage(
-    (message) => message.metadata.custom?.keatingRetryExhausted === true,
+  const retryExhausted = useAuiState(
+    ({ message }) => message.metadata.custom?.keatingRetryExhausted === true,
   );
-  const isPrefillStatus = useMessage(
-    (message) => message.metadata.custom?.keatingPrefillStatus === true,
+  const isPrefillStatus = useAuiState(
+    ({ message }) => message.metadata.custom?.keatingPrefillStatus === true,
   );
   // The message id is `assistant-${index}-${timestamp}` (see toAssistantMessage).
   // The trailing timestamp is the stable handle we use to fork at this turn.
-  const messageId = useMessage((message) => message.id);
-  const messageText = useMessage((message) =>
+  const messageId = useAuiState(({ message }) => message.id);
+  const messageText = useAuiState(({ message }) =>
     (message.content as Array<{ type: string; text?: string }>)
       .filter((part) => part.type === "text")
       .map((part) => part.text ?? "")
@@ -5321,7 +5326,7 @@ function AssistantMessage({
       ),
     ),
   ).trim();
-  const createdAt = useMessage(message => message.createdAt);
+  const createdAt = useAuiState(({ message }) => message.createdAt);
   const handleFork = () => {
     const ts = createdAt?.getTime() ?? Number(messageId.slice(messageId.lastIndexOf("-") + 1));
     onFork?.(Number.isFinite(ts) ? ts : undefined);

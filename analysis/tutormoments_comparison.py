@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["marimo==0.23.1", "pandas==2.*", "numpy>=2,<3", "matplotlib==3.10.*", "typer>=0.12"]
+# dependencies = ["marimo==0.25.1", "pandas==3.0.6", "numpy>=2,<3", "matplotlib==3.11.2", "typer>=0.12"]
 # ///
 """Inspect original moments beside synthetic Keating episodes, without inference."""
 import marimo

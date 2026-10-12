@@ -259,6 +259,12 @@ devenv tasks run keating:web
 
 The full task reference lives in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md); the [devenv tasks documentation](https://devenv.sh/tasks/) covers how tasks work, arguments, and dependencies.
 
+Browse web components in Storybook on port 6006 and native terminal components
+in [Textbook](textbook/README.md) on port 6007. Both run with `devenv up`.
+To start only the terminal workshop, run `devenv tasks run keating:textbook`.
+Refresh all current documentation screenshots and rebuild the guides with
+`rtk devenv tasks run keating:docs-screenshots` ([capture details](scripts/docs-site/README.md#screenshot-contract)).
+
 ```bash
 devenv tasks run keating:build
 devenv tasks run keating:doctor

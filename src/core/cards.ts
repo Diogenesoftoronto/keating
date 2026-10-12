@@ -244,3 +244,106 @@ export function toolResultCardLines(toolName: string, result: unknown): string[]
   const presentation = uiDocumentPresentation(toolResultToUiDocument(toolName, result));
   return cardLines(presentation.heading, presentation.body);
 }
+
+/** A card as Markdown: the heading becomes the transcript entry's title. */
+export interface MarkdownCard {
+  heading: string;
+  body: string[];
+}
+
+function previewBody(filePath: string, fence?: string, maxLines = 40): string[] {
+  let lines: string[];
+  try {
+    lines = readFileSync(filePath, "utf8").replace(/\s+$/, "").split("\n");
+  } catch {
+    return [`*Could not read ${filePath}.*`];
+  }
+  const shown = lines.slice(0, maxLines);
+  const more = lines.length > maxLines ? [`*${lines.length - maxLines} more lines in ${filePath}*`] : [`*${filePath}*`];
+  return [...(fence ? [`\`\`\`${fence}`, ...shown, "```"] : shown), "", ...more];
+}
+
+export function quizCardMarkdown(quiz: Quizish, state: QuizCardStateish = {}): MarkdownCard {
+  const body: string[] = [];
+  let correct = 0;
+  let graded = 0;
+  for (const [index, q] of (quiz.questions ?? []).entries()) {
+    const status = questionStatus(q, state);
+    if (status === "correct") correct++;
+    if (status === "correct" || status === "incorrect") graded++;
+    body.push(`${index + 1}. ${QUESTION_GLYPH[status]} ${q.question}${q.level ? `  *${q.level}*` : ""}`);
+    const answer = lookup<string>(state.answers, q.id);
+    if (answer) body.push(`   → ${answer}`);
+    const note = lookup<{ note?: string }>(state.openEndedGrades, q.id)?.note;
+    if (note) body.push(`   *${note}*`);
+  }
+  if (graded > 0) body.unshift(`**${correct} of ${graded} correct**`, "");
+  return { heading: `Quiz: ${quiz.topic}`, body };
+}
+
+export function goalCardMarkdown(goal: Goalish): MarkdownCard {
+  const steps = goal.steps ?? [];
+  const done = steps.filter((s) => s.status === "done").length;
+  const next = steps.find((s) => s.status !== "done");
+  const facts = [`${done} of ${steps.length} steps`, goal.status !== "active" ? goal.status : "", next ? `next: ${next.title}` : ""]
+    .filter(Boolean).join(" · ");
+  return {
+    heading: `Goal: ${goal.title}`,
+    body: [
+      ...(goal.description ? [goal.description, ""] : []),
+      `*${facts}*`,
+      ...steps.map((step) => `${step.status === "done" ? "- [x]" : "- [ ]"} ${step.title}${step.status === "in_progress" ? "  *in progress*" : ""}`),
+    ],
+  };
+}
+
+/**
+ * Map a finished tool execution to a Markdown card for the terminal
+ * transcript. Returns undefined when the tool has no card representation.
+ */
+export function toolResultCard(toolName: string, result: unknown): MarkdownCard | undefined {
+  const direct = result as { protocol?: unknown } | undefined;
+  if (direct?.protocol === "keating.ui") return uiDocumentPresentation(toolResultToUiDocument(toolName, result));
+  const details = (result as { details?: Record<string, unknown> } | undefined)?.details;
+  if (!details) return undefined;
+
+  if ((toolName === "quiz" || toolName === "grade_quiz") && details.quiz) {
+    return quizCardMarkdown(details.quiz as Quizish, {
+      answers: details.answers,
+      objectiveResults: details.objectiveResults,
+      openEndedGrades: details.openEndedGrades,
+    });
+  }
+
+  const artifact = ARTIFACT_TOOL_CARDS[toolName];
+  if (artifact) {
+    const path = details[artifact.pathKey];
+    if (typeof path === "string") return { heading: artifact.title, body: previewBody(path, toolName === "map" ? "mermaid" : undefined) };
+  }
+
+  if (details.goal && typeof details.goal === "object") return goalCardMarkdown(details.goal as Goalish);
+  if (Array.isArray(details.goals)) {
+    const goals = details.goals as Goalish[];
+    return {
+      heading: "Goals",
+      body: goals.length === 0 ? ["*No goals yet.*"] : goals.map((g) => {
+        const steps = g.steps ?? [];
+        const done = steps.filter((s) => s.status === "done").length;
+        return `${g.status === "completed" ? "- [x]" : "- [ ]"} ${g.title}  *${done}/${steps.length}${g.status === "paused" ? " · paused" : ""}*`;
+      }),
+    };
+  }
+
+  if (toolName === "web_search" && Array.isArray(details.citations)) {
+    const citations = details.citations as Array<{ title?: string; url?: string }>;
+    const query = typeof details.query === "string" ? details.query : "";
+    return {
+      heading: query ? `Search: ${query}` : "Search",
+      body: citations.length === 0
+        ? ["*No sources found.*"]
+        : citations.flatMap((c, i) => [`${i + 1}. ${c.title ?? c.url ?? ""}`, ...(c.title && c.url ? [`   <${c.url}>`] : [])]),
+    };
+  }
+
+  return uiDocumentPresentation(toolResultToUiDocument(toolName, result));
+}

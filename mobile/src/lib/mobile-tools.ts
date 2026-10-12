@@ -1,5 +1,6 @@
 import { generateLearningArtifact } from "./learning-artifacts";
 import type { GeneratedArtifactKind, StudyArtifact } from "./types";
+import { MOBILE_KNOWLEDGE_TOOLS } from "./knowledge-tools";
 
 export type JsonSchema = Readonly<Record<string, unknown>>;
 
@@ -10,6 +11,7 @@ export interface MobileToolDefinition {
 }
 
 export interface MobileToolExecutionContext {
+  knowledge?: (name: string, args: string | Readonly<Record<string, unknown>>, context: MobileToolExecutionContext) => Promise<MobileToolExecutionResult>;
   /** Stable semantic key derived by the coordinator, not the provider call id. */
   idempotencyKey: string;
   createdAt: number;
@@ -105,6 +107,7 @@ export const MOBILE_TOOL_DEFINITIONS: readonly MobileToolDefinition[] = Object.f
     description: "Save a reviewable mobile workspace source proposal. This never activates the change; the learner must activate it explicitly.",
     inputSchema: WORKSPACE_PROPOSE_SCHEMA,
   }),
+  ...MOBILE_KNOWLEDGE_TOOLS,
 ]);
 
 /** These are recovery notices, never provider-advertised tool definitions. */

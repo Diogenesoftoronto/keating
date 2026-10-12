@@ -13,13 +13,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@flue/runtime": "2.0.3",
-    "@flue/sdk": "2.0.3"
+    "@flue/runtime": "2.2.2",
+    "@flue/sdk": "2.2.2"
   },
   "devDependencies": {
-    "@types/bun": "^1.3.13",
-    "@types/node": "^24.3.0",
-    "typescript": "^5.9.2",
-    "vite": "^7.1.3"
+    "@types/bun": "^1.4.2",
+    "@types/node": "^26.6.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2"
   }
 }

@@ -13,15 +13,13 @@ import { resolveTopic } from "../core/topics.js";
 import { loadCommittedTuiQuizHistory, saveCommittedTuiQuizHistory } from "./cli-quiz-history.js";
 import { createCliJudgementBackend, JUDGEMENT_MODEL_ENV, type CliJudgementOptions } from "./transport.js";
 import { loadNotOrganicJudgementCredential, notOrganicJudgementEndpoint } from "./notorganic.js";
-import { loadCliQuizFit } from "./quiz-fit-loader.js";
-import { QUIZ_BOOSTING_TARGET, QUIZ_BOOSTING_FEATURE_SCHEMA } from "../../packages/learner-contracts/src/judgement/quiz-boosting-features.js";
 import {
   CliQuizPerformanceStore, cliQuizPerformanceCanonical as canonical, cliQuizPerformanceDigest as digest,
   type CliQuizPredictionEnvelope, type CliQuizPreparedSubmission,
 } from "./quiz-performance-store.js";
 
 export interface CliQuizPerformanceController {
-  estimate(): Promise<{ ok: true; expectedCorrect: number; itemCount: number; estimateMethod?: "shallow-tree" | "boosting"; rawExpectedCorrect?: number; fitSha256?: string } | { ok: false; reason: string }>;
+  estimate(): Promise<{ ok: true; expectedCorrect: number; itemCount: number } | { ok: false; reason: string }>;
   touch(): void;
   hint(questionId: string): void;
   prepareSubmission(action: UiAction): void;
@@ -38,10 +36,7 @@ export interface CliQuizPerformanceOptions {
   /** Explicit test boundaries; the application factory never supplies these. */
   history?: (title: string, asOf: number) => Promise<unknown[]>;
   runtime?: () => { call: JudgementCaller; current: () => boolean } | null;
-  loadFit?: typeof loadCliQuizFit;
 }
-export const QUIZ_FIT_FILE_ENV = "KEATING_QUIZ_FIT_FILE";
-export const QUIZ_FIT_SHA256_ENV = "KEATING_QUIZ_FIT_SHA256";
 const EXPIRY_MS = 15 * 60_000;
 const MAX_HISTORY_BYTES = 200_000;
 
@@ -172,17 +167,6 @@ export function createCliQuizPerformanceController(options: CliQuizPerformanceOp
         promise.then(resolve, reject).finally(() => abort.signal.removeEventListener("abort", cancel));
       });
       try {
-        const env = options.env ?? process.env;
-        const fitPath = env[QUIZ_FIT_FILE_ENV], fitPin = env[QUIZ_FIT_SHA256_ENV];
-        const fitConfigured = fitPath !== undefined || fitPin !== undefined;
-        const fitConfigCurrent = () => env[QUIZ_FIT_FILE_ENV] === fitPath && env[QUIZ_FIT_SHA256_ENV] === fitPin;
-        if (fitConfigured && (!fitPath?.trim() || !isSha256Hex(fitPin))) return { ok: false, reason: "fit-unavailable" };
-        let fit: Awaited<ReturnType<typeof loadCliQuizFit>> | undefined;
-        if (fitConfigured) {
-          try { fit = await active((options.loadFit ?? loadCliQuizFit)(options.cwd, fitPath!, fitPin!, { now })); }
-          catch { return { ok: false, reason: abort.signal.aborted ? "cancelled" : "fit-unavailable" }; }
-        }
-        if (stale() || !fitConfigCurrent()) return { ok: false, reason: "source-changed" };
         const backend = runtime();
         if (!backend) return { ok: false, reason: "judgement-unavailable" };
         const cutoff = now();
@@ -201,8 +185,7 @@ export function createCliQuizPerformanceController(options: CliQuizPerformanceOp
           || (response.backend.calibrationSha256 !== null && !isSha256Hex(response.backend.calibrationSha256))
           || Object.keys(response.answers).length !== eligible.length
           || Object.entries(questions).some(([key, question]) => decodeAnswer(question, response.answers[key])?.type !== "noul")) return { ok: false, reason: "response-malformed" };
-        if (canonical(await active(history(node.title, cutoff))) !== canonical(prior) || stale() || !backend.current() || !fitConfigCurrent()) return { ok: false, reason: "source-changed" };
-        if (fit && canonical(fit.backend) !== canonical(response.backend)) return { ok: false, reason: "fit-backend-mismatch" };
+        if (canonical(await active(history(node.title, cutoff))) !== canonical(prior) || stale() || !backend.current()) return { ok: false, reason: "source-changed" };
         const createdAt = now();
         if (createdAt < cutoff) return { ok: false, reason: "source-changed" };
         const rows = eligible.map((item, index): CliQuizPredictionEnvelope => ({
@@ -212,25 +195,13 @@ export function createCliQuizPerformanceController(options: CliQuizPerformanceOp
             createdAt, backend: structuredClone(response.backend), question: questions[`item_${index}`]!,
             probability: (response.answers[`item_${index}`] as { noul: number }).noul, source: "proxy" },
         }));
-        if (fit) {
-          for (let index = 0; index < rows.length; index++) {
-            const row = rows[index]!, probability = fit.predict(eligible[index]!, row.prediction.probability);
-            if (probability === null || !Number.isFinite(probability) || probability < 0 || probability > 1) return { ok: false, reason: "fit-unavailable" };
-            row.fitted = { source: "proxy", target: QUIZ_BOOSTING_TARGET, featureSchema: QUIZ_BOOSTING_FEATURE_SCHEMA,
-              method: fit.method, fitSha256: fit.fitSha256, fileSha256: fit.fileSha256, probability };
-          }
-          if (!await active(fit.current())) return { ok: false, reason: "source-changed" };
-        }
-        if (stale() || !backend.current() || !fitConfigCurrent()) return { ok: false, reason: "source-changed" };
+        if (stale() || !backend.current()) return { ok: false, reason: "source-changed" };
         // Await persistence: no estimate is presented as recorded until its private receipt exists.
         await active(store.savePredictions(rows));
-        if (fit && !await active(fit.current())) return { ok: false, reason: "source-changed" };
-        if (stale() || !backend.current() || !fitConfigCurrent()) return { ok: false, reason: "source-changed" };
+        if (stale() || !backend.current()) return { ok: false, reason: "source-changed" };
         predictions = rows;
-        accountCurrent = () => backend.current() && fitConfigCurrent();
-        const rawExpectedCorrect = rows.reduce((sum, row) => sum + row.prediction.probability, 0);
-        return { ok: true, expectedCorrect: rows.reduce((sum, row) => sum + (row.fitted?.probability ?? row.prediction.probability), 0), itemCount: rows.length,
-          ...(fit ? { estimateMethod: fit.method, rawExpectedCorrect, fitSha256: fit.fitSha256 } : {}) };
+        accountCurrent = () => backend.current();
+        return { ok: true, expectedCorrect: rows.reduce((sum, row) => sum + row.prediction.probability, 0), itemCount: rows.length };
       } catch { return { ok: false, reason: abort.signal.aborted ? "cancelled" : "unavailable" }; }
       finally { clearTimeout(timer); running = false; }
     },

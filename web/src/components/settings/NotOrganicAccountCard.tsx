@@ -83,6 +83,7 @@ export function NotOrganicAccountCard() {
 				Your name and photo come from your Not Organic account{!profile.name || !profile.imageUrl ? ", and parts of them are still blank. Add them there and they'll fill in here." : ". Edit them there to change them here."}
 			</p>
 			<div className={actionsClass}>
+				<a className={buttonClass} href="/review/learning-profile">Public learning profile</a>
 				{accountUrl && (
 					<a className={buttonClass} href={accountUrl} target="_blank" rel="noopener noreferrer">
 						Credits &amp; account details <ExternalLink size={12} />

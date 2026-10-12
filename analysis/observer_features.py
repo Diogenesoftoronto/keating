@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12,<3.14"
-# dependencies = ["marimo==0.23.1", "numpy==2.2.6", "pandas==2.3.3", "matplotlib==3.10.8", "scikit-learn==1.7.2"]
+# dependencies = ["marimo==0.25.1", "numpy==2.5.3", "pandas==3.0.6", "matplotlib==3.11.2", "scikit-learn==1.9.1"]
 # ///
 """Read-only observer workbench. No torch, checkpoint download or provider calls."""
 import marimo

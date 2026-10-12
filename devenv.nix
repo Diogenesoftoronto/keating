@@ -101,6 +101,10 @@ in
     exec = "bun scripts/docs-site/build.ts";
     before = [ "devenv:processes:caddy" ];
   };
+  tasks."keating:docs-screenshots" = {
+    description = "Recapture all current documentation screenshots, update guides and rebuild docs";
+    exec = "bun scripts/docs-site/capture.ts";
+  };
   tasks."keating:blog-site-install" = {
     description = "Install the standalone blog dependencies";
     exec = "bun install --cwd scripts/blog-site --frozen-lockfile";
@@ -181,6 +185,17 @@ in
         period = 2;
         probe_timeout = 5;
         failure_threshold = 150;
+      };
+    };
+
+    textbook = {
+      exec = "bun run textbook";
+      ready = {
+        http.get.port = 6007;
+        http.get.path = "/healthz";
+        period = 2;
+        probe_timeout = 5;
+        failure_threshold = 30;
       };
     };
   };
@@ -455,7 +470,7 @@ in
       # paths here: a stale PYTHONHOME breaks python before it loads encodings.
       unset PYTHONHOME PYTHONPATH
       export UV_MANAGED_PYTHON=1
-      uv run --no-project --python 3.13 --with typer --with httpx --with pandas --with matplotlib --with numpy --with scikit-learn==1.7.2 --with catboost==1.2.10 \
+      uv run --no-project --python 3.13 --index https://download.pytorch.org/whl/cpu --index-strategy unsafe-best-match --with torch==2.14.1+cpu --with huggingface-hub==1.33.0 --with safetensors==0.8.0 --with typer --with httpx --with pandas --with matplotlib --with numpy --with scikit-learn==1.9.1 --with catboost==1.2.10 \
         python -m unittest discover -s scripts/training -p 'test_*.py'
       uv run --no-project --with typer --with httpx --with pandas --with matplotlib --with numpy \
         python -m unittest discover -s scripts/report-site -p 'test_*.py'
@@ -467,7 +482,7 @@ in
     exec = ''
       unset PYTHONHOME PYTHONPATH
       export UV_MANAGED_PYTHON=1
-      uv run --no-project --with pandas --with matplotlib --with numpy --with marimo==0.23.1 --with typer --with httpx python
+      uv run --no-project --with pandas --with matplotlib --with numpy --with marimo==0.25.1 --with typer --with httpx python
     '';
   };
 
@@ -486,13 +501,13 @@ in
       unset PYTHONHOME PYTHONPATH
       export UV_MANAGED_PYTHON=1
       bun test scripts/training/test_native_episode.test.ts scripts/training/test_native_simulator.test.ts scripts/training/test_native_paths.test.ts scripts/training/test_native_resources.test.ts scripts/training/test_native_pilot_run.test.ts scripts/training/test_native_experiment.test.ts scripts/training/test_native_action_search.test.ts scripts/training/test_native_instruction_backend.test.ts scripts/training/test_native_process_supervisor.test.ts
-      uv run --no-project --python 3.13 --with typer --with httpx --with pandas --with matplotlib --with numpy --with scikit-learn==1.7.2 python -m unittest discover -s scripts/training -p 'test_native_*.py'
+      uv run --no-project --python 3.13 --with typer --with httpx --with pandas --with matplotlib --with numpy --with scikit-learn==1.9.1 python -m unittest discover -s scripts/training -p 'test_native_*.py'
       uv run --no-project --with typer python -m unittest discover -s scripts/training -p 'test_tutormoments_supervision.py'
       uv run --no-project --with typer python -m unittest discover -s scripts/training -p 'test_mathdial_supervision.py'
-      uv run --no-project --python 3.13 --with numpy==2.2.6 --with scikit-learn==1.7.2 python -m unittest discover -s scripts/training -p 'test_user_model_evaluation.py'
-      uv run --no-project --python 3.13 --with numpy==2.2.6 --with scikit-learn==1.7.2 python -m unittest discover -s scripts/training -p 'test_profile_information.py'
+      uv run --no-project --python 3.13 --with numpy==2.5.3 --with scikit-learn==1.9.1 python -m unittest discover -s scripts/training -p 'test_user_model_evaluation.py'
+      uv run --no-project --python 3.13 --with numpy==2.5.3 --with scikit-learn==1.9.1 python -m unittest discover -s scripts/training -p 'test_profile_information.py'
       # Exercise the pinned SDK's real data/retry interfaces without an account.
-      uv run --no-project --with typer --with httpx --with tinker==0.27.1 python -m unittest discover -s scripts/training -p 'test_native_tinker_update.py'
+      uv run --no-project --with typer --with httpx --with tinker==0.31.0 python -m unittest discover -s scripts/training -p 'test_native_tinker_update.py'
       uv run --no-project --with certifi python -m unittest discover -s scripts/training -p 'test_observer_runpod.py'
       uv run --script scripts/training/test_observer_core.py
       uv run --script scripts/training/test_observer_probes.py
@@ -519,7 +534,7 @@ in
       # paths here: a stale PYTHONHOME breaks python before it loads encodings.
       unset PYTHONHOME PYTHONPATH
       export UV_MANAGED_PYTHON=1
-      uvx marimo==0.23.1 edit --sandbox analysis/
+      uvx marimo==0.25.1 edit --sandbox analysis/
     '';
   };
 
@@ -700,6 +715,21 @@ in
     exec = ''
       cd web && bun run storybook
     '';
+  };
+
+  tasks."keating:textbook" = {
+    description = "Launch the Textbook terminal component workshop on port 6007";
+    exec = "bun run textbook";
+  };
+
+  tasks."keating:textbook-tui" = {
+    description = "Browse terminal component stories in a native terminal";
+    exec = "bun run textbook:tui";
+  };
+
+  tasks."keating:check-textbook" = {
+    description = "Typecheck and render every terminal story at compact and wide sizes";
+    exec = "bun run textbook:check";
   };
 
   # ── CLI shortcuts ───────────────────────────────────────────────

@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12,<3.14"
-# dependencies = ["numpy==2.2.6", "scikit-learn==1.7.2"]
+# dependencies = ["numpy==2.5.3", "scikit-learn==1.9.1"]
 # ///
 """Authored fixtures verify split, masking and calibration mechanics only."""
 import copy

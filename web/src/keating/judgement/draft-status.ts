@@ -1,6 +1,7 @@
 import { INTERACTION_AFFORDANCES, TEACHING_INTERACTION_FEATURES, TEACHING_POLICY_DETERMINISTIC_RULES, TEACHING_POLICY_RULES, type PlanReview, type TeachingDraftInteraction, type TeachingDraftSnapshot } from "@keating/learner-contracts";
 import { recordDiagnostic } from "../../lib/diagnostics";
 import { STATE_SECTION_KEYS, type StateComposition, type TeachingDraftPhase } from "@keating/learner-contracts";
+import { ACTIVITY_KINDS, projectActivitySelectionReceipt } from "../../../../packages/learner-contracts/src/judgement/activity-learning";
 
 export type TeachingDraftFeedbackKind = "helpful" | "too-strict" | "missed-problem";
 export interface TeachingDraftStatus {
@@ -46,6 +47,12 @@ function projectPlanReview(review: PlanReview | undefined): { planReview?: PlanR
 const nonnegative = (value: number): number => typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
 const phases = new Set<string>(["planning", "drafting", "checking", "revising", "selecting", "released", "withheld", "cancelled"]);
 const safePhase = (phase: TeachingDraftPhase): TeachingDraftPhase => phases.has(phase) ? phase : "withheld";
+function projectSynthesisSources(sources: unknown, attempt: number): { synthesisSourceAttempts?: readonly number[] } {
+  if (!Array.isArray(sources)) return {};
+  const safe = [...new Set(sources.filter((source): source is number => typeof source === "number"
+    && Number.isSafeInteger(source) && source >= 1 && source <= 10 && source < attempt))].slice(0, 2);
+  return safe.length ? { synthesisSourceAttempts: safe } : {};
+}
 /** Reconstruct every nested field so extra content cannot enter a saved receipt. */
 function projectState(state: StateComposition): StateComposition {
   return {
@@ -58,18 +65,28 @@ function projectState(state: StateComposition): StateComposition {
 
 /** Content-free projection shared by the live status and the persisted review receipt. */
 export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): TeachingDraftSnapshot {
+  const activityLearning = projectActivitySelectionReceipt(snapshot.activityLearning);
+  const background = snapshot.backgroundActivity;
+  const backgroundActivity = background?.version === 1 && background.target === "next-linked-objective-score" && background.causal === false
+    && Number.isSafeInteger(background.policyCreatedAt) && background.policyCreatedAt > 0 && ACTIVITY_KINDS.includes(background.preferredKind)
+    ? { version: 1 as const, policyCreatedAt: background.policyCreatedAt, preferredKind: background.preferredKind,
+      target: "next-linked-objective-score" as const, causal: false as const } : undefined;
   return {
     phase: snapshot.phase, attempt: snapshot.attempt, maxAttempts: snapshot.maxAttempts,
     reasoning: snapshot.reasoning, standard: snapshot.standard, elapsedMs: snapshot.elapsedMs,
     judgeModel: snapshot.judgeModel, selectedAttempt: snapshot.selectedAttempt, reason: snapshot.reason,
+    ...projectSynthesisSources(snapshot.synthesisSourceAttempts, snapshot.attempt),
     ...(snapshot.planningMs === undefined ? {} : { planningMs: snapshot.planningMs }),
     ...(snapshot.interaction ? { interaction: projectInteraction(snapshot.interaction) } : {}),
+    ...(activityLearning ? { activityLearning } : {}),
+    ...(backgroundActivity ? { backgroundActivity } : {}),
     ...projectPlanReview(snapshot.planReview),
     ...(snapshot.state ? { state: projectState(snapshot.state) } : {}),
     ...(snapshot.slides ? { slides: snapshot.slides.slice(-64).map(slide => ({ phase: safePhase(slide.phase), attempt: nonnegative(slide.attempt), elapsedMs: nonnegative(slide.elapsedMs), turnsDropped: nonnegative(slide.turnsDropped), before: projectState(slide.before), after: slide.after ? projectState(slide.after) : null })) } : {}),
     ...(snapshot.stateHistory ? { stateHistory: snapshot.stateHistory.slice(-64).map(sample => ({ phase: safePhase(sample.phase), attempt: nonnegative(sample.attempt), elapsedMs: nonnegative(sample.elapsedMs), requestIndex: nonnegative(sample.requestIndex), state: projectState(sample.state) })) } : {}),
     attempts: snapshot.attempts.map(attempt => ({ attempt: attempt.attempt, reasoning: attempt.reasoning, standard: attempt.standard, variant: attempt.variant ?? "default",
       generationMs: attempt.generationMs, judgementMs: attempt.judgementMs, status: attempt.status,
+      ...projectSynthesisSources(attempt.synthesisSourceAttempts, attempt.attempt),
       checks: attempt.checks.filter(check => checkIds.has(check.id)).map(check => ({
         id: check.id, source: check.source, severity: check.severity, status: check.status, probability: check.probability,
       })),

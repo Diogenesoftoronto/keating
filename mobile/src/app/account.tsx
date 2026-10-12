@@ -5,6 +5,7 @@ import { Button } from "@/components/Buttons";
 import { Screen } from "@/components/Screen";
 import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import { useNotOrganicAccount } from "@/state/NotOrganicAccountProvider";
+import { MobileKnowledgeSources } from "@/components/MobileKnowledgeSources";
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -42,6 +43,7 @@ export default function AccountScreen() {
         )}
       </View>
 
+      <MobileKnowledgeSources />
       <View style={styles.note}>
         <Text style={styles.noteTitle}>What connects</Text>
         <Text style={styles.noteBody}>Your wallet, hosted model access, account sync key, and future prompt/MAP-Elites evolution records use this account. The signing key stays on this device.</Text>

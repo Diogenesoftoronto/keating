@@ -22,6 +22,7 @@ import {
 } from "./browser-tools/improvement";
 import { createMediaTools } from "./browser-tools/media";
 import { createSearchTools } from "./browser-tools/search";
+import { createKnowledgeTools } from "./browser-tools/knowledge";
 import { createTeachingTools } from "./browser-tools/teaching";
 import {
   createToolRegistry,
@@ -150,6 +151,7 @@ export async function createKeatingTools(
   const tools = preserveRegistrationOrder([
     createWorkspaceTools(options),
     createSearchTools(options),
+    createKnowledgeTools(),
     createMediaTools(storage),
     createCourseTools(options),
     createTeachingTools(storage),

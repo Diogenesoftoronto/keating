@@ -103,7 +103,7 @@ export function tuiOnboardingPages(options: TuiOnboardingOptions = {}): readonly
     {
       title: "Make Keating yours",
       body: [
-        "Press Space to open Profile & setup. Choose the display name shown beside your messages, then use the built-in learner portrait, your initials, or a local PNG, JPEG, GIF, BMP, or TIFF image up to 5 MiB. Local images are read locally and never uploaded by setup.",
+        "Press Space to open Profile & setup. Choose the display name shown in the side panel, then use the built-in learner portrait, your initials, or a local PNG, JPEG, GIF, BMP, or TIFF image up to 5 MiB. Local images are read locally and never uploaded by setup.",
         "Change it later with `/setup`. From a terminal, use `keating profile --name=\"Ada Lovelace\" --image=./portrait.png`; `--learner` selects the built-in portrait and `--initials=AL` uses initials.",
       ],
     },
@@ -204,7 +204,7 @@ export function onboardingMarkdown(options: TuiOnboardingOptions = {}): string {
     "- Press **Ctrl+F** to search this transcript and **Ctrl+P** for the command palette.",
     "- Open **Courses** from the palette to continue a local course.",
     "",
-    "Change your name or profile image later with **/setup**, or open **[S] PROFILE** in the **Ctrl+B** side panel. The panel also holds the model, actions, and tree of forked sessions; **Ctrl+P** lists every command.",
+    "Change your name or profile image later with **/setup**, or open **Profile** in the **Ctrl+B** side panel. The panel also holds the model, actions, and tree of forked sessions; **Ctrl+P** lists every command.",
   ].join("\n");
 }
 

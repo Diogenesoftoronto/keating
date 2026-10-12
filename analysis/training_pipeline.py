@@ -2,9 +2,9 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #     "numpy>=2,<3",
-#     "pandas==2.*",
-#     "marimo==0.23.1",
-#     "matplotlib==3.10.*",
+#     "pandas==3.0.6",
+#     "marimo==0.25.1",
+#     "matplotlib==3.11.2",
 #     "typer>=0.12",
 # ]
 # ///

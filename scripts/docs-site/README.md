@@ -11,7 +11,7 @@ pricing, and privacy links on `https://keating.help/`.
 
 ## Build and preview
 
-From the repository root, with the existing Bun 1.3.13 environment:
+From the repository root, with the existing Bun environment:
 
 ```sh
 rtk bun scripts/docs-site/build.ts
@@ -64,11 +64,16 @@ type Video = {
   captions?: string;
   title?: string;
   caption: string;
+  aspect?: "16:9" | "9:16" | "1:1";
 };
 ```
 
 All text is plain text, escaped by the builder. Markdown and HTML are not
 interpreted. Use the links array for links and the code field for examples.
+Organize the learner site around Getting started, Setup, Learning, Privacy,
+and Help. The first lesson is a short sequence for reaching a useful result;
+the interface reference identifies controls; setup guides explain configuration;
+learning guides answer specific tasks; troubleshooting starts with a symptom.
 Keep product claims and visible UI labels grounded in the current source.
 Installation, offline models, hosted services, and payment availability can
 have different requirements; document those requirements explicitly.
@@ -94,6 +99,25 @@ fragments when renaming headings.
 
 ## Screenshot contract
 
+Refresh all 21 current screenshots and update the guides from the repository root:
+
+```sh
+rtk devenv tasks run keating:docs-screenshots
+```
+
+The capture task builds Storybook, renders `shots.json`, restores an isolated
+lesson in the web app, records `docs/tui-screenshots.tape`, writes the
+provenance manifest, synchronizes image dimensions and capture dates in the
+guides, and rebuilds the documentation. It reuses the local web app on port
+3000 or starts and stops its own development process. It requires Google Chrome, ImageMagick, VHS, and the
+existing Bun environment. The Chrome wrapper enables software GPU compositing
+so the production flashcard faces remain readable. Use
+`rtk bun scripts/docs-site/capture.ts --metadata-only` to update provenance,
+dimensions, and the documentation build from existing captures without recapturing.
+
+The VHS subprocess clears `LD_LIBRARY_PATH` so system Chrome and ttyd use their
+own libraries rather than inherited Android/Nix libraries from Devenv.
+
 Place screenshots in the section where they explain a task or a visible state.
 An optional `screenshots` array must contain at least one object:
 
@@ -116,28 +140,42 @@ original PNG. The build checks every generated asset reference, the PNG
 signature and header, and its dimensions before replacing the last good output.
 Missing files and mismatched dimensions fail the build.
 
-Images render uncropped at the article width with their aspect ratio reserved,
+Images render uncropped at their natural width, limited to the article width,
+with their aspect ratio reserved,
 lazy loading, and asynchronous decoding. Each semantic figure has a visible
 caption and an ordinary **View full-size screenshot** link to the same original
 PNG. This works without JavaScript and lets readers inspect small controls at
 full resolution. Alt text and captions are included in the section search index.
 
-The 14 PNGs in `assets/screenshots/` are unchanged copies of genuine captures
-from `web/public/tutorial/`, selected after visual inspection. The build uses
-only the copies inside this self-contained upload directory. Keep the originals
-in `web/public/tutorial/` so old `/tutorial/` image URLs remain valid. The local
+The screenshot set combines current source captures with retained tutorial
+images. Current images have a `current-` prefix and provenance in the
+[capture manifest](assets/screenshots/captures.json): capture date, source commit, viewport,
+visible state, and fixture or app source. Component stories render production
+components with authored fixture data. They demonstrate the displayed state;
+they do not establish a real payment, model download, or course delivery.
+Narrow web captures are labelled as web layouts rather than native mobile
+screens, and the workspace component is not proof of a native installation.
+The classroom images show a restored authored lesson in the current app route.
+Terminal images show the production TUI with an isolated workspace and a
+loopback demonstration provider. Both sources are identified in their captions.
+
+The original 14 PNGs are unchanged copies of genuine captures from
+`web/public/tutorial/`, selected after visual inspection. The build uses only
+the copies inside this self-contained upload directory. Keep the originals in
+`web/public/tutorial/` so old `/tutorial/` image URLs remain valid. The local
 `assets/screenshots/.gitignore` makes these captures addable despite the root
 PNG ignore rule. Do not generate, redraw, crop, or fabricate replacement screens.
 
-These pictures come from the earlier tutorial, not a fresh capture of the
+Retained tutorial pictures are not a fresh capture of the
 current release. Captions identify renamed controls, unavailable features,
 empty or unfinished states, and other differences that matter for the task.
 Authored prose remains the current instruction. In particular, the old model
 picker says **Select Model**, the older question says **Submit answers**, and
 the captured WebGPU warning does not diagnose a custom model server. There is
 no old capture of the current custom-provider form, native offline download,
-account/credit recovery, quiz grading, or course-delivery confirmation; do not
-use a different screen as proof of those states.
+account/credit recovery, quiz grading, or course-delivery confirmation. Current
+component captures fill those visual gaps with captions identifying their
+fixture data; do not use a different screen as proof of those states.
 
 The earlier page can be inspected read-only after its deletion with:
 
@@ -166,15 +204,23 @@ Eighteen inspected source PNGs are deliberately not copied:
 
 ## Video walkthrough contract
 
-Place video walkthroughs in sections where they demonstrate interactive flows, terminal sessions, or artifact compilation. An optional `videos` array contains one or more video objects:
+The learner guides currently contain no video embeds. Launch films, feature
+promos, brand films, and tours of the landing page or paper do not help a reader
+complete a documented task. Keep those media outside the learner guides.
+
+A future recording earns a place only when it demonstrates a specific procedure
+that is difficult to explain with steps and screenshots. Its controls, sequence,
+and caption must match the surrounding instructions; the procedure must still
+be understandable without watching it. Avoid repeated platform comparisons and
+duplicated media catalogues. The existing builder supports an optional `videos`
+array for such recordings:
 
 ```json
 {
-  "src": "/assets/tapes/keating-4-launch.mp4",
-  "poster": "/assets/tapes/posters/keating-4-launch.jpg",
-  "captions": "/assets/tapes/captions/keating-4-launch.vtt",
-  "title": "Keating 4.0 in 70 seconds",
-  "caption": "The narrated 4.0 launch film. English captions included."
+  "src": "/assets/tapes/tui-onboarding.mp4",
+  "poster": "/assets/tapes/posters/tui-onboarding.jpg",
+  "title": "First terminal startup",
+  "caption": "Setting a learner name and portrait during terminal onboarding."
 }
 ```
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "expo-router";
 import { AppState, StyleSheet, Text, View } from "react-native";
 import { formatDueIn, type StudyPriority } from "@keating/learner-contracts";
@@ -9,39 +9,22 @@ import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import { buildLearnerProgress, type LearnerTopicProgress } from "@/lib/learner-progress";
 import { buildComingUp, type ComingUpItem } from "@/lib/learner-study";
 import { useKeating } from "@/state/KeatingProvider";
-import { useNotOrganicAccount } from "@/state/NotOrganicAccountProvider";
-import { mobileDecisionPolicyStores, type MobileDecisionPolicies } from "@/lib/judgement/decision-policies";
+import { MobileOnlineLearning, useMobileOnlineLearning } from "@/components/MobileOnlineLearning";
+import { applyMobileOnlineUrgency, mobileOnlineDeckRecall, mobileOnlineDeckUrgency, mobileOnlineTopicEstimates } from "@/lib/judgement/online-learning";
 
 const PRIORITIES: readonly StudyPriority[] = ["focus", "maintain", "low"];
 
 export default function LearnScreen() {
   const router = useRouter();
   const learner = useKeating();
-  const account = useNotOrganicAccount();
-  const policyScope = account.status === "signed-in" && account.session?.issuer && account.session.accountId
-    ? JSON.stringify([account.session.issuer, account.session.accountId]) : account.status === "signed-out" ? "device-local" : null;
-  const masteryRevision = useSyncExternalStore(mobileDecisionPolicyStores.mastery.subscribe, mobileDecisionPolicyStores.mastery.getRevision, mobileDecisionPolicyStores.mastery.getRevision);
-  const retentionRevision = useSyncExternalStore(mobileDecisionPolicyStores.retention.subscribe, mobileDecisionPolicyStores.retention.getRevision, mobileDecisionPolicyStores.retention.getRevision);
-  const urgencyRevision = useSyncExternalStore(mobileDecisionPolicyStores.urgency.subscribe, mobileDecisionPolicyStores.urgency.getRevision, mobileDecisionPolicyStores.urgency.getRevision);
-  const policyRevision = `${masteryRevision}:${retentionRevision}:${urgencyRevision}`;
-  const [installedPolicies, setInstalledPolicies] = useState<{ revision: string; policies: MobileDecisionPolicies } | null>(null);
   const theme = useKeatingTheme();
   const styles = createStyles(theme);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [nowIso, setNowIso] = useState(() => new Date().toISOString());
   const learnerData = learner.learnerData;
-  useEffect(() => {
-    let current = true;
-    void Promise.all((["mastery", "retention", "urgency"] as const).map(async target => {
-      try { return [target, await mobileDecisionPolicyStores[target].load()] as const; } catch { return [target, null] as const; }
-    })).then(entries => { if (current) setInstalledPolicies({ revision: policyRevision,
-      policies: Object.fromEntries(entries.filter(([, policy]) => policy !== null)) }); });
-    return () => { current = false; };
-  }, [policyRevision]);
-  const policies = installedPolicies?.revision === policyRevision
-    && mobileDecisionPolicyStores.mastery.isCurrent(masteryRevision) && mobileDecisionPolicyStores.retention.isCurrent(retentionRevision)
-    && mobileDecisionPolicyStores.urgency.isCurrent(urgencyRevision) ? installedPolicies.policies : undefined;
+  const online = useMobileOnlineLearning(learnerData);
+  const policyScope = online.scope;
 
   useEffect(() => {
     const refresh = () => setNowIso(new Date().toISOString());
@@ -58,12 +41,13 @@ export default function LearnScreen() {
   const projection = useMemo(() => {
     if (!learnerData) return null;
     try {
-      const progress = buildLearnerProgress(learnerData, Date.parse(nowIso), policies);
-      return { nowIso, progress, comingUp: buildComingUp(learnerData, progress, nowIso, policies, policyScope) };
+      const progress = buildLearnerProgress(learnerData, Date.parse(nowIso));
+      const base = buildComingUp(learnerData, progress, nowIso);
+      return { nowIso, progress, comingUp: applyMobileOnlineUrgency(base, learnerData, online.results, policyScope, Date.now()) };
     } catch (cause) {
       return { error: cause instanceof Error ? cause.message : "Keating could not read local learner data." };
     }
-  }, [learnerData, nowIso, policies, policyScope]);
+  }, [learnerData, nowIso, online.results, policyScope]);
 
   const setPriority = async (item: ComingUpItem, priority: StudyPriority) => {
     if (item.priority === priority) return;
@@ -139,6 +123,8 @@ export default function LearnScreen() {
 
       {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
 
+      <MobileOnlineLearning learning={online} />
+
       <MobileStudyReadiness data={learnerData} nowIso={nowIso} onStudy={(id) => {
         const item = comingUp.items.find(candidate => candidate.id === id);
         if (!item) return;
@@ -162,6 +148,7 @@ export default function LearnScreen() {
             <ComingUpCard
               key={item.id}
               item={item}
+              onlineUrgency={item.targetType === "deck" ? mobileOnlineDeckUrgency(learnerData, online.results, item.targetId, policyScope, Date.now()) : null}
               nowIso={nowIso}
               busy={busy === `priority:${item.id}` || busy === `practice:${item.id}`}
               onPriority={(priority) => void setPriority(item, priority)}
@@ -196,7 +183,7 @@ export default function LearnScreen() {
       </Section>
 
       <Section title="Topic evidence" styles={styles}>
-        {progress.topics.length ? progress.topics.map((topic) => <TopicCard key={topic.topic} topic={topic} styles={styles} />)
+        {progress.topics.length ? progress.topics.map((topic) => <TopicCard key={topic.topic} topic={topic} online={mobileOnlineTopicEstimates(learnerData, online.results, topic.topic, Date.now())} styles={styles} />)
           : <Empty text="A topic appears after study activity or an assessment is recorded. Keating does not infer mastery from a lesson title." styles={styles} />}
       </Section>
 
@@ -204,8 +191,9 @@ export default function LearnScreen() {
         <Button compact variant="secondary" onPress={() => router.push("/deck-editor" as never)}>Create deck</Button>
         {learnerData.decks.length ? learnerData.decks.map((deck) => {
           const item = comingUp.items.find((candidate) => candidate.targetType === "deck" && candidate.targetId === deck.id);
+          const recall = mobileOnlineDeckRecall(learnerData, online.results, deck.id, Date.now());
           return <View key={deck.id} style={styles.deckRow}>
-            <View style={styles.rowCopy}><Text style={styles.cardTitle}>{deck.title}</Text><Text style={styles.muted}>{deck.cards.length} cards · {item?.dueCount ?? 0} due{item?.nextDueAt ? ` · next ${formatDueIn(item.nextDueAt, nowIso)}` : ""}</Text></View>
+            <View style={styles.rowCopy}><Text style={styles.cardTitle}>{deck.title}</Text><Text style={styles.muted}>{deck.cards.length} cards · {item?.dueCount ?? 0} due{item?.nextDueAt ? ` · next ${formatDueIn(item.nextDueAt, nowIso)}` : ""}</Text>{recall ? <Text style={styles.intent}>Predicted recall {Math.round(recall.value * 100)}% across {recall.cards} cards · TabPFN 3.5</Text> : null}</View>
             <Button compact variant="secondary" disabled={!item?.dueCount} onPress={() => router.push({ pathname: "/review", params: { deckId: deck.id } } as never)}>Review</Button>
           </View>;
         }) : <Empty text="No portable decks yet. Create one here for offline review; Anki package transfer is not in this mobile build yet." styles={styles} />}
@@ -221,7 +209,8 @@ export default function LearnScreen() {
   );
 }
 
-function ComingUpCard({ item, nowIso, busy, onPriority, onReview, onPractice, styles }: {
+function ComingUpCard({ item, nowIso, busy, onPriority, onReview, onPractice, styles, onlineUrgency }: {
+  onlineUrgency: { value: number; heldOut: boolean } | null;
   item: ComingUpItem;
   nowIso: string;
   busy: boolean;
@@ -233,7 +222,7 @@ function ComingUpCard({ item, nowIso, busy, onPriority, onReview, onPractice, st
   return <View style={styles.card}>
     <Text style={styles.cardTitle}>{item.title}</Text>
     <Text style={styles.muted}>{item.description}</Text>
-    {item.measuredUrgency ? <Text style={styles.intent}>Ranking proxy: {Math.round(item.measuredUrgency.value * 100)}% · {item.measuredUrgency.heldOut ? "incumbent control position" : "fitted ranking within your priority"}{"\n"}Dataset: {item.measuredUrgency.datasets.join(", ")} · fit {item.measuredUrgency.fitSha256.slice(0, 12)}{"\n"}{item.measuredUrgency.evidenceLabel}{"\n"}{item.measuredUrgency.domain} · {item.measuredUrgency.provenance.join(" / ")}</Text> : null}
+    {onlineUrgency ? <Text style={styles.intent}>Predicted lapse risk {Math.round(onlineUrgency.value * 100)}% · {onlineUrgency.heldOut ? "usual control position" : "adaptive order within your priority"} · TabPFN 3.5</Text> : null}
     <Text style={styles.meta}>{item.dueCount ? `${item.dueCount} due${item.overdueCount ? ` · ${item.overdueCount} overdue` : ""}` : "No cards due"}{item.nextDueAt ? ` · next ${formatDueIn(item.nextDueAt, nowIso)}` : ""}{item.estimatedMinutes ? ` · ${item.estimatedMinutes} min` : ""}</Text>
     <View style={styles.priorityRow}>
       {PRIORITIES.map((priority) => <Button key={priority} compact variant={item.priority === priority ? "primary" : "quiet"} disabled={busy} onPress={() => onPriority(priority)}>{laneLabel(priority)}</Button>)}
@@ -244,14 +233,14 @@ function ComingUpCard({ item, nowIso, busy, onPriority, onReview, onPractice, st
   </View>;
 }
 
-function TopicCard({ topic, styles }: { topic: LearnerTopicProgress; styles: ReturnType<typeof createStyles> }) {
+function TopicCard({ topic, styles, online }: { topic: LearnerTopicProgress; styles: ReturnType<typeof createStyles>; online: ReturnType<typeof mobileOnlineTopicEstimates> }) {
   const status = topic.status === "insufficient" ? "Insufficient assessed evidence" : topic.status.replace("-", " ");
   return <View style={styles.card}>
     <Text style={styles.cardTitle}>{topic.topic}</Text>
-    <Text style={styles.meta}>{topic.measuredPolicy?.mastery ? `Next-question proxy: ${topic.measuredPolicy.mastery.value >= 0.5 ? "likely correct" : "needs review"} · recorded-rule status ${topic.measuredPolicy.incumbentStatus}` : status} · evidence confidence {Math.round(topic.confidence * 100)}% from {topic.evidenceCount} scored/review record{topic.evidenceCount === 1 ? "" : "s"}</Text>
+    <Text style={styles.meta}>{status} · evidence confidence {Math.round(topic.confidence * 100)}% from {topic.evidenceCount} scored/review record{topic.evidenceCount === 1 ? "" : "s"}</Text>
     <Text style={styles.muted}>Recorded assessment mean: {topic.mastery === null ? "not assessed" : `${Math.round(topic.mastery * 100)}%`} · Recorded review rating mean: {topic.retention === null ? "no card-review evidence" : `${Math.round(topic.retention * 100)}%`}</Text>
-    {topic.measuredPolicy?.mastery ? <Text style={styles.intent}>Next-question correctness proxy {Math.round(topic.measuredPolicy.mastery.value * 100)}% · {topic.measuredPolicy.mastery.datasets.join(", ")} · fit {topic.measuredPolicy.mastery.fitSha256.slice(0, 12)}{"\n"}{topic.measuredPolicy.mastery.evidenceLabel}{"\n"}{topic.measuredPolicy.mastery.domain} · {topic.measuredPolicy.mastery.provenance.join(" / ")}</Text> : null}
-    {topic.measuredPolicy?.retention ? <Text style={styles.intent}>Delayed recall proxy {Math.round(topic.measuredPolicy.retention.value * 100)}% across {topic.measuredPolicy.retention.cards} eligible cards · {topic.measuredPolicy.retention.datasets.join(", ")} · fit {topic.measuredPolicy.retention.fitSha256.slice(0, 12)}{"\n"}{topic.measuredPolicy.retention.evidenceLabel}{"\n"}{topic.measuredPolicy.retention.domain} · {topic.measuredPolicy.retention.provenance.join(" / ")}</Text> : null}
+    {online.mastery !== undefined ? <Text style={styles.intent}>Predicted next-answer correctness {Math.round(online.mastery * 100)}% · TabPFN 3.5</Text> : null}
+    {online.retention ? <Text style={styles.intent}>Predicted recall {Math.round(online.retention.value * 100)}% across {online.retention.cards} eligible cards · TabPFN 3.5</Text> : null}
     {topic.pendingAssessmentCount ? <Text style={styles.intent}>{topic.pendingAssessmentCount} assessment{topic.pendingAssessmentCount === 1 ? " is" : "s are"} still pending.</Text> : null}
   </View>;
 }

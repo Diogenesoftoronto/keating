@@ -220,6 +220,27 @@ episode CLI enforces call/turn bounds but is not itself a provider-dollar ledger
 | `keating:web-preview` | Build and preview the Keating web UI production build |
 | `keating:storybook` | Launch the Storybook component explorer |
 
+### Terminal component workshop
+
+Textbook is the terminal counterpart to Storybook. `devenv up` starts its browser
+workshop at <http://127.0.0.1:6007>, alongside Storybook on port 6006.
+
+| Task | Description |
+|------|-------------|
+| `keating:textbook` | Start only the Textbook browser workshop |
+| `keating:textbook-tui` | Browse the same stories in a native terminal |
+| `keating:check-textbook` | Typecheck, discover, and render every story at 60×20 and 120×36 |
+
+The [Textbook guide](../textbook/README.md) covers fixtures, adding stories, and
+documentation visual coverage. Stories live in `textbook/`, use the production
+OpenTUI components, and need no model provider or account credentials.
+
+Run `rtk devenv tasks run keating:docs-screenshots` to recapture all current
+documentation images, update image dimensions and capture dates in the guides,
+and rebuild the documentation site. It reuses the web app on port 3000 or starts
+one temporarily. See the [capture guide](../scripts/docs-site/README.md#screenshot-contract)
+for requirements and fixture boundaries.
+
 ### Product analytics
 
 The event contracts, activation funnel, AI observability fields, survey plan,

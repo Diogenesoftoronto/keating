@@ -253,7 +253,7 @@ class NativeTinkerTests(unittest.TestCase):
                 default = mode in {"absent", "null"}
                 env = {"TINKER_API_KEY": "MOCK-not-a-key"}
                 if not default: env["TINKER_PROJECT_ID"] = "unused-ambient-project"
-                with patch.dict(os.environ, env, clear=True), patch.object(nu.importlib.metadata, "version", return_value="0.27.1"):
+                with patch.dict(os.environ, env, clear=True), patch.object(nu.importlib.metadata, "version", return_value="0.31.0"):
                     result = nu.execute_update(*data, budget_path=self.budget, cap_usd="1.00", output_dir=self.output,
                         sdk=sdk, retry_config_factory=NS)
                 self.assertEqual(result["status"], "complete")
@@ -460,7 +460,7 @@ except UpdateError:
         import inspect
         import tinker
         from tinker.lib.retry_handler import RetryConfig
-        self.assertEqual(nu.importlib.metadata.version("tinker"), "0.27.1")
+        self.assertEqual(nu.importlib.metadata.version("tinker"), "0.31.0")
         expected = {
             tinker.ServiceClient.create_training_client_from_state: {"path", "base_model", "user_metadata"},
             tinker.ServiceClient.create_sampling_client: {"model_path", "retry_config"},

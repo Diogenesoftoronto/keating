@@ -117,12 +117,17 @@ describe("OpenTUI session browser presentation", () => {
       ["grandchild", 2, false],
       ["recent-root", 0, false],
     ]);
-    const labels = rows.map((row) => sessionTreeOption(row, now, "unicode", 64));
-    expect(labels[0]).toContain("├───╦ Limits");
-    expect(labels[1]).toContain("└───╦ Formal proof");
-    expect(labels[2]).toContain("└───  Counterexample");
-    expect(labels[2]).toContain("[ACTIVE] [FORK]");
+    const labels = rows.map((row) => sessionTreeOption(row, now, "unicode", 40));
+    // Roots carry no connector; each fork level costs two columns; the age sits flush right.
+    expect(labels[0]).toBe(`  Limits${" ".repeat(30)}2d`);
+    expect(labels[1]).toStartWith("└   Formal proof");
+    expect(labels[2]).toStartWith("  └ ● Counterexample");
+    expect(labels[2]).toEndWith("1h");
+    expect(labels[3]).toStartWith("  Topology");
     expect(labels.join("\n")).not.toContain("/sessions/");
+    expect(labels.join("\n")).not.toMatch(/ACTIVE|FORK|msg/);
+    // In a narrow panel the title keeps the room and the age gives way.
+    expect(sessionTreeOption(rows[2]!, now, "unicode", 18)).toBe("  └ ● Counterexam…");
   });
 
   test("keeps orphaned and cyclic sessions selectable roots with an ASCII fallback", () => {
@@ -137,7 +142,7 @@ describe("OpenTUI session browser presentation", () => {
     const ascii = rows.map((row) => sessionTreeOption(row, new Date("2026-08-11T10:00:00.000Z"), "ascii", 40));
     expect(ascii.every((label) => sacredTextWidth(label) <= 40)).toBe(true);
     expect(ascii.every((label) => /^[\x20-\x7e]*$/.test(label))).toBe(true);
-    expect(ascii.some((label) => label.startsWith("|---") || label.startsWith("`---"))).toBe(true);
+    expect(ascii.every((label) => label.startsWith("  Cycle") || label.startsWith("  Orphan"))).toBe(true);
   });
 
   test("sanitizes and terminal-bounds accent, CJK, emoji, and wide tree labels", () => {

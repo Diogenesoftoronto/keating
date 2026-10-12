@@ -2,8 +2,12 @@ import { describe, expect, test } from "bun:test";
 import { isApplicationPublicAsset, webBuildTarget } from "../../scripts/web-build-target";
 
 describe("application build assets", () => {
+  test("includes the scoped learning-profile OAuth client metadata", () => {
+    expect(isApplicationPublicAsset("learning-profile-client-metadata.json")).toBe(true);
+    expect(isApplicationPublicAsset("private-client-metadata.json")).toBe(false);
+  });
   test("keeps assets required by chat, activities, status and local runtimes", () => {
-    for (const path of ["brand/logo-lockup-compact.avif", "brand/mascot-full.avif", "brand/stop-motion-v1/keatingbot-body-thinking.avif", "brand/bot-status-v1/loading.avif", "brand/keatingbot-insufficient-funds-v2.png", "textures/recall-felt-v1.webp", "vendor/strudel-web-1.3.0/index.js", "needle-wasm/needle.wasm", "pwa-192x192.png", "favicon.svg", "sw-update-reload.js"]) {
+    for (const path of ["brand/logo-lockup-compact.avif", "brand/mascot-full.avif", "brand/stop-motion-v1/keatingbot-body-thinking.avif", "brand/bot-status-v1/loading.avif", "brand/keatingbot-insufficient-funds-v3.png", "textures/recall-felt-v1.webp", "vendor/strudel-web-1.3.0/index.js", "needle-wasm/needle.wasm", "pwa-192x192.png", "favicon.svg", "sw-update-reload.js"]) {
       expect(isApplicationPublicAsset(path)).toBe(true);
     }
   });

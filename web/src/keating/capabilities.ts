@@ -21,6 +21,7 @@ export interface CapabilityEnvironment {
   runtime?: KeatingAgentRuntimeConfig;
   speechEnabled?: boolean;
   clientWebSearch?: boolean;
+  coursesAvailable?: boolean;
 }
 
 /**
@@ -42,6 +43,9 @@ export const BASELINE_TEACHING_TOOLS = new Set([
   "set_learner_goal",
   "update_goal_step",
   "revise_study_plan",
+  "knowledge_sources",
+  "knowledge_read_resource",
+  "knowledge_call_tool",
 ]);
 
 const TOOL_NAMES: Record<KeatingCapabilityId, string[]> = {
@@ -199,6 +203,9 @@ export function filterAvailableKeatingTools(
 ): AgentTool[] {
   const registered = new Set(tools.map((tool) => tool.name));
   const visible = new Set(BASELINE_TEACHING_TOOLS);
+  if (environment.coursesAvailable === false) {
+    for (const name of ["course_list", "course_inspect", "course_create", "course_update"]) visible.delete(name);
+  }
   if (environment.clientWebSearch && registered.has("client-web-search")) {
     visible.add("client-web-search");
   }

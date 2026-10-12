@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12,<3.14"
-# dependencies = ["torch==2.8.0+cpu", "transformers==5.3.0", "numpy==2.2.6"]
+# dependencies = ["torch==2.14.1+cpu", "transformers==5.18.0", "numpy==2.5.3"]
 # [tool.uv.sources]
 # torch = { index = "pytorch-cpu" }
 # [[tool.uv.index]]

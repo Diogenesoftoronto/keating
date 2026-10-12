@@ -1,0 +1,14 @@
+{
+  "client_id": "https://chat.keating.help/learning-profile-client-metadata.json",
+  "client_name": "Keating public learning profile",
+  "client_uri": "https://keating.help",
+  "policy_uri": "https://keating.help/privacy",
+  "tos_uri": "https://keating.help/terms",
+  "redirect_uris": ["https://chat.keating.help/review/learning-profile"],
+  "scope": "atproto repo:app.keating.learningProfile",
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none",
+  "application_type": "web",
+  "dpop_bound_access_tokens": true
+}

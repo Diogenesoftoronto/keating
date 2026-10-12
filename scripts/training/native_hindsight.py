@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11,<3.14"
-# dependencies = ["tinker==0.27.1", "tinker-cookbook==0.5.7", "transformers==5.3.0", "torch==2.10.0", "typer>=0.12"]
+# dependencies = ["tinker==0.31.0", "tinker-cookbook==0.5.7", "transformers==5.5.4", "torch==2.14.1", "typer>=0.12"]
 # [tool.uv.sources]
 # torch = { index = "pytorch-cpu" }
 # [[tool.uv.index]]
@@ -268,7 +268,7 @@ def prepare_hindsight(episode, capture, review, config, *, renderer=None):
     prefix_ids = renderer.render(copy.deepcopy(teacher_messages), copy.deepcopy(tools))
     completion = copy.deepcopy(capture["completion_token_ids"])
     nu.need(nu.tokens(prefix_ids) and prefix_ids != original_ids, "distinct_teacher_prefix_required")
-    # SDK 0.27.1 compute_logprobs internally requests one extra sample token.
+    # SDK 0.31.0 compute_logprobs internally requests one extra sample token.
     # Budget/scoring remain exclusively the existing updater's responsibility.
     nu.need(len(prefix_ids) + len(completion) + 1 <= CONTEXT_TOKENS, "hindsight_context_overflow")
     prefix = nt.seal({"prompt_token_ids": prefix_ids, "completion_token_ids": completion,

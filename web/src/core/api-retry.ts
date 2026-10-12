@@ -3,6 +3,7 @@ import {
   sanitizeApiRetryPolicy,
   type ApiRetryPolicy,
 } from "../../../shared/api-retry-policy";
+import { CourseApiError } from "../courses/client";
 
 export { DEFAULT_API_RETRY_POLICY, sanitizeApiRetryPolicy, type ApiRetryPolicy };
 
@@ -139,6 +140,56 @@ function rateLimitRecovery(retryAfterMs: number | null): string {
 }
 
 export function classifyLlmError(error: unknown): LlmErrorDetails {
+  // Pi serializes tool failures as text. Accept only our complete, bounded
+  // course marker; never interpret arbitrary object fields as a course error.
+  const courseMarker = typeof error === "string"
+    ? /^Keating course request failed \(([45]\d{2})(?:; (notorganic_auth_adapter_unavailable))?\)\.$/.exec(error.trim())
+    : null;
+  const courseError = error instanceof CourseApiError
+    ? error
+    : error instanceof Error && error.cause instanceof CourseApiError
+      ? error.cause
+      : courseMarker
+        ? new CourseApiError("Course request failed", Number(courseMarker[1]), courseMarker[2])
+        : null;
+  if (courseError) {
+    const statusCode = courseError.status;
+    const base = { statusCode, retryAfterMs: null, automaticRetry: false };
+    if (courseError.code === "notorganic_auth_adapter_unavailable") {
+      return { ...base, category: "auth", title: "Course account access unavailable",
+        description: "Keating could not establish the account session needed to access your courses.",
+        recovery: "Check your Keating account sign-in. If you are already signed in, course access needs attention from the deployment operator." };
+    }
+    if (statusCode === 401) {
+      return { ...base, category: "auth", title: "Sign in to access your courses",
+        description: "Your Keating account session could not authorize this course request.",
+        recovery: "Sign in to Keating again, then retry the course request." };
+    }
+    if (statusCode === 403) {
+      return { ...base, category: "permission", title: "Course access is not allowed",
+        description: "Your account does not have permission for this course operation.",
+        recovery: "Open a course available to your account, or ask its owner to check your membership." };
+    }
+    if (statusCode === 404) {
+      return { ...base, category: "invalid-request", title: "Course could not be found",
+        description: "The course or course endpoint is unavailable.",
+        recovery: "Refresh your course library and choose an available course. If the library also fails, course access needs attention from the deployment operator." };
+    }
+    if (statusCode === 409) {
+      return { ...base, category: "invalid-request", title: "Course request needs review",
+        description: "The course changed or this operation requires additional consent.",
+        recovery: "Open the course workspace to review its current state and required consent before trying the operation again." };
+    }
+    if (statusCode === 400 || statusCode === 422) {
+      return { ...base, category: "invalid-request", title: "Course request could not be processed",
+        description: "The course request or stored course data did not pass validation.",
+        recovery: "Review the course request. If listing existing courses fails, report the error so the stored data can be checked." };
+    }
+    return { ...base, category: statusCode >= 500 ? "server" : "unknown",
+      title: "Course service unavailable",
+      description: "Keating could not complete this course request.",
+      recovery: "Check your connection and try opening the course library again. Before repeating a change, check whether it was saved." };
+  }
   const message = apiErrorText(error);
   const statusCode = apiErrorStatus(error);
   const retryAfterMs = retryAfterDelayMs(error);

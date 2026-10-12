@@ -1,0 +1,23 @@
+{
+  "viewport": [1280, 900],
+  "scale": 1,
+  "theme": "light",
+  "shots": [
+    { "name": "current-onboarding-desktop", "story": "chat-onboarding--welcome", "trim": false },
+    { "name": "current-onboarding-mobile", "story": "chat-onboarding--mobile", "viewport": [390, 844], "trim": false },
+    { "name": "current-model-access", "story": "chat-onboarding--model-access", "trim": false },
+    { "name": "current-model-picker", "story": "documentation-model-setup--populated-model-picker", "trim": false },
+    { "name": "current-custom-provider", "story": "documentation-model-setup--custom-provider", "trim": false },
+    { "name": "current-offline-download", "story": "documentation-model-setup--offline-download" },
+    { "name": "current-offline-ready", "story": "documentation-model-setup--offline-ready" },
+    { "name": "current-credit-recovery", "story": "chat-credit-recovery--insufficient-funds" },
+    { "name": "current-credit-retry-ready", "story": "chat-credit-recovery--retry-ready" },
+    { "name": "current-quiz-graded", "story": "learning-quiz--graded" },
+    { "name": "current-flashcard-review", "story": "artifacts-flashcards--still-arena", "viewport": [1280, 1050], "wait": 18000 },
+    { "name": "current-flashcard-mobile", "story": "artifacts-flashcards--compact-chat-embed-revealed", "viewport": [390, 1100], "wait": 18000, "trim": false },
+    { "name": "current-assignment-submitted", "story": "learning-task--submitted" },
+    { "name": "current-submission-local", "story": "learning-submission-delivery--saved-on-device" },
+    { "name": "current-submission-delivered", "story": "learning-submission-delivery--delivered-to-course" },
+    { "name": "current-workspace-files", "story": "workspace-desktop--files", "trim": false }
+  ]
+}

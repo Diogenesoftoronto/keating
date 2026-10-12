@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["matplotlib==3.10.*", "numpy>=2,<3", "pandas==2.*"]
+# dependencies = ["matplotlib==3.11.2", "numpy>=2,<3", "pandas==3.0.6"]
 # ///
 """Render actual native event ledgers, with missing outcome/training evidence explicit."""
 import argparse

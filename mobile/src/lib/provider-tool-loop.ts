@@ -51,6 +51,8 @@ export interface RunMobileToolLoopOptions extends Omit<ProviderRequestOptions, "
   onIntermediateText?: (text: string, round: number) => void;
   onUsage?: (usage: ProviderUsage) => void;
   onToolCall?: (call: ProviderToolCall, idempotencyKey: string) => void;
+  /** Persist an external call intent before dispatch, so uncertain effects cannot replay after restart. */
+  beforeToolExecution?: (call: ProviderToolCall, idempotencyKey: string) => Promise<void>;
   lookupToolReceipt?: (
     idempotencyKey: string,
     call: ProviderToolCall,
@@ -127,6 +129,7 @@ export async function runMobileToolLoop(
     onIntermediateText,
     onUsage,
     onToolCall,
+    beforeToolExecution,
     lookupToolReceipt,
     commitToolCall,
     executeTool = executeMobileTool,
@@ -199,6 +202,7 @@ export async function runMobileToolLoop(
       }
       onToolCall?.(call, idempotencyKey);
       const receipt = await lookupToolReceipt?.(idempotencyKey, call) ?? null;
+      if (!receipt) await beforeToolExecution?.(call, idempotencyKey);
       const execution = receipt ?? await executeTool(call.name, call.arguments, {
           idempotencyKey,
           createdAt,

@@ -30,6 +30,7 @@ import { DOCUMENTATION_URL } from "../lib/tutorial-links";
 import { BLOG_URL } from "../lib/blog-links";
 import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
+import { KnowledgeSourcesButton } from "../components/settings/KnowledgeSources";
 import { JudgementDiagnostics } from "../components/JudgementDiagnostics";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import { ChatOnboarding, hasCompletedChatOnboarding } from "../components/ChatOnboarding";
@@ -1194,6 +1195,7 @@ function ChatContent() {
           </span>
           <ChevronDown size={13} className={css({ flexShrink: 0 })} />
         </button>
+        <KnowledgeSourcesButton />
         <span className="chat-mode-badge chat-only-desktop">
           MODE: SOCRATIC
         </span>

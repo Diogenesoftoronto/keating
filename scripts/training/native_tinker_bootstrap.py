@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["tinker==0.27.1", "certifi"]
+# dependencies = ["tinker==0.31.0", "certifi"]
 # ///
 """Create one immutable, untrained Qwen adapter and sampler with bounded storage.
 
@@ -20,9 +20,9 @@ from native_tinker_update import BudgetLedger, UpdateError, checkpoint, need, wr
 
 MODEL = "Qwen/Qwen3.5-9B-Base"
 SDK_SOURCES = {
-    "tinker/lib/public_interfaces/service_client.py": "cd54efc12ce8982f26a49a9bab67e14db6606a5ca7681c6671ef77ab319e0efe",
-    "tinker/lib/public_interfaces/training_client.py": "92a0b666a1006fe648e985c85c71e63d8eedaa114b0e91167ae14a029bbf31d6",
-    "tinker/lib/internal_client_holder.py": "b74b910177bdc9724707d7e8a8496fb805c07c86baaf0fb68a740c020013e785",
+    "tinker/lib/public_interfaces/service_client.py": "b8e63b7970ac2ae9461d7fd8d1939d15d64dc5a5d9526acf7d82b217637744f8",
+    "tinker/lib/public_interfaces/training_client.py": "d2f3dfa2c7dbf6a2cfd3912cd03418686ad79db5c6fb6ba477ffe4f38aa89c4b",
+    "tinker/lib/internal_client_holder.py": "78bfe7a113f5b36191fd9e72f715e98b86e8fd74d125fcdf612732109e9d5492",
 }
 
 
@@ -32,7 +32,7 @@ def bootstrap_plan(project_id=None):
         "schema_version": 1, "kind": "native-tinker-bootstrap/v1",
         "model": MODEL, "rank": 32, "seed": 42, "ttl_seconds": 86400,
         "project_selection": "account_default" if project_id is None else "explicit",
-        "project_id": project_id, "sdk_version": "0.27.1",
+        "project_id": project_id, "sdk_version": "0.31.0",
         "sdk_source_hashes": dict(SDK_SOURCES),
         "phases": ["create_service", "create_trainer", "get_info", "save_state", "save_sampler"],
         "retry_policy": "http_zero_checkpoint_submission_single_attempt",
@@ -46,7 +46,7 @@ def bootstrap_plan(project_id=None):
 def audit_sdk():
     """Read installed code only; no client construction or credential access."""
     distribution = importlib.metadata.distribution("tinker")
-    need(distribution.version == "0.27.1", "sdk_version_mismatch")
+    need(distribution.version == "0.31.0", "sdk_version_mismatch")
     for relative, expected in SDK_SOURCES.items():
         need(hashlib.sha256(Path(distribution.locate_file(relative)).read_bytes()).hexdigest() == expected,
              "sdk_source_mismatch")
@@ -57,7 +57,7 @@ async def _single_attempt(operation, *args, **kwargs):
 
 
 def disable_checkpoint_retries(trainer):
-    """0.27.1 saves retry above HTTP. Limit this trainer's holder only.
+    """0.31.0 saves retry above HTTP. Limit this trainer's holder only.
 
     This deliberately version-pinned private seam changes submission retries,
     not future-result polling. No global SDK class is patched. Leave it installed

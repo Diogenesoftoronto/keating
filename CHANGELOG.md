@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.8] - 2026-10-12
+
+### Added
+- Background activity learning, online decision-policy controls, and learner evidence integration across web and mobile.
+- Account-backed knowledge sources and optional public learning profiles.
+- A Textbook workshop for terminal components, refreshed documentation captures, and tabular-policy benchmarking tools.
+
+### Changed
+- Retain eligible teaching drafts, select the best available response, and retry within a ten-attempt budget.
+- Combine complementary eligible drafts into a new response that receives an independent review.
+- Refresh terminal navigation and transcript rendering, dependencies, and release build tooling.
+
+### Fixed
+- Publish reviewed replies as content events so they appear in durable chat history instead of leaving only a review receipt.
+- Review complete model responses rather than truncated or empty generations, preserve eligible replies when later attempts time out, and explain generation or review failures.
+- Improve account credit recovery, diagnostic routing, and learner-policy evidence handling.
+
 ## [4.0.7] - 2026-09-28
 
 ### Fixed

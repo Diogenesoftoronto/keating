@@ -2,19 +2,20 @@ import {
   BoxRenderable,
   MarkdownRenderable,
   RGBA,
+  TextAttributes,
   TextRenderable,
+  dim,
+  fg,
+  t,
   type ColorInput,
   type MarkdownTableOptions,
   type RenderContext,
+  type StyledText,
   type SyntaxStyle,
 } from "@opentui/core";
 
+import { keatingDesignContract } from "./design-contract.js";
 import type { TuiPresentationProfile } from "./terminal-profile.js";
-import {
-  KEATINGBOT_TERMINAL_AVATAR,
-  avatarLinesForMode,
-  type TerminalAvatar,
-} from "./profile.js";
 import {
   TRANSCRIPT_EMPTY_TEXT,
   prepareTerminalMarkdown,
@@ -23,38 +24,22 @@ import {
   type TranscriptEntryKind,
 } from "./view-model.js";
 
-const AVATAR_WIDTH = 4;
-const MESSAGE_CHROME_WIDTH = AVATAR_WIDTH + 3;
-
-const ASCII_BORDER_CHARS = {
-  topLeft: "+",
-  topRight: "+",
-  bottomLeft: "+",
-  bottomRight: "+",
-  horizontal: "-",
-  vertical: "|",
-  topT: "+",
-  bottomT: "+",
-  leftT: "+",
-  rightT: "+",
-  cross: "+",
-} as const;
+/** Notices up to this length sit on their title's line instead of below it. */
+const INLINE_NOTICE_LIMIT = 96;
 
 type SemanticColorRole = "text" | "mutedText" | "accent" | "success" | "warning" | "danger" | "info";
 
 export interface SacredTranscriptColors {
   text?: ColorInput;
+  muted?: ColorInput;
   user?: ColorInput;
+  /** Band behind the learner's own words; omitted outside truecolor. */
+  userSurface?: ColorInput | null;
   assistant?: ColorInput;
   tool?: ColorInput;
   artifact?: ColorInput;
   notice?: ColorInput;
   error?: ColorInput;
-}
-
-export interface SacredTranscriptIdentity {
-  label: string;
-  avatar: TerminalAvatar;
 }
 
 export interface SacredTranscriptOptions {
@@ -67,8 +52,6 @@ export interface SacredTranscriptOptions {
   colors?: SacredTranscriptColors;
   tableOptions?: MarkdownTableOptions;
   emptyText?: string;
-  userIdentity?: SacredTranscriptIdentity;
-  assistantIdentity?: SacredTranscriptIdentity;
 }
 
 interface ReconciledEntry {
@@ -76,20 +59,27 @@ interface ReconciledEntry {
   streaming: boolean;
 }
 
+/**
+ * "line": a single dim row (tool calls, short notices).
+ * "prose": glyph + Markdown body (learner and tutor turns).
+ * "section": glyph + bold title + Markdown body (artifacts, errors, long notices).
+ */
+type EntryShape = "line" | "prose" | "section";
+
 interface EntryLayer {
   kind: TranscriptEntryKind;
+  shape: EntryShape;
   root: BoxRenderable;
-  frame: BoxRenderable;
-  markdown: MarkdownRenderable;
+  gutter: TextRenderable;
+  body: BoxRenderable;
+  title?: TextRenderable;
+  line?: TextRenderable;
+  /** Dim diagnostic under a one-line entry, e.g. why a tool call failed. */
+  detail?: TextRenderable;
+  markdown?: MarkdownRenderable;
   renderedBody: string;
   streaming: boolean;
-  avatar?: TextRenderable;
 }
-
-const DEFAULT_USER_AVATAR: TerminalAvatar = {
-  unicode: ["╭YO╮", "╰──╯"],
-  ascii: ["[YO]", "[--]"],
-};
 
 function profileColor(profile: TuiPresentationProfile, role: SemanticColorRole): ColorInput {
   if (profile.design.colorMode === "none") return RGBA.defaultForeground();
@@ -104,19 +94,36 @@ function resolvedColors(
   profile: TuiPresentationProfile,
   colors: SacredTranscriptColors = {},
 ): Required<SacredTranscriptColors> {
+  const muted = colors.muted ?? profileColor(profile, "mutedText");
   return {
     text: colors.text ?? profileColor(profile, "text"),
+    muted,
     user: colors.user ?? profileColor(profile, "info"),
+    userSurface: colors.userSurface !== undefined
+      ? colors.userSurface
+      : profile.design.colorMode === "truecolor"
+        ? keatingDesignContract.themes[profile.theme].colors.surfaceRaised
+        : null,
     assistant: colors.assistant ?? profileColor(profile, "accent"),
-    tool: colors.tool ?? profileColor(profile, "warning"),
+    // Tool calls are routine; they recede instead of competing with the lesson.
+    tool: colors.tool ?? muted,
     artifact: colors.artifact ?? profileColor(profile, "success"),
-    notice: colors.notice ?? profileColor(profile, "mutedText"),
+    notice: colors.notice ?? muted,
     error: colors.error ?? profileColor(profile, "danger"),
   };
 }
 
+/** The margin column that carries every entry's role: the widest mark plus one space. */
+function gutterWidth(profile: TuiPresentationProfile): number {
+  return Math.max(...Object.values(profile.marks).map((mark) => [...mark].length)) + 1;
+}
+
 function cleanTitle(title: string): string {
   return title.replace(/[\u0000-\u001f\u007f]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function cleanDetail(detail: string | undefined): string {
+  return (detail ?? "").replace(/[\u0000-\u0008\u000b-\u001f\u007f]+/g, " ").trim();
 }
 
 function quotedDetail(detail: string): string {
@@ -135,16 +142,6 @@ function renderBody(
   return entry.detail ? `${body}\n\n${quotedDetail(entry.detail)}` : body;
 }
 
-function avatarContent(identity: SacredTranscriptIdentity, profile: TuiPresentationProfile): string {
-  const lines = avatarLinesForMode(identity.avatar, profile.design.glyphMode);
-  return `${lines[0]}\n${lines[1]}`;
-}
-
-function tailContent(kind: "user" | "assistant", profile: TuiPresentationProfile): string {
-  if (profile.design.glyphMode === "ascii") return kind === "user" ? "<" : ">";
-  return kind === "user" ? "◀" : "▶";
-}
-
 function semanticColor(
   kind: TranscriptEntryKind,
   colors: Required<SacredTranscriptColors>,
@@ -157,6 +154,22 @@ function semanticColor(
     case "notice": return colors.notice;
     case "error": return colors.error;
   }
+}
+
+function nonEmptyLines(text: string): string[] {
+  return text.split("\n").map((line) => line.trim()).filter(Boolean);
+}
+
+function isInlineNotice(entry: TranscriptEntry): boolean {
+  const lines = nonEmptyLines(entry.body);
+  return !entry.detail && lines.length <= 1 && (lines[0]?.length ?? 0) <= INLINE_NOTICE_LIMIT;
+}
+
+function entryShape(entry: TranscriptEntry): EntryShape {
+  if (entry.kind === "user" || entry.kind === "assistant") return "prose";
+  if (entry.kind === "tool") return "line";
+  if (entry.kind === "notice" && isInlineNotice(entry)) return "line";
+  return "section";
 }
 
 function reconciledEntries(
@@ -173,7 +186,12 @@ function reconciledEntries(
 }
 
 /**
- * Sacred-inspired transcript surface for OpenTUI.
+ * Terminal transcript for OpenTUI.
+ *
+ * Every entry is a margin glyph plus a hanging-indented body: the glyph carries
+ * the role (learner, tutor, tool, artifact, notice, error), whitespace carries
+ * the grouping, and no entry draws a box. Tool activity collapses to one dim
+ * line so the lesson itself keeps the reader's attention.
  *
  * Completed rows are keyed by the model's stable TranscriptEntry.id. Reconcile
  * mutates only changed rows, which lets MarkdownRenderable retain parsed tables,
@@ -186,26 +204,22 @@ export class SacredTranscriptRenderable extends BoxRenderable {
   private readonly layers = new Map<string, EntryLayer>();
   private readonly empty: TextRenderable;
   private readonly palette: Required<SacredTranscriptColors>;
+  private readonly gutter: number;
   private orderedIds: string[] = [];
   private contentWidth: number;
   private _tableOptions: MarkdownTableOptions;
-  private readonly identities: Record<"user" | "assistant", SacredTranscriptIdentity>;
 
   constructor(ctx: RenderContext, options: SacredTranscriptOptions) {
     super(ctx, {
       id: options.id ?? "keating-sacred-transcript",
       width: "100%",
       flexDirection: "column",
-      gap: 1,
+      gap: 0,
     });
-
     this.profile = options.profile;
     this.syntaxStyle = options.syntaxStyle;
     this.palette = resolvedColors(options.profile, options.colors);
-    this.identities = {
-      user: options.userIdentity ?? { label: "You", avatar: DEFAULT_USER_AVATAR },
-      assistant: options.assistantIdentity ?? { label: "Keating", avatar: KEATINGBOT_TERMINAL_AVATAR },
-    };
+    this.gutter = gutterWidth(options.profile);
     this.contentWidth = Math.max(20, Math.floor(options.width));
     this._tableOptions = {
       style: "columns",
@@ -237,7 +251,9 @@ export class SacredTranscriptRenderable extends BoxRenderable {
 
   set tableOptions(options: MarkdownTableOptions) {
     this._tableOptions = { ...options };
-    for (const layer of this.layers.values()) layer.markdown.tableOptions = this._tableOptions;
+    for (const layer of this.layers.values()) {
+      if (layer.markdown) layer.markdown.tableOptions = this._tableOptions;
+    }
   }
 
   getEntryRenderable(id: string): BoxRenderable | undefined {
@@ -248,21 +264,11 @@ export class SacredTranscriptRenderable extends BoxRenderable {
     return this.layers.get(id)?.markdown;
   }
 
-  /** Update message identity without rebuilding stable Markdown renderables. */
-  setIdentity(kind: "user" | "assistant", identity: SacredTranscriptIdentity): void {
-    this.identities[kind] = identity;
-    for (const layer of this.layers.values()) {
-      if (layer.kind !== kind) continue;
-      layer.frame.title = this.messageTitle(kind);
-      if (layer.avatar) layer.avatar.content = avatarContent(identity, this.profile);
-    }
-  }
-
   setViewportWidth(width: number): void {
     const nextWidth = Math.max(20, Math.floor(width));
     if (nextWidth === this.contentWidth) return;
     this.contentWidth = nextWidth;
-    for (const layer of this.layers.values()) this.applyLayerWidth(layer);
+    for (const [id, layer] of this.layers) this.applyLayerWidth(id, layer);
   }
 
   update(
@@ -289,9 +295,8 @@ export class SacredTranscriptRenderable extends BoxRenderable {
     }
 
     for (const item of next) {
-      const prior = this.layers.get(item.entry.id);
-      let layer = prior;
-      if (layer && layer.kind !== item.entry.kind) {
+      let layer = this.layers.get(item.entry.id);
+      if (layer && (layer.kind !== item.entry.kind || layer.shape !== entryShape(item.entry))) {
         layer.root.destroyRecursively();
         this.layers.delete(item.entry.id);
         layer = undefined;
@@ -300,14 +305,20 @@ export class SacredTranscriptRenderable extends BoxRenderable {
         layer = this.createLayer(item.entry, item.streaming);
         this.layers.set(item.entry.id, layer);
       } else {
-        this.updateLayer(layer, item.entry, item.streaming);
+        this.updateLayer(item.entry.id, layer, item.entry, item.streaming);
       }
     }
 
     this.orderedIds = next.map(({ entry }) => entry.id);
+    let previous: EntryLayer | undefined;
     for (const [index, id] of this.orderedIds.entries()) {
-      const root = this.layers.get(id)?.root;
-      if (root && this.getChildren()[index] !== root) this.add(root, index);
+      const layer = this.layers.get(id);
+      if (!layer) continue;
+      if (this.getChildren()[index] !== layer.root) this.add(layer.root, index);
+      // Runs of one-line activity stay together; everything else breathes.
+      const spacing = !previous || (previous.shape === "line" && layer.shape === "line") ? 0 : 1;
+      if (layer.root.marginTop !== spacing) layer.root.marginTop = spacing;
+      previous = layer;
     }
     this.empty.visible = next.length === 0;
   }
@@ -323,133 +334,95 @@ export class SacredTranscriptRenderable extends BoxRenderable {
   }
 
   private createLayer(entry: TranscriptEntry, streaming: boolean): EntryLayer {
-    return entry.kind === "user" || entry.kind === "assistant"
-      ? this.createMessageLayer(entry, streaming)
-      : this.createSemanticLayer(entry, streaming);
-  }
-
-  private createMarkdown(entry: TranscriptEntry, streaming: boolean, width: number): MarkdownRenderable {
-    return new MarkdownRenderable(this.ctx, {
-      id: `${this.id}:body:${entry.id}`,
-      content: renderBody(entry, streaming, this.profile),
-      syntaxStyle: this.syntaxStyle,
-      fg: this.palette.text,
-      width,
-      height: "auto",
-      conceal: true,
-      concealCode: false,
-      streaming,
-      tableOptions: this._tableOptions,
-    });
-  }
-
-  private createMessageLayer(entry: TranscriptEntry, streaming: boolean): EntryLayer {
-    const kind = entry.kind as "user" | "assistant";
-    const color = semanticColor(kind, this.palette);
-    const identity = this.identities[kind];
+    const shape = entryShape(entry);
+    const color = semanticColor(entry.kind, this.palette);
+    const userBand = entry.kind === "user" ? this.palette.userSurface : null;
     const root = new BoxRenderable(this.ctx, {
       id: `${this.id}:entry:${entry.id}`,
       width: "100%",
       flexDirection: "row",
-      alignItems: "flex-end",
-      justifyContent: kind === "user" ? "flex-start" : "flex-end",
-      gap: 0,
+      ...(userBand ? { backgroundColor: userBand } : {}),
     });
-    const frame = new BoxRenderable(this.ctx, {
-      id: `${this.id}:message:${entry.id}`,
-      width: this.messageWidth(),
-      height: "auto",
-      flexDirection: "column",
-      border: true,
-      borderStyle: "single",
-      customBorderChars: this.profile.design.glyphMode === "ascii" ? ASCII_BORDER_CHARS : undefined,
-      borderColor: color,
-      titleColor: color,
-      title: this.messageTitle(kind),
-      titleAlignment: kind === "user" ? "left" : "right",
-      paddingLeft: 1,
-      paddingRight: 1,
-      shouldFill: false,
-    });
-    const markdown = this.createMarkdown(entry, streaming, this.messageBodyWidth());
-    frame.add(markdown);
-    const avatar = new TextRenderable(this.ctx, {
-      id: `${this.id}:avatar:${entry.id}`,
-      content: avatarContent(identity, this.profile),
+    const gutter = new TextRenderable(this.ctx, {
+      id: `${this.id}:mark:${entry.id}`,
+      content: this.profile.marks[entry.kind],
       fg: color,
-      width: AVATAR_WIDTH,
-      height: 2,
-    });
-    const tail = new TextRenderable(this.ctx, {
-      id: `${this.id}:tail:${entry.id}`,
-      content: tailContent(kind, this.profile),
-      fg: color,
-      width: 1,
+      attributes: entry.kind === "user" || entry.kind === "assistant" ? TextAttributes.BOLD : TextAttributes.NONE,
+      width: this.gutter,
       height: 1,
-      marginBottom: 1,
+      flexShrink: 0,
     });
-    if (kind === "user") {
-      root.add(avatar);
-      root.add(tail);
-      root.add(frame);
+    const body = new BoxRenderable(this.ctx, {
+      id: `${this.id}:body-column:${entry.id}`,
+      width: this.bodyWidth(entry.kind),
+      flexDirection: "column",
+    });
+    root.add(gutter);
+    root.add(body);
+
+    const layer: EntryLayer = { kind: entry.kind, shape, root, gutter, body, renderedBody: "", streaming };
+    if (shape === "line") {
+      layer.line = new TextRenderable(this.ctx, {
+        id: `${this.id}:line:${entry.id}`,
+        content: this.lineContent(entry),
+        width: "100%",
+        wrapMode: entry.kind === "tool" ? "none" : "word",
+      });
+      body.add(layer.line);
+      layer.detail = new TextRenderable(this.ctx, {
+        id: `${this.id}:detail:${entry.id}`,
+        content: cleanDetail(entry.detail),
+        fg: this.palette.muted,
+        attributes: TextAttributes.DIM,
+        width: "100%",
+        wrapMode: "word",
+        visible: !!entry.detail,
+      });
+      body.add(layer.detail);
     } else {
-      root.add(frame);
-      root.add(tail);
-      root.add(avatar);
+      if (shape === "section") {
+        layer.title = new TextRenderable(this.ctx, {
+          id: `${this.id}:title:${entry.id}`,
+          content: cleanTitle(entry.title),
+          fg: color,
+          attributes: TextAttributes.BOLD,
+          width: "100%",
+          wrapMode: "word",
+        });
+        body.add(layer.title);
+      }
+      layer.renderedBody = renderBody(entry, streaming, this.profile);
+      layer.markdown = new MarkdownRenderable(this.ctx, {
+        id: `${this.id}:body:${entry.id}`,
+        content: layer.renderedBody,
+        syntaxStyle: this.syntaxStyle,
+        fg: this.palette.text,
+        width: "100%",
+        height: "auto",
+        conceal: true,
+        concealCode: false,
+        streaming,
+        tableOptions: this._tableOptions,
+      });
+      body.add(layer.markdown);
     }
-    return {
-      kind,
-      root,
-      frame,
-      markdown,
-      renderedBody: renderBody(entry, streaming, this.profile),
-      streaming,
-      avatar,
-    };
+    return layer;
   }
 
-  private createSemanticLayer(entry: TranscriptEntry, streaming: boolean): EntryLayer {
-    const color = semanticColor(entry.kind, this.palette);
-    const root = new BoxRenderable(this.ctx, {
-      id: `${this.id}:entry:${entry.id}`,
-      width: "100%",
-      flexDirection: "column",
-    });
-    const frame = new BoxRenderable(this.ctx, {
-      id: `${this.id}:card:${entry.id}`,
-      width: "100%",
-      height: "auto",
-      flexDirection: "column",
-      border: entry.kind === "notice" ? ["top", "bottom"] : true,
-      borderStyle: "single",
-      customBorderChars: this.profile.design.glyphMode === "ascii" ? ASCII_BORDER_CHARS : undefined,
-      borderColor: color,
-      titleColor: color,
-      title: `${this.profile.marks[entry.kind]} ${cleanTitle(entry.title)}`.trim(),
-      titleAlignment: "left",
-      paddingLeft: 2,
-      paddingRight: 2,
-      shouldFill: false,
-    });
-    const markdown = this.createMarkdown(entry, streaming, this.semanticBodyWidth(entry.kind));
-    frame.add(markdown);
-    root.add(frame);
-    return {
-      kind: entry.kind,
-      root,
-      frame,
-      markdown,
-      renderedBody: renderBody(entry, streaming, this.profile),
-      streaming,
-    };
-  }
-
-  private updateLayer(layer: EntryLayer, entry: TranscriptEntry, streaming: boolean): void {
-    const title = entry.kind === "user" || entry.kind === "assistant"
-      ? this.messageTitle(entry.kind)
-      : `${this.profile.marks[entry.kind]} ${cleanTitle(entry.title)}`.trim();
-    if (layer.frame.title !== title) layer.frame.title = title;
-
+  private updateLayer(id: string, layer: EntryLayer, entry: TranscriptEntry, streaming: boolean): void {
+    if (layer.line) {
+      layer.line.content = this.lineContent(entry);
+      if (layer.detail) {
+        layer.detail.content = cleanDetail(entry.detail);
+        layer.detail.visible = !!entry.detail;
+      }
+      return;
+    }
+    if (layer.title) {
+      const title = cleanTitle(entry.title);
+      if (layer.title.plainText !== title) layer.title.content = title;
+    }
+    if (!layer.markdown) return;
     if (streaming && !layer.markdown.streaming) layer.markdown.streaming = true;
     const renderedBody = renderBody(entry, streaming, this.profile);
     if (renderedBody !== layer.renderedBody) {
@@ -458,31 +431,42 @@ export class SacredTranscriptRenderable extends BoxRenderable {
     }
     if (!streaming && layer.markdown.streaming) layer.markdown.streaming = false;
     layer.streaming = streaming;
+    this.applyLayerWidth(id, layer);
   }
 
-  private applyLayerWidth(layer: EntryLayer): void {
-    if (layer.kind === "user" || layer.kind === "assistant") {
-      layer.frame.width = this.messageWidth();
-      layer.markdown.width = this.messageBodyWidth();
-    } else {
-      layer.markdown.width = this.semanticBodyWidth(layer.kind);
+  /**
+   * One-row entries: a tool call reads "read  path=notes.md", a tool result
+   * reads "read completed  first line (+12 lines)", and a short notice keeps
+   * its title and message on the same line.
+   */
+  private lineContent(entry: TranscriptEntry): StyledText {
+    const color = semanticColor(entry.kind, this.palette);
+    const title = cleanTitle(entry.title);
+    const lines = nonEmptyLines(entry.body.replace(/[\u0000-\u0008\u000b-\u001f\u007f]+/g, " "));
+    if (entry.kind !== "tool") {
+      return lines[0] ? t`${fg(color)(title)}  ${dim(fg(this.palette.muted)(lines[0]))}` : t`${fg(color)(title)}`;
     }
+    const room = Math.max(0, this.bodyWidth(entry.kind) - [...title].length - 2);
+    const more = lines.length > 1 ? ` (+${lines.length - 1} lines)` : "";
+    const first = lines[0] ?? "";
+    const glyphs = [...first];
+    const summaryRoom = Math.max(0, room - more.length);
+    const summary = glyphs.length <= summaryRoom
+      ? first
+      : `${glyphs.slice(0, Math.max(0, summaryRoom - 1)).join("")}…`;
+    return summary || more
+      ? t`${fg(color)(title)}  ${dim(fg(this.palette.muted)(`${summary}${more}`))}`
+      : t`${fg(color)(title)}`;
   }
 
-  private messageWidth(): number {
-    return Math.max(13, this.contentWidth - MESSAGE_CHROME_WIDTH);
+  private applyLayerWidth(_id: string, layer: EntryLayer): void {
+    const width = this.bodyWidth(layer.kind);
+    if (layer.body.width !== width) layer.body.width = width;
   }
 
-  private messageBodyWidth(): number {
-    return Math.max(8, this.messageWidth() - 4);
-  }
-
-  private semanticBodyWidth(kind: TranscriptEntryKind): number {
-    return Math.max(8, this.contentWidth - (kind === "notice" ? 4 : 6));
-  }
-
-  private messageTitle(kind: "user" | "assistant"): string {
-    return cleanTitle(this.identities[kind].label) || (kind === "user" ? "You" : "Keating");
+  private bodyWidth(kind: TranscriptEntryKind): number {
+    // The learner band keeps one column of air on its right edge.
+    return Math.max(8, this.contentWidth - this.gutter - (kind === "user" ? 1 : 0));
   }
 }
 

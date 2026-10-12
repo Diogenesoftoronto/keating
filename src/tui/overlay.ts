@@ -63,3 +63,15 @@ export function overlayResponseTone(label: string): OverlayResponseTone {
   if (/^(cancel|close)\b/.test(normalized)) return "mutedText";
   return "accent";
 }
+
+/**
+ * An overlay's header: the title on the left and a short key hint flush right
+ * on its first row. Long titles wrap to a second row; the hint never wraps.
+ */
+export function overlayHeaderLines(title: string, hint: string, width: number): string[] {
+  const lineWidth = Math.max(1, Math.floor(width));
+  const hintWidth = [...hint].length;
+  if (!hint || hintWidth + 4 > lineWidth) return overlayTitleLines(title, lineWidth, 2);
+  const [first = "", ...rest] = overlayTitleLines(title, lineWidth - hintWidth - 2, 2);
+  return [`${first}${" ".repeat(Math.max(2, lineWidth - [...first].length - hintWidth))}${hint}`, ...rest];
+}

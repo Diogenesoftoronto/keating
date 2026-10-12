@@ -32,7 +32,7 @@ devenv tasks run keating:mobile-apk
 
 `devenv tasks run keating:mobile-apk` prebuilds the native Android project and produces a locally installable debug APK at `mobile/android/app/build/outputs/apk/debug/app-debug.apk`.
 
-Expo SDK 56 currently generates a Gradle 9 wrapper while React Native 0.85's bundled Foojay resolver still targets Gradle 8. The APK task pins the generated, gitignored wrapper to Gradle 8.14.3 after every prebuild so clean builds remain reproducible.
+Expo SDK 57 and React Native 0.86 use Gradle 9.3.1. The APK task pins the generated, gitignored wrapper to that version after every prebuild so clean builds remain reproducible.
 
 For the downloadable app, `rtk bun run --cwd mobile android:apk:release` builds
 `mobile/android/app/build/outputs/apk/release/app-release-unsigned.apk` with

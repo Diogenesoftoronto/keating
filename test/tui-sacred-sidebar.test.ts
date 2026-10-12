@@ -37,14 +37,9 @@ function sidebarOptions(overrides: Partial<SacredSidebarOptions<SessionValue>> =
     glyphMode: "unicode",
     surface: "#191714",
     colors: COLORS,
-    identity: {
-      label: "Keating",
-      detail: "local tutor",
-      avatarLines: ["╭K─╮", "╰──╯"],
-      asciiAvatarLines: ["+K-+", "+--+"],
-    },
+    identity: { label: "Keating", detail: "local tutor" },
     navigation: [
-      { id: "new", label: "New lesson" },
+      { id: "new", label: "New lesson", hint: ":n" },
       { id: "settings", label: "Settings" },
     ],
     sessions: [
@@ -59,7 +54,7 @@ function sidebarOptions(overrides: Partial<SacredSidebarOptions<SessionValue>> =
 }
 
 describe("SacredSidebar", () => {
-  test("renders the identity, layered handle, action list, tree rows, and recent activity", async () => {
+  test("renders a borderless panel: one identity line, hinted actions, tree rows, and recent activity", async () => {
     const setup = await createTestRenderer({ width: 60, height: 22, kittyKeyboard: true, exitOnCtrlC: false });
     const sidebar = createSacredSidebar(setup.renderer, sidebarOptions());
     setup.renderer.root.add(sidebar.root);
@@ -71,18 +66,19 @@ describe("SacredSidebar", () => {
       expect(sidebar.root.zIndex).toBe(7);
       expect(sidebar.resizeHandle.zIndex).toBe(8);
       expect(sidebar.resizeHandle.width).toBe(2);
-      expect(setup.renderer.root.findDescendantById("test-sacred-sidebar-avatar")).toMatchObject({ width: 4, height: 2 });
-      expect(frame).toContain("Keating");
-      expect(frame).toContain("local tutor");
+      expect(setup.renderer.root.findDescendantById("test-sacred-sidebar-avatar")).toBeUndefined();
+      expect(frame).toContain("Keating · local tutor");
       expect(frame).toContain("Actions");
-      expect(frame).toContain("New lesson");
+      // Labels read as words; the shortcut sits flush right instead of a "[N]" prefix.
+      expect(frame).toMatch(/New lesson +:n/);
       expect(frame).toContain("Sessions");
       expect(frame).toContain("Root session");
       expect(frame).toContain("Forked session");
       expect(frame).toContain("Recent");
       expect(frame).toContain("tool finished");
       expect(frame).toContain("┊");
-      expect(frame).toContain("┌");
+      // The resize rule is the only line; no box, no heading rules.
+      expect(frame).not.toMatch(/[┌┐]|─{3}/);
 
       sidebar.setVisible(false);
       await setup.flush();
@@ -224,14 +220,14 @@ describe("SacredSidebar", () => {
     }
   });
 
-  test("uses ASCII chrome and removes renderables plus global keyboard listeners on teardown", async () => {
+  test("stays ASCII-only and removes renderables plus global keyboard listeners on teardown", async () => {
     const setup = await createTestRenderer({ width: 48, height: 18, kittyKeyboard: true, exitOnCtrlC: false });
     const listenerCount = setup.renderer.keyInput.listenerCount("keypress");
     const sidebar = createSacredSidebar(setup.renderer, sidebarOptions({
       id: "ascii-sacred-sidebar",
       width: 30,
       glyphMode: "ascii",
-      identity: { label: "Kéating 界面", detail: "révision", avatarLines: ["╭K─╮", "╰──╯"] },
+      identity: { label: "Kéating 界面", detail: "révision" },
       sessions: [{ display: "└─ fork… 界面 🚀", value: SESSION_VALUES[0]! }],
       activity: ["· vérifying 界面"],
     }));
@@ -240,9 +236,9 @@ describe("SacredSidebar", () => {
     try {
       await setup.flush();
       const frame = setup.captureCharFrame();
-      expect(frame).toContain("+K-+");
+      expect(frame).toContain("- r");
       expect(frame).toContain("+- fork...");
-      expect(frame).toContain("|||");
+      expect(frame).toContain("||");
       expect(frame).not.toMatch(/[^\x00-\x7f]/);
       expect(setup.renderer.keyInput.listenerCount("keypress")).toBe(listenerCount + 1);
 

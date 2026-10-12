@@ -355,7 +355,7 @@ class LocalPinTests(unittest.TestCase):
         rendered = sampler.tokenizer.apply_chat_template(messages, tokenize=True,
                            add_generation_prompt=True, enable_thinking=False)
         self.assertEqual(ids, rendered["input_ids"])
-        self.assertIn("SDK 0.27.1 still", sampler.audit["retry_scope"])
+        self.assertIn("SDK 0.31.0 still", sampler.audit["retry_scope"])
         self.assertEqual(sampler.audit["hf_revision"], nl.HF_REVISION)
 
     def test_actual_sdk_serialization_including_default_seed_without_network(self):

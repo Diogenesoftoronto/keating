@@ -3,8 +3,7 @@ import { mkdtemp, mkdir, readFile, rm, stat, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { OPENUI_JSON_PARITY_FIXTURE, type JudgementCaller, type UiAction, type UiDocument } from "@keating/learner-contracts";
-import { createCliQuizPerformanceController, exportCliQuizPerformanceEvidence, loadCliQuizPerformanceHistory, QUIZ_FIT_FILE_ENV, QUIZ_FIT_SHA256_ENV } from "../src/judgement/cli-quiz-performance.js";
-import { QUIZ_BOOSTING_TARGET } from "../packages/learner-contracts/src/judgement/quiz-boosting-features.js";
+import { createCliQuizPerformanceController, exportCliQuizPerformanceEvidence, loadCliQuizPerformanceHistory } from "../src/judgement/cli-quiz-performance.js";
 import { CliQuizPerformanceStore } from "../src/judgement/quiz-performance-store.js";
 import { FileUiActionJournalStorage } from "../src/tui/ui/filesystem-journal.js";
 import { UiActionJournalStore } from "../src/tui/ui/journal.js";
@@ -28,56 +27,16 @@ const call: JudgementCaller = async request => ({ ok: true, response: { backend:
   answers: Object.fromEntries(Object.keys(request.questions).map(key => [key, { type: "noul", noul: 0.8 }])) } });
 const history = async () => [{ question: "Earlier work", answer: "Prior", correct: true, assessedAt: 1 }];
 
-const fitEnv = () => ({ [QUIZ_FIT_FILE_ENV]: "/private/quiz-fit.json", [QUIZ_FIT_SHA256_ENV]: "a".repeat(64) });
-const loadedFit = () => ({ fitSha256: "b".repeat(64), fileSha256: "a".repeat(64), target: QUIZ_BOOSTING_TARGET,
-  method: "shallow-tree" as const, backend: { backend: "system-one" as const, model: "jev-1.13.0", calibrationSha256: null },
-  predict: () => 0.25, current: async () => true });
-
-test("fitted estimate persists a separate proxy and leaves the original model receipt untouched", async () => {
-  const cwd = await workspace(), doc = document(), store = new CliQuizPerformanceStore(cwd);
-  const controller = createCliQuizPerformanceController({ cwd, document: doc, nodeId: "quiz", store, history,
-    env: fitEnv(), loadFit: async () => loadedFit(), runtime: () => ({ current: () => true, call }) });
-  expect(await controller.estimate()).toEqual({ ok: true, expectedCorrect: 0.25, rawExpectedCorrect: 0.8,
-    itemCount: 1, estimateMethod: "shallow-tree", fitSha256: "b".repeat(64) });
-  const saved = (await store.read(doc.id)).predictions[0]!;
-  expect(saved.prediction.probability).toBe(0.8);
-  expect(saved.fitted).toMatchObject({ source: "proxy", probability: 0.25, method: "shallow-tree", fileSha256: "a".repeat(64) });
-  const invalid = structuredClone(saved); (invalid.fitted as unknown as { source: string }).source = "observed";
-  await expect(store.savePredictions([invalid])).rejects.toThrow();
-});
-
-test("configured missing pins and unavailable fits fail before hosted inference", async () => {
-  for (const env of [{ [QUIZ_FIT_FILE_ENV]: "/missing" }, fitEnv()]) {
-    let calls = 0;
-    const controller = createCliQuizPerformanceController({ cwd: await workspace(), document: document(), nodeId: "quiz", history, env,
-      loadFit: async () => { throw new Error("private file details"); }, runtime: () => ({ current: () => true, call: async request => { calls++; return call(request); } }) });
-    expect(await controller.estimate()).toEqual({ ok: false, reason: "fit-unavailable" }); expect(calls).toBe(0);
+test("retired fit environment variables cannot override or block the raw model estimate", async () => {
+  for (const env of [{ KEATING_QUIZ_FIT_FILE: "/missing" }, { KEATING_QUIZ_FIT_FILE: "/private/quiz-fit.json", KEATING_QUIZ_FIT_SHA256: "invalid-pin" }]) {
+    const cwd = await workspace(), doc = document(), store = new CliQuizPerformanceStore(cwd);
+    const controller = createCliQuizPerformanceController({ cwd, document: doc, nodeId: "quiz", store, history, env,
+      runtime: () => ({ current: () => true, call }) });
+    expect(await controller.estimate()).toEqual({ ok: true, expectedCorrect: 0.8, itemCount: 1 });
+    const saved = (await store.read(doc.id)).predictions[0]!;
+    expect(saved.prediction.probability).toBe(0.8);
+    expect(saved.fitted).toBeUndefined();
   }
-});
-
-test("fit backend, configuration and source changes cannot publish a fitted estimate", async () => {
-  for (const kind of ["backend", "config", "source", "after-save"] as const) {
-    const fit = loadedFit(), env = fitEnv(); let saves = 0;
-    if (kind === "backend") fit.backend.model = "jev-1.14.0";
-    fit.current = async () => kind !== "source" && !(kind === "after-save" && saves > 0);
-    const controller = createCliQuizPerformanceController({ cwd: await workspace(), document: document(), nodeId: "quiz", history, env,
-      loadFit: async () => fit, runtime: () => ({ current: () => true, call: async request => {
-        if (kind === "config") env[QUIZ_FIT_SHA256_ENV] = "c".repeat(64);
-        return call(request);
-      } }), store: { savePredictions: async () => { saves++; }, linkCommitted: async () => 0 } });
-    expect(await controller.estimate()).toEqual({ ok: false, reason: kind === "backend" ? "fit-backend-mismatch" : "source-changed" });
-    expect(saves).toBe(kind === "after-save" ? 1 : 0);
-  }
-});
-
-test("answer interaction cancels a non-cooperative fit load before inference or persistence", async () => {
-  let release!: (fit: ReturnType<typeof loadedFit>) => void, started!: () => void;
-  const began = new Promise<void>(resolve => { started = resolve; }); let calls = 0;
-  const controller = createCliQuizPerformanceController({ cwd: await workspace(), document: document(), nodeId: "quiz", history, env: fitEnv(),
-    loadFit: () => { started(); return new Promise(resolve => { release = resolve; }); },
-    runtime: () => ({ current: () => true, call: async request => { calls++; return call(request); } }) });
-  const pending = controller.estimate(); await began; controller.touch();
-  expect(await pending).toEqual({ ok: false, reason: "cancelled" }); release(loadedFit()); await Promise.resolve(); expect(calls).toBe(0);
 });
 
 test("pre-answer prediction joins a real completed journal, freezes hint use, and exports privately", async () => {

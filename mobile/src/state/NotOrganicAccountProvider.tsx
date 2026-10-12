@@ -1,10 +1,11 @@
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { mobileJudgementAccountConfig } from "@/lib/notorganic-account/contracts";
+import { defaultNotOrganicAccountConfig, mobileJudgementAccountConfig, mobileTabularAccountConfig } from "@/lib/notorganic-account/contracts";
 import type { NotOrganicAccountSnapshot, NotOrganicDeviceSession } from "@/lib/notorganic-account/contracts";
 import { beginNotOrganicLogin, completeAuthorizationFromUrl } from "@/lib/notorganic-account/auth";
 import { loadAccountSnapshot, revokeDeviceSession } from "@/lib/notorganic-account/client";
 import { clearDeviceSession, clearPendingAuthorization, loadDeviceSession } from "@/lib/notorganic-account/credentials";
 import { deleteDeviceKey } from "@/lib/notorganic-account/dpop";
+import { mobileKnowledgeAccountConfig } from "@/lib/notorganic-account/knowledge";
 import {
   fetchPedagogyArtifactBytes,
   loadActiveMobilePedagogyRevision,
@@ -33,7 +34,7 @@ interface NotOrganicAccountContextValue {
   activePedagogy: ActiveAccountPedagogy | null;
   evolutionError: string | null;
   error: string | null;
-  login(options?: { judgement?: boolean }): Promise<void>;
+  login(options?: { judgement?: boolean; tabular?: boolean; knowledge?: boolean; knowledgeTools?: boolean }): Promise<void>;
   completeLogin(callbackUrl: string): Promise<void>;
   logout(): Promise<void>;
   refresh(): Promise<void>;
@@ -91,9 +92,12 @@ export function NotOrganicAccountProvider({ children }: PropsWithChildren) {
 
   const hydrateAccount = useCallback(async (nextSession: NotOrganicDeviceSession) => {
     setSession(nextSession);
+    setAccount(null);
     setStatus("signed-in");
     try {
       setAccount(await loadAccountSnapshot());
+      const confirmed = await loadDeviceSession();
+      if (confirmed?.accessToken === nextSession.accessToken) setSession(confirmed);
       setError(null);
     } catch (cause) {
       // Keep the durable login through transient network failures. A rejected
@@ -113,11 +117,16 @@ export function NotOrganicAccountProvider({ children }: PropsWithChildren) {
     });
   }, [hydrateAccount]);
 
-  const login = useCallback(async (options?: { judgement?: boolean }) => {
+  const login = useCallback(async (options?: { judgement?: boolean; tabular?: boolean; knowledge?: boolean; knowledgeTools?: boolean }) => {
     setStatus("authorizing");
     setError(null);
     try {
-      const next = await beginNotOrganicLogin(options?.judgement ? mobileJudgementAccountConfig() : undefined);
+      let config = defaultNotOrganicAccountConfig();
+      const granted = session?.scope.split(/\s+/) ?? [];
+      if (options?.judgement || granted.includes("judgement:evaluate")) config = mobileJudgementAccountConfig(config);
+      if (options?.tabular || granted.includes("tabular:predict")) config = mobileTabularAccountConfig(config);
+      if (options?.knowledge || options?.knowledgeTools || granted.includes("knowledge:read")) config = mobileKnowledgeAccountConfig(config, options?.knowledgeTools || granted.includes("knowledge:tools"), session?.scope);
+      const next = await beginNotOrganicLogin(config);
       if (!next) { setStatus(session ? "signed-in" : "signed-out"); return; }
       await hydrateAccount(next);
     } catch (cause) {
@@ -138,14 +147,15 @@ export function NotOrganicAccountProvider({ children }: PropsWithChildren) {
   }, [hydrateAccount, session]);
 
   const logout = useCallback(async () => {
-    await revokeDeviceSession().catch(() => undefined);
-    await Promise.all([clearDeviceSession(), clearPendingAuthorization(), deleteDeviceKey().catch(() => undefined)]);
+    // Hide account-bound predictions and cancel opted-in work immediately, including during a slow revoke.
     setSession(null);
     setAccount(null);
     setActivePedagogy(null);
     setEvolutionError(null);
     setError(null);
     setStatus("signed-out");
+    await revokeDeviceSession().catch(() => undefined);
+    await Promise.all([clearDeviceSession(), clearPendingAuthorization(), deleteDeviceKey().catch(() => undefined)]);
   }, []);
 
   const refresh = useCallback(async () => {

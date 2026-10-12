@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
-import { applyReview, initialSrsState, rankingHoldoutAssignment, validatePortableLearnerData, validateFlashcardDeck, validateCardReviewRecord, type PortableLearnerData } from "@keating/learner-contracts";
+import { applyReview, initialSrsState, validatePortableLearnerData, validateFlashcardDeck, validateCardReviewRecord, type PortableLearnerData } from "@keating/learner-contracts";
 import { DECISION_POLICY_RECONSTRUCTION_LIMITS, verifyDecisionPolicySourceArtifact, type DecisionPolicySourceArtifact } from "../../packages/learner-contracts/src/judgement/decision-policy-data";
 import { fitDecisionPolicy, serializeDecisionPolicyFit, type VerifiedDecisionPolicy } from "../../packages/learner-contracts/src/judgement/decision-policy-fit";
 import { MobileDecisionPolicyStore, importMobileDecisionPolicy, mobileDecisionEstimate, mobileDecisionPolicyEvidenceLabel, chunkedDecisionPolicyStorage, privateFileDecisionPolicyStorage } from "../src/lib/judgement/decision-policies";
@@ -77,46 +77,39 @@ test("pinned measured installation rejects tampering/target mismatch and survive
   expect(await store.load()).toBeNull();
 });
 
-test("actual verified policies project proxy status/recall and preserve source scores and unscored fallback", async () => {
+test("archived verified policies remain usable as benchmark references without changing live projections", async () => {
   const files = await reports(), policies: Partial<Record<"mastery" | "retention" | "urgency", VerifiedDecisionPolicy>> = {};
   for (const target of ["mastery", "retention", "urgency"] as const) policies[target] = await new MobileDecisionPolicyStore(target, storage(), hash).install(files[target], await hash(files[target]));
   const source = data(1), nowIso = source.generatedAt, now = Date.parse(nowIso), original = JSON.stringify(source);
   source.questionChecks = source.questionChecks.slice(0, 1);
-  const baseline = buildLearnerProgress(source, now), learned = buildLearnerProgress(source, now, policies);
-  expect(learned.topics[0]!.mastery).toBe(baseline.topics[0]!.mastery);
-  expect(learned.topics[0]!.retention).toBe(baseline.topics[0]!.retention);
-  expect(learned.topics[0]!.status).toBe("strong");
-  expect(learned.topics[0]!.measuredPolicy?.incumbentStatus).toBe(baseline.topics[0]!.status);
-  expect(learned.topics[0]!.measuredPolicy?.mastery).toMatchObject({ value: 1, method: "shallow-tree", labelKind: "observed-binary", evidenceLabel: "Recorded-outcome fit; personal calibration unverified", datasets: ["Synthetic boundary fixture"] });
-  expect(learned.topics[0]!.measuredPolicy?.retention?.cards).toBe(3);
-  expect(learned.topics[0]!.measuredPolicy?.retention?.value).toBeCloseTo(1 / 3);
+  const baseline = buildLearnerProgress(source, now);
+  const mastery = mobileDecisionEstimate(policies.mastery, "mastery", source, "Math", now);
+  expect(mastery).toMatchObject({ value: 1, method: "shallow-tree", labelKind: "observed-binary", evidenceLabel: "Recorded-outcome fit; personal calibration unverified", datasets: ["Synthetic boundary fixture"] });
+  const recall = source.decks.flatMap(deck => deck.cards.flatMap(card => {
+    const estimate = mobileDecisionEstimate(policies.retention, "retention", source, "Math", now, { deckId: deck.id, cardId: card.id });
+    return estimate ? [estimate.value] : [];
+  }));
+  expect(recall).toHaveLength(3); expect(recall.reduce((sum, value) => sum + value, 0) / recall.length).toBeCloseTo(1 / 3);
+  expect(buildLearnerProgress(source, now)).toEqual(baseline);
   const fake = { ...policies.mastery!, predict: () => 1 };
   expect(mobileDecisionEstimate(fake, "mastery", source, "Math", now)).toBeNull();
   expect(mobileDecisionEstimate(policies.mastery, "retention", source, "Math", now)).toBeNull();
   const noHistory = { ...source, questionChecks: [], cardReviews: [] };
-  expect(buildLearnerProgress(noHistory, now, policies)).toEqual(buildLearnerProgress(noHistory, now));
+  expect(mobileDecisionEstimate(policies.mastery, "mastery", noHistory, "Math", now)).toBeNull();
+  expect(mobileDecisionEstimate(policies.retention, "retention", noHistory, "Math", now, { deckId: "a-good", cardId: "a-good-card" })).toBeNull();
   source.questionChecks = JSON.parse(original).questionChecks;
   expect(JSON.stringify(source)).toBe(original);
 
-  let scope = "";
-  for (let i = 0; i < 100; i++) { const candidate = `profile-${i}`;
-    if (["a-good", "b-risk"].every(id => !rankingHoldoutAssignment("decision-policy-urgency-v1", JSON.stringify([candidate, id]), 1000).heldOut)) { scope = candidate; break; } }
   const existing = buildComingUp(source, buildLearnerProgress(source, now), nowIso);
-  const ranked = buildComingUp(source, buildLearnerProgress(source, now), nowIso, policies, scope);
+  const good = mobileDecisionEstimate(policies.urgency, "urgency", source, "Math", now, { deckId: "a-good" });
+  const risky = mobileDecisionEstimate(policies.urgency, "urgency", source, "Math", now, { deckId: "b-risk" });
+  expect(risky!.value).toBeGreaterThan(good!.value);
   expect(existing.lanes.focus.map(row => row.targetId)).toEqual(["a-good", "b-risk"]);
-  expect(ranked.lanes.focus.map(row => row.targetId)).toEqual(["b-risk", "a-good"]);
-  expect(ranked.dueCardCount).toBe(existing.dueCardCount); expect(ranked.lanes.maintain.map(row => row.id)).toEqual(existing.lanes.maintain.map(row => row.id));
-  expect(ranked.lanes.focus[0]!.measuredUrgency).toMatchObject({ value: 1, heldOut: false });
-  for (let i = 0; i < 100; i++) { const candidate = `profile-${i}`;
-    if (rankingHoldoutAssignment("decision-policy-urgency-v1", JSON.stringify([candidate, "a-good"]), 1000).heldOut) {
-      const heldOut = buildComingUp(source, buildLearnerProgress(source, now), nowIso, policies, candidate);
-      expect(heldOut.lanes.focus[0]!.targetId).toBe("a-good"); expect(heldOut.lanes.focus[0]!.measuredUrgency?.heldOut).toBe(true); break;
-    }
-  }
+  expect(buildComingUp(source, buildLearnerProgress(source, now), nowIso)).toEqual(existing);
   expect(JSON.stringify(source)).toBe(original);
   const chosen = structuredClone(source);
   chosen.studyPriorities.push({ id: "chosen", targetType: "deck", targetId: "b-risk", priority: "low", updatedAt: nowIso });
-  const chosenPlan = buildComingUp(chosen, buildLearnerProgress(chosen, now), nowIso, policies, scope);
+  const chosenPlan = buildComingUp(chosen, buildLearnerProgress(chosen, now), nowIso);
   expect(chosenPlan.lanes.low.map(row => row.targetId)).toEqual(["b-risk"]);
   expect(chosenPlan.lanes.focus.map(row => row.targetId)).toEqual(["a-good"]);
 });

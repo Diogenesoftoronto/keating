@@ -4,10 +4,10 @@ version = "0.1.0"
 description = "Bounded account-owned training and local checkpoint serving tools"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "tinker==0.27.1",
+    "tinker==0.31.0",
     "tinker-cookbook==0.5.7",
     "tml-renderers==0.1.0",
-    "torch==2.14.0+cpu",
+    "torch==2.14.1+cpu",
     "typer==0.27.2",
 ]
 

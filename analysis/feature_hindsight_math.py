@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12,<3.14"
-# dependencies = ["marimo==0.23.1", "pandas==2.*", "numpy==2.2.6", "matplotlib==3.10.*", "torch==2.8.0+cpu"]
+# dependencies = ["marimo==0.25.1", "pandas==3.0.6", "numpy==2.5.3", "matplotlib==3.11.2", "torch==2.14.1+cpu"]
 # [tool.uv.sources]
 # torch = { index = "pytorch-cpu" }
 # [[tool.uv.index]]

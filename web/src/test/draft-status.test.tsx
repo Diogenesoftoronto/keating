@@ -9,6 +9,54 @@ const snapshot: TeachingDraftSnapshot = { phase: "checking", attempt: 1, maxAtte
   elapsedMs: 500, attempts: [], judgeModel: "jev-1.13.0", selectedAttempt: null, reason: null };
 afterEach(clearTeachingDraftStatuses);
 
+test("synthesis diagnostics retain only two distinct bounded preceding attempt numbers", () => {
+  publishTeachingDraftStatus("synthesis", { ...snapshot, phase: "revising", attempt: 4,
+    synthesisSourceAttempts: ["PRIVATE_DRAFT", { text: "PRIVATE_SOURCE" }, 0, 1.5, 11, 4, 1, 1, 2, 3],
+    attempts: [{ attempt: 3, reasoning: "low", standard: "concise", generationMs: 100, judgementMs: 30, status: "pass", checks: [],
+      synthesisSourceAttempts: ["PRIVATE_TEXT", 3, 2, 1], text: "PRIVATE_CONTENT" }],
+  } as unknown as TeachingDraftSnapshot);
+  const state = getTeachingDraftStatus("synthesis")!;
+  expect(state.snapshot.synthesisSourceAttempts).toEqual([1, 2]);
+  expect(state.snapshot.attempts[0]!.synthesisSourceAttempts).toEqual([2, 1]);
+  expect(JSON.stringify(state)).not.toContain("PRIVATE_");
+  publishTeachingDraftStatus("synthesis", { ...snapshot, synthesisSourceAttempts: { text: "PRIVATE_TEXT" } } as unknown as TeachingDraftSnapshot);
+  expect(getTeachingDraftStatus("synthesis")!.snapshot.synthesisSourceAttempts).toBeUndefined();
+});
+
+test("synthesis generation reports a coherent combination awaiting its own review", () => {
+  publishTeachingDraftStatus("synthesis", { ...snapshot, phase: "revising", attempt: 3, synthesisSourceAttempts: [1, 2] });
+  const html = renderToStaticMarkup(<DraftReviewStatus sessionId="synthesis" status={getTeachingDraftStatus("synthesis")} />);
+  expect(html).toContain("Combining completed drafts");
+  expect(html).toContain("one coherent response");
+  expect(html).toContain("still awaits its own review");
+  expect(html).toContain("Source attempts: 1, 2");
+  expect(html).toContain("Attempt 3 of 3");
+  expect(html).not.toContain("Response checked");
+});
+
+test("background policy diagnostics preserve only bounded preference metadata", () => {
+  const backgroundActivity = { version: 1, policyCreatedAt: 1000, preferredKind: "question", target: "next-linked-objective-score", causal: false,
+    privateText: "PRIVATE_BACKGROUND" };
+  publishTeachingDraftStatus("background", { ...snapshot, backgroundActivity } as unknown as TeachingDraftSnapshot);
+  expect(getTeachingDraftStatus("background")!.snapshot.backgroundActivity?.preferredKind).toBe("question");
+  expect(JSON.stringify(getTeachingDraftStatus("background"))).not.toContain("PRIVATE_");
+  publishTeachingDraftStatus("background", { ...snapshot, backgroundActivity: { ...backgroundActivity, preferredKind: "PRIVATE_KIND" } } as unknown as TeachingDraftSnapshot);
+  expect(getTeachingDraftStatus("background")!.snapshot.backgroundActivity).toBeUndefined();
+});
+
+test("chat prediction diagnostics retain bounded scores and discard callback text", () => {
+  const activityLearning = { version: 1, status: "active", target: "next-linked-objective-score", model: "v3.5_default", asOf: 1000,
+    baselineAttempt: 1, selectedAttempt: 2, counts: { exposures: 30, labelled: 26, train: 20, validation: 6, candidates: 2, text: "PRIVATE_COUNTS" },
+    validation: { kind: "squared-error", modelLoss: .1, baselineLoss: .2, passed: true, text: "PRIVATE_VALIDATION" },
+    predictedScores: [{ attempt: 1, score: .4, text: "PRIVATE_REPLY" }, { attempt: 2, score: .6 }], reasons: [],
+    scope: "chronological-within-learner", causal: false, unaidedLearning: "unknown", text: "PRIVATE_TOP" };
+  publishTeachingDraftStatus("activity", { ...snapshot, activityLearning } as unknown as TeachingDraftSnapshot);
+  expect(getTeachingDraftStatus("activity")!.snapshot.activityLearning?.selectedAttempt).toBe(2);
+  expect(JSON.stringify(getTeachingDraftStatus("activity"))).not.toContain("PRIVATE_");
+  publishTeachingDraftStatus("activity", { ...snapshot, activityLearning: { ...activityLearning, reasons: ["PRIVATE_REASON"] } } as unknown as TeachingDraftSnapshot);
+  expect(getTeachingDraftStatus("activity")!.snapshot.activityLearning).toBeUndefined();
+});
+
 test("state diagnostics reconstruct nested fields, reject content and retain only 64 samples", () => {
   const state = measureStateComposition({ state: { turn: { learnerMessage: "PRIVATE_REQUEST" } }, questions: { check: { type: "noul", instructions: "Supported?" } } }, 2000);
   const dirty = { ...state, text: "PRIVATE_TOP", totalBytes: "PRIVATE_NUMBER", sections: { ...state.sections, conversation: { ...state.sections.conversation, text: "PRIVATE_HISTORY" }, PRIVATE_SECTION: { bytes: 99, text: "PRIVATE_TEXT" } }, pinned: { ...state.pinned, plan: "PRIVATE_PLAN", text: "PRIVATE_PINNED" } };
@@ -37,11 +85,34 @@ test("draft review shows content-free progress with no preview", () => {
   const state = getTeachingDraftStatus("a");
   expect(teachingDraftIsActive(state)).toBe(true);
   const html = renderToStaticMarkup(<DraftReviewStatus sessionId="a" status={state} />);
-  expect(html).toContain("Checking the draft");
-  expect(html).toContain("Draft 1 of 3");
+  expect(html).toContain("Reviewing the completed response");
+  expect(html).toContain("Generation finished.");
+  expect(html).toContain("Attempt 1 of 3");
   expect(html).not.toContain("PRIVATE_");
   expect(JSON.stringify(state)).not.toContain("PRIVATE_");
   expect(getTeachingDraftStatus("b")).toBeNull();
+});
+
+test("generation progress does not imply a completed or reviewed draft", () => {
+  for (const phase of ["drafting", "revising"] as const) {
+    const html = renderToStaticMarkup(<DraftReviewStatus sessionId="a" status={{ id: 1, feedback: null, snapshot: { ...snapshot, phase } }} />);
+    expect(html).toContain(phase === "drafting" ? "Generating a response" : "Generating an improved response");
+    expect(html).not.toContain("Generation finished.");
+    expect(html).not.toContain("Reviewing the completed response");
+  }
+});
+
+test("released review count excludes failed generations", () => {
+  const attempt = { attempt: 1, reasoning: "low", standard: "concise", variant: "default", generationMs: 100, judgementMs: 0, checks: [] } as const;
+  const html = renderToStaticMarkup(<DraftReviewStatus sessionId="a" status={{ id: 1, feedback: null, snapshot: {
+    ...snapshot, phase: "released", selectedAttempt: 2, attempts: [
+      { ...attempt, status: "generation-error" },
+      { ...attempt, attempt: 2, status: "pass", judgementMs: 30 },
+    ],
+  } }} />);
+  expect(html).toContain("1 draft reviewed.");
+  expect(html).not.toContain("2 drafts reviewed.");
+  expect(html).toContain("Attempt 1 · generation-error");
 });
 
 test("rejected attempts expose only rule diagnostics, and feedback targets the exact turn", () => {

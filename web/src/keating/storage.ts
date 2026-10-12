@@ -42,6 +42,8 @@ const DB_VERSION = 9;
 const LEARNER_STATE_SCHEMA_VERSION = 3;
 const META_STORE = "_meta";
 const OPENUI_ACTION_JOURNAL_PREFIX = "openui-action-journal:v1:";
+export const LEARNING_EVIDENCE_CHANGED_EVENT = "keating:learning-evidence-changed";
+export const LEARNING_HISTORY_REPLACEMENT_EVENT = "keating:learning-history-replacement";
 export const QUESTION_JUDGEMENT_CHANGED_EVENT = "keating:question-judgement-changed";
 
 // Store names
@@ -362,6 +364,10 @@ export interface CardReviewRecord {
 	easeAfter: number;
 	/** The interval the learner was asked to recall over, before this review. */
 	previousIntervalDays?: number;
+	/** Exact post-review schedule; absent on historical records. */
+	nextDueAt?: number;
+	repetitionsAfter?: number;
+	lapsesAfter?: number;
 	isLapse?: boolean;
 	createdAt: number;
 	sessionId?: string;
@@ -1223,6 +1229,9 @@ export class KeatingStorage {
 						appliedIntervalDays: outcome.appliedIntervalDays,
 						easeAfter: outcome.next.ease,
 						previousIntervalDays: card.srs.intervalDays,
+						nextDueAt: outcome.next.dueAt,
+						repetitionsAfter: outcome.next.reps,
+						lapsesAfter: outcome.next.lapses,
 						isLapse: outcome.isLapse,
 						createdAt: timestamp,
 						sessionId: this.currentSessionId ?? undefined,
@@ -1266,6 +1275,9 @@ export class KeatingStorage {
 							appliedIntervalDays: rating.appliedIntervalDays,
 							easeAfter: rating.easeAfter,
 							previousIntervalDays: priorSrs.intervalDays,
+							nextDueAt: nextSrs.dueAt,
+							repetitionsAfter: nextSrs.reps,
+							lapsesAfter: nextSrs.lapses,
 							isLapse: rating.rating === 0,
 							createdAt: timestamp,
 							sessionId: this.currentSessionId ?? undefined,
@@ -1316,6 +1328,7 @@ export class KeatingStorage {
 		}
 		await complete;
 		if (!materialization) throw new Error("OpenUI action materialization did not produce a result.");
+		if (!materialization.replayed && typeof window !== "undefined") window.dispatchEvent(new Event(LEARNING_EVIDENCE_CHANGED_EVENT));
 		// Evidence is linked only after the learner records and receipt committed.
 		// Optional local evidence failure must never fail the answer acknowledgement.
 		void collectCommittedQuizPerformance(action, sourceDocument, materialization.receipt).catch(() => undefined);
@@ -1448,6 +1461,11 @@ export class KeatingStorage {
 	}
 
 	async importPortableData(data: Partial<KeatingStoragePortableData>): Promise<KeatingStorageImportResult> {
+		const notify = (phase: "begin" | "end") => {
+			if (this.databaseName === DB_NAME && typeof window !== "undefined") window.dispatchEvent(new CustomEvent(LEARNING_HISTORY_REPLACEMENT_EVENT, { detail: { phase } }));
+		};
+		notify("begin");
+		try {
 		const result: KeatingStorageImportResult = {
 			lessonPlans: await this.putMany(STORES.LESSON_PLANS, data.lessonPlans),
 			lessonMaps: await this.putMany(STORES.LESSON_MAPS, data.lessonMaps),
@@ -1490,6 +1508,7 @@ export class KeatingStorage {
 		}
 		await this.refreshDerivedLearnerProfile();
 		return result;
+		} finally { notify("end"); }
 	}
 
 	// Lesson Plans
@@ -2148,12 +2167,16 @@ export class KeatingStorage {
 			appliedIntervalDays: review.appliedIntervalDays,
 			easeAfter: review.easeAfter,
 			previousIntervalDays: review.previousIntervalDays,
+			nextDueAt: review.nextDueAt,
+			repetitionsAfter: review.repetitionsAfter,
+			lapsesAfter: review.lapsesAfter,
 			isLapse: review.isLapse,
 			createdAt: review.createdAt ?? Date.now(),
 			sessionId: review.sessionId ?? this.currentSessionId ?? undefined,
 		};
 		await this.put(STORES.CARD_REVIEWS, record);
 		await this.refreshDerivedLearnerProfile();
+		if (typeof window !== "undefined") window.dispatchEvent(new Event(LEARNING_EVIDENCE_CHANGED_EVENT));
 		return record;
 	}
 
@@ -2177,6 +2200,7 @@ export class KeatingStorage {
 		};
 		await this.put(STORES.QUESTION_CHECKS, record);
 		await this.refreshDerivedLearnerProfile();
+		if (typeof window !== "undefined") window.dispatchEvent(new Event(LEARNING_EVIDENCE_CHANGED_EVENT));
 		return record;
 	}
 

@@ -723,6 +723,7 @@ const recipes = {
 } as const;
 
 export default defineConfig({
+  presets: ["@pandacss/preset-base", "@pandacss/preset-panda"],
   preflight: true,
   jsxFramework: "react",
   jsxStyleProps: "none",
@@ -5003,10 +5004,13 @@ export default defineConfig({
       }
     }
   },
-  hooks: {
-    "cssgen:done": ({ artifact, content }) => {
-      if (artifact !== "styles.css") return;
-      return appendUnlayeredAppStyles(content);
+  plugins: [{
+    name: "keating-app-cascade",
+    hooks: {
+      "cssgen:done": ({ artifact, content }) => {
+        if (artifact !== "styles.css") return;
+        return appendUnlayeredAppStyles(content);
+      }
     }
-  }
+  }]
 });

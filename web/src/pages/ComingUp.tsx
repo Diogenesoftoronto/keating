@@ -25,13 +25,17 @@ import { useSeo } from "../hooks/useSeo";
 import { buildAnkiPackage, buildAnkiTsv, mergeAnkiDeck, parseAnkiPackage, parseAnkiText } from "../keating/anki-package";
 import { buildComingUpQueue, type ComingUpItem, type ComingUpQueue } from "../keating/coming-up";
 import { formatDueIn } from "../keating/srs";
-import type { FlashcardDeck, LearnerState, StudyPriority, Verification } from "../keating/storage";
+import { LEARNING_EVIDENCE_CHANGED_EVENT, QUESTION_JUDGEMENT_CHANGED_EVENT, type FlashcardDeck, type LearnerState, type StudyPriority, type Verification } from "../keating/storage";
 import { downloadFile, downloadTextFile } from "../lib/browser-download";
 import { estimateStudyDeck, loadStudySnapshot, type StudyEstimateReceipt, type StudyEstimateResult } from "../keating/judgement/study-estimates";
 import { StudyEstimateStore } from "../keating/judgement/study-estimate-store";
 import { loadJudgementModelSettings, subscribeJudgementModelSettings } from "../keating/judgement-model";
 import { judgementAccountStatus } from "../keating/judgement/public-account";
-import { WebDecisionPolicyStore, projectWebDecisionPolicies, subscribeWebDecisionPolicies, type WebDecisionPolicies, type WebDecisionEvidence } from "../keating/judgement/decision-policies";
+import type { WebOnlineEvidence } from "../keating/judgement/online-evidence";
+import { webOnlineEvidence } from "../keating/judgement/online-evidence";
+import { projectOnlineLearningQueue } from "../keating/judgement/online-projection";
+import { useOnlineLearning } from "../hooks/useOnlineLearning";
+import { OnlineLearningStatus } from "../components/OnlineLearningStatus";
 
 const PRIORITIES: Array<{ id: StudyPriority; label: string; note: string }> = [
 	{ id: "focus", label: "Focus", note: "What matters most now" },
@@ -182,12 +186,6 @@ function QueueCard({
 			{item.weakConcepts.length > 0 ? (
 				<div className={styles.weakList}>Needs attention: {item.weakConcepts.slice(0, 2).join(" · ")}</div>
 			) : null}
-			{item.decisionEstimates && Object.keys(item.decisionEstimates).length > 0 ? <div className={styles.stripCopy} aria-label="Fitted learning estimates">
-				{Object.entries(item.decisionEstimates).map(([target, estimate]) => <p key={target} title={`${estimate.evidenceLabel}. ${estimate.domain}. File ${estimate.fileSha256}. Fit ${estimate.fitSha256}.`}>
-					{target === "mastery" ? "Independent-answer prediction" : target === "retention" ? "Mean card recall prediction" : "Due-deck lapse prediction"}: {Math.round(estimate.value * 100)}% · {estimate.evidenceLabel}
-				</p>)}
-				{item.decisionExploration ? <p>Usual queue position retained for comparison.</p> : null}
-			</div> : null}
 			<div className={styles.cardFooter}>
 				<label className={styles.selectLabel}>
 					<span>Learning priority</span>
@@ -322,20 +320,7 @@ export function ComingUp() {
 	const busy = pageState.transferBusy;
 	const [mobileLane, setMobileLane] = useState<StudyPriority>("focus");
 	const [now, setNow] = useState(() => Date.now());
-	const policyStore = useMemo(() => new WebDecisionPolicyStore(), []);
-	const [decisionPolicies, setDecisionPolicies] = useState<WebDecisionPolicies>({});
-	const [decisionEvidence, setDecisionEvidence] = useState<Omit<WebDecisionEvidence, "decks">>({ checks: [], reviews: [] });
-	useEffect(() => {
-		let active = true, generation = 0;
-		const load = async () => {
-			const revision = ++generation;
-			const targets = ["mastery", "retention", "urgency"] as const;
-			const policies = await Promise.all(targets.map(async target => [target, await policyStore.load(target)] as const));
-			if (active && generation === revision) setDecisionPolicies(Object.fromEntries(policies.filter(([, policy]) => policy)));
-		};
-		void load(); const unsubscribe = subscribeWebDecisionPolicies(() => { void load(); });
-		return () => { active = false; unsubscribe(); };
-	}, [policyStore]);
+	const [decisionEvidence, setDecisionEvidence] = useState<Omit<WebOnlineEvidence, "decks">>({ checks: [], reviews: [] });
 	const importRef = useRef<HTMLInputElement>(null);
 	const estimateStore = useMemo(() => new StudyEstimateStore(), []);
 	const [estimates, setEstimates] = useState<Record<string, StudyEstimateReceipt>>({});
@@ -404,7 +389,9 @@ export function ComingUp() {
 		finally { estimateRuns.current.delete(deckId); setEstimating(current => { const next = new Set(current); next.delete(deckId); return next; }); }
 	}, [estimateStore]);
 
+	const loadRevision = useRef(0);
 	const loadData = useCallback(async () => {
+		const revision = ++loadRevision.current;
 		await getInitPromise();
 		const [nextDecks, nextVerifications, nextLearnerState, checks, reviews] = await Promise.all([
 			keatingStorage.getDecks(),
@@ -413,6 +400,8 @@ export function ComingUp() {
 			keatingStorage.getQuestionChecks(),
 			keatingStorage.getCardReviews(),
 		]);
+		if (revision !== loadRevision.current) return;
+		setNow(Date.now());
 		setDecisionEvidence({ checks, reviews });
 		dispatch({ type: "data.loaded", decks: nextDecks, verifications: nextVerifications, learnerState: nextLearnerState });
 	}, []);
@@ -424,19 +413,38 @@ export function ComingUp() {
 	}, [loadData]);
 
 	useEffect(() => {
-		const refreshClock = () => setNow(Date.now());
-		const timer = window.setInterval(refreshClock, 60_000);
-		window.addEventListener("focus", refreshClock);
-		return () => {
-			window.clearInterval(timer);
-			window.removeEventListener("focus", refreshClock);
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		const refresh = () => {
+			clearTimeout(timer);
+			timer = setTimeout(() => { void loadData().catch(() => {
+				dispatch({ type: "feedback.error", error: "Saved learning history could not be refreshed." });
+			}); }, 50);
 		};
-	}, []);
+		// Storage notifications fire after commits. Focus/minute refresh also observes changes from other tabs.
+		const events = [LEARNING_EVIDENCE_CHANGED_EVENT, QUESTION_JUDGEMENT_CHANGED_EVENT, "keating:artifacts-changed", "focus"];
+		events.forEach(event => window.addEventListener(event, refresh));
+		const interval = window.setInterval(refresh, 60_000);
+		return () => {
+			loadRevision.current++; clearTimeout(timer); window.clearInterval(interval);
+			events.forEach(event => window.removeEventListener(event, refresh));
+		};
+	}, [loadData]);
 
-	const queue = useMemo(() => learnerState ? projectWebDecisionPolicies(buildComingUpQueue({ decks, verifications, learnerState, now }),
-		{ ...decisionEvidence, decks }, decisionPolicies, now) : emptyQueue(), [decks, learnerState, now, verifications, decisionEvidence, decisionPolicies]);
-	const currentReviewDeck = reviewDeckIds.length > 0 ? decks.find((deck) => deck.id === reviewDeckIds[reviewIndex]) ?? null : null;
-	const dueCardIds = currentReviewDeck?.cards.filter((card) => card.srs.dueAt <= now).map((card) => card.id) ?? [];
+	const onlineEvidence = useMemo(() => {
+		try { return learnerState ? webOnlineEvidence({ ...decisionEvidence, decks }, now) : null; }
+		catch { return null; }
+	}, [decks, decisionEvidence, learnerState, now]);
+	const onlineLearning = useOnlineLearning(onlineEvidence, now);
+	const queue = useMemo(() => learnerState ? projectOnlineLearningQueue(buildComingUpQueue({ decks, verifications, learnerState, now }), onlineLearning.state.results) : emptyQueue(), [decks, learnerState, now, verifications, onlineLearning.state.results]);
+	// A running review owns its starting cards. Background prediction/storage refreshes must not restart it.
+	const activeReviewId = reviewDeckIds[reviewIndex] ?? null;
+	const reviewSnapshot = useRef<{ id: string; deck: FlashcardDeck; dueCardIds: string[] } | null>(null);
+	if (reviewSnapshot.current?.id !== activeReviewId) {
+		const deck = decks.find(row => row.id === activeReviewId);
+		reviewSnapshot.current = deck ? { id: deck.id, deck, dueCardIds: deck.cards.filter(card => card.srs.dueAt <= now).map(card => card.id) } : null;
+	}
+	const currentReviewDeck = reviewSnapshot.current?.deck ?? null;
+	const dueCardIds = reviewSnapshot.current?.dueCardIds ?? [];
 
 	const moveItem = useCallback(async (item: ComingUpItem, priority: StudyPriority) => {
 		if (item.priority === priority && item.prioritySource === "learner") return;
@@ -545,6 +553,7 @@ export function ComingUp() {
 				description="Set what deserves attention, work the reviews that are actually due, and carry decks between Keating and Anki."
 			/>
 			<main className={styles.main}>
+				{onlineLearning.enabled && <OnlineLearningStatus state={onlineLearning.state} evidenceAvailable={onlineEvidence !== null} />}
 				<div className={styles.metrics}>
 					<LearningMetric icon={<Brain size={18} />} label="Cards due now" value={formatNumber(queue.dueCardCount)} detail={queue.overdueCardCount > 0 ? `${formatNumber(queue.overdueCardCount)} overdue by more than a day` : "Nothing overdue by more than a day"} />
 					<LearningMetric icon={<Clock3 size={18} />} label="Review time" value={`~${formatNumber(queue.estimatedMinutes)} min`} detail="Estimated from the due cards, not the whole board" />

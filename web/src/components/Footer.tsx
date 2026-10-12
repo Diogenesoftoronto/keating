@@ -2,6 +2,7 @@ import { AppLink as Link } from "./AppLink";
 import { isDesktopShell } from "../lib/desktop-navigation";
 import { DOCUMENTATION_URL } from "../lib/tutorial-links";
 import { BLOG_URL } from "../lib/blog-links";
+import { DIAGNOSTIC_SUPPORT_EMAIL } from "../lib/diagnostics";
 import { T } from "gt-react";
 import { css, cx } from "../../styled-system/css";
 
@@ -47,6 +48,9 @@ export function Footer() {
               </li>
               <li>
                 <Link to="/usage"><T>Usage</T></Link>
+              </li>
+              <li>
+                <a href={`mailto:${DIAGNOSTIC_SUPPORT_EMAIL}`}><T>Support</T></a>
               </li>
               <li>
                 <a
@@ -163,6 +167,16 @@ export function SimpleFooter() {
         >
           Privacy Policy
         </Link>
+        <span aria-hidden="true">//</span>
+        <a
+          href={`mailto:${DIAGNOSTIC_SUPPORT_EMAIL}`}
+          className={css({
+            transition: "color 0.15s ease",
+            _hover: { color: "#d5604b" }
+          })}
+        >
+          Support
+        </a>
       </div>
     </footer>
   );

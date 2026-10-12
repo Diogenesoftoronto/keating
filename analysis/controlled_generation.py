@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12,<3.14"
-# dependencies = ["marimo==0.23.1", "matplotlib==3.10.*", "numpy==2.*", "pandas==2.*"]
+# dependencies = ["marimo==0.25.1", "matplotlib==3.11.2", "numpy==2.*", "pandas==3.0.6"]
 # ///
 """Explore saved controlled SAE generations and blinded reviews without inference."""
 import marimo

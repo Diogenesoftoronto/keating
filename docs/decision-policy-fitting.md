@@ -1,5 +1,7 @@
 # Measured mastery, retention and urgency policies
 
+> Historical benchmark workflow. Runtime file imports were retired on October 1, 2026. See [online tabular learning](online-tabular-learning.md) for the active replacement and [the paired benchmark](tabular-policy-benchmark.md) for current results.
+
 Keating fits three separate decision policies from its existing source-grounded teaching harness. The original task, learner evidence, source revision and license travel with each example. Related variants stay in one source family, and entire families are assigned to training or validation before requesting judgements.
 
 The targets answer different questions:
@@ -48,7 +50,7 @@ Run the last command separately for `retention` and `urgency`, each with a new o
 
 The output includes the model, source records, comparison report and fit identity. Installation checks an independently supplied SHA-256 of the exact artifact bytes and recomputes the comparison. Model predictions remain separate from saved answers, review ratings and learner-declared profile fields.
 
-The mobile installer stores large source-bound artifacts in private files, with a small commit manifest in AsyncStorage. Import and removal leave recorded grades and review schedules unchanged. The Learn surface shows the prediction's target, dataset and whether it was fitted to observed outcomes or harness judgements. Unknown input history leaves the existing rule in place.
+The retained research-only mobile installer stores large source-bound artifacts in private files, with a small commit manifest in AsyncStorage. Import and removal leave recorded grades and review schedules unchanged. These artifacts are no longer applied by Learn or Coming Up. The verifier remains available for benchmark reproduction.
 
 ## First completed comparison
 
@@ -64,7 +66,7 @@ Urgency compares 383 unequal-probability pairs across 14 held-out cohorts. Its c
 
 Mastery's failed comparison is retained. The ensemble is deliberately skipped when the shallow candidate fails, so this run does not justify replacing the mastery rule. No parameters were changed in response to that validation result.
 
-Final artifacts are under `.keating/datasets/decision-policies/harness-jev-v1-final-{mastery,retention,urgency}/`, each with `decision-policy.json` and `report.md`. Import only a selected artifact:
+Final artifacts are under `.keating/datasets/decision-policies/harness-jev-v1-final-{mastery,retention,urgency}/`, each with `decision-policy.json` and `report.md`. Their original artifact identities are:
 
 | Artifact | Exact file SHA-256 |
 | --- | --- |

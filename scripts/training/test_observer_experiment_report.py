@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12,<3.14"
-# dependencies = ["numpy==2.2.6", "scikit-learn==1.7.2", "matplotlib==3.10.8"]
+# dependencies = ["numpy==2.5.3", "scikit-learn==1.9.1", "matplotlib==3.11.2"]
 # ///
 """Authored local protocol fixtures; no source corpus, GPU, Hub or provider."""
 from copy import deepcopy

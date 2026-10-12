@@ -43,7 +43,7 @@ const RULES: Array<{ test: (e: DiagnosticEntry) => boolean; explain: Explanation
 		test: (e) => /restoring session/i.test(e.message) && /timed out/i.test(e.message),
 		explain: {
 			title: "Couldn't restore your last session",
-			meaning: "Loading your saved session timed out. Check your connection, and that the Keating server is running if you host it yourself.",
+			meaning: "Loading your saved history on this device took too long. Reload the page, then reopen the session. This warning does not mean your saved data was deleted.",
 			fix: { label: "Reload the page", reload: true },
 		},
 	},

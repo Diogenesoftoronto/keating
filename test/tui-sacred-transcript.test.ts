@@ -59,7 +59,7 @@ async function settleMarkdown(
 }
 
 describe("SacredTranscriptRenderable", () => {
-  test("renders asymmetric Unicode Message and MessageViewer layers without flattening Markdown", async () => {
+  test("renders turns as margin glyphs with hanging Markdown, never boxes", async () => {
     const setup = await createTestRenderer({ width: 84, height: 38, exitOnCtrlC: false });
     renderers.push(setup.renderer);
     const profile = createTuiPresentationProfile({
@@ -104,13 +104,17 @@ describe("SacredTranscriptRenderable", () => {
 
     await settleMarkdown(setup, transcript);
     const frame = setup.captureCharFrame();
-    const userAvatarLine = lineContaining(frame, "╭YO╮");
-    const assistantAvatarLine = lineContaining(frame, "╭◉⌒╮");
+    const learnerLine = lineContaining(frame, "Can you keep");
+    const tutorLine = lineContaining(frame, "Conservation check");
 
-    expect(userAvatarLine.indexOf("╭YO╮")).toBeLessThan(assistantAvatarLine.indexOf("╭◉⌒╮"));
-    expect(frame).toContain("◀");
-    expect(frame).toContain("▶");
-    expect(frame).toContain("Conservation check");
+    // Role lives in column 0; both bodies hang from the same column.
+    expect(learnerLine).toStartWith("> Can you keep");
+    expect(tutorLine).toStartWith("◆ Conservation check");
+    expect(lineContaining(frame, "The explanation begins")).toStartWith("  The explanation");
+    // No speech-bubble chrome, name labels, or portraits.
+    expect(frame).not.toMatch(/[╭╮╰╯┌┐└┘◀▶]/);
+    expect(frame).not.toContain("Keating");
+    expect(frame).not.toContain("You");
     expect(frame).toContain("Construct");
     expect(frame).toContain("Expected behavior");
     expect(frame).toContain("semantic native rendering");
@@ -121,7 +125,7 @@ describe("SacredTranscriptRenderable", () => {
     expect(transcript.getEntryRenderable("learner-turn-1")?.id).toEndWith(":entry:learner-turn-1");
   });
 
-  test("uses ASCII avatars, tails, and full-width semantic cards without color-only meaning", async () => {
+  test("keeps every role legible in ASCII without color, and collapses tool calls to one line", async () => {
     const setup = await createTestRenderer({ width: 64, height: 32, exitOnCtrlC: false });
     renderers.push(setup.renderer);
     const profile = createTuiPresentationProfile({
@@ -148,23 +152,18 @@ describe("SacredTranscriptRenderable", () => {
 
     await settleMarkdown(setup, transcript);
     const frame = setup.captureCharFrame();
-    const userAvatarLine = lineContaining(frame, "[YO]");
-    const assistantAvatarLine = lineContaining(frame, "[oo]");
-    const toolTitleLine = lineContaining(frame, "-> Search");
 
-    expect(userAvatarLine.indexOf("[YO]")).toBeLessThan(assistantAvatarLine.indexOf("[oo]"));
-    expect(frame).toContain("<");
-    expect(frame).toContain(">");
-    expect(frame).toContain("# Lesson plan");
-    expect(frame).toContain(". Saved");
-    expect(frame).toContain("X Provider failed");
+    expect(lineContaining(frame, "ASCII learner row")).toStartWith(">  ASCII learner row");
+    expect(lineContaining(frame, "ASCII teacher row")).toStartWith("K  ASCII teacher row");
+    expect(lineContaining(frame, "Search")).toStartWith("-> Search  Tool output remains readable");
+    expect(frame).toContain("#  Lesson plan");
+    expect(frame).toContain(".  Saved  Notice output remains readable");
+    expect(frame).toContain("X  Provider failed");
     expect(frame).toContain("Tool output remains readable");
     expect(frame).toContain("Artifact output remains readable");
     expect(frame).toContain("Notice output remains readable");
     expect(frame).toContain("Error output remains readable");
-    expect(toolTitleLine.trimStart().startsWith("+")).toBe(true);
-    expect(toolTitleLine.trimEnd().length).toBe(64);
-    expect(frame).not.toMatch(/[╭╰◆◀▶─]/);
+    expect(frame).not.toMatch(/[╭╰◆◀▶─│›→▣·]/);
     expect(profile.design.colorMode).toBe("none");
   });
 
@@ -232,35 +231,30 @@ describe("SacredTranscriptRenderable", () => {
     expect(setup.renderer.root.getRenderable("keating-sacred-transcript")).toBeUndefined();
   });
 
-  test("updates the learner portrait and label without rebuilding completed Markdown", async () => {
-    const setup = await createTestRenderer({ width: 64, height: 18, exitOnCtrlC: false });
+  test("summarizes multi-line tool output on one line and keeps failure detail visible", async () => {
+    const setup = await createTestRenderer({ width: 60, height: 12, exitOnCtrlC: false });
     renderers.push(setup.renderer);
     const profile = createTuiPresentationProfile({ TERM: "xterm-256color", LANG: "en_CA.UTF-8" });
     const transcript = new SacredTranscriptRenderable(setup.renderer, {
-      entries: [{ id: "learner", kind: "user", title: "You", body: "Keep this parsed message." }],
+      entries: [
+        { id: "tool", kind: "tool", title: "read", body: "line one of a long file\nline two\nline three" },
+        { id: "failed", kind: "tool", title: "read · failed", body: "Could not open notes.", detail: "ENOENT notes.md" },
+        { id: "learner", kind: "user", title: "You", body: "Then explain it without the file." },
+      ],
       profile,
-      width: 64,
+      width: 60,
       syntaxStyle: syntaxStyle(),
-      userIdentity: {
-        label: "Ada",
-        avatar: { unicode: ["┌AL┐", "└──┘"], ascii: ["[AL]", "+--+"] },
-      },
     });
     setup.renderer.root.add(transcript);
     await settleMarkdown(setup, transcript);
-    const markdown = transcript.getEntryMarkdown("learner");
-    expect(setup.captureCharFrame()).toContain("Ada");
-    expect(setup.captureCharFrame()).toContain("┌AL┐");
+    const lines = setup.captureCharFrame().split("\n").map((line) => line.trimEnd());
 
-    transcript.setIdentity("user", {
-      label: "Grace",
-      avatar: { unicode: ["┌GH┐", "└──┘"], ascii: ["[GH]", "+--+"] },
-    });
-    await settleMarkdown(setup, transcript);
-
-    expect(transcript.getEntryMarkdown("learner")).toBe(markdown);
-    expect(setup.captureCharFrame()).toContain("Grace");
-    expect(setup.captureCharFrame()).toContain("┌GH┐");
-    expect(setup.captureCharFrame()).not.toContain("┌AL┐");
+    expect(lines[0]).toBe("→ read  line one of a long file (+2 lines)");
+    // Consecutive tool lines stack without a blank row; the next turn breathes.
+    expect(lines[1]).toBe("→ read · failed  Could not open notes.");
+    expect(lines[2]).toBe("  ENOENT notes.md");
+    expect(lines[3]).toBe("");
+    expect(lines[4]).toStartWith("> Then explain it");
+    expect(transcript.getEntryMarkdown("tool")).toBeUndefined();
   });
 });

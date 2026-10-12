@@ -18,3 +18,7 @@ export * from "./teaching-policy.js";
 export * from "./teaching-drafts.js";
 export * from "./active-work.js";
 export * from "./state-metrics.js";
+export * from "./activity-observations.js";
+export * from "./activity-learning.js";
+export * from "./background-activity-policy.js";
+export * from "./background-activity-guidance.js";

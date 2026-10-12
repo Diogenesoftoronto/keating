@@ -115,7 +115,7 @@ main{min-width:0;padding-top:30px}
 .code-block{margin:24px 0;background:#0c1510;color:#dcefe0;max-width:100%;overflow:hidden;border-radius:3px}
 .code-block figcaption{padding:12px 18px 0;color:#90dca6;font:.7rem/1.6 var(--mono)}
 .app-screenshot{margin:28px 0;max-width:100%}
-.app-screenshot img{display:block;width:100%;max-width:100%;height:auto;border:1px solid var(--line);border-radius:3px}
+.app-screenshot img{display:block;width:auto;max-width:100%;height:auto;border:1px solid var(--line);border-radius:3px}
 .app-screenshot figcaption{margin-top:12px;color:var(--muted);font-size:.85rem;line-height:1.65;max-width:70ch;overflow-wrap:anywhere}
 .app-screenshot figcaption a{display:table;padding:7px 0;font-size:.82rem}
 .app-video{margin:28px 0;max-width:100%}
