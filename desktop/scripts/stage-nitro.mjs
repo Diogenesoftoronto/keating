@@ -2,6 +2,7 @@ import { access, cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/pro
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { stageOnnxRuntime } from "./stage-onnx-runtime.mjs";
+import { stageProductionDependencies } from "./stage-production-dependencies.mjs";
 
 const desktopRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const source = resolve(desktopRoot, "../web/.output");
@@ -48,7 +49,7 @@ await writeFile(
 			main: "main.js",
 			dependencies: {
 				"@keating/p2p-core": "file:node_modules/@keating/p2p-core",
-				"onnxruntime-node": "1.29.0",
+				"onnxruntime-node": desktopPackage.dependencies["onnxruntime-node"],
 			},
 		},
 		null,
@@ -61,12 +62,8 @@ await mkdir(stagedP2P, { recursive: true });
 await Promise.all([
 	cp(join(p2pSource, "dist"), join(stagedP2P, "dist"), { recursive: true, dereference: true }),
 	cp(join(p2pSource, "package.json"), join(stagedP2P, "package.json"), { dereference: true }),
-	cp(join(p2pSource, "node_modules"), join(appDestination, "node_modules"), {
-		recursive: true,
-		dereference: true,
-	}),
 ]);
-
+await stageProductionDependencies({ packageDirectory: p2pSource, appDirectory: appDestination });
 
 // ONNX Runtime uses a stable Node-API binding; keep its external data and shared libraries beside the addon.
 await stageOnnxRuntime({ appDirectory: appDestination });

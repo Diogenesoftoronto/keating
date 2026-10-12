@@ -50,7 +50,6 @@ test("staging carries the verified repository into the generated app manifest", 
     await put(join(root, "web", ".output", "server", "index.mjs"), "export {};");
     await put(join(root, "packages", "p2p-core", "dist", "index.js"), "export {};");
     await put(join(root, "packages", "p2p-core", "package.json"), JSON.stringify({ name: "@keating/p2p-core" }));
-    await mkdir(join(root, "packages", "p2p-core", "node_modules"), { recursive: true });
     await put(join(root, "node_modules", "@huggingface", "tokenizers", "LICENSE"), "fixture license");
     for (const name of ["onnxruntime-node", "onnxruntime-common"]) {
       await put(join(project, "node_modules", name, "package.json"), JSON.stringify({ name, main: "index.js" }));
@@ -58,7 +57,7 @@ test("staging carries the verified repository into the generated app manifest", 
     }
     await put(join(project, "node_modules", "onnxruntime-node", "bin", "napi-v6", process.platform, process.arch, "binding.node"), "fixture binding");
     await mkdir(join(project, "scripts"), { recursive: true });
-    for (const script of ["stage-nitro.mjs", "stage-onnx-runtime.mjs"]) {
+    for (const script of ["stage-nitro.mjs", "stage-onnx-runtime.mjs", "stage-production-dependencies.mjs"]) {
       await cp(join(desktop, "scripts", script), join(project, "scripts", script));
     }
     const result = spawnSync("node", [join(project, "scripts", "stage-nitro.mjs")], { cwd: project, encoding: "utf8" });
