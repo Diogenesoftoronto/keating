@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.10] - 2026-10-12
+
+### Fixed
+- Update desktop signing configuration for the installed Electron packager while preserving SHA-256 and DLL/native-module signing.
+- Includes all 4.0.8 and 4.0.9 changes; those downloadable releases were blocked by packaging compatibility issues.
+
 ## [4.0.9] - 2026-10-12
 
 ### Fixed
