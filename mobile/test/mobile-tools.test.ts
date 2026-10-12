@@ -14,13 +14,17 @@ const context = {
 };
 
 describe("mobile trusted tool registry", () => {
-  it("publishes exact closed JSON schemas for only local deterministic tools", () => {
+  it("publishes exact closed schemas for local tools and guarded knowledge wrappers", () => {
     expect(MOBILE_TOOL_DEFINITIONS.map((tool) => tool.name)).toEqual([
       "generate_study_plan",
       "generate_concept_map",
       "generate_practice_quiz",
       "inspect_mobile_workspace",
       "propose_mobile_workspace_change",
+      "list_knowledge_sources",
+      "list_knowledge_resources",
+      "read_knowledge_resource",
+      "call_knowledge_tool",
     ]);
     for (const tool of MOBILE_TOOL_DEFINITIONS.slice(0, 3)) {
       expect(tool.inputSchema).toEqual({

@@ -1,6 +1,6 @@
 import { documentsFromMessage, splitAssistantOpenUiDocuments, TUI_SUBMISSION_MESSAGE } from "./ui/assistant-documents.js";
 import { uiDocumentPresentation } from "./ui/render.js";
-import { toolResultCardLines } from "../core/cards.js";
+import { toolResultCard } from "../core/cards.js";
 import {
   createTuiPresentationProfile,
   terminalLayoutProfile,
@@ -162,12 +162,12 @@ export function transcriptEntriesFromMessages(messages: readonly unknown[]): Tra
           ),
         }];
       }
-      const card = toolResultCardLines(toolName, { content: message.content, details: message.details });
+      const card = toolResultCard(toolName, { content: message.content, details: message.details });
       return [{
         id: stableId("tool-result", message, index),
         kind: card ? "artifact" : "tool",
-        title: card ? `${toolName} result` : toolName,
-        body: card?.join("\n") || body || "Completed",
+        title: card ? card.heading : toolName,
+        body: card?.body.join("\n") || body || "Completed",
       }];
     }
     return [];
@@ -365,16 +365,30 @@ export interface HeaderTextOptions {
   label?: string;
 }
 
+const PI_SESSION_FILE = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z_[0-9a-f-]{8,}$/i;
+
+/** Pi names unnamed sessions after a timestamp and UUID; that is storage, not a title. */
+export function readableSessionLabel(session: string): string {
+  const trimmed = session.trim();
+  return !trimmed || PI_SESSION_FILE.test(trimmed) ? "untitled" : trimmed;
+}
+
 export function headerText(
   state: TuiHeaderState,
   profile = createTuiPresentationProfile(),
   options: HeaderTextOptions = {},
 ): string {
-  const semantic = state.busy ? profile.design.states.active : profile.design.states.ready;
   const label = options.label ?? "keating";
-  const left = `${profile.marks.assistant} ${label}  ${state.session}`;
-  const right = `${state.model}  ·  ${state.thinking}  ·  ${semantic.glyph} ${state.busy ? "working" : semantic.label.toLowerCase()}`;
-  return options.width ? justifyLine(left, right, options.width) : `${left}  ·  ${right}`;
+  const session = readableSessionLabel(state.session);
+  const left = `${profile.marks.assistant} ${label} · ${session}`;
+  // Only facts that change what the learner should expect earn a slot: idle
+  // "ready" and a disabled thinking level are the default and go unsaid.
+  const right = [
+    state.model,
+    state.thinking && state.thinking !== "off" ? `thinking ${state.thinking}` : "",
+    state.busy ? `${profile.design.states.active.glyph} working` : "",
+  ].filter(Boolean).join(" · ");
+  return options.width ? justifyLine(left, right, options.width) : `${left} · ${right}`;
 }
 
 function truncate(text: string, width: number): string {

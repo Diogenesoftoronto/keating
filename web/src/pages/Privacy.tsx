@@ -1,5 +1,6 @@
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
+import { DIAGNOSTIC_SUPPORT_EMAIL } from "../lib/diagnostics";
 import { DownloadPdfButton } from "../components/DownloadPdfButton";
 import { useSeo } from "../hooks/useSeo";
 import { cx } from "../../styled-system/css";
@@ -199,8 +200,8 @@ export function Privacy() {
           <section>
             <h2>14. Contact</h2>
             <p>
-              For privacy questions about the repository or hosted site, open an issue in the
-              Keating repository or use the contact channel listed on the project site.
+              For privacy questions about Keating or the hosted site, email{" "}
+              <a href={`mailto:${DIAGNOSTIC_SUPPORT_EMAIL}`}>{DIAGNOSTIC_SUPPORT_EMAIL}</a>.
             </p>
           </section>
         </article>

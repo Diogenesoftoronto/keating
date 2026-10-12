@@ -1,3 +1,4 @@
+.downloads { --green-wash: var(--accent); } /* Pair green surfaces with theme-aware foregrounds. */
 .downloads .downloads-wrap { width: min(1240px, calc(100% - 64px)); margin-inline: auto; }
 .downloads .downloads-hero { padding: clamp(36px, 5vw, 76px) 0 56px; }
 .downloads .downloads-hero-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.3fr); gap: clamp(32px, 4vw, 64px); align-items: center; }

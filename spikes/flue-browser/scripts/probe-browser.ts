@@ -107,4 +107,4 @@ results.push(await probe("src/browser-client.ts", "browser-compatible"));
 results.push(await probe("src/keating-agent.ts", "remote-only"));
 results.push(await probe("src/node-runtime.ts", "remote-only"));
 
-console.log(JSON.stringify({ flueVersion: "2.0.3", results }, null, 2));
+console.log(JSON.stringify({ flueVersion: "2.2.2", results }, null, 2));

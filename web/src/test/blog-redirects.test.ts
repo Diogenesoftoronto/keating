@@ -74,11 +74,11 @@ describe("legacy blog SPA redirects", () => {
 		const router = createRouter({ routeTree: root.addChildren([index, post]), history: createMemoryHistory({ initialEntries: [href] }), isServer: true });
 		await router.load();
 		// Follow TanStack's initial trailing-slash canonicalization in server mode.
-		if (router.state.redirect?.options.href === "/blog") {
+		if (router._serverResult?.type === "redirect" && router._serverResult.redirect.options.href === "/blog") {
 			router.history.replace("/blog");
 			await router.load();
 		}
-		expect(router.state.redirect?.options).toMatchObject({ href: destination, reloadDocument: true, replace: true });
+		expect(router._serverResult?.type === "redirect" && router._serverResult.redirect.options).toMatchObject({ href: destination, reloadDocument: true, replace: true });
 	});
 	it("does not leave the app on preload", () => {
 		expect(() => blogRedirectBeforeLoad({ location: { href: "/blog/first-post" }, preload: true })).not.toThrow();

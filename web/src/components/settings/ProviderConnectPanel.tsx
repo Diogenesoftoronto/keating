@@ -7,7 +7,8 @@ import { loadOAuthCredentials, providerToOAuthId } from "../../keating/oauth";
 import { PROVIDER_CREDENTIALS_CHANGED_EVENT, type ModelPrefs } from "../../keating/model-prefs";
 import { Toggle } from "../Toggle";
 import { NotOrganicAccountCard } from "./NotOrganicAccountCard";
-import { NOTORGANIC_PROVIDER_ID } from "../../notorganic-provider";
+import { NOTORGANIC_PROVIDER_ID, NOTORGANIC_DEFAULT_MODEL, isNotOrganicFeatureEnabled, notOrganicPublicClient } from "../../notorganic-provider";
+import { readConnectedProviders } from "../../lib/provider-connection";
 import { ProviderCredentialForm } from "./CloudProviderKeysSection";
 
 const layoutClass = css({
@@ -88,7 +89,10 @@ const emptyClass = css({ padding: "1rem", fontSize: "0.875rem", color: "var(--mu
 
 type ModelInfo = { id: string; name: string };
 
-function modelsFor(provider: string): ModelInfo[] {
+export function modelsFor(provider: string): ModelInfo[] {
+	if (provider === NOTORGANIC_PROVIDER_ID) {
+		return isNotOrganicFeatureEnabled() ? [{ id: NOTORGANIC_DEFAULT_MODEL.id, name: NOTORGANIC_DEFAULT_MODEL.name }] : [];
+	}
 	try {
 		return (getModels(provider as never) as unknown as ModelInfo[]).map((m) => ({ id: m.id, name: m.name }));
 	} catch {
@@ -102,17 +106,19 @@ export function useConnectedProviders(providers: string[]): Set<string> {
 	const dep = providers.join(",");
 	useEffect(() => {
 		let active = true;
+		let refreshVersion = 0;
 		const refresh = async () => {
+			const version = ++refreshVersion;
 			const storage = getAppStorage();
-			const next = new Set<string>();
-			await Promise.all(providers.map(async (p) => {
-				try {
-					if ((await storage.providerKeys.get(p))?.trim()) { next.add(p); return; }
-					const oauthId = providerToOAuthId(p);
-					if (oauthId && (await loadOAuthCredentials(oauthId))) next.add(p);
-				} catch { /* unavailable storage just reads as not connected */ }
-			}));
-			if (active) setConnected(next);
+			const next = await readConnectedProviders(providers, {
+				hostedSession: async () => await notOrganicPublicClient()?.activeSession() ?? null,
+				apiKey: (provider) => storage.providerKeys.get(provider),
+				oauth: async (provider) => {
+					const oauthId = providerToOAuthId(provider);
+					return oauthId ? await loadOAuthCredentials(oauthId) : null;
+				},
+			});
+			if (active && version === refreshVersion) setConnected(next);
 		};
 		void refresh();
 		window.addEventListener(PROVIDER_CREDENTIALS_CHANGED_EVENT, refresh);

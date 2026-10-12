@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["pandas==2.*", "numpy>=2,<3", "matplotlib==3.10.*"]
+# dependencies = ["pandas==3.0.6", "numpy>=2,<3", "matplotlib==3.11.2"]
 # ///
 """Offline paired checkpoint report. Reads evidence; never scores, samples or trains."""
 from __future__ import annotations

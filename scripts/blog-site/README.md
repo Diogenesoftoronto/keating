@@ -41,7 +41,7 @@ styles/fonts, and deployment files into ignored `dist/`.
 **The Railway service root/upload is `scripts/blog-site/dist`, not the source
 directory.** The artifact has no imports outside itself and no runtime package
 dependencies. Rebuild before every upload. Use its `railway.toml` and
-`railpack.json`. Native Railpack uses Bun 1.3.13 at runtime; unlike the static
+`railpack.json`. Native Railpack uses Bun 1.4.2 at runtime; unlike the static
 docs/dev sites, blog requests need a server to fetch current AT records.
 
 ```sh

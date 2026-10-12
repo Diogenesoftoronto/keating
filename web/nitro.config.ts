@@ -133,6 +133,7 @@ export default defineNitroConfig({
     { route: "/api/**", handler: "server/api-not-found.ts" },
     { route: "/api/judgement/typesafe", method: "POST" as const, handler: "server/api/judgement/typesafe.post.ts" },
     { route: "/api/credit-waitlist", method: "POST" as const, handler: "server/api/credit-waitlist/index.post.ts" },
+    { route: "/api/diagnostics/report", method: "POST" as const, handler: "server/api/diagnostics/report.post.ts" },
     {
       route: "/api/training-datasets",
       method: "POST" as const,

@@ -5,6 +5,7 @@ import type { MobileWorkspaceEngine } from "@/lib/mobile-workspace/engine";
 import type { MobileWorkspaceState } from "@/lib/mobile-workspace/repository";
 import { executeMobileTool, type MobileToolExecutionContext, type MobileToolExecutionResult } from "@/lib/mobile-tools";
 import { MOBILE_PROGRAM_ENTRYPOINT } from "@/lib/mobile-workspace/program";
+import { isMobileKnowledgeTool } from "@/lib/knowledge-tools";
 
 interface MobileWorkspaceContextValue {
   state: MobileWorkspaceState | null;
@@ -66,6 +67,10 @@ export function MobileWorkspaceProvider({ children }: PropsWithChildren) {
     clearError: () => setError(null),
     hasOverlay: (overlayId) => state?.overlays.some((overlay) => overlay.id === overlayId) ?? false,
     executeAgentTool: async (toolName, rawArguments, context) => {
+      if (isMobileKnowledgeTool(toolName)) {
+        if (context.knowledge) return context.knowledge(toolName, rawArguments, context);
+        return { ok: false, toolName, idempotencyKey: context.idempotencyKey, code: "execution_failed", message: "Select knowledge sources in Account before using them.", retryable: false, effects: [] };
+      }
       if (toolName !== "inspect_mobile_workspace" && toolName !== "propose_mobile_workspace_change") {
         return executeMobileTool(toolName, rawArguments, context);
       }

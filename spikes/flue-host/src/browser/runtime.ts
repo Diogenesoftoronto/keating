@@ -17,6 +17,10 @@ import {
   fauxProvider,
   createAssistantMessageEventStream,
   type AssistantMessageEventStream,
+  type Api,
+  type Model,
+  type TranscriptContext,
+  type StreamOptions,
 } from "@earendil-works/pi-ai";
 import * as v from "valibot";
 import { nodepodPersistence } from "../nodepod-persistence.ts";
@@ -81,7 +85,7 @@ const base = fauxProvider({
     },
   ],
 }).provider;
-const stream: typeof base.streamSimple = (_model, _context, options) => {
+const stream = (_model: Model<Api>, _context: TranscriptContext, options?: StreamOptions) => {
   const result = createAssistantMessageEventStream();
   const id = `model-${++serial}`;
   streams.set(id, result);

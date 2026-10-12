@@ -71,13 +71,15 @@ describe("shared terminal UI document adapter and presentation", () => {
       "Explanation", "WARNING: Check the claim", "Question", "Question", "Question",
       "Grouped retrieval", "Quiz: Retrieval check", "Language practice: A little Spanish",
       "Goal: Explain Bayesian updating", "Deck: Bayes cards", "Bayes plan",
-      "Artifact", "Bayes map", "Notes: Learner notes", "Image: Update diagram",
+      "Bayes note", "Bayes map", "Notes: Learner notes", "Image: Update diagram",
       "Audio: Bayes narration", "Video: Bayes video", "Animation: Bayes animation", "Continue on web",
     ]);
-    for (const heading of nodeHeadings) expect(output).toContain(`— ${heading} —`);
-    expect(output).toContain("Mermaid source (not executed in terminal):");
+    for (const heading of nodeHeadings) expect(output).toContain(`### ${heading}`);
+    // Diagrams stay as fenced source; the transcript adds the web/desktop pointer once.
+    expect(output).toContain("```mermaid");
+    expect(output).not.toContain("Lifecycle:");
     expect(output).toContain("https://example.com/bayes.mp3");
-    expect(output).toContain("Handoff target: web");
+    expect(output).toContain("### Continue on web");
   });
 
   test("imports legacy keating.ui tool results and recovers malformed or browser-program input without evaluation", () => {

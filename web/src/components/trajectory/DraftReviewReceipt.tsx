@@ -72,6 +72,17 @@ export function DraftReviewReceipt({ receipt }: { receipt: TeachingDraftReceiptR
 					{snapshot.planningMs === undefined ? "" : ` · planning ${Math.round(snapshot.planningMs)} ms`}
 				</p>
 				{snapshot.interaction ? <InteractionSummary interaction={snapshot.interaction} /> : null}
+				{snapshot.backgroundActivity ? <p className={muted} data-testid="draft-background-learning">
+					Background learning · saved preference for {snapshot.backgroundActivity.preferredKind}, used without waiting for a hosted prediction.
+					{" Current teaching checks and your request still take precedence."}
+				</p> : null}
+				{snapshot.activityLearning ? <p className={muted} data-testid="draft-activity-learning">
+					{snapshot.activityLearning.validation === null && snapshot.activityLearning.counts.exposures === 0 && snapshot.activityLearning.reasons.length === 0
+						? "Learning history · this released reply is eligible to be linked to a later recorded answer."
+						: <>Chat predictions · {snapshot.activityLearning.status === "active" ? "TabPFN selected among approved replies" : "usual reply selection retained"}
+							{` · ${snapshot.activityLearning.counts.labelled} linked graded outcomes · ${snapshot.activityLearning.counts.validation} later checks.`}
+							{" This estimates the next recorded answer; it does not show causal improvement or unaided learning."}</>}
+				</p> : null}
 				{snapshot.planReview ? (
 					<p className={muted} data-testid="draft-plan-review">
 						Plan review after {planTriggerLabels[snapshot.planReview.trigger]}: {planActionLabels[snapshot.planReview.action]}

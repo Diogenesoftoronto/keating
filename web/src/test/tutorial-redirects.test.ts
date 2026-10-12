@@ -63,11 +63,11 @@ describe("legacy tutorial SPA routing", () => {
 		await router.load();
 		// The server-mode harness canonicalizes a trailing slash first. The SPA
 		// Transitioner performs the same canonical navigation before beforeLoad.
-		if (router.state.redirect?.options.href === "/tutorial") {
+		if (router._serverResult?.type === "redirect" && router._serverResult.redirect.options.href === "/tutorial") {
 			router.history.replace("/tutorial");
 			await router.load();
 		}
-		expect(router.state.redirect?.options).toMatchObject({ href: destination, reloadDocument: true, replace: true });
+		expect(router._serverResult?.type === "redirect" && router._serverResult.redirect.options).toMatchObject({ href: destination, reloadDocument: true, replace: true });
 	});
 	it("does not navigate merely because a link is preloaded", () => {
 		expect(() => tutorialRedirectBeforeLoad({ location: { href: "/tutorial" }, preload: true })).not.toThrow();

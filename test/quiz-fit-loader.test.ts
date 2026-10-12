@@ -10,7 +10,7 @@ import { UiActionJournalStore } from "../src/tui/ui/journal.js";
 import { fitCliQuizPerformance } from "../src/judgement/quiz-boosting-fit.js";
 import { loadCliQuizFit } from "../src/judgement/quiz-fit-loader.js";
 import { withLearnerProfile } from "../src/core/learner-profile-selection.js";
-import { createCliQuizPerformanceController, QUIZ_FIT_FILE_ENV, QUIZ_FIT_SHA256_ENV } from "../src/judgement/cli-quiz-performance.js";
+import { createCliQuizPerformanceController } from "../src/judgement/cli-quiz-performance.js";
 
 const dirs: string[] = [];
 afterEach(async () => { await Promise.all(dirs.splice(0).map(d => rm(d, { recursive: true, force: true }))); });
@@ -79,17 +79,17 @@ test("loader verifies complete source-bound reports and refuses repinned changes
   doc.nodes = [{ type: "quiz", id: "quiz", title: "Topic", questions: [question] }];
   const prior = await f.store.read(documents[3]!.documentId);
   const controller = createCliQuizPerformanceController({ cwd: f.cwd, document: doc, nodeId: "quiz", ...options,
-    env: { [QUIZ_FIT_FILE_ENV]: "fit.json", [QUIZ_FIT_SHA256_ENV]: pin },
+    env: { KEATING_QUIZ_FIT_FILE: "fit.json", KEATING_QUIZ_FIT_SHA256: pin },
     history: async () => prior.observations,
     runtime: () => ({ current: () => true, call: async request => ({ ok: true, response: {
       backend: { backend: "system-one", model: "jev-1.13.0", calibrationSha256: null },
       answers: Object.fromEntries(Object.keys(request.questions).map(key => [key, { type: "noul", noul: 0.8 }])),
     } }) }) });
-  expect(await controller.estimate()).toEqual({ ok: true, expectedCorrect: 0.05, rawExpectedCorrect: 0.8,
-    itemCount: 1, estimateMethod: "shallow-tree", fitSha256: fit.fitSha256 });
+  // Research fits remain verifiable, but a legacy environment cannot activate them in the application.
+  expect(await controller.estimate()).toEqual({ ok: true, expectedCorrect: 0.8, itemCount: 1 });
   const persisted = (await new CliQuizPerformanceStore(f.cwd, undefined, options.now).read(doc.id)).predictions[0]!;
   expect(persisted.prediction.probability).toBe(0.8);
-  expect(persisted.fitted).toMatchObject({ source: "proxy", probability: 0.05, method: "shallow-tree", fitSha256: fit.fitSha256, fileSha256: pin });
+  expect(persisted.fitted).toBeUndefined();
   controller.dispose();
   await expect(loadCliQuizFit(f.cwd, file, "0".repeat(64), options)).rejects.toThrow();
   for (const kind of ["tree", "metrics", "backend", "selection", "version", "hash"] as const) {

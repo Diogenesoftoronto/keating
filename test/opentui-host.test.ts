@@ -119,7 +119,8 @@ describe("OpenTUI host controller", () => {
       result: { details: { goal: { title: "Calculus", status: "active", steps: [{ order: 0, title: "Limits", status: "in_progress" }] } } },
       isError: false,
     });
-    expect(h.entries.map((entry) => entry.body).join("\n")).toContain("Goal: Calculus");
+    // The card's heading is the entry title; the body carries only the content.
+    expect(h.entries.map((entry) => entry.title)).toContain("Goal: Calculus");
     expect(h.entries.map((entry) => entry.body).join("\n")).toContain("Limits");
     expect(h.controller.getActiveUiDocument()?.nodes[0]).toMatchObject({ type: "goal", title: "Calculus" });
     expect(h.documents.at(-1)?.controls.map((control) => control.label)).toContain("Complete goal step: Limits");

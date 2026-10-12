@@ -80,6 +80,10 @@ const NotOrganicCallback = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/NotOrganicCallback")),
   "NotOrganicCallback",
 );
+const LearningProfile = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/LearningProfile")),
+  "LearningProfile",
+);
 const LatestCommitReview = APP_ONLY ? () => null : lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/LatestCommitReview")),
   "LatestCommitReview",
@@ -271,6 +275,12 @@ const notOrganicCallbackRoute = createRoute({
   component: NotOrganicCallback,
 });
 
+const learningProfileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/review/learning-profile",
+  component: LearningProfile,
+});
+
 const latestCommitReviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/review/latest-commit",
@@ -319,6 +329,7 @@ const routeTree = rootRoute.addChildren([
   sharedSessionRoute,
   oauthCallbackRoute,
   notOrganicCallbackRoute,
+  learningProfileRoute,
   coursesRoute,
   courseJoinRoute,
   courseWorkspaceRoute,

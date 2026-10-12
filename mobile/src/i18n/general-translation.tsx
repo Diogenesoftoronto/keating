@@ -1,7 +1,7 @@
-import "@formatjs/intl-getcanonicallocales/polyfill-force";
-import "@formatjs/intl-locale/polyfill-force";
-import "@formatjs/intl-displaynames/polyfill-force";
-import "@formatjs/intl-displaynames/locale-data/en";
+import "@formatjs/intl-getcanonicallocales/polyfill-force.js";
+import "@formatjs/intl-locale/polyfill-force.js";
+import "@formatjs/intl-displaynames/polyfill-force.js";
+import "@formatjs/intl-displaynames/locale-data/en.js";
 
 import type { ReactNode } from "react";
 import { GTProvider, initializeGT } from "gt-react-native";

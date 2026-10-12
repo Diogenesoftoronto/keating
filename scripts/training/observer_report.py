@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12,<3.14"
-# dependencies = ["numpy==2.2.6", "pandas==2.3.3", "matplotlib==3.10.8"]
+# dependencies = ["numpy==2.5.3", "pandas==3.0.6", "matplotlib==3.11.2"]
 # ///
 """Validate a completed observer job and export descriptive PNG/SVG/HTML.
 

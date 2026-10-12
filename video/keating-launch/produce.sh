@@ -9,7 +9,7 @@
 # for Whisper word timings. Keys are read at runtime and never stored.
 set -euo pipefail
 cd "$(dirname "$0")"
-HF="npx --yes hyperframes@0.8.92"
+HF="npx --yes hyperframes@0.8.106"
 
 scripts/stage-assets.sh
 scripts/gen-images.sh

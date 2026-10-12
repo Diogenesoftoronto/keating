@@ -17,6 +17,241 @@ function answers(request: JudgementRequest, override: Record<string, string | nu
 const makeJudge = (mutate: (request: JudgementRequest) => Record<string, string | number> = () => ({})): JudgementCaller => async (request) => ({ ok: true, response: { answers: answers(request, mutate(request)), backend: { backend: "fixture", model: "fixture-v1", calibrationSha256: null }, usage: { inputTokens: 10, outputTokens: 2 } } });
 
 describe("private draft loop", () => {
+  test("complementary reviewed drafts produce one freshly reviewed synthesis within the attempt budget", async () => {
+    let generated = 0;
+    let syntheses = 0;
+    const reviews: number[] = [];
+    const progress: TeachingDraftSnapshot[] = [];
+    const result = await runTeachingDrafts({ turn, maxAttempts: 3,
+      onProgress: snapshot => progress.push(snapshot),
+      judge: makeJudge((request): Record<string, string | number> => {
+        if (request.questions.draft_choice) return { draft_choice: "draft_3" };
+        if (request.questions.quality_progress) reviews.push(generated);
+        return generated === 1 ? { quality_progress: .99, quality_scope: .3 }
+          : generated === 2 ? { quality_progress: .3, quality_scope: .99 } : {};
+      }),
+      generate: async input => {
+        generated++;
+        if (input.synthesis) {
+          syntheses++;
+          expect(input.attempt).toBe(3);
+          expect(input.synthesis.sources.map(source => source.attempt)).toEqual([1, 2]);
+          expect(input.synthesis.sources[0]).toMatchObject({ text: "PRIVATE_SOURCE_1" });
+          expect(input.synthesis.sources[0]!.passedChecks).toContain("quality_progress");
+          expect(input.synthesis.sources[0]!.repairChecks).toContain("quality_scope");
+          expect(input.synthesis.sources[1]!.passedChecks).toContain("quality_scope");
+          expect(input.synthesis.sources[1]!.repairChecks).toContain("quality_progress");
+        }
+        return { reply: { text: `PRIVATE_SOURCE_${generated}`, toolCalls: [] }, value: generated };
+      },
+    });
+    expect(generated).toBe(3);
+    expect(syntheses).toBe(1);
+    expect(reviews).toEqual([1, 2, 3]);
+    expect(result.status).toBe("released");
+    expect(result.value).toBe(3);
+    expect(JSON.stringify(result.receipt)).not.toContain("PRIVATE_SOURCE_");
+    expect(JSON.stringify(progress)).not.toContain("PRIVATE_SOURCE_");
+  });
+
+  test.each(["same weakness", "critical failure", "tools", "oversized"])("does not synthesize sources with %s", async exclusion => {
+    let generated = 0;
+    let syntheses = 0;
+    const result = await runTeachingDrafts({ turn: { ...turn, availableTools: ["read"] }, maxAttempts: 3,
+      judge: makeJudge((): Record<string, string | number> => generated === 1
+        ? { quality_progress: .99, quality_scope: .3, ...(exclusion === "critical failure" ? { retention_overclaimed: .99 } : {}) }
+        : { quality_progress: .3, quality_scope: exclusion === "same weakness" ? .3 : .99 }),
+      generate: async input => {
+        generated++;
+        if (input.synthesis) syntheses++;
+        return { reply: {
+          text: exclusion === "oversized" && generated === 1 ? "x".repeat(12_001) : `source ${generated}`,
+          toolCalls: exclusion === "tools" && generated === 1 ? [{ name: "read", arguments: { path: "lesson" } }] : [],
+        }, value: generated };
+      },
+    });
+    expect(generated).toBe(3);
+    expect(syntheses).toBe(0);
+    if (exclusion === "tools") expect(result.receipt.attempts[0]!.checks.find(check => check.id === "available_tool")?.status).toBe("pass");
+  });
+
+  test.each(["deadline", "cancel"])("a hanging synthesis respects %s and preserves the release boundary", async boundary => {
+    const controller = new AbortController();
+    let generated = 0;
+    let synthesisStarted = false;
+    const result = await runTeachingDrafts({ turn, maxAttempts: 3, timeoutMs: 200, signal: controller.signal,
+      judge: makeJudge((): Record<string, string | number> => generated === 1
+        ? { quality_progress: .99, quality_scope: .3 }
+        : { quality_progress: .3, quality_scope: .99 }),
+      generate: async input => {
+        generated++;
+        if (input.synthesis) {
+          synthesisStarted = true;
+          if (boundary === "cancel") controller.abort();
+          return new Promise<never>(() => {});
+        }
+        return { reply: { text: `original ${generated}`, toolCalls: [] }, value: generated };
+      },
+    });
+    expect(synthesisStarted).toBe(true);
+    expect(generated).toBe(3);
+    expect(result.status).toBe(boundary === "cancel" ? "cancelled" : "released");
+    if (boundary === "cancel") {
+      expect(result.value).toBeUndefined();
+      expect(result.reply).toBeUndefined();
+    } else {
+      expect(result.value).toBe(1);
+      expect(result.reply?.text).toBe("original 1");
+    }
+  });
+
+  test("a failed synthesis cannot enter selection and detached synthesis input preserves originals", async () => {
+    let generated = 0;
+    let syntheses = 0;
+    let selectedTexts: string[] = [];
+    const result = await runTeachingDrafts({ turn, maxAttempts: 4,
+      judge: makeJudge((request): Record<string, string | number> => {
+        if (request.questions.draft_choice) {
+          selectedTexts = Object.values((request.state as { candidates: Record<string, { text: string }> }).candidates).map(candidate => candidate.text);
+          return { draft_choice: "draft_1" };
+        }
+        return generated === 1 ? { quality_progress: .99, quality_scope: .3 }
+          : generated === 2 ? { quality_progress: .3, quality_scope: .99 }
+          : { retention_overclaimed: .99 };
+      }),
+      generate: async input => {
+        generated++;
+        if (input.synthesis) {
+          syntheses++;
+          const sources = input.synthesis.sources as unknown as { text: string; passedChecks: string[]; repairChecks: string[] }[];
+          sources[0]!.text = "UNREVIEWED_MUTATION";
+          sources[0]!.passedChecks.push("UNREVIEWED_CHECK_MUTATION");
+          sources[0]!.repairChecks.length = 0;
+        }
+        return { reply: { text: generated <= 2 ? `original ${generated}` : "FAILED_MERGE", toolCalls: [] }, value: generated };
+      },
+    });
+    expect(syntheses).toBe(1);
+    expect(generated).toBe(4);
+    expect(result.status).toBe("released");
+    expect(result.value).toBe(1);
+    expect(result.reply?.text).toBe("original 1");
+    expect(result.receipt.selectionCandidateAttempts).toEqual([1, 2]);
+    expect(selectedTexts).toEqual(["original 1", "original 2"]);
+    expect(JSON.stringify(result.receipt)).not.toContain("UNREVIEWED_CHECK_MUTATION");
+  });
+
+  test("complementary drafts do not add a synthesis beyond the cap", async () => {
+    let generated = 0;
+    await runTeachingDrafts({ turn, maxAttempts: 2,
+      judge: makeJudge((): Record<string, string | number> => generated === 1 ? { quality_progress: .99, quality_scope: .3 } : { quality_progress: .3, quality_scope: .99 }),
+      generate: async input => {
+        expect(input.synthesis).toBeUndefined();
+        return { reply: { text: `source ${++generated}`, toolCalls: [] }, value: generated };
+      },
+    });
+    expect(generated).toBe(2);
+  });
+
+  test("ten imperfect drafts remain eligible and the comparator chooses the best", async () => {
+    let generated = 0;
+    let compared: number[] = [];
+    const result = await runTeachingDrafts({ turn,
+      judge: async (request, signal) => {
+        if (request.questions.draft_choice) {
+          expect(request.questions.draft_choice.type === "choice" && request.questions.draft_choice.criteria).not.toHaveProperty("no_match");
+          compared = Object.keys((request.state as { candidates: object }).candidates).map(key => Number(key.slice(6)));
+        }
+        return makeJudge(() => ({ quality_progress: .4, quality_scope: .5, code_example_missing: .95, draft_choice: "draft_7" }))(request, signal);
+      },
+      generate: async ({ feedback }) => {
+        if (generated) expect(feedback.some(check => check.id === "quality_progress")).toBe(true);
+        return { reply: { text: `complete draft ${++generated}`, toolCalls: [] }, value: generated };
+      },
+    });
+    expect(generated).toBe(10);
+    expect(compared).toEqual([1,2,3,4,5,6,7,8,9,10]);
+    expect(result.status).toBe("released");
+    expect(result.value).toBe(7);
+  });
+
+  test("unavailable comparison uses the strongest completed quality review", async () => {
+    let generated = 0;
+    const result = await runTeachingDrafts({ turn, maxAttempts: 3,
+      judge: async (request, signal) => request.questions.draft_choice
+        ? { ok: false, error: { code: "backend-unavailable", retryable: true } }
+        : makeJudge(() => ({ quality_progress: generated === 2 ? .5 : .3, quality_scope: .4 }))(request, signal),
+      generate: async () => ({ reply: { text: `complete draft ${++generated}`, toolCalls: [] }, value: generated }),
+    });
+    expect(result.status).toBe("released");
+    expect(result.value).toBe(2);
+    expect(result.receipt.reason).toBe("selection-quality-fallback");
+  });
+
+  test("revises past three drafts and releases the tenth without an eleventh", async () => {
+    let generated = 0;
+    const result = await runTeachingDrafts({ turn,
+      judge: makeJudge((): Record<string, string | number> => generated < 10 ? { retention_overclaimed: 0.99 } : {}),
+      generate: async ({ feedback }) => {
+        if (generated) expect(feedback.some(check => check.id === "retention_overclaimed")).toBe(true);
+        generated++;
+        return { reply: { text: `candidate ${generated}`, toolCalls: [] }, value: generated };
+      },
+    });
+    expect(result.status).toBe("released");
+    expect(result.value).toBe(10);
+    expect(generated).toBe(10);
+    expect(result.receipt.maxAttempts).toBe(10);
+  });
+
+  test.each([undefined, 50])("exhausted retries stop at ten even with budget %s", async maxAttempts => {
+    let generated = 0;
+    const result = await runTeachingDrafts({ turn, maxAttempts,
+      judge: makeJudge(() => ({ retention_overclaimed: 0.99 })),
+      generate: async () => ({ reply: { text: "PRIVATE rejected draft", toolCalls: [] }, value: ++generated }),
+    });
+    expect(generated).toBe(10);
+    expect(result.status).toBe("withheld");
+    expect(result.receipt.attempts).toHaveLength(10);
+    expect(result.value).toBeUndefined();
+  });
+
+  test("uncertain teaching style does not veto useful replies; raw scores remain visible", async () => {
+    const result = await runTeachingDrafts({ turn: { ...turn, domain: "unknown" }, maxAttempts: 1,
+      judge: makeJudge(() => ({ draft_standard: "deep", quality_progress: 0.8, quality_scope: 0.67,
+        explanation_missing: 0.44, checkpoint_not_interactive: 0.73, code_example_missing: 0.54,
+        science_prediction_missing: 0.33, art_work_missing: 0.29 })),
+      generate: async () => ({ reply: { text: "A useful response", toolCalls: [] }, value: "approved" }),
+    });
+    expect(result.status).toBe("released");
+    expect(result.receipt.attempts[0]!.checks.find(check => check.id === "code_example_missing"))
+      .toMatchObject({ probability: 0.54, status: "unknown" });
+  });
+
+  test.each([
+    { identity_invented: 0.5 }, { profile_evidence_invented: 0.21 },
+  ] as Record<string, number>[])("still blocks evidence uncertainty, clear violations and unhelpful drafts: %j", async scores => {
+    const result = await runTeachingDrafts({ turn: { ...turn, domain: "unknown" }, maxAttempts: 1,
+      judge: makeJudge(() => scores),
+      generate: async () => ({ reply: { text: "PRIVATE", toolCalls: [] }, value: "PRIVATE" }),
+    });
+    expect(result.status).toBe("withheld");
+    expect(result.value).toBeUndefined();
+  });
+
+  test("missing stylistic review answers remain blocking", async () => {
+    const judge = makeJudge();
+    const result = await runTeachingDrafts({ turn, maxAttempts: 1,
+      judge: async (request, signal) => {
+        const outcome = await judge(request, signal);
+        if (outcome.ok) delete (outcome.response.answers as Record<string, JudgementAnswer>).explanation_missing;
+        return outcome;
+      },
+      generate: async () => ({ reply: { text: "PRIVATE", toolCalls: [] }, value: "PRIVATE" }),
+    });
+    expect(result.status).toBe("withheld");
+  });
+
   test("preflight rebuilds the window and diagnostics measure each actual batch", async () => {
     const conversation = Array.from({ length: 30 }, (_, index) => ({ role: index % 2 ? "assistant" as const : "user" as const, content: `PRIVATE_TURN_${index} ${"x".repeat(400)}` }));
     const calls: JudgementRequest[] = [];
@@ -72,7 +307,7 @@ describe("private draft loop", () => {
     expect(JSON.stringify(updates)).not.toContain("PRIVATE_REJECTED");
     expect(JSON.stringify(revisions)).not.toContain("PRIVATE_REJECTED");
     expect(JSON.stringify(revisions)).toContain("retention_overclaimed");
-    expect(result.receipt.judgeUsage).toEqual({ inputTokens: 40, outputTokens: 8 });
+    expect(result.receipt.judgeUsage).toEqual({ inputTokens: 30, outputTokens: 6 });
   });
 
   test("failed candidates cannot enter the selector and exhausted retries return no draft", async () => {
@@ -100,11 +335,11 @@ describe("private draft loop", () => {
     expect(result.receipt.attempts).toHaveLength(2);
   });
 
-  test("selector no_match cannot fall back to an unchosen draft", async () => {
-    const result = await runTeachingDrafts({ turn, judge: makeJudge(() => ({ draft_choice: "no_match" })), generate: async () => ({ reply: { text: "answer", toolCalls: [] }, value: "answer" }) });
-    expect(result.status).toBe("withheld");
-    expect(result.receipt.reason).toBe("selection-abstained");
-    expect(result.value).toBeUndefined();
+  test("selector abstention retains the best reviewed draft", async () => {
+    const result = await runTeachingDrafts({ turn, judge: makeJudge(() => ({ draft_standard: "supported", draft_choice: "no_match" })), generate: async () => ({ reply: { text: "answer", toolCalls: [] }, value: "answer" }) });
+    expect(result.status).toBe("released");
+    expect(result.receipt.reason).toBe("selection-quality-fallback");
+    expect(result.value).toBe("answer");
   });
 
   test("adaptive effort respects an explicit off ceiling and does not lower standards after failure", async () => {
@@ -114,8 +349,8 @@ describe("private draft loop", () => {
       levels.push(reasoning); n++; return { reply: { text: `candidate ${n}`, toolCalls: [] }, value: n };
     } });
     expect(levels).toEqual(["off", "off"]);
-    expect(result.status).toBe("withheld");
-    expect(result.receipt.qualityThreshold).toBe(0.85);
+    expect(result.status).toBe("released");
+    expect(result.receipt.qualityThreshold).toBe(0.65);
     expect(result.receipt.attempts.every(({ standard }) => standard === "deep")).toBe(true);
   });
 
@@ -144,6 +379,34 @@ describe("private draft loop", () => {
     const result = await runTeachingDrafts({ turn, judge: makeJudge(), timeoutMs: 10, generate: () => new Promise(() => {}) });
     expect(result.status).toBe("withheld");
     expect(result.receipt.reason).toBe("time-budget");
+  });
+
+  test("deadline retains the best completed review while a later generation hangs", async () => {
+    let generated = 0;
+    const result = await runTeachingDrafts({ turn, timeoutMs: 100,
+      judge: makeJudge(() => ({ quality_progress: .4 })),
+      generate: async () => ++generated === 1
+        ? { reply: { text: "Completed response", toolCalls: [] }, value: "completed" }
+        : new Promise(() => {}),
+    });
+    expect(result.status).toBe("released");
+    expect(result.value).toBe("completed");
+    expect(result.receipt.selectedAttempt).toBe(1);
+    expect(result.receipt.reason).toBe("time-budget-best-draft");
+  });
+
+  test("user cancellation never releases even an earlier eligible draft", async () => {
+    const controller = new AbortController();
+    let generated = 0;
+    const result = await runTeachingDrafts({ turn, signal: controller.signal,
+      judge: makeJudge(() => ({ quality_progress: .4 })),
+      generate: async () => {
+        if (++generated === 2) controller.abort();
+        return { reply: { text: "Completed response", toolCalls: [] }, value: "completed" };
+      },
+    });
+    expect(result.status).toBe("cancelled");
+    expect(result.value).toBeUndefined();
   });
 
   test("review and release use the same detached reply even if a provider mutates its object", async () => {

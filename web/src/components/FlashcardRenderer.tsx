@@ -913,6 +913,10 @@ export function FlashcardRenderer({
 					appliedIntervalDays: outcome.appliedIntervalDays,
 					easeAfter: nextSrs.ease,
 					previousIntervalDays: current.srs.intervalDays,
+					createdAt: nextSrs.lastReviewedAt,
+					nextDueAt: nextSrs.dueAt,
+					repetitionsAfter: nextSrs.reps,
+					lapsesAfter: nextSrs.lapses,
 					isLapse: outcome.isLapse,
 				});
 			} catch {

@@ -81,7 +81,8 @@ describe("prompt adherence experiment", () => {
     const rows = await run({ cases: [tainted], generator: async request => { actorInputs.push(JSON.stringify(request.turn)); return completion; },
       judge: async request => { calls.push(request); return judgePass(request); } });
     expect(rows.length).toBe(4);
-    expect(calls.length).toBe(8);
+    // A single eligible draft needs no comparison judgment.
+    expect(calls.length).toBe(7);
     for (const encoded of [...actorInputs, ...calls.map(request => JSON.stringify(request))]) {
       expect(encoded).not.toContain("CANARY_");
       expect(encoded).not.toContain("expectedDecisions");
@@ -99,7 +100,7 @@ describe("prompt adherence experiment", () => {
       judge: async request => { clock += 5; return judgePass(request); } });
     expect(rows.find(row => row.arm === "full")!.timing).toEqual({ preJudgeMs: 0, generationMs: 11, postJudgeMs: 5, draftJudgeMs: 0, endToEndMs: 16 });
     expect(rows.find(row => row.arm === "governed")!.timing).toEqual({ preJudgeMs: 5, generationMs: 11, postJudgeMs: 5, draftJudgeMs: 0, endToEndMs: 21 });
-    expect(rows.find(row => row.arm === "drafted")!.timing).toEqual({ preJudgeMs: 5, generationMs: 11, postJudgeMs: 5, draftJudgeMs: 10, endToEndMs: 31 });
+    expect(rows.find(row => row.arm === "drafted")!.timing).toEqual({ preJudgeMs: 5, generationMs: 11, postJudgeMs: 5, draftJudgeMs: 5, endToEndMs: 26 });
     const pairs = summarizeBenchmark(rows).pairs;
     expect(pairs.find(row => row.arm === "governed")!.endToEndMsDeltaMedianComplete).toBe(5);
   });
@@ -195,7 +196,7 @@ describe("prompt adherence experiment", () => {
     }
   });
 
-  test("private drafts repair failures and retain every attempt's usage and reasoning choice", async () => {
+  test("private drafts revise advisory failures, select the better eligible reply, and retain every attempt's usage and reasoning choice", async () => {
     let draftAttempts = 0;
     const rows = await run({ generator: async request => {
       if (request.reasoning === undefined) return completion;
@@ -205,6 +206,9 @@ describe("prompt adherence experiment", () => {
         usage: { ...UNAVAILABLE_USAGE, inputTokens: 10, outputTokens: 5, source: "fixture" } };
     }, judge: async request => {
       const result = await judgePass(request);
+      if (result.ok && "draft_choice" in request.questions) return { ...result, response: { ...result.response,
+        answers: { ...result.response.answers, draft_choice: { type: "choice", choice: "draft_2", confidence: 1,
+          probabilities: { draft_1: 0, draft_2: 1 } } } } };
       const state = request.state as { reply?: { text: string } };
       return result.ok && state.reply?.text === "bad draft" ? { ...result, response: { ...result.response,
         answers: { ...result.response.answers, direct_help_withheld: { type: "noul", noul: .95 } } } } : result;
@@ -213,6 +217,8 @@ describe("prompt adherence experiment", () => {
     expect(draftAttempts).toBe(2);
     expect(drafted.generation.reply.text).toBe("approved draft");
     expect(drafted.status).toBe("pass");
+    expect(drafted.draft!.diagnostics.selectionCandidateAttempts).toEqual([1, 2]);
+    expect(drafted.draft!.diagnostics.attempts[0]!.checks.find(check => check.id === "direct_help_withheld")!.status).toBe("fail");
     expect(drafted.draft!.diagnostics.selectedAttempt).toBe(2);
     expect(drafted.draft!.generations.map(row => row.reasoning)).toEqual(["off", "low"]);
     expect(drafted.draft!.generations[0]!.result.reply.text).toBe("bad draft");

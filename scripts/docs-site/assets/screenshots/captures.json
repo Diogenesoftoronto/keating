@@ -1,0 +1,304 @@
+{
+  "captureDate": "2026-10-01",
+  "metadataGeneratedAt": "2026-10-01T11:01:41.761Z",
+  "version": "4.0.7",
+  "sourceCommit": "ca81830b7ead66aae4b4e37a52aef35c6c31c96b",
+  "sourceState": "Working tree includes documentation capture fixtures and scripts.",
+  "regenerate": "rtk devenv tasks run keating:docs-screenshots",
+  "screenshots": [
+    {
+      "name": "current-onboarding-desktop",
+      "source": "chat-onboarding--welcome",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-onboarding-desktop.png",
+      "width": 1280,
+      "height": 900,
+      "sha256": "b92dc6527a4b09e216b5148f394fb1d47e18fb0d6a7d0ded66b3a82470431c8a"
+    },
+    {
+      "name": "current-onboarding-mobile",
+      "source": "chat-onboarding--mobile",
+      "kind": "production-component-story",
+      "viewport": [
+        390,
+        844
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-onboarding-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "111c4a18636961442f989ececcb0e2e8179e8db25bd0a5f67b51d157be10669b"
+    },
+    {
+      "name": "current-model-access",
+      "source": "chat-onboarding--model-access",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-model-access.png",
+      "width": 1280,
+      "height": 900,
+      "sha256": "580a49e651235feb14607076745af26684328b43a8f6394aa6c016894e3fe1e4"
+    },
+    {
+      "name": "current-model-picker",
+      "source": "documentation-model-setup--populated-model-picker",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-model-picker.png",
+      "width": 1280,
+      "height": 900,
+      "sha256": "1fa69920965a838656f4ac1e120a79c893e583a2c615572474bad42a4c7ccfa5"
+    },
+    {
+      "name": "current-custom-provider",
+      "source": "documentation-model-setup--custom-provider",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-custom-provider.png",
+      "width": 1280,
+      "height": 900,
+      "sha256": "8225c3d7ce04d83ef41a4d7f940b2ecfb37fc6a9eff7e9b9c55a9c26aae7c671"
+    },
+    {
+      "name": "current-offline-download",
+      "source": "documentation-model-setup--offline-download",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-offline-download.png",
+      "width": 696,
+      "height": 384,
+      "sha256": "ce469a2ef5258f2ed2e6e0f1604c13546cb4c64f1c8f0cbc7ca79ea460a26917"
+    },
+    {
+      "name": "current-offline-ready",
+      "source": "documentation-model-setup--offline-ready",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-offline-ready.png",
+      "width": 683,
+      "height": 353,
+      "sha256": "8bac72e4d1e11b7699f6e74d180d25fad437e3846d5b4c4a345a687d07fc2519"
+    },
+    {
+      "name": "current-credit-recovery",
+      "source": "chat-credit-recovery--insufficient-funds",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-credit-recovery.png",
+      "width": 652,
+      "height": 372,
+      "sha256": "c9e9e0835211618af390fd92cd5243eb1030f61cf28ffe457c351fd0ee6f36cc"
+    },
+    {
+      "name": "current-credit-retry-ready",
+      "source": "chat-credit-recovery--retry-ready",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-credit-retry-ready.png",
+      "width": 652,
+      "height": 378,
+      "sha256": "3d670d0924546fdacb2030a7892d57a58c38376e60fe13093cd68f47b98bddda"
+    },
+    {
+      "name": "current-quiz-graded",
+      "source": "learning-quiz--graded",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-quiz-graded.png",
+      "width": 1062,
+      "height": 907,
+      "sha256": "feb4d43222bb736f693f601e80df7c5ed1fde1f924ad5332db91830b925da8a1"
+    },
+    {
+      "name": "current-flashcard-review",
+      "source": "artifacts-flashcards--still-arena",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        1050
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-flashcard-review.png",
+      "width": 938,
+      "height": 826,
+      "sha256": "d8654d5abd17b7a5c5128a96ea9ebdea541300cb95b301874c2d74c07c18aaca"
+    },
+    {
+      "name": "current-flashcard-mobile",
+      "source": "artifacts-flashcards--compact-chat-embed-revealed",
+      "kind": "production-component-story",
+      "viewport": [
+        390,
+        1100
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-flashcard-mobile.png",
+      "width": 390,
+      "height": 1100,
+      "sha256": "3f434848d034f7a7120224053c2a60c206178283f0437dbe3d547ea7c89cf5f4"
+    },
+    {
+      "name": "current-assignment-submitted",
+      "source": "learning-task--submitted",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-assignment-submitted.png",
+      "width": 1062,
+      "height": 599,
+      "sha256": "6773a31b5a7ba8314391749145a4f256d2115a37dbf4c371dc9bb6b1b5842bad"
+    },
+    {
+      "name": "current-submission-local",
+      "source": "learning-submission-delivery--saved-on-device",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-submission-local.png",
+      "width": 212,
+      "height": 76,
+      "sha256": "ce186ccd2ae4789d55907a42bbe996c9814d772ee019c0495828844727db47a9"
+    },
+    {
+      "name": "current-submission-delivered",
+      "source": "learning-submission-delivery--delivered-to-course",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-submission-delivered.png",
+      "width": 202,
+      "height": 76,
+      "sha256": "91d4e046d7ed459f8feb95ddc0ab8775ab942e64c3d734be8a52006f23934a2c"
+    },
+    {
+      "name": "current-workspace-files",
+      "source": "workspace-desktop--files",
+      "kind": "production-component-story",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
+      "file": "current-workspace-files.png",
+      "width": 1280,
+      "height": 900,
+      "sha256": "5d21001e2d615e60b7076b1e8a75b5b1c110c91ce902a4d76f7e7c155c52d678"
+    },
+    {
+      "name": "current-classroom-desktop",
+      "source": "scripts/capture-classroom-shots.mjs (/chat)",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        900
+      ],
+      "fixture": "Authored lesson restored through production local session storage; no inference request. Mobile is narrow web, not a native client.",
+      "file": "current-classroom-desktop.png",
+      "width": 1280,
+      "height": 900,
+      "sha256": "e51adf51bbd0e82f000562cb5d3ab479083268bfa6cb1cae2485640fd1c98958"
+    },
+    {
+      "name": "current-classroom-mobile",
+      "source": "scripts/capture-classroom-shots.mjs (/chat)",
+      "kind": "application-route",
+      "viewport": [
+        390,
+        844
+      ],
+      "fixture": "Authored lesson restored through production local session storage; no inference request. Mobile is narrow web, not a native client.",
+      "file": "current-classroom-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "07440a4c43a27dcd3bc9c590311c66664043ae5d9c451550b41f8e93bd7d46d8"
+    },
+    {
+      "name": "current-tui-conversation",
+      "source": "docs/tui-screenshots.tape (src/cli/main.ts tui)",
+      "kind": "production-terminal-host",
+      "viewport": [
+        1440,
+        900
+      ],
+      "fixture": "Isolated temporary workspace and loopback demo provider; actual terminal runtime, without hosted inference or operator credentials.",
+      "file": "current-tui-conversation.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5353db8fa9b2071f746e3f8ca1a69edc61f5d0e3618410ae58ad2d778f46d72b"
+    },
+    {
+      "name": "current-tui-model-picker",
+      "source": "docs/tui-screenshots.tape (src/cli/main.ts tui)",
+      "kind": "production-terminal-host",
+      "viewport": [
+        1440,
+        900
+      ],
+      "fixture": "Isolated temporary workspace and loopback demo provider; actual terminal runtime, without hosted inference or operator credentials.",
+      "file": "current-tui-model-picker.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "d40d97a2836d31ae7f36c8cb2a1f566bec2f27dd2f5e20bbabc4d5fdc948ec7f"
+    },
+    {
+      "name": "current-tui-session-tree",
+      "source": "docs/tui-screenshots.tape (src/cli/main.ts tui)",
+      "kind": "production-terminal-host",
+      "viewport": [
+        1440,
+        900
+      ],
+      "fixture": "Isolated temporary workspace and loopback demo provider; actual terminal runtime, without hosted inference or operator credentials.",
+      "file": "current-tui-session-tree.png",
+      "width": 1440,
+      "height": 900,
+      "sha256": "9d98231e55530063b391484f5f65959382648307d20a8bf34cdd5958bb15c66a"
+    }
+  ]
+}

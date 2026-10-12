@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["marimo==0.23.1", "pandas==2.*", "numpy>=2,<3", "matplotlib==3.10.*"]
+# dependencies = ["marimo==0.25.1", "pandas==3.0.6", "numpy>=2,<3", "matplotlib==3.11.2"]
 # ///
 """Read-only Stage 1 candidate coverage, denominators, and paired family effects."""
 import marimo

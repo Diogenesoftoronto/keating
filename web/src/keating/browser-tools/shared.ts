@@ -1,4 +1,5 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
+import { CourseApiError } from "../../courses/client";
 import type { KeatingAgentRuntimeConfig } from "../agent-runtime";
 import type { BenchSessionSample, BrowserLearnerOutcome } from "../core";
 import type { WebSpeechSettings } from "../speech";
@@ -76,8 +77,9 @@ export class KeatingToolError extends Error {
       | "invalid-arguments"
       | "unavailable"
       | "execution-failed" = "execution-failed",
+    cause?: CourseApiError,
   ) {
-    super(message);
+    super(message, cause ? { cause } : undefined);
     this.name = "KeatingToolError";
   }
 }
@@ -295,8 +297,11 @@ export function createTool(
         if (error instanceof KeatingToolError) throw error;
         throw new KeatingToolError(
           name,
-          error instanceof Error ? error.message : String(error),
+          error instanceof CourseApiError
+            ? `Keating course request failed (${error.status}${error.code === "notorganic_auth_adapter_unavailable" ? "; notorganic_auth_adapter_unavailable" : ""}).`
+            : error instanceof Error ? error.message : String(error),
           "execution-failed",
+          error instanceof CourseApiError ? error : undefined,
         );
       }
     },

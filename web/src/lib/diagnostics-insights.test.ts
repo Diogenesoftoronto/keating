@@ -10,6 +10,14 @@ const entry = (id: number, level: DiagnosticEntry["level"], source: string, mess
 	({ id, timestamp: `2026-01-01T00:00:0${id}Z`, level, source, message });
 
 describe("diagnostics insights", () => {
+	it("describes a local session restore timeout without diagnosing a server outage", () => {
+		const detail = explainDiagnostic(entry(1, "warning", "storage", "Restoring session timed out after 15000ms"));
+		expect(detail.meaning).toContain("on this device");
+		expect(detail.meaning).toContain("reopen the session");
+		expect(detail.meaning).not.toContain("server");
+		expect(detail.meaning).not.toContain("connection");
+		expect(detail.fix?.reload).toBe(true);
+	});
 	it("groups repeats and ignores info", () => {
 		const groups = groupProblems([
 			entry(1, "error", "auth", "Provider sign-in failed"),

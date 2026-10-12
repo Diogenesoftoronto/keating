@@ -19,6 +19,7 @@ import { KeatingProvider, useKeating } from "@/state/KeatingProvider";
 import { UiSettingsProvider, useUiSettings } from "@/state/UiSettingsProvider";
 import { MobileWorkspaceProvider } from "@/state/MobileWorkspaceProvider";
 import { NotOrganicAccountProvider } from "@/state/NotOrganicAccountProvider";
+import { MobileKnowledgeProvider } from "@/state/MobileKnowledgeProvider";
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -65,9 +66,11 @@ export default function RootLayout() {
           <KeatingThemeProvider>
             <MobileWorkspaceProvider>
               <NotOrganicAccountProvider>
+                <MobileKnowledgeProvider>
                 <KeatingProvider>
                   <AppNavigator />
                 </KeatingProvider>
+                </MobileKnowledgeProvider>
               </NotOrganicAccountProvider>
             </MobileWorkspaceProvider>
           </KeatingThemeProvider>

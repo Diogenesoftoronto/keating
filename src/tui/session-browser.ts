@@ -151,43 +151,45 @@ function relativeAge(modified: Date, now: Date): string {
   return modified.toISOString().slice(0, 10);
 }
 
+/**
+ * Two columns per level. Roots carry no connector at all, so a flat list of
+ * sessions reads as a plain list and only real forks draw lineage.
+ */
 function treePrefix(row: TuiSessionTreeRow, glyphMode: TerminalGlyphMode): string {
-  const ancestors = row.ancestorContinues
-    .map((continues) => glyphMode === "ascii"
-      ? continues ? "| . " : ". . "
-      : continues ? "│ . " : ". . ")
+  if (row.depth === 0) return "";
+  const ascii = glyphMode === "ascii";
+  const ancestors = row.ancestorContinues.slice(1)
+    .map((continues) => (continues ? (ascii ? "| " : "│ ") : "  "))
     .join("");
-  const branch = glyphMode === "ascii"
-    ? row.isLast ? "`---" : "|---"
-    : row.isLast ? "└───" : "├───";
-  const node = row.hasChildren ? (glyphMode === "ascii" ? "+ " : "╦ ") : "  ";
-  return `${ancestors}${branch}${node}`;
+  const branch = ascii ? (row.isLast ? "`-" : "|-") : row.isLast ? "└ " : "├ ";
+  return `${ancestors}${branch}`;
 }
 
-/** Sacred TreeView row with a bounded label and an unmodified item value. */
+/**
+ * Sacred TreeView row with a bounded label and an unmodified item value.
+ * The title owns the width: the active session is a leading dot, lineage is
+ * the tree itself, and the age is the only metadata, dropped first when tight.
+ */
 export function sessionTreeOption(
   row: TuiSessionTreeRow,
   now = new Date(),
   glyphMode: TerminalGlyphMode = "unicode",
   width = 96,
 ): string {
-  const prefix = treePrefix(row, glyphMode);
-  const badges = [row.item.active ? "ACTIVE" : "", row.item.parentSessionPath ? "FORK" : ""]
-    .filter(Boolean)
-    .map((badge) => `[${badge}]`)
-    .join(" ");
-  const count = `${row.item.messageCount} msg`;
-  const metadataSeparator = glyphMode === "ascii" ? " | " : " · ";
-  const right = [badges, count, relativeAge(row.item.modified, now)].filter(Boolean).join(metadataSeparator);
   const safeWidth = Number.isFinite(width) ? Math.max(0, Math.floor(width)) : 96;
   if (safeWidth === 0) return "";
-  const titleSeparator = right ? "  " : "";
-  const titleWidth = Math.max(
-    0,
-    safeWidth - sacredTextWidth(prefix) - sacredTextWidth(right) - sacredTextWidth(titleSeparator),
-  );
-  const title = compactText(row.item.title, titleWidth, glyphMode);
-  const option = `${prefix}${title}  ${right}`;
+  const ascii = glyphMode === "ascii";
+  const marker = row.item.active ? (ascii ? "* " : "● ") : "  ";
+  const lead = `${treePrefix(row, glyphMode)}${marker}`;
+  const age = relativeAge(row.item.modified, now);
+  const title = sacredSanitizeText(row.item.title, glyphMode);
+  const roomWithAge = safeWidth - sacredTextWidth(lead) - sacredTextWidth(age) - 2;
+  const showAge = roomWithAge >= Math.min(12, sacredTextWidth(title));
+  const titleWidth = Math.max(0, showAge ? roomWithAge : safeWidth - sacredTextWidth(lead));
+  const fitted = compactText(title, titleWidth, glyphMode);
+  const option = showAge
+    ? `${lead}${fitted}${" ".repeat(Math.max(2, safeWidth - sacredTextWidth(lead) - sacredTextWidth(fitted) - sacredTextWidth(age)))}${age}`
+    : `${lead}${fitted}`;
   return sacredTextWidth(option) <= safeWidth ? option : sacredTruncateText(option, safeWidth, glyphMode);
 }
 

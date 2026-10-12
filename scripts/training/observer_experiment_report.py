@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12,<3.14"
-# dependencies = ["numpy==2.2.6", "scikit-learn==1.7.2", "matplotlib==3.10.8"]
+# dependencies = ["numpy==2.5.3", "scikit-learn==1.9.1", "matplotlib==3.11.2"]
 # ///
 """Local, sealed four-layer source-readout analysis. No model loads or providers.
 
@@ -29,7 +29,7 @@ POOLINGS = list(experiment.POOLINGS[:2])
 PARTITIONS = {'train': 26, 'calibration': 4, 'test': 10}
 CLASSES = {'train': {'0': 16, '1': 10}, 'calibration': {'0': 3, '1': 1}, 'test': {'0': 8, '1': 2}}
 SELECTION_SEED = 'mathdial-four-layer-readout-feasibility-v1'
-SOFTWARE = {'numpy': '2.2.6', 'scikit-learn': '1.7.2', 'matplotlib': '3.10.8'}
+SOFTWARE = {'numpy': '2.5.3', 'scikit-learn': '1.9.1', 'matplotlib': '3.11.2'}
 ANALYSIS_NAMES = (*worker.SOURCE_NAMES, 'observer_probes.py', 'observer_experiment_report.py')
 RECIPE = {
     'classifier': 'L2 logistic liblinear', 'C_grid': [.1, 1., 10., 100.],

@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npx --yes hyperframes@0.8.78 preview",
-    "check": "npx --yes hyperframes@0.8.78 check",
+    "dev": "npx --yes hyperframes@0.8.106 preview",
+    "check": "npx --yes hyperframes@0.8.106 check",
     "render": "./produce.sh"
   }
 }

@@ -215,6 +215,19 @@ describe("Not Organic public client", () => {
 		expect(client.getSession()).toBeNull();
 	});
 
+	it("chooses an account for a fresh login and after sign-out, but reuses a connected account for extra scopes", async () => {
+		installBrowser();
+		const client = new NotOrganicPublicClient(config, stubFetch(async () => successToken()));
+		const first = await client.authorizationUrl("/chat");
+		expect(new URL(first).searchParams.get("prompt")).toBe("select_account");
+		await client.completeAuthorization(callback(first));
+		expect(new URL(await client.authorizationUrl("/chat?settings=judgement")).searchParams.has("prompt")).toBe(false);
+		await client.signOut();
+		const next = new URL(await new NotOrganicPublicClient(config).authorizationUrl("/chat"));
+		expect(next.searchParams.get("prompt")).toBe("select_account");
+		expect(next.searchParams.get("state")).not.toBe(new URL(first).searchParams.get("state"));
+	});
+
 	it("expires completion receipts even while the provider session remains valid", async () => {
 		installBrowser();
 		const client = new NotOrganicPublicClient(config, stubFetch(async () => successToken()));

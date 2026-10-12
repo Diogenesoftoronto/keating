@@ -1,9 +1,11 @@
-# Fit quiz estimates from committed answers
+# Benchmark quiz estimates from committed answers
 
 The terminal quiz records an optional estimate before an answer, then joins it
 to the completed answer action. These commands rebuild fitting rows from those
 original records and compare an inspectable depth-three tree with the raw Jev
-estimate. A passing tree permits a fixed CatBoost ensemble to be tried.
+estimate. A passing tree permits a fixed CatBoost ensemble to be tried in the
+benchmark. These fitting tools and artifact verifiers are retained for research;
+their fitted models no longer override application estimates.
 
 ## Select original records
 
@@ -84,7 +86,7 @@ Source records are checked again after training. A changed source invalidates
 the result. Insufficient or failing tree evidence produces a report with no
 selected candidate, skips CatBoost, and makes the command exit nonzero.
 
-## Limits and remaining integration
+## Limits and application behavior
 
 The hint flag comes from the app's saved observation. The completion journal
 rechecks the answer but does not independently reconstruct hint events or
@@ -96,15 +98,17 @@ supports this predeclared comparison, not an untouched final test estimate.
 Changing features or repeatedly selecting models against those groups consumes
 the holdout; use fresh independent groups for subsequent evaluation.
 
-The terminal consumes a verified report when both `KEATING_QUIZ_FIT_FILE` and
-`KEATING_QUIZ_FIT_SHA256` are set. Relative paths resolve inside the learner
-workspace. The loader checks exact file bytes, rebuilds the original dataset,
-recomputes the tree and ensemble comparison, and pins target, feature schema,
-backend and source bindings. Changed configuration, sources or backend stop the
-estimate. The display labels the selected tree or ensemble estimate and retains
-the raw Jev estimate separately in the saved receipt. With no configured fit,
-the existing raw estimate remains available. Web and mobile still show raw
-estimates. No authentic production dataset or fitted quiz model is bundled.
+The terminal uses the raw configured judgement model estimate and records its
+original receipt. `KEATING_QUIZ_FIT_FILE` and `KEATING_QUIZ_FIT_SHA256` are retired
+and have no runtime effect. The benchmark loader still verifies exact file
+bytes, original records, tree and ensemble comparisons, target, feature schema,
+backend and source bindings so historical comparisons remain reproducible.
+
+The CLI's pre-answer quiz estimate is separate from the three learner-policy
+targets: mastery, retention and review urgency. Web and mobile use the hosted
+tabular prediction path for those learner policies and review ordering; this
+CLI controller does not call TabPFN. No authentic production dataset or fitted
+quiz model is bundled.
 
 This target does not measure long-term retention, mastery, or the usefulness of
 ranking unlike activities. Replacing `LEARNER_PROGRESS_THRESHOLDS`,

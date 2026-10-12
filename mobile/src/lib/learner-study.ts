@@ -12,10 +12,8 @@ import {
   type StudyPriority,
   type StudyPriorityRecord,
   type StudyPriorityTargetType,
-  rankingHoldoutAssignment,
 } from "@keating/learner-contracts";
 import type { LearnerProgressDashboard } from "./learner-progress";
-import { mobileDecisionEstimate, type MobileDecisionEstimate, type MobileDecisionPolicies } from "./judgement/decision-policies";
 
 const MS_PER_DAY = 86_400_000;
 
@@ -38,7 +36,6 @@ export interface ComingUpItem {
   estimatedMinutes: number;
   cardCount: number;
   createdAt: string;
-  measuredUrgency?: MobileDecisionEstimate & { heldOut: boolean };
 }
 
 export interface ComingUp {
@@ -157,8 +154,6 @@ export function buildComingUp(
   data: PortableLearnerData,
   progress: LearnerProgressDashboard,
   nowIso: string,
-  policies: MobileDecisionPolicies = {},
-  scope: string | null = null,
 ): ComingUp {
   if (!validatePortableLearnerData(data)) throw new Error("Cannot build Coming Up from invalid portable learner data.");
   const now = time(nowIso);
@@ -232,20 +227,6 @@ export function buildComingUp(
   const sorted = [...items].sort(compareUrgency);
   const lanes: ComingUp["lanes"] = { focus: [], maintain: [], low: [] };
   for (const item of sorted) lanes[item.priority].push(item);
-  if (scope && policies.urgency) for (const lane of Object.values(lanes)) {
-    const eligible: number[] = [];
-    for (let i = 0; i < lane.length; i++) {
-      const item = lane[i]!;
-      if (item.targetType !== "deck" || item.dueCount < 1) continue;
-      const estimate = mobileDecisionEstimate(policies.urgency, "urgency", data, item.topic, now, { deckId: item.targetId });
-      if (!estimate) continue;
-      const heldOut = rankingHoldoutAssignment("decision-policy-urgency-v1", JSON.stringify([scope, item.targetId]), 1000).heldOut;
-      item.measuredUrgency = { ...estimate, heldOut };
-      if (!heldOut) eligible.push(i);
-    }
-    const ranked = eligible.map(index => lane[index]!).sort((a, b) => b.measuredUrgency!.value - a.measuredUrgency!.value || compareUrgency(a, b));
-    eligible.forEach((position, index) => { lane[position] = ranked[index]!; });
-  }
   const dueDeckIds = [ ...lanes.focus, ...lanes.maintain, ...lanes.low ]
     .filter((item) => item.targetType === "deck" && item.dueCount > 0)
     .map((item) => item.targetId);

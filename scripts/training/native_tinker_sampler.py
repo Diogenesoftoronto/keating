@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11,<3.14"
-# dependencies = ["tinker==0.27.1", "tinker-cookbook==0.5.7", "transformers==5.3.0", "torch==2.10.0", "typer>=0.12"]
+# dependencies = ["tinker==0.31.0", "tinker-cookbook==0.5.7", "transformers==5.5.4", "torch==2.14.1", "typer>=0.12"]
 # [tool.uv.sources]
 # torch = { index = "pytorch-cpu" }
 # [[tool.uv.index]]
@@ -40,20 +40,20 @@ from native_capture import append_capture
 MODEL = "Qwen/Qwen3.5-9B-Base"
 HF_REVISION = "68c46c4b3498877f3ef123c856ecfde50c39f404"
 RENDERER = "qwen3_5_disable_thinking"
-VERSIONS = {"tinker": "0.27.1", "tinker-cookbook": "0.5.7", "transformers": "5.3.0"}
+VERSIONS = {"tinker": "0.31.0", "tinker-cookbook": "0.5.7", "transformers": "5.5.4"}
 HF_HASHES = {
     "tokenizer.json": "fe000e3ed39ed12b8d2481d527d44f93c65d37e87645d2dcc80d1bf9d50d2927",
     "tokenizer_config.json": "3891e840d7dc5fca0af33d3a25083a735e36fe06214e3f707024820cb6b9f89c",
 }
 HF_TEMPLATE_HASH = "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715"
-# Audited from PyPI's SHA256-verified 0.27.1 / 0.5.7 wheels, not moving main.
+# Audited from PyPI's SHA256-verified 0.31.0 / 0.5.7 wheels, not moving main.
 SOURCE_HASHES = {
     "tinker/types/_pydantic_types/sampling_params.py": "ec8bef759540135ae37df47b78e76553d4b1213974f223e4c271734c1afeffb0",
-    "tinker/types/sampled_sequence.py": "8f0909fb811e238317e0dbf937697186a5aa2a444a2044adb9c9cad545529c0e",
-    "tinker/proto/response_conv.py": "7a39e1719df5c70350221ee23ace40d572d325b59d97f53cbf96098c823be681",
-    "tinker/lib/public_interfaces/sampling_client.py": "86a5bb4a90cddb3528b10ea93d13bd1bf0ec7aaa7ea3072110beeeeafe1c975e",
-    "tinker/lib/public_interfaces/service_client.py": "cd54efc12ce8982f26a49a9bab67e14db6606a5ca7681c6671ef77ab319e0efe",
-    "tinker/lib/internal_client_holder.py": "b74b910177bdc9724707d7e8a8496fb805c07c86baaf0fb68a740c020013e785",
+    "tinker/types/sampled_sequence.py": "2a6b51e04214f8ba0a8b91e954e424eec082e427bf53786f0f0d003e181bd5b7",
+    "tinker/proto/response_conv.py": "9532c276e366202b1ddd29ecbb57c96ec7dc38ae0092be6454fe02c955d6f06b",
+    "tinker/lib/public_interfaces/sampling_client.py": "fa246d5870bece5144c075e4ebb495a8e1fd5dadf0cebc6a9047163ea9acce97",
+    "tinker/lib/public_interfaces/service_client.py": "b8e63b7970ac2ae9461d7fd8d1939d15d64dc5a5d9526acf7d82b217637744f8",
+    "tinker/lib/internal_client_holder.py": "78bfe7a113f5b36191fd9e72f715e98b86e8fd74d125fcdf612732109e9d5492",
     "tinker_cookbook/renderers/qwen3_5.py": "aa786b03f97a016f65ed43f687e738fd52eedb0dc6240e9e2698f9e1a3253f81",
     "tinker_cookbook/renderers/qwen3.py": "ec26c77a2de649fc1994063f7c07ac2dcd3b6996fcb4ce707ecc1d6d5b68802a",
     "tinker_cookbook/renderers/base.py": "ee9beaaf1bfc467c2f340b33a3cd5dd76a1c4225412ff1382f9f618432a3a560",
@@ -430,7 +430,7 @@ class QwenCaptureBridge:
                             "generation_hash": generation["generation_hash"],
                             "completion_token_ids_hash": nt.native_hash(ids), "logprobs_hash": nt.native_hash(lps),
                             "sampling_params_hash": nt.native_hash(serialized), "all_generation_transforms_recorded": True,
-                            "evidence": {"source": "https://pypi.org/project/tinker/0.27.1/; SOURCE_HASHES and source_audit in this record",
+                            "evidence": {"source": "https://pypi.org/project/tinker/0.31.0/; SOURCE_HASHES and source_audit in this record",
                                          "revision": nt.native_hash(self.sampler.audit),
                                          "sha256": nt.native_hash(self.sampler.audit)}}, "probability_hash")
                     emit({"phase": "sampled", "sequence_index": index, "sequence_count": len(response.sequences),

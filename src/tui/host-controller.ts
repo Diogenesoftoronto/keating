@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { toolResultCardLines } from "../core/cards.js";
+import { toolResultCard } from "../core/cards.js";
 import type { KeatingPiModel } from "../runtime/pty-rpc-client.js";
 import {
   messageText,
@@ -74,7 +74,7 @@ export interface UiDocumentControl {
 
 /** Optional evidence collection never owns answer delivery. */
 export interface TuiQuizPerformanceController {
-  estimate(): Promise<{ ok: true; expectedCorrect: number; itemCount: number; estimateMethod?: "shallow-tree" | "boosting"; rawExpectedCorrect?: number; fitSha256?: string } | { ok: false; reason: string }>;
+  estimate(): Promise<{ ok: true; expectedCorrect: number; itemCount: number } | { ok: false; reason: string }>;
   touch(): void;
   hint(questionId: string): void;
   prepareSubmission(action: UiAction): Promise<unknown> | unknown;
@@ -513,8 +513,8 @@ export class HostController {
           this.append("error", "Interactive document needs attention", adapted.recovery.message);
           return;
         }
-        const card = toolResultCardLines(toolName, result);
-        if (card) this.append("artifact", `${toolName} result`, card.join("\n"));
+        const card = toolResultCard(toolName, result);
+        if (card) this.append("artifact", card.heading, card.body.join("\n"));
         else this.append("tool", `${toolName} completed`, messageText(result) || "Completed");
         return;
       }
@@ -680,9 +680,7 @@ export class HostController {
               if (!current() || attempt.touched) return;
               if (result.ok) {
                 attempt.estimated = true;
-                const method = result.estimateMethod === "shallow-tree" ? "Fitted tree" : result.estimateMethod === "boosting" ? "Fitted ensemble" : "Model";
-                const raw = result.estimateMethod && typeof result.rawExpectedCorrect === "number" ? ` Raw model estimate: ${result.rawExpectedCorrect.toFixed(1)} of ${result.itemCount}.` : "";
-                this.append("notice", "Quiz prediction", `${method} estimate, correct without in-app hints: ${result.expectedCorrect.toFixed(1)} of ${result.itemCount}.${raw} This is an estimate, not a grade.`);
+                this.append("notice", "Quiz prediction", `Model estimate, correct without in-app hints: ${result.expectedCorrect.toFixed(1)} of ${result.itemCount}. This is an estimate, not a grade.`);
               } else this.append("notice", "Prediction unavailable", result.reason);
             } catch { this.append("notice", "Prediction unavailable", "You can continue answering the quiz."); }
             finally { attempt.busy = false; this.refreshDocumentControls(); }

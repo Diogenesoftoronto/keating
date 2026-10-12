@@ -34,6 +34,7 @@ import { KeatingUiSettingsTab } from "../components/KeatingUiSettingsTab";
 import { DiagnosticsTab } from "../components/settings/DiagnosticsTab";
 import { LearningTab } from "../components/settings/LearningTab";
 import { ModelsProvidersTab } from "../components/settings/ModelsProvidersTab";
+import { KnowledgeToolReview } from "../components/settings/KnowledgeSources";
 import {
   SessionBrowser,
   SESSION_BROWSER_BREAKPOINT,
@@ -57,6 +58,7 @@ import { withTeachingDraftGate } from "../keating/judgement/draft-gate";
 import { clearTeachingDraftStatus, projectTeachingDraftSnapshot, publishTeachingDraftStatus } from "../keating/judgement/draft-status";
 import { teachingDraftEvidence } from "../keating/judgement/draft-evidence";
 import { loadActiveWork } from "../keating/judgement/active-work-host";
+import { createWebActivityLearning } from "../keating/judgement/activity-learning";
 import { createTeachingAdjustmentController, withTeachingAdjustment, type TeachingAdjustmentController } from "../keating/judgement/teaching-adjustment";
 import { createDesktopNeedleRecall, withDesktopNeedleRecall } from "../keating/needle-retrieval";
 import { createWebMemoryAdmission, withWebMemoryBank } from "../keating/judgement/memory-admission";
@@ -146,6 +148,7 @@ import {
   type WebSpeechSettings,
 } from "../keating/speech";
 import { buildLiveHistory } from "../keating/live-history";
+import { courseToolsAvailable } from "../courses/tool-availability";
 import { buildLiveSessionContext } from "../keating/live-context";
 import {
   savePersistentStorageStatus,
@@ -1398,6 +1401,7 @@ export function useKeatingAgent(
       resolveAvailableChatModel(requestedModel, { allowFallback: !preserveSelectedModel && !explicitModelSelectionRef.current && !isNotOrganicProvider(requestedModel.provider) }),
     ]);
     const tools = filterAvailableKeatingTools(await createKeatingTools(keatingStorage, toolOptions(speechSettings, agentRuntime)), {
+      coursesAvailable: await courseToolsAvailable(),
       runtime: agentRuntime, speechEnabled: speechSettings.enabled, clientWebSearch: shouldExposeClientWebSearch(resolvedModel),
     });
     return { promptBase, agentRuntime, resolvedModel, tools };
@@ -1502,6 +1506,11 @@ export function useKeatingAgent(
         }),
       });
       clearTeachingDraftStatus(agentSessionId);
+      const activityLearning = createWebActivityLearning({
+        sessionId: agentSessionId,
+        source: keatingStorage,
+        current: () => agentRef.current === agent && sessionIdRef.current === agentSessionId,
+      });
       const agent: FlueConversation = new FlueConversation({
         initialState: nextState,
         convertToLlm: toModelMessages,
@@ -1509,6 +1518,9 @@ export function useKeatingAgent(
           sessionId: agentSessionId,
           basePrompt: () => systemPromptBaseRef.current,
           isCurrent: () => agentRef.current === agent && sessionIdRef.current === agentSessionId,
+          activityLearning: activityLearning.select,
+          activityLearningState: activityLearning.turnSettings,
+          onPublished: activityLearning.published,
           evidence: async () => {
             const [profile, activeWork] = await Promise.all([
               loadCompleteLearnerStartupContext(keatingStorage),
@@ -1606,6 +1618,7 @@ export function useKeatingAgent(
                 const availableTools = filterAvailableKeatingTools(
                   refreshedTools,
                   {
+                    coursesAvailable: await courseToolsAvailable(),
                     runtime,
                     speechEnabled: speechSettings.enabled,
                     clientWebSearch: shouldExposeClientWebSearch(
@@ -1974,6 +1987,7 @@ export function useKeatingAgent(
         if (cancelled) return;
         agentRuntimeRef.current = agentRuntime;
         const availableTools = filterAvailableKeatingTools(tools, {
+          coursesAvailable: await courseToolsAvailable(),
           runtime: agentRuntime,
           speechEnabled: speechSettings.enabled,
           clientWebSearch: shouldExposeClientWebSearch(
@@ -3024,6 +3038,7 @@ export function useKeatingAgent(
       {modelSelectorDialogElement}
       {imageModelSelectorDialogElement}
       <KeatingApiKeyPromptDialog />
+      <KnowledgeToolReview />
     </>
   );
 

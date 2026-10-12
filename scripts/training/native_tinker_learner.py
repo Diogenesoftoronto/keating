@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11,<3.14"
-# dependencies = ["tinker==0.27.1", "tinker-cookbook==0.5.7", "transformers==5.3.0", "torch==2.10.0", "typer>=0.12", "certifi"]
+# dependencies = ["tinker==0.31.0", "tinker-cookbook==0.5.7", "transformers==5.5.4", "torch==2.14.1", "typer>=0.12", "certifi"]
 # [tool.uv.sources]
 # torch = { index = "pytorch-cpu" }
 # [[tool.uv.index]]
@@ -47,12 +47,12 @@ HF_HASHES = {
     "tokenizer_config.json": "316230d6a809701f4db5ea8f8fc862bc3a6f3229c937c174e674ff3ca0a64ac8",
     "chat_template.jinja": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715",
 }
-VERSIONS = {"tinker": "0.27.1", "tinker-cookbook": "0.5.7", "transformers": "5.3.0"}
+VERSIONS = {"tinker": "0.31.0", "tinker-cookbook": "0.5.7", "transformers": "5.5.4"}
 SOURCE_HASHES = {
     "tinker/lib/retry_handler.py": "8dba752fbf61860c53a76a61aeff950e62ecc0f01fc28b5992347a5785809abf",
-    "tinker/lib/public_interfaces/sampling_client.py": "86a5bb4a90cddb3528b10ea93d13bd1bf0ec7aaa7ea3072110beeeeafe1c975e",
-    "tinker/lib/public_interfaces/service_client.py": "cd54efc12ce8982f26a49a9bab67e14db6606a5ca7681c6671ef77ab319e0efe",
-    "tinker/lib/internal_client_holder.py": "b74b910177bdc9724707d7e8a8496fb805c07c86baaf0fb68a740c020013e785",
+    "tinker/lib/public_interfaces/sampling_client.py": "fa246d5870bece5144c075e4ebb495a8e1fd5dadf0cebc6a9047163ea9acce97",
+    "tinker/lib/public_interfaces/service_client.py": "b8e63b7970ac2ae9461d7fd8d1939d15d64dc5a5d9526acf7d82b217637744f8",
+    "tinker/lib/internal_client_holder.py": "78bfe7a113f5b36191fd9e72f715e98b86e8fd74d125fcdf612732109e9d5492",
     "tinker_cookbook/renderers/qwen3_5.py": "aa786b03f97a016f65ed43f687e738fd52eedb0dc6240e9e2698f9e1a3253f81",
     "tinker_cookbook/renderers/qwen3.py": "ec26c77a2de649fc1994063f7c07ac2dcd3b6996fcb4ce707ecc1d6d5b68802a",
     "tinker_cookbook/renderers/base.py": "ee9beaaf1bfc467c2f340b33a3cd5dd76a1c4225412ff1382f9f618432a3a560",
@@ -66,7 +66,7 @@ PARENT_PROJECT = "keating-native-research-2026-09-13"
 PARENT_MODEL = "shared-runpod-and-tinker"
 RETRY_SCOPE = (
     "Application dispatch once; HTTP max_retries=0 and sampling RetryConfig.enable_retry_logic=False. "
-    "SDK 0.27.1 still has holder.execute_with_retries and sampling backpressure/billing loops. "
+    "SDK 0.31.0 still has holder.execute_with_retries and sampling backpressure/billing loops. "
     "Deadline does not prove remote cancellation; halt and retain full reservation."
 )
 

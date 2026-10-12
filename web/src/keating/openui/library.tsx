@@ -617,13 +617,14 @@ export const MusicLab = defineComponent({
 const languageRoundBase = { id: z.string(), prompt: z.string(), hint: z.string().optional() };
 const languageAudioFields = { text: z.string(), referenceAudioUrl: z.string().optional(), audioCreditUrl: z.string().optional() };
 const languagePracticePropsSchema = z.object({
-    id: z.string(), title: z.string(), language: z.string(), lifecycle: lifecycleSchema.default("resumable"),
+    id: z.string(), title: z.string(), language: z.string(),
     rounds: z.array(z.discriminatedUnion("kind", [
         z.object({ ...languageRoundBase, kind: z.literal("translation"), text: z.string(), acceptedAnswers: z.array(z.string()).min(1).max(16) }),
         z.object({ ...languageRoundBase, kind: z.literal("word-order"), tokens: z.array(z.object({ id: z.string(), label: z.string() })).min(1).max(24), correctOrder: z.array(z.string()).min(1).max(24) }),
         z.object({ ...languageRoundBase, ...languageAudioFields, kind: z.literal("listening"), acceptedAnswers: z.array(z.string()).min(1).max(16) }),
         z.object({ ...languageRoundBase, ...languageAudioFields, kind: z.literal("pronunciation") }),
     ])).min(1).max(16),
+    lifecycle: lifecycleSchema.default("resumable"),
 });
 function OpenUILanguagePractice({ props }: { props: z.infer<typeof languagePracticePropsSchema> }) {
     const streaming = useIsStreaming();

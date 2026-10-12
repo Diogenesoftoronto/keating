@@ -11,7 +11,6 @@ import {
   type MouseEvent,
 } from "@opentui/core";
 import {
-  sacredFitText,
   sacredSanitizeText,
   sacredTextWidth,
   sacredTruncateText,
@@ -32,26 +31,20 @@ export interface SacredSidebarSemanticColors {
   onSelection: ColorInput;
 }
 
-export interface SacredSidebarAvatar {
-  unicode: readonly [string, string];
-  ascii?: readonly [string, string];
-}
-
+/** One quiet line at the top of the panel: who is learning, plus optional context. */
 export interface SacredSidebarIdentity {
   /** Primary caller-owned identity label. `name` remains a compatibility alias. */
   label?: string;
   name?: string;
   detail?: string;
-  /** Two terminal rows, each presented in an exact 4ch avatar slot. */
-  avatarLines?: readonly [string, string];
-  asciiAvatarLines?: readonly [string, string];
-  avatar?: SacredSidebarAvatar;
 }
 
 export interface SacredSidebarNavigationItem {
   id: string;
   label: string;
   asciiLabel?: string;
+  /** Keyboard shortcut shown flush right, e.g. ":p". Omit when there is none. */
+  hint?: string;
 }
 
 /**
@@ -124,24 +117,17 @@ const DEFAULT_LABELS: SacredSidebarLabels = {
   emptySessions: "No sessions",
 };
 
-const DEFAULT_AVATAR: SacredSidebarAvatar = {
-  unicode: ["╭──╮", "╰──╯"],
-  ascii: ["+--+", "+--+"],
-};
-
 const GLYPHS = {
   unicode: {
     focus: "◆",
-    idle: "·",
+    idle: " ",
     selected: "›",
-    rule: "─",
     handle: "┊",
   },
   ascii: {
     focus: ">",
-    idle: ".",
+    idle: " ",
     selected: ">",
-    rule: "-",
     handle: "|",
   },
 } as const;
@@ -165,9 +151,26 @@ function fitLine(value: string, width: number, mode: SacredSidebarGlyphMode): st
   return sacredTruncateText(source, limit, mode);
 }
 
-function avatarLine(value: string, mode: SacredSidebarGlyphMode): string {
-  const source = mode === "ascii" ? asciiFallback(value) : value;
-  return sacredFitText(source, 4, mode);
+/**
+ * Fit a caller-aligned row (tree connectors, flush-right metadata) without
+ * collapsing its spacing: each cell between runs of spaces is sanitized on its
+ * own, then the whole row is cut to width.
+ */
+function fitColumns(value: string, width: number, mode: SacredSidebarGlyphMode): string {
+  const limit = Math.max(1, Math.floor(width));
+  const row = value
+    .split(/(^ +| {2,})/)
+    .map((cell) => (/^ +$/.test(cell) ? cell : sacredSanitizeText(mode === "ascii" ? asciiFallback(cell) : cell, mode)))
+    .join("")
+    .replace(/\s+$/, "");
+  if (sacredTextWidth(row) <= limit) return row;
+  const ellipsis = mode === "ascii" ? "..." : "…";
+  let cut = "";
+  for (const glyph of row) {
+    if (sacredTextWidth(cut + glyph) > limit - sacredTextWidth(ellipsis)) break;
+    cut += glyph;
+  }
+  return `${cut.replace(/ +$/, "")}${ellipsis}`;
 }
 
 function boundedInteger(value: number, minimum: number, maximum: number): number {
@@ -192,6 +195,10 @@ interface OpenTuiMouseCapture {
 /**
  * An additive, host-agnostic sidebar composed from OpenTUI imperative
  * renderables. Add `root` to the desired host container after construction.
+ *
+ * The panel draws no box of its own: the resize handle on its right edge is
+ * the only rule between it and the transcript, sections are separated by
+ * blank rows, and focus is carried by the heading glyph and colour.
  */
 export class SacredSidebar<T> {
   readonly root: BoxRenderable;
@@ -208,7 +215,6 @@ export class SacredSidebar<T> {
   private readonly minWidth: number;
   private readonly maxWidth: number;
   private readonly maxNavigationRows: number;
-  private readonly avatar: TextRenderable;
   private readonly identityText: TextRenderable;
   private readonly navigationHeading: TextRenderable;
   private readonly sessionsHeading: TextRenderable;
@@ -255,10 +261,6 @@ export class SacredSidebar<T> {
       zIndex,
       visible: options.visible ?? true,
       backgroundColor: this.surface,
-      border: true,
-      borderStyle: "single",
-      customBorderChars,
-      borderColor: this.colors.border,
       shouldFill: true,
     });
 
@@ -267,8 +269,6 @@ export class SacredSidebar<T> {
       width: "100%",
       height: "100%",
       flexDirection: "column",
-      paddingTop: 1,
-      paddingBottom: 1,
       paddingLeft: 1,
       paddingRight: 3,
       zIndex,
@@ -276,41 +276,19 @@ export class SacredSidebar<T> {
       shouldFill: true,
     });
 
-    const identityArea = new BoxRenderable(renderer, {
-      id: `${id}-identity`,
-      width: "100%",
-      height: 2,
-      flexDirection: "row",
-      flexShrink: 0,
-      backgroundColor: this.surface,
-      shouldFill: true,
-    });
-    this.avatar = new TextRenderable(renderer, {
-      id: `${id}-avatar`,
-      width: 4,
-      height: 2,
-      flexShrink: 0,
-      content: "",
-      fg: this.colors.accent,
-      bg: this.surface,
-      selectable: false,
-      wrapMode: "none",
-      truncate: true,
-    });
     this.identityText = new TextRenderable(renderer, {
       id: `${id}-identity-text`,
-      flexGrow: 1,
-      height: 2,
-      marginLeft: 1,
+      width: "100%",
+      height: 1,
+      flexShrink: 0,
+      marginBottom: 1,
       content: "",
-      fg: this.colors.text,
+      fg: this.colors.muted,
       bg: this.surface,
       selectable: false,
       wrapMode: "none",
       truncate: true,
     });
-    identityArea.add(this.avatar);
-    identityArea.add(this.identityText);
 
     this.navigationHeading = new TextRenderable(renderer, {
       id: `${id}-navigation-heading`,
@@ -351,6 +329,7 @@ export class SacredSidebar<T> {
       width: "100%",
       height: 1,
       flexShrink: 0,
+      marginTop: 1,
       content: "",
       fg: this.colors.muted,
       bg: this.surface,
@@ -385,6 +364,7 @@ export class SacredSidebar<T> {
       width: "100%",
       height: 1,
       flexShrink: 0,
+      marginTop: 1,
       content: "",
       fg: this.colors.muted,
       bg: this.surface,
@@ -445,7 +425,7 @@ export class SacredSidebar<T> {
     });
     this.resizeHandle.add(this.handleGlyph);
 
-    content.add(identityArea);
+    content.add(this.identityText);
     content.add(this.navigationHeading);
     content.add(this.navigationSelect);
     content.add(this.sessionsHeading);
@@ -510,6 +490,11 @@ export class SacredSidebar<T> {
 
   get width(): number {
     return this.widthValue;
+  }
+
+  /** Cells available to a session row's `display`, after the selection marker. */
+  get sessionTextWidth(): number {
+    return this.contentWidth() - 2;
   }
 
   get visible(): boolean {
@@ -614,9 +599,10 @@ export class SacredSidebar<T> {
   setActivity(activity: string | readonly string[]): void {
     if (this.destroyed) return;
     const value = typeof activity === "string" ? activity : activity.join("\n");
+    // One leading space puts each activity mark in the marker column above it.
     this.activityText.content = value.split("\n").map((line) => {
       const source = this.glyphMode === "ascii" ? asciiFallback(line) : line;
-      return sacredSanitizeText(source, this.glyphMode);
+      return ` ${sacredSanitizeText(source, this.glyphMode)}`;
     }).join("\n");
   }
 
@@ -642,29 +628,34 @@ export class SacredSidebar<T> {
     return Math.max(1, Math.min(this.maxNavigationRows, this.navigationItems.length || 1));
   }
 
+  /**
+   * Row width inside the content padding (one column left, three right for the
+   * handle) less the leading column SelectRenderable draws before each option.
+   */
   private contentWidth(): number {
-    return Math.max(4, this.widthValue - 9);
+    return Math.max(4, this.widthValue - 5);
   }
 
   private refreshIdentity(): void {
-    const avatar = this.identity.avatar ?? DEFAULT_AVATAR;
-    const rows = this.glyphMode === "ascii"
-      ? (this.identity.asciiAvatarLines ?? this.identity.avatarLines ?? avatar.ascii ?? avatar.unicode)
-      : (this.identity.avatarLines ?? avatar.unicode);
-    this.avatar.content = `${avatarLine(rows[0], this.glyphMode)}\n${avatarLine(rows[1], this.glyphMode)}`;
-    const width = Math.max(1, this.widthValue - 11);
     const label = this.identity.label ?? this.identity.name ?? "";
-    this.identityText.content = `${fitLine(label, width, this.glyphMode)}\n${fitLine(this.identity.detail ?? "", width, this.glyphMode)}`;
+    const separator = this.glyphMode === "ascii" ? " - " : " · ";
+    const line = [label, this.identity.detail ?? ""].filter((part) => part.trim()).join(separator);
+    this.identityText.content = `   ${fitLine(line, this.sessionTextWidth, this.glyphMode)}`;
+    this.identityText.visible = line.length > 0;
   }
 
   private navigationDisplay(item: SacredSidebarNavigationItem): string {
     const source = this.glyphMode === "ascii" ? (item.asciiLabel ?? item.label) : item.label;
-    return fitLine(source, this.contentWidth() - 2, this.glyphMode);
+    const width = this.contentWidth() - 2;
+    const hint = item.hint ? fitLine(item.hint, 4, this.glyphMode) : "";
+    if (!hint) return fitLine(source, width, this.glyphMode);
+    const label = fitLine(source, Math.max(1, width - sacredTextWidth(hint) - 1), this.glyphMode);
+    return `${label}${" ".repeat(Math.max(1, width - sacredTextWidth(label) - sacredTextWidth(hint)))}${hint}`;
   }
 
   private sessionDisplay(row: SacredSidebarSessionRow<T>): string {
     const source = this.glyphMode === "ascii" ? (row.asciiDisplay ?? row.display) : row.display;
-    return fitLine(source, this.contentWidth() - 2, this.glyphMode);
+    return fitColumns(source, this.sessionTextWidth, this.glyphMode);
   }
 
   private refreshNavigationOptions(): void {
@@ -696,12 +687,10 @@ export class SacredSidebar<T> {
     return typeof value === "number" && Number.isInteger(value) ? value : null;
   }
 
+  /** The focus glyph takes the marker column, so the label never shifts when focus moves. */
   private heading(label: string, focused: boolean): string {
     const glyphs = GLYPHS[this.glyphMode];
-    const prefix = `${focused ? glyphs.focus : glyphs.idle} ${label} `;
-    const available = Math.max(1, this.widthValue - 6);
-    const clipped = fitLine(prefix, available, this.glyphMode);
-    return `${clipped}${glyphs.rule.repeat(Math.max(0, available - sacredTextWidth(clipped)))}`;
+    return ` ${focused ? glyphs.focus : glyphs.idle} ${fitLine(label, this.sessionTextWidth, this.glyphMode)}`;
   }
 
   private paintFocus(area: SacredSidebarFocusArea | null): void {

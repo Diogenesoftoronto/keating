@@ -25,7 +25,7 @@ Keating is a Pi-powered "hyperteacher" — a CLI tool + web app that generates p
 - **`shared/evolution/`** — Fresh teaching-episode benchmarks, immutable skill revisions, independent promotion gates, and fixed learner assessments. See `docs/teaching-evolution.md`.
 - **`scripts/`** — Build/utility scripts, plus `install/install.sh` used in release bundles.
 - **`docs/`** — Architecture docs, Typst study paper, VHS tape scripts for recordings.
-- **`video/`** — Product films: `keating-intro/` (Remotion, narrated), `keating-surface-tour/` (HyperFrames, silent), `keating-launch/` (HyperFrames, 4.0 launch), and `shared/` (Storybook capture, caption generator, fonts). Published encodes live in `web/public/tapes/` and are mirrored into the docs site.
+- **`video/`** — Product films: `keating-intro/` (Remotion, narrated), `keating-surface-tour/` (HyperFrames, silent), `keating-launch/` (HyperFrames, 4.0 launch), and `shared/` (Storybook capture, caption generator, fonts). Published encodes live in `web/public/tapes/`. Learner documentation uses task instructions and screenshots rather than product films.
 - **`bin/keating.js`** — Executable entrypoint for the CLI.
 
 ## Build & Test Commands
@@ -160,7 +160,7 @@ The narrated intro is composed at build time from two kinds of source footage:
    - Stitch with ffmpeg at 60fps: `ffmpeg -framerate 60 -pattern_type glob -i 'frame_*.jpg' -c:v libx264 -pix_fmt yuv420p -crf 18 docs/assets/<clip>.mp4`.
    - `devenv tasks run keating:video-web-stitch` runs `scripts/stitch-web-frames.mjs` to redo this stitching pass; the frame-pumping itself flows through the MCP capture driver.
 
-The current intro no longer uses these clips. `video/keating-intro/scenes.json` lists ten scenes, and each pairs a narration line with a Storybook capture (`shots.json` → `video/shared/capture.mjs`). `scripts/render-keating-intro.mjs` voices the lines with Gemini TTS (voice `Kore`, key `GEMINI_API_KEY`), snaps each cut to a narration pause, and renders `video/keating-intro/src/{root.tsx,video.tsx}` to about 76 s. `devenv tasks run keating:video-intro` produces `.keating/outputs/video/keating-intro/keating-intro.mp4`. The VHS and web clips above still feed the docs-site walkthroughs.
+The current intro no longer uses these clips. `video/keating-intro/scenes.json` lists ten scenes, and each pairs a narration line with a Storybook capture (`shots.json` → `video/shared/capture.mjs`). `scripts/render-keating-intro.mjs` voices the lines with Gemini TTS (voice `Kore`, key `GEMINI_API_KEY`), snaps each cut to a narration pause, and renders `video/keating-intro/src/{root.tsx,video.tsx}` to about 76 s. `devenv tasks run keating:video-intro` produces `.keating/outputs/video/keating-intro/keating-intro.mp4`. Learner documentation has no video embeds; `keating:docs-screenshots` refreshes its still images and rebuilds the guides.
 
 ### Other films and publishing
 
@@ -178,7 +178,7 @@ The current intro no longer uses these clips. `video/keating-intro/scenes.json` 
 - **Social cuts**: `bash video/shared/social-cuts.sh` reframes the published web encodes for 9:16, 1:1 and 4:5 feeds with burned-in captions (`video/shared/social.mjs`). The cut windows are seconds into the encodes, so re-check them after a re-render.
 - **Web walkthrough clips**: `node scripts/capture-web-clips.mjs [--only=web-landing,...]` records the steps in `scripts/web-clips.json` with headless Chrome against a disposable profile. Model replies come from the loopback `scripts/tui-demo-provider.mjs`, so no real key is used.
 - **Terminal tapes**: use VHS v0.11.0. v0.12.0 renders nothing ([vhs#787](https://github.com/charmbracelet/vhs/issues/787)). If the prompt shows a literal `\[\]>`, put a directory with a plain `bash` symlink first on `PATH`. The camera should only see short `keating …` commands. The tape defines a `keating()` shell function inside `Hide`/`Show`, followed by `clear`, and runs its cleanup inside `Hide` too.
-- **Where they appear**: the landing page (`web/src/components/LandingFilms.tsx`) and the docs-site visual guide (`scripts/docs-site/content/getting-started.json`), and next to the matching how-to sections in `learning.json` (spotlights). The docs build copies `web/public/tapes/` into `scripts/docs-site/assets/tapes/`.
+- **Where they appear**: product films belong on product and marketing surfaces such as `web/src/components/LandingFilms.tsx`. The learner docs have a short first lesson, an interface reference, setup guides, learning tasks, privacy, and troubleshooting. Do not add a film to a learner guide just because a matching asset exists. Retained tape assets are not current documentation placements; see `scripts/docs-site/README.md` for the editorial contract.
 
 ### Node Version
 `package.json` specifies `engines: { "node": ">=22.19.0" }`. Bun is the primary runtime used in CI.

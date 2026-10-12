@@ -1,5 +1,5 @@
 // Record the current web UI with headless Chrome and a loopback demo provider.
-// Usage: bun scripts/capture-web-clips.mjs [--base=http://localhost:3000] [--only=web-landing,...] [--out=docs/assets]
+// Usage: bun scripts/capture-web-clips.mjs [--base=http://localhost:3000] [--only=web-landing,...] [--out=docs/assets] [--screenshots]
 
 import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
@@ -152,7 +152,7 @@ function routeLocalProvider(providerUrl) {
   };
 }
 
-async function record(cdp, clip, base, out, providerUrl) {
+async function record(cdp, clip, base, out, providerUrl, screenshot = false) {
   const { browserContextId } = await cdp.send("Target.createBrowserContext");
   const { targetId } = await cdp.send("Target.createTarget", { url: "about:blank", browserContextId });
   const { sessionId } = await cdp.send("Target.attachToTarget", { targetId, flatten: true });
@@ -200,9 +200,11 @@ async function record(cdp, clip, base, out, providerUrl) {
     } finally { unsubscribe(); }
   };
   try {
-    await mkdir(directory, { recursive: true });
-    for (const file of await readdir(directory)) {
-      if (/^frame_\d{5}\.jpg$/.test(file)) await rm(join(directory, file));
+    if (!screenshot) {
+      await mkdir(directory, { recursive: true });
+      for (const file of await readdir(directory)) {
+        if (/^frame_\d{5}\.jpg$/.test(file)) await rm(join(directory, file));
+      }
     }
     listeners.push(cdp.on("Fetch.requestPaused", (event, session) => {
       if (session !== sessionId) return;
@@ -255,9 +257,11 @@ async function record(cdp, clip, base, out, providerUrl) {
       await evaluate(`const providerUrl = ${JSON.stringify(providerUrl)}; ${clip.seed}`);
       await navigate(clip.steps[0].path, true);
     }
-    recording = true;
-    await send("Page.startScreencast", { format: "jpeg", quality: 90, maxWidth: width, maxHeight: height, everyNthFrame: 1 });
-    await until(() => { if (fatal) throw fatal; return frames.length > 0; }, 10000, "first screencast frame");
+    if (!screenshot) {
+      recording = true;
+      await send("Page.startScreencast", { format: "jpeg", quality: 90, maxWidth: width, maxHeight: height, everyNthFrame: 1 });
+      await until(() => { if (fatal) throw fatal; return frames.length > 0; }, 10000, "first screencast frame");
+    }
     for (const [index, step] of clip.steps.entries()) {
       if (index === 0) continue;
       if (fatal) throw fatal;
@@ -313,6 +317,13 @@ async function record(cdp, clip, base, out, providerUrl) {
         throw new Error(`${clip.name} step ${index + 1} (${step.kind}): ${error.message}`);
       }
     }
+    if (screenshot) {
+      await settle();
+      const shot = await send("Page.captureScreenshot", { format: "png" });
+      await writeFile(join(out, `${clip.name}.png`), Buffer.from(shot.data, "base64"));
+      console.log(`${clip.name}: ${width}x${height} -> ${join(out, `${clip.name}.png`)}`);
+      return;
+    }
     await send("Page.stopScreencast");
     recording = false;
     await Promise.all(writes);
@@ -339,7 +350,7 @@ async function record(cdp, clip, base, out, providerUrl) {
 }
 
 export async function main(args = process.argv.slice(2)) {
-  for (const value of args) if (!/^--(base|only|out)=.+/.test(value)) throw new Error(`Unknown option: ${value}`);
+  for (const value of args) if (value !== "--screenshots" && !/^--(base|only|out)=.+/.test(value)) throw new Error(`Unknown option: ${value}`);
   const arg = (name, fallback) => args.find((value) => value.startsWith(`--${name}=`))?.slice(name.length + 3) ?? fallback;
   const base = arg("base", "http://localhost:3000");
   if (!isLoopback(base) || !["http:", "https:"].includes(new URL(base).protocol)) throw new Error("--base must be a loopback HTTP(S) URL without credentials");
@@ -347,10 +358,15 @@ export async function main(args = process.argv.slice(2)) {
   const all = JSON.parse(await readFile(join(root, "scripts/web-clips.json"), "utf8"));
   const only = arg("only", "").split(",").filter(Boolean);
   for (const name of only) if (!all.some((clip) => clip.name === name)) throw new Error(`Unknown clip: ${name}`);
-  const clips = all.filter((clip) => !only.length || only.includes(clip.name));
-  for (const clip of clips) {
+  const selected = all.filter((clip) => !only.length || only.includes(clip.name));
+  for (const clip of selected) {
     if (!/^web-[a-z0-9-]+$/.test(clip.name) || clip.steps?.[0]?.kind !== "goto") throw new Error(`Invalid clip declaration: ${clip.name}`);
   }
+  const screenshots = args.includes("--screenshots");
+  const clips = screenshots ? selected.flatMap(clip => [
+    { ...clip, name: `current-${clip.name.slice(4)}-desktop`, width: 1280, height: 900 },
+    { ...clip, name: `current-${clip.name.slice(4)}-mobile`, width: 390, height: 844 },
+  ]) : selected;
   let profile;
   let chrome;
   let provider;
@@ -376,6 +392,7 @@ export async function main(args = process.argv.slice(2)) {
     }
     await mkdir(join(root, ".keating/tmp"), { recursive: true });
     await mkdir(out, { recursive: true });
+    await mkdir(frameRoot, { recursive: true });
     profile = await mkdtemp(join(root, ".keating/tmp/web-clips-"));
     let providerUrl;
     if (clips.some((clip) => clip.provider === "demo")) {
@@ -407,7 +424,7 @@ export async function main(args = process.argv.slice(2)) {
     const failures = [];
     for (const clip of clips) {
       if (cancelled) throw new Error("Capture interrupted");
-      try { await record(cdp, clip, base, out, providerUrl); }
+      try { await record(cdp, clip, base, out, providerUrl, screenshots); }
       catch (error) { failures.push(error); console.error(`${clip.name}: ${error.message}`); }
     }
     if (cancelled) throw new Error("Capture interrupted");
@@ -420,6 +437,8 @@ export async function main(args = process.argv.slice(2)) {
     process.removeListener("SIGTERM", abort);
   }
 }
+
+export { CDP, start, stop, record };
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   main().catch((error) => { console.error(`capture-web-clips: ${error.message}`); process.exitCode = 1; });

@@ -73,3 +73,8 @@ export const defaultNotOrganicAccountConfig = (): NotOrganicAccountConfig => ({
 export function mobileJudgementAccountConfig(config = defaultNotOrganicAccountConfig()): NotOrganicAccountConfig {
   return { ...config, scope: [...new Set([...config.scope.split(/\s+/).filter(Boolean), "judgement:evaluate"])].join(" ") };
 }
+
+/** Requested only from the learner's explicit online-prediction control. */
+export function mobileTabularAccountConfig(config = defaultNotOrganicAccountConfig()): NotOrganicAccountConfig {
+  return { ...config, scope: [...new Set([...config.scope.split(/\s+/).filter(Boolean), "tabular:predict"])].join(" ") };
+}

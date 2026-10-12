@@ -114,13 +114,11 @@ import { publishTuiSession } from "./share.js";
 import { isTuiLeaderKey, TUI_LEADER_HINT, tuiLeaderAction } from "./leader.js";
 import { KEATING_VERSION } from "../core/version.js";
 import { sacredTextWidth } from "./sacred.js";
-import { overlayResponseTone, overlayTitleLines, truncateOverlayLabel } from "./overlay.js";
+import { overlayHeaderLines, overlayResponseTone, truncateOverlayLabel } from "./overlay.js";
 import { createSacredSidebar, type SacredSidebar, type SacredSidebarNavigationItem } from "./sacred-sidebar.js";
 import {
-  KEATINGBOT_TERMINAL_AVATAR,
   loadTuiProfile,
   saveTuiProfile,
-  terminalAvatarForProfile,
   validateCustomAvatarPath,
   type TuiProfile,
 } from "./profile.js";
@@ -207,16 +205,18 @@ function markdownSyntaxStyle(profile: TuiPresentationProfile): SyntaxStyle {
     const fg = openTuiColor(profile, role);
     return { ...(fg ? { fg } : {}), ...attributes };
   };
-  const heading = style("accent", { bold: true });
+  // Hierarchy comes from weight, not hue: only the top heading is accented,
+  // so warning and danger colours keep their meaning.
+  const heading = style("text", { bold: true });
   return SyntaxStyle.fromStyles({
     default: style("text"),
     "markup.heading": heading,
     "markup.heading.1": style("accent", { bold: true }),
-    "markup.heading.2": style("info", { bold: true }),
-    "markup.heading.3": style("warning", { bold: true }),
-    "markup.heading.4": style("success", { bold: true }),
+    "markup.heading.2": heading,
+    "markup.heading.3": heading,
+    "markup.heading.4": style("mutedText", { bold: true }),
     "markup.heading.5": style("mutedText", { bold: true }),
-    "markup.heading.6": style("danger", { bold: true }),
+    "markup.heading.6": style("mutedText", { bold: true }),
     "markup.strong": style("text", { bold: true }),
     "markup.italic": style("text", { italic: true }),
     "markup.strikethrough": style("mutedText", { dim: true }),
@@ -248,7 +248,6 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   const borderColor = mutedColor;
   const sidebarSurfaceColor = surfaceColor ?? RGBA.defaultBackground();
   let tuiProfile = await loadTuiProfile(cwd);
-  let tuiAvatar = await terminalAvatarForProfile(tuiProfile, cwd);
   const client = await launchRpcClient(cwd);
   const listSessions = options.listSessions ?? listProjectTuiSessions;
   const openExternalUrl = options.openExternalUrl ?? tryOpenExternalUrl;
@@ -305,6 +304,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     fg: mutedColor,
     height: 1,
     width: "100%",
+    marginBottom: 1,
   });
   const onboarding = new BoxRenderable(renderer, {
     id: "keating-open-tui-onboarding",
@@ -391,6 +391,9 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     scrollY: true,
     stickyScroll: true,
     stickyStart: "bottom",
+    // A short conversation sits on the composer, the way it is read and
+    // written, instead of hanging from the header over an empty pane.
+    contentOptions: { justifyContent: "flex-end" },
     scrollbarOptions: presentationProfile.design.glyphMode === "ascii"
       ? { visible: false }
       : undefined,
@@ -402,8 +405,6 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     profile: presentationProfile,
     width: Math.max(20, renderer.terminalWidth - 6),
     syntaxStyle: markdownSyntaxStyle(presentationProfile),
-    userIdentity: { label: tuiProfile.displayName, avatar: tuiAvatar },
-    assistantIdentity: { label: "Keating", avatar: KEATINGBOT_TERMINAL_AVATAR },
     emptyText: "Ask a question, continue a learning goal, or type /shell for the classic Pi interface.",
     tableOptions: {
       style: "columns",
@@ -434,11 +435,11 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   const inputFrame = new BoxRenderable(renderer, {
     id: "keating-open-tui-input-frame",
     width: "100%",
-    height: 5,
+    height: 3,
     border: true,
     borderStyle: presentationProfile.design.glyphMode === "ascii" ? "single" : "rounded",
     customBorderChars,
-    borderColor: accentColor,
+    borderColor,
     flexDirection: "row",
     paddingLeft: 1,
     paddingRight: 1,
@@ -531,47 +532,46 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   const promptRecovery = new TuiPromptRecovery(client);
   let currentLayout = terminalLayoutProfile(renderer.terminalWidth, renderer.terminalHeight);
   const refreshSidebarIdentity = () => {
-    transcript.setIdentity("user", { label: tuiProfile.displayName, avatar: tuiAvatar });
-    sacredSidebar?.setIdentity({
-      label: tuiProfile.displayName,
-      detail: headerState.model,
-      avatarLines: tuiAvatar.unicode,
-      asciiAvatarLines: tuiAvatar.ascii,
-    });
+    // The model already sits in the header; the panel only names the learner.
+    sacredSidebar?.setIdentity({ label: tuiProfile.displayName });
   };
   const refreshSidebarActivity = () => {
     if (!sacredSidebar) return;
-    const recent = entries.slice(-3).reverse().map((entry) => {
-      const mark = presentationProfile.marks[entry.kind];
-      return `${mark} ${entry.title.replace(/\s+/g, " ").trim() || entry.kind}`;
-    });
-    sacredSidebar.setActivity(recent.length > 0 ? recent : ["· No activity yet"]);
+    // Conversation turns are already on screen; Recent lists what happened around them.
+    const recent = entries
+      .filter((entry) => entry.kind !== "user" && entry.kind !== "assistant")
+      .slice(-3)
+      .reverse()
+      .map((entry) => `${presentationProfile.marks[entry.kind]} ${entry.title.replace(/\s+/g, " ").trim() || entry.kind}`);
+    sacredSidebar.setActivity(recent.length > 0 ? recent : [`${presentationProfile.marks.notice} Nothing yet`]);
   };
-  const retryHint = () => promptRecovery.draft === null ? "" : " · Ctrl+R retry preserved prompt";
+  const retryHint = () => promptRecovery.draft === null ? "" : " · ^R retry";
+  // Emacs is the default and goes unsaid; Vim states earn their place.
+  const statusLine = (hints: string) => {
+    const mode = editorMode === "vim" ? `${editorModeLabel(editorMode, vimState)} · ` : "";
+    return `${mode}${hints}`;
+  };
   const idleStatus = () => {
     const shortcuts = currentLayout.compactStatus
       ? activeUiDocument
-        ? `Ctrl+U actions (${activeUiControls.length}) · Ctrl+B panel · :m model${retryHint()}`
-        : `Ctrl+B panel · :m model · :p commands · /shell classic Pi${retryHint()}`
+        ? `^U ${activeUiControls.length} actions · :p commands${retryHint()}`
+        : `:p commands · :m model${retryHint()}`
       : activeUiDocument
-        ? `Ctrl+U document actions (${activeUiControls.length})  ·  Ctrl+B panel  ·  :m model  ·  :p commands  ·  :s sessions${retryHint()}`
-        : `Ctrl+B panel  ·  :m model  ·  :p commands  ·  :s sessions  ·  :t thinking  ·  :n new${retryHint()}`;
-    return `${editorModeLabel(editorMode, vimState)}  ·  ${shortcuts}`;
+        ? `^U ${activeUiControls.length} actions · :p commands · :m model · :s sessions · ^B panel${retryHint()}`
+        : `:p commands · :m model · :s sessions · :n new · ^B panel${retryHint()}`;
+    return statusLine(shortcuts);
   };
   const synchronizeFocusArea = (next: "composer" | "transcript" | "sidebar") => {
     focusArea = next;
+    // Focus moves the composer's prompt colour and the status line, never a box:
+    // assigning borderColor on a borderless OpenTUI box switches its border on.
+    inputPrompt.fg = next === "composer" ? accentColor ?? RGBA.defaultForeground() : mutedColor ?? RGBA.defaultForeground();
     if (next === "composer") {
-      inputFrame.borderColor = accentColor ?? RGBA.defaultForeground();
-      scroll.borderColor = borderColor ?? RGBA.defaultForeground();
       if (!busy) status.content = idleStatus();
     } else if (next === "transcript") {
-      inputFrame.borderColor = borderColor ?? RGBA.defaultForeground();
-      scroll.borderColor = accentColor ?? RGBA.defaultForeground();
-      status.content = `${editorModeLabel(editorMode, vimState)}  ·  Transcript focused · Tab ${sacredSidebar?.visible ? "opens side panel" : "returns to composer"} · ↑/↓ scroll · Ctrl+F searches`;
+      status.content = statusLine(`↑/↓ scroll · ^F search · tab ${sacredSidebar?.visible ? "panel" : "composer"}`);
     } else {
-      inputFrame.borderColor = borderColor ?? RGBA.defaultForeground();
-      scroll.borderColor = borderColor ?? RGBA.defaultForeground();
-      status.content = `${editorModeLabel(editorMode, vimState)}  ·  Side panel focused · Enter opens · Tab advances · Shift+Tab returns · Esc returns`;
+      status.content = statusLine("↵ open · tab next · esc back");
     }
   };
   const setFocusArea = (next: "composer" | "transcript" | "sidebar") => {
@@ -823,11 +823,13 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       const returnFocus = focusArea;
       const overlayWidth = Math.max(24, Math.floor(renderer.terminalWidth * 0.8));
       const innerWidth = Math.max(12, overlayWidth - 4);
-      const titleLines = overlayTitleLines(title, innerWidth, 2);
-      const hint = truncateOverlayLabel(presentation.message ? "PgUp/PgDn read · Tab/↑/↓ choose · Enter selects · Esc cancels" : "type to filter · Tab/↑/↓ or j/k navigate · Enter selects · Esc cancels", innerWidth);
+      // One header row: what this is on the left, the two keys that matter on
+      // the right. Typing filters, so the filter row needs no instructions.
+      const hint = presentation.message ? "PgUp/PgDn read · esc" : "↵ select · esc";
+      const titleLines = overlayHeaderLines(title, hint, innerWidth);
       const maxHeight = Math.max(10, renderer.terminalHeight - 6);
-      // Border + padding use four rows; the hint and filter each use one.
-      const chromeRows = titleLines.length + 6;
+      // The border uses two rows; the filter row and its gap use two more.
+      const chromeRows = titleLines.length + 4;
       const availableRows = Math.max(1, maxHeight - chromeRows);
       const optionRows = Math.min(Math.max(1, options.length), presentation.message ? Math.max(1, Math.floor(availableRows / 2)) : availableRows);
       const messageLines = presentation.message?.split("\n").reduce((count, line) => count + Math.max(1, Math.ceil(sacredTextWidth(line) / Math.max(1, innerWidth - 1))), 0) ?? 0;
@@ -843,23 +845,25 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         zIndex: 30,
         flexDirection: "column",
         border: true,
-        borderStyle: "single",
+        borderStyle: presentationProfile.design.glyphMode === "ascii" ? "single" : "rounded",
         customBorderChars,
-        borderColor: accentColor,
+        borderColor,
         backgroundColor: sidebarSurfaceColor,
         shouldFill: true,
-        padding: 1,
+        paddingLeft: 1,
+        paddingRight: 1,
       });
       const titleView = new TextRenderable(renderer, {
-        content: [...titleLines, hint].join("\n"),
-        fg: accentColor,
+        content: titleLines.join("\n"),
+        fg: mutedColor,
         bg: sidebarSurfaceColor,
-        height: titleLines.length + 1,
+        height: titleLines.length,
       });
       const filterInput = new InputRenderable(renderer, {
         id: `keating-select-filter-${Date.now()}`,
         width: "100%",
-        placeholder: "Filter options…",
+        marginBottom: 1,
+        placeholder: presentationProfile.design.glyphMode === "ascii" ? "> filter" : "› filter",
         textColor,
         placeholderColor: mutedColor,
         backgroundColor: sidebarSurfaceColor,
@@ -871,6 +875,8 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         flexGrow: 1,
         options: options.map((option) => ({ name: optionName(option), description: presentation.descriptions?.get(option) ?? "", value: option })),
         showDescription: presentation.showDescription ?? false,
+        // The highlight bar already marks the row; a second arrow is noise.
+        showSelectionIndicator: false,
         wrapSelection: true,
         backgroundColor: sidebarSurfaceColor,
         textColor: textColor,
@@ -953,30 +959,30 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       const returnFocus = focusArea;
       const overlayWidth = Math.max(24, Math.floor(renderer.terminalWidth * 0.8));
       const innerWidth = Math.max(12, overlayWidth - 4);
-      const titleLines = overlayTitleLines(title, innerWidth, 2);
-      const hint = truncateOverlayLabel("Enter submits · Esc cancels", innerWidth);
+      const titleLines = overlayHeaderLines(title, "↵ submit · esc", innerWidth);
       const modal = new BoxRenderable(renderer, {
         id: `keating-input-dialog-${Date.now()}`,
         width: "80%",
-        height: titleLines.length + 6,
+        height: titleLines.length + 3,
         position: "absolute",
         top: "30%",
         left: "10%",
         zIndex: 30,
         flexDirection: "column",
         border: true,
-        borderStyle: "single",
+        borderStyle: presentationProfile.design.glyphMode === "ascii" ? "single" : "rounded",
         customBorderChars,
-        borderColor: accentColor,
+        borderColor,
         backgroundColor: sidebarSurfaceColor,
         shouldFill: true,
-        padding: 1,
+        paddingLeft: 1,
+        paddingRight: 1,
       });
       const titleView = new TextRenderable(renderer, {
-        content: [...titleLines, hint].join("\n"),
-        fg: accentColor,
+        content: titleLines.join("\n"),
+        fg: mutedColor,
         bg: sidebarSurfaceColor,
-        height: titleLines.length + 1,
+        height: titleLines.length,
       });
       const dialogInput = new InputRenderable(renderer, {
         id: `keating-dialog-input-${Date.now()}`,
@@ -1441,7 +1447,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       const provider = providers.find((candidate) => candidate.label === selectedProvider);
       if (!provider) return;
       const choices = modelChoices(models.filter((model) => model.provider === provider.provider), current);
-      const selected = await presentSelect(`${provider.provider} · all ${choices.length} configured model${choices.length === 1 ? "" : "s"}`, choices.map((choice) => choice.label), {
+      const selected = await presentSelect(`Model · ${provider.provider}`, choices.map((choice) => choice.label), {
         descriptions: new Map(choices.map((choice) => [choice.label, choice.description])),
         showDescription: false,
       });
@@ -1466,13 +1472,13 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     if (options.confirm !== false) {
       const begin = await surface.presentConfirm(
         "Profile & setup · about one minute",
-        "First choose the name and profile image shown beside your messages, then connect inference and runtime preferences without leaving OpenTUI. Secret inputs are hidden.",
+        "Set your name and profile image, then connect inference and runtime preferences without leaving OpenTUI. Secret inputs are hidden.",
       );
       if (!begin) return;
     }
 
     const displayNameResponse = await presentTextInput(
-      "Set your learner name\nShown beside your messages. Change it later with /setup.",
+      "Set your learner name\nShown in the side panel. Change it later with /setup.",
       tuiProfile.displayName,
       "Display name…",
     );
@@ -1517,7 +1523,6 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       const nextProfile: TuiProfile = { schemaVersion: 1, displayName, avatar };
       await saveTuiProfile(cwd, nextProfile);
       tuiProfile = await loadTuiProfile(cwd);
-      tuiAvatar = await terminalAvatarForProfile(tuiProfile, cwd);
       refreshSidebarIdentity();
     } catch (error) {
       appendEntry({
@@ -1561,7 +1566,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
           `${models.length} authenticated model${models.length === 1 ? "" : "s"} detected.`,
           thinking ? `Thinking set to ${thinking}.` : "Thinking was not changed.",
           "Use Ctrl+B for the side panel, :m for models, :p for every command, @path for files, and /setup to run this again.",
-          "Change your name or profile image anytime: type /setup, or open [S] PROFILE in the side panel.",
+          "Change your name or profile image anytime: type /setup, or open Profile in the side panel (^B).",
           "Share publishes only after explicit confirmation and requires KEATING_SHARE_ORIGIN.",
         ].join("\n\n"),
       });
@@ -1935,7 +1940,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
         return;
       }
       const courseOptions = courses.map(courseOption);
-      const selected = await presentSelect("Courses · type to filter", courseOptions);
+      const selected = await presentSelect("Courses", courseOptions);
       if (selected === undefined) return;
       const course = courses[courseOptions.indexOf(selected)];
       if (!course) return;
@@ -2171,18 +2176,19 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     presentPromptOutcome(await promptRecovery.send(raw, busy, resolved.prompt), false);
   };
 
+  // Hints are the real leader keys; Profile has none, so it shows none.
   const sidebarNavigation: readonly SacredSidebarNavigationItem[] = [
-    { id: "commands", label: "[P] COMMANDS" },
-    { id: "new-session", label: "[N] NEW SESSION" },
-    { id: "model", label: "[M] MODELS" },
-    { id: "setup", label: "[S] PROFILE" },
-    { id: "library", label: "[L] LIBRARY" },
-    { id: "courses", label: "[O] COURSES" },
-    { id: "review", label: "[R] REVIEW" },
+    { id: "commands", label: "Commands", hint: ":p" },
+    { id: "new-session", label: "New session", hint: ":n" },
+    { id: "model", label: "Model", hint: ":m" },
+    { id: "library", label: "Library", hint: ":l" },
+    { id: "courses", label: "Courses", hint: ":o" },
+    { id: "review", label: "Review" },
+    { id: "setup", label: "Profile" },
   ];
   const paintSidebarSessions = () => {
     if (!sacredSidebar) return;
-    const displayWidth = Math.max(24, sacredSidebar.width - 8);
+    const displayWidth = sacredSidebar.sessionTextWidth;
     sacredSidebar.setSessions(sidebarSessionTree.map((row) => ({
       display: sessionTreeOption(row, new Date(), "unicode", displayWidth),
       asciiDisplay: sessionTreeOption(row, new Date(), "ascii", displayWidth),
@@ -2232,26 +2238,22 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
       selection: accentColor ?? RGBA.defaultForeground(),
       onSelection: sidebarSurfaceColor,
     },
-    identity: {
-      label: tuiProfile.displayName,
-      detail: headerState.model,
-      avatarLines: tuiAvatar.unicode,
-      asciiAvatarLines: tuiAvatar.ascii,
-    },
+    identity: { label: tuiProfile.displayName },
     navigation: sidebarNavigation,
     sessions: [],
-    activity: ["· No activity yet"],
-    activityRows: 4,
-    maxNavigationRows: 5,
-    labels: { navigation: "ACTIONS", sessions: "SESSION TREE", recent: "RECENT" },
-    onNavigationSelection(item) {
+    activity: [`${presentationProfile.marks.notice} Nothing yet`],
+    activityRows: 3,
+    maxNavigationRows: 7,
+    labels: { navigation: "Actions", sessions: "Sessions", recent: "Recent" },
+    onNavigationSelection() {
       synchronizeFocusArea("sidebar");
-      status.content = `${item.label} · Enter opens · Tab moves to session tree · Shift+Tab returns · Esc returns to composer`;
+      status.content = statusLine("↵ open · tab sessions · esc back");
     },
     onNavigate: activateSidebarNavigation,
-    onSessionSelection(_path, row) {
+    onSessionSelection(path) {
       synchronizeFocusArea("sidebar");
-      status.content = `${row.display} · Enter resumes this exact session · Esc returns`;
+      const title = sidebarSessionTree.find((candidate) => candidate.item.path === path)?.item.title ?? "Session";
+      status.content = statusLine(`${title} · ↵ resume · esc back`);
     },
     onSessionActivate(path) {
       synchronizeFocusArea("sidebar");

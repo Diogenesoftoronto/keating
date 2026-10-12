@@ -317,6 +317,9 @@ export class NotOrganicPublicClient {
 		requireBrowserStorage().removeItem(RECEIPT_KEY);
 		writeJson(TRANSACTION_KEY, { state, verifier, issuer: this.config.issuer, clientId: this.config.clientId, redirectUri: this.config.redirectUri, createdAt: Date.now(), returnTo: safeAuthorizationReturnTo(returnTo) } satisfies AuthorizationTransaction);
 		const url = new URL(this.config.authorizationUrl);
+		// A portal cookie can survive Keating sign-out. A fresh app session must
+		// start at the account chooser; adding scopes to a session can reuse it.
+		if (!this.getSession()) url.searchParams.set("prompt", "select_account");
 		url.searchParams.set("client_id", this.config.clientId);
 		url.searchParams.set("redirect_uri", this.config.redirectUri);
 		url.searchParams.set("response_type", "code");

@@ -14,7 +14,7 @@ export interface ProfileCommandOptions {
 }
 
 export const PROFILE_HELP = [
-  "Configure the identity shown beside your messages in Keating's TUI.",
+  "Configure your learner identity in Keating's TUI.",
   "",
   "Usage:",
   "  keating profile",

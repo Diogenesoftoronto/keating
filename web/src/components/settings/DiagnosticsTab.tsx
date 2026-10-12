@@ -283,7 +283,12 @@ function HealthSummary() {
 		const summary = problems[0]?.explanation.title ?? "Diagnostics from settings";
 		const delivery = await sendDiagnosticReport({ summary });
 		setSending(false);
-		if (delivery) { setStatus("Report sent. Thank you."); return; }
+		if (delivery) {
+			setStatus(delivery === "log"
+				? "The sanitized report was accepted into the server log. It was not sent by email."
+				: "The sanitized report was accepted by the diagnostics service; this does not confirm inbox delivery.");
+			return;
+		}
 		window.location.href = diagnosticReportMailto({ summary });
 		setStatus("Couldn't send automatically, so your email app was opened with the report instead.");
 	};

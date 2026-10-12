@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11,<3.14"
-# dependencies = ["tinker==0.27.1", "torch==2.10.0+cpu", "tinker-cookbook==0.5.7", "transformers==5.3.0", "typer>=0.12"]
+# dependencies = ["tinker==0.31.0", "torch==2.14.1+cpu", "tinker-cookbook==0.5.7", "transformers==5.5.4", "typer>=0.12"]
 # [tool.uv.sources]
 # torch = { index = "pytorch-cpu" }
 # [[tool.uv.index]]
@@ -36,13 +36,13 @@ HINDSIGHT_VERSION = "native-hindsight/v3"
 PROJECTION_VERSION = "native-hindsight-teacher-feedback/v1"
 PROJECTION_HASH = "0912a4c75f99aef1123cf5708df1b2e8f7380ce4f60a6f251bb5e2abf9bcae58"
 SOURCE_PINS = {
-    "native_tinker_update.py": "11dce4a7f1c7e8815838c0e0efceee61f60d0f22c663fc20d4fd527bb7e4a6cc",
+    "native_tinker_update.py": "b6bd8be11f18812bfbf9c23b0b821a5082bfae6c4a15bd6b86bff5f888577751",
     "native_combined_loss.py": "719140df07f6c6c2dd5b9c0f13427b8e37b8ee0cb643755c49e9dcf82d64214c",
-    "native_hindsight.py": "7bf64a71f99da680b4f05c75c14cbefbd1616143264820fa2ec4a5793c92bb2e",
+    "native_hindsight.py": "a12ea22b45c3315eaf0ed4fbc7b0b00ca6d0964d08c9a8da7a6e44e0bbbbb204",
 }
 SDK_SOURCE_PINS = {
     **base.SDK_SOURCE_HASHES,
-    "tinker/lib/public_interfaces/sampling_client.py": "86a5bb4a90cddb3528b10ea93d13bd1bf0ec7aaa7ea3072110beeeeafe1c975e",
+    "tinker/lib/public_interfaces/sampling_client.py": "fa246d5870bece5144c075e4ebb495a8e1fd5dadf0cebc6a9047163ea9acce97",
     "tinker/lib/api_future_impl.py": "aebd8e2eddb0e0e3c4a5fcb9df1aa1bb4b7bed9b4bec8374bb494931566fc943",
     "tinker/lib/retry_handler.py": "8dba752fbf61860c53a76a61aeff950e62ecc0f01fc28b5992347a5785809abf",
     "tinker/lib/public_interfaces/api_future.py": "c1458f4648b3556857a916ee413f06dda9f0cd42953e85d89adc7e37683a0967",

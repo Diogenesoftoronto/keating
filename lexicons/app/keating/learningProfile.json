@@ -1,0 +1,30 @@
+{
+  "lexicon": 1,
+  "id": "app.keating.learningProfile",
+  "defs": {
+    "main": {
+      "type": "record",
+      "key": "literal:self",
+      "description": "An explicitly published, owner-authored learning summary. This is not an issuer-verified achievement. Missing record means private or not yet published; consumers must not infer privacy from network errors.",
+      "record": {
+        "type": "object",
+        "required": ["schemaVersion", "visibility", "publicationId", "updatedAt"],
+        "properties": {
+          "schemaVersion": { "type": "integer", "const": 1 },
+          "visibility": { "type": "string", "knownValues": ["public", "private"], "description": "A private tombstone contains no topics or activity. Writers must use swapRecord for every publication or withdrawal to prevent stale writes resurrecting withdrawn content." },
+          "publicationId": { "type": "string", "maxLength": 100, "description": "Unique nonce per publication/withdrawal. Prevents same-timestamp revision reuse." },
+          "topics": { "type": "array", "maxLength": 20, "items": { "type": "string", "minLength": 1, "maxLength": 320, "maxGraphemes": 80 } },
+          "activity": { "type": "ref", "ref": "#activity" },
+          "updatedAt": { "type": "string", "format": "datetime" }
+        }
+      }
+    },
+    "activity": {
+      "type": "object",
+      "required": ["savedSessions"],
+      "properties": {
+        "savedSessions": { "type": "integer", "minimum": 0, "description": "Optional count of visible saved sessions on the publishing device; not proof of lesson completion or mastery." }
+      }
+    }
+  }
+}

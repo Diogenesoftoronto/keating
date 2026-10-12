@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { it } from "node:test";
-import { fauxAssistantMessage, fauxToolCall } from "@earendil-works/pi-ai";
+import { fauxAssistantMessage, fauxToolCall, getCurrentTools } from "@earendil-works/pi-ai";
 import { init, useModel, useSkill, useSubagent, useTool } from "@flue/runtime";
 import { start } from "@flue/runtime/node";
 import * as v from "valibot";
@@ -39,7 +39,7 @@ it("registers and executes portable browser tool names through the real Flue har
   let observedResults = false;
   deterministicProvider.setResponses([
     (context) => {
-      const registered = context.tools?.map((tool) => tool.name) ?? [];
+      const registered = getCurrentTools(context.messages).map((tool) => tool.name);
       for (const name of names) assert.ok(registered.includes(name), `${name} registered`);
       assert.ok(registered.includes("activate_skill"), "native skill tool remains registered");
       assert.ok(registered.includes("task"), "native delegation tool remains registered");

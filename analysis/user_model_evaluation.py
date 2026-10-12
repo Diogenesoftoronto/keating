@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12,<3.14"
-# dependencies = ["marimo==0.23.1", "pandas==2.*", "matplotlib==3.10.*", "numpy==2.2.6", "scikit-learn==1.7.2"]
+# dependencies = ["marimo==0.25.1", "pandas==3.0.6", "matplotlib==3.11.2", "numpy==2.5.3", "scikit-learn==1.9.1"]
 # ///
 """Read-only authored profile/panel demonstration. No human data or provider calls."""
 import marimo

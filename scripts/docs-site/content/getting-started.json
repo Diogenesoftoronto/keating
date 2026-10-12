@@ -9,77 +9,23 @@
         "heading": "1. Open your learning space",
         "screenshots": [
           {
-            "src": "/assets/screenshots/surface-classroom.png",
-            "alt": "Keating's empty chat with the Sessions panel on the left, suggested starting points, and the message box below.",
-            "caption": "Earlier tutorial capture of the chat workspace. Sessions sit on the left and the message box is at the bottom. The first-visit walkthrough and header labels have since changed; follow the steps in this guide.",
-            "width": 1440,
+            "src": "/assets/screenshots/current-onboarding-desktop.png",
+            "alt": "Welcome to Keating onboarding at desktop width.",
+            "caption": "Current component capture with authored fixture data (2026-10-01). The first visit begins with Welcome to Keating.",
+            "width": 1280,
             "height": 900
+          },
+          {
+            "src": "/assets/screenshots/current-onboarding-mobile.png",
+            "alt": "Welcome to Keating onboarding at narrow browser width.",
+            "caption": "Current component capture with authored fixture data (2026-10-01). Onboarding adapts to a narrow browser width.",
+            "width": 390,
+            "height": 844
           }
         ],
         "paragraphs": [
-          "Open Keating in your browser. You can begin on a phone, tablet, or computer without installing an app. Use the browser profile where you want to keep your lessons: browser sessions and settings are saved locally.",
-          "The tutor opens directly at https://chat.keating.help/. Learning usage, benchmarks, courses, review, and live sessions stay in that application. The public landing page, downloads, and pricing remain at https://keating.help/.",
-          "On your first visit, Welcome to Keating walks you through model access, setup, and a starting point. Choose Next to continue. Go straight to chat skips the walkthrough; you can still connect a model from the chat header or Settings.",
-          "To understand how Keating works in practice, follow learner Elena Chen throughout these guides. Elena is a backend engineer mastering distributed consensus algorithms, focusing on Raft leader election and log replication invariants. She switches seamlessly between the Web UI for visual deep dives, the Terminal UI inside tmux while writing Go code, and the CLI shell for rapid spaced quizzes. Use the tabs below to explore each step across your preferred surface:"
-        ],
-        "surfaceTabs": [
-          {
-            "surface": "web",
-            "label": "Web UI",
-            "summary": "Access Keating in any modern browser. Zero installation required, with full support for visual diagrams, OpenUI quiz cards, and audio duplex.",
-            "shortcut": "Browser",
-            "bullets": [
-              "Navigate to https://chat.keating.help/ on desktop, tablet, or phone.",
-              "Conversations, settings, and learning progress persist locally in your browser storage.",
-              "Interactive OpenUI cards render Socratic checks and retrieval practice directly in the chat stream."
-            ],
-            "code": "https://chat.keating.help/",
-            "language": "Browser URL",
-            "video": {
-              "src": "/assets/tapes/web-landing.mp4",
-              "poster": "/assets/tapes/posters/web-landing.jpg",
-              "title": "Web classroom entry",
-              "caption": "The Keating landing page: the problem it answers, a try-it-yourself card, the films, and a goal planner."
-            }
-          },
-          {
-            "surface": "tui",
-            "label": "Terminal UI",
-            "summary": "Launch Keating's full-screen OpenTUI terminal interface directly in your shell or tmux session.",
-            "shortcut": "keating tui",
-            "bullets": [
-              "Run keating tui inside any modern terminal emulator.",
-              "Press Ctrl+B to open the action sidebar, switch models, and inspect teaching policies.",
-              "Keyboard-driven navigation lets you learn without switching away from your editor."
-            ],
-            "code": "keating tui",
-            "language": "Terminal command",
-            "video": {
-              "src": "/assets/tapes/tui-onboarding.mp4",
-              "poster": "/assets/tapes/posters/tui-onboarding.jpg",
-              "title": "Terminal UI first-minute launch",
-              "caption": "Running keating tui for the first time: the eight-step tour, then a learner name, a local portrait, thinking effort, and runtime behaviour."
-            }
-          },
-          {
-            "surface": "cli",
-            "label": "CLI Shell",
-            "summary": "Interact with Keating's hyperteacher directly from your shell, ideal for headless scripts and quick checks.",
-            "shortcut": "keating shell",
-            "bullets": [
-              "Run keating shell with an optional initial prompt to start immediately.",
-              "Use --continue to resume your last conversation, or --session to target a specific ID.",
-              "Supports scriptable flags for model selection and separate learner profiles."
-            ],
-            "code": "keating shell 'Teach me Raft consensus leader election'",
-            "language": "Terminal command",
-            "video": {
-              "src": "/assets/tapes/cli-artifacts.mp4",
-              "poster": "/assets/tapes/posters/cli-artifacts.jpg",
-              "title": "CLI plan, map, and verify",
-              "caption": "Running keating plan, map, and verify on Special Relativity, then reading the saved plan and its trace."
-            }
-          }
+          "Open https://chat.keating.help/ in your browser. You can begin on a phone, tablet, or computer without installing an app. Use the browser profile where you want to keep your lessons: conversations and settings are saved locally.",
+          "On your first visit, Welcome to Keating walks you through model access and a starting point. Choose Next to continue. Go straight to chat skips the walkthrough; you can still connect a model from the chat header or Settings."
         ],
         "links": [
           {
@@ -87,7 +33,7 @@
             "href": "https://chat.keating.help/"
           },
           {
-            "label": "Watch the visual guide and walkthroughs",
+            "label": "Find your way around the interface",
             "href": "/visual-guide/"
           }
         ]
@@ -96,47 +42,6 @@
         "heading": "2. Connect a model",
         "paragraphs": [
           "A model generates Keating's responses. Choose one way to connect before sending your first question. You can change the model later by selecting its name in the chat header."
-        ],
-        "surfaceTabs": [
-          {
-            "surface": "web",
-            "label": "Web UI",
-            "summary": "Select your active model directly from the header dropdown, or configure cloud providers in Settings.",
-            "shortcut": "Header menu",
-            "bullets": [
-              "Click the model name in the top navigation bar to switch between available models.",
-              "Connect via Not Organic for hosted inference with zero local setup.",
-              "Bring your own API key in Settings → Models & Providers → Cloud Providers."
-            ],
-            "code": "Settings → Models & Providers → Cloud Providers",
-            "language": "Web Navigation"
-          },
-          {
-            "surface": "tui",
-            "label": "Terminal UI",
-            "summary": "Switch models instantly with Ctrl+P or manage credentials with keating setup.",
-            "shortcut": "Ctrl+P",
-            "bullets": [
-              "Press Ctrl+P anywhere in the TUI to open the fuzzy model selection palette.",
-              "Configured providers sort first, with active models highlighted at the top.",
-              "Run keating setup to configure API keys or local endpoint ports."
-            ],
-            "code": "keating setup",
-            "language": "Terminal command"
-          },
-          {
-            "surface": "cli",
-            "label": "CLI Shell",
-            "summary": "Pass the model directly via command flags or export standard provider environment variables.",
-            "shortcut": "--model",
-            "bullets": [
-              "Use keating shell --model=<provider>/<model> to select an exact model string.",
-              "Export provider keys like OPENAI_API_KEY, ANTHROPIC_API_KEY, or NOTORGANIC_TOKEN.",
-              "Run keating doctor to inspect runtime detection and provider connectivity."
-            ],
-            "code": "keating shell --model=anthropic/claude-3-5-sonnet-20241022\nkeating doctor",
-            "language": "Terminal command"
-          }
         ],
         "bullets": [
           "Use Keating selects Inkling Small. Choose Connect or create an account, then Sign up / Sign in to connect through Not Organic. Hosted responses depend on account access and available credit; completing sign-in alone does not confirm either.",
@@ -151,6 +56,15 @@
           {
             "label": "Set up an offline tutor",
             "href": "/offline-tutor/"
+          }
+        ],
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/current-model-access.png",
+            "alt": "Onboarding model access choices.",
+            "caption": "Current component capture with authored fixture data (2026-10-01). Choose how to connect a tutor during onboarding.",
+            "width": 1280,
+            "height": 900
           }
         ]
       },
@@ -169,65 +83,6 @@
           "For example: I think the function stops when the input reaches zero. Give me an input where that stopping rule fails, and let me work out why.",
           "If a response stops because of a key, account, or credit error, follow the action shown with the error. Check the saved message before sending another copy. The accounts guide explains Refresh balance and Retry response."
         ],
-        "surfaceTabs": [
-          {
-            "surface": "web",
-            "label": "Web UI",
-            "summary": "Answer Socratic prompts directly in the browser chat stream with typed OpenUI interaction cards.",
-            "shortcut": "Web Chat",
-            "bullets": [
-              "Type your explanation or hypothesis directly into the chat input box.",
-              "When Keating asks a diagnostic question, answer in your own words rather than guessing rote phrases.",
-              "Inspect visible model reasoning tags before each pedagogical response."
-            ],
-            "code": "I think two majorities cannot overlap because each node gets only one vote per term.",
-            "language": "Web chat input",
-            "video": {
-              "src": "/assets/tapes/web-classroom.mp4",
-              "poster": "/assets/tapes/posters/web-classroom.jpg",
-              "title": "Web classroom walkthrough",
-              "caption": "Elena working through a live Socratic session: asking questions, observing reasoning, and answering the next prompt."
-            }
-          },
-          {
-            "surface": "tui",
-            "label": "Terminal UI",
-            "summary": "Answer Socratic questions directly in the terminal with keyboard-driven branching and live fork trees.",
-            "shortcut": "keating tui",
-            "bullets": [
-              "Type answers in the bottom message bar and press Enter to stream the hyperteacher's response.",
-              "Press Ctrl+B to inspect active models, thinking depth, and session policy parameters.",
-              "Fork the session at any turn to test alternative counter-examples without losing your primary branch."
-            ],
-            "code": "keating tui 'Teach me Raft leader election invariants'",
-            "language": "Terminal command",
-            "video": {
-              "src": "/assets/tapes/tui-collaborative.mp4",
-              "poster": "/assets/tapes/posters/tui-collaborative.jpg",
-              "title": "Terminal UI session walkthrough",
-              "caption": "Asking keating tui why proof by contradiction works, following up for an example, and forking the whole branch into a new session."
-            }
-          },
-          {
-            "surface": "cli",
-            "label": "CLI Shell",
-            "summary": "Run single-turn checks, prompt-driven sessions, and automated Socratic exercises from bash or zsh.",
-            "shortcut": "keating shell",
-            "bullets": [
-              "Pass questions directly on the command line: keating shell '<question>'.",
-              "Resume where you left off with keating shell --continue.",
-              "Inspect generated plans, Mermaid maps, and verification checklists under .keating/outputs/."
-            ],
-            "code": "keating shell --continue\nkeating verify 'Raft Consensus'",
-            "language": "Terminal command",
-            "video": {
-              "src": "/assets/tapes/cli-artifacts.mp4",
-              "poster": "/assets/tapes/posters/cli-artifacts.jpg",
-              "title": "CLI verification",
-              "caption": "Generating and verifying Special Relativity artifacts with plain keating commands; each one is saved as Markdown you can read."
-            }
-          }
-        ],
         "links": [
           {
             "label": "Resolve account and credit prompts",
@@ -238,54 +93,16 @@
       {
         "heading": "5. Return to a lesson or begin another",
         "paragraphs": [
-          "Use the sessions panel to reopen a previous conversation. On a narrow screen, Open sessions panel reveals it. Choose New session when you want to start a separate topic.",
-          "Settings lets you adjust the app and your learning preferences. The Models & Providers tab controls model connections, Learning contains teaching preferences, and App contains interface and privacy controls. On small screens, some controls appear as icons."
+          "Use the sessions panel to reopen a previous conversation. On a narrow screen, Open sessions panel reveals it. Choose New session when you want to start a separate topic."
         ],
-        "surfaceTabs": [
+        "links": [
           {
-            "surface": "web",
-            "label": "Web UI",
-            "summary": "Use the left-hand sessions panel to search, reopen, or fork previous lesson threads.",
-            "shortcut": "Sessions panel",
-            "bullets": [
-              "Click Open sessions panel on the left rail to view your conversation history.",
-              "Select any conversation (such as 'Raft Consensus') to resume where you stopped.",
-              "Click New session (+) to start a fresh topic without losing your history."
-            ],
-            "code": "Click '+' in Sessions drawer for New Session\nClick 'Fork session' on any turn to branch",
-            "language": "Web navigation"
+            "label": "Find and continue a saved lesson",
+            "href": "/sessions-and-review/"
           },
           {
-            "surface": "tui",
-            "label": "Terminal UI",
-            "summary": "Search and jump between conversation threads with keyboard shortcuts.",
-            "shortcut": "Ctrl+B → SESSIONS",
-            "bullets": [
-              "Press Ctrl+B to open the action sidebar and navigate to SESSIONS.",
-              "Browse recent conversations or search by topic name.",
-              "Press Enter to switch threads instantly without restarting the TUI."
-            ],
-            "code": "Ctrl+B → Down to SESSIONS → Enter",
-            "language": "Keyboard navigation",
-            "video": {
-              "src": "/assets/tapes/tui-collaborative.mp4",
-              "poster": "/assets/tapes/posters/tui-collaborative.jpg",
-              "title": "Terminal session browser and fork",
-              "caption": "Opening the session browser in keating tui and forking the active branch. The original session stays saved."
-            }
-          },
-          {
-            "surface": "cli",
-            "label": "CLI Shell",
-            "summary": "Resume the active session or target a specific conversation ID with shell flags.",
-            "shortcut": "--continue",
-            "bullets": [
-              "Use keating shell --continue to immediately resume your most recent session.",
-              "Specify a session with keating shell --session=<uuid>.",
-              "Use --profile=elena to isolate learner state and history in separate profile directories."
-            ],
-            "code": "# Resume the last active session\nkeating shell --continue\n\n# Resume with Elena's learner profile\nkeating shell --profile=elena --continue",
-            "language": "Terminal command"
+            "label": "Find sessions and settings",
+            "href": "/visual-guide/#section-sessions-and-settings"
           }
         ]
       },
@@ -310,325 +127,164 @@
   },
   {
     "slug": "visual-guide",
-    "title": "Visual guide and walkthroughs",
-    "description": "Watch the Keating 4.0 launch film, the narrated introduction, and walkthroughs of every layer: classroom, terminal UI, onboarding, CLI artifacts, and the surface tour.",
+    "title": "Find your way around",
+    "description": "Find chat controls, model selection, learning activities, saved sessions, settings, and terminal shortcuts.",
     "group": "Getting started",
     "sections": [
       {
-        "heading": "1. Keating 4.0 and the surface tour",
+        "heading": "Chat and messages",
         "paragraphs": [
-          "Keating is organized into multiple interconnected surfaces, each designed for a different aspect of independent study, pedagogical verification, and course creation. You can move seamlessly between the browser classroom, the terminal, and command-line compilation.",
-          "Start with the 4.0 launch film. It covers the Socratic lesson, learner-owned models and data, GPT Live voice sessions, local recall, independent reviews, and the terminal. Then watch the silent surface tour for the parts of Keating that are not the chat box. Every beat is a capture of the real component."
+          "The conversation fills the main area. Write your question or answer in the message box at the bottom and send it. Continue in the same conversation when you want Keating to use the earlier discussion.",
+          "The chat header shows the selected model. The sessions panel sits beside the conversation on wide screens; on a narrow screen, use Open sessions panel to reveal it. Some controls use icons when space is limited."
         ],
-        "videos": [
+        "screenshots": [
           {
-            "src": "/assets/tapes/keating-4-launch.mp4",
-            "poster": "/assets/tapes/posters/keating-4-launch.jpg",
-            "captions": "/assets/tapes/captions/keating-4-launch.vtt",
-            "title": "Keating 4.0 in 70 seconds",
-            "caption": "The narrated 4.0 launch film, from a wall of text to a question you can answer, with GPT Live, local recall, and reviews you decide on. English captions included."
+            "src": "/assets/screenshots/current-classroom-desktop.png",
+            "alt": "Keating classroom with a populated local demonstration conversation.",
+            "caption": "Current application capture with a restored authored lesson fixture (2026-10-01). A populated lesson in the desktop web layout.",
+            "width": 1280,
+            "height": 900
           },
           {
-            "src": "/assets/tapes/keating-surface-tour.mp4",
-            "poster": "/assets/tapes/posters/keating-surface-tour.jpg",
-            "title": "More than a chat in 32 seconds",
-            "caption": "A silent eight-beat tour: simulate, code, speak, recall, sit an exam, plan, search sessions, and work in a local desktop workspace."
+            "src": "/assets/screenshots/current-classroom-mobile.png",
+            "alt": "Keating classroom with a demonstration conversation at a narrow browser width.",
+            "caption": "Current application capture with a restored authored lesson fixture (2026-10-01). The same lesson in the narrow web layout.",
+            "width": 390,
+            "height": 844
           }
-        ],
-        "bullets": [
-          "Simulate: move a control in the base-rate simulation and watch the chart redraw.",
-          "Code: write a TypeScript solution in the code lab and run the sample tests.",
-          "Speak: record a pronunciation attempt and compare it with the target.",
-          "Recall: review flashcards on a spaced schedule.",
-          "Exam: sit a timed exam, flag questions, and review the grading.",
-          "Plan: follow a nested study plan with linked lessons.",
-          "Sessions: search past sessions without losing fork ancestry.",
-          "Desktop: run a local workspace with real files and processes."
         ],
         "links": [
           {
             "label": "Start your first lesson",
             "href": "/start-here/"
-          },
-          {
-            "label": "Open Keating",
-            "href": "https://chat.keating.help/"
           }
         ]
       },
       {
-        "heading": "2. Web classroom and interactive OpenUI",
+        "heading": "Models and connections",
         "paragraphs": [
-          "The browser classroom is Keating's primary conversational space. Unlike conventional chatbots that return monolithic walls of text or opaque answers, Keating teaches Socratically: it reasons in the open, identifies the edge of your understanding, and hands back the next question worth answering.",
-          "As conversations progress, Keating streams typed OpenUI interface documents directly into the response stream. These include conversational Question checks, multi-session StudyPlan checklists, visual ConceptMap diagrams, and persistent SharedNotes that survive across turns."
-        ],
-        "videos": [
-          {
-            "src": "/assets/tapes/web-classroom.mp4",
-            "poster": "/assets/tapes/posters/web-classroom.jpg",
-            "title": "Inquiry in the classroom",
-            "caption": "A live lesson exploring why cities form where they do. Keating reasons openly, asks targeted questions, and adapts to learner responses."
-          }
-        ],
-        "bullets": [
-          "Visible reasoning: see how the model constructs its pedagogical next step before delivering it.",
-          "Socratic prompts: Keating asks for predictions and explanations in your own words rather than handing over rote answers.",
-          "Typed OpenUI widgets: interactive Question cards with classification, matching, multiple-choice, and open-ended responses.",
-          "Session rail: search, fork, rename, or resume previous learning branches at any time."
+          "Select the model name in the chat header to open Find a model. Search for a model, open Model details to inspect it, then select the model you want to use.",
+          "Open Settings → Models & Providers to connect a provider, enter its key, or manage models that run on your device. A saved connection and a selected model are separate choices."
         ],
         "links": [
           {
-            "label": "Learn with Keating",
+            "label": "Choose and connect a model",
+            "href": "/choose-a-model/"
+          },
+          {
+            "label": "Connect a local model server",
+            "href": "/connect-local-models/"
+          },
+          {
+            "label": "Prepare an offline tutor",
+            "href": "/offline-tutor/"
+          }
+        ]
+      },
+      {
+        "heading": "Questions and activities",
+        "paragraphs": [
+          "A response may include a question, quiz, flashcard, or another activity. Use the controls inside the activity to answer, reveal, or advance it. You can also ask a follow-up in the message box.",
+          "For quizzes, read the score together with the grading status. For flashcards, try to recall the answer before revealing it and choosing a rating."
+        ],
+        "links": [
+          {
+            "label": "Work through a lesson",
             "href": "/learning-with-keating/"
           },
           {
-            "label": "Quizzes and practice",
+            "label": "Use quizzes and flashcards",
             "href": "/quizzes-and-practice/"
           }
         ]
       },
       {
-        "heading": "3. Terminal UI and branching dialogue",
+        "heading": "Sessions and settings",
         "paragraphs": [
-          "For learners who prefer working directly in the terminal, Keating provides a full-featured OpenTUI client (keating tui). It connects to the same underlying Pi runtime, preserving all prompts, skills, and session state while offering a dense, keyboard-first environment.",
-          "The terminal interface includes a responsive sidepanel, mouse and keyboard selection for cloud and local models, action rows, custom ASCII portraits, and a live visual session tree showing every branch and fork of your conversation."
-        ],
-        "videos": [
-          {
-            "src": "/assets/tapes/tui-collaborative.mp4",
-            "poster": "/assets/tapes/posters/tui-collaborative.jpg",
-            "title": "Terminal workspace and branching",
-            "caption": "A short keating tui session: a question, the side panel and model picker, a follow-up, and a fork of the whole branch."
-          }
-        ],
-        "bullets": [
-          "Layered sidepanel: toggle sessions, model selection, thinking depth, and focus mode with single keystrokes.",
-          "Fork tree: branch off any previous turn to explore alternative hypotheses without losing the original conversation.",
-          "ASCII-safe rendering: full compatibility with standard terminal emulators, tmux, and SSH sessions.",
-          "Instant /shell switch: drop into the raw Pi extension shell at any time while retaining active session state."
+          "Open the sessions panel to find an earlier conversation. Choose a saved session to continue it, or New session to begin another topic.",
+          "Open Settings to change app and learning preferences. Models & Providers contains connections and model choices, Learning contains teaching preferences, and App contains interface and privacy controls.",
+          "Learning usage contains Portable data, where you can export and import saved learning data. Signing in to a hosted account does not restore another browser's lesson library."
         ],
         "links": [
           {
-            "label": "Install Keating",
-            "href": "/install-keating/"
-          },
-          {
-            "label": "Sessions and the review desk",
+            "label": "Find sessions and review earlier work",
             "href": "/sessions-and-review/"
-          }
-        ]
-      },
-      {
-        "heading": "4. First minute and profile onboarding",
-        "paragraphs": [
-          "Keating is designed to be immediately usable without initial credential friction. When launching the terminal client for the first time, an onboarding wizard introduces you to the system's layout and controls before you ever configure an API key.",
-          "You can configure your learner handle, select a generated pixel portrait, choose initials, or link a local avatar image. The onboarding flow then walks through panel toggling, model inspection, and focus shortcuts."
-        ],
-        "videos": [
-          {
-            "src": "/assets/tapes/tui-onboarding.mp4",
-            "poster": "/assets/tapes/posters/tui-onboarding.jpg",
-            "title": "First-minute terminal onboarding",
-            "caption": "The first-run tour and profile setup in keating tui: learner name, local portrait, thinking effort, and runtime behaviour, with no provider key needed."
-          }
-        ],
-        "bullets": [
-          "Local-first identity: learner handles and avatars are stored in local configuration, not on remote servers.",
-          "Zero-credential preview: test layout, controls, and help menus before entering cloud provider keys.",
-          "Custom portraits: choose between procedural pixel art, monogram initials, or local image paths."
-        ],
-        "links": [
-          {
-            "label": "Install Keating",
-            "href": "/install-keating/"
           },
           {
-            "label": "Privacy and your data",
+            "label": "Save and move your learning data",
             "href": "/privacy-and-data/"
           }
         ]
       },
       {
-        "heading": "5. Deterministic pedagogy and CLI artifacts",
+        "heading": "Files in a desktop workspace",
         "paragraphs": [
-          "Beneath the conversational interface lies Keating's deterministic pedagogy layer. Rather than leaving lesson plans and concept relationships to unconstrained model hallucination, Keating compiles learning topics into structured, inspectable files.",
-          "Using the keating CLI, you can generate lesson plans, compile Mermaid concept graphs, build Hyperframes animated explanation bundles, and run Chain-of-Verification (CoVe) fact checks. All artifacts are saved under .keating/outputs/ where they can be versioned and reviewed."
+          "Supported desktop builds include a workspace panel for browsing and editing local files. Use the file list to open a file when your lesson involves code or project material.",
+          "The workspace panel depends on the installed build. Check the download page for a package that supports your device."
         ],
-        "code": "keating plan \"Special Relativity\"\nkeating map \"Special Relativity\"\nkeating animate \"Special Relativity\"\nkeating verify \"Special Relativity\"",
-        "language": "Terminal commands",
-        "videos": [
+        "screenshots": [
           {
-            "src": "/assets/tapes/cli-artifacts.mp4",
-            "poster": "/assets/tapes/posters/cli-artifacts.jpg",
-            "title": "CLI artifact generation",
-            "caption": "Generating a lesson plan, Mermaid meaning map, and verification checklist for Special Relativity live from the command line."
+            "src": "/assets/screenshots/current-workspace-files.png",
+            "alt": "Workspace file browser and editing tools.",
+            "caption": "Current component capture with authored fixture data (2026-10-01). The production workspace component displays fixture files; this is not a native installation capture.",
+            "width": 1280,
+            "height": 900
           }
-        ],
-        "bullets": [
-          "keating plan: creates a deterministic pedagogical sequence balancing intuition, formal structure, and transfer.",
-          "keating map: turns the plan into an inspectable Mermaid knowledge graph with clear prerequisite dependencies.",
-          "keating animate: selects a scene grammar and emits a self-contained Hyperframes visual explanation bundle.",
-          "keating verify: executes a Chain-of-Verification check against the core claims before teaching begins."
         ],
         "links": [
           {
-            "label": "Install Keating",
+            "label": "Use Keating on your device",
+            "href": "/install-keating/"
+          }
+        ]
+      },
+      {
+        "heading": "Terminal conversation",
+        "paragraphs": [
+          "After installing the terminal app and connecting a model, run keating tui. The transcript occupies the main area and the message input sits at the bottom. Enter sends the message; Ctrl+X stops the current response.",
+          "Press Ctrl+B to show or hide the side panel, Ctrl+M to choose a model, or Ctrl+P to open the command palette. Ctrl+N begins a new session."
+        ],
+        "code": "keating tui",
+        "language": "sh",
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/current-tui-conversation.png",
+            "alt": "Production terminal interface with a demonstration tutoring conversation.",
+            "caption": "Current production terminal capture from an isolated local workspace with a loopback demo tutor (2026-10-01). The learner and tutor conversation appears in the terminal workspace.",
+            "width": 1440,
+            "height": 900
+          }
+        ],
+        "links": [
+          {
+            "label": "Install the terminal app",
             "href": "/install-keating/"
           },
           {
-            "label": "Read the developer handbook",
-            "href": "https://dev.keating.help"
+            "label": "Choose a model",
+            "href": "/choose-a-model/"
           }
         ]
       },
       {
-        "heading": "6. Hyperteacher architecture and narrated film",
+        "heading": "Terminal sessions and branches",
         "paragraphs": [
-          "Keating is designed as a Socratic AI scaffold for people who still want to own their understanding. The narrated introduction below walks through ten real screens: how onboarding asks the way you learn, what the learner profile remembers, sources you can open, simulations, fieldwork away from the screen, timed recall, word-order practice, an honestly graded exam, and the apps you can take anywhere.",
-          "Alongside the introduction, the interactive tutorial walkthrough demonstrates the complete guided learning flow: from initial inquiry to progressive hint generation, concept mapping, and knowledge transfer."
+          "Press Ctrl+S to open the session browser and choose a conversation. The side panel's session tree shows related branches.",
+          "Use the session browser's fork action when you want to explore another direction while keeping the original conversation. A fork creates a separate session; select the branch you want to continue."
         ],
-        "videos": [
+        "screenshots": [
           {
-            "src": "/assets/tapes/keating-intro.mp4",
-            "poster": "/assets/tapes/posters/keating-intro.jpg",
-            "captions": "/assets/tapes/captions/keating-intro.vtt",
-            "title": "A teacher for the age of answering machines",
-            "caption": "A 76-second narrated introduction over real product captures: it does not hand you the mountain, it teaches you to climb. English captions included."
-          },
-          {
-            "src": "/assets/tapes/web-tutorial.mp4",
-            "poster": "/assets/tapes/posters/web-tutorial.jpg",
-            "title": "Interactive tutorial walkthrough",
-            "caption": "A 60fps walkthrough of the structured tutorial, stepping through lessons, diagnostic hints, and practice cards."
+            "src": "/assets/screenshots/current-tui-session-tree.png",
+            "alt": "Production terminal interface with a session branch tree.",
+            "caption": "Current production terminal capture from an isolated local workspace with a loopback demo tutor (2026-10-01). The session tree shows the local demonstration lesson and its branch.",
+            "width": 1440,
+            "height": 900
           }
-        ],
-        "bullets": [
-          "Predict before reveal: test your mental model before the explanation confirms or reframes it.",
-          "Reconstruction in your own words: Keating verifies comprehension by asking you to apply principles to fresh scenarios.",
-          "Branching sessions: fork a question into a sub-investigation without polluting your primary study path.",
-          "Narrated introduction: a Gemini Kore voiceover timed to each screen, with an English caption track."
         ],
         "links": [
           {
-            "label": "Learn with Keating",
-            "href": "/learning-with-keating/"
-          },
-          {
-            "label": "Quizzes and practice",
-            "href": "/quizzes-and-practice/"
-          }
-        ]
-      },
-      {
-        "heading": "7. The published metaharness paper and web interface",
-        "paragraphs": [
-          "Keating treats teaching methodology as serious, quotable software engineering. The metaharness paper documents the empirical framework, Socratic prompt architecture, evaluation benchmarks against synthetic learners, and the limits of synthetic scores.",
-          "The companion web walkthrough illustrates how the metaharness translates into a fluid browser experience: real-time inspection panels, model selection, live session stats, and verifiable learning traces."
-        ],
-        "videos": [
-          {
-            "src": "/assets/tapes/web-paper.mp4",
-            "poster": "/assets/tapes/posters/web-paper.jpg",
-            "title": "Quotable methodology and paper",
-            "caption": "Exploring the published research paper, empirical evaluation design, and the metaharness methodology."
-          },
-          {
-            "src": "/assets/tapes/web-landing.mp4",
-            "poster": "/assets/tapes/posters/web-landing.jpg",
-            "title": "The Keating landing page",
-            "caption": "Scrolling keating.help: the problem, a try-it-yourself card, the films, shared courses, and a goal planner."
-          }
-        ],
-        "bullets": [
-          "Published metaharness paper: citation-ready empirical methodology with verifiable study analysis.",
-          "Web classroom: conversational inquiry with live model reasoning and OpenUI cards.",
-          "Review desk annotations: mark teaching turns with Problem, Strength, Suggestion, or Rewrite annotations.",
-          "Multi-surface parity: seamless continuity across web, mobile, desktop, and terminal."
-        ],
-        "links": [
-          {
-            "label": "Sessions and the review desk",
+            "label": "Find and continue saved work",
             "href": "/sessions-and-review/"
-          },
-          {
-            "label": "Troubleshooting guide",
-            "href": "/troubleshooting/"
-          }
-        ]
-      },
-      {
-        "heading": "8. Keating 4.0 feature spotlights",
-        "paragraphs": [
-          "Four short narrated films, each on one part of Keating 4.0: judgements you can check, local recall, GPT Live, and the first run with the teacher persona. Each has English captions."
-        ],
-        "videos": [
-          {
-            "src": "/assets/tapes/keating-spotlight-judgements.mp4",
-            "poster": "/assets/tapes/posters/keating-spotlight-judgements.jpg",
-            "title": "Judgements you can check",
-            "caption": "Your answer is saved first, an independent judge checks it against the rubric, and you can flag a review that missed something.",
-            "captions": "/assets/tapes/captions/keating-spotlight-judgements.vtt"
-          },
-          {
-            "src": "/assets/tapes/keating-spotlight-recall.mp4",
-            "poster": "/assets/tapes/posters/keating-spotlight-recall.jpg",
-            "title": "Local recall",
-            "caption": "Keating brings back earlier work with its source: Needle on desktop, Search by meaning on your phone, and recall in the browser.",
-            "captions": "/assets/tapes/captions/keating-spotlight-recall.vtt"
-          },
-          {
-            "src": "/assets/tapes/keating-spotlight-live.mp4",
-            "poster": "/assets/tapes/posters/keating-spotlight-live.jpg",
-            "title": "GPT Live",
-            "caption": "Choosing GPT Live in the voice picker: your conversation comes with you, and each session has a visible spending ceiling.",
-            "captions": "/assets/tapes/captions/keating-spotlight-live.vtt"
-          },
-          {
-            "src": "/assets/tapes/keating-spotlight-onboarding.mp4",
-            "poster": "/assets/tapes/posters/keating-spotlight-onboarding.jpg",
-            "title": "First run and the teacher persona",
-            "caption": "Telling Keating how to teach you, which accessibility needs to treat as requirements, and how to shape the teacher's persona.",
-            "captions": "/assets/tapes/captions/keating-spotlight-onboarding.vtt"
-          }
-        ],
-        "links": [
-          {
-            "label": "Use quizzes and practice",
-            "href": "/quizzes-and-practice/"
-          },
-          {
-            "label": "Use voice and attachments",
-            "href": "/voice-and-attachments/"
-          }
-        ]
-      },
-      {
-        "heading": "9. Why Keating, a lesson and the changelog",
-        "paragraphs": [
-          "Three shorter films in other shapes: a brand film on what Keating is for, a vertical one-minute lesson that shows the Socratic method at work, and a square 4.0 changelog set to music."
-        ],
-        "videos": [
-          {
-            "src": "/assets/tapes/keating-manifesto.mp4",
-            "poster": "/assets/tapes/posters/keating-manifesto.jpg",
-            "title": "Why Keating",
-            "caption": "Every answer is one tap away. Keating asks before it tells, lets you get stuck, and checks your work honestly.",
-            "captions": "/assets/tapes/captions/keating-manifesto.vtt"
-          },
-          {
-            "src": "/assets/tapes/keating-lesson.mp4",
-            "poster": "/assets/tapes/posters/keating-lesson.jpg",
-            "title": "A one-minute lesson",
-            "caption": "Why is winter cold? Keating asks questions until the learner works it out; it never gives the answer.",
-            "captions": "/assets/tapes/captions/keating-lesson.vtt",
-            "aspect": "9:16"
-          },
-          {
-            "src": "/assets/tapes/keating-changelog.mp4",
-            "poster": "/assets/tapes/posters/keating-changelog.jpg",
-            "title": "Keating 4.0 in twenty seconds",
-            "caption": "What's new in 4.0 as kinetic type: judgements, local recall, search by meaning, GPT Live and the first run. Music only, no narration.",
-            "aspect": "1:1"
           }
         ]
       }
@@ -638,15 +294,22 @@
     "slug": "choose-a-model",
     "title": "Choose and connect a model",
     "description": "Find a model for your task, connect your own provider, or choose a model that runs on your device.",
-    "group": "Getting started",
+    "group": "Setup",
     "sections": [
       {
         "heading": "Open the model picker",
         "screenshots": [
           {
-            "src": "/assets/screenshots/surface-models.png",
-            "alt": "An earlier Select Model dialog with search and provider filters, cloud model entries, and a warning that no WebGPU adapter was found.",
-            "caption": "The earlier picker was called Select Model and used Use Selected Model. The current guide describes Find a model. This capture also shows browser models unavailable because no WebGPU adapter was found; the visible cloud entries are not downloaded local models.",
+            "src": "/assets/screenshots/current-model-picker.png",
+            "alt": "Current model picker with available model choices.",
+            "caption": "Current component capture with authored fixture data (2026-10-01). Find a model shows the available choices in this fixture.",
+            "width": 1280,
+            "height": 900
+          },
+          {
+            "src": "/assets/screenshots/current-tui-model-picker.png",
+            "alt": "Production terminal model selection interface.",
+            "caption": "Current production terminal capture from an isolated local workspace with a loopback demo tutor (2026-10-01). Terminal model selection uses a local demonstration provider.",
             "width": 1440,
             "height": 900
           }
@@ -717,7 +380,7 @@
     "slug": "accounts-and-credits",
     "title": "Manage accounts and credits",
     "description": "Understand when an account is needed, check hosted credit, and resume a lesson after an account or balance error.",
-    "group": "Getting started",
+    "group": "Setup",
     "sections": [
       {
         "heading": "Decide whether you need an account",
@@ -758,6 +421,22 @@
         "paragraphs": [
           "When the credit panel says Your message is safe, Keating has kept the message for recovery. You do not need to type it again.",
           "If the account is restricted, adding credit may not resolve the restriction. Follow the account message before trying another payment."
+        ],
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/current-credit-recovery.png",
+            "alt": "Credit recovery card after insufficient funds.",
+            "caption": "Current component capture with authored fixture data (2026-10-01). The recovery controls appear after an insufficient-credit response; no purchase takes place.",
+            "width": 652,
+            "height": 372
+          },
+          {
+            "src": "/assets/screenshots/current-credit-retry-ready.png",
+            "alt": "Credit recovery card after the wallet balance is refreshed.",
+            "caption": "Current component capture with authored fixture data (2026-10-01). A restored fixture balance makes retry available; this is not a completed payment.",
+            "width": 652,
+            "height": 378
+          }
         ]
       },
       {
@@ -792,7 +471,7 @@
     "slug": "install-keating",
     "title": "Use Keating on your device",
     "description": "Start in the browser, find a published download for your device, or install the terminal app.",
-    "group": "Getting started",
+    "group": "Setup",
     "sections": [
       {
         "heading": "Start with the browser",
@@ -800,66 +479,13 @@
           "Open Keating in your browser to use the learning workspace without installing an app. This is also the way to begin when a native installer is not offered for your device.",
           "Opening the website still requires a connection. Using a browser model for local generation is a separate setup step; visiting the site does not install an offline tutor."
         ],
-        "surfaceTabs": [
-          {
-            "surface": "web",
-            "label": "Web UI",
-            "summary": "Run instantly with zero installation by visiting chat.keating.help/ in Chrome, Safari, Firefox, or Edge.",
-            "shortcut": "No install",
-            "bullets": [
-              "Visit https://chat.keating.help/ directly from any modern desktop or mobile browser.",
-              "Supports WebGPU for client-side local offline models.",
-              "Local storage holds session transcripts, settings, and active learning state."
-            ],
-            "code": "https://chat.keating.help/",
-            "language": "Browser URL"
-          },
-          {
-            "surface": "tui",
-            "label": "Terminal UI",
-            "summary": "Install the globally executable CLI to run the full OpenTUI terminal interface.",
-            "shortcut": "keating tui",
-            "bullets": [
-              "Install with Bun: bun add -g keating.",
-              "Run keating setup to configure local or cloud model providers.",
-              "Launch keating tui to start an interactive, full-screen terminal session."
-            ],
-            "code": "bun add -g keating\nkeating setup\nkeating tui",
-            "language": "Terminal command",
-            "video": {
-              "src": "/assets/tapes/tui-onboarding.mp4",
-              "poster": "/assets/tapes/posters/tui-onboarding.jpg",
-              "title": "Terminal installation and onboarding",
-              "caption": "Running keating tui after installing: the first-run tour, a learner name and portrait, then the side panel."
-            }
-          },
-          {
-            "surface": "cli",
-            "label": "CLI Shell",
-            "summary": "Use the headless hyperteacher shell directly from your terminal or shell scripts.",
-            "shortcut": "keating shell",
-            "bullets": [
-              "Install with Bun: bun add -g keating.",
-              "Run keating doctor to verify environment detection and tool availability.",
-              "Execute keating shell with prompts, session resumption, or custom learner profiles."
-            ],
-            "code": "bun add -g keating\nkeating doctor\nkeating shell 'Hello Keating'",
-            "language": "Terminal command",
-            "video": {
-              "src": "/assets/tapes/cli-artifacts.mp4",
-              "poster": "/assets/tapes/posters/cli-artifacts.jpg",
-              "title": "First CLI commands",
-              "caption": "A first run after installing: keating plan, map, verify, and trace on Special Relativity."
-            }
-          }
-        ],
         "links": [
           {
             "label": "Open Keating in your browser",
             "href": "https://chat.keating.help/"
           },
           {
-            "label": "Follow the first-lesson walkthrough",
+            "label": "Start your first lesson",
             "href": "/start-here/"
           }
         ]
@@ -890,31 +516,23 @@
           }
         ],
         "paragraphs": [
-          "The macOS and Linux terminal .tar.gz downloads contain Keating's terminal app and its runtime. Extract the archive, open a terminal inside the extracted folder, and run the installer. Then start Keating's shell."
+          "The macOS and Linux terminal .tar.gz downloads contain Keating's terminal app and its runtime. Extract the archive, open a terminal inside the extracted folder, and run the installer. Run setup to choose your provider and model, then open the terminal interface."
         ],
-        "code": "./install.sh\nkeating shell",
+        "code": "./install.sh\nkeating setup\nkeating tui",
         "language": "sh",
-        "videos": [
-          {
-            "src": "/assets/tapes/tui-onboarding.mp4",
-            "poster": "/assets/tapes/posters/tui-onboarding.jpg",
-            "title": "Terminal onboarding walkthrough",
-            "caption": "Setting your learner name and portrait during the first terminal startup."
-          }
-        ],
         "links": [
           {
-            "label": "Watch the terminal and branching walkthrough",
-            "href": "/visual-guide/#section-3-terminal-ui-and-branching-dialogue"
+            "label": "Find the terminal controls and session browser",
+            "href": "/visual-guide/#section-terminal-conversation"
           }
         ]
       },
       {
         "heading": "Install the terminal app with Bun",
         "paragraphs": [
-          "If Bun is already installed, you can install the Keating package globally. Run setup to choose your provider and model, then use doctor to check the local setup before opening the shell."
+          "If Bun is already installed, you can install the Keating package globally. Run setup to choose your provider and model, then use doctor to check the local setup before opening the terminal interface."
         ],
-        "code": "bun add -g keating\nkeating setup\nkeating doctor\nkeating shell",
+        "code": "bun add -g keating\nkeating setup\nkeating doctor\nkeating tui",
         "language": "sh",
         "links": [
           {
@@ -946,7 +564,7 @@
     "slug": "offline-tutor",
     "title": "Prepare an offline tutor",
     "description": "Download a local text model, manage its storage, and check what will work before you lose your connection.",
-    "group": "Getting started",
+    "group": "Setup",
     "sections": [
       {
         "heading": "Check which version you are using",
@@ -971,6 +589,22 @@
         ],
         "paragraphs": [
           "Downloading a model does not replace a model you have explicitly selected. Check the name in the chat header before starting your offline lesson."
+        ],
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/current-offline-download.png",
+            "alt": "Offline tutor settings showing download progress.",
+            "caption": "Current component capture with authored fixture data (2026-10-01). The production panel displays simulated download progress; no model is downloaded.",
+            "width": 696,
+            "height": 384
+          },
+          {
+            "src": "/assets/screenshots/current-offline-ready.png",
+            "alt": "Offline tutor settings showing a model ready offline.",
+            "caption": "Current component capture with authored fixture data (2026-10-01). The production panel displays a simulated ready state; no native runtime or downloaded model is verified.",
+            "width": 683,
+            "height": 353
+          }
         ]
       },
       {
@@ -1014,7 +648,7 @@
     "slug": "connect-local-models",
     "title": "Connect Ollama, llama.cpp, or LiteLLM",
     "description": "Add a model server or gateway, choose the right address, and troubleshoot model discovery.",
-    "group": "Getting started",
+    "group": "Setup",
     "sections": [
       {
         "heading": "Choose a connection Keating can reach",
@@ -1022,47 +656,6 @@
           "A custom provider connects Keating to a separate model server. Ollama and llama.cpp can run models on your computer; LiteLLM is a gateway that can route requests to local or remote models. These are separate from models labeled (Browser) or (Offline).",
           "The hosted app routes custom-provider requests through its server, which rejects local and private network addresses. Entering localhost in the hosted website does not connect it to your computer. Use a reachable HTTPS gateway supplied by your administrator, or a locally configured Keating environment that supports local targets.",
           "The localhost addresses below describe each runner's local setup. For a hosted connection, use the HTTPS address provided for that service. If you want local generation in the hosted website without running a separate server, choose a compatible browser model."
-        ],
-        "surfaceTabs": [
-          {
-            "surface": "web",
-            "label": "Web UI",
-            "summary": "Connect local or gateway endpoints via Settings → Models & Providers → Custom Providers.",
-            "shortcut": "Settings",
-            "bullets": [
-              "Choose Add Provider and select Ollama, llama.cpp, or AI Gateway.",
-              "If running hosted web, connect to an HTTPS reverse-proxy or gateway URL.",
-              "If running self-hosted web locally, http://localhost:11434 connects directly."
-            ],
-            "code": "Settings → Models & Providers → Custom Providers → Add Provider",
-            "language": "Web navigation"
-          },
-          {
-            "surface": "tui",
-            "label": "Terminal UI",
-            "summary": "Connect local daemons directly through Pi configuration or interactive setup.",
-            "shortcut": "keating setup",
-            "bullets": [
-              "Run keating setup to configure local Ollama, llama.cpp, or OpenAI-compatible servers.",
-              "Local endpoints on 127.0.0.1 or localhost are reachable without proxies.",
-              "Press Ctrl+P inside the TUI to toggle between cloud and local providers instantly."
-            ],
-            "code": "keating setup",
-            "language": "Terminal command"
-          },
-          {
-            "surface": "cli",
-            "label": "CLI Shell",
-            "summary": "Pass local runner models directly on the command line or via environment variables.",
-            "shortcut": "--model",
-            "bullets": [
-              "Target Ollama directly: keating shell --model=ollama/qwen3:4b.",
-              "Run keating doctor to verify that the local AI runtime and port are responding.",
-              "Zero external internet connection required for fully local Socratic lessons."
-            ],
-            "code": "keating shell --model=ollama/qwen3:4b 'Explain Raft leader election'",
-            "language": "Terminal command"
-          }
         ],
         "links": [
           {
@@ -1085,6 +678,15 @@
         ],
         "paragraphs": [
           "Saving a provider can succeed even when model discovery fails. Read the notice, check the connection, and try a short text conversation before relying on it for a lesson."
+        ],
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/current-custom-provider.png",
+            "alt": "Custom provider dialog with name, base URL, and API key fields.",
+            "caption": "Current component capture with authored fixture data (2026-10-01). Enter an OpenAI-compatible provider connection; no credentials are submitted.",
+            "width": 1280,
+            "height": 900
+          }
         ]
       },
       {
@@ -1159,104 +761,10 @@
     ]
   },
   {
-    "slug": "privacy-and-data",
-    "title": "Keep control of your learning data",
-    "description": "Understand local storage, choose what leaves your device, and export or restore your lessons.",
-    "group": "Getting started",
-    "sections": [
-      {
-        "heading": "Know where your work is saved",
-        "paragraphs": [
-          "Keating keeps browser conversations, learning artifacts, and settings in browser storage. Provider keys you enter in the website are stored locally too. Another browser profile or device has separate storage.",
-          "A Not Organic account manages hosted access and account credit; signing in is not an automatic backup of your browser's lesson library. Native mobile learning storage is also local to the device. Desktop peer-to-peer sync is a separate device-connection feature, not a promise of account-based cloud backup.",
-          "Clearing site data or losing a device can remove local work. Export a copy before changing browsers, deleting app data, or uninstalling."
-        ]
-      },
-      {
-        "heading": "Understand what leaves the device",
-        "paragraphs": [
-          "When you use a remote model, the prompt and relevant conversation material are sent through the configured connection to the service providing the response. Attachments and speech may also be sent to the services used for those features. Review your chosen provider's data practices before submitting private material.",
-          "A browser or native offline model generates locally. Other features you choose, such as sharing, online speech, or optional evaluation sharing, can still send data out. Local generation does not turn those features off.",
-          "Keep API keys in credential fields. A key pasted into a conversation becomes conversation content and can be included in a model request, share, or export."
-        ]
-      },
-      {
-        "heading": "Choose analytics and evaluation settings",
-        "screenshots": [
-          {
-            "src": "/assets/screenshots/settings-privacy-diagnostics.png",
-            "alt": "Settings, App, Privacy shows anonymous product analytics on, session replay off and unavailable, and Arize evaluation off and unavailable.",
-            "caption": "In this earlier tutorial capture, analytics is on while replay and Arize evaluation are unavailable and off. These are the captured browser's settings, not a statement of your preferences or the options enabled in your build.",
-            "width": 1920,
-            "height": 1048
-          }
-        ],
-        "paragraphs": [
-          "Open Settings → App → Privacy. These preferences apply to the browser where you change them. Controls that are unavailable in the current build explain that in their description."
-        ],
-        "bullets": [
-          "Anonymous product analytics controls future product events, such as feature use and response timing. Keating excludes prompts, replies, file contents, provider keys, and full share links from these PostHog events.",
-          "Privacy-masked session replay controls interaction recordings where the deployment offers them. Text, inputs, and other sensitive page details are masked. Replay also depends on product analytics being enabled.",
-          "Share future turns for Arize evaluation is separate and off by default. Where enabled, it may send the current visible prompt and final visible reply for future turns. Read its description: some deployments permit metadata only. Turn it off to stop future submissions."
-        ]
-      },
-      {
-        "heading": "Export a copy of your lessons",
-        "screenshots": [
-          {
-            "src": "/assets/screenshots/usage-training-export.png",
-            "alt": "The Portable data panel has Export portable JSON and Import portable JSON controls above a separate Training data export panel.",
-            "caption": "Earlier tutorial capture: use Export portable JSON in the upper Portable data panel to move your lessons. The lower panel prepares a separate training dataset; its older Export training ZIP label is not the backup action.",
-            "width": 1920,
-            "height": 1048
-          }
-        ],
-        "paragraphs": [
-          "Open Learning usage and find Portable data. Choose whether to keep Include sandbox code history selected, then choose Export portable JSON. Save the downloaded keating-portable-data.json somewhere you can find from your next device.",
-          "The portable export includes saved sessions, learner state, learning artifacts, goals, quizzes, flashcards, and review records. Sandbox code history is optional. It does not transfer provider sign-ins, API-key settings, or downloaded model files.",
-          "Wait for the export confirmation and check that the file downloaded before clearing any data. The JSON contains your learning content as readable text; store it as carefully as the original notes."
-        ],
-        "links": [
-          {
-            "label": "Open Portable data on Learning usage",
-            "href": "https://chat.keating.help/usage"
-          }
-        ]
-      },
-      {
-        "heading": "Restore in another browser",
-        "paragraphs": [
-          "Open Keating in the destination browser, visit Learning usage → Portable data, and choose Import portable JSON. Select your saved export and wait for the import summary. Open a session to check its contents before discarding the original copy.",
-          "Export any existing work in the destination browser first. An import writes sessions and records with their saved identifiers, so importing an older copy can replace a matching saved record.",
-          "Reconnect model providers on the destination device and download any local models again. A successful data import does not sign you in to those services or restore model downloads."
-        ],
-        "links": [
-          {
-            "label": "Reconnect a model",
-            "href": "/choose-a-model/"
-          }
-        ]
-      },
-      {
-        "heading": "Share and remove data deliberately",
-        "paragraphs": [
-          "A Share session link makes the shared conversation, supported artifacts, and finalized review feedback readable by anyone with that link. Review the content before confirming a share. A share link is useful for showing someone a lesson; use a portable export to move your learning data.",
-          "Use browser site-data controls to remove the website's local data after exporting anything you want to keep. Removing a local copy does not remove shared copies or information already sent to a model provider. Sign out of connected accounts and remove saved credentials when retiring a device."
-        ],
-        "links": [
-          {
-            "label": "Keating privacy policy",
-            "href": "https://keating.help/privacy"
-          }
-        ]
-      }
-    ]
-  },
-  {
     "slug": "judgement-model",
     "title": "Set up a judgement model",
     "description": "Choose who reviews your work: Jev through Not Organic, Jev with your own TypeSafe key, or a model on your device.",
-    "group": "Getting started",
+    "group": "Setup",
     "sections": [
       {
         "heading": "What the judgement model does",

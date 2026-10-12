@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.12,<3.14"
-# dependencies = ["marimo==0.23.1", "pandas==2.*", "numpy==2.2.6", "matplotlib==3.10.*"]
+# dependencies = ["marimo==0.25.1", "pandas==3.0.6", "numpy==2.5.3", "matplotlib==3.11.2"]
 # ///
 """Read-only, wholly authored finite-profile workbench; zero real people.
 

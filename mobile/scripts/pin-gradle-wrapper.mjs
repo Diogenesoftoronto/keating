@@ -2,7 +2,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
-const COMPATIBLE_GRADLE_VERSION = "8.14.3";
+const COMPATIBLE_GRADLE_VERSION = "9.3.1";
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const wrapperPath = resolve(scriptDir, "../android/gradle/wrapper/gradle-wrapper.properties");
 const current = await readFile(wrapperPath, "utf8");

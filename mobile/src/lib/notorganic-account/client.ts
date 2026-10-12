@@ -9,10 +9,28 @@ import { defaultNotOrganicAccountConfig } from "./contracts";
 import { deviceSessionGeneration, loadDeviceSession, saveDeviceSessionIfCurrent } from "./credentials";
 import { randomBase64Url } from "./crypto";
 import { createDpopProof, getDevicePublicJwk } from "./dpop";
+import type { OnlineDecisionRequest } from "../../../../packages/learner-contracts/src/judgement/online-decision-policy";
 
 export type AccountFetch = typeof fetch;
 let accountFetch: AccountFetch = globalThis.fetch.bind(globalThis);
 let refreshInFlight: Promise<NotOrganicDeviceSession> | null = null;
+
+/** Isolated knowledge transport: never dispatch or release content after account/selection changes. */
+export async function guardedKnowledgeRequest<T>(path: string, init: RequestInit, current: () => boolean, expected: { accountId: string; generation: number }, config = defaultNotOrganicAccountConfig()): Promise<T> {
+  const session = await loadDeviceSession();
+  const valid = () => current() && !init.signal?.aborted && deviceSessionGeneration() === expected.generation;
+  if (!valid() || !session || session.accountId !== expected.accountId || session.issuer !== config.issuer || session.accessExpiresAt <= Date.now()) throw Error("The knowledge account changed.");
+  const url = `${config.issuer}/v1/knowledge/${path}`;
+  const method = (init.method ?? "GET").toUpperCase();
+  const proof = await createDpopProof({ url, method, boundToken: session.accessToken });
+  if (!valid()) throw Error("The knowledge account changed.");
+  const headers = new Headers(init.headers);
+  headers.set("authorization", `DPoP ${session.accessToken}`); headers.set("dpop", proof);
+  const response = await accountFetch(url, { ...init, method, headers, redirect: "error" });
+  const result = await parseResponse<T>(response);
+  if (!valid()) throw Error("The knowledge account changed. Returned content was discarded.");
+  return result;
+}
 
 export function setAccountFetchForTests(next: AccountFetch | null): void {
   accountFetch = next ?? globalThis.fetch.bind(globalThis);
@@ -158,4 +176,61 @@ export async function notOrganicJudgementRequest(
   return accountFetch(url, { method: "POST", body, signal, redirect: "error",
     headers: { "content-type": "application/json", authorization: `DPoP ${session.accessToken}`, dpop: proof,
       "idempotency-key": idempotencyKey, "x-notorganic-max-cost-microusd": "100000" } });
+}
+
+/** Numerical learner predictions use a separately granted, issuer-bound first-party capability. */
+export async function notOrganicTabularRequest(
+  body: OnlineDecisionRequest, signal?: AbortSignal, config = defaultNotOrganicAccountConfig(),
+  current: () => boolean | Promise<boolean> = () => true,
+): Promise<Response> {
+  if (signal?.aborted || !await current()) return new Response(null, { status: 403 });
+  const issuer = new URL(config.issuer);
+  if (issuer.protocol !== "https:" || issuer.username || issuer.password || issuer.search || issuer.hash || issuer.pathname !== "/") {
+    throw new Error("Online learning account configuration is invalid.");
+  }
+  const stored = await loadDeviceSession();
+  if (signal?.aborted || stored?.issuer !== config.issuer || !stored.accountId || !stored.scope.split(/\s+/).includes("tabular:predict")) {
+    return new Response(null, { status: 403 });
+  }
+  const session = await activeDeviceSession(config);
+  if (signal?.aborted || session.issuer !== config.issuer || session.accountId !== stored.accountId
+    || !session.scope.split(/\s+/).includes("tabular:predict") || !Number.isFinite(session.accessExpiresAt) || session.accessExpiresAt <= Date.now()) {
+    return new Response(null, { status: 403 });
+  }
+  const generation = deviceSessionGeneration(), url = `${config.issuer}/v1/tabular/predict`;
+  const proof = await createDpopProof({ url, method: "POST", boundToken: session.accessToken });
+  const idempotencyKey = `keating-mobile-tabular-${await randomBase64Url(24)}`;
+  if (signal?.aborted || generation !== deviceSessionGeneration() || !await current()
+    || signal?.aborted || generation !== deviceSessionGeneration()) return new Response(null, { status: 403 });
+  const response = await accountFetch(url, { method: "POST", body: JSON.stringify(body), signal, redirect: "error",
+    headers: { "content-type": "application/json", authorization: `DPoP ${session.accessToken}`, dpop: proof,
+      "idempotency-key": idempotencyKey, "x-notorganic-max-cost-microusd": "100000" } });
+  return signal?.aborted || generation !== deviceSessionGeneration() || !await current()
+    || signal?.aborted || generation !== deviceSessionGeneration() ? new Response(null, { status: 403 }) : response;
+}
+
+export interface MobileTabularModel {
+  id: "v3.5_default"; name: string; provider: string; task: "regression"; available: boolean;
+  priceMicrousd: number | null;
+  limits: { maxTrainRows: number; maxTestRows: number; maxFeatures: number };
+}
+
+/** Catalogue requests do not run inference or spend credits. */
+export async function loadMobileTabularModels(signal?: AbortSignal, config = defaultNotOrganicAccountConfig()): Promise<MobileTabularModel[]> {
+  const issuer = new URL(config.issuer);
+  if (issuer.protocol !== "https:" || issuer.username || issuer.password || issuer.search || issuer.hash || issuer.pathname !== "/") throw Error("Online learning account configuration is invalid.");
+  const stored = await loadDeviceSession();
+  if (!stored?.accountId || stored.issuer !== config.issuer) throw Error("Sign in to the configured account service.");
+  const session = await activeDeviceSession(config), generation = deviceSessionGeneration();
+  if (signal?.aborted || session.accountId !== stored.accountId || session.issuer !== config.issuer) throw Error("The account changed.");
+  const url = `${config.issuer}/v1/tabular/models`, proof = await createDpopProof({ url, method: "GET", boundToken: session.accessToken });
+  if (signal?.aborted || generation !== deviceSessionGeneration()) throw Error("The account changed.");
+  const response = await accountFetch(url, { signal, redirect: "error", headers: { authorization: `DPoP ${session.accessToken}`, dpop: proof } });
+  if (signal?.aborted || generation !== deviceSessionGeneration()) throw Error("The account changed.");
+  const body = await parseResponse<{ models?: unknown }>(response);
+  if (!Array.isArray(body?.models)) throw Error("The model catalogue is unavailable.");
+  return body.models.filter((value): value is MobileTabularModel => !!value && typeof value === "object" && value.id === "v3.5_default"
+    && value.task === "regression" && typeof value.available === "boolean" && typeof value.name === "string" && typeof value.provider === "string"
+    && (value.priceMicrousd === null || Number.isSafeInteger(value.priceMicrousd) && value.priceMicrousd >= 0)
+    && !!value.limits && Number.isSafeInteger(value.limits.maxTrainRows) && Number.isSafeInteger(value.limits.maxTestRows) && Number.isSafeInteger(value.limits.maxFeatures));
 }

@@ -14,6 +14,9 @@ const NEVER_VOICE = new Set<ToolRiskClass>(["code-execution", "destructive"]);
 
 export const KEATING_TOOL_RISKS: Readonly<Record<string, ToolRiskClass>> = {
   agent_runtime: "sensitive-read",
+  knowledge_sources: "sensitive-read",
+  knowledge_read_resource: "sensitive-read",
+  knowledge_call_tool: "external-side-effect",
   bash: "code-execution",
   remote_execute: "code-execution",
   run_script: "code-execution",

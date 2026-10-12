@@ -14,6 +14,7 @@ export function webBuildTarget(): "app" | "site" {
  * silently expand the npm package or desktop installer. */
 export function isApplicationPublicAsset(path: string): boolean {
   const name = path.replaceAll("\\", "/");
+  if (name === "learning-profile-client-metadata.json") return true;
   if (/^(avatars|audio|textures|vendor|needle-wasm)\//.test(name)) return true;
   if (/^brand\/(stop-motion-v1|bot-status-v1|bot-frames-v1)\//.test(name)) return true;
   if (/^brand\/(logo-lockup-compact\.avif|mascot-(full|head-v2|lotus)\.avif|keatingbot-(credits-ready|insufficient-funds|wallet-refresh)-v\d+\.png)$/.test(name)) return true;

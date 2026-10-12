@@ -51,7 +51,7 @@ describe("verified credit recovery", () => {
     expect(html).toContain("purchases aren’t available");
     expect(html).not.toContain("Retry response");
     expect(html).not.toContain("Payment successful");
-    expect(html).toContain("keatingbot-insufficient-funds-v2.png");
+    expect(html).toContain("keatingbot-insufficient-funds-v3.png");
   });
 
   it("shows the new refresh animation only while checking the wallet, and starter credit only when granted", () => {

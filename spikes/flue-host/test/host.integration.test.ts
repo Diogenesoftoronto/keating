@@ -4,7 +4,9 @@ import { describe, it } from "node:test";
 import {
   fauxAssistantMessage,
   fauxToolCall,
-  type Context,
+  getCurrentSystemPrompt,
+  getCurrentTools,
+  type TranscriptContext,
   type Message,
 } from "@earendil-works/pi-ai";
 import { getAgentInstance, init } from "@flue/runtime";
@@ -22,10 +24,10 @@ interface CapturedContext {
   messages: Message[];
 }
 
-function captureContext(context: Context): CapturedContext {
+function captureContext(context: TranscriptContext): CapturedContext {
   return {
-    systemPrompt: context.systemPrompt,
-    toolNames: context.tools?.map((tool) => tool.name) ?? [],
+    systemPrompt: getCurrentSystemPrompt(context.messages),
+    toolNames: getCurrentTools(context.messages).map((tool) => tool.name),
     // Tool definitions contain executable functions and are deliberately not
     // structured-cloneable. Messages are the durable JSON evidence we need.
     messages: structuredClone(context.messages),

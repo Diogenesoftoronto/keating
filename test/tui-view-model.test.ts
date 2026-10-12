@@ -91,7 +91,10 @@ describe("TUI view model", () => {
   test("summarizes header state and only shows the activity rail when there is room", () => {
     const state = { ...EMPTY_HEADER_STATE, model: "google/gemini", thinking: "high", session: "limits", busy: true };
     const profile = createTuiPresentationProfile({ TERM: "xterm-256color", LANG: "en_CA.UTF-8" });
-    expect(headerText(state, profile)).toBe("◆ keating  limits  ·  google/gemini  ·  high  ·  ◐ working");
+    expect(headerText(state, profile)).toBe("◆ keating · limits · google/gemini · thinking high · ◐ working");
+    // Defaults go unsaid, and Pi's timestamp+UUID file names never reach the learner.
+    const idle = { ...state, thinking: "off", busy: false, session: "2026-10-01T06-04-51-076Z_01a0f610-cc04-78ba-a254-999a55c1134f" };
+    expect(headerText(idle, profile)).toBe("◆ keating · untitled · google/gemini");
     expect(activityText([{ id: "1", kind: "tool", title: "read", body: "package.json" }], state, profile)).toContain("read");
     expect(showActivityRail(99)).toBe(false);
     expect(showActivityRail(100)).toBe(true);

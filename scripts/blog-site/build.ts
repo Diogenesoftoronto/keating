@@ -18,7 +18,7 @@ for (const name of ["logo-lockup-compact.avif", "mascot-head-v2.png"]) {
 const katex = dirname(Bun.resolveSync("katex/package.json", root));
 await cp(join(katex, "dist"), join(out, "assets/katex"), { recursive: true, filter: source => !source.endsWith(".js") && !source.endsWith(".mjs") });
 for (const name of ["railpack.json", "railway.toml"]) await cp(join(root, name), join(out, name));
-await writeFile(join(out, "package.json"), JSON.stringify({ name: "keating-blog", private: true, type: "module", packageManager: "bun@1.3.13", scripts: { start: "bun server.js" } }, null, 2) + "\n");
+await writeFile(join(out, "package.json"), JSON.stringify({ name: "keating-blog", private: true, type: "module", packageManager: "bun@1.4.2", scripts: { start: "bun server.js" } }, null, 2) + "\n");
 // Railway otherwise inherits the repository's dist/ ignore when uploading.
 await writeFile(join(out, ".railwayignore"), "!**\nnode_modules/\n**/node_modules/\n");
 await readFile(join(out, "server.js"));

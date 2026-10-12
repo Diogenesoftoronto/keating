@@ -504,6 +504,7 @@ export async function loginNotOrganic(
       throw new Error("Not Organic loopback client and callback must share one origin.");
     }
     const authorization = new URL(authorizationUrl);
+    authorization.searchParams.set("prompt", "select_account");
     authorization.searchParams.set("response_type", "code");
     authorization.searchParams.set("client_id", clientId.origin);
     authorization.searchParams.set("redirect_uri", redirect.toString());
