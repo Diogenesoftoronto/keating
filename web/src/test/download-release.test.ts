@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { detectDownloadArchitecture, detectPlatform } from "../lib/detect-platform";
-import { downloadButtonLabel, parseDownloadRelease, recommendedDownload, RELEASES_URL, VERIFIED_DOWNLOAD_RELEASE } from "../lib/download-release";
+import { downloadButtonLabel, fetchDownloadRelease, includeWindowsPreview, parseDownloadRelease, parseWindowsPreviewRelease, recommendedDownload, RELEASES_URL, VERIFIED_DOWNLOAD_RELEASE, VERIFIED_WINDOWS_PREVIEW_RELEASE } from "../lib/download-release";
+import windowsSnapshot from "../lib/windows-download-release-snapshot.json";
 
 const nav = (userAgent: string, platform = "", maxTouchPoints = 0, userAgentData?: object) => ({ userAgent, platform, maxTouchPoints, userAgentData }) as unknown as Navigator;
 
@@ -39,6 +40,46 @@ describe("download platform selection", () => {
 	});
 	it("recognizes Linux ARM64 without client hints", async () => {
 		expect(await detectDownloadArchitecture(nav("X11 Linux aarch64", "Linux aarch64"))).toBe("arm64");
+	});
+});
+
+describe("published Windows self-signed preview", () => {
+	it("offers the verified x64 installer in the bundled API-outage fallback", () => {
+		const asset = recommendedDownload(VERIFIED_DOWNLOAD_RELEASE, "windows", "x64")!;
+		expect(asset.url).toBe(windowsSnapshot.assets[0]!.browser_download_url);
+		expect(asset.releaseTag).toBe("windows-selfsigned-v4.0.7");
+		expect(asset.selfSigned).toBe(true);
+		expect(downloadButtonLabel(asset)).toBe("Download Windows EXE");
+		expect(recommendedDownload(VERIFIED_DOWNLOAD_RELEASE, "windows", "arm64")).toBeUndefined();
+		expect(recommendedDownload(VERIFIED_DOWNLOAD_RELEASE, "windows", "unknown")).toBeUndefined();
+	});
+	it("retains the installer after a successful stable release refresh without Windows assets", async () => {
+		const previousFetch = globalThis.fetch;
+		globalThis.fetch = (async () => Response.json({ tag_name: "v4.0.3", draft: false, prerelease: false, assets: [] })) as unknown as typeof fetch;
+		try {
+			const refreshed = await fetchDownloadRelease(new AbortController().signal);
+			expect(refreshed?.tag).toBe("v4.0.3");
+			expect(recommendedDownload(refreshed!, "windows", "x64")?.url).toBe(windowsSnapshot.assets[0]!.browser_download_url);
+		} finally { globalThis.fetch = previousFetch; }
+	});
+	it("preserves platform assets and prefers a published stable Windows installer", () => {
+		const stable = parseDownloadRelease(release([uploaded("Keating-3.12.0-windows-x64-setup.exe"), uploaded("Keating-3.12.0-linux-amd64.deb")]))!;
+		expect(includeWindowsPreview(stable).assets).toEqual(stable.assets);
+		const linuxOnly = { ...stable, assets: stable.assets.filter((asset) => asset.platform === "linux") };
+		const combined = includeWindowsPreview(linuxOnly);
+		expect(combined.assets.filter((asset) => asset.platform === "linux")).toEqual(linuxOnly.assets);
+		expect(combined.assets.filter((asset) => asset.selfSigned)).toEqual(VERIFIED_WINDOWS_PREVIEW_RELEASE.assets);
+		expect(includeWindowsPreview(combined).assets).toEqual(combined.assets);
+	});
+	it("rejects unpublished, unapproved, duplicate, foreign or changed installer metadata", () => {
+		const asset = windowsSnapshot.assets[0]!;
+		for (const candidate of [
+			{ ...windowsSnapshot, draft: true }, { ...windowsSnapshot, prerelease: false },
+			{ ...windowsSnapshot, tag_name: "windows-selfsigned-v4.0.8" },
+			{ ...windowsSnapshot, assets: [] }, { ...windowsSnapshot, assets: [asset, asset] },
+			...[{ state: "new" }, { browser_download_url: "https://example.com/fake.exe" }, { size: 1 }, { digest: "sha256:wrong" }, { name: "Keating-4.0.7-windows-arm64-selfsigned-setup.exe" }].map((change) => ({ ...windowsSnapshot, assets: [{ ...asset, ...change }] })),
+		]) expect(parseWindowsPreviewRelease(candidate)).toBeNull();
+		expect(parseDownloadRelease(windowsSnapshot)).toBeNull();
 	});
 });
 

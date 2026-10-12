@@ -24,7 +24,9 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "gt:translate": "gt translate --config gt.config.json",
-    "gt:check": "gt translate --config gt.config.json --dry-run"
+    "gt:check": "gt translate --config gt.config.json --dry-run",
+    "gt:seed-navigation": "node scripts/compile-navigation-catalog.mjs",
+    "gt:check-local": "node scripts/check-navigation-catalog.mjs"
   },
   "overrides": {
     "@babel/core": "7.29.7",

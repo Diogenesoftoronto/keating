@@ -1,5 +1,6 @@
 import type { DetectedPlatform, DownloadArchitecture } from "./detect-platform";
 import verifiedRelease from "./download-release-snapshot.json";
+import verifiedWindowsRelease from "./windows-download-release-snapshot.json";
 
 export const RELEASES_URL = "https://github.com/Diogenesoftoronto/keating/releases";
 export const RELEASE_API_URL = "https://api.github.com/repos/Diogenesoftoronto/keating/releases/latest";
@@ -13,6 +14,8 @@ export interface DownloadAsset {
 	kind: "terminal" | "desktop" | "android";
 	format: string;
 	edition?: "offline";
+	releaseTag?: string;
+	selfSigned?: boolean;
 }
 
 export interface DownloadRelease {
@@ -23,7 +26,34 @@ export interface DownloadRelease {
 
 // Refresh after publication with web/scripts/refresh-download-release.ts.
 // This API-outage fallback contains only published assets, independent of APP_VERSION.
-export const VERIFIED_DOWNLOAD_RELEASE: DownloadRelease = parseDownloadRelease(verifiedRelease)!;
+export const VERIFIED_WINDOWS_PREVIEW_RELEASE = parseWindowsPreviewRelease(verifiedWindowsRelease)!;
+export const VERIFIED_DOWNLOAD_RELEASE: DownloadRelease = includeWindowsPreview(parseDownloadRelease(verifiedRelease)!);
+
+/** Explicitly approved Windows preview; ordinary prereleases remain excluded. */
+export function parseWindowsPreviewRelease(value: unknown): DownloadRelease | null {
+	if (!value || typeof value !== "object") return null;
+	const raw = value as Record<string, unknown>;
+	if (raw.draft !== false || raw.prerelease !== true
+		|| raw.tag_name !== "windows-selfsigned-v4.0.7" || !Array.isArray(raw.assets)) return null;
+	const name = "Keating-4.0.7-windows-x64-selfsigned-setup.exe";
+	const url = `${RELEASES_URL}/download/${raw.tag_name}/${name}`;
+	const uploaded = raw.assets.filter((item): item is Record<string, unknown> => Boolean(item && typeof item === "object"
+		&& item.name === name && item.browser_download_url === url && item.state === "uploaded"
+		&& item.size === 154613280
+		&& item.digest === "sha256:914c30443f5657e4b3e8be6116dc7d6491b8102bfa4f84fea33ac5e6aea73214"));
+	if (uploaded.length !== 1) return null;
+	return {
+		tag: raw.tag_name, url: `${RELEASES_URL}/tag/${raw.tag_name}`,
+		assets: [{ name, url, size: 154613280, platform: "windows", architecture: "x64", kind: "desktop", format: ".exe", releaseTag: raw.tag_name, selfSigned: true }],
+	};
+}
+
+/** Preserve the Windows download when /latest returns a release without it. */
+export function includeWindowsPreview(release: DownloadRelease): DownloadRelease {
+	const previews = VERIFIED_WINDOWS_PREVIEW_RELEASE.assets.filter((preview) => !release.assets.some((asset) => asset.platform === "windows"
+		&& (asset.architecture === preview.architecture || asset.architecture === "universal")));
+	return { ...release, assets: [...release.assets, ...previews] };
+}
 
 /** Only offer actual uploaded assets from this repository, never inferred URLs. */
 export function parseDownloadRelease(value: unknown): DownloadRelease | null {
@@ -68,7 +98,8 @@ export function parseDownloadRelease(value: unknown): DownloadRelease | null {
 export async function fetchDownloadRelease(signal: AbortSignal): Promise<DownloadRelease | null> {
 	const response = await fetch(RELEASE_API_URL, { signal, credentials: "omit", headers: { Accept: "application/vnd.github+json" } });
 	if (!response.ok) throw new Error("Release metadata unavailable");
-	return parseDownloadRelease(await response.json());
+	const release = parseDownloadRelease(await response.json());
+	return release ? includeWindowsPreview(release) : null;
 }
 
 /** Do not silently select the other CPU architecture or a different platform. */
