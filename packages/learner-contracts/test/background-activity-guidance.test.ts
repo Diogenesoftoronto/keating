@@ -74,7 +74,7 @@ test("an update during planning cannot change this turn's captured policy", asyn
   const { policy } = await fixture();
   const prompts: string[] = [];
   let selectorPreference: unknown;
-  const pending = runTeachingDrafts({ turn, backgroundActivityPolicy: policy, recordActivity: true,
+  const pending = runTeachingDrafts({ refinement: "extended", turn, backgroundActivityPolicy: policy, recordActivity: true,
     judge: async (request, signal) => {
       if (request.questions.draft_standard) policy.prototypes[0].scores = [.99, .01];
       if (request.questions.draft_choice) selectorPreference = (request.state as Record<string, unknown>).backgroundPreference;

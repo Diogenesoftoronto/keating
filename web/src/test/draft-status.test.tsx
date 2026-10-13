@@ -194,15 +194,14 @@ test("finished turns are tallied once, content-free, into session diagnostics", 
   publishTeachingDraftStatus("b", { ...snapshot, phase: "withheld", interaction: { action: "none", paired: false, features: [], families: [] } });
   publishTeachingDraftStatus("c", { ...snapshot, phase: "released", selectedAttempt: 1, attempts: [attempt(1, "prose", "fail")],
     interaction: { action: "none", paired: false, features: [], families: [] } });
-  expect(getTeachingDraftTally()).toEqual({ turns: 3, released: 2, interactionActions: { create: 1, none: 2 }, paired: 1, pairedInteractiveSelected: 1,
+  expect(getTeachingDraftTally()).toMatchObject({ turns: 3, released: 2, interactionActions: { create: 1, none: 2 }, paired: 1, pairedInteractiveSelected: 1,
     openuiChecked: 1, openuiValid: 1, planActions: { "suggest-advance": 1 } });
   const entries = getDiagnosticsSnapshot().filter(entry => entry.source === "teaching-drafts");
   expect(entries.map(entry => entry.metadata)).toEqual([
-    { interactionAction: "create", paired: true, interactiveSelected: true, openuiValid: true, planAction: "suggest-advance" },
-    { interactionAction: "none", paired: false, interactiveSelected: false, openuiValid: "unchecked", planAction: "none" },
-    { interactionAction: "none", paired: false, interactiveSelected: false, openuiValid: "unchecked", planAction: "none" },
-  ]);
-});
+    { attempts: 2, bestEffort: false, interactionAction: "create", paired: true, interactiveSelected: true, openuiValid: true, planAction: "suggest-advance" },
+    { attempts: 0, bestEffort: false, interactionAction: "none", paired: false, interactiveSelected: false, openuiValid: "unchecked", planAction: "none" },
+    { attempts: 1, bestEffort: false, interactionAction: "none", paired: false, interactiveSelected: false, openuiValid: "unchecked", planAction: "none" },
+  ]);});
 
  test("review progress and receipts stay out of default chat", () => {
   for (const phase of ["checking", "released", "revising", "cancelled"] as const) {

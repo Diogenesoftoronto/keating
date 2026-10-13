@@ -83,7 +83,7 @@ function SharedNode({ documentId, documentRevision, node, receipts, disabled, on
 	if (node.type === "notes") return <Notes node={node} disabled={disabled} onAction={onAction} />;
 	if (node.type === "image") return <RemoteImage node={node} receipt={completedNodeReceipt(receipts, node.id, ["save-artifact"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "simulation") return <SimulationRenderer node={node} />;
-	if (node.type === "coding-challenge") return <CodingChallenge node={node} disabled={disabled} />;
+	if (node.type === "coding-challenge") return <CodingChallenge node={node} disabled={disabled} onAction={onAction} />;
 	if (node.type === "music-lab") return <MusicLab node={node} disabled={disabled} />;
 	if (node.type === "language-practice") return <LanguagePractice node={node} receipt={completedNodeReceipt(receipts, node.id, ["complete-language-practice"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "task") return <Task documentId={documentId} node={node} receipt={completedNodeReceipt(receipts, node.id, ["submit-task"])} receipts={receipts} disabled={disabled} onAction={onAction} />;

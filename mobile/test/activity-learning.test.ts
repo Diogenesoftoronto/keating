@@ -33,6 +33,36 @@ const judge = (noMatch = false): JudgementCaller => async request => ({ ok: true
 } });
 const noPrediction = (input: Parameters<typeof selectActivityCandidate>[0]) => selectActivityCandidate(input, { exposures: [], transport: async () => { throw Error("must not call"); } });
 
+test("ordinary native replies do not revise uncertain presentation", async () => {
+  let generated = 0;
+  const baseJudge = judge();
+  const request = createMobileTeachingDraftRound({ current: () => true, evidence: async () => empty(), onReleased: () => {},
+    judge: async (request, signal) => {
+      const outcome = await baseJudge(request, signal);
+      if (outcome.ok && request.questions.checkpoint_continued) {
+        return { ...outcome, response: { ...outcome.response, answers: { ...outcome.response.answers,
+          checkpoint_continued: { type: "noul", noul: .5 }, quality_scope: { type: "noul", noul: .3 } } } };
+      }
+      return outcome;
+    },
+    request: async () => { generated++; return { text: "Division splits a quantity into equal groups.", calls: [], assistantTurn: null, usage: null }; },
+  });
+  const result = await request({ provider: "openai", model: "fixture", customBaseUrl: "" }, "key", [{ id: "user", role: "user", content: "Explain division", createdAt: time }]);
+  expect(generated).toBe(1);
+  expect(result.text).toBe("Division splits a quantity into equal groups.");
+});
+
+test("ordinary native semantic failures release best effort after one repair", async () => {
+  let generated = 0;
+  const request = createMobileTeachingDraftRound({ judge: judge(), current: () => true, evidence: async () => empty(), onReleased: () => {},
+    request: async () => { generated++; return { text: "PRIVATE_REJECTED: you will retain this forever.", calls: [], assistantTurn: null, usage: null }; },
+  });
+  const result = await request({ provider: "openai", model: "fixture", customBaseUrl: "" }, "key", [{ id: "user", role: "user", content: "Explain division", createdAt: time }]);
+  expect(generated).toBe(2);
+  expect(result.text).toContain("PRIVATE_REJECTED");
+  expect(result.calls).toEqual([]);
+});
+
 test("native synthesis sends source text privately and releases only the newly reviewed answer", async () => {
   const seen: ChatMessage[][] = [], prompts: string[] = [], visible: string[] = [], reviewed: string[] = [];
   const original: ChatMessage[] = [{ id: "user", role: "user", content: "Explain division", createdAt: time }];
@@ -54,7 +84,7 @@ test("native synthesis sends source text privately and releases only the newly r
     }
     return { ...result, response: { ...result.response, answers } };
   };
-  const request = createMobileTeachingDraftRound({ judge: synthesisJudge, current: () => true, evidence: async () => empty(), onReleased: () => {},
+  const request = createMobileTeachingDraftRound({ judge: synthesisJudge, refinement: "extended", current: () => true, evidence: async () => empty(), onReleased: () => {},
     request: async (_settings, _key, messages, options) => {
       seen.push(structuredClone(messages)); prompts.push(options?.systemPrompt ?? "");
       expect(options?.onTextDelta).toBeUndefined(); expect(options?.onReasoningDelta).toBeUndefined();

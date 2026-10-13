@@ -198,7 +198,7 @@ describe("prompt adherence experiment", () => {
 
   test("private drafts revise advisory failures, select the better eligible reply, and retain every attempt's usage and reasoning choice", async () => {
     let draftAttempts = 0;
-    const rows = await run({ generator: async request => {
+    const rows = await run({ draftMaxAttempts: 4, generator: async request => {
       if (request.reasoning === undefined) return completion;
       draftAttempts++;
       if (draftAttempts === 2) expect(request.systemPrompt).toContain("direct_help_withheld");

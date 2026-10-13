@@ -16,13 +16,13 @@ function answers(request: JudgementRequest, override: Record<string, string | nu
 }
 const makeJudge = (mutate: (request: JudgementRequest) => Record<string, string | number> = () => ({})): JudgementCaller => async (request) => ({ ok: true, response: { answers: answers(request, mutate(request)), backend: { backend: "fixture", model: "fixture-v1", calibrationSha256: null }, usage: { inputTokens: 10, outputTokens: 2 } } });
 
-describe("private draft loop", () => {
+describe("explicit extended private draft loop", () => {
   test("complementary reviewed drafts produce one freshly reviewed synthesis within the attempt budget", async () => {
     let generated = 0;
     let syntheses = 0;
     const reviews: number[] = [];
     const progress: TeachingDraftSnapshot[] = [];
-    const result = await runTeachingDrafts({ turn, maxAttempts: 3,
+    const result = await runTeachingDrafts({ refinement: "extended", turn, maxAttempts: 3,
       onProgress: snapshot => progress.push(snapshot),
       judge: makeJudge((request): Record<string, string | number> => {
         if (request.questions.draft_choice) return { draft_choice: "draft_3" };
@@ -57,7 +57,7 @@ describe("private draft loop", () => {
   test.each(["same weakness", "critical failure", "tools", "oversized"])("does not synthesize sources with %s", async exclusion => {
     let generated = 0;
     let syntheses = 0;
-    const result = await runTeachingDrafts({ turn: { ...turn, availableTools: ["read"] }, maxAttempts: 3,
+    const result = await runTeachingDrafts({ refinement: "extended", turn: { ...turn, availableTools: ["read"] }, maxAttempts: 3,
       judge: makeJudge((): Record<string, string | number> => generated === 1
         ? { quality_progress: .99, quality_scope: .3, ...(exclusion === "critical failure" ? { retention_overclaimed: .99 } : {}) }
         : { quality_progress: .3, quality_scope: exclusion === "same weakness" ? .3 : .99 }),
@@ -79,7 +79,7 @@ describe("private draft loop", () => {
     const controller = new AbortController();
     let generated = 0;
     let synthesisStarted = false;
-    const result = await runTeachingDrafts({ turn, maxAttempts: 3, timeoutMs: 200, signal: controller.signal,
+    const result = await runTeachingDrafts({ refinement: "extended", turn, maxAttempts: 3, timeoutMs: 200, signal: controller.signal,
       judge: makeJudge((): Record<string, string | number> => generated === 1
         ? { quality_progress: .99, quality_scope: .3 }
         : { quality_progress: .3, quality_scope: .99 }),
@@ -109,7 +109,7 @@ describe("private draft loop", () => {
     let generated = 0;
     let syntheses = 0;
     let selectedTexts: string[] = [];
-    const result = await runTeachingDrafts({ turn, maxAttempts: 4,
+    const result = await runTeachingDrafts({ refinement: "extended", turn, maxAttempts: 4,
       judge: makeJudge((request): Record<string, string | number> => {
         if (request.questions.draft_choice) {
           selectedTexts = Object.values((request.state as { candidates: Record<string, { text: string }> }).candidates).map(candidate => candidate.text);
@@ -143,7 +143,7 @@ describe("private draft loop", () => {
 
   test("complementary drafts do not add a synthesis beyond the cap", async () => {
     let generated = 0;
-    await runTeachingDrafts({ turn, maxAttempts: 2,
+    await runTeachingDrafts({ refinement: "extended", turn, maxAttempts: 2,
       judge: makeJudge((): Record<string, string | number> => generated === 1 ? { quality_progress: .99, quality_scope: .3 } : { quality_progress: .3, quality_scope: .99 }),
       generate: async input => {
         expect(input.synthesis).toBeUndefined();
@@ -156,7 +156,7 @@ describe("private draft loop", () => {
   test("ten imperfect drafts remain eligible and the comparator chooses the best", async () => {
     let generated = 0;
     let compared: number[] = [];
-    const result = await runTeachingDrafts({ turn,
+    const result = await runTeachingDrafts({ refinement: "extended", turn,
       judge: async (request, signal) => {
         if (request.questions.draft_choice) {
           expect(request.questions.draft_choice.type === "choice" && request.questions.draft_choice.criteria).not.toHaveProperty("no_match");
@@ -177,7 +177,7 @@ describe("private draft loop", () => {
 
   test("unavailable comparison uses the strongest completed quality review", async () => {
     let generated = 0;
-    const result = await runTeachingDrafts({ turn, maxAttempts: 3,
+    const result = await runTeachingDrafts({ refinement: "extended", turn, maxAttempts: 3,
       judge: async (request, signal) => request.questions.draft_choice
         ? { ok: false, error: { code: "backend-unavailable", retryable: true } }
         : makeJudge(() => ({ quality_progress: generated === 2 ? .5 : .3, quality_scope: .4 }))(request, signal),
@@ -190,7 +190,7 @@ describe("private draft loop", () => {
 
   test("revises past three drafts and releases the tenth without an eleventh", async () => {
     let generated = 0;
-    const result = await runTeachingDrafts({ turn,
+    const result = await runTeachingDrafts({ refinement: "extended", turn,
       judge: makeJudge((): Record<string, string | number> => generated < 10 ? { retention_overclaimed: 0.99 } : {}),
       generate: async ({ feedback }) => {
         if (generated) expect(feedback.some(check => check.id === "retention_overclaimed")).toBe(true);
@@ -206,7 +206,7 @@ describe("private draft loop", () => {
 
   test.each([undefined, 50])("exhausted semantic retries release best effort at ten even with budget %s", async maxAttempts => {
     let generated = 0;
-    const result = await runTeachingDrafts({ turn, maxAttempts,
+    const result = await runTeachingDrafts({ refinement: "extended", turn, maxAttempts,
       judge: makeJudge(() => ({ retention_overclaimed: 0.99 })),
       generate: async () => ({ reply: { text: "PRIVATE rejected draft", toolCalls: [] }, value: ++generated }),
     });
@@ -217,7 +217,7 @@ describe("private draft loop", () => {
   });
 
   test("uncertain teaching style does not veto useful replies; raw scores remain visible", async () => {
-    const result = await runTeachingDrafts({ turn: { ...turn, domain: "unknown" }, maxAttempts: 1,
+    const result = await runTeachingDrafts({ refinement: "extended", turn: { ...turn, domain: "code" }, maxAttempts: 1,
       judge: makeJudge(() => ({ draft_standard: "deep", quality_progress: 0.8, quality_scope: 0.67,
         explanation_missing: 0.44, checkpoint_not_interactive: 0.73, code_example_missing: 0.54,
         science_prediction_missing: 0.33, art_work_missing: 0.29 })),
@@ -230,8 +230,8 @@ describe("private draft loop", () => {
 
   test.each([
     { identity_invented: 0.5 }, { profile_evidence_invented: 0.21 },
-  ] as Record<string, number>[])("records semantic uncertainty without rejecting all usable drafts: %j", async scores => {
-    const result = await runTeachingDrafts({ turn: { ...turn, domain: "unknown" }, maxAttempts: 1,
+  ] as Record<string, number>[])("records semantic uncertainty without rejecting usable drafts: %j", async scores => {
+    const result = await runTeachingDrafts({ refinement: "extended", turn: { ...turn, domain: "unknown" }, maxAttempts: 1,
       judge: makeJudge(() => scores),
       generate: async () => ({ reply: { text: "PRIVATE", toolCalls: [] }, value: "PRIVATE" }),
     });
@@ -241,7 +241,7 @@ describe("private draft loop", () => {
 
   test("missing stylistic review answers remain honest in best effort", async () => {
     const judge = makeJudge();
-    const result = await runTeachingDrafts({ turn, maxAttempts: 1,
+    const result = await runTeachingDrafts({ refinement: "extended", turn, maxAttempts: 1,
       judge: async (request, signal) => {
         const outcome = await judge(request, signal);
         if (outcome.ok) delete (outcome.response.answers as Record<string, JudgementAnswer>).explanation_missing;
@@ -256,7 +256,7 @@ describe("private draft loop", () => {
     const conversation = Array.from({ length: 30 }, (_, index) => ({ role: index % 2 ? "assistant" as const : "user" as const, content: `PRIVATE_TURN_${index} ${"x".repeat(400)}` }));
     const calls: JudgementRequest[] = [];
     const progress: TeachingDraftSnapshot[] = [];
-    const result = await runTeachingDrafts({ turn: { ...turn, conversation },
+    const result = await runTeachingDrafts({ refinement: "extended", turn: { ...turn, conversation },
       judgementModel: { id: "fixture", requestTokens: null, stateQuestionTokens: 4000 },
       onProgress: snapshot => progress.push(snapshot),
       judge: async (request, signal) => { calls.push(request); return makeJudge()(request, signal); },
@@ -279,7 +279,7 @@ describe("private draft loop", () => {
     const activeWork = { plan: { documentId: "plan", revision: 1, title: "Division", outline: [{ id: "groups", title: "Equal groups", status: "in_progress" as const, depth: 0 }] }, focus: null, openInteractions: [], truncated: false };
     const conversation = Array.from({ length: 30 }, (_, index) => ({ role: index % 2 ? "assistant" as const : "user" as const, content: `turn ${index} ${"x".repeat(400)}` }));
     const states: string[] = [];
-    await runTeachingDrafts({
+    await runTeachingDrafts({ refinement: "extended",
       turn: { ...turn, conversation, activeWork },
       judgementModel: { id: "fixture", requestTokens: null, stateQuestionTokens: 2_000 },
       judge: async (request, signal) => { states.push(JSON.stringify(request.state)); return makeJudge()(request, signal); },
@@ -295,7 +295,7 @@ describe("private draft loop", () => {
     const revisions: unknown[] = [];
     let generation = 0;
     const judge = makeJudge((request): Record<string, string | number> => JSON.stringify(request.state).includes("PRIVATE_REJECTED") ? { retention_overclaimed: 0.99 } : {});
-    const result = await runTeachingDrafts({ turn, judge, onProgress: (snapshot) => updates.push(snapshot), generate: async (input) => {
+    const result = await runTeachingDrafts({ refinement: "extended", turn, judge, onProgress: (snapshot) => updates.push(snapshot), generate: async (input) => {
       revisions.push(input.feedback);
       generation++;
       const text = generation === 1 ? "PRIVATE_REJECTED: you will remember this forever." : "Division splits a quantity into equal groups.";
@@ -314,7 +314,7 @@ describe("private draft loop", () => {
     const calls: JudgementRequest[] = [];
     let generated = 0;
     const base = makeJudge((request): Record<string, string | number> => request.questions.retention_overclaimed ? { retention_overclaimed: 0.99 } : {});
-    const result = await runTeachingDrafts({ turn, maxAttempts: 2, judge: async (request, signal) => { calls.push(request); return base(request, signal); }, generate: async () => {
+    const result = await runTeachingDrafts({ refinement: "extended", turn, maxAttempts: 2, judge: async (request, signal) => { calls.push(request); return base(request, signal); }, generate: async () => {
       generated++; return { reply: { text: "hidden", toolCalls: [] }, value: "MUST_NOT_ESCAPE" };
     } });
     expect(generated).toBe(2);
@@ -326,7 +326,7 @@ describe("private draft loop", () => {
 
   test("Jev can select the better passing option without exposing the other", async () => {
     let generated = 0;
-    const result = await runTeachingDrafts({ turn, judge: makeJudge(() => ({ draft_standard: "supported", draft_choice: "draft_2" })), generate: async () => {
+    const result = await runTeachingDrafts({ refinement: "extended", turn, judge: makeJudge(() => ({ draft_standard: "supported", draft_choice: "draft_2" })), generate: async () => {
       generated++; return { reply: { text: `candidate ${generated}`, toolCalls: [] }, value: generated };
     } });
     expect(result.status).toBe("released");
@@ -336,7 +336,7 @@ describe("private draft loop", () => {
   });
 
   test("selector abstention retains the best reviewed draft", async () => {
-    const result = await runTeachingDrafts({ turn, judge: makeJudge(() => ({ draft_standard: "supported", draft_choice: "no_match" })), generate: async () => ({ reply: { text: "answer", toolCalls: [] }, value: "answer" }) });
+    const result = await runTeachingDrafts({ refinement: "extended", turn, judge: makeJudge(() => ({ draft_standard: "supported", draft_choice: "no_match" })), generate: async () => ({ reply: { text: "answer", toolCalls: [] }, value: "answer" }) });
     expect(result.status).toBe("released");
     expect(result.receipt.reason).toBe("selection-quality-fallback");
     expect(result.value).toBe("answer");
@@ -345,7 +345,7 @@ describe("private draft loop", () => {
   test("adaptive effort respects an explicit off ceiling and does not lower standards after failure", async () => {
     const levels: string[] = [];
     let n = 0;
-    const result = await runTeachingDrafts({ turn, maxReasoning: "off", maxAttempts: 2, judge: makeJudge((request) => ({ draft_reasoning: "high", draft_standard: "deep", ...(request.questions.quality_progress ? { quality_progress: 0.5 } : {}) })), generate: async ({ reasoning }) => {
+    const result = await runTeachingDrafts({ refinement: "extended", turn, maxReasoning: "off", maxAttempts: 2, judge: makeJudge((request) => ({ draft_reasoning: "high", draft_standard: "deep", ...(request.questions.quality_progress ? { quality_progress: 0.5 } : {}) })), generate: async ({ reasoning }) => {
       levels.push(reasoning); n++; return { reply: { text: `candidate ${n}`, toolCalls: [] }, value: n };
     } });
     expect(levels).toEqual(["off", "off"]);
@@ -355,20 +355,20 @@ describe("private draft loop", () => {
   });
 
   test("host schema/evidence failure cannot be overruled by Jev", async () => {
-    const result = await runTeachingDrafts({ turn, maxAttempts: 1, judge: makeJudge(), check: () => [{ id: "schema", source: "deterministic", severity: "critical", status: "fail", probability: 1 }], generate: async () => ({ reply: { text: "answer", toolCalls: [] }, value: "answer" }) });
+    const result = await runTeachingDrafts({ refinement: "extended", turn, maxAttempts: 1, judge: makeJudge(), check: () => [{ id: "schema", source: "deterministic", severity: "critical", status: "fail", probability: 1 }], generate: async () => ({ reply: { text: "answer", toolCalls: [] }, value: "answer" }) });
     expect(result.status).toBe("withheld");
   });
 
   test("off or unavailable judgment does not dispatch an actor", async () => {
     let generated = false;
-    const result = await runTeachingDrafts({ turn, judge: async () => ({ ok: false, error: { code: "backend-unavailable", retryable: false } }), generate: async () => { generated = true; return { reply: { text: "secret", toolCalls: [] }, value: "secret" }; } });
+    const result = await runTeachingDrafts({ refinement: "extended", turn, judge: async () => ({ ok: false, error: { code: "backend-unavailable", retryable: false } }), generate: async () => { generated = true; return { reply: { text: "secret", toolCalls: [] }, value: "secret" }; } });
     expect(generated).toBe(false);
     expect(result.status).toBe("withheld");
   });
 
   test("cancellation ignores late provider work and returns no text", async () => {
     const controller = new AbortController();
-    const result = await runTeachingDrafts({ turn, judge: makeJudge(), signal: controller.signal, generate: async () => {
+    const result = await runTeachingDrafts({ refinement: "extended", turn, judge: makeJudge(), signal: controller.signal, generate: async () => {
       controller.abort(); return { reply: { text: "late private response", toolCalls: [] }, value: "late private response" };
     } });
     expect(result.status).toBe("cancelled");
@@ -376,14 +376,14 @@ describe("private draft loop", () => {
   });
 
   test("total timeout bounds a provider that ignores its signal", async () => {
-    const result = await runTeachingDrafts({ turn, judge: makeJudge(), timeoutMs: 10, generate: () => new Promise(() => {}) });
+    const result = await runTeachingDrafts({ refinement: "extended", turn, judge: makeJudge(), timeoutMs: 10, generate: () => new Promise(() => {}) });
     expect(result.status).toBe("withheld");
     expect(result.receipt.reason).toBe("time-budget");
   });
 
   test("deadline retains the best completed review while a later generation hangs", async () => {
     let generated = 0;
-    const result = await runTeachingDrafts({ turn, timeoutMs: 100,
+    const result = await runTeachingDrafts({ refinement: "extended", turn, timeoutMs: 100,
       judge: makeJudge(() => ({ quality_progress: .4 })),
       generate: async () => ++generated === 1
         ? { reply: { text: "Completed response", toolCalls: [] }, value: "completed" }
@@ -398,7 +398,7 @@ describe("private draft loop", () => {
   test("user cancellation never releases even an earlier eligible draft", async () => {
     const controller = new AbortController();
     let generated = 0;
-    const result = await runTeachingDrafts({ turn, signal: controller.signal,
+    const result = await runTeachingDrafts({ refinement: "extended", turn, signal: controller.signal,
       judge: makeJudge(() => ({ quality_progress: .4 })),
       generate: async () => {
         if (++generated === 2) controller.abort();
@@ -413,7 +413,7 @@ describe("private draft loop", () => {
     const reply = { text: "original answer", toolCalls: [] };
     const value = { text: "native metadata" };
     const base = makeJudge();
-    const result = await runTeachingDrafts({ turn, judge: async (request, signal) => {
+    const result = await runTeachingDrafts({ refinement: "extended", turn, judge: async (request, signal) => {
       if (request.questions.quality_progress) { reply.text = "UNREVIEWED_MUTATION"; value.text = "UNREVIEWED_MUTATION"; }
       return base(request, signal);
     }, generate: async () => ({ reply, value }) });
@@ -425,7 +425,7 @@ describe("private draft loop", () => {
 
   test("selection retains full evidence and explicitly narrows only approved candidates to fit", async () => {
     const largeTurn = { ...turn, learnerEvidence: [{ kind: "source", content: "e".repeat(78_000) }] };
-    const result = await runTeachingDrafts({ turn: largeTurn, judge: makeJudge(() => ({ draft_standard: "supported" })),
+    const result = await runTeachingDrafts({ refinement: "extended", turn: largeTurn, judge: makeJudge(() => ({ draft_standard: "supported" })),
       generate: async () => ({ reply: { text: "a".repeat(10_000), toolCalls: [] }, value: "approved" }) });
     expect(result.status).toBe("released");
     expect(result.receipt.selectionCandidateAttempts).toEqual([1]);
@@ -446,7 +446,7 @@ describe("paired interactive and prose drafts", () => {
   test("an activity recommendation pairs a required-activity draft against a prose draft, order randomized", async () => {
     for (const [roll, order] of [[0.1, ["interactive", "prose"]], [0.9, ["prose", "interactive"]]] as const) {
       const { prompts, generate } = collect();
-      const result = await runTeachingDrafts({ turn, random: () => roll, judge: makeJudge(simulation()), generate });
+      const result = await runTeachingDrafts({ refinement: "extended", turn, random: () => roll, judge: makeJudge(simulation()), generate });
       expect(result.receipt.attempts.map(({ variant }) => variant)).toEqual([...order]);
       const interactive = prompts[order.indexOf("interactive")]!;
       const prose = prompts[order.indexOf("prose")]!;
@@ -463,7 +463,7 @@ describe("paired interactive and prose drafts", () => {
     const selections: JudgementRequest[] = [];
     const base = makeJudge(simulation());
     const { generate } = collect();
-    await runTeachingDrafts({ turn, random: () => 0.1, generate, judge: async (request, signal) => {
+    await runTeachingDrafts({ refinement: "extended", turn, random: () => 0.1, generate, judge: async (request, signal) => {
       if (request.questions.draft_choice) selections.push(request);
       return base(request, signal);
     } });
@@ -480,23 +480,23 @@ describe("paired interactive and prose drafts", () => {
       return request.questions.retention_overclaimed && ++checks === 1 ? { retention_overclaimed: 0.99 } : {};
     });
     const { generate } = collect();
-    const result = await runTeachingDrafts({ turn, random: () => 0.1, judge, generate });
+    const result = await runTeachingDrafts({ refinement: "extended", turn, random: () => 0.1, judge, generate });
     expect(result.receipt.attempts.map(({ variant, status }) => `${variant}:${status}`)).toEqual(["interactive:fail", "interactive:pass", "prose:pass"]);
   });
 
   test("no recommendation, grade-first, or a concise standard stays unpaired", async () => {
-    const plain = await runTeachingDrafts({ turn, judge: makeJudge(() => ({ draft_standard: "supported" })), generate: collect().generate });
+    const plain = await runTeachingDrafts({ refinement: "extended", turn, judge: makeJudge(() => ({ draft_standard: "supported" })), generate: collect().generate });
     expect(plain.receipt.attempts.map(({ variant }) => variant)).toEqual(["default", "default"]);
     expect(plain.receipt.interaction).toMatchObject({ action: "none", paired: false });
 
     const concise = collect();
-    const short = await runTeachingDrafts({ turn, judge: makeJudge(simulation({ draft_standard: "concise" })), generate: concise.generate });
+    const short = await runTeachingDrafts({ refinement: "extended", turn, judge: makeJudge(simulation({ draft_standard: "concise" })), generate: concise.generate });
     expect(concise.prompts).toHaveLength(1);
     expect(short.receipt.attempts.map(({ variant }) => variant)).toEqual(["default"]);
     expect(short.receipt.interaction).toMatchObject({ action: "create", paired: false });
     expect(concise.prompts[0]).toContain("At most one OpenUI activity");
 
-    const pending = await runTeachingDrafts({ turn: { ...turn, pendingSubmissions: [{ kind: "quiz", id: "q", questionIds: ["a"] }] }, judge: makeJudge(simulation()), generate: collect().generate });
+    const pending = await runTeachingDrafts({ refinement: "extended", turn: { ...turn, pendingSubmissions: [{ kind: "quiz", id: "q", questionIds: ["a"] }] }, judge: makeJudge(simulation()), generate: collect().generate });
     expect(pending.receipt.interaction).toMatchObject({ action: "grade-first", paired: false });
     expect(pending.receipt.attempts.every(({ variant }) => variant === "default")).toBe(true);
   });

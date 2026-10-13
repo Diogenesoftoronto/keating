@@ -590,14 +590,21 @@ const codingChallengePropsSchema = z.object({
 	lifecycle: lifecycleSchema.default("workspace"), hint: z.string().optional(),
 });
 
+function OpenUICodingChallenge({ props }: { props: z.infer<typeof codingChallengePropsSchema> }) {
+	const streaming = useIsStreaming();
+	const triggerAction = useTriggerAction();
+	const node = useMemo(() => compileOpenUISourceToSharedDocument(`root = LearningSurface([lab])\nlab = CodingChallenge(${JSON.stringify(props)})`, { documentId: props.id }).nodes[0] as Extract<UiDocumentNode, { type: "coding-challenge" }>, [props]);
+	return <CodingChallengeRenderer node={node} disabled={streaming} onAction={(event) => {
+		void triggerAction(event.humanFriendlyMessage, undefined, { type: "continue_conversation", params: { interaction: "coding-challenge", challenge: node, ...event.intent } });
+		return true;
+	}} />;
+}
+
 export const CodingChallenge = defineComponent({
 	name: "CodingChallenge",
-	description: "A small JavaScript or TypeScript function exercise with an editable starter and executable sample tests. Each test supplies JSON args and expected output. No imports, DOM, network, or external packages. Runs happen only when the learner presses Run tests, with a three-second limit. Sample results are formative feedback, not a formal grade.",
+	description: "A small JavaScript or TypeScript function exercise with an editable starter and executable sample tests. Each test supplies JSON args and expected output. No imports, DOM, network, or external packages. Runs happen only when the learner presses Run tests, with a three-second limit. Each finished run sends the learner's code and sample results to the tutor. Sample results are formative feedback, not a formal grade.",
 	props: codingChallengePropsSchema,
-	component: ({ props }) => {
-		const node = compileOpenUISourceToSharedDocument(`root = LearningSurface([lab])\nlab = CodingChallenge(${JSON.stringify(props)})`, { documentId: props.id }).nodes[0] as Extract<UiDocumentNode, { type: "coding-challenge" }>;
-		return <CodingChallengeRenderer node={node} />;
-	},
+	component: OpenUICodingChallenge,
 });
 
 const musicLabPropsSchema = z.object({

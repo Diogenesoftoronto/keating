@@ -382,7 +382,23 @@ export interface UiDocument {
   updatedAt: string;
 }
 
+export interface UiCodingTestResult {
+  testId: string;
+  passed: boolean;
+  /** Bounded JSON display of the actual output, including undefined. */
+  actual?: string;
+  error?: string;
+}
+
+/** Work time in the current opened exercise, excluding pauses, hidden tabs and test execution. */
+export interface UiCodingTiming {
+  workingMs: number;
+  sinceLastRunMs: number;
+  runNumber: number;
+}
+
 export type UiAction =
+  | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "run-coding-challenge"; documentId: string; documentRevision: number; nodeId: string; runId: string; code: string; cases: UiCodingTestResult[]; durationMs: number; timing?: UiCodingTiming; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "complete-language-practice"; documentId: string; documentRevision: number; nodeId: string; rounds: UiLanguageRoundResult[]; correct: number; objectiveTotal: number; pronunciationPracticed: number; totalMs: number; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "submit-answer"; documentId: string; documentRevision: number; nodeId: string; answer: UiAnswer; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "choose-option"; documentId: string; documentRevision: number; nodeId: string; optionIds: string[]; idempotencyKey: string }
@@ -448,7 +464,7 @@ const LIFECYCLES = new Set<DocumentLifecycle>(["draft", "streaming", "ready", "s
 const RETENTION_POLICIES = new Set<UiDocumentRetention>(["ephemeral", "resumable", "workspace"]);
 const GOAL_STEP_STATUSES = new Set<UiGoalStepStatus>(["not_started", "in_progress", "done"]);
 const ARTIFACT_FORMATS = new Set<UiArtifactFormat>(["markdown", "text", "json", "uri"]);
-const ACTION_TYPES = new Set<UiAction["type"]>(["complete-language-practice", "submit-answer", "choose-option", "submit-question-group", "complete-quiz", "complete-goal-step", "complete-plan-item", "update-notes", "rate-card", "complete-deck", "save-artifact", "retry", "open-handoff", "complete-task-item", "submit-task"]);
+const ACTION_TYPES = new Set<UiAction["type"]>(["run-coding-challenge", "complete-language-practice", "submit-answer", "choose-option", "submit-question-group", "complete-quiz", "complete-goal-step", "complete-plan-item", "update-notes", "rate-card", "complete-deck", "save-artifact", "retry", "open-handoff", "complete-task-item", "submit-task"]);
 const RECEIPT_STATES = new Set<UiActionReceipt["state"]>(["pending", "accepted", "completed", "rejected", "retryable"]);
 const DOCUMENT_KEYS = new Set(["schemaVersion", "id", "revision", "lifecycle", "retention", "supportedSurfaces", "title", "description", "nodes", "createdAt", "updatedAt"]);
 const OPTION_KEYS = new Set(["id", "label"]);
@@ -490,6 +506,7 @@ const HANDOFF_KEYS = new Set(["type", "id", "target", "reason", "context"]);
 const MARKDOWN_KEYS = new Set(["type", "id", "markdown"]);
 const ACTION_BASE_KEYS = new Set(["schemaVersion", "type", "documentId", "documentRevision", "nodeId", "idempotencyKey"]);
 const ACTION_KEYS: Readonly<Record<UiAction["type"], ReadonlySet<string>>> = {
+  "run-coding-challenge": new Set([...ACTION_BASE_KEYS, "runId", "code", "cases", "durationMs", "timing"]),
   "submit-answer": new Set([...ACTION_BASE_KEYS, "answer"]),
   "choose-option": new Set([...ACTION_BASE_KEYS, "optionIds"]),
   "submit-question-group": new Set([...ACTION_BASE_KEYS, "responses"]),
@@ -903,6 +920,18 @@ export function validateUiAction(value: unknown): value is UiAction {
   if (!hasOnlyKeys(value, ACTION_KEYS[type])) return false;
   if (type !== "retry" && !isContractId(value.nodeId)) return false;
   switch (type) {
+    case "run-coding-challenge": return isContractId(value.runId) && boundedString(value.code, 32768)
+      && (value.timing === undefined || (isRecord(value.timing)
+        && hasOnlyKeys(value.timing, new Set(["workingMs", "sinceLastRunMs", "runNumber"]))
+        && validRevision(value.timing.workingMs) && validRevision(value.timing.sinceLastRunMs)
+        && value.timing.sinceLastRunMs <= value.timing.workingMs
+        && validRevision(value.timing.runNumber) && value.timing.runNumber > 0))
+      && isNonNegativeFinite(value.durationMs) && boundedArray(value.cases, 24) && value.cases.length > 0
+      && value.cases.every((item) => isRecord(item) && hasOnlyKeys(item, new Set(["testId", "passed", "actual", "error"]))
+        && isContractId(item.testId) && typeof item.passed === "boolean"
+        && (item.actual === undefined || boundedString(item.actual, 4096, true))
+        && (item.error === undefined || (boundedString(item.error, 400) && item.passed === false)))
+      && uniqueField(value.cases as UiCodingTestResult[], "testId");
     case "submit-answer": return (typeof value.answer === "string" && boundedString(value.answer, 8192, true))
       || (boundedArray(value.answer, MAX_CHOICES) && value.answer.length > 0
         && (value.answer.every((answer) => boundedString(answer, 8192, true)) || value.answer.every(validateUiRowAnswer)));
@@ -1029,6 +1058,9 @@ export function validateUiActionAgainstDocument(action: unknown, document: unkno
   if (!target) return false;
   const question = target.node.type === "question" ? target.node : target.question;
   switch (action.type) {
+    case "run-coding-challenge": return target.node.type === "coding-challenge"
+      && action.cases.length === target.node.tests.length
+      && action.cases.every((item, index) => item.testId === (target.node as UiCodingChallengeNode).tests[index]?.id);
     case "submit-answer": {
       if (!question) return false;
       if (question.kind === "blanks" || question.kind === "fill_in") {

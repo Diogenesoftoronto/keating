@@ -1,4 +1,5 @@
 import { runTeachingDrafts } from "../../packages/learner-contracts/src/judgement/teaching-drafts.js";
+import { TEACHING_POLICY_RULES } from "../../packages/learner-contracts/src/judgement/teaching-policy.js";
 import type { JudgementAnswer, JudgementRequest } from "../../packages/learner-contracts/src/judgement/contracts.js";
 import type { KeatingScenario } from "./keating-types.js";
 
@@ -24,6 +25,8 @@ export async function captureKeatingRequests(scenario: KeatingScenario): Promise
   const captured: JudgementRequest[] = [];
   let phase = "planning";
   await runTeachingDrafts({ turn: structuredClone(scenario.turn), maxAttempts: 1, maxReasoning: "off", random: () => 0, now: () => 0,
+    // Benchmarks explicitly cover the full rubric, independent of ordinary-turn domain scoping.
+    ruleIds: TEACHING_POLICY_RULES.filter(rule => !rule.domain || scenario.turn.domain === "unknown" || rule.domain === scenario.turn.domain).map(rule => rule.id),
     judgementModel: { id: "capture-only", requestTokens: 64_000, stateQuestionTokens: 32_000 },
     onProgress(snapshot) { phase = snapshot.phase; },
     judge: async request => {

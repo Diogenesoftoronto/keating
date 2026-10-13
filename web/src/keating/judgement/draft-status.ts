@@ -142,6 +142,15 @@ export function publishTeachingDraftStatus(sessionId: string, snapshot: Teaching
 export interface TeachingDraftTally {
   readonly turns: number;
   readonly released: number;
+  /** Index 0 records turns that ended before any completed draft attempt. */
+  readonly attemptHistogram: readonly number[];
+  readonly draftedTurns: number;
+  readonly noDraftTurns: number;
+  /** Shares and nearest-rank percentiles exclude the zero-attempt bucket. */
+  readonly oneOrTwoAttemptShare: number | null;
+  readonly overThreeAttemptShare: number | null;
+  readonly attemptPercentiles: Readonly<{ p50: number | null; p95: number | null; p99: number | null }>;
+  readonly bestEffortReleases: number;
   readonly interactionActions: Readonly<Record<string, number>>;
   readonly paired: number;
   readonly pairedInteractiveSelected: number;
@@ -151,13 +160,33 @@ export interface TeachingDraftTally {
 }
 
 const emptyTally = (): TeachingDraftTally => ({ turns: 0, released: 0, interactionActions: {}, paired: 0, pairedInteractiveSelected: 0,
-  openuiChecked: 0, openuiValid: 0, planActions: {} });
+  openuiChecked: 0, openuiValid: 0, planActions: {}, attemptHistogram: Array<number>(11).fill(0), draftedTurns: 0,
+  noDraftTurns: 0, oneOrTwoAttemptShare: null, overThreeAttemptShare: null,
+  attemptPercentiles: { p50: null, p95: null, p99: null }, bestEffortReleases: 0 });
 let tally = emptyTally();
 const terminal = (snapshot: TeachingDraftSnapshot) => snapshot.phase === "released" || snapshot.phase === "withheld";
 const bump = (counts: Readonly<Record<string, number>>, key: string) => ({ ...counts, [key]: (counts[key] ?? 0) + 1 });
 
 function tallyTerminalTurn(snapshot: TeachingDraftSnapshot): void {
   const released = snapshot.phase === "released";
+  // Completed attempt records include generation failures. Ignore malformed
+  // indices, and bound legacy/foreign values to the supported ten-attempt cap.
+  const attempts = snapshot.attempts.reduce((maximum, attempt) => Number.isSafeInteger(attempt.attempt) && attempt.attempt > 0
+    ? Math.max(maximum, Math.min(10, attempt.attempt)) : maximum, 0);
+  const attemptHistogram = [...tally.attemptHistogram];
+  attemptHistogram[attempts] = (attemptHistogram[attempts] ?? 0) + 1;
+  const draftedTurns = tally.draftedTurns + (attempts > 0 ? 1 : 0);
+  const percentile = (quantile: number): number | null => {
+    if (!draftedTurns) return null;
+    const rank = Math.ceil(draftedTurns * quantile);
+    let cumulative = 0;
+    for (let index = 1; index <= 10; index++) {
+      cumulative += attemptHistogram[index] ?? 0;
+      if (cumulative >= rank) return index;
+    }
+    return null;
+  };
+  const bestEffort = released && snapshot.reason === "best-effort-draft";
   const selected = released ? snapshot.attempts.find(attempt => attempt.attempt === snapshot.selectedAttempt) : undefined;
   // Render validity only means something on turns that recommended an activity.
   const offered = snapshot.interaction?.action === "create" || snapshot.interaction?.action === "continue";
@@ -167,6 +196,13 @@ function tallyTerminalTurn(snapshot: TeachingDraftSnapshot): void {
   tally = {
     turns: tally.turns + 1,
     released: tally.released + (released ? 1 : 0),
+    attemptHistogram,
+    draftedTurns,
+    noDraftTurns: tally.noDraftTurns + (attempts === 0 ? 1 : 0),
+    oneOrTwoAttemptShare: draftedTurns ? ((attemptHistogram[1] ?? 0) + (attemptHistogram[2] ?? 0)) / draftedTurns : null,
+    overThreeAttemptShare: draftedTurns ? attemptHistogram.slice(4).reduce((sum, count) => sum + count, 0) / draftedTurns : null,
+    attemptPercentiles: { p50: percentile(.5), p95: percentile(.95), p99: percentile(.99) },
+    bestEffortReleases: tally.bestEffortReleases + (bestEffort ? 1 : 0),
     interactionActions: snapshot.interaction ? bump(tally.interactionActions, snapshot.interaction.action) : tally.interactionActions,
     paired: tally.paired + (paired ? 1 : 0),
     pairedInteractiveSelected: tally.pairedInteractiveSelected + (interactiveSelected ? 1 : 0),
@@ -175,6 +211,8 @@ function tallyTerminalTurn(snapshot: TeachingDraftSnapshot): void {
     planActions: snapshot.planReview ? bump(tally.planActions, snapshot.planReview.action) : tally.planActions,
   };
   recordDiagnostic("info", "teaching-drafts", `Draft turn ${snapshot.phase}`, {
+    attempts,
+    bestEffort,
     interactionAction: snapshot.interaction?.action ?? "unplanned",
     paired,
     interactiveSelected,
@@ -183,7 +221,14 @@ function tallyTerminalTurn(snapshot: TeachingDraftSnapshot): void {
   });
 }
 
-export function getTeachingDraftTally(): TeachingDraftTally { return tally; }
+export function getTeachingDraftTally(): TeachingDraftTally {
+  return Object.freeze({ ...tally,
+    attemptHistogram: Object.freeze([...tally.attemptHistogram]),
+    attemptPercentiles: Object.freeze({ ...tally.attemptPercentiles }),
+    interactionActions: Object.freeze({ ...tally.interactionActions }),
+    planActions: Object.freeze({ ...tally.planActions }),
+  });
+}
 export function clearTeachingDraftTally(): void { tally = emptyTally(); }
 
 /** Feedback is attached to the exact reviewed turn, never a later response. */

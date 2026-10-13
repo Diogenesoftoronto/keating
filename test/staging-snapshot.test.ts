@@ -14,7 +14,10 @@ function fixture() {
   const root = join(base, "checkout");
   mkdirSync(root);
   const git = (...args: string[]) => {
-    const result = spawnSync("git", args, { cwd: root, encoding: "utf8" });
+    const env = { ...process.env };
+    // Hooks export checkout-local routing; fixture repositories own their cwd.
+    for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR", "GIT_PREFIX"]) delete env[key];
+    const result = spawnSync("git", args, { cwd: root, env, encoding: "utf8" });
     if (result.status !== 0) throw new Error(result.stderr);
     return result.stdout.trim();
   };

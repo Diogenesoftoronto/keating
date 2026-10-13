@@ -26,7 +26,11 @@ export function stagingSourcePath(path: string): boolean {
 }
 
 async function run(args: string[], cwd = process.cwd()): Promise<string> {
-  const child = Bun.spawn(args, { cwd, stdout: "pipe", stderr: "pipe" });
+  const env = { ...process.env };
+  // Snapshot commands target cwd explicitly. Hook routing must not redirect
+  // reads to another checkout or mutate its index/configuration.
+  if (args[0] === "git") for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR", "GIT_PREFIX"]) delete env[key];
+  const child = Bun.spawn(args, { cwd, env, stdout: "pipe", stderr: "pipe" });
   const [stdout, stderr, exit] = await Promise.all([new Response(child.stdout).text(), new Response(child.stderr).text(), child.exited]);
   if (exit !== 0) {
     const details = [stderr.trim(), stdout.trim()].filter(Boolean).join("\n");

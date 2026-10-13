@@ -95,19 +95,40 @@ export function buildCompactTeachingPrompt(plan?: TeachingPolicyPlan): string {
   return `${COMPACT_PROMPT}${lines.length ? `\n\nTurn decisions:\n${lines.map((line) => `- ${line}`).join("\n")}` : ""}`;
 }
 
-function selectedRules(turn: TeachingPolicyTurn, ids?: readonly string[]): readonly TeachingPolicyRule[] {
+/** Planning-derived applicability, separate from the judge's violation scores. */
+export interface TeachingPolicyReviewScope {
+  readonly domain?: TeachingPolicyTurn["domain"];
+  /** False only when planning positively identifies that fresh sources are unnecessary. */
+  readonly researchRequired?: boolean;
+}
+
+const domainEvidenceChecks = new Set([
+  "law_authority_missing", "law_jurisdiction_missing", "medicine_evidence_conflated",
+  "history_disagreement_erased", "psychology_replication_ignored", "politics_normative_as_fact",
+]);
+
+function selectedRules(turn: TeachingPolicyTurn, ids?: readonly string[], scope?: TeachingPolicyReviewScope): readonly TeachingPolicyRule[] {
+  const domain = turn.domain === "unknown" ? scope?.domain ?? "unknown" : turn.domain;
   if (ids) for (const id of ids) {
     if ((TEACHING_POLICY_DETERMINISTIC_RULES as readonly string[]).includes(id)) continue;
     const entry = TEACHING_POLICY_RULES.find((entry) => entry.id === id);
     if (!entry) throw new Error(`Unknown teaching policy rule: ${id}`);
     if (entry.domain && turn.domain !== "unknown" && entry.domain !== turn.domain) throw new Error(`Teaching policy rule ${id} requires domain ${entry.domain}`);
   }
-  return TEACHING_POLICY_RULES.filter((entry) => (!entry.domain || turn.domain === "unknown" || entry.domain === turn.domain) && (entry.global || !ids || ids.includes(entry.id)));
+  return TEACHING_POLICY_RULES.filter((entry) => {
+    const explicitlySelected = ids?.includes(entry.id) ?? false;
+    // Unknown subject matter does not make every subject's teaching conventions applicable.
+    // Explicit benchmark rules and critical invariants still receive their own review.
+    if (entry.domain && entry.domain !== domain && !(turn.domain === "unknown" && explicitlySelected)
+      && !(domain === "unknown" && (entry.severity === "critical" || domainEvidenceChecks.has(entry.id)))) return false;
+    if (entry.id === "research_skipped" && scope?.researchRequired === false && !explicitlySelected) return false;
+    return entry.global || !ids || explicitlySelected;
+  });
 }
 
 /** This request cannot see the actor model, experiment arm, selected plan, or expected labels. */
-export function teachingPolicyAdherenceRequest(turn: TeachingPolicyTurn, reply: TeachingPolicyReply, ruleIds?: readonly string[]): JudgementRequest | null {
-  const rules = selectedRules(turn, ruleIds);
+export function teachingPolicyAdherenceRequest(turn: TeachingPolicyTurn, reply: TeachingPolicyReply, ruleIds?: readonly string[], scope?: TeachingPolicyReviewScope): JudgementRequest | null {
+  const rules = selectedRules(turn, ruleIds, scope);
   const request: JudgementRequest = { state: { ...teachingPolicyState(turn), reply: {
     text: reply.text, toolCalls: reply.toolCalls.map(({ name, arguments: args }) => ({ name, arguments: args })),
   } }, questions: Object.fromEntries(rules.map(({ id, question }) => [id, question])) };
@@ -210,9 +231,9 @@ export function teachingPolicyDeterministicChecks(turn: TeachingPolicyTurn, repl
 }
 
 /** Unknown, malformed, unavailable, and budget-exhausted judgments can never turn into passes. */
-export function assessTeachingPolicyAdherence(turn: TeachingPolicyTurn, reply: TeachingPolicyReply, outcome: JudgementOutcome | null, ruleIds?: readonly string[]): TeachingPolicyAssessment {
-  const rules = selectedRules(turn, ruleIds);
-  const request = teachingPolicyAdherenceRequest(turn, reply, ruleIds);
+export function assessTeachingPolicyAdherence(turn: TeachingPolicyTurn, reply: TeachingPolicyReply, outcome: JudgementOutcome | null, ruleIds?: readonly string[], scope?: TeachingPolicyReviewScope): TeachingPolicyAssessment {
+  const rules = selectedRules(turn, ruleIds, scope);
+  const request = teachingPolicyAdherenceRequest(turn, reply, ruleIds, scope);
   const semantic: TeachingPolicyCheck[] = rules.map((entry) => {
     const value = request ? probability(outcome, entry.id, entry.question) : null;
     const violation = binary(value);

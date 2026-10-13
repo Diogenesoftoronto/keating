@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.14
+
+- Release ordinary usable replies in one attempt when semantic scores are uncertain; allow only one repair for concrete semantic failures before best-effort text.
+- Remove mandatory activity comparisons; request text-only recovery at attempt three, reserving attempts four through ten for unusable output.
+- Scope domain reviews and add content-free attempt histograms and observed percentile diagnostics.
+- Deliver coding-challenge submissions and test results to the tutor context, with a visible working timer and replayable receipts.
+
 ## [Unreleased]
 
 ## [4.0.13] - 2026-10-12
