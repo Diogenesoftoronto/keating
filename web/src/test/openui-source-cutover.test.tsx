@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { KeatingOpenUIRenderer } from "../keating/openui/renderer";
+import { parseOpenUIMessageSegments } from "../keating/openui/segments";
+import { __test_InertOpenUISourceRecovery, __claimOpenUICompileRecovery, __resetOpenUICompileRecovery, KeatingOpenUIRenderer } from "../keating/openui/renderer";
 
 const metadata = {
 	id: "session-message-source",
@@ -15,11 +16,12 @@ const source = [
 describe("completed browser OpenUI source cutover", () => {
 	test("keeps unclosed source inert instead of mounting the legacy renderer", () => {
 		const html = renderToStaticMarkup(
-			<KeatingOpenUIRenderer program={source} source={source} metadata={metadata} sourceComplete={false} />,
+			<KeatingOpenUIRenderer program={source} source={source} metadata={metadata} sourceComplete={false} isStreaming />,
 		);
 		expect(html).not.toContain("data-shared-openui-document");
 		expect(html).toContain('data-openui-source-recovery="incomplete"');
-		expect(html).toContain("What changes the posterior?");
+		expect(html).not.toContain("What changes the posterior?");
+		expect(html).toContain("still being prepared");
 		expect(html).not.toContain("Submit answers");
 	});
 
@@ -43,9 +45,9 @@ describe("completed browser OpenUI source cutover", () => {
 			<KeatingOpenUIRenderer program={invalid} metadata={metadata} sourceComplete />,
 		);
 		expect(html).not.toContain("data-shared-openui-document");
-		expect(html).toContain('data-openui-source-recovery="rejected"');
-		expect(html).toContain("could not be built");
-		expect(html.match(/Keep my answer/g)?.length).toBe(1);
+		expect(html).not.toContain("data-openui-source-recovery");
+		expect(html).not.toContain("could not be displayed");
+		expect(html).not.toContain("Keep my answer");
 		expect(html).not.toContain("Submit answers");
 	});
 
@@ -64,4 +66,61 @@ describe("completed browser OpenUI source cutover", () => {
 		expect(html).not.toContain("&lt;script&gt;");
 		expect(html).toContain("Open the Topic animation in Keating web");
 	});
+});
+
+
+describe("learning surface simulation fence completion", () => {
+	const simulation = 'root = LearningSurface([sim], "Growth")\nsim = Simulation({ title: "Growth", parameters: [{ id: "rate", label: "Rate", min: 0, max: 10, value: 2 }], readouts: [{ id: "double", label: "Double", expr: "rate * 2" }] })';
+	for (const [name, newline, close] of [["CRLF", "\r\n", "```"], ["trailing whitespace", "\n", "``` \t"], ["indented closing fence", "\n", "   ```"]]) {
+		test(`renders a completed simulation with ${name}`, () => {
+			const message = `\`\`\`openui${newline}${simulation.replaceAll("\n", newline)}${newline}${close}${newline}Keep exploring.`;
+			const segments = parseOpenUIMessageSegments(message);
+			const segment = segments[0];
+			if (segment.type !== "openui") throw new Error("Expected simulation source");
+			expect(segment.complete).toBe(true);
+			const html = renderToStaticMarkup(<KeatingOpenUIRenderer program={segment.program} source={segment.rawProgram} sourceComplete={segment.complete} metadata={segment.metadata} />);
+			expect(html).toContain("data-shared-openui-document");
+			expect(html).toContain("Double");
+			expect(html).not.toContain("data-openui-source-recovery");
+			expect(segments[1]).toEqual({ type: "text", content: "Keep exploring." });
+		});
+	}
+	test("keeps compiler diagnostics and source available in developer mode", () => {
+		const broken = 'root = LearningSurface([missing], "Readable lesson")';
+		const html = renderToStaticMarkup(<KeatingOpenUIRenderer program={broken} metadata={metadata} developerMode />);
+		expect(html).toContain("Development details");
+		expect(html).toContain("Readable lesson");
+		expect(html).toContain("missing");
+	});
+});
+
+
+test("a stopped unfinished simulation removes inert content instead of claiming it is still streaming", () => {
+	const html = renderToStaticMarkup(<KeatingOpenUIRenderer program={source} source={source} metadata={metadata} sourceComplete={false} />);
+	expect(html).not.toContain("data-openui-source-recovery");
+	expect(html).not.toContain("ask Keating to rebuild");
+	expect(html).not.toContain("still being prepared");
+	expect(html).not.toContain("data-shared-openui-document");
+	expect(html).not.toContain("LearningSurface");
+});
+
+
+test("automatic repair is bounded and deduplicated across failed render remounts", () => {
+	__resetOpenUICompileRecovery();
+	expect(__claimOpenUICompileRecovery("first", "invalid")).toBe(1);
+	expect(__claimOpenUICompileRecovery("first", "invalid")).toBeNull();
+	expect(__claimOpenUICompileRecovery("second", "unsupported")).toBe(2);
+	expect(__claimOpenUICompileRecovery("third", "invalid")).toBe(3);
+	expect(__claimOpenUICompileRecovery("fourth", "invalid")).toBeNull();
+	__resetOpenUICompileRecovery();
+});
+
+
+test("developer mode preserves inert source and compiler error during automatic rebuilding", () => {
+	const html = renderToStaticMarkup(<__test_InertOpenUISourceRecovery source={source} state="rebuilding" developerMode error="Missing simulation parameter" attempt={2} />);
+	expect(html).toContain("Rebuilding this interaction");
+	expect(html).toContain("Development details");
+	expect(html).toContain("Missing simulation parameter");
+	expect(html).toContain("LearningSurface");
+	expect(html).not.toContain("data-shared-openui-document");
 });

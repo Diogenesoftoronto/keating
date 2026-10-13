@@ -23,7 +23,7 @@ import { ChatMascotMenu } from "./ChatMascotMenu";
 import "./chat-mascot.css";
 import { RecordingWaveform } from "./RecordingWaveform";
 import { DraftReviewStatus } from "./DraftReviewStatus";
-import { getTeachingDraftStatus, subscribeTeachingDraftStatus, teachingDraftIsActive } from "../keating/judgement/draft-status";
+import { clearTeachingDraftContents, getTeachingDraftStatus, subscribeTeachingDraftStatus, teachingDraftIsActive } from "../keating/judgement/draft-status";
 import { prepareAudioAttachment } from "../lib/audio-attachment";
 import { rememberRecordingTranscript, recordingHasTranscript } from "../lib/recording-transcripts";
 import type { FlueConversation } from "../keating/flue/conversation";
@@ -41,6 +41,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import type { Key, ReactNode } from "react";
+const DeveloperChatDetails = createContext(false);
 import { createPortal } from "react-dom";
 import type {
   AgentMessage,
@@ -567,6 +568,8 @@ function StreamingTextPart({
   const messageId = useAuiState(({ message }) => message.id);
   const messageCreatedAt = useAuiState(({ message }) => message.createdAt);
 	const sessionId = useContext(OpenUISessionScopeContext);
+  const developerMode = useContext(DeveloperChatDetails);
+  const handledFailure = useAuiState(({ message }) => Boolean(message.metadata.custom?.keatingLlmFailure && message.metadata.custom?.keatingRetryable));
   const isMarkedError = text.startsWith(ERROR_TEXT_PREFIX);
   // Only turns completed while this view is open link to the current plan
   // focus; reopened history must not be linked to today's focus.
@@ -653,6 +656,7 @@ function StreamingTextPart({
   }, [displayText, isMarkedError, messageCreatedAt, messageId, sessionId, status?.type]);
 
   if (isMarkedError) {
+    if (!developerMode && handledFailure) return null;
     const classified = classifyError(visibleText);
     return (
       <ErrorBadge
@@ -789,6 +793,8 @@ function ErrorBadge({
   rawMessage: string;
   showRaw: boolean;
 }) {
+  const developerMode = useContext(DeveloperChatDetails);
+  if (!developerMode) return <p role="alert">This request could not finish. Please try again.</p>;
   const ErrorIcon = classified.icon;
   return (
     <div className={css({ display: "grid", gap: "0.375rem" })}>
@@ -2516,6 +2522,7 @@ const MarkdownText = memo(function MarkdownText({
   documentScope: string | OpenUIDocumentScope;
   isRunning?: boolean;
 }) {
+  const developerMode = useContext(DeveloperChatDetails);
   const displayText = stripArtifactLinks(text);
   // OpenUI is the streamable path. Text segments still flow through the legacy
   // tag parser so saved sessions and existing tools remain compatible.
@@ -2538,10 +2545,12 @@ const MarkdownText = memo(function MarkdownText({
           if (seg.format === "document") {
             if (seg.error) {
               return <div key={`${seg.metadata.id}-${i}`} role="alert" className={css({ marginBlock: "0.75rem", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--destructive) 10%, transparent)", padding: "0.75rem", color: "var(--destructive)" })}>
-                This interaction could not be rendered: {seg.error}
+                This activity could not be displayed. Ask Keating to try it again.
+                {developerMode && <details><summary>Development details</summary>{seg.error}</details>}
               </div>;
             }
             return <KeatingOpenUIRenderer
+              developerMode={developerMode}
               key={`${seg.metadata.id}-${seg.metadata.revision}-${i}`}
               document={seg.document}
               metadata={seg.metadata}
@@ -2551,6 +2560,7 @@ const MarkdownText = memo(function MarkdownText({
           }
           return (
             <KeatingOpenUIRenderer
+              developerMode={developerMode}
               key={`${seg.metadata.id}-${seg.metadata.revision}-${i}`}
               program={seg.program}
 			  source={seg.rawProgram}
@@ -2870,7 +2880,7 @@ function ToolPart({
               onRetry={onImageGenerationModelSelect}
             />
           )}
-          {classifiedError && diagnosticsSummaryForFailure(classifiedError, `${toolName} tool`) && (
+          {showDetails && classifiedError && diagnosticsSummaryForFailure(classifiedError, `${toolName} tool`) && (
             <ErrorDiagnosticsActions summary={diagnosticsSummaryForFailure(classifiedError, `${toolName} tool`)!} />
           )}
         </div>
@@ -4199,13 +4209,14 @@ function AssistantThread({
   const components = useMemo(
     () =>
       messagePartComponents(
-        uiSettings.showToolUi,
-        uiSettings.showRawErrors,
-        uiSettings.showReasoning,
+        uiSettings.showDeveloperDetails && uiSettings.showToolUi,
+        uiSettings.showDeveloperDetails && uiSettings.showRawErrors,
+        uiSettings.showDeveloperDetails && uiSettings.showReasoning,
         uiSettings.autoExpandReasoning,
         callbacks.onImageGenerationModelSelect,
       ),
     [
+      uiSettings.showDeveloperDetails,
       uiSettings.showToolUi,
       uiSettings.showRawErrors,
       uiSettings.showReasoning,
@@ -4623,7 +4634,13 @@ function AssistantThread({
   const selectedProvider = modelRef.current?.provider;
   const usingGoogleModel = selectedProvider === "google";
 
-  useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
+  useEffect(() => {
+    if (!loadKeatingUiSettings().showDeveloperDetails) clearTeachingDraftContents();
+    return subscribeKeatingUiSettings(settings => {
+      if (!settings.showDeveloperDetails) clearTeachingDraftContents();
+      setUiSettings(settings);
+    });
+  }, []);
 
   useEffect(() => {
     if (!composerHasUrl) {
@@ -4693,6 +4710,7 @@ function AssistantThread({
       <QuizGradesContext.Provider value={quizGradesContextValue}>
 		<OpenUISessionScopeContext.Provider value={callbacks.sessionId}>
 			<KeatingOpenUIActionProvider onAction={handleOpenUIAction}>
+          <DeveloperChatDetails.Provider value={uiSettings.showDeveloperDetails}>
           <AssistantRuntimeProvider runtime={runtime}>
             <ThreadPrimitive.Root
               className={css({
@@ -4750,7 +4768,7 @@ function AssistantThread({
                     />
                   </AuiIf>
                   <ThreadPrimitive.Messages components={threadComponents} />
-                  {agent && <DraftReviewStatus sessionId={agent.sessionId} status={draftStatus} />}
+                  {agent && <DraftReviewStatus sessionId={agent.sessionId} status={draftStatus} showDeveloperDetails={uiSettings.showDeveloperDetails} />}
                 </div>
                 <ThreadPrimitive.ViewportFooter
                   className={css({
@@ -5017,6 +5035,7 @@ function AssistantThread({
               </ThreadPrimitive.Viewport>
             </ThreadPrimitive.Root>
           </AssistantRuntimeProvider>
+          </DeveloperChatDetails.Provider>
 			</KeatingOpenUIActionProvider>
 		</OpenUISessionScopeContext.Provider>
       </QuizGradesContext.Provider>
@@ -5285,6 +5304,7 @@ function AssistantMessage({
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [feedbackType, setFeedbackType] = useState<"up" | "down">("up");
   const onAuthError = useContext(AuthErrorContext);
+  const developerMode = useContext(DeveloperChatDetails);
   const authError = useAuiState(
     ({ message }) =>
       message.metadata.custom?.keatingAuthError as AuthErrorEntry | undefined,
@@ -5405,16 +5425,16 @@ function AssistantMessage({
             </div>
             {llmFailure && canRetry && onRetry && (
               <FailedResponseRecovery
-                recovery={llmFailure.recovery}
+                recovery={developerMode ? llmFailure.recovery : undefined}
                 onRetry={onRetry}
-                diagnosticsSummary={diagnosticsSummaryForFailure(llmFailure)}
+                diagnosticsSummary={developerMode ? diagnosticsSummaryForFailure(llmFailure) : undefined}
               />
             )}
             {/* A reportable failure with no retry control still needs a way out. */}
-            {llmFailure && !(canRetry && onRetry) && diagnosticsSummaryForFailure(llmFailure) && (
+            {developerMode && llmFailure && !(canRetry && onRetry) && diagnosticsSummaryForFailure(llmFailure) && (
               <ErrorDiagnosticsActions summary={diagnosticsSummaryForFailure(llmFailure)!} />
             )}
-            {llmFailure && retryAttempts && retryAttempts > 1 && (
+            {developerMode && llmFailure && retryAttempts && retryAttempts > 1 && (
               <p
                 className={css({
                   marginTop: "0.5rem",

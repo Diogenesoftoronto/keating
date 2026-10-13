@@ -11,7 +11,7 @@ import { validateUiDocument, type UiDocument } from "@keating/learner-contracts"
  * of them when replaying persisted turns, while reserving source compilation
  * for the explicit browser source labels.
  */
-const OPENUI_FENCE = /```(openui|openui-lang|keating-ui|ui-document|openui-json)(?:[ \t]+([^\n]*))?\n/g;
+const OPENUI_FENCE = /```(openui|openui-lang|keating-ui|ui-document|openui-json)(?:[ \t]+([^\r\n]*))?\r?\n/g;
 const DOCUMENT_ID = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$/;
 
 function hashProgram(program: string): string {
@@ -97,14 +97,14 @@ function findClosingFence(text: string, bodyStart: number): { index: number; end
 		}
 
 		const atLineStart = index === bodyStart || text[index - 1] === "\n";
-		if (atLineStart && text.startsWith("```", index)) {
-			const afterFence = index + 3;
-			if (afterFence === text.length || text[afterFence] === "\n") {
-				return {
-					index: index === bodyStart ? index : index - 1,
-					end: afterFence < text.length ? afterFence + 1 : afterFence,
-				};
-			}
+		if (atLineStart) {
+			// Markdown permits up to three leading spaces and trailing whitespace.
+			// Preserve quote-aware scanning: fences inside source strings stay inert.
+			const fence = /^ {0,3}```[ \t]*(?:\r?\n|$)/.exec(text.slice(index));
+			if (fence) return {
+				index: index === bodyStart ? index : index - 1,
+				end: index + fence[0].length,
+			};
 		}
 		index += 1;
 	}

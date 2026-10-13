@@ -11,6 +11,31 @@ export interface TeachingDraftStatus {
 }
 
 const states = new Map<string, TeachingDraftStatus>();
+export interface TeachingDraftInspectedCandidate {
+  readonly attempt: number;
+  readonly variant: "interactive" | "prose" | "default";
+  readonly text: string;
+  readonly truncated: boolean;
+}
+/** Separate volatile store: never part of diagnostics, durable receipts, or export. */
+const contentStates = new Map<string, readonly TeachingDraftInspectedCandidate[]>();
+const MAX_INSPECTED_TEXT = 64_000;
+export function getTeachingDraftContent(sessionId: string | null | undefined): readonly TeachingDraftInspectedCandidate[] | null {
+  return sessionId ? contentStates.get(sessionId) ?? null : null;
+}
+export function publishTeachingDraftContent(sessionId: string, candidate: import("@keating/learner-contracts").TeachingDraftCandidateText | null): void {
+  if (!candidate) { if (contentStates.delete(sessionId)) emit(); return; }
+  if (!Number.isSafeInteger(candidate.attempt) || candidate.attempt < 1 || candidate.attempt > 10
+    || typeof candidate.text !== "string" || !["interactive", "prose", "default"].includes(candidate.variant)) return;
+  const safe: TeachingDraftInspectedCandidate = { attempt: candidate.attempt, variant: candidate.variant,
+    text: candidate.text.slice(0, MAX_INSPECTED_TEXT), truncated: candidate.text.length > MAX_INSPECTED_TEXT };
+  const previous = contentStates.get(sessionId) ?? [];
+  contentStates.delete(sessionId);
+  contentStates.set(sessionId, [...previous.filter(item => item.attempt !== safe.attempt), safe].slice(-10));
+  while (contentStates.size > 20) contentStates.delete(contentStates.keys().next().value!);
+  emit();
+}
+export function clearTeachingDraftContents(): void { contentStates.clear(); emit(); }
 const listeners = new Set<() => void>();
 const checkIds = new Set<string>([...TEACHING_POLICY_RULES.map(rule => rule.id), ...TEACHING_POLICY_DETERMINISTIC_RULES,
   "quality_progress", "quality_scope", "runtime_tool_schema"]);
@@ -99,6 +124,7 @@ export function publishTeachingDraftStatus(sessionId: string, snapshot: Teaching
   const previous = states.get(sessionId);
   const isNew = !previous || snapshot.phase === "planning" && previous.snapshot.phase !== "planning";
   const safe = projectTeachingDraftSnapshot(snapshot);
+  if (isNew || safe.phase === "cancelled") contentStates.delete(sessionId);
   states.delete(sessionId);
   const id = isNew ? ++nextId : previous.id;
   if (terminal(safe) && !(previous && previous.id === id && terminal(previous.snapshot))) tallyTerminalTurn(safe);
@@ -169,8 +195,8 @@ export function recordTeachingDraftFeedback(sessionId: string, id: number, feedb
   return true;
 }
 
-export function clearTeachingDraftStatuses(): void { states.clear(); emit(); }
-export function clearTeachingDraftStatus(sessionId: string): void { if (states.delete(sessionId)) emit(); }
+export function clearTeachingDraftStatuses(): void { states.clear(); contentStates.clear(); emit(); }
+export function clearTeachingDraftStatus(sessionId: string): void { const changed = states.delete(sessionId); const contentChanged = contentStates.delete(sessionId); if (changed || contentChanged) emit(); }
 
 export function teachingDraftIsActive(status: TeachingDraftStatus | null): boolean {
   return !!status && !["released", "withheld", "cancelled"].includes(status.snapshot.phase);

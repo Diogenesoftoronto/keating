@@ -98,6 +98,7 @@ export function KeatingOpenUIRenderer({
 	metadata,
 	isStreaming = false,
 	sourceComplete = !isStreaming,
+	developerMode = false,
 }: {
 	program?: string;
 	/** Full inert source, including any uncommitted streaming tail. */
@@ -107,6 +108,8 @@ export function KeatingOpenUIRenderer({
 	isStreaming?: boolean;
 	/** True only after the source fence closes; partial source remains inert. */
 	sourceComplete?: boolean;
+	/** Include compiler diagnostics and preserved source for development. */
+	developerMode?: boolean;
 }) {
 	const hostAction = useContext(OpenUIActionContext);
 	const storage = useMemo(browserStorage, []);
@@ -131,9 +134,18 @@ export function KeatingOpenUIRenderer({
 					metadata={metadata}
 					storage={storage}
 					hostAction={hostAction}
+					developerMode={developerMode}
 				/>
 			) : program || source ? (
-				<InertOpenUISourceRecovery source={source ?? program ?? ""} state="incomplete" />
+				isStreaming ? <InertOpenUISourceRecovery source={source ?? program ?? ""} state="incomplete" developerMode={developerMode} /> : <CompletedOpenUISource
+					key={`${metadata.id}:${metadata.revision}:incomplete`}
+					program={source ?? program ?? ""}
+					metadata={metadata}
+					storage={storage}
+					hostAction={hostAction}
+					developerMode={developerMode}
+					sourceComplete={false}
+				/>
 			) : null}
 		</div>
 	);
@@ -159,12 +171,23 @@ function recoverableFailure(kind: OpenUISourceFailureKind): boolean {
 	return kind === "invalid" || kind === "unsupported";
 }
 
+/** Claim one automatic repair without allowing remounts to repeat it. */
+export function __claimOpenUICompileRecovery(documentId: string, kind: OpenUISourceFailureKind): number | null {
+	if (!recoverableFailure(kind) || compileRecovery.attempted.has(documentId)) return null;
+	if (compileRecovery.consecutiveFailures >= MAX_COMPILE_RECOVERY_ATTEMPTS) return null;
+	compileRecovery.attempted.add(documentId);
+	compileRecovery.consecutiveFailures += 1;
+	return compileRecovery.consecutiveFailures;
+}
+
 export function __resetOpenUICompileRecovery(): void {
 	compileRecovery.consecutiveFailures = 0;
 	compileRecovery.attempted.clear();
 }
 
 function CompletedOpenUISource({
+	sourceComplete = true,
+	developerMode,
 	program,
 	metadata,
 	storage,
@@ -174,8 +197,11 @@ function CompletedOpenUISource({
 	metadata: OpenUIDocumentMetadata;
 	storage: StorageLike | null;
 	hostAction: KeatingOpenUIActionHandler | null;
+	developerMode: boolean;
+	sourceComplete?: boolean;
 }) {
 	const [prepared] = useState<{ document: UiDocument; error?: undefined; kind?: undefined } | { document?: undefined; error: string; kind: OpenUISourceFailureKind }>(() => {
+		if (!sourceComplete) return { error: "The response ended before the OpenUI source fence closed.", kind: "invalid" };
 		const compiled = tryCompileOpenUISourceToSharedDocument(program, {
 			documentId: metadata.id,
 			revision: metadata.revision,
@@ -206,15 +232,17 @@ function CompletedOpenUISource({
 
 	const requestRegeneration = useCallback((manual: boolean) => {
 		if (!hostAction || !failure || !kind) return false;
-		const next = compileRecovery.consecutiveFailures + 1;
-		if (!manual && (next > MAX_COMPILE_RECOVERY_ATTEMPTS || !recoverableFailure(kind))) {
+		if (manual) {
+			compileRecovery.consecutiveFailures = 0;
+			compileRecovery.attempted.delete(metadata.id);
+		}
+		const next = __claimOpenUICompileRecovery(metadata.id, kind);
+		if (next === null) {
 			setExhausted(true);
 			return false;
 		}
-		compileRecovery.consecutiveFailures = manual ? 1 : next;
-		compileRecovery.attempted.add(metadata.id);
-		setAttempt(compileRecovery.consecutiveFailures);
-		void hostAction({
+		setAttempt(next);
+		void Promise.resolve().then(() => hostAction({
 			kind: "legacy",
 			type: "regenerate-interaction",
 			humanFriendlyMessage: "This interaction could not be built and needs regenerating",
@@ -222,12 +250,12 @@ function CompletedOpenUISource({
 				interaction: "regenerate",
 				reason: failure,
 				failureKind: kind,
-				attempt: compileRecovery.consecutiveFailures,
+				attempt: next,
 				maxAttempts: MAX_COMPILE_RECOVERY_ATTEMPTS,
 				source: program,
 			},
 			document: metadata,
-		});
+		})).then((accepted) => { if (accepted === false) setExhausted(true); }).catch(() => setExhausted(true));
 		return true;
 	}, [failure, hostAction, kind, metadata, program]);
 
@@ -248,9 +276,11 @@ function CompletedOpenUISource({
 			hostAction={hostAction}
 		/>;
 	}
+	if (!developerMode) return null;
 	const rebuilding = attempt > 0 && !exhausted;
 	return <InertOpenUISourceRecovery
 		source={program}
+		developerMode={developerMode}
 		state={rebuilding ? "rebuilding" : "rejected"}
 		error={prepared.error}
 		attempt={attempt}
@@ -259,6 +289,7 @@ function CompletedOpenUISource({
 }
 
 function InertOpenUISourceRecovery({
+	developerMode = false,
 	source,
 	state,
 	error,
@@ -267,6 +298,7 @@ function InertOpenUISourceRecovery({
 }: {
 	source: string;
 	state: "incomplete" | "rejected" | "rebuilding";
+	developerMode?: boolean;
 	error?: string;
 	attempt?: number;
 	onRetry?: () => void;
@@ -282,10 +314,10 @@ function InertOpenUISourceRecovery({
 				: <CircleAlert aria-hidden="true" size={15} className={css({ marginTop: "0.0625rem", flexShrink: 0 })} />}
 			<div className={css({ display: "grid", gap: "0.5rem" })}>
 				<span>{state === "incomplete"
-					? "This interaction is incomplete. Its source is preserved as inert text and has not been executed."
+					? "This activity is still being prepared. You can keep reading the lesson while it finishes."
 					: state === "rebuilding"
 						? `Rebuilding this interaction${attempt && attempt > 1 ? ` (attempt ${attempt} of ${MAX_COMPILE_RECOVERY_ATTEMPTS})` : ""}…`
-						: `This interaction could not be built${error ? `: ${error}` : "."} Nothing was executed.`}</span>
+						: "This activity could not be displayed. You can ask Keating to rebuild it or explain it in the chat."}</span>
 				{onRetry ? <div>
 					<button
 						type="button"
@@ -297,12 +329,15 @@ function InertOpenUISourceRecovery({
 				</div> : null}
 			</div>
 		</div>
-		{state === "rebuilding" ? null : <details className={css({ borderTop: "1px solid var(--border)" })}>
-			<summary className={css({ cursor: "pointer", padding: "0.5rem 0.75rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>Show source</summary>
+		{!developerMode ? null : <details className={css({ borderTop: "1px solid var(--border)" })}>
+			<summary className={css({ cursor: "pointer", padding: "0.5rem 0.75rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>Development details</summary>
+			{error ? <p>{error}</p> : null}
 			<pre className={css({ margin: 0, maxHeight: "18rem", overflow: "auto", borderTop: "1px solid var(--border)", padding: "0.75rem", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontFamily: "mono", fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>{source}</pre>
 		</details>}
 	</section>;
 }
+
+export const __test_InertOpenUISourceRecovery = InertOpenUISourceRecovery;
 
 function canonicalActionParams(action: UiAction): Record<string, unknown> {
 	const {

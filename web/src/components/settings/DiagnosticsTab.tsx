@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { css, cx } from "../../../styled-system/css";
 import { downloadTextFile } from "../../lib/browser-download";
 import {
@@ -15,13 +15,14 @@ import {
 	subscribeSessionDebug,
 	type SessionDebugEvent,
 } from "../../lib/session-debug";
+import { loadKeatingUiSettings, saveKeatingUiSettings, subscribeKeatingUiSettings } from "../../keating/ui-settings";
 import { Toggle } from "../Toggle";
 import { JudgementDiagnostics } from "../JudgementDiagnostics";
 import { CopyDiagnosticButton } from "./CopyDiagnosticButton";
 import { explainDiagnostic, buildHealthChecks, buildHealthText, groupProblems, overallStatus, type CheckStatus } from "../../lib/diagnostics-insights";
 import { diagnosticReportMailto, readDiagnosticRuntimeSnapshot, sendDiagnosticReport } from "../../lib/diagnostics";
 import { PROVIDER_CREDENTIALS_CHANGED_EVENT } from "../../keating/model-prefs";
-import { useConnectedProviders } from "./ProviderConnectPanel";
+import { useProviderConnectionState } from "./ProviderConnectPanel";
 import { getProviders } from "@earendil-works/pi-ai/compat";
 
 const stackClass = css({ display: "flex", flexDirection: "column", gap: "1.5rem" });
@@ -271,10 +272,10 @@ const PROVIDER_LIST = [...getProviders(), "notorganic"];
 
 function HealthSummary() {
 	const entries = useSyncExternalStore(subscribeDiagnostics, getDiagnosticsSnapshot, getDiagnosticsSnapshot);
-	const connected = useConnectedProviders(PROVIDER_LIST);
+	const { connected, checked } = useProviderConnectionState(PROVIDER_LIST);
 	const [status, setStatus] = useState("");
 	const [sending, setSending] = useState(false);
-	const checks = buildHealthChecks({ runtime: readDiagnosticRuntimeSnapshot(), entries, connectedProviderCount: connected.size });
+	const checks = buildHealthChecks({ runtime: readDiagnosticRuntimeSnapshot(), entries, connectedProviderCount: connected.size > 0 || checked ? connected.size : null });
 	const overall = overallStatus(checks);
 	const problems = groupProblems(entries);
 
@@ -352,9 +353,16 @@ function HealthSummary() {
 }
 
 export function DiagnosticsTab() {
+	const [uiSettings, setUiSettings] = useState(loadKeatingUiSettings);
+	useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
 	return (
 		<div className={stackClass}>
 			<HealthSummary />
+			<section className={sectionClass} aria-labelledby="developer-chat-heading">
+				<h3 id="developer-chat-heading" className={headingClass}>Developer chat details</h3>
+				<p className={mutedClass}>Show draft reviews, reasoning, and technical tool details in chat. Off by default.</p>
+				<Toggle aria-label="Show developer chat details" checked={uiSettings.showDeveloperDetails} onChange={enabled => saveKeatingUiSettings({ ...loadKeatingUiSettings(), showDeveloperDetails: enabled })} />
+			</section>
 			<details>
 				<summary className={summaryClass}>Advanced: technical logs and session inspector</summary>
 				<div className={cx(stackClass, css({ marginTop: "1rem" }))}>

@@ -10,16 +10,18 @@ export interface ProviderConnectionReaders {
 export async function readConnectedProviders(
   providers: readonly string[],
   readers: ProviderConnectionReaders,
+  onConnected?: (connected: Set<string>) => void,
 ): Promise<Set<string>> {
   const connected = new Set<string>();
   await Promise.all(providers.map(async (provider) => {
     try {
       if (provider === NOTORGANIC_PROVIDER_ID) {
-        if (await readers.hostedSession()) connected.add(provider);
+        if (await readers.hostedSession()) { connected.add(provider); onConnected?.(new Set(connected)); }
         return;
       }
       if ((await readers.apiKey(provider))?.trim() || await readers.oauth(provider)) {
         connected.add(provider);
+        onConnected?.(new Set(connected));
       }
     } catch { /* unavailable or expired credentials are not connected */ }
   }));

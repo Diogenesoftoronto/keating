@@ -125,7 +125,7 @@ export function groupProblems(entries: readonly DiagnosticEntry[]): ExplainedGro
 export function buildHealthChecks(input: {
 	runtime: DiagnosticRuntimeSnapshot;
 	entries: readonly DiagnosticEntry[];
-	connectedProviderCount: number;
+	connectedProviderCount: number | null;
 }): HealthCheck[] {
 	const { runtime, entries, connectedProviderCount } = input;
 	const recentErrors = entries.filter((e) => e.level === "error").length;
@@ -139,11 +139,11 @@ export function buildHealthChecks(input: {
 		{
 			id: "provider",
 			label: "Model access",
-			status: connectedProviderCount > 0 ? "ok" : "problem",
-			detail: connectedProviderCount > 0
+			status: connectedProviderCount === null ? "warning" : connectedProviderCount > 0 ? "ok" : "problem",
+			detail: connectedProviderCount === null ? "Checking model access…" : connectedProviderCount > 0
 				? `${connectedProviderCount} provider${connectedProviderCount === 1 ? "" : "s"} connected.`
 				: "No provider is connected, so Keating can't answer yet.",
-			...(connectedProviderCount > 0 ? {} : { fix: { label: "Connect a provider", tab: "models" } }),
+			...(connectedProviderCount === null || connectedProviderCount > 0 ? {} : { fix: { label: "Connect a provider", tab: "models" } }),
 		},
 		{
 			id: "storage",

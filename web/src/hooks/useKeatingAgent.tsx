@@ -55,7 +55,7 @@ import {
 import { recordDiagnostic } from "../lib/diagnostics";
 import { createReplyJudgementObserver } from "../keating/judgement/reply-review";
 import { withTeachingDraftGate } from "../keating/judgement/draft-gate";
-import { clearTeachingDraftStatus, projectTeachingDraftSnapshot, publishTeachingDraftStatus } from "../keating/judgement/draft-status";
+import { clearTeachingDraftStatus, projectTeachingDraftSnapshot, publishTeachingDraftStatus, publishTeachingDraftContent } from "../keating/judgement/draft-status";
 import { teachingDraftEvidence } from "../keating/judgement/draft-evidence";
 import { loadActiveWork } from "../keating/judgement/active-work-host";
 import { createWebActivityLearning } from "../keating/judgement/activity-learning";
@@ -1529,6 +1529,8 @@ export function useKeatingAgent(
             return { ...teachingDraftEvidence(profile), activeWork };
           },
           onProgress: snapshot => publishTeachingDraftStatus(agentSessionId, snapshot),
+          captureDraftContent: () => loadKeatingUiSettings().showDeveloperDetails,
+          onDraftContent: candidate => publishTeachingDraftContent(agentSessionId, candidate),
           onReceipt: receipt => {
             void keatingStorage.recordTeachingDraftReceipt({
               id: `${agentSessionId}:${receipt.messageTimestamp}`,

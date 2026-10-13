@@ -19,6 +19,8 @@ export type ShareLinkMode = "portable-short" | "compressed-hash" | "local-short"
 
 export interface KeatingUiSettings {
 	showToolUi: boolean;
+	/** Explicit opt-in for chat review receipts and technical traces. */
+	showDeveloperDetails: boolean;
 	autoOpenArtifacts: boolean;
 	limitInlineArtifactPreviews: boolean;
 	showRawErrors: boolean;
@@ -51,6 +53,7 @@ export interface KeatingUiSettings {
 export const DEFAULT_UI_SETTINGS: KeatingUiSettings = {
 	// Tool call cards stay out of the transcript until the learner asks for them.
 	showToolUi: false,
+	showDeveloperDetails: false,
 	autoOpenArtifacts: true,
 	limitInlineArtifactPreviews: true,
 	showRawErrors: false,
@@ -186,6 +189,7 @@ function normalizeSettings(value: LegacyUiSettingsInput | null): KeatingUiSettin
 
 	return {
 		showToolUi: value?.showToolUi ?? DEFAULT_UI_SETTINGS.showToolUi,
+		showDeveloperDetails: value?.showDeveloperDetails === true,
 		autoOpenArtifacts: value?.autoOpenArtifacts ?? DEFAULT_UI_SETTINGS.autoOpenArtifacts,
 		limitInlineArtifactPreviews: value?.limitInlineArtifactPreviews ?? DEFAULT_UI_SETTINGS.limitInlineArtifactPreviews,
 		showRawErrors: value?.showRawErrors ?? DEFAULT_UI_SETTINGS.showRawErrors,

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DraftContentInspection } from "./DraftContentInspection";
 import { JudgementStateInspector } from "./JudgementStateInspector";
 import type { TeachingDraftPhase, TeachingDraftSnapshot } from "@keating/learner-contracts";
 import { css } from "../../styled-system/css";
@@ -29,7 +30,7 @@ function issues(snapshot: TeachingDraftSnapshot): string[] {
   return [...groups];
 }
 
-export function DraftReviewStatus({ sessionId, status }: { sessionId: string; status: TeachingDraftStatus | null }) {
+export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = false }: { sessionId: string; status: TeachingDraftStatus | null; showDeveloperDetails?: boolean }) {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [copyFailed, setCopyFailed] = useState(false);
   if (!status) return null;
@@ -54,6 +55,7 @@ export function DraftReviewStatus({ sessionId, status }: { sessionId: string; st
         : "The reviewer is unavailable. Check the judgement model in Settings → Providers & Models, then retry."
       : combining ? "Combining the completed drafts into one coherent response. The merged response still awaits its own review."
       : descriptions[snapshot.phase];
+  if (!showDeveloperDetails) return null;
   const feedback = (kind: TeachingDraftFeedbackKind) => recordTeachingDraftFeedback(sessionId, status.id, kind);
   const copy = async () => {
     try { await navigator.clipboard.writeText(JSON.stringify(status, null, 2)); setCopiedId(status.id); setCopyFailed(false); }
@@ -80,6 +82,7 @@ export function DraftReviewStatus({ sessionId, status }: { sessionId: string; st
       </div>}
       {status.feedback && <p role="status" className={muted}>Feedback saved in this tab.</p>}
     </details>}
+    <DraftContentInspection sessionId={sessionId} enabled={showDeveloperDetails} />
     <details>
         <summary className={detail}>Developer diagnostics</summary>
         <JudgementStateInspector snapshot={snapshot} />

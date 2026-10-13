@@ -1,3 +1,4 @@
+import { buildHealthChecks } from "../lib/diagnostics-insights";
 import { describe, expect, test } from "bun:test";
 import { readConnectedProviders, type ProviderConnectionReaders } from "../lib/provider-connection";
 
@@ -30,4 +31,28 @@ describe("provider credential availability", () => {
     expect(connected.has("anthropic")).toBe(true);
     expect(connected.has("google")).toBe(false);
   });
+});
+
+test("hosted connection is available while an unrelated local credential read is pending", async () => {
+  let finish!: (value: string | null) => void;
+  const pending = new Promise<string | null>(resolve => { finish = resolve; });
+  const updates: Set<string>[] = [];
+  const result = readConnectedProviders(["openai", "notorganic"], {
+    hostedSession: async () => ({ accessToken: "test-only" }),
+    apiKey: async () => pending,
+    oauth: async () => null,
+  }, connected => updates.push(connected));
+  await Promise.resolve(); await Promise.resolve();
+  expect(updates[0]?.has("notorganic")).toBe(true);
+  finish(null);
+  expect((await result).has("notorganic")).toBe(true);
+});
+
+test("health distinguishes pending access from verified absence", () => {
+  const runtime = { appVersion: "test", pathname: "/chat", online: true, userAgent: "test", platform: "test", serviceWorkerAvailable: false, serviceWorkerControlled: false, localStorageAvailable: true, indexedDbAvailable: true };
+  const provider = (count: number | null) => buildHealthChecks({ runtime, entries: [], connectedProviderCount: count }).find(check => check.id === "provider")!;
+  expect(provider(null).detail).toBe("Checking model access…");
+  expect(provider(null).fix).toBeUndefined();
+  expect(provider(0).status).toBe("problem");
+  expect(provider(1).status).toBe("ok");
 });

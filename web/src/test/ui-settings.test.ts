@@ -217,3 +217,17 @@ describe("Keating UI Settings", () => {
 		});
 	});
 });
+
+ it("developer chat details require explicit opt-in and react to preference changes", () => {
+  mockStorage.clear();
+  expect(loadKeatingUiSettings().showDeveloperDetails).toBe(false);
+  mockStorage.setItem("keating_ui_settings", JSON.stringify({ showReasoning: true, showToolUi: true, showDeveloperDetails: "true" }));
+  expect(loadKeatingUiSettings().showDeveloperDetails).toBe(false);
+  const changes: boolean[] = [];
+  const unsubscribe = subscribeKeatingUiSettings(settings => changes.push(settings.showDeveloperDetails));
+  saveKeatingUiSettings({ ...loadKeatingUiSettings(), showDeveloperDetails: true });
+  expect(loadKeatingUiSettings().showDeveloperDetails).toBe(true);
+  saveKeatingUiSettings({ ...loadKeatingUiSettings(), showDeveloperDetails: false });
+  expect(changes).toEqual([true, false]);
+  unsubscribe();
+ });

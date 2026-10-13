@@ -11,7 +11,7 @@ afterEach(clearTeachingDraftStatuses);
 
 test("best available release does not imply every review concern passed", () => {
   publishTeachingDraftStatus("best-effort", { ...snapshot, phase: "released", reason: "best-effort-draft", selectedAttempt: 2 });
-  const html = renderToStaticMarkup(<DraftReviewStatus sessionId="best-effort" status={getTeachingDraftStatus("best-effort")} />);
+  const html = renderToStaticMarkup(<DraftReviewStatus showDeveloperDetails sessionId="best-effort" status={getTeachingDraftStatus("best-effort")} />);
   expect(html).toContain("Best available response");
   expect(html).toContain("Some review concerns remain");
   expect(html).not.toContain("Response checked");
@@ -33,7 +33,7 @@ test("synthesis diagnostics retain only two distinct bounded preceding attempt n
 
 test("synthesis generation reports a coherent combination awaiting its own review", () => {
   publishTeachingDraftStatus("synthesis", { ...snapshot, phase: "revising", attempt: 3, synthesisSourceAttempts: [1, 2] });
-  const html = renderToStaticMarkup(<DraftReviewStatus sessionId="synthesis" status={getTeachingDraftStatus("synthesis")} />);
+  const html = renderToStaticMarkup(<DraftReviewStatus showDeveloperDetails sessionId="synthesis" status={getTeachingDraftStatus("synthesis")} />);
   expect(html).toContain("Combining completed drafts");
   expect(html).toContain("one coherent response");
   expect(html).toContain("still awaits its own review");
@@ -92,7 +92,7 @@ test("draft review shows content-free progress with no preview", () => {
   publishTeachingDraftStatus("a", { ...snapshot, text: "PRIVATE_DRAFT", reasoningText: "PRIVATE_THOUGHT" } as TeachingDraftSnapshot);
   const state = getTeachingDraftStatus("a");
   expect(teachingDraftIsActive(state)).toBe(true);
-  const html = renderToStaticMarkup(<DraftReviewStatus sessionId="a" status={state} />);
+  const html = renderToStaticMarkup(<DraftReviewStatus showDeveloperDetails sessionId="a" status={state} />);
   expect(html).toContain("Reviewing the completed response");
   expect(html).toContain("Generation finished.");
   expect(html).toContain("Attempt 1 of 3");
@@ -103,7 +103,7 @@ test("draft review shows content-free progress with no preview", () => {
 
 test("generation progress does not imply a completed or reviewed draft", () => {
   for (const phase of ["drafting", "revising"] as const) {
-    const html = renderToStaticMarkup(<DraftReviewStatus sessionId="a" status={{ id: 1, feedback: null, snapshot: { ...snapshot, phase } }} />);
+    const html = renderToStaticMarkup(<DraftReviewStatus showDeveloperDetails sessionId="a" status={{ id: 1, feedback: null, snapshot: { ...snapshot, phase } }} />);
     expect(html).toContain(phase === "drafting" ? "Generating a response" : "Generating an improved response");
     expect(html).not.toContain("Generation finished.");
     expect(html).not.toContain("Reviewing the completed response");
@@ -112,7 +112,7 @@ test("generation progress does not imply a completed or reviewed draft", () => {
 
 test("released review count excludes failed generations", () => {
   const attempt = { attempt: 1, reasoning: "low", standard: "concise", variant: "default", generationMs: 100, judgementMs: 0, checks: [] } as const;
-  const html = renderToStaticMarkup(<DraftReviewStatus sessionId="a" status={{ id: 1, feedback: null, snapshot: {
+  const html = renderToStaticMarkup(<DraftReviewStatus showDeveloperDetails sessionId="a" status={{ id: 1, feedback: null, snapshot: {
     ...snapshot, phase: "released", selectedAttempt: 2, attempts: [
       { ...attempt, status: "generation-error" },
       { ...attempt, attempt: 2, status: "pass", judgementMs: 30 },
@@ -129,7 +129,7 @@ test("rejected attempts expose only rule diagnostics, and feedback targets the e
     checks: [{ id: "retention_overclaimed", source: "jev", severity: "critical", status: "fail", probability: .99, explanation: "PRIVATE_DRAFT" }],
   }] } as unknown as TeachingDraftSnapshot);
   const state = getTeachingDraftStatus("a")!;
-  const html = renderToStaticMarkup(<DraftReviewStatus sessionId="a" status={state} />);
+  const html = renderToStaticMarkup(<DraftReviewStatus showDeveloperDetails sessionId="a" status={state} />);
   expect(html).toContain("could not be approved");
   expect(html).toContain("Claims needed stronger evidence");
   expect(html).toContain("Developer diagnostics");
@@ -145,7 +145,7 @@ test("rejected attempts expose only rule diagnostics, and feedback targets the e
 
 test("stopped review has no publication or misleading approved status", () => {
   publishTeachingDraftStatus("a", { ...snapshot, phase: "cancelled" });
-  const html = renderToStaticMarkup(<DraftReviewStatus sessionId="a" status={getTeachingDraftStatus("a")} />);
+  const html = renderToStaticMarkup(<DraftReviewStatus showDeveloperDetails sessionId="a" status={getTeachingDraftStatus("a")} />);
   expect(html).toContain("Draft cancelled");
   expect(html).not.toContain("Response checked");
   expect(teachingDraftIsActive(getTeachingDraftStatus("a"))).toBe(false);
@@ -202,4 +202,17 @@ test("finished turns are tallied once, content-free, into session diagnostics", 
     { interactionAction: "none", paired: false, interactiveSelected: false, openuiValid: "unchecked", planAction: "none" },
     { interactionAction: "none", paired: false, interactiveSelected: false, openuiValid: "unchecked", planAction: "none" },
   ]);
+});
+
+ test("review progress and receipts stay out of default chat", () => {
+  for (const phase of ["checking", "released", "revising", "cancelled"] as const) {
+    const status = { id: 1, feedback: null, snapshot: { ...snapshot, phase } };
+    expect(renderToStaticMarkup(<DraftReviewStatus sessionId="default" status={status} />)).toBe("");
+    expect(renderToStaticMarkup(<DraftReviewStatus showDeveloperDetails sessionId="developer" status={status} />)).toContain("Response review");
+  }
+});
+
+test("withheld reviews remain hidden in default chat", () => {
+  const status = { id: 1, feedback: null, snapshot: { ...snapshot, phase: "withheld" as const, reason: "backend-payment-required" } };
+  expect(renderToStaticMarkup(<DraftReviewStatus sessionId="recovery" status={status} />)).toBe("");
 });

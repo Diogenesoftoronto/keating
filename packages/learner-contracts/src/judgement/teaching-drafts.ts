@@ -113,7 +113,15 @@ export interface TeachingDraftGenerationInput {
   readonly feedback: readonly TeachingDraftFeedback[];
   readonly signal: AbortSignal;
 }
+/** Explicit opt-in inspection of generated answer text. Never reasoning or tool arguments. */
+export interface TeachingDraftCandidateText {
+  readonly attempt: number;
+  readonly variant: TeachingDraftVariant;
+  readonly text: string;
+}
 export interface TeachingDraftOptions<T> {
+  /** Ephemeral developer inspection only; never copied into snapshots or receipts. */
+  readonly onDraftContent?: (candidate: TeachingDraftCandidateText) => void;
   /** Hosted reply comparison is experimental and must be explicitly selected. */
   readonly activityLearningMode?: "background" | "live";
   /** A tested local policy, captured once before planning. Never a promise or remote lookup. */
@@ -518,6 +526,10 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
         attempts.push({ attempt, reasoning, standard, generationMs: now() - started, judgementMs: 0, status: "generation-error", checks: [], variant, ...provenance });
         reason = "generation-unavailable";
         continue;
+      }
+      if (!controller.signal.aborted && options.onDraftContent) {
+        try { options.onDraftContent({ attempt, variant, text: generated.reply.text }); }
+        catch { /* Inspection cannot change review or publication. */ }
       }
       const generationMs = now() - started;
       publish("checking");

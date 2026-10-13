@@ -92,6 +92,10 @@ export interface TeachingDraftReceipt {
 }
 
 export interface TeachingDraftGateOptions {
+  /** Read at turn start and before delivery; disabled by default. */
+  readonly captureDraftContent?: () => boolean;
+  /** Private ephemeral answer text only; null clears this turn's inspection. */
+  readonly onDraftContent?: (candidate: import("@keating/learner-contracts").TeachingDraftCandidateText | null) => void;
   readonly sessionId: string;
   readonly basePrompt: () => string;
   readonly onProgress?: (snapshot: TeachingDraftSnapshot) => void;
@@ -254,6 +258,13 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
   };
   return (model, context, streamOptions) => {
     const startedAt = Date.now();
+    const captureDraftContent = options.captureDraftContent?.() === true;
+    const clearDraftContent = () => {
+      if (options.isCurrent?.() ?? true) {
+        try { options.onDraftContent?.(null); } catch { /* Inspection cannot affect publication. */ }
+      }
+    };
+    clearDraftContent();
     let activityState: ReturnType<NonNullable<TeachingDraftGateOptions["activityLearningState"]>> | undefined;
     try { const value = options.activityLearningState?.(); activityState = value ? structuredClone(value) : undefined; }
     catch { /* Optional preferences cannot interrupt a reply. */ }
@@ -386,6 +397,10 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         timeoutMs: Math.max(1, budget - (Date.now() - startedAt)),
         signal: controller.signal,
         onProgress: progress,
+        ...(captureDraftContent ? { onDraftContent: (candidate: import("@keating/learner-contracts").TeachingDraftCandidateText) => {
+          if (!current() || options.captureDraftContent?.() !== true) { clearDraftContent(); return; }
+          try { options.onDraftContent?.(candidate); } catch { /* Inspection cannot affect publication. */ }
+        } } : {}),
         check: (reply) => checkSchemas(snapshot, reply),
         generate: async ({ reasoning, systemPrompt, feedback, synthesis, textOnlyRecovery, signal }) => {
           if (!current()) throw new Error("draft-stale");
@@ -443,6 +458,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       detachEvidenceAbort?.();
       streamOptions?.signal?.removeEventListener("abort", abort);
       unsubscribe();
+      if (stopped() || options.captureDraftContent?.() !== true) clearDraftContent();
       controller.abort();
     });
     return target;
