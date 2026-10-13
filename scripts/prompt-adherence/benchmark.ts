@@ -184,7 +184,9 @@ export async function runPromptAdherenceBenchmark(options: BenchmarkOptions): Pr
       const judgments: JudgeReceipt[] = [];
       const generations: DraftBenchmarkReceipt["generations"][number][] = [];
       const result = await runTeachingDrafts({ turn, timeoutMs: options.timeoutMs,
-        maxAttempts: options.draftMaxAttempts ?? 3, maxReasoning: "high", ruleIds: fixture.ruleIds, now,
+        maxAttempts: options.draftMaxAttempts ?? 3,
+        refinement: (options.draftMaxAttempts ?? 3) > 3 ? "extended" : "ordinary",
+        maxReasoning: "high", ruleIds: fixture.ruleIds, now,
         judge: async (request, signal) => {
           const receipt = await judged(request, options.judge, options.timeoutMs, now, signal);
           judgments.push(receipt); return receipt.outcome;

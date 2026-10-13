@@ -29,7 +29,7 @@ const generate = async () => ({ reply: { text: "A concrete hint for the learner'
 describe("exhausted teaching drafts", () => {
   test("all ten semantic rejections release the best completed prose with honest failed checks", async () => {
     let count = 0;
-    const result = await runTeachingDrafts({ turn, judge: judge(request => ({
+    const result = await runTeachingDrafts({ refinement: "extended", turn, judge: judge(request => ({
       retention_overclaimed: .99, quality_progress: count === 4 ? .95 : .3, quality_scope: count === 4 ? .95 : .3,
     })), generate: async () => { count++; return { reply: { text: `Helpful answer ${count}`, toolCalls: [] }, value: count }; } });
     expect(count).toBe(10);
@@ -41,7 +41,7 @@ describe("exhausted teaching drafts", () => {
   });
   test("invalid or unauthorized tool payloads remain blocked and request recovery within budget", async () => {
     let count = 0; let recovery = false;
-    const result = await runTeachingDrafts({ turn, judge: judge(), generate: async input => {
+    const result = await runTeachingDrafts({ refinement: "extended", turn, judge: judge(), generate: async input => {
       count++; recovery ||= input.textOnlyRecovery === true;
       return { reply: { text: "Proposed operation", toolCalls: [{ name: "unauthorized", arguments: {} }] }, value: count };
     } });
@@ -50,7 +50,7 @@ describe("exhausted teaching drafts", () => {
   });
   test("host schema failures remain blocked while semantic execution concerns are recorded", async () => {
     for (const falseSuccess of [false, true]) {
-      const result = await runTeachingDrafts({ turn, maxAttempts: 1, judge: judge(() => ({ retention_overclaimed: .99,
+      const result = await runTeachingDrafts({ refinement: "extended", turn, maxAttempts: 1, judge: judge(() => ({ retention_overclaimed: .99,
         tool_success_invented: falseSuccess ? .99 : .01 })), generate,
         check: () => falseSuccess ? [] : [{ id: "host_schema", source: "deterministic", severity: "critical", status: "fail", probability: 1 }],
       });
@@ -59,7 +59,7 @@ describe("exhausted teaching drafts", () => {
   });
   test("all ten critical semantic failures rank the least concerning usable prose", async () => {
     let count = 0;
-    const result = await runTeachingDrafts({ turn, judge: judge(() => ({
+    const result = await runTeachingDrafts({ refinement: "extended", turn, judge: judge(() => ({
       tool_success_invented: count === 6 ? .81 : .99, instruction_override: .99,
     })), generate: async () => { count++; return { reply: { text: `Answer ${count}`, toolCalls: [] }, value: count }; } });
     expect(count).toBe(10); expect(result.status).toBe("released"); expect(result.value).toBe(6);
@@ -70,7 +70,7 @@ describe("exhausted teaching drafts", () => {
   });
   test("cancellation discards retained prose", async () => {
     const controller = new AbortController(); let count = 0;
-    const result = await runTeachingDrafts({ turn, signal: controller.signal,
+    const result = await runTeachingDrafts({ refinement: "extended", turn, signal: controller.signal,
       judge: judge(() => ({ retention_overclaimed: .99 })), generate: async () => {
         count++; if (count === 2) controller.abort(); return generate();
       } });

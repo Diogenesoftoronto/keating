@@ -88,6 +88,48 @@ describe("teaching policy composition", () => {
   });
 });
 
+describe("review applicability", () => {
+  test("unknown domain does not apply every subject's teaching conventions", () => {
+    const request = teachingPolicyAdherenceRequest({ ...turn, domain: "unknown" }, reply)!;
+    for (const id of ["code_trace_missing", "science_prediction_missing", "history_primary_source_missing", "art_work_missing"]) {
+      expect(request.questions[id]).toBeUndefined();
+    }
+    for (const id of ["identity_invented", "tool_success_invented", "source_contradicted", "profile_evidence_invented", "medicine_evidence_conflated", "history_disagreement_erased"]) {
+      expect(request.questions[id]).toBeDefined();
+    }
+  });
+
+  test("planning scopes coding conventions and request and assessment use exactly the same checks", () => {
+    const unknown = { ...turn, domain: "unknown" as const };
+    const scope = { domain: "code" as const, researchRequired: false };
+    const request = teachingPolicyAdherenceRequest(unknown, reply, undefined, scope)!;
+    expect(request.questions.code_example_missing).toBeDefined();
+    expect(request.questions.code_trace_missing).toBeDefined();
+    expect(request.questions.research_skipped).toBeUndefined();
+    expect(request.questions.history_primary_source_missing).toBeUndefined();
+    const review = assessTeachingPolicyAdherence(unknown, reply, outcome(request), undefined, scope);
+    expect(review.status).toBe("pass");
+    expect(review.checks.filter(check => check.source === "jev").map(check => check.id).sort()).toEqual(Object.keys(request.questions).sort());
+  });
+
+  test("explicit subject and benchmark checks cannot be overridden by inferred applicability", () => {
+    const history = { ...turn, domain: "history" as const };
+    const explicit = teachingPolicyAdherenceRequest(history, reply, undefined, { domain: "code" })!;
+    expect(explicit.questions.history_primary_source_missing).toBeDefined();
+    expect(explicit.questions.code_trace_missing).toBeUndefined();
+    const selected = teachingPolicyAdherenceRequest({ ...turn, domain: "unknown" }, reply,
+      ["history_primary_source_missing", "research_skipped"], { domain: "code", researchRequired: false })!;
+    expect(selected.questions.history_primary_source_missing).toBeDefined();
+    expect(selected.questions.research_skipped).toBeDefined();
+    expect(() => teachingPolicyAdherenceRequest(history, reply, ["code_trace_missing"])).toThrow("requires domain code");
+  });
+
+  test("absent or required research scope retains the research evidence obligation", () => {
+    expect(teachingPolicyAdherenceRequest(turn, reply)!.questions.research_skipped).toBeDefined();
+    expect(teachingPolicyAdherenceRequest(turn, reply, undefined, { researchRequired: true })!.questions.research_skipped).toBeDefined();
+  });
+});
+
 describe("deterministic adherence", () => {
   test("canonical UI is validated and a checkpoint ends the response", () => {
     expect(failed(document([question]))).toEqual([]);

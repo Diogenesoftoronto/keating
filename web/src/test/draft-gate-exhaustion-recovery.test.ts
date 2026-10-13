@@ -36,15 +36,15 @@ test("final reserved generation recovers a visible answer with tools disabled an
   const stream = await gated(model, context);
   const events = []; for await (const event of stream) events.push(event);
   const result = await stream.result();
-  expect(seen).toHaveLength(10);
-  expect(seen.slice(0, 9).every(next => next.tools?.length === 1)).toBe(true);
-  expect(seen[9]!.tools).toEqual([]);
-  expect(seen[9]!.systemPrompt).toContain("Do not call tools or claim");
-  expect(seen[9]!.messages[0]).toEqual(original.messages[0]);
+  expect(seen).toHaveLength(3);
+  expect(seen.slice(0, 2).every(next => next.tools?.length === 1)).toBe(true);
+  expect(seen[2]!.tools).toEqual([]);
+  expect(seen[2]!.systemPrompt).toContain("Do not call tools or claim");
+  expect(seen[2]!.messages[0]).toEqual(original.messages[0]);
   expect(result.content).toEqual([{ type: "text", text: "Four factorial is 4 × 3 × 2 × 1 = 24." }]);
   expect(events.map(event => event.type)).toEqual(["start", "text_start", "text_delta", "text_end", "done"]);
   expect(receipts[0]!.snapshot.reason).toBe("best-effort-draft");
-  expect(receipts[0]!.snapshot.attempts[9]!.status).toBe("fail");
+  expect(receipts[0]!.snapshot.attempts[2]!.status).toBe("fail");
   expect(context).toEqual(original);
 });
 
@@ -61,6 +61,6 @@ test("cancelling the reserved recovery publishes no late answer or receipt", asy
   await recoveryStarted; controller.abort();
   const events = []; for await (const event of stream) events.push(event);
   const result = await stream.result();
-  expect(calls).toBe(10); expect(result.stopReason).toBe("aborted"); expect(result.content).toEqual([]);
+  expect(calls).toBe(3); expect(result.stopReason).toBe("aborted"); expect(result.content).toEqual([]);
   expect(events.map(event => event.type)).toEqual(["error"]); expect(receipts).toEqual([]);
 });

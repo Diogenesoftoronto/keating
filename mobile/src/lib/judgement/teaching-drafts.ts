@@ -1,6 +1,6 @@
 import { runTeachingDrafts, validateToolCall, projectActiveWork, type UiDocument, type ActivitySelectionInput, type ActivitySelection,
   type JudgementCaller, type PortableLearnerData, type ReleasedActivitySelection,
-  type TeachingPolicyCheck, type TeachingPolicyReply, type TeachingPolicyTurn } from "@keating/learner-contracts";
+  type TeachingPolicyCheck, type TeachingPolicyReply, type TeachingPolicyTurn, type TeachingDraftRefinement } from "@keating/learner-contracts";
 import { requestProviderRound, type ProviderRound, type ProviderToolResult } from "../provider-client";
 import { extractUiDocuments } from "../ui-document-wire";
 import type { BackgroundActivityPolicy } from "../../../../packages/learner-contracts/src/judgement/background-activity-policy";
@@ -31,6 +31,8 @@ export function createMobileTeachingDraftRound(options: {
   sessionId?: string;
   learnerContext?: string;
   activeDocument?: UiDocument | null;
+  /** Explicit host opt-in for longer private comparison/synthesis. */
+  refinement?: TeachingDraftRefinement;
   activityLearning?: (input: ActivitySelectionInput) => Promise<ActivitySelection>;
   activityLearningMode?: "background" | "live";
   backgroundActivityPolicy?: BackgroundActivityPolicy | null;
@@ -87,7 +89,7 @@ export function createMobileTeachingDraftRound(options: {
     };
     const result = await runTeachingDrafts<ProviderRound>({ turn, signal: providerOptions.signal,
       judge: async (input, signal) => { await stillCurrent(); const result = await options.judge(input, signal); await stillCurrent(); return result; },
-      check, maxAttempts: 10, timeoutMs: 120_000,
+      check, refinement: options.refinement, timeoutMs: 120_000,
       maxReasoning: providerOptions.reasoningLevel === "xhigh" ? "high" : providerOptions.reasoningLevel === "minimal" ? "low" : providerOptions.reasoningLevel ?? "off",
       recordActivity: true, activityLearningMode: options.activityLearningMode ?? "background", backgroundActivityPolicy,
       ...(options.activityLearning ? { activityLearning: async (input: ActivitySelectionInput) => {

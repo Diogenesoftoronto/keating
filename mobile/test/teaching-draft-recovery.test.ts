@@ -26,5 +26,5 @@ test("native final recovery disables tools while preserving selected model and a
   const result = await request({ provider: "openai", model: "selected-teacher", customBaseUrl: "" }, "key",
     [{ id: "user", role: "user", content: "What is four factorial?", createdAt: 1 }],
     { tools: [{ name: "workspace_inspect", description: "Read", parameters: { type: "object", properties: {} } }] });
-  expect(calls).toBe(10); expect(result.text).toBe("Four factorial is 24."); expect(result.calls).toEqual([]);
+  expect(calls).toBe(3); expect(result.text).toBe("Four factorial is 24."); expect(result.calls).toEqual([]);
 });

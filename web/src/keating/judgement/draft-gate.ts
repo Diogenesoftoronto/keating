@@ -18,10 +18,12 @@ import {
   type PlanReviewMemory,
   judgementRequestProblem,
   runTeachingDrafts,
+  teachingDraftAttemptLimit,
   type JudgementBackendKey,
   type JudgementCaller,
   type JudgementOutcome,
   type TeachingDraftReasoning,
+  type TeachingDraftRefinement,
   type TeachingDraftSnapshot,
   type TeachingPolicyCheck,
   type TeachingPolicyReply,
@@ -122,6 +124,7 @@ export interface TeachingDraftGateOptions {
   readonly domain?: TeachingPolicyTurn["domain"];
   readonly maxReasoning?: TeachingDraftReasoning;
   readonly maxAttempts?: number;
+  readonly refinement?: TeachingDraftRefinement;
   readonly timeoutMs?: number;
 }
 
@@ -279,7 +282,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
     let timedOut = false;
     const timer = setTimeout(() => { timedOut = true; abort(); }, budget);
     const current = () => !controller.signal.aborted && (options.isCurrent?.() ?? true);
-    let lastProgress: TeachingDraftSnapshot = { phase: "planning", attempt: 0, maxAttempts: Math.min(10, Math.max(1, Math.floor(options.maxAttempts ?? 10))),
+    let lastProgress: TeachingDraftSnapshot = { phase: "planning", attempt: 0, maxAttempts: teachingDraftAttemptLimit(options.maxAttempts, options.refinement),
       reasoning: ceiling(options, streamOptions), standard: "supported", elapsedMs: 0, attempts: [],
       judgeModel: null, selectedAttempt: null, reason: null };
     const progress = (next: TeachingDraftSnapshot) => {
@@ -393,6 +396,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         recordActivity: activityState?.recordActivity ?? false,
         judgementModel,
         maxAttempts: options.maxAttempts,
+        refinement: options.refinement,
         maxReasoning: ceiling(options, streamOptions),
         timeoutMs: Math.max(1, budget - (Date.now() - startedAt)),
         signal: controller.signal,

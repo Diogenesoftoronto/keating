@@ -16,6 +16,7 @@ import { estimatedRequestTokens, estimatedStateQuestionTokens, measureStateCompo
 
 export type TeachingDraftReasoning = "off" | "low" | "medium" | "high";
 export type TeachingDraftStandard = "concise" | "supported" | "deep";
+export type TeachingDraftRefinement = "ordinary" | "extended";
 /** `interactive` and `prose` drafts compete blind; `default` is an unpaired turn. */
 export type TeachingDraftVariant = "interactive" | "prose" | "default";
 export type TeachingDraftPhase = "planning" | "drafting" | "checking" | "revising" | "selecting" | "released" | "withheld" | "cancelled";
@@ -136,6 +137,8 @@ export interface TeachingDraftOptions<T> {
   readonly judgementModel?: { readonly id: string; readonly requestTokens: number | null; readonly stateQuestionTokens: number | null };
   readonly generate: (input: TeachingDraftGenerationInput) => Promise<{ readonly reply: TeachingPolicyReply; readonly value: T }>;
   readonly maxAttempts?: number;
+  /** Longer comparison/synthesis is opt-in; response depth alone does not expand retries. */
+  readonly refinement?: TeachingDraftRefinement;
   readonly maxReasoning?: TeachingDraftReasoning;
   readonly timeoutMs?: number;
   readonly ruleIds?: readonly string[];
@@ -199,11 +202,18 @@ const advisoryTeachingChecks = new Set([
   "science_prediction_missing", "history_timeline_missing", "politics_framework_missing",
   "art_work_missing", "art_effect_missing",
 ]);
+// Confirmed violations still require repair. Ambiguous lesson pacing and
+// presentation are advisory; executable actions still require approval.
+const uncertainTeachingChecks = new Set([
+  "learner_voice_replaced", "checkpoint_answer_leaked", "checkpoint_repeated", "checkpoint_continued",
+  "practice_withheld", "unsolicited_assessment", "housekeeping_delegated",
+]);
 function blocksDraft(check: TeachingPolicyCheck): boolean {
   if (check.status === "pass") return false;
   return !(check.status === "unknown" && check.source === "jev" && check.severity !== "critical"
     && check.probability !== null && Number.isFinite(check.probability)
-    && check.probability >= 0 && check.probability < 0.8 && advisoryTeachingChecks.has(check.id));
+    && check.probability >= 0 && check.probability < 0.8
+    && (advisoryTeachingChecks.has(check.id) || uncertainTeachingChecks.has(check.id)));
 }
 const MAX_QUESTIONS_PER_SUBQUERY = 64;
 /** Presentation and usefulness scores rank completed replies; they are not release vetoes. */
@@ -212,7 +222,15 @@ export function blocksRelease(check: TeachingPolicyCheck): boolean {
   return !(check.source === "jev" && check.severity !== "critical"
     && check.probability !== null && Number.isFinite(check.probability)
     && check.probability >= 0 && check.probability <= 1
-    && (advisoryTeachingChecks.has(check.id) || check.id === "quality_progress" || check.id === "quality_scope"));
+    && (advisoryTeachingChecks.has(check.id) || check.id === "quality_progress" || check.id === "quality_scope"
+      || check.status === "unknown" && check.probability < 0.8 && uncertainTeachingChecks.has(check.id)));
+}
+
+/** Shared by hosts so their progress display reports the real drafting budget. */
+export function teachingDraftAttemptLimit(maxAttempts?: number, refinement: TeachingDraftRefinement = "ordinary"): number {
+  if (refinement !== "ordinary" && refinement !== "extended" || maxAttempts !== undefined && !Number.isFinite(maxAttempts)) throw new Error("invalid-teaching-draft-budget");
+  const ceiling = 10;
+  return Math.min(ceiling, Math.max(1, Math.floor(maxAttempts ?? ceiling)));
 }
 
 function draftQuality(checks: readonly TeachingPolicyCheck[]): number {
@@ -314,13 +332,14 @@ function splitJudgementRequest(request: JudgementRequest, budgets: {
 }
 
 /**
- * Private draft loop. Only an approved value can escape; diagnostics contain no
+ * Private draft loop. Structurally valid text can use best-effort release; diagnostics contain no
  * draft text, reasoning text, learner text, tool arguments, or source snippets.
  */
 export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Promise<TeachingDraftResult<T>> {
   const backgroundPolicy = options.activityLearningMode !== "live" && validateBackgroundActivityPolicy(options.backgroundActivityPolicy)
     ? structuredClone(options.backgroundActivityPolicy) : null;
-  const maxAttempts = Math.min(10, Math.max(1, Math.floor(options.maxAttempts ?? 10)));
+  const extended = options.refinement === "extended";
+  const maxAttempts = teachingDraftAttemptLimit(options.maxAttempts, options.refinement);
   const timeoutMs = Math.min(180_000, Math.max(1, options.timeoutMs ?? 90_000));
   if (!Number.isFinite(maxAttempts) || !Number.isFinite(timeoutMs)) throw new Error("invalid-teaching-draft-budget");
   const now = options.now ?? (() => performance.now());
@@ -471,9 +490,14 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
     backgroundActivity = guided.guidance;
     if (plan.planReview) planReview = plan.planReview;
     let feedback: TeachingDraftFeedback[] = [];
-    const targetCandidates = standard === "concise" ? 1 : Math.min(2, maxAttempts);
+    const compareLiveAlternatives = options.activityLearningMode === "live" && options.activityLearning !== undefined;
+    const targetCandidates = standard === "concise" || (!extended && !compareLiveAlternatives) ? 1 : Math.min(2, maxAttempts);
     // Interactive and prose drafts compete only when an activity is recommended and two candidates are wanted.
     const paired = targetCandidates === 2 && (plan.interaction.action === "create" || plan.interaction.action === "continue");
+    const reviewScope = {
+      domain: turn.domain === "unknown" && plan.features.executable_code === true ? "code" as const : turn.domain,
+      researchRequired: plan.decisions.fresh_sources_needed !== false,
+    };
     interaction = interactionSummary(plan, paired);
     const variantOrder: readonly TeachingDraftVariant[] = !paired ? ["default"]
       : (options.random ?? Math.random)() < 0.5 ? ["interactive", "prose"] : ["prose", "interactive"];
@@ -483,7 +507,7 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
       // A revision repairs its own variant; a fresh draft targets a variant still lacking an approved candidate.
       if (!feedback.length) variant = variantOrder.find((candidate) => !approvedVariants.has(candidate)) ?? variantOrder[0]!;
       let synthesis: TeachingDraftGenerationInput["synthesis"];
-      if (!synthesisUsed) {
+      if (extended && !synthesisUsed) {
         // Only reuse fully reviewed eligible prose, never failed evidence or
         // executable tool arguments. Keep complete bounded texts, not fragments.
         const sources = candidates.flatMap(candidate => {
@@ -514,7 +538,8 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
       const provenance = synthesisSourceAttempts ? { synthesisSourceAttempts: [...synthesisSourceAttempts] } : {};
       publish(synthesis || feedback.length ? "revising" : "drafting");
       const started = now();
-      const textOnlyRecovery = attempt === maxAttempts && !candidates.length && !usableDrafts.length;
+      const textOnlyRecovery = attempt >= (extended ? maxAttempts : Math.min(3, maxAttempts))
+        && !candidates.length && !usableDrafts.length;
       let generated: { reply: TeachingPolicyReply; value: T };
       try {
         generated = structuredClone(await bounded(() => options.generate({ attempt, reasoning,
@@ -525,6 +550,7 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
         if (controller.signal.aborted) throw new Error("draft-interrupted");
         attempts.push({ attempt, reasoning, standard, generationMs: now() - started, judgementMs: 0, status: "generation-error", checks: [], variant, ...provenance });
         reason = "generation-unavailable";
+        if (!extended && usableDrafts.length) break;
         continue;
       }
       if (!controller.signal.aborted && options.onDraftContent) {
@@ -536,20 +562,24 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
       const checkStarted = now();
       const extra = qualityQuestions(standard);
       const request = prepareRequest((currentTurn) => {
-        const adherence = teachingPolicyAdherenceRequest(currentTurn, generated.reply, options.ruleIds);
+        const adherence = teachingPolicyAdherenceRequest(currentTurn, generated.reply, options.ruleIds, reviewScope);
         return adherence ? { ...adherence, questions: { ...adherence.questions, ...extra } } : null;
       });
       const judged = request ? await judge(request) : null;
       // Keep infrastructure failures distinct from a completed review rejecting
       // the draft. A later completed review supersedes an earlier failure.
       reason = judged && !judged.ok ? judged.error.code : null;
-      const assessment = assessTeachingPolicyAdherence(turn, generated.reply, judged, options.ruleIds);
+      const assessment = assessTeachingPolicyAdherence(turn, generated.reply, judged, options.ruleIds, reviewScope);
       const hostChecks: readonly TeachingPolicyCheck[] = [
         ...(options.check?.(generated.reply) ?? []),
         ...(textOnlyRecovery && generated.reply.toolCalls.length ? [{ id: "text_only_recovery", source: "deterministic" as const,
           severity: "critical" as const, status: "fail" as const, probability: 1 }] : []),
       ];
-      const checks: TeachingPolicyCheck[] = [...assessment.checks, ...hostChecks];
+      const checks: TeachingPolicyCheck[] = [
+        ...assessment.checks.map(check => turn.assessment === "assessed" && check.id === "checkpoint_answer_leaked"
+          ? { ...check, severity: "critical" as const } : check),
+        ...hostChecks,
+      ];
       for (const [id, question] of Object.entries(extra)) {
         const answer = judged?.ok ? decodeAnswer(question, judged.response.answers[id]) : null;
         const probability = answer?.type === "noul" ? answer.noul : null;
@@ -557,7 +587,7 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
           status: probability === null ? "unknown" : probability >= qualityFloors[standard] ? "pass" : probability <= 0.2 ? "fail" : "unknown" });
       }
       const blocking = checks.filter(blocksRelease);
-      const revisionChecks = checks.filter(blocksDraft);
+      const revisionChecks = extended ? checks.filter(blocksDraft) : blocking;
       const status = blocking.some((check) => check.status === "fail") ? "fail" : blocking.length ? "unknown" : "pass";
       attempts.push({ attempt, reasoning, standard, generationMs, judgementMs: now() - checkStarted, status, checks, variant, ...provenance });
       // Retain only complete prose with passing schema/host checks. Executable
@@ -573,8 +603,14 @@ export async function runTeachingDrafts<T>(options: TeachingDraftOptions<T>): Pr
       if (status === "pass") {
         approvedVariants.add(variant);
         candidates.push({ attempt, ...generated, quality: draftQuality(checks) });
-        if (!revisionChecks.length && candidates.length >= targetCandidates) break;
+        if ((!extended || !revisionChecks.length) && candidates.length >= targetCandidates) break;
       }
+      // Ordinary text does not spend its tail budget chasing uncertain scores.
+      // One concrete semantic failure gets at most one repair; even a failed
+      // repair retains the best structurally valid text. Only unusable output
+      // (schema/tool errors, empty text, generation errors) reaches attempts 3–10.
+      if (!extended && status !== "pass" && usableDrafts.length
+        && (attempt >= 2 || !blocking.some(check => check.status === "fail"))) break;
       feedback = revisionChecks.map((check) => ({ id: check.id, probability: check.probability,
         instruction: TEACHING_POLICY_RULES.find(({ id }) => id === check.id)?.question.instructions
           ?? (check.id === "quality_progress" ? "Provide substantive progress on the learner's immediate request, not mere acknowledgement."

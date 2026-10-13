@@ -104,6 +104,40 @@ const text = (value: AssistantMessage) => value.content.filter((part) => part.ty
 afterEach(() => configureJudgementDiagnostics({ enabled: false, details: false }));
 
 describe("private teaching draft stream", () => {
+  test("ordinary web turns publish once despite uncertain presentation and report the shared ten-attempt ceiling", async () => {
+    let calls = 0;
+    const updates: TeachingDraftSnapshot[] = [];
+    const { result } = await collect(await gate(() => { calls++; return streamOf(message("24")); }, {
+      onProgress: update => updates.push(update),
+      makeCaller: () => async request => {
+        const outcome = answer(request, { standard: "supported" });
+        if (outcome.ok && request.questions.checkpoint_continued) {
+          return { ...outcome, response: { ...outcome.response, answers: { ...outcome.response.answers,
+            checkpoint_continued: { type: "noul", noul: .5 }, quality_scope: { type: "noul", noul: .3 } } } };
+        }
+        return outcome;
+      },
+    })(MODEL, context()));
+    expect(calls).toBe(1);
+    expect(text(result)).toBe("24");
+    expect(updates.every(update => update.maxAttempts === 10)).toBe(true);
+    expect(updates.at(-1)?.phase).toBe("released");
+  });
+
+  test("ordinary semantic failures get one repair then release honest best effort", async () => {
+    let calls = 0;
+    const updates: TeachingDraftSnapshot[] = [];
+    const { events, result } = await collect(await gate(() => { calls++; return streamOf(message("REJECTED PRIVATE DRAFT")); }, {
+      onProgress: update => updates.push(update),
+    })(MODEL, context()));
+    expect(calls).toBe(2);
+    expect(updates.at(-1)?.phase).toBe("released");
+    expect(updates.at(-1)?.attempts).toHaveLength(2);
+    expect(updates.at(-1)?.reason).toBe("best-effort-draft");
+    expect(text(result)).toBe("REJECTED PRIVATE DRAFT");
+    expect(JSON.stringify(events)).toContain("REJECTED PRIVATE DRAFT");
+  });
+
   test("synthesis receives complementary drafts only in private messages and reviews the merged response", async () => {
     const seen: Context[] = [], updates: TeachingDraftSnapshot[] = [];
     const original = context(), before = structuredClone(original);
@@ -127,7 +161,7 @@ describe("private teaching draft stream", () => {
     const output = await gate((_model, next) => {
       seen.push(structuredClone(next));
       return streamOf(message(seen.length === 1 ? "PRIVATE SOURCE A" : seen.length === 2 ? "PRIVATE SOURCE B" : "4 factorial is 24."));
-    }, { makeCaller: () => synthesisJudge, maxAttempts: 3, onProgress: update => updates.push(structuredClone(update)) })(MODEL, original);
+    }, { makeCaller: () => synthesisJudge, refinement: "extended", maxAttempts: 3, onProgress: update => updates.push(structuredClone(update)) })(MODEL, original);
     const { result, events } = await collect(output);
     expect(seen).toHaveLength(3);
     for (const prior of seen.slice(0, 2)) expect(JSON.stringify(prior)).not.toContain("synthesisSources");
@@ -276,7 +310,7 @@ describe("private teaching draft stream", () => {
       if (++calls === 1) return streamOf(message("24"));
       revising.resolve();
       return createAssistantMessageEventStream();
-    }, { maxAttempts: 2, timeoutMs: 300, onProgress: value => updates.push(value),
+    }, { refinement: "extended", maxAttempts: 2, timeoutMs: 300, onProgress: value => updates.push(value),
       makeCaller: () => async request => {
         const outcome = answer(request);
         if (outcome.ok && "quality_scope" in request.questions) {
