@@ -24,15 +24,20 @@ import {
 } from "@earendil-works/pi-ai";
 import * as v from "valibot";
 import { nodepodPersistence } from "../nodepod-persistence.ts";
+import { canonicalInvariantMetadata } from "./canonical-error.ts";
 
 const PREFIX = "KEATING_FLUE_RPC:";
 const send = (message: unknown) =>
   process.stdout.write(PREFIX + JSON.stringify(message) + "\n");
 observe((event) => {
-  if ("isError" in event && event.isError && "error" in event)
-    send({ kind: "diagnostic", error: String(event.error) });
-  if (event.type === "log" && event.level === "error")
-    send({ kind: "diagnostic", error: event.message });
+  if ("isError" in event && event.isError && "error" in event) {
+    const invariant = canonicalInvariantMetadata(event.error);
+    send({ kind: "diagnostic", error: String(event.error) + (invariant ? ` Canonical invariant: ${JSON.stringify(invariant)}` : "") });
+  }
+  if (event.type === "log" && event.level === "error") {
+    const invariant = canonicalInvariantMetadata(event.attributes?.error);
+    send({ kind: "diagnostic", error: event.message + (invariant ? ` Canonical invariant: ${JSON.stringify(invariant)}` : "") });
+  }
 });
 let serial = 0;
 let config: {

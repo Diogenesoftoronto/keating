@@ -24,7 +24,7 @@ test("state inspector renders an accessible budget meter and content-free breakd
 
 test("developer diagnostics are reachable during checking and after release", () => {
   for (const phase of ["checking", "released"] as const) {
-    const html = renderToStaticMarkup(<DraftReviewStatus sessionId="test" status={{ id: 1, feedback: null, snapshot: { ...snapshot, phase } }} />);
+    const html = renderToStaticMarkup(<DraftReviewStatus showDeveloperDetails sessionId="test" status={{ id: 1, feedback: null, snapshot: { ...snapshot, phase } }} />);
     expect(html).toContain("Developer diagnostics");
     expect(html).toContain("Judgement state");
     expect(html).toContain("Copy review");
@@ -38,4 +38,11 @@ test("unknown or undispatched budgets do not imply zero usage", () => {
   expect(unknown).not.toContain("<meter");
   const missing = renderToStaticMarkup(<JudgementStateInspector snapshot={{ ...snapshot, state: undefined }} />);
   expect(missing).toContain("No judgement request dispatched yet");
+});
+
+test("judgement diagnostics are hidden without developer opt-in", () => {
+  for (const phase of ["checking", "released"] as const) {
+    const html = renderToStaticMarkup(<DraftReviewStatus sessionId="default" status={{ id: 1, feedback: null, snapshot: { ...snapshot, phase } }} />);
+    expect(html).toBe("");
+  }
 });

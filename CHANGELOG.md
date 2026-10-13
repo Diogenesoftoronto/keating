@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.13] - 2026-10-12
+
+### Changed
+- Hide draft reviews, tool internals, and technical error details unless developer chat details are enabled.
+- Let developers inspect completed draft answer text in an ephemeral view that clears when disabled.
+
+### Fixed
+- Accept complete OpenUI fences with Windows line endings or trailing whitespace.
+- Retry incomplete interactions within a bounded budget and remove failed inert blocks from normal chat while preserving their source and errors in developer mode.
+- Report hosted provider connections without waiting for unrelated local credential checks.
+
 ## [4.0.12] - 2026-10-12
 
 ### Fixed

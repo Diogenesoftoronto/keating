@@ -101,30 +101,36 @@ export function modelsFor(provider: string): ModelInfo[] {
 }
 
 /** Providers that already hold an API key or a subscription sign-in. */
-export function useConnectedProviders(providers: string[]): Set<string> {
+export function useProviderConnectionState(providers: string[]): { connected: Set<string>; checked: boolean } {
 	const [connected, setConnected] = useState<Set<string>>(new Set());
+	const [checked, setChecked] = useState(false);
 	const dep = providers.join(",");
 	useEffect(() => {
 		let active = true;
 		let refreshVersion = 0;
 		const refresh = async () => {
 			const version = ++refreshVersion;
-			const storage = getAppStorage();
+			setChecked(false);
+			setConnected(new Set());
 			const next = await readConnectedProviders(providers, {
 				hostedSession: async () => await notOrganicPublicClient()?.activeSession() ?? null,
-				apiKey: (provider) => storage.providerKeys.get(provider),
+				apiKey: (provider) => getAppStorage().providerKeys.get(provider),
 				oauth: async (provider) => {
 					const oauthId = providerToOAuthId(provider);
 					return oauthId ? await loadOAuthCredentials(oauthId) : null;
 				},
-			});
-			if (active && version === refreshVersion) setConnected(next);
+			}, partial => { if (active && version === refreshVersion) setConnected(partial); });
+			if (active && version === refreshVersion) { setConnected(next); setChecked(true); }
 		};
 		void refresh();
 		window.addEventListener(PROVIDER_CREDENTIALS_CHANGED_EVENT, refresh);
 		return () => { active = false; window.removeEventListener(PROVIDER_CREDENTIALS_CHANGED_EVENT, refresh); };
 	}, [dep]);
-	return connected;
+	return { connected, checked };
+}
+
+export function useConnectedProviders(providers: string[]): Set<string> {
+	return useProviderConnectionState(providers).connected;
 }
 
 /**
