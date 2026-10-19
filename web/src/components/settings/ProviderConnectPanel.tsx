@@ -7,7 +7,7 @@ import { loadOAuthCredentials, providerToOAuthId } from "../../keating/oauth";
 import { PROVIDER_CREDENTIALS_CHANGED_EVENT, type ModelPrefs } from "../../keating/model-prefs";
 import { Toggle } from "../Toggle";
 import { NotOrganicAccountCard } from "./NotOrganicAccountCard";
-import { NOTORGANIC_PROVIDER_ID, NOTORGANIC_DEFAULT_MODEL, isNotOrganicFeatureEnabled, notOrganicPublicClient } from "../../notorganic-provider";
+import { NOTORGANIC_PROVIDER_ID, NOTORGANIC_CHAT_MODELS, isNotOrganicFeatureEnabled, notOrganicPublicClient } from "../../notorganic-provider";
 import { readConnectedProviders } from "../../lib/provider-connection";
 import { ProviderCredentialForm } from "./CloudProviderKeysSection";
 
@@ -91,7 +91,7 @@ type ModelInfo = { id: string; name: string };
 
 export function modelsFor(provider: string): ModelInfo[] {
 	if (provider === NOTORGANIC_PROVIDER_ID) {
-		return isNotOrganicFeatureEnabled() ? [{ id: NOTORGANIC_DEFAULT_MODEL.id, name: NOTORGANIC_DEFAULT_MODEL.name }] : [];
+		return isNotOrganicFeatureEnabled() ? NOTORGANIC_CHAT_MODELS.map(({ id, name }) => ({ id, name })) : [];
 	}
 	try {
 		return (getModels(provider as never) as unknown as ModelInfo[]).map((m) => ({ id: m.id, name: m.name }));

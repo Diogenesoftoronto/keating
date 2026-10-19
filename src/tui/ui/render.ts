@@ -1,4 +1,5 @@
 import type { UiArtifactResource, UiDocument, UiDocumentNode, UiQuestion, UiStudyPlanItem, UiTaskNode } from "../learner-contracts.js";
+import { systemDesignMermaid } from "../learner-contracts.js";
 
 /**
  * Terminal presentation of canonical learning documents.
@@ -189,6 +190,7 @@ function nodePresentation(node: UiDocumentNode): UiDocumentPresentation {
         heading: `${taskKindLabel(node.kind)}: ${node.title}`,
         body: [
           ...node.brief.split("\n"),
+          ...(node.diagram ? ["", "```mermaid", ...systemDesignMermaid({ components: node.diagram.components, connections: node.diagram.connections }).split("\n"), "```", "", "**Structural checks**", ...node.diagram.checks.map((entry) => `- ${entry.label}`), aside("Open this activity on web or mobile to build your diagram and submit your explanation for review.")] : []),
           ...(facts.length ? ["", aside(facts.join(" · "))] : []),
           ...(node.items?.length
             ? ["", ...node.items.flatMap((item) => [

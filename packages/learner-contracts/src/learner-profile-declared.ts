@@ -428,7 +428,7 @@ export function declaredProfilePromptLines(profile: DeclaredLearnerProfile): str
   if (profile.plainLanguage) access.push("plain language");
   if (profile.screenReader) access.push("uses a screen reader — describe visuals in text");
   if (profile.captionsPreferred) access.push("prefers captions/transcripts");
-  if (profile.dyslexiaFriendlyFont) access.push("dyslexia-friendly typography");
+  if (profile.dyslexiaFriendlyFont) access.push("dyslexia-friendly typography; prefer spoken explanations and short recaps when speech is available, while keeping the full written response available");
   if (profile.reduceMotion) access.push("reduced motion");
   if (profile.highContrast) access.push("high contrast");
   if (profile.textScale && profile.textScale !== "default") access.push(`${profile.textScale} text`);

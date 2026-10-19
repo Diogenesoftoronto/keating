@@ -41,6 +41,7 @@ export const INTERACTION_AFFORDANCES: readonly AffordanceRow[] = [
   { family: "manipulable", components: ["CodingChallenge"], features: ["executable_code"] },
   { family: "perform", components: ["AudioResponse", "VideoResponse", "MusicLab"], features: ["performed_skill"] },
   { family: "workspace", components: ["ConceptMap"], features: ["structure_relations"] },
+  { family: "manipulable", components: ["Diagram"], features: ["structure_relations", "extended_production"] },
   { family: "workspace", components: ["LearningImage"], features: ["visual_reference"] },
   { family: "away", components: ["Assignment", "Draft"], features: ["extended_production"] },
   { family: "away", components: ["Fieldwork"], features: ["outside_observation"] },
@@ -78,7 +79,11 @@ export function recommendInteraction(features: Flags, decisions: Flags, context:
     byFamily.set(row.family, entry);
   }
   if (decisions.learner_stuck === true) byFamily.delete("away");
-  if (decisions.practice_requested === true) for (const family of [...byFamily.keys()]) if (family !== "retrieval") byFamily.delete(family);
+  if (decisions.practice_requested === true) for (const [family, entry] of byFamily) {
+    if (family === "retrieval") continue;
+    if (family === "manipulable" && entry.components.includes("Diagram")) entry.components = ["Diagram"];
+    else byFamily.delete(family);
+  }
   const families = FAMILY_ORDER.filter((family) => byFamily.has(family)).map((family) => ({ family, ...byFamily.get(family)! }));
   if (families.length === 0) return NONE;
   const lead = decisions.direct_answer_requested === true || decisions.explanation_requested === true ? { lead: "answer-first" as const } : {};

@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { mockEvent } from "h3";
 import {
 	NOTORGANIC_DEFAULT_MODEL,
+	NOTORGANIC_SOL_MODEL,
 	NOTORGANIC_IMAGE_MODEL_ALIAS,
 	NOTORGANIC_MODEL_ALIAS,
 	NOTORGANIC_PROVIDER_ID,
@@ -10,6 +11,7 @@ import {
 	isNotOrganicProvider,
 	notOrganicOpenAiBaseUrl,
 	notOrganicOpenAiImageEndpoint,
+	notOrganicModelNeedsConsent,
 } from "../notorganic-provider";
 import {
 	NOTORGANIC_IDEMPOTENCY_HEADER,
@@ -23,6 +25,28 @@ import {
 } from "../notorganic-provider/server";
 
 describe("Not Organic provider definition", () => {
+	it("offers Sol through Responses and requires its own model consent", () => {
+		expect(NOTORGANIC_SOL_MODEL).toMatchObject({
+			id: "gpt-6.1-sol", name: "GPT-6.1 Sol", provider: "notorganic",
+			api: "openai-responses", baseUrl: NOTORGANIC_DEFAULT_MODEL.baseUrl,
+			reasoning: true, input: ["text", "image"],
+		});
+		const existing = { scope: "wallet:read infer:balanced" };
+		expect(notOrganicModelNeedsConsent(NOTORGANIC_SOL_MODEL, existing)).toBe(true);
+		expect(notOrganicModelNeedsConsent(NOTORGANIC_DEFAULT_MODEL, existing)).toBe(true);
+		expect(notOrganicModelNeedsConsent(NOTORGANIC_SOL_MODEL, { scope: "infer:balanced infer:gpt-6.1-sol web:search web:fetch" })).toBe(false);
+		expect(notOrganicModelNeedsConsent(NOTORGANIC_SOL_MODEL, { scope: "infer:gpt-6.1-sol-other" })).toBe(true);
+		expect(notOrganicModelNeedsConsent(NOTORGANIC_SOL_MODEL, null)).toBe(false);
+		expect(notOrganicModelNeedsConsent({ id: "gpt-6.1-sol", provider: "openai" }, existing)).toBe(false);
+	});
+	it("reconnects legacy model grants until both hosted web permissions are present", () => {
+		for (const model of [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL]) {
+			for (const webScopes of ["", "web:search", "web:fetch", "web:search-other web:fetch"]) {
+				expect(notOrganicModelNeedsConsent(model, { scope: `infer:${model.id} ${webScopes}` })).toBe(true);
+			}
+			expect(notOrganicModelNeedsConsent(model, { scope: `infer:${model.id} web:search web:fetch` })).toBe(false);
+		}
+	});
 	it("uses the stable balanced alias and retains a same-origin fallback", () => {
 		expect(NOTORGANIC_DEFAULT_MODEL.id).toBe(NOTORGANIC_MODEL_ALIAS);
 		expect(NOTORGANIC_DEFAULT_MODEL.name).toBe("Inkling Small");

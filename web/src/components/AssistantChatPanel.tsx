@@ -254,28 +254,29 @@ const iconButtonClass = css({
     opacity: 0.72,
   },
 });
+const composerIconButtonStyles = css.raw({
+  display: "inline-flex",
+  width: "2rem",
+  height: "2rem",
+  flexShrink: 0,
+  alignItems: "center",
+  justifyContent: "center",
+  borderRadius: "0.375rem",
+  border: "1px solid var(--border)",
+  color: "var(--muted-foreground)",
+  _hover: {
+    backgroundColor: "var(--accent)",
+    color: "var(--accent-foreground)",
+  },
+  _disabled: {
+    color: "var(--muted-foreground)",
+    opacity: 0.72,
+  },
+  sm: { width: "2.25rem", height: "2.25rem" },
+});
 const composerIconButtonClass = cx(
   srInteractiveClass,
-  css({
-    display: "inline-flex",
-    width: "2rem",
-    height: "2rem",
-    flexShrink: 0,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: "0.375rem",
-    border: "1px solid var(--border)",
-    color: "var(--muted-foreground)",
-    _hover: {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
-    },
-    _disabled: {
-      color: "var(--muted-foreground)",
-      opacity: 0.72,
-    },
-    sm: { width: "2.25rem", height: "2.25rem" },
-  }),
+  css(composerIconButtonStyles),
 );
 const dialogButtonClass = cx(
   "dialog-compact-button",
@@ -1220,8 +1221,8 @@ function SpeechComposerControl({
           aria-label="Start a live conversation"
           aria-haspopup="dialog"
           className={cx(
-            composerIconButtonClass,
-            css({
+            srInteractiveClass,
+            css(composerIconButtonStyles, {
               borderColor: "transparent",
               backgroundColor: "var(--foreground)",
               color: "var(--background)",
@@ -1230,6 +1231,7 @@ function SpeechComposerControl({
                   "color-mix(in srgb, var(--foreground) 85%, var(--background))",
                 color: "var(--background)",
               },
+              _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "3px" },
             }),
           )}
         >

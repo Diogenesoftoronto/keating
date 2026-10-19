@@ -47,6 +47,8 @@ export interface CustomSpeechModel {
 
 export interface WebSpeechSettings {
 	enabled: boolean;
+	/** Ordinary chat replies use device speech or the selected provider. Live keeps its own provider. */
+	replyMode?: "device" | "provider";
 	/** Active provider. Defaults to "gemini-live" for back-compat. */
 	providerId: SpeechProviderId;
 	/** Active model for the chosen provider. */
@@ -107,6 +109,7 @@ const speechSetting = createLocalSetting<WebSpeechSettings>({
 				: [];
 			return {
 				enabled: parsed.enabled === true,
+				...(parsed.replyMode === "device" || parsed.replyMode === "provider" ? { replyMode: parsed.replyMode } : {}),
 				providerId: cleanString(parsed.providerId) || DEFAULT_WEB_SPEECH_SETTINGS.providerId,
 				model: cleanString(parsed.model) || DEFAULT_WEB_SPEECH_SETTINGS.model,
 				voiceName: cleanString(parsed.voiceName) || DEFAULT_WEB_SPEECH_SETTINGS.voiceName,
@@ -631,15 +634,24 @@ function resolveCustomModel(settings: WebSpeechSettings): CustomSpeechModel | un
 	return settings.customModels.find((m) => m.id === id);
 }
 
+/** Tavus and GPT Live speak in calls; ordinary chat defaults to the visible device-voice option. */
+export function speechReplyMode(settings: WebSpeechSettings): "device" | "provider" {
+	if (settings.providerId === "tavus" || settings.providerId === "gpt-live") return "device";
+	return settings.replyMode ?? "provider";
+}
+
 export function createSpeechTool(
 	settings: WebSpeechSettings,
 	getApiKey: (provider: string) => Promise<string | undefined>,
 ): AgentTool {
+	const outputSettings: WebSpeechSettings = speechReplyMode(settings) === "device"
+		? { ...settings, providerId: "device-speech", model: "device-default", voiceName: "", microphoneEnabled: false, videoEnabled: false }
+		: settings;
 	return {
 		name: KEATING_VOICE_TOOL_NAME,
 		label: "Keating Voice",
 		description:
-			"Speak one short learner-facing utterance through the active speech provider (Gemini Live, OpenAI TTS, OpenAI Realtime, Supertonic-3, or a user-defined custom provider). Use for brief questions, recaps, redirects, and encouragement only.",
+			"Speak one short learner-facing utterance through the configured spoken-reply voice (device speech or the selected speech provider). Use for brief questions, recaps, redirects, and encouragement only.",
 		parameters: {
 			type: "object",
 			properties: {
@@ -657,16 +669,18 @@ export function createSpeechTool(
 			additionalProperties: false,
 		},
 		execute: async (_toolCallId: string, params: Record<string, unknown>, signal?: AbortSignal) => {
-			const utterance = normalizeVoiceUtterance(params, settings);
+			const utterance = normalizeVoiceUtterance(params, outputSettings);
 			const line = voiceTagLine(utterance);
-			const customModel = resolveCustomModel(settings);
+			const customModel = resolveCustomModel(outputSettings);
 
 			let provider: SpeechProvider | null;
-			if (customModel) {
+			if (speechReplyMode(settings) === "device") {
+				provider = (await import("./speech-providers/device-speech")).deviceSpeechProvider;
+			} else if (customModel) {
 				const mod = await import("./speech-providers/custom-tts");
 				provider = mod.customTtsProvider;
 			} else {
-				provider = await getSpeechProvider(settings.providerId);
+				provider = await getSpeechProvider(outputSettings.providerId);
 			}
 
 			if (!provider) {
@@ -686,7 +700,7 @@ export function createSpeechTool(
 			try {
 				const result = await provider.synthesize({
 					utterance,
-					settings,
+					settings: outputSettings,
 					customModel,
 					getApiKey,
 					signal,
@@ -700,7 +714,7 @@ export function createSpeechTool(
 						provider: provider.id,
 						label: provider.label,
 						kind: provider.kind,
-						model: settings.model,
+						model: outputSettings.model,
 						voiceName: utterance.voice,
 						utterance,
 						transcript: result.transcript,
@@ -711,7 +725,7 @@ export function createSpeechTool(
 				};
 			} catch (error) {
 				const message = speechErrorMessage(error, `${provider.label} speech failed.`);
-				console.warn(`[keating:speech] ${provider.id}/${settings.model} failed: ${message}`);
+				console.warn(`[keating:speech] ${provider.id}/${outputSettings.model} failed: ${message}`);
 				return {
 					content: [{
 						type: "text",
@@ -720,7 +734,7 @@ export function createSpeechTool(
 					details: {
 						provider: provider.id,
 						label: provider.label,
-						model: settings.model,
+						model: outputSettings.model,
 						voiceName: utterance.voice,
 						utterance,
 						status: "speech-error",

@@ -215,3 +215,16 @@ test("withheld reviews remain hidden in default chat", () => {
   const status = { id: 1, feedback: null, snapshot: { ...snapshot, phase: "withheld" as const, reason: "backend-payment-required" } };
   expect(renderToStaticMarkup(<DraftReviewStatus sessionId="recovery" status={status} />)).toBe("");
 });
+
+ test("review progress and receipts stay out of default chat", () => {
+  for (const phase of ["checking", "released", "revising", "cancelled"] as const) {
+    const status = { id: 1, feedback: null, snapshot: { ...snapshot, phase } };
+    expect(renderToStaticMarkup(<DraftReviewStatus sessionId="default" status={status} />)).toBe("");
+    expect(renderToStaticMarkup(<DraftReviewStatus showDeveloperDetails sessionId="developer" status={status} />)).toContain("Response review");
+  }
+});
+
+test("withheld reviews remain hidden in default chat", () => {
+  const status = { id: 1, feedback: null, snapshot: { ...snapshot, phase: "withheld" as const, reason: "backend-payment-required" } };
+  expect(renderToStaticMarkup(<DraftReviewStatus sessionId="recovery" status={status} />)).toBe("");
+});

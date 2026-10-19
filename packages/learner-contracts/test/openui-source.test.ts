@@ -22,11 +22,11 @@ describe("trusted OpenUI source compiler", () => {
     expect(document.retention).toBe("workspace");
     expect(document.nodes.map((node) => node.type)).toEqual([
       "markdown", "callout", "question-group", "quiz", "quiz", "language-practice", "deck", "study-plan",
-      "concept-map", "image", "notes", "task", "task", "task", "task", "simulation", "coding-challenge", "music-lab",
+      "concept-map", "image", "notes", "task", "task", "task", "task", "task", "task", "simulation", "coding-challenge", "music-lab",
       "task", "task",
     ]);
     expect(document.nodes.filter((node) => node.type === "task").map((node) => node.kind))
-      .toEqual(["assignment", "practice", "draft", "fieldwork", "practice", "practice"]);
+      .toEqual(["assignment", "practice", "draft", "fieldwork", "practice", "practice", "practice", "practice"]);
     // The current generation fixture contains only advertised components. Persisted
     // LearningAnimation programs are covered separately as a compile-only legacy path.
     expect(document.nodes.some((node) => node.type === "handoff")).toBe(false);

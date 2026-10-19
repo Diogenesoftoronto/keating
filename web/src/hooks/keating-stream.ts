@@ -13,11 +13,13 @@ import { streamWithApiRetry } from "../keating/api-retry";
 import { chatProxyBaseUrl, proxyTargetHeader, shouldProxyModel } from "../lib/provider-proxy";
 import {
 	isNotOrganicProvider,
+	isNotOrganicFeatureEnabled,
 	NOTORGANIC_DEFAULT_MODEL,
 	notOrganicPublicClient,
 } from "../notorganic-provider";
 import { createNotOrganicInferenceFetch } from "../notorganic-provider/inference-fetch";
 import { publicClientMaxCostMicrousd } from "../notorganic-provider/public-client";
+import { searchNotOrganicWeb } from "../notorganic-provider/web";
 import {
 	isCodexSearchModel,
 	applyGoogleSearchGrounding,
@@ -146,9 +148,12 @@ function citationsFromSearchText(text: string): RawSearchCitation[] {
 	return citations;
 }
 
-/** Execute hosted search with another configured provider and return its sourced findings to the active model. */
+/** Prefer account-hosted search; explicit provider keys remain available outside hosted deployments. */
 export async function searchWithConfiguredProvider(query: string, signal?: AbortSignal): Promise<string> {
 	if (!query) throw new Error("A web search query is required.");
+	signal?.throwIfAborted();
+	const hostedClient = isNotOrganicFeatureEnabled() ? notOrganicPublicClient() : null;
+	if (hostedClient) return searchNotOrganicWeb(hostedClient, query, signal);
 	const resolved = await resolveAuxiliaryWebSearchModel();
 	if (!resolved) {
 		throw new Error("Web search needs an OpenAI, Gemini, or Anthropic API key with a supported search model.");
@@ -357,6 +362,11 @@ export function normalizeProviderStreamOptions(
 	return codexOptions;
 }
 
+export function notOrganicInferenceRequestUrl(model: Pick<Model<Api>, "api" | "baseUrl">): string {
+	const endpoint = model.api === "openai-responses" ? "responses" : "chat/completions";
+	return `${model.baseUrl.replace(/\/+$/, "")}/${endpoint}`;
+}
+
 export async function hybridStreamFn(model: Model<Api>, context: Context, options?: KeatingStreamOptions) {
 	if (model.provider === DESKTOP_OFFLINE_PROVIDER) return desktopOfflineStream(context, options, model);
 	const { hostedWebSearch = true, ...requestOptions } = options ?? {};
@@ -383,7 +393,7 @@ export async function hybridStreamFn(model: Model<Api>, context: Context, option
 	if (isNotOrganicProvider(model.provider)) {
 		const client = notOrganicPublicClient();
 		if (!client) throw new Error("This Keating deployment has not enabled Not Organic sign-in.");
-		const requestUrl = `${model.baseUrl.replace(/\/+$/, "")}/chat/completions`;
+		const requestUrl = notOrganicInferenceRequestUrl(model);
 		const initialHeaders = Object.fromEntries(
 			Object.entries(streamOptions?.headers ?? {}).filter(
 				(entry): entry is [string, string] => typeof entry[1] === "string",

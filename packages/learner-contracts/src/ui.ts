@@ -1,5 +1,6 @@
 import { isValidSimulationExpression } from "./simulation-expression.js";
 import { checkedMathQuestion } from "./math-question.js";
+import { systemDesignSubmissionIsComplete, validateSystemDesignSpec, type SystemDesignSpec } from "./system-design.js";
 import { codePointCompare, compareContractTimestamps, hasOnlyKeys, isBoundedJsonValue, isContractId, isContractTimestamp, isRecord } from "./validation.js";
 
 export const UI_CONTRACT_VERSION = 1 as const;
@@ -220,6 +221,8 @@ export interface UiTaskNode {
   /** 1-based revision round, for a draft carried across submissions. */
   round?: number;
   submission?: UiTaskSubmission;
+  /** Editable diagram exercise; topology checks are observations, not domain grades. */
+  diagram?: SystemDesignSpec;
 }
 
 /**
@@ -489,7 +492,7 @@ const PLAN_LINK_KEYS = new Set(["planId", "title", "relation", "detail"]);
 const CALLOUT_KEYS = new Set(["type", "id", "markdown", "tone", "title"]);
 const CONCEPT_MAP_KEYS = new Set(["type", "id", "title", "source"]);
 const NOTES_KEYS = new Set(["type", "id", "title", "value", "placeholder"]);
-const TASK_KEYS = new Set(["type", "kind", "id", "title", "brief", "criteria", "items", "estimatedMinutes", "dueAt", "availableFrom", "round", "submission"]);
+const TASK_KEYS = new Set(["type", "kind", "id", "title", "brief", "criteria", "items", "estimatedMinutes", "dueAt", "availableFrom", "round", "submission", "diagram"]);
 const TASK_ITEM_KEYS = new Set(["id", "title", "detail", "status", "note"]);
 const TASK_SUBMISSION_KEYS = new Set(["format", "label", "placeholder", "targetWords", "capture"]);
 const SIMULATION_KEYS = new Set(["type", "id", "title", "brief", "parameters", "readouts"]);
@@ -714,7 +717,8 @@ function validateTaskNode(value: Record<string, unknown>): boolean {
     && (node.dueAt === undefined || isContractTimestamp(node.dueAt))
     && (node.availableFrom === undefined || isContractTimestamp(node.availableFrom))
     && (node.round === undefined || (isNonNegativeFinite(node.round) && node.round <= 1000))
-    && (node.submission === undefined || validateTaskSubmission(node.submission));
+    && (node.submission === undefined || validateTaskSubmission(node.submission))
+    && (node.diagram === undefined || (validateSystemDesignSpec(node.diagram) && node.submission?.format === "text" && !node.submission.capture));
 }
 
 function validateStudyPlanNode(value: Record<string, unknown>): boolean {
@@ -1112,7 +1116,8 @@ export function validateUiActionAgainstDocument(action: unknown, document: unkno
     case "complete-deck": return target.node.type === "deck" && validateDeckCompletionAgainstCards(action, target.node.cards);
     case "save-artifact": return target.node.type === "study-plan" || target.node.type === "artifact" || target.node.type === "image" || target.node.type === "media";
     case "complete-task-item": return target.node.type === "task" && !!target.node.items && target.node.items.some((item) => item.id === action.itemId);
-    case "submit-task": return target.node.type === "task" && target.node.submission?.format !== "none";
+    case "submit-task": return target.node.type === "task" && target.node.submission?.format !== "none"
+      && (target.node.diagram === undefined || (action.round === target.node.round && systemDesignSubmissionIsComplete(action.submission, target.node.diagram)));
     case "open-handoff": return target.node.type === "handoff";
   }
 }

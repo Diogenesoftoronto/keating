@@ -24,6 +24,8 @@ import {
 } from "./ui.js";
 import { WEB_OPENUI_COMPONENTS } from "./rendering.js";
 import { isValidSimulationExpression } from "./simulation-expression.js";
+import type { SystemDesignSpec } from "./system-design.js";
+import { SYSTEM_DESIGN_KINDS } from "./system-design.js";
 
 export interface CompileSharedOpenUIOptions {
   documentId: string;
@@ -42,7 +44,7 @@ export type OpenUISourceCompileResult =
 export const SHARED_OPENUI_COMPONENT_MAPPERS = [
   "LearningSurface", "Explanation", "Callout", "Question", "Quiz", "Exam", "Flashcards",
   "StudyPlan", "ConceptMap", "LearningImage", "SharedNotes",
-  "Assignment", "Practice", "Draft", "Fieldwork", "AudioResponse", "VideoResponse", "Simulation", "CodingChallenge", "MusicLab", "LanguagePractice",
+  "Assignment", "Practice", "Draft", "Fieldwork", "AudioResponse", "VideoResponse", "Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab", "LanguagePractice",
 ] as const satisfies typeof WEB_OPENUI_COMPONENTS;
 
 // Persisted sessions may still contain the retired streamed animation component.
@@ -276,6 +278,8 @@ const POSITIONAL_FIELDS: Readonly<Record<string, readonly string[]>> = {
   Flashcards: ["id", "topic", "title", "cards", "lifecycle", "description"],
   StudyPlan: ["id", "title", "items", "lifecycle", "overview", "relatedPlans"],
   ConceptMap: ["code", "lifecycle", "title"],
+  SystemDesign: ["id", "title", "brief", "components", "connections", "checks", "criteria", "lifecycle", "kinds"],
+  Diagram: ["id", "title", "brief", "components", "connections", "checks", "criteria", "lifecycle", "kinds"],
   LearningImage: ["src", "alt", "lifecycle", "title", "caption"],
   LearningAnimation: ["topic", "html", "lifecycle", "summary"],
   SharedNotes: ["id", "title", "lifecycle", "initialValue", "placeholder"],
@@ -587,6 +591,16 @@ function mapElement(element: SourceElement, index: number): UiDocumentNode[] {
       ...(Array.isArray(props.relatedPlans) ? { relatedPlans: props.relatedPlans.map(planLink) } : {}),
     }];
     case "ConceptMap": return [{ type: "concept-map", id, source: text(props.code), ...(optionalText(props.title) ? { title: text(props.title) } : {}) }];
+    case "Diagram":
+    case "SystemDesign": return [{
+      type: "task", kind: "practice", id: contractId(text(props.id, id), id),
+      title: text(props.title, element.typeName === "SystemDesign" ? "System design" : "Diagram"), brief: text(props.brief),
+      ...(props.criteria !== undefined ? { criteria: props.criteria as string[] } : {}),
+      diagram: { components: props.components, connections: props.connections, checks: props.checks,
+        ...(props.kinds !== undefined ? { kinds: props.kinds } : element.typeName === "SystemDesign" ? { kinds: [...SYSTEM_DESIGN_KINDS] } : {}),
+      } as SystemDesignSpec,
+      submission: { format: "text", label: "Explain your diagram and choices" },
+    }];
     case "LearningImage": return [{ type: "image", id, alt: text(props.alt, "Learning image"), resource: { id: childId(id, "resource"), title: text(props.title, "Learning image"), format: "uri", uri: text(props.src) } }];
     case "LearningAnimation": return [{
       type: "handoff",

@@ -345,13 +345,20 @@ export function Live() {
 						gap: "0.5rem",
 						width: "100%",
 						borderRadius: "9999px",
-						border: "1px solid var(--primary)",
-						backgroundColor: "var(--primary)",
+						border: "1px solid color-mix(in srgb, var(--primary) 84%, black)",
+						backgroundColor: "color-mix(in srgb, var(--primary) 84%, black)",
 						color: "var(--primary-foreground)",
 						paddingBlock: "0.875rem",
 						fontSize: "1rem",
 						fontWeight: 600,
 						cursor: "pointer",
+						transition: "background-color 120ms ease, border-color 120ms ease",
+						_hover: {
+							backgroundColor: "color-mix(in srgb, var(--primary) 72%, black)",
+							borderColor: "color-mix(in srgb, var(--primary) 72%, black)",
+							color: "var(--primary-foreground)",
+						},
+						_focusVisible: { outline: "3px solid var(--ring)", outlineOffset: "3px" },
 						_disabled: { opacity: 0.5, cursor: "not-allowed" },
 					}))}
 				>

@@ -460,16 +460,17 @@ export function GoalFields({
 				</Field>
 			</div>
 			<div className={rowClass}>
-				<Field id={`${idPrefix}-weekly`} label="Minutes a week you can give this" hint="Shapes how much Keating plans, not how fast it expects you to go.">
+				<Field id={`${idPrefix}-weekly`} label="Hours per week you can give this" hint="Shapes how much Keating plans, not how fast it expects you to go.">
 					<input
 						id={`${idPrefix}-weekly`}
 						className={fieldInput()}
 						type="number"
-						min={1}
-						max={10080}
-						value={profile.weeklyMinutes ?? ""}
-						onChange={(event) => onChange({ weeklyMinutes: event.target.value ? Number(event.target.value) : null })}
-						placeholder="90"
+						min={0.25}
+						max={168}
+						step={0.25}
+						value={profile.weeklyMinutes == null ? "" : profile.weeklyMinutes / 60}
+						onChange={(event) => onChange({ weeklyMinutes: event.target.value ? Number(event.target.value) * 60 : null })}
+						placeholder="1.5"
 					/>
 				</Field>
 				<Field id={`${idPrefix}-session`} label="Comfortable session length (minutes)">
@@ -559,7 +560,7 @@ export function AccessibilityFields({ profile, onChange, idPrefix = "profile" }:
 			<ToggleRow title="Plain language" description="Short sentences, no jargon unless it is the thing being taught." checked={profile.plainLanguage} onChange={(plainLanguage) => onChange({ plainLanguage })} />
 			<ToggleRow title="I use a screen reader" description="Keating describes diagrams and visuals in text rather than relying on them." checked={profile.screenReader} onChange={(screenReader) => onChange({ screenReader })} />
 			<ToggleRow title="Prefer captions and transcripts" description="Applies to spoken lessons and voice mode." checked={profile.captionsPreferred} onChange={(captionsPreferred) => onChange({ captionsPreferred })} />
-			<ToggleRow title="Dyslexia-friendly typography" description="Wider spacing and a more distinguishable typeface." checked={profile.dyslexiaFriendlyFont} onChange={(dyslexiaFriendlyFont) => onChange({ dyslexiaFriendlyFont })} />
+			<ToggleRow title="Dyslexia-friendly reading and speech" description="Uses Atkinson Hyperlegible with wider spacing. Saving enables spoken replies and turns microphone input off. With a Live-only provider, replies use your device voice." checked={profile.dyslexiaFriendlyFont} onChange={(dyslexiaFriendlyFont) => onChange({ dyslexiaFriendlyFont })} />
 			<ToggleRow title="Reduce motion" description="Removes animated transitions across the interface." checked={profile.reduceMotion} onChange={(reduceMotion) => onChange({ reduceMotion })} />
 			<ToggleRow title="Higher contrast" description="Strengthens text and border contrast." checked={profile.highContrast} onChange={(highContrast) => onChange({ highContrast })} />
 			<Field id={`${idPrefix}-text-scale`} label="Text size">

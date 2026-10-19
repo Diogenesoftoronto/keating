@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { buildKeatingTrials, keatingScenarios } from "../scripts/context-window/keating-suite.js";
-import { teachingPolicyDecisionRequest } from "../packages/learner-contracts/src/judgement/teaching-policy.js";
+import { teachingPolicyAdherenceRequest, teachingPolicyDecisionRequest } from "../packages/learner-contracts/src/judgement/teaching-policy.js";
 import { digest, type Trial } from "../scripts/context-window/cases.js";
 import { summarize, type Receipt } from "../scripts/context-window/benchmark.js";
 import { htmlReport, markdownReport, reportData } from "../scripts/context-window/report.js";
@@ -20,7 +20,6 @@ test("fifty production batches retain natural state and keep gold and rationale 
   expect(trials.filter(row => row.stage === "adherence")).toHaveLength(20);
   expect(trials.filter(row => row.stage === "grading")).toHaveLength(10);
   expect(trials.reduce((n, row) => n + Object.keys(row.expected).length, 0)).toBe(162);
-  expect(trials.reduce((n, row) => n + Object.keys(row.request.questions).length, 0)).toBe(1522);
   for (const trial of trials) {
     expect(trial.id).toEndWith("/native");
     expect(trial.turnsDropped).toBe(0);
@@ -35,6 +34,13 @@ test("fifty production batches retain natural state and keep gold and rationale 
       for (const [key, question] of Object.entries(production.questions)) expect(trial.request.questions[key]).toEqual(question);
       expect(trial.request.questions).toHaveProperty("draft_standard");
       expect(Object.keys(trial.request.questions).length).toBeGreaterThan(Object.keys(trial.expected).length);
+    }
+    if (trial.stage === "adherence") {
+      const production = teachingPolicyAdherenceRequest(scenario.turn, scenario.reply!, undefined, { researchRequired: true })!;
+      expect(trial.request.state).toEqual(production.state);
+      for (const [key, question] of Object.entries(production.questions)) expect(trial.request.questions[key]).toEqual(question);
+      expect(Object.keys(trial.request.questions).sort()).toEqual([...Object.keys(production.questions), "quality_progress", "quality_scope"].sort());
+      expect(trial.request.questions).toHaveProperty("research_skipped");
     }
     if (trial.stage === "grading") expect(trial.request).toEqual(scenario.request!);
   }

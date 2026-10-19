@@ -1,10 +1,11 @@
 import { checkoutSelection, subscriptionAvailable, subscriptionCheckoutEnabled } from "./plans";
-import type { Model } from "@earendil-works/pi-ai";
+import type { Api, Model } from "@earendil-works/pi-ai";
 import { availableCreditPacks, normalizeCreditWallet } from "./credit-wallet";
 import { isNotOrganicDesktop, prepareNotOrganicDesktopAuthorization } from "../keating/notorganic-desktop";
 import {
 	NotOrganicPublicClient,
 	publicClientConfig,
+	type NotOrganicProviderSession,
 } from "./public-client";
 
 export const NOTORGANIC_PROVIDER_ID = "notorganic";
@@ -44,6 +45,32 @@ export const NOTORGANIC_DEFAULT_MODEL: Model<"openai-completions"> = {
 	contextWindow: 256_000,
 	maxTokens: 16_384,
 };
+
+export const NOTORGANIC_SOL_MODEL: Model<"openai-responses"> = {
+	id: "gpt-6.1-sol",
+	name: "GPT-6.1 Sol",
+	api: "openai-responses",
+	provider: NOTORGANIC_PROVIDER_ID,
+	baseUrl: notOrganicOpenAiBaseUrl(),
+	reasoning: true,
+	input: ["text", "image"],
+	// The gateway owns credit pricing and settlement, as with Balanced.
+	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+	contextWindow: 1_050_000,
+	maxTokens: 128_000,
+};
+
+export const NOTORGANIC_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL];
+
+/** A stored account session does not imply consent to every selectable model. */
+export function notOrganicModelNeedsConsent(
+	model: Pick<Model<Api>, "id" | "provider">,
+	session: Pick<NotOrganicProviderSession, "scope"> | null | undefined = notOrganicPublicClient()?.getSession(),
+): boolean {
+	if (model.provider !== NOTORGANIC_PROVIDER_ID || !session) return false;
+	const granted = new Set(session.scope.split(/\s+/));
+	return [`infer:${model.id}`, "web:search", "web:fetch"].some(scope => !granted.has(scope));
+}
 
 export interface NotOrganicAccount {
 	id: string;

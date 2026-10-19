@@ -4,6 +4,7 @@ import type { DOMProps } from "expo/dom";
 import katex from "katex";
 import mermaid from "mermaid";
 import { useEffect, useRef, useState } from "react";
+import { decodeSystemDesignSvgLabels } from "@/lib/system-design-svg";
 
 interface SharedDomProps {
   dom?: DOMProps;
@@ -22,6 +23,7 @@ export interface LocalMathDomProps extends SharedDomProps {
 
 export interface LocalMermaidDomProps extends SharedDomProps {
   kind: "mermaid";
+  decodeEntityLabels?: boolean;
   surfaceColor: string;
   textColor: string;
   mutedColor: string;
@@ -101,7 +103,7 @@ function LocalMathDom({ source, display, color, mutedColor, backgroundColor, des
 }
 
 function LocalMermaidDom(props: LocalMermaidDomProps) {
-  const { source, description, backgroundColor, surfaceColor, textColor, mutedColor, borderColor, accentColor, onRenderError } = props;
+  const { source, description, backgroundColor, surfaceColor, textColor, mutedColor, borderColor, accentColor, onRenderError, decodeEntityLabels = false } = props;
   const target = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   useEffect(installLocalDocumentPolicy, []);
@@ -149,7 +151,12 @@ function LocalMermaidDom(props: LocalMermaidDomProps) {
         });
         const result = await mermaid.render("keating-local-diagram", source);
         if (!active || !target.current) return;
-        target.current.replaceChildren(safeSvg(result.svg, description));
+        const sanitized = safeSvg(result.svg, description);
+        // Revalidate the serialized SVG after text-only decoding before insertion.
+        const rendered = decodeEntityLabels
+          ? safeSvg(decodeSystemDesignSvgLabels(new XMLSerializer().serializeToString(sanitized), true), description)
+          : sanitized;
+        target.current.replaceChildren(rendered);
         onRenderError?.(null);
       } catch {
         if (!active) return;
@@ -159,7 +166,7 @@ function LocalMermaidDom(props: LocalMermaidDomProps) {
     };
     void render();
     return () => { active = false; };
-  }, [accentColor, backgroundColor, borderColor, description, mutedColor, onRenderError, source, surfaceColor, textColor]);
+  }, [accentColor, backgroundColor, borderColor, decodeEntityLabels, description, mutedColor, onRenderError, source, surfaceColor, textColor]);
   return <main style={{ display: "grid", gridTemplateRows: "auto 1fr", width: "100%", height: "100%", overflow: "hidden", color: textColor, background: backgroundColor }}>
     <nav aria-label="Diagram zoom" style={{ display: "flex", gap: 8, padding: "8px 10px", borderBottom: `1px solid ${borderColor}` }}>
       <button type="button" aria-label="Zoom out diagram" onClick={() => setScale((value) => Math.max(0.6, Number((value - 0.2).toFixed(1))))}>−</button>

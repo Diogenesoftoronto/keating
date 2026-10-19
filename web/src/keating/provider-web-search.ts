@@ -2,6 +2,7 @@ import type { Api, Model } from "@earendil-works/pi-ai";
 import { negotiateProviderCapabilities } from "./providers";
 import type { SearchRoute } from "./search";
 import { loadKeatingUiSettings } from "./ui-settings";
+import { isNotOrganicFeatureEnabled, notOrganicPublicClient } from "../notorganic-provider";
 
 function enabled(hasApiKey: boolean): boolean {
 	return hasApiKey && loadKeatingUiSettings().webSearch !== "off";
@@ -79,6 +80,13 @@ export function resolveProviderWebSearchRoute(
 	model: Model<Api>,
 	hasApiKey: boolean,
 ): SearchRoute {
+	if (model.provider !== "browser" && isNotOrganicFeatureEnabled() && notOrganicPublicClient()
+		&& loadKeatingUiSettings().webSearch !== "off") {
+		return {
+			provider: model.provider, modelId: model.id, kind: "client-adapter",
+			tool: "client-web-search", citationKind: "tool-results", providerNative: false,
+		};
+	}
 	const negotiation = negotiateProviderCapabilities(model, {
 		webSearch: true,
 		citations: true,

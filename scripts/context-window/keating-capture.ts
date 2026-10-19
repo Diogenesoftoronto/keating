@@ -4,9 +4,13 @@ import type { JudgementAnswer, JudgementRequest } from "../../packages/learner-c
 import type { KeatingScenario } from "./keating-types.js";
 
 /** Stage-control doubles only. These outputs never become benchmark answers or gold labels. */
-function harnessAnswers(request: JudgementRequest, standard: string): Record<string, JudgementAnswer> {
+function harnessAnswers(request: JudgementRequest, standard: string, retainResearchReview: boolean): Record<string, JudgementAnswer> {
   return Object.fromEntries(Object.entries(request.questions).map(([id, question]) => {
-    if (question.type === "noul") return [id, { type: "noul", noul: id.startsWith("quality_") ? 1 : 0 }];
+    if (question.type === "noul") return [id, { type: "noul", noul: id.startsWith("quality_") ? 1
+      // An adherence episode cannot use a fake planning rejection to remove
+      // source review. Abstain independently of gold and retain the production
+      // uncertainty path; planning episodes keep their existing stage doubles.
+      : retainResearchReview && id === "fresh_sources_needed" ? .5 : 0 }];
     if (question.type === "choice") {
       const choice = id === "draft_standard" ? standard : Object.keys(question.criteria)[0]!;
       return [id, { type: "choice", choice, confidence: 1, probabilities: Object.fromEntries(Object.keys(question.criteria).map(key => [key, Number(key === choice)])) }];
@@ -31,7 +35,7 @@ export async function captureKeatingRequests(scenario: KeatingScenario): Promise
     onProgress(snapshot) { phase = snapshot.phase; },
     judge: async request => {
       if (phase === (scenario.stage === "planning" ? "planning" : "checking")) captured.push(structuredClone(request));
-      return { ok: true, response: { backend: { backend: "fixture", model: "not-an-evaluated-model", calibrationSha256: null }, answers: harnessAnswers(request, scenario.standard ?? "supported") } };
+      return { ok: true, response: { backend: { backend: "fixture", model: "not-an-evaluated-model", calibrationSha256: null }, answers: harnessAnswers(request, scenario.standard ?? "supported", scenario.stage === "adherence") } };
     },
     generate: async () => ({ reply: structuredClone(scenario.reply ?? { text: "Fixture response for request capture only.", toolCalls: [] }), value: null }),
   });

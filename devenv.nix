@@ -250,7 +250,7 @@ in
     VITE_NOTORGANIC_ACCOUNT_URL = "";
     VITE_NOTORGANIC_CLIENT_ID = "";
     VITE_NOTORGANIC_REDIRECT_URI = "";
-    VITE_NOTORGANIC_SCOPE = "wallet:read usage:read billing:checkout infer:balanced realtime:connect";
+    VITE_NOTORGANIC_SCOPE = "wallet:read usage:read billing:checkout infer:balanced infer:gpt-6.1-sol web:search web:fetch realtime:connect";
 
     # Browser inference reservation ceiling (100000 micro-USD = $0.10).
     VITE_NOTORGANIC_MAX_COST_MICROUSD = "100000";

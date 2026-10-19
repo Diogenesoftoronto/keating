@@ -153,8 +153,8 @@ export function NotOrganicAccessPanel({ loading = false, error, summary, connect
 			<KeatingBot size={64} state={loading ? "connecting" : connected ? "settled" : "greeting"} label="" />
 			<p id={descriptionId} className={css({ fontSize: "0.9375rem", lineHeight: 1.6 })}>{pack
 				? <>Add <strong>${pack.priceUsd}</strong> in Keating credits with your Not Organic account.</>
-				: reconnect ? <>Sign in or sign up with <strong>Not Organic</strong> to reconnect this model and retry your message.</>
-				: <>Sign up or sign in to use <strong>Inkling Small</strong>, Keating’s default model. Your account is managed by Not Organic.</>}</p>
+				: reconnect ? <>Sign in with <strong>Not Organic</strong> to approve access to your selected model and web search.</>
+				: <>Sign up or sign in with <strong>Not Organic</strong> to use Keating’s hosted models and web search. You can choose Inkling Small or GPT-6.1 Sol.</>}</p>
 			</div>
 			{summary && <p role="status" className={css({ fontSize: "0.875rem", overflowWrap: "anywhere" })}>{summary}</p>}
 			{error && <p role="alert" className={css({ fontSize: "0.875rem", color: "var(--destructive)", overflowWrap: "anywhere" })}>{error}</p>}

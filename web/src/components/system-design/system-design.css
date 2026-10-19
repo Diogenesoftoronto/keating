@@ -1,0 +1,47 @@
+.system-design-workbench { display: grid; gap: 1.25rem; min-width: 0; color: var(--foreground); font-size: .875rem; line-height: 1.5; }
+.system-design-workbench h3 { margin: 0; font-size: 1.125rem; font-weight: 700; }
+.system-design-workbench h4 { margin: 0; font-size: .875rem; font-weight: 650; }
+.system-design-workbench p { margin: 0; }
+.sd-brief { display: grid; gap: .625rem; }
+.sd-heading, .sd-section-heading { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; }
+.sd-kicker { font-size: .6875rem; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--muted-foreground); }
+.sd-muted { color: var(--muted-foreground); font-size: .8125rem; }
+.sd-diagram { overflow: auto; min-height: 9rem; border: 1px solid var(--border); border-radius: .625rem; background: color-mix(in srgb, var(--muted) 25%, transparent); padding: 1rem; }
+.sd-empty { display: grid; min-height: 7rem; place-items: center; color: var(--muted-foreground); text-align: center; }
+.sd-editor { display: grid; gap: .75rem; min-width: 0; border: 0; padding: 0; margin: 0; }
+.sd-editor legend { width: 100%; padding: 0 0 .75rem; font-weight: 650; }
+.system-design-workbench button { min-height: 2.5rem; border: 1px solid var(--border); border-radius: .375rem; padding: .4rem .75rem; background: var(--background); color: var(--foreground); cursor: pointer; font-size: .8125rem; font-weight: 600; }
+.system-design-workbench button:hover:enabled { background: var(--muted); }
+.system-design-workbench button:disabled { cursor: default; opacity: .5; }
+.system-design-workbench :is(button, input, select, textarea):focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.system-design-workbench :is(input, select, textarea) { width: 100%; min-width: 0; min-height: 2.5rem; border: 1px solid var(--border); border-radius: .375rem; padding: .5rem .625rem; background: var(--background); color: var(--foreground); font: inherit; }
+.system-design-workbench textarea { resize: vertical; }
+.system-design-workbench label { display: grid; gap: .25rem; font-size: .75rem; font-weight: 550; }
+.sd-components, .sd-connections { display: grid; gap: .5rem; list-style: none; margin: 0; padding: 0; }
+.sd-component { display: grid; grid-template-columns: minmax(0, 1fr) minmax(8rem, .55fr) auto; align-items: end; gap: .5rem; }
+.sd-remove { color: var(--muted-foreground) !important; }
+.sd-connections li { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding-block: .25rem; border-bottom: 1px solid var(--border); }
+.sd-connections li > span { min-width: 0; overflow-wrap: anywhere; }
+.sd-connections small, .sd-review small { display: block; color: var(--muted-foreground); font-size: .75rem; }
+.sd-connection-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: end; gap: .5rem; }
+.sd-connection-form label:nth-child(3) { grid-column: 1; }
+.sd-review { display: grid; gap: .375rem; border-top: 1px solid var(--border); padding-top: .875rem; }
+.sd-review ul { display: grid; gap: .5rem; list-style: none; margin: .25rem 0 0; padding: 0; }
+.sd-review li { display: flex; align-items: baseline; gap: .75rem; }
+.sd-review li > span:first-child { flex: 0 0 3.5rem; font-size: .75rem; font-weight: 600; }
+.sd-check-pass { color: var(--foreground); }
+.sd-review ul.sd-criteria { list-style: disc; padding-left: 1.1rem; }
+.sd-review .sd-criteria li { display: list-item; }
+.sd-explanation { border-top: 1px solid var(--border); padding-top: .875rem; }
+.sd-footer { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.sd-footer p { flex-basis: 100%; }
+.system-design-workbench .sd-submit { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+.system-design-workbench .sd-submit:hover:enabled { background: color-mix(in srgb, var(--primary) 88%, var(--background)); }
+.sd-error { color: var(--destructive); font-size: .8125rem; }
+@media (max-width: 480px) {
+  .sd-component { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .sd-component label:first-child { grid-column: 1 / -1; }
+  .sd-connection-form { grid-template-columns: minmax(0, 1fr); }
+  .sd-connection-form label:nth-child(3) { grid-column: auto; }
+  .sd-connection-form button { justify-self: start; }
+}

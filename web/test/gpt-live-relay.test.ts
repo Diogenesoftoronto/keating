@@ -8,6 +8,7 @@ import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { pathToFileURL } from "node:url";
 import type { ClientRequest, IncomingMessage } from "node:http";
+import nitroConfig from "../nitro.config";
 import { createGptLiveRelay, GPT_LIVE_BUFFER_BYTES, GPT_LIVE_FRAME_BYTES, gptLiveServerConfig, safeGptLiveUpgradeError,
   validateGptLiveOrigin, type GptLiveUpstream, type GptLiveUpstreamOptions } from "../server/utils/gpt-live-relay";
 
@@ -144,7 +145,12 @@ test("actual H3/CrossWS Node sockets preserve text auth, bufferedAmount, forward
   const webRoot = resolve(import.meta.dir, "..");
   const require = createRequire(join(webRoot, "package.json"));
   try {
-    const built = await Bun.build({ entrypoints: [join(webRoot, "server/api/live.ts")], target: "node", format: "esm", outdir: directory, naming: "route.mjs" });
+    // Exercise the registered endpoint: a working relay file is insufficient
+    // when production's explicit route list sends /api/live to the API fallback.
+    const liveRoute = nitroConfig.handlers?.find(handler => typeof handler !== "string" && handler.route === "/api/live");
+    expect(liveRoute).toBeDefined();
+    if (!liveRoute || typeof liveRoute === "string" || !liveRoute.handler) throw new Error("Live relay is not registered");
+    const built = await Bun.build({ entrypoints: [join(webRoot, liveRoute.handler)], target: "node", format: "esm", outdir: directory, naming: "route.mjs" });
     expect(built.success).toBe(true);
     const script = `
       import assert from 'node:assert/strict';

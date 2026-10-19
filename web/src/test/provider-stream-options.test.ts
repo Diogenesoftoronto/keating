@@ -1,6 +1,12 @@
 import { expect, test } from "bun:test";
 import type { SimpleStreamOptions } from "@earendil-works/pi-ai";
-import { normalizeProviderStreamOptions } from "../hooks/keating-stream";
+import { normalizeProviderStreamOptions, notOrganicInferenceRequestUrl } from "../hooks/keating-stream";
+
+test("Not Organic signs the endpoint selected by the model API", () => {
+	const baseUrl = "https://api.notorganic.test/v1///";
+	expect(notOrganicInferenceRequestUrl({ api: "openai-responses", baseUrl })).toBe("https://api.notorganic.test/v1/responses");
+	expect(notOrganicInferenceRequestUrl({ api: "openai-completions", baseUrl })).toBe("https://api.notorganic.test/v1/chat/completions");
+});
 
 test("Codex omits temperature and preserves the caller's remaining options", () => {
 	const onPayload = (payload: unknown) => payload;

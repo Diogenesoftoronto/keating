@@ -18,6 +18,7 @@ import { useFlashcardAutoReveal } from "../../components/flashcards/useFlashcard
 import "./activity.css";
 import type { UiActionReceipt, UiDocument, UiDocumentNode, UiQuestion, UiQuestionGroupResponse, UiQuizTiming, UiStudyPlanItem, UiTaskNode } from "@keating/learner-contracts";
 import { SimulationRenderer } from "../../components/SimulationRenderer";
+import { SystemDesignWorkbench } from "../../components/SystemDesignWorkbench";
 import { ExamRenderer } from "../../components/ExamRenderer";
 import { CodingChallenge } from "../../components/CodingChallenge";
 import { MusicLab } from "../../components/MusicLab";
@@ -86,6 +87,7 @@ function SharedNode({ documentId, documentRevision, node, receipts, disabled, on
 	if (node.type === "coding-challenge") return <CodingChallenge node={node} disabled={disabled} onAction={onAction} />;
 	if (node.type === "music-lab") return <MusicLab node={node} disabled={disabled} />;
 	if (node.type === "language-practice") return <LanguagePractice node={node} receipt={completedNodeReceipt(receipts, node.id, ["complete-language-practice"])} disabled={disabled} onAction={onAction} />;
+	if (node.type === "task" && node.diagram) return <SystemDesignWorkbench documentId={documentId} documentRevision={documentRevision} node={{ ...node, diagram: node.diagram }} receipt={completedNodeReceipt(receipts, node.id, ["submit-task"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "task") return <Task documentId={documentId} node={node} receipt={completedNodeReceipt(receipts, node.id, ["submit-task"])} receipts={receipts} disabled={disabled} onAction={onAction} />;
 	if (node.type === "media") return <Media node={node} receipt={completedNodeReceipt(receipts, node.id, ["save-artifact"])} disabled={disabled} onAction={onAction} />;
 	return <Handoff node={node} receipt={completedNodeReceipt(receipts, node.id, ["open-handoff"])} disabled={disabled} onAction={onAction} />;

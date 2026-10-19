@@ -3,6 +3,7 @@ import {
 	isPublicCheckoutConfigured,
 	pricingAvailability,
 	pricingPackAction,
+	pricingPlanAction,
 	pricingWaitlistCta,
 } from "../pages/Pricing";
 import { NOTORGANIC_PACKS } from "../notorganic-provider/packs";
@@ -19,6 +20,15 @@ const completePublicConfig = {
 };
 
 describe("pricing availability", () => {
+	test("keeps subscription loading separate from confirmed waitlist eligibility", () => {
+		const wallet = normalizeCreditWallet({ availableMicros: 5_000_000, checkout: { available: true, planIds: ["keating_personal_v2"] } });
+		expect(pricingPlanAction(true, true, undefined, true)).toBe("loading");
+		expect(pricingPlanAction(true, true, wallet, false)).toBe("checkout");
+		expect(pricingPlanAction(true, true, wallet, true)).toBe("loading");
+		expect(pricingPlanAction(true, true, undefined, false)).toBe("unavailable");
+		expect(pricingPlanAction(false, true, undefined, false)).toBe("waitlist");
+		expect(pricingPlanAction(true, false, undefined, false)).toBe("connect");
+	});
 	test("requires the feature gate and the complete public client contract", () => {
 		expect(isPublicCheckoutConfigured(completePublicConfig)).toBe(true);
 		for (const key of Object.keys(completePublicConfig)) {
