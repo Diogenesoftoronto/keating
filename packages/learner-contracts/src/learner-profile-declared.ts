@@ -106,6 +106,8 @@ export interface DeclaredLearnerProfile {
   interfaceLocale: InterfaceLocale;
   explainInLanguage: string;
   otherLanguages: string[];
+  /** Optional self-reported fluency per retained additional language; never an ability measurement. */
+  otherLanguageFluencies?: Record<string, LanguageFluency>;
   instructionLanguageFluency: LanguageFluency | "";
 
   educationStage: EducationStage | "";
@@ -158,6 +160,7 @@ export function defaultDeclaredProfile(): DeclaredLearnerProfile {
     interfaceLocale: "system",
     explainInLanguage: "",
     otherLanguages: [],
+    otherLanguageFluencies: {},
     instructionLanguageFluency: "",
     educationStage: "",
     priorKnowledge: "",
@@ -225,6 +228,23 @@ function stringList(value: unknown, maxEntries: number, maxLength: number): stri
   return out;
 }
 
+/** Keep ratings attached to the bounded authoritative language list, using its display spelling. */
+function otherLanguageFluencies(value: unknown, languages: readonly string[]): Record<string, LanguageFluency> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const names = new Map(languages.map(name => [name.toLowerCase(), name]));
+  const ratings = new Map<string, LanguageFluency>();
+  for (const [rawName, descriptor] of Object.entries(Object.getOwnPropertyDescriptors(value))) {
+    // Stored ratings are data; accessor properties must not execute during parsing.
+    const rawRating: unknown = Object.hasOwn(descriptor, "value") ? descriptor.value : undefined;
+    const name = names.get(str(rawName, 60).toLowerCase());
+    const rating = oneOf(rawRating, LANGUAGE_FLUENCIES);
+    if (name && rating && !ratings.has(name)) ratings.set(name, rating);
+  }
+  // Unlike assignment into {}, this safely retains names such as __proto__
+  // as ordinary own data properties without changing the object prototype.
+  return Object.fromEntries(ratings);
+}
+
 /**
  * Never throws and never returns a partial object: malformed storage yields
  * defaults, so a corrupted profile degrades to "not answered" rather than
@@ -242,6 +262,7 @@ export function parseDeclaredProfile(value: unknown): DeclaredLearnerProfile {
   }
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return fallback;
   const input = raw as Record<string, unknown>;
+  const languages = stringList(input.otherLanguages, 8, 60);
 
   return {
     schemaVersion: DECLARED_PROFILE_SCHEMA_VERSION,
@@ -250,7 +271,8 @@ export function parseDeclaredProfile(value: unknown): DeclaredLearnerProfile {
     ageBand: oneOf(input.ageBand, AGE_BANDS),
     interfaceLocale: oneOf(input.interfaceLocale, INTERFACE_LOCALES) || "system",
     explainInLanguage: str(input.explainInLanguage, 60),
-    otherLanguages: stringList(input.otherLanguages, 8, 60),
+    otherLanguages: languages,
+    otherLanguageFluencies: otherLanguageFluencies(Object.getOwnPropertyDescriptor(input, "otherLanguageFluencies")?.value, languages),
     instructionLanguageFluency: oneOf(input.instructionLanguageFluency, LANGUAGE_FLUENCIES),
     educationStage: oneOf(input.educationStage, EDUCATION_STAGES),
     priorKnowledge: str(input.priorKnowledge, 600),
@@ -285,7 +307,7 @@ export function parseDeclaredProfile(value: unknown): DeclaredLearnerProfile {
 /** Field ids only — used for telemetry and completeness, never carrying values. */
 export const DECLARED_PROFILE_FIELD_GROUPS: Record<DeclaredProfileGroup, readonly (keyof DeclaredLearnerProfile)[]> = {
   identity: ["preferredName", "pronouns", "ageBand"],
-  language: ["interfaceLocale", "explainInLanguage", "otherLanguages", "instructionLanguageFluency"],
+  language: ["interfaceLocale", "explainInLanguage", "otherLanguages", "otherLanguageFluencies", "instructionLanguageFluency"],
   context: ["educationStage", "priorKnowledge", "interests"],
   goals: ["goalText", "pursuits", "motivation", "deadline", "weeklyMinutes", "preferredSessionMinutes"],
   pedagogy: ["socraticIntensity", "hintLevel", "tone", "depth", "examplesFirst", "analogyDomains"],
@@ -302,6 +324,7 @@ export const DECLARED_PROFILE_FIELD_GROUPS: Record<DeclaredProfileGroup, readonl
 
 function isAnswered(profile: DeclaredLearnerProfile, field: keyof DeclaredLearnerProfile): boolean {
   const value = profile[field];
+  if (field === "otherLanguageFluencies") return Object.keys(otherLanguageFluencies(value, profile.otherLanguages)).length > 0;
   if (field === "interfaceLocale") return value !== "system";
   if (Array.isArray(value)) return value.length > 0;
   if (typeof value === "string") return value.length > 0;
@@ -370,7 +393,12 @@ export function declaredProfilePromptLines(profile: DeclaredLearnerProfile): str
   add("Pronouns", profile.pronouns);
   add("Age band", profile.ageBand ? AGE_BAND_LABELS[profile.ageBand] : "");
   add("Explain in language", profile.explainInLanguage);
-  add("Also speaks", profile.otherLanguages.join(", "));
+  const languageRatings = otherLanguageFluencies(profile.otherLanguageFluencies, profile.otherLanguages);
+  add("Also speaks", profile.otherLanguages.map(language => Object.hasOwn(languageRatings, language)
+    ? `${language} (self-reported fluency: ${languageRatings[language]})` : language).join(", "));
+  if (Object.keys(languageRatings).length) {
+    lines.push("Other-language fluencies are self-reported communication context, not evidence of subject knowledge or mastery.");
+  }
   add("Fluency in the language of instruction", profile.instructionLanguageFluency);
   add("Education stage", profile.educationStage);
   add("Prior knowledge (self-reported)", profile.priorKnowledge);

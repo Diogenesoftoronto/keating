@@ -39,6 +39,7 @@
 .chat-onboarding__goal > span { color: var(--muted-foreground); }
 .chat-onboarding__goal textarea { display: block; box-sizing: border-box; margin-top: 8px; width: 100%; min-height: 100px; padding: 12px; resize: vertical; border: 1px solid var(--border); border-radius: 6px; background: var(--card); color: inherit; font: inherit; font-size: 14px; line-height: 1.5; }
 .chat-onboarding__error { margin: 12px 0 0; font-size: 13px; color: var(--destructive); }
+.chat-onboarding__hint { margin: 12px 0 0; font-size: 13px; color: var(--muted-foreground); }
 .chat-onboarding__navigation { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); }
 .chat-onboarding__advance { display: flex; align-items: center; gap: 8px; }
 .chat-onboarding__tips { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
