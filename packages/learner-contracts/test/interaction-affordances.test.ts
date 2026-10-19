@@ -64,6 +64,15 @@ describe("interaction affordance table", () => {
 });
 
 describe("interaction modifiers", () => {
+  test("architecture construction remains selectable for interview practice without widening ordinary recall", () => {
+    const practice = { ...teaching, practice_requested: true };
+    const rec = recommendInteraction(features("extended_production", "structure_relations", "variable_relationship"), practice);
+    expect(rec.families.map(({ family }) => family)).toEqual(["manipulable"]);
+    expect(rec.families[0]?.components).toEqual(["Diagram"]);
+    expect(recommendInteraction(features("structure_relations"), practice).action).toBe("none");
+    expect(recommendInteraction(features("extended_production"), practice).action).toBe("none");
+    expect(recommendInteraction(features("discrete_recall", "untested_coverage"), practice).families[0]?.components).toEqual(["Quiz", "Flashcards"]);
+  });
   test("pending submissions take precedence: grade first", () => {
     const rec = recommendInteraction(features("prediction_opportunity"), teaching, { pendingSubmissions: [{ kind: "quiz", id: "q", questionIds: ["a"] }] });
     expect(rec.action).toBe("grade-first");
@@ -92,7 +101,8 @@ describe("interaction modifiers", () => {
 
   test("a stuck learner is not sent away from the chat", () => {
     const rec = recommendInteraction(features("extended_production", "structure_relations"), { ...teaching, learner_stuck: true });
-    expect(rec.families.map(({ family }) => family)).toEqual(["workspace"]);
+    expect(rec.families.map(({ family }) => family)).toEqual(["manipulable", "workspace"]);
+    expect(rec.families.find(({ family }) => family === "manipulable")?.components).toEqual(["Diagram"]);
     expect(recommendInteraction(features("outside_observation"), { ...teaching, learner_stuck: true }).action).toBe("none");
   });
 

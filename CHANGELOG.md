@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.16
+
+- Add an interactive Diagram workbench for building and explaining relationship graphs (concept maps, cycles, process flows, system design interviews) on web and mobile, with structural checks the tutor reviews against the original brief and criteria.
+- Offer GPT-6.1 Sol through a Not Organic account, asking for consent before first use, and route account-hosted web search and fetch through Not Organic.
+- List Not Organic first in the model picker and show it before sign-in.
+- Skip the onboarding sign-in step for learners who are already signed in, and start sign-in directly otherwise.
+- Use dropdowns for pronouns and languages, and record an optional fluency for each additional language.
+- Add a device-voice option for spoken chat replies, and make dyslexia-friendly mode use Atkinson Hyperlegible and enable spoken replies.
+- Ask for weekly study time in hours instead of minutes.
+- Send purchases to the Not Organic waitlist when checkout is unavailable.
+- Fix the Live voice relay in standalone server builds.
+
 ## 4.0.15
 
 - Tell the tutor when each learner message was sent and how long since the previous one, so it can reorient learners returning after days or weeks and reason about dates and deadlines.

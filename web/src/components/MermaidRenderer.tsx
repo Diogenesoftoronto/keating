@@ -4,6 +4,7 @@ import { Maximize2, X } from "lucide-react";
 import { detectSupportedMermaidGrammar } from "@keating/learner-contracts";
 import { css, cx } from "../../styled-system/css";
 import { sanitizeSvg } from "../lib/sanitize-svg";
+import { decodeSystemDesignSvgLabels } from "../lib/system-design-svg";
 
 const errorContainerClass = css({
 	padding: "1rem",
@@ -140,6 +141,9 @@ const expandedDiagramClass = css({
 interface MermaidRendererProps {
 	content: string;
 	className?: string;
+	/** Plain graph labels should stay SVG text, without HTML label markup. */
+	htmlLabels?: boolean;
+	decodeEntityLabels?: boolean;
 }
 
 // Cache for rendered diagrams
@@ -153,8 +157,8 @@ export function currentMermaidTheme(documentElement = typeof document === "undef
 }
 
 /** A lossless tuple key prevents same-prefix diagrams from sharing SVG output. */
-export function mermaidRenderCacheKey(source: string, theme: MermaidTheme): string {
-	return JSON.stringify([theme, source]);
+export function mermaidRenderCacheKey(source: string, theme: MermaidTheme, htmlLabels = true, decodeEntityLabels = false): string {
+	return JSON.stringify([theme, source, htmlLabels, decodeEntityLabels]);
 }
 
 export function mermaidSourceError(source: string): string | null {
@@ -188,7 +192,7 @@ export function extractMermaidSource(input: string): string {
 	return match ? match[1].trim() : trimmed;
 }
 
-export function MermaidRenderer({ content, className }: MermaidRendererProps) {
+export function MermaidRenderer({ content, className, htmlLabels = true, decodeEntityLabels = false }: MermaidRendererProps) {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const renderTargetRef = useRef<HTMLDivElement | null>(null);
 	const expandButtonRef = useRef<HTMLButtonElement>(null);
@@ -219,7 +223,7 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 			}
 
 			// Check cache first
-			const cacheKey = mermaidRenderCacheKey(mermaidCode, theme);
+			const cacheKey = mermaidRenderCacheKey(mermaidCode, theme, htmlLabels, decodeEntityLabels);
 			if (renderCache.has(cacheKey)) {
 				if (!cancelled) {
 					setSvg(renderCache.get(cacheKey)!);
@@ -238,13 +242,14 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 					startOnLoad: false,
 					theme,
 					securityLevel: "strict",
+					htmlLabels,
 					flowchart: {
 						useMaxWidth: true,
 						// Render `<br/>` markers inside node labels as real line
 						// breaks. The output SVG is passed through sanitizeSvg,
 						// which explicitly permits the `<foreignObject>` Mermaid wraps
 						// around htmlLabels content only on this strict-rendered path.
-						htmlLabels: true,
+						htmlLabels,
 					},
 				});
 
@@ -268,7 +273,8 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 
 				// Render into detached container
 				const { svg: renderedSvg } = await mermaid.default.render(id, mermaidCode, renderTargetRef.current);
-				const safeSvg = sanitizeSvg(renderedSvg, { allowForeignObject: true });
+				const sanitizedSvg = sanitizeSvg(renderedSvg, { allowForeignObject: htmlLabels });
+				const safeSvg = sanitizedSvg && decodeEntityLabels && !htmlLabels ? decodeSystemDesignSvgLabels(sanitizedSvg) : sanitizedSvg;
 				if (!safeSvg) {
 					throw new Error("Rendered diagram failed SVG safety checks");
 				}
@@ -305,7 +311,7 @@ export function MermaidRenderer({ content, className }: MermaidRendererProps) {
 				renderTargetRef.current = null;
 			}
 		};
-	}, [content, theme]);
+	}, [content, theme, htmlLabels, decodeEntityLabels]);
 
 	useEffect(() => {
 		if (!expanded || typeof document === "undefined") return;

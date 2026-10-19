@@ -6,8 +6,6 @@ import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
 import { useSeo } from "../hooks/useSeo";
 import {
-	CreditWaitlistDialog,
-	promptCreditWaitlist,
 	type PricingWaitlistVariant,
 } from "../components/CreditWaitlistDialog";
 import {
@@ -19,6 +17,7 @@ import { createNotOrganicCheckout, createNotOrganicSubscriptionCheckout } from "
 import { availableCreditPacks, formatCreditBalance, normalizeCreditWallet, type CreditWallet } from "../notorganic-provider/credit-wallet";
 import { KEATING_PERSONAL_PLAN, subscriptionAvailable, subscriptionCheckoutEnabled } from "../notorganic-provider/plans";
 import { KEATING_SUBSCRIBER_BENEFITS } from "../notorganic-provider/subscriber-benefits";
+import { purchaseWaitlistUrl } from "../notorganic-provider/purchase-waitlist";
 import { PROVIDER_CREDENTIALS_CHANGED_EVENT } from "../keating/model-prefs";
 import "./pricing-page.css";
 
@@ -80,6 +79,14 @@ function readPricingSession(client: NotOrganicPublicClient | null) {
 	try { return client?.getSession() ?? null; } catch { return null; }
 }
 
+export function pricingPlanAction(plansEnabled: boolean, providerConnected: boolean, wallet: CreditWallet | undefined, walletLoading: boolean): "waitlist" | "connect" | "loading" | "unavailable" | "checkout" {
+	if (!plansEnabled) return "waitlist";
+	if (!providerConnected) return "connect";
+	if (walletLoading) return "loading";
+	if (!wallet) return "unavailable";
+	return subscriptionAvailable(wallet, true) ? "checkout" : "waitlist";
+}
+
 export function Pricing() {
 	const posthog = usePostHog();
 	const [pricingVariant, setPricingVariant] = useState<PricingWaitlistVariant>("control");
@@ -120,7 +127,7 @@ export function Pricing() {
 	useEffect(() => {
 		const selected = new URLSearchParams(window.location.search).get("pack");
 		const pack = NOTORGANIC_PACKS.find(item => item.id === selected);
-		if (pack && !checkoutConfigured) promptCreditWaitlist(pack.id);
+		if (pack && !checkoutConfigured) window.location.assign(purchaseWaitlistUrl("credits", pack.id));
 	}, [checkoutConfigured]);
 	useSeo({
 		title: "Pricing — Keating",
@@ -178,11 +185,7 @@ export function Pricing() {
 	}, [providerSession]);
 
 
-	const buyPack = async (pack: NotOrganicPack) => {
-		if (checkoutPending.current) return;
-		const connected = Boolean(readPricingSession(publicClient));
-		const action = pricingPackAction(checkoutConfigured, connected, wallet, walletLoading, pack.id);
-		if (action === "loading" || action === "unavailable") return;
+	const recordPackIntent = (pack: NotOrganicPack) => {
 		// Keep the established event name stable: selecting a pack is purchase
 		// intent, not a completed checkout. The availability property makes that
 		// distinction explicit without breaking historical funnels.
@@ -192,8 +195,15 @@ export function Pricing() {
 			availability,
 			pricing_cta_variant: pricingVariant,
 		});
-		if (!publicClient || action === "waitlist") {
-			promptCreditWaitlist(pack.id, pricingVariant);
+	};
+	const buyPack = async (pack: NotOrganicPack) => {
+		if (checkoutPending.current) return;
+		const connected = Boolean(readPricingSession(publicClient));
+		const action = pricingPackAction(checkoutConfigured, connected, wallet, walletLoading, pack.id);
+		if (action === "loading") return;
+		recordPackIntent(pack);
+		if (!publicClient || action === "waitlist" || action === "unavailable") {
+			window.location.assign(purchaseWaitlistUrl("credits", pack.id));
 			return;
 		}
 		checkoutPending.current = true;
@@ -221,6 +231,7 @@ export function Pricing() {
 
 	const plansEnabled = checkoutConfigured && subscriptionCheckoutEnabled(import.meta.env);
 	const planAvailable = subscriptionAvailable(wallet, plansEnabled);
+	const planAction = pricingPlanAction(plansEnabled, Boolean(providerSession), wallet, walletLoading);
 	const buySubscription = async () => {
 		if (checkoutPending.current || !plansEnabled || !publicClient) return;
 		checkoutPending.current = true;
@@ -264,7 +275,7 @@ export function Pricing() {
 				<section className="pricing-own-key" aria-labelledby="personal-title">
 					<div className="pricing-own-key-copy"><p className="pricing-eyebrow">Monthly subscription</p><h2 id="personal-title">Keating {KEATING_PERSONAL_PLAN.name}</h2><p>${KEATING_PERSONAL_PLAN.monthlyCreditUsd} in hosted AI credit each month.<br />Unused monthly credit rolls forward one billing cycle. Top up when you need more.</p></div>
 					<div className="pricing-free-price"><span>${KEATING_PERSONAL_PLAN.priceUsdMonthly}</span><span>USD / month, before tax</span></div>
-					<button type="button" className="pricing-button" disabled={!plansEnabled || (Boolean(providerSession) && !planAvailable) || pendingPack !== null} onClick={() => void buySubscription()}>{pendingPack === KEATING_PERSONAL_PLAN.id ? "Opening…" : !plansEnabled || (providerSession && !planAvailable) ? "Subscription unavailable" : providerSession ? "Choose Personal" : "Connect for Personal"}<ArrowRight size={17} aria-hidden="true" /></button>
+					{planAction === "waitlist" ? <a className="pricing-button" href={purchaseWaitlistUrl("subscription", KEATING_PERSONAL_PLAN.id)}>Join the Personal waitlist<ArrowRight size={17} aria-hidden="true" /></a> : <button type="button" className="pricing-button" disabled={pendingPack !== null || planAction === "loading" || planAction === "unavailable"} onClick={() => void buySubscription()}>{planAction === "loading" ? "Checking availability…" : planAction === "unavailable" ? "Couldn't check availability" : pendingPack === KEATING_PERSONAL_PLAN.id ? "Opening…" : providerSession ? "Choose Personal" : "Connect for Personal"}<ArrowRight size={17} aria-hidden="true" /></button>}
 				</section>
 				<p className="pricing-notice">Existing subscriptions keep their current terms. Personal includes metered hosted usage; custom model training and premium voice are not included.</p>
 				<section className="pricing-own-key" aria-labelledby="subscriber-benefits-title">
@@ -288,7 +299,7 @@ export function Pricing() {
 							<h3>{pack.label}</h3>
 							<p className="pricing-pack-amount"><span>$</span>{pack.priceUsd}</p>
 							<p className="pricing-pack-value">${pack.priceUsd} in AI credits</p>
-							<button type="button" className={`pricing-button${pack.popular ? "" : " pricing-button--outline"}`} disabled={pendingPack !== null || action === "loading" || action === "unavailable"} onClick={() => void buyPack(pack)}>{pendingPack === pack.id ? (providerSession ? "Opening checkout…" : "Opening sign-in…") : action === "loading" ? "Checking availability…" : action === "unavailable" ? "Checkout unavailable" : pricingWaitlistCta(pack, pricingVariant)}<ArrowRight size={17} aria-hidden="true" /></button>
+							{action === "waitlist" || action === "unavailable" ? <a className={`pricing-button${pack.popular ? "" : " pricing-button--outline"}`} href={purchaseWaitlistUrl("credits", pack.id)} onClick={() => recordPackIntent(pack)}>Join waitlist for ${pack.priceUsd} credit<ArrowRight size={17} aria-hidden="true" /></a> : <button type="button" className={`pricing-button${pack.popular ? "" : " pricing-button--outline"}`} disabled={pendingPack !== null || action === "loading"} onClick={() => void buyPack(pack)}>{pendingPack === pack.id ? (providerSession ? "Opening checkout…" : "Opening sign-in…") : action === "loading" ? "Checking availability…" : pricingWaitlistCta(pack, pricingVariant)}<ArrowRight size={17} aria-hidden="true" /></button>}
 						</article>; })}
 					</div>
 					<div className="pricing-pack-notes"><span><Check size={15} aria-hidden="true" /> One-time payment, no subscription</span><span><Check size={15} aria-hidden="true" /> Same teaching tools</span><span>Prices in USD</span></div>
@@ -297,7 +308,6 @@ export function Pricing() {
 				<section className="pricing-faq" aria-labelledby="pricing-faq-title"><h2 id="pricing-faq-title">A few things to know.</h2><div>{FAQ_ITEMS.map(item => <details key={item.q}><summary>{item.q}</summary><p>{item.a}</p></details>)}</div></section>
 			</main>
 			<Footer />
-			<CreditWaitlistDialog />
 		</div>
 	);
 }

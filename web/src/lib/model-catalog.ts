@@ -30,6 +30,7 @@ export type ModelProviderAvailability = {
 };
 
 const MODEL_PROVIDER_PRIORITY = [
+	"notorganic",
 	"openai-codex",
 	"anthropic",
 	"openai",
@@ -53,6 +54,7 @@ export function compareModelProviders(left: string, right: string): number {
 
 export function displayModelProvider(provider: string): string {
 	const labels: Record<string, string> = {
+		notorganic: "Not Organic",
 		"desktop-offline": "On this device",
 		"amazon-bedrock": "Amazon Bedrock",
 		"openai-codex": "OpenAI Codex",
@@ -138,14 +140,16 @@ export async function discoverModels(
 		cloud: cloudProviders.has(provider),
 		configured: configured.has(provider),
 		manuallyHidden: hidden.has(provider),
-		revealed: revealed.has(provider),
+		// Account-backed choices are discoverable before sign-in. Selection still
+		// requires a real provider session, and explicit hiding remains respected.
+		revealed: revealed.has(provider) || (provider === NOTORGANIC_PROVIDER_ID && !hidden.has(provider)),
 	}));
 
 	for (const saved of modelPrefs.customModels) {
 		all.push(buildSavedModel(saved));
 	}
 
-	const knownProviders = new Set<string>(getProviders());
+	const knownProviders = cloudProviders;
 	const selectable: SelectableModel[] = all.map((model) => ({
 		key: modelKey(model),
 		model,

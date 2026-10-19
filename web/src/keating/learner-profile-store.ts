@@ -6,6 +6,8 @@ import {
 	parseDeclaredProfile,
 } from "@keating/learner-contracts";
 import { createLocalSetting } from "./local-setting";
+import { loadWebSpeechSettings, saveWebSpeechSettings, speechReplyMode } from "./speech";
+import { primeDeviceSpeech } from "./speech-providers/device-speech";
 
 export const DECLARED_PROFILE_STORAGE_KEY = "keating:learner-profile:v2";
 export const DECLARED_PROFILE_CHANGED_EVENT = "keating:learner-profile-v2-changed";
@@ -50,6 +52,7 @@ export function loadDeclaredProfile(): DeclaredLearnerProfile {
  * sites depend on — keeps returning the learner's free text.
  */
 export function saveDeclaredProfile(profile: DeclaredLearnerProfile): void {
+	const previous = loadDeclaredProfile();
 	const next = parseDeclaredProfile({ ...profile, updatedAt: new Date().toISOString() });
 	declaredProfileSetting.save(next);
 	try {
@@ -59,6 +62,16 @@ export function saveDeclaredProfile(profile: DeclaredLearnerProfile): void {
 		}
 	} catch {
 		// The v2 record above is authoritative; the mirror is a convenience.
+	}
+	// Activate only after a saved opt-in, never while editing a form draft.
+	// Upgrade the earlier enabled-but-unconfigured path once; later speech choices survive other profile saves.
+	if (next.dyslexiaFriendlyFont && loadDeclaredProfile().dyslexiaFriendlyFont) {
+		const speech = loadWebSpeechSettings();
+		if (!previous.dyslexiaFriendlyFont || (speech.enabled && speech.replyMode === undefined)) {
+			const replyMode = speechReplyMode(speech);
+			saveWebSpeechSettings({ ...speech, enabled: true, microphoneEnabled: false, replyMode });
+			if (replyMode === "device") primeDeviceSpeech();
+		}
 	}
 }
 

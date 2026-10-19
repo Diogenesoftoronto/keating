@@ -138,3 +138,97 @@ describe("declared learner profile", () => {
     expect(lines.some((line) => line.startsWith("Current pursuit:"))).toBe(false);
   });
 });
+
+
+describe("declared additional-language fluencies", () => {
+  it("adds empty ratings without changing legacy language names or prompt output", () => {
+    const profile = parseDeclaredProfile({ otherLanguages: ["French", "Spanish"], instructionLanguageFluency: "fluent" });
+    expect(defaultDeclaredProfile().otherLanguageFluencies).toEqual({});
+    expect(profile.otherLanguageFluencies).toEqual({});
+    expect(declaredProfilePromptLines(profile)).toEqual([
+      "Also speaks: French, Spanish", "Fluency in the language of instruction: fluent",
+    ]);
+    const legacy = { ...profile };
+    delete legacy.otherLanguageFluencies;
+    expect(declaredProfilePromptLines(legacy)).toEqual(declaredProfilePromptLines(profile));
+    expect(answeredDeclaredProfileFields(legacy)).toEqual(["otherLanguages", "instructionLanguageFluency"]);
+  });
+
+  it("matches trimmed case-insensitive names to the retained display spelling", () => {
+    const profile = parseDeclaredProfile({
+      otherLanguages: [" French ", "FRENCH", "Spanish", "German"],
+      otherLanguageFluencies: { " french ": "intermediate", FRENCH: "native", spanish: "beginner", Portuguese: "fluent", German: "unknown" },
+    });
+    expect(profile.otherLanguages).toEqual(["French", "Spanish", "German"]);
+    expect(profile.otherLanguageFluencies).toEqual({ French: "intermediate", Spanish: "beginner" });
+    expect(declaredProfilePromptLines(profile)).toContain("Also speaks: French (self-reported fluency: intermediate), Spanish (self-reported fluency: beginner), German");
+    expect(declaredProfilePromptLines(profile)).toContain("Other-language fluencies are self-reported communication context, not evidence of subject knowledge or mastery.");
+    expect(profile.instructionLanguageFluency).toBe("");
+  });
+
+  it("drops removed or renamed ratings without inventing a fluency for the new name", () => {
+    const saved = parseDeclaredProfile({ otherLanguages: ["French", "Spanish"], otherLanguageFluencies: { French: "native", Spanish: "fluent" } });
+    expect(parseDeclaredProfile({ ...saved, otherLanguages: [" french "] }).otherLanguageFluencies).toEqual({ french: "native" });
+    const renamed = parseDeclaredProfile({ ...saved, otherLanguages: ["German"] });
+    expect(renamed.otherLanguageFluencies).toEqual({});
+    expect(declaredProfilePromptLines(renamed)).toEqual(["Also speaks: German"]);
+    expect(parseDeclaredProfile({ ...saved, otherLanguages: [] }).otherLanguageFluencies).toEqual({});
+  });
+
+  it("bounds language names and retains ratings only for the first eight unique names", () => {
+    const names = Array.from({ length: 10 }, (_, index) => `language-${index}`);
+    const longName = "L".repeat(70);
+    const profile = parseDeclaredProfile({ otherLanguages: [longName, ...names], otherLanguageFluencies: Object.fromEntries([longName, ...names].map(name => [name, "fluent"])) });
+    expect(profile.otherLanguages).toHaveLength(8);
+    expect(profile.otherLanguages[0]).toHaveLength(60);
+    expect(Object.keys(profile.otherLanguageFluencies!)).toEqual(profile.otherLanguages);
+    expect(profile.otherLanguageFluencies!["language-7"]).toBeUndefined();
+  });
+
+  it("rejects malformed maps and invalid fluencies without inferring unknown ratings", () => {
+    for (const malformed of [null, [], ["native"], "fluent", 42, true]) {
+      expect(parseDeclaredProfile({ otherLanguages: ["French"], otherLanguageFluencies: malformed }).otherLanguageFluencies).toEqual({});
+    }
+    for (const rating of ["", "Native", "unknown", "expert", null, 1, {}, ["fluent"]]) {
+      const profile = parseDeclaredProfile({ otherLanguages: ["French"], otherLanguageFluencies: { French: rating } });
+      expect(profile.otherLanguageFluencies).toEqual({});
+      expect(declaredProfilePromptLines(profile)).toEqual(["Also speaks: French"]);
+    }
+    const malformed = parseDeclaredProfile({ otherLanguageFluencies: { French: "fluent" } });
+    expect(isDeclaredProfileEmpty(malformed)).toBe(true);
+    expect(answeredDeclaredProfileFields(malformed)).toEqual([]);
+  });
+
+  it("ignores inherited maps and entries while handling prototype-looking language names safely", () => {
+    const inheritedRatings = Object.create({ French: "native" });
+    inheritedRatings.Spanish = "intermediate";
+    expect(parseDeclaredProfile({ otherLanguages: ["French", "Spanish"], otherLanguageFluencies: inheritedRatings }).otherLanguageFluencies)
+      .toEqual({ Spanish: "intermediate" });
+    const inheritedProfile = Object.create({ otherLanguageFluencies: { French: "native" } });
+    inheritedProfile.otherLanguages = ["French"];
+    expect(parseDeclaredProfile(inheritedProfile).otherLanguageFluencies).toEqual({});
+    const accessorMap = Object.defineProperty({}, "French", { enumerable: true, get() { throw new Error("must-not-read"); } });
+    expect(parseDeclaredProfile({ otherLanguages: ["French"], otherLanguageFluencies: accessorMap }).otherLanguageFluencies).toEqual({});
+    const accessorProfile = Object.defineProperty({ otherLanguages: ["French"] }, "otherLanguageFluencies", { get() { throw new Error("must-not-read"); } });
+    expect(parseDeclaredProfile(accessorProfile).otherLanguageFluencies).toEqual({});
+    const nullPrototypeMap = Object.assign(Object.create(null), { French: "fluent" });
+    expect(parseDeclaredProfile({ otherLanguages: ["French"], otherLanguageFluencies: nullPrototypeMap }).otherLanguageFluencies).toEqual({ French: "fluent" });
+    const special = parseDeclaredProfile('{"otherLanguages":["__proto__","constructor","toString"],"otherLanguageFluencies":{"__proto__":"fluent","constructor":"beginner","toString":"native"}}');
+    expect(Object.getPrototypeOf(special.otherLanguageFluencies)).toBe(Object.prototype);
+    expect(Object.hasOwn(special.otherLanguageFluencies!, "__proto__")).toBe(true);
+    expect(special.otherLanguageFluencies!["__proto__"]).toBe("fluent");
+    expect(declaredProfilePromptLines(special)).toContain("Also speaks: __proto__ (self-reported fluency: fluent), constructor (self-reported fluency: beginner), toString (self-reported fluency: native)");
+    expect(({} as Record<string, unknown>).French).toBeUndefined();
+  });
+
+  it("persists canonical ratings through the existing JSON codec and lists telemetry field ids only", () => {
+    const profile = parseDeclaredProfile({ otherLanguages: [" French ", "Spanish"], otherLanguageFluencies: { french: "fluent" }, weeklyMinutes: 10_080 });
+    expect(parseDeclaredProfile(JSON.stringify(profile))).toEqual(profile);
+    const answered = answeredDeclaredProfileFields(profile);
+    expect(answered).toEqual(["otherLanguages", "otherLanguageFluencies", "weeklyMinutes"]);
+    expect(answered.join(" ")).not.toContain("French");
+    expect(answered.join(" ")).not.toContain("fluent");
+    expect(profile.weeklyMinutes).toBe(10_080);
+    expect(declaredProfilePromptLines(profile).some(line => /mastered|proficient in subject|strong student/i.test(line))).toBe(false);
+  });
+});

@@ -21,6 +21,7 @@ import { Alert, Image, Linking, Pressable, ScrollView, StyleSheet, Text, TextInp
 import { Button } from "@/components/Buttons";
 import { MarkdownText } from "@/components/MarkdownText";
 import { MermaidDiagram } from "@/components/MermaidDiagram";
+import { SystemDesignWorkbench } from "@/components/SystemDesignWorkbench";
 import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import { safeMarkdownUri } from "@/lib/markdown-document";
 import { uiActionLearnerMessage } from "@/lib/ui-action-mutations";
@@ -214,6 +215,11 @@ function UiNode({
   if (node.type === "coding-challenge") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text><MarkdownText content={node.prompt} /><Text selectable>{node.starterCode}</Text><Text style={styles.notice}>Open this challenge in the web app to edit and run the sample tests.</Text></View>;
   if (node.type === "music-lab") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text>{node.brief ? <MarkdownText content={node.brief} /> : null}<Text selectable>{node.code}</Text><Text style={styles.notice}>Open this lab in the web app for Strudel playback and controls.</Text></View>;
   if (node.type === "language-practice") return <View style={styles.node}><Text style={styles.nodeTitle}>{node.title}</Text><Text style={styles.notice}>{node.language} · {node.rounds.length} rounds</Text><Text style={styles.notice}>Open this practice in the web app for word tiles, listening, and pronunciation recording.</Text></View>;
+  if (node.type === "task" && node.diagram) return <SystemDesignWorkbench
+    node={{ ...node, diagram: node.diagram }} document={document} disabled={disabled} busy={busy !== null}
+    submitted={durableActions.find((action): action is Extract<UiAction, { type: "submit-task" }> => action.type === "submit-task" && action.nodeId === node.id)}
+    onSubmit={(submission) => run({ schemaVersion: UI_CONTRACT_VERSION, type: "submit-task", documentId: document.id, documentRevision: document.revision, nodeId: node.id, submission, ...(node.round !== undefined ? { round: node.round } : {}), idempotencyKey: actionKey(document, "submit-task", node.id, submission) })}
+  />;
   if (node.type === "task") return <TaskNode node={node} document={document} disabled={disabled} busy={busy} durableActions={durableActions} run={run} />;
   if (node.type === "handoff") return <HandoffNode node={node} document={document} disabled={disabled} busy={busy} run={run} />;
   return <ResourceNode node={node} document={document} disabled={disabled} busy={busy} durableActions={durableActions} run={run} />;

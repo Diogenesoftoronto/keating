@@ -25,6 +25,9 @@ export default defineNitroConfig({
   features: {
     websocket: true,
   },
+  // The Live relay loads ws through createRequire; include it in standalone
+  // output because this runtime import is invisible to the bundle tracer.
+  traceDeps: ["ws"],
   // Courses are account state, not ephemeral share payloads. Deployments should
   // point this at a persistent volume (for example /data/keating-courses).
   storage: {
@@ -169,6 +172,11 @@ export default defineNitroConfig({
 	  route: "/api/courses/realtime",
 	  handler: "server/api/courses/realtime.ts",
 	},
+    {
+      // WebSocket relays need explicit registration just like HTTP APIs.
+      route: "/api/live",
+      handler: "server/api/live.ts",
+    },
 	{
 	  route: "/api/agent-runtime/host/execute",
 	  handler: "server/api/agent-runtime/host/execute.ts",

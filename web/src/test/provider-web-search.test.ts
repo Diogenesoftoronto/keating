@@ -13,6 +13,36 @@ import {
 } from "../hooks/keating-stream";
 
 describe("provider-native web search", () => {
+	it("prefers hosted Not Organic search over native provider search and respects disabled/unconfigured fallback", () => {
+		const keys = ["VITE_NOTORGANIC_ENABLED", "VITE_NOTORGANIC_PUBLIC_ISSUER", "VITE_NOTORGANIC_AUTHORIZATION_URL", "VITE_NOTORGANIC_CLIENT_ID", "VITE_NOTORGANIC_REDIRECT_URI"];
+		const original = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+		const storageDescriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+		const values = new Map<string, string>();
+		Object.defineProperty(globalThis, "localStorage", { configurable: true, value: { getItem: (key: string) => values.get(key) ?? null } });
+		const model = { provider: "openai", api: "openai-responses", id: "gpt-5.6-sol" } as any;
+		try {
+			Object.assign(process.env, { VITE_NOTORGANIC_ENABLED: "true", VITE_NOTORGANIC_PUBLIC_ISSUER: "https://gateway.example.test", VITE_NOTORGANIC_AUTHORIZATION_URL: "https://accounts.example.test/authorize", VITE_NOTORGANIC_CLIENT_ID: "https://keating.example.test", VITE_NOTORGANIC_REDIRECT_URI: "https://keating.example.test/notorganic/callback" });
+			expect(resolveProviderWebSearchRoute(model, true).kind).toBe("client-adapter");
+			expect(resolveProviderWebSearchRoute(model, false).kind).toBe("client-adapter");
+			expect(shouldExposeClientWebSearch(model)).toBe(true);
+			expect(applyProviderWebSearch({}, model, true)).toBeUndefined();
+			values.set("keating_ui_settings", JSON.stringify({ webSearch: "off" }));
+			expect(resolveProviderWebSearchRoute(model, true).kind).toBe("unavailable");
+			expect(shouldExposeClientWebSearch(model)).toBe(false);
+			expect(applyProviderWebSearch({}, model, true)).toBeUndefined();
+			values.clear();
+			process.env.VITE_NOTORGANIC_ENABLED = "false";
+			expect(resolveProviderWebSearchRoute(model, true).kind).toBe("native");
+			expect(applyProviderWebSearch({}, model, true)).toBeDefined();
+			process.env.VITE_NOTORGANIC_ENABLED = "true";
+			delete process.env.VITE_NOTORGANIC_PUBLIC_ISSUER;
+			expect(resolveProviderWebSearchRoute(model, true).kind).toBe("native");
+		} finally {
+			for (const key of keys) { if (original[key] === undefined) delete process.env[key]; else process.env[key] = original[key]; }
+			if (storageDescriptor) Object.defineProperty(globalThis, "localStorage", storageDescriptor);
+			else delete (globalThis as any).localStorage;
+		}
+	});
 	it("keeps the request transformer pure outside the production stream", () => {
 		const signals: unknown[] = [];
 		const cleanup = setSearchProvenanceSignalSink((signal) => signals.push(signal));

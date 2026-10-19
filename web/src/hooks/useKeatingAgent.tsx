@@ -62,7 +62,7 @@ import { createWebActivityLearning } from "../keating/judgement/activity-learnin
 import { createTeachingAdjustmentController, withTeachingAdjustment, type TeachingAdjustmentController } from "../keating/judgement/teaching-adjustment";
 import { createDesktopNeedleRecall, withDesktopNeedleRecall } from "../keating/needle-retrieval";
 import { createWebMemoryAdmission, withWebMemoryBank } from "../keating/judgement/memory-admission";
-import { NOTORGANIC_DEFAULT_MODEL, isNotOrganicProvider, notOrganicPublicClient } from "../notorganic-provider";
+import { NOTORGANIC_DEFAULT_MODEL, isNotOrganicProvider, notOrganicModelNeedsConsent, notOrganicPublicClient } from "../notorganic-provider";
 import { hasNotOrganicProductSession, promptNotOrganicAccess } from "../components/NotOrganicAccessPromptDialog";
 import { rememberChatTurn, clearPendingChatTurn, claimPendingChatTurn, pendingChatTurn } from "../notorganic-provider/pending-chat-turn";
 import { applyGptLiveDefaultIfUnset } from "../keating/speech-default";
@@ -1813,12 +1813,13 @@ export function useKeatingAgent(
 		},
         onApiKeyRequired: async (provider: string) => {
           if (provider === "browser") return true;
-          if (await getProviderApiKey(provider)) return true;
+          const needsModelConsent = notOrganicModelNeedsConsent(agent.context.model);
+          if (await getProviderApiKey(provider) && !needsModelConsent) return true;
           if (isNotOrganicProvider(provider)) {
             await persistSnapshot();
             rememberChatTurn(agentSessionId, agent.context.messages);
           }
-          const allowed = await promptKeatingApiKey(provider);
+          const allowed = await promptKeatingApiKey(provider, { force: needsModelConsent });
           if (isNotOrganicProvider(provider)) clearPendingChatTurn(agentSessionId);
           return allowed;
         },
@@ -2709,11 +2710,12 @@ export function useKeatingAgent(
         messages: [...current.messages],
       }, { preserveSelectedModel: true });
     }
-    if (isNotOrganicProvider(model.provider) && !(await hasNotOrganicProductSession())
+    const needsModelConsent = notOrganicModelNeedsConsent(model);
+    if (isNotOrganicProvider(model.provider) && (needsModelConsent || !(await hasNotOrganicProductSession()))
       && isNotOrganicProvider(selectedModelRef.current.provider)) {
       // Keep the chosen model. Account setup should be visible, with sending
       // still gated by onApiKeyRequired if the learner dismisses the popup.
-      void promptNotOrganicAccess({ allowSignIn: true });
+      void promptNotOrganicAccess({ allowSignIn: true, reconnect: needsModelConsent });
     }
   }, [createAgent, posthog, selectModel]);
 
@@ -2813,13 +2815,14 @@ export function useKeatingAgent(
 			},
             onApiKeyRequired: async (provider: string) => {
               if (provider === "browser") return true;
-              if (await getProviderApiKey(provider)) return true;
+              const needsModelConsent = notOrganicModelNeedsConsent(existingAgent.context.model);
+              if (await getProviderApiKey(provider) && !needsModelConsent) return true;
               const sourceSessionId = sessionIdRef.current;
               if (isNotOrganicProvider(provider)) {
                 await saveSessionSnapshot(existingAgent, sourceSessionId, sessionCreatedAtRef.current);
                 rememberChatTurn(sourceSessionId, existingAgent.context.messages);
               }
-              const allowed = await promptKeatingApiKey(provider);
+              const allowed = await promptKeatingApiKey(provider, { force: needsModelConsent });
               if (isNotOrganicProvider(provider)) clearPendingChatTurn(sourceSessionId);
               return allowed;
             },

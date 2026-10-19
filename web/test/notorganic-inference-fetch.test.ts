@@ -3,7 +3,7 @@ import type { Api, Context, Model } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { streamSimple } from "@earendil-works/pi-ai/compat";
 import { createNotOrganicInferenceFetch } from "../src/notorganic-provider/inference-fetch";
-import { NOTORGANIC_DEFAULT_MODEL } from "../src/notorganic-provider";
+import { NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL } from "../src/notorganic-provider";
 import { streamWithApiRetry, WEB_API_RETRY_POLICY } from "../src/keating/api-retry";
 const url = "https://api.notorganic.test/v1/chat/completions";
 const model: Model<Api> = {
@@ -52,6 +52,54 @@ test("rejects unexpected endpoints before signing", async () => {
 	const fetcher = createNotOrganicInferenceFetch({ async headersFor() { signed = true; return new Headers(); } }, url, { idempotencyKey: "request", maxCostMicrousd: 1 });
 	await expect(fetcher("https://unexpected.test/v1/chat/completions", { method: "POST" })).rejects.toThrow("Unexpected");
 	expect(signed).toBe(false);
+});
+
+test("Responses models preserve account authorization and use the responses endpoint", async () => {
+	const selected = { ...NOTORGANIC_SOL_MODEL, baseUrl: "https://api.notorganic.test/v1" };
+	const context: Context = {
+		tools: [{ name: "lookup", description: "Look up a learning concept", parameters: Type.Object({ topic: Type.String() }) }],
+		messages: [
+			{ role: "user", content: "Hello", timestamp: 1 },
+			{ role: "assistant", content: [{ type: "toolCall", id: "call_lookup", name: "lookup", arguments: { topic: "hinge" } }],
+				api: selected.api, provider: selected.provider, model: selected.id, timestamp: 2, stopReason: "toolUse",
+				usage: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } } },
+			{ role: "toolResult", toolCallId: "call_lookup", toolName: "lookup", content: [{ type: "text", text: "A pivot point." }], isError: false, timestamp: 3 },
+		],
+	};
+	const target = "https://api.notorganic.test/v1/responses";
+	let outbound: Request | undefined;
+	const authenticated = createNotOrganicInferenceFetch({ async headersFor(method, requestUrl, initial) {
+		expect(method).toBe("POST");
+		expect(requestUrl).toBe(target);
+		const headers = new Headers(initial);
+		headers.set("authorization", "DPoP test-account-token");
+		headers.set("dpop", "responses-proof");
+		return headers;
+	} }, target, {
+		idempotencyKey: "responses-request", maxCostMicrousd: 123,
+		fetch: (async (input, init) => {
+			outbound = new Request(input, init);
+			return new Response('event: response.completed\ndata: {"type":"response.completed","response":{"id":"resp_test","status":"completed","output":[],"usage":{"input_tokens":1,"output_tokens":0,"total_tokens":1}}}\n\n', {
+				headers: { "content-type": "text/event-stream" },
+			});
+		}) as typeof fetch,
+	});
+	const result = await streamSimple(selected, context, {
+		fetch: authenticated, headers: { authorization: "DPoP initial" }, maxRetries: 0,
+	}).result();
+	expect(result.stopReason).toBe("stop");
+	expect(outbound?.url).toBe(target);
+	expect(outbound?.headers.get("authorization")).toBe("DPoP test-account-token");
+	expect(outbound?.headers.get("dpop")).toBe("responses-proof");
+	expect(outbound?.headers.get("idempotency-key")).toBe("responses-request");
+	expect(outbound?.headers.get("x-notorganic-max-cost-microusd")).toBe("123");
+	const body = await outbound!.json();
+	expect(body.model).toBe("gpt-6.1-sol");
+	expect(body.input[0].content[0].text).toBe("Hello");
+	expect(body.tools[0]).toMatchObject({ type: "function", name: "lookup", description: "Look up a learning concept",
+		parameters: { type: "object", properties: { topic: { type: "string" } }, required: ["topic"] } });
+	expect(body.input[1]).toMatchObject({ type: "function_call", call_id: "call_lookup", name: "lookup", arguments: '{"topic":"hinge"}' });
+	expect(body.input[2]).toMatchObject({ type: "function_call_output", call_id: "call_lookup", output: "A pivot point." });
 });
 
 test("real reasoning model serializes supported system and tool roles while preserving account headers", async () => {

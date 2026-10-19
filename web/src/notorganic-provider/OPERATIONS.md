@@ -65,10 +65,23 @@ Browser gate:
   When blank, uses `/notorganic/callback` on the current HTTPS or HTTP loopback
   origin. This keeps the callback on the origin holding the PKCE transaction.
 - `VITE_NOTORGANIC_SCOPE` — requested public capability scopes. Keating needs
-  `wallet:read usage:read billing:checkout infer:balanced realtime:connect` for the complete
-  wallet, checkout, and balanced-inference surface.
+  `wallet:read usage:read billing:checkout infer:balanced infer:gpt-6.1-sol web:search web:fetch realtime:connect`
+  for wallet, checkout, hosted web access, and the Inkling Small and GPT-6.1 Sol chat options.
+  Existing connections must reconnect to approve missing model and web scopes. Sol uses the
+  Responses API for tool calls; its gateway alias must be enabled and routed to
+  OpenAI. Keep any explicit scope override in sync when deploying this option.
+- With Not Organic enabled and its public OAuth client configured, web search
+  uses the hosted `/v1/web/search` endpoint by default, including for chat models
+  from other providers. The server's Keenable credential stays in Skate; never
+  put it in browser configuration. Search off disables this tool. When hosted
+  search is disabled or unconfigured, explicitly connected provider keys retain
+  their existing search route. Hosted errors require reconnecting or retrying;
+  they do not silently switch providers.
+- Both Not Organic chat models appear in the picker before sign-in. Selecting
+  one requests account access; explicitly hiding Not Organic in model settings
+  still removes its models from the picker.
 - `VITE_NOTORGANIC_MAX_COST_MICROUSD` — positive per-request browser inference
-  reservation ceiling; defaults to `100000` ($0.10). Direct browser inference
+  reservation ceiling; defaults to `100000` ($0.10). Hosted web search and direct browser inference
   must send this value as `x-notorganic-max-cost-microusd`.
 
 `VITE_NOTORGANIC_ENABLED=true` alone does not enable checkout. Pricing offers

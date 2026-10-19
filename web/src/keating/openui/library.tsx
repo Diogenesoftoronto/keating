@@ -22,7 +22,7 @@ import { LanguagePractice as LanguagePracticeRenderer } from "../../components/L
 import { ExamRenderer } from "../../components/ExamRenderer";
 import { CodingChallenge as CodingChallengeRenderer } from "../../components/CodingChallenge";
 import { MusicLab as MusicLabRenderer } from "../../components/MusicLab";
-import { compileOpenUISourceToSharedDocument, MIN_EXAM_QUESTIONS, type UiDocumentNode } from "@keating/learner-contracts";
+import { compileOpenUISourceToSharedDocument, MIN_EXAM_QUESTIONS, validateSystemDesignSpec, type UiDocumentNode } from "@keating/learner-contracts";
 import { FlashcardRenderer } from "../../components/FlashcardRenderer";
 import { initialSrsState, type FlashcardDeck } from "../srs";
 import type { Quiz } from "../core";
@@ -347,6 +347,59 @@ export const ConceptMap = defineComponent({
 			<div className={bodyClass}><MermaidRenderer content={props.code} /></div>
 		</figure>
 	),
+});
+
+const designKindSchema = z.string().regex(/^[A-Za-z][A-Za-z0-9_-]{0,63}$/).describe("A declared category such as concept, step, organism, resource, or service");
+const designIdSchema = z.string().regex(/^[A-Za-z][A-Za-z0-9_-]{0,63}$/);
+const designCheckBase = { id: designIdSchema, label: z.string().min(1).max(160) };
+const systemDesignPropsSchema = z.object({
+	id: z.string().min(1).describe("Stable exercise id; keep it when continuing a design"),
+	title: z.string().min(1).max(512),
+	brief: z.string().min(1).describe("The diagramming task, question, or constraints. Leave the learner's reasoning and construction for them."),
+	components: z.array(z.object({ id: designIdSchema, label: z.string().min(1).max(160), kind: designKindSchema })).max(40).describe("Starter components; [] lets the learner build from scratch"),
+	connections: z.array(z.object({ id: designIdSchema, from: designIdSchema, to: designIdSchema, label: z.string().max(160).optional() })).max(80).describe("Directed starter connections; endpoints must be existing component ids"),
+	checks: z.array(z.discriminatedUnion("type", [
+		z.object({ ...designCheckBase, type: z.literal("component"), kind: designKindSchema, minimum: z.number().int().min(1).max(40).optional() }),
+		z.object({ ...designCheckBase, type: z.literal("connection"), fromKind: designKindSchema, toKind: designKindSchema }),
+		z.object({ ...designCheckBase, type: z.literal("path"), fromKind: designKindSchema, toKind: designKindSchema }),
+	])).max(24).describe("Named structural checks recomputed locally. component counts a kind, connection checks a directed edge, path checks directed reachability. These do not establish domain correctness."),
+	criteria: z.array(z.string().min(1).max(2048)).max(32).optional().describe("Task-specific model review hooks: e.g. causal relationships in biology, process ordering, state transitions, or architectural trade-offs. Judge from the submitted graph and explanation; a structural pass is not correctness."),
+	lifecycle: lifecycleSchema.default("resumable"),
+	kinds: z.array(designKindSchema).min(1).max(32).optional().describe("Optional unique categories for this exercise; e.g. [organism, process, resource]. All component and check kinds must come from this palette. Omit for general defaults."),
+}).refine((props) => validateSystemDesignSpec({ components: props.components, connections: props.connections, checks: props.checks, ...(props.kinds ? { kinds: props.kinds } : {}) }), "Diagram ids and categories must be valid and unique.");
+
+function OpenUIDiagram({ props }: { props: z.infer<typeof systemDesignPropsSchema> }) {
+	const streaming = useIsStreaming();
+	const trigger = useTriggerAction();
+	const document = useMemo(() => compileOpenUISourceToSharedDocument(`diagram = Diagram(${JSON.stringify(props)})\nroot = LearningSurface([diagram])`, { documentId: props.id, retention: props.lifecycle }), [props]);
+	return <SharedUiDocumentRenderer document={{ ...document, lifecycle: streaming ? "streaming" : "ready" }} onAction={(event) => {
+		trigger(event.humanFriendlyMessage, undefined, { type: "continue_conversation", params: { interaction: "diagram", ...event.intent } });
+		return true;
+	}} />;
+}
+
+export const Diagram = defineComponent({
+	name: "Diagram",
+	description: "An editable Mermaid diagram for constructing and explaining relationships. Use for process flows, biology, concept relationships, data pipelines, state models, or system design. Supply task-specific categories, structural checks, and model review criteria.",
+	props: systemDesignPropsSchema.clone(),
+	component: OpenUIDiagram,
+});
+
+function OpenUISystemDesign({ props }: { props: z.infer<typeof systemDesignPropsSchema> }) {
+	const streaming = useIsStreaming();
+	const trigger = useTriggerAction();
+	const document = useMemo(() => compileOpenUISourceToSharedDocument(`design = SystemDesign(${JSON.stringify(props)})\nroot = LearningSurface([design])`, { documentId: props.id, retention: props.lifecycle }), [props]);
+	return <SharedUiDocumentRenderer document={{ ...document, lifecycle: streaming ? "streaming" : "ready" }} onAction={(event) => {
+		trigger(event.humanFriendlyMessage, undefined, { type: "continue_conversation", params: { interaction: "system-design", ...event.intent } });
+		return true;
+	}} />;
+}
+
+export const SystemDesign = defineComponent({
+	name: "SystemDesign",
+	description: "Compatibility preset for existing architecture exercises. Prefer Diagram with an infrastructure category palette for new system design exercises; Diagram also supports other domains.",
+	props: systemDesignPropsSchema.clone(),
+	component: OpenUISystemDesign,
 });
 
 export const LearningImage = defineComponent({
@@ -686,6 +739,8 @@ const learningBlock = z.union([
 	Flashcards.ref,
 	StudyPlan.ref,
 	ConceptMap.ref,
+	Diagram.ref,
+	SystemDesign.ref,
 	LearningImage.ref,
 	SharedNotes.ref,
 	Assignment.ref,
@@ -701,7 +756,7 @@ export const LearningSurface = defineComponent({
 	name: "LearningSurface",
 	description: "Root container for one coherent learning interaction. Avoid wrapping unrelated content together.",
 	props: z.object({
-		content: z.array(learningBlock).min(1).max(20),
+		content: z.array(learningBlock).min(1).max(24),
 		title: z.string().optional(),
 		description: z.string().optional(),
 		lifecycle: lifecycleSchema,
@@ -735,6 +790,8 @@ export const keatingOpenUILibrary = createLibrary({
 		Flashcards,
 		StudyPlan,
 		ConceptMap,
+		Diagram,
+		SystemDesign,
 		LearningImage,
 		SharedNotes,
 		Assignment,
@@ -750,7 +807,7 @@ export const keatingOpenUILibrary = createLibrary({
 		{ name: "Teaching", components: ["Explanation", "Callout", "Question", "Quiz", "Exam", "Flashcards", "LanguagePractice"] },
 		{ name: "Workspace", components: ["StudyPlan", "ConceptMap", "LearningImage", "SharedNotes"] },
 		{ name: "Work away from the chat", components: ["Assignment", "Practice", "Draft", "Fieldwork"] },
-		{ name: "Manipulable", components: ["Simulation", "CodingChallenge", "MusicLab"] },
+		{ name: "Manipulable", components: ["Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab"] },
 	],
 });
 
@@ -834,6 +891,7 @@ export const keatingOpenUIStudyPlanExampleProgram = [
 ].join("\n");
 
 export const keatingOpenUIPrompt = [
+	"Use Diagram whenever constructing or revising a graph helps the learner reason about relationships: process flows, causal models, biological cycles, concept relationships, data pipelines, state transitions, or system design. System design interviews are one example, not the component's scope. Supply a task brief, an empty or partial starter graph, task-appropriate kinds, named structural checks, and semantic review criteria. Examples of kinds: [organism, process, resource] for biology; [input, step, decision, output] for a process; [client, service, database, cache, queue] for architecture. Directed edges mean only the relationship specified by their labels and the task; do not infer causation from topology alone. Let the learner construct the diagram and explain their choices. A submit-task response contains kind=diagram (legacy kind=system-design is also accepted), graph, Mermaid source, structural observations, and explanation. Review those fields against the original brief and criteria. Structural passes are not domain correctness, measured performance, or learning mastery. Wait for the submitted work before evaluating it. SystemDesign remains a compatibility preset; prefer Diagram for new exercises.",
 	openUILibraryPrompt,
 	keatingOpenUIQuestionTypeGuide,
 	"## Canonical Question interaction",

@@ -273,7 +273,7 @@ export function publicClientConfig(
 		clientId,
 		redirectUri,
 		 scope: env.VITE_NOTORGANIC_SCOPE
-			?? "wallet:read usage:read billing:checkout infer:balanced infer:image realtime:connect",
+			?? "wallet:read usage:read billing:checkout infer:balanced infer:gpt-6.1-sol web:search web:fetch infer:image realtime:connect",
 	};
 }
 

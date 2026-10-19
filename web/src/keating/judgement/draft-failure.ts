@@ -16,6 +16,11 @@ const failures: Record<string, string> = {
   "evidence-unavailable": "Keating couldn't load the context needed to check this reply. Reload the conversation and try again.",
 };
 
+/** Why review couldn't run, for a reply released unverified; null for an unknown code. */
+export function describeReviewCause(cause: string): string | null {
+  return Object.hasOwn(failures, cause) ? failures[cause]! : null;
+}
+
 /** Only code-owned explanations and counts reach the transcript, never provider bodies or drafts. */
 export function describeDraftFailure(snapshot: TeachingDraftSnapshot): string {
   const reason = snapshot.reason ?? "review-unavailable";

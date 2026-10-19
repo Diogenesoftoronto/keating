@@ -9,12 +9,14 @@ import {
 	isDuplexSpeechProvider,
 	listSpeechProviders,
 	resolveSpeechRealtimeTier,
+	speechReplyMode,
 	usesProviderHostedLiveSurface,
 	type CustomSpeechModel,
 	type SpeechProviderDescriptor,
 	type SpeechProviderId,
 	type WebSpeechSettings,
 } from "../keating/speech";
+import { primeDeviceSpeech } from "../keating/speech-providers/device-speech";
 import { useKeatingSetting } from "../hooks/use-keating-setting";
 import { css, cx } from "../../styled-system/css";
 import { gptLiveMaxCostMicrousd } from "../keating/speech-providers/gpt-live";
@@ -122,6 +124,8 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 	// explains itself rather than failing when the session starts.
 	const liveTier = resolveSpeechRealtimeTier(settings);
 	const providerHostedLive = usesProviderHostedLiveSurface(settings);
+	const replyMode = speechReplyMode(settings);
+	const liveOnlyProvider = settings.providerId === "tavus" || settings.providerId === "gpt-live";
 
 	useEffect(() => {
 		let cancelled = false;
@@ -226,13 +230,27 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 			<SettingRow
 				id="settings-section-speech-enable"
 				title="Enable spoken responses"
-				description="When on, Keating can call its voice tool to speak short learner-facing lines through the active provider."
+				description="When on, Keating can speak short explanations and recaps with the spoken-reply voice below."
 				className={css({ scrollMarginTop: "5rem" })}
 			>
 				<Toggle
 					checked={settings.enabled}
-					onChange={(checked) => persist({ enabled: checked, ...(checked ? duplexMicDefault(settings.providerId) : {}) })}
+					onChange={(checked) => {
+						persist({ enabled: checked, replyMode, ...(checked ? replyMode === "device" ? { microphoneEnabled: false } : duplexMicDefault(settings.providerId) : {}) });
+						if (checked && replyMode === "device") primeDeviceSpeech();
+					}}
 				/>
+			</SettingRow>
+
+			<SettingRow title="Spoken-reply voice" description="Device voice reads short chat replies with your browser. Live conversations always use the provider selected below.">
+				<Select aria-label="Spoken-reply voice" value={replyMode} onValueChange={(value) => {
+					if (value !== "device" && value !== "provider") return;
+					persist({ replyMode: value, ...(value === "device" ? { microphoneEnabled: false } : {}) });
+					if (value === "device" && settings.enabled) primeDeviceSpeech();
+				}}>
+					<option value="device">Device voice</option>
+					<option value="provider" disabled={liveOnlyProvider}>Selected provider{liveOnlyProvider ? " (Live conversations only)" : ""}</option>
+				</Select>
 			</SettingRow>
 
 			<div id="settings-section-speech-provider" className={sectionClass}>

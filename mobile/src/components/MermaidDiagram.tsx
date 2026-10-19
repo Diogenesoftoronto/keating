@@ -4,7 +4,7 @@ import LocalRichDom from "@/components/LocalRich.dom";
 import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import { createInitialDocumentNavigationGuard, validateLocalMermaidSource } from "@/lib/local-rich-renderer";
 
-export function MermaidDiagram({ source }: { source: string }) {
+export function MermaidDiagram({ source, decodeEntityLabels = false }: { source: string; decodeEntityLabels?: boolean }) {
   const theme = useKeatingTheme();
   const styles = createStyles(theme);
   const validation = useMemo(() => validateLocalMermaidSource(source), [source]);
@@ -19,6 +19,7 @@ export function MermaidDiagram({ source }: { source: string }) {
       {!renderError ? <LocalRichDom
         kind="mermaid"
         source={validation.source}
+        decodeEntityLabels={decodeEntityLabels}
         description={description}
         backgroundColor={theme.colors.backgroundDeep}
         surfaceColor={theme.colors.surfaceRaised}
