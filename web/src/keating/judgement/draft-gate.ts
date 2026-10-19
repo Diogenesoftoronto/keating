@@ -36,6 +36,7 @@ import { JEV_REQUEST_TOKEN_LIMIT, JEV_STATE_QUESTION_TOKEN_LIMIT, loadJudgementM
 import { markDiagnosticOperation, unmarkDiagnosticOperation } from "./diagnostics";
 import { createWebJudgementRuntime, type WebJudgementRuntime } from "./runtime";
 import { describeDraftFailure } from "./draft-failure";
+import { withReviewNotice } from "./review-notice";
 import type { BackgroundActivityPolicy } from "../../../../packages/learner-contracts/src/judgement/background-activity-policy";
 
 type StreamFn = NonNullable<AgentOptions["streamFn"]>;
@@ -222,7 +223,7 @@ function checkSchemas(context: Context, reply: TeachingPolicyReply): readonly Te
   return [{ id: "runtime_tool_schema", source: "deterministic", severity: "critical", status: valid ? "pass" : "fail", probability: valid ? 0 : 1 }];
 }
 
-function approvedMessage(message: AssistantMessage, reply: TeachingPolicyReply, usage: Usage): AssistantMessage {
+function approvedMessage(message: AssistantMessage, reply: TeachingPolicyReply, usage: Usage, unverified = false): AssistantMessage {
   const nativeCalls = message.content.filter((part) => part.type === "toolCall");
   if (nativeCalls.length !== reply.toolCalls.length || nativeCalls.some((call, index) => call.name !== reply.toolCalls[index]?.name)) {
     throw new Error("approved-tool-metadata-mismatch");
@@ -230,7 +231,7 @@ function approvedMessage(message: AssistantMessage, reply: TeachingPolicyReply, 
   return {
     role: "assistant",
     content: [
-      ...(reply.text ? [{ type: "text" as const, text: reply.text }] : []),
+      ...(reply.text ? [{ type: "text" as const, text: unverified ? withReviewNotice("unverified", reply.text) : reply.text }] : []),
       ...reply.toolCalls.map((call, index) => ({ type: "toolCall" as const, id: nativeCalls[index]!.id,
         name: call.name, arguments: structuredClone(call.arguments) as Record<string, unknown>,
         ...(nativeCalls[index]!.thoughtSignature ? { thoughtSignature: nativeCalls[index]!.thoughtSignature } : {}),
@@ -349,7 +350,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         : message.content.some(part => part.type === "image" || part.type === "text" && /\[keating-audio-[^\]]+\]/.test(part.text)));
       if (unsupportedEvidence) {
         progress({ ...lastProgress, phase: "withheld", reason: "unsupported-evidence" });
-        publish(safeMessage("I can't check this attachment's contents yet. Send its text or a transcript in a new conversation so I can review the response."));
+        publish(safeMessage(withReviewNotice("withheld", "I can't check this attachment's contents yet. Send its text or a transcript in a new conversation so I can review the response.")));
         return;
       }
       const layers = promptLayers(snapshot, options.basePrompt());
@@ -450,13 +451,13 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       });
       if (stopped()) { publish(safeMessage("", true)); return; }
       if (result.status === "released" && result.value && result.reply && current()) {
-        publish(approvedMessage(result.value, result.reply, usage), result.activitySelection);
+        publish(approvedMessage(result.value, result.reply, usage, result.receipt.reason === "best-effort-draft"), result.activitySelection);
       } else {
-        publish(safeMessage(describeDraftFailure(lastProgress)));
+        publish(safeMessage(withReviewNotice("withheld", describeDraftFailure(lastProgress))));
       }
     })().catch(() => {
       progress({ ...lastProgress, phase: stopped() ? "cancelled" : "withheld", reason: stopped() ? "cancelled" : timedOut ? "time-budget" : loadingEvidence ? "evidence-unavailable" : "review-unavailable" });
-      publish(stopped() ? safeMessage("", true) : safeMessage(describeDraftFailure(lastProgress)));
+      publish(stopped() ? safeMessage("", true) : safeMessage(withReviewNotice("withheld", describeDraftFailure(lastProgress))));
     }).finally(() => {
       clearTimeout(timer);
       detachEvidenceAbort?.();

@@ -142,6 +142,8 @@ import type { PlanRevisionProposal } from "../keating/plan-revisions";
 import { PlanRevisionCard } from "./PlanRevisionCard";
 import { recordAssistantPresentations } from "../keating/judgement/active-work-host";
 import { recordWebActivityPresentation } from "../keating/judgement/activity-learning";
+import { parseReviewNotice, stripReviewNotice } from "../keating/judgement/review-notice";
+import { ReviewNoticeCard } from "./ReviewNoticeCard";
 import {
   QuizGradesContext,
   type QuizGradesContextValue,
@@ -644,9 +646,12 @@ function StreamingTextPart({
   useEffect(() => {
     if (!sessionId || isMarkedError || status?.type === "running" || !liveTurnRef.current) return;
     liveTurnRef.current = false;
-    const presentationText = stripArtifactLinks(splitSearchSources(displayText).text);
+    // A withheld turn presented nothing the learner can act on.
+    if (parseReviewNotice(displayText)?.kind === "withheld") return;
+    const deliveredText = stripReviewNotice(displayText);
+    const presentationText = stripArtifactLinks(splitSearchSources(deliveredText).text);
     if (messageCreatedAt) {
-      recordWebActivityPresentation(displayText, { sessionId, messageId }, messageCreatedAt.getTime(), presentationText);
+      recordWebActivityPresentation(deliveredText, { sessionId, messageId }, messageCreatedAt.getTime(), presentationText);
     }
     void recordAssistantPresentations(
       quizGradeStorage,
@@ -672,8 +677,18 @@ function StreamingTextPart({
     return <LearnerResponseReview response={learnerResponse} />;
   }
 
-  const searchContent = splitSearchSources(visibleText);
-  return (
+  const notice = parseReviewNotice(visibleText);
+  if (notice?.kind === "withheld") {
+    return (
+      <ReviewNoticeCard kind="withheld">
+        {notice.text.split(/\n{2,}/).filter(Boolean).map((paragraph, index) => (
+          <p key={index} className={index ? mutedTextClass : undefined}>{paragraph}</p>
+        ))}
+      </ReviewNoticeCard>
+    );
+  }
+  const searchContent = splitSearchSources(notice ? notice.text : visibleText);
+  const reply = (
     <>
     <MarkdownText
       text={searchContent.text}
@@ -683,6 +698,7 @@ function StreamingTextPart({
     {searchContent.sites.length > 0 && <WebSearchPart toolName="web_search" result={{ citations: searchContent.sites }} status={{ type: "complete" }} />}
     </>
   );
+  return notice ? <ReviewNoticeCard kind="unverified">{reply}</ReviewNoticeCard> : reply;
 }
 
 const artifactLinkPattern = /\[artifact:\/\/([^/]+)\/([^\]]+)\]/g;
@@ -4248,11 +4264,16 @@ function AssistantThread({
   const mascotState = chatMascotState({ messages: threadMessages, running: isRunning, recording: micRecording });
   const convertMessage = useCallback((message: ThreadMessageLike) => message, []);
 
-  const sendUserMessage = useCallback(async (userMessage: AgentMessage) => {
+  const sendUserMessage = useCallback(async (userMessage: AgentMessage, onAdmitted?: () => void) => {
     if (!agent || agent.context.isStreaming) return false;
     setComposerHasUrl(false);
     try {
       await agent.sendPrepared(userMessage, async (signal) => {
+        // The turn is in the saved transcript now. Durable deliveries settle
+        // here, not when the reply finishes: a reload mid-reply must not
+        // submit the same learner response a second time.
+        await callbacks.onLocalMessagesChanged?.();
+        onAdmitted?.();
         const provider = agent.context.model.provider;
         if (callbacks.onApiKeyRequired && !(await callbacks.onApiKeyRequired(provider))) {
           throw new Error(`Authentication error: no credentials are available for ${provider}. Open Settings → Providers & Models, connect the provider, then retry this message.`);
@@ -4275,7 +4296,7 @@ function AssistantThread({
   }, [sendUserMessage]);
 
   const onNew = useCallback(
-    async (message: AppendMessage) => {
+    async (message: AppendMessage, onAdmitted?: () => void) => {
       if (!agent) return false;
       const userMessage = makeUserMessageFromAppend(message);
       if (!userMessage) return false;
@@ -4310,7 +4331,7 @@ function AssistantThread({
         return true;
       }
 
-      return sendUserMessage(userMessage);
+      return sendUserMessage(userMessage, onAdmitted);
     },
     [agent, callbacks, sendUserMessage],
   );
@@ -4344,9 +4365,12 @@ function AssistantThread({
 	const pendingSendsRef = useRef<PendingSend[]>([]);
 	const activeDeliveryKeysRef = useRef(new Set<string>());
 	const deliverPendingSend = useCallback(async (pending: PendingSend) => {
-		const delivered = await onNew(pending.message);
+		let settled = false;
+		const settle = () => { if (!settled) { settled = true; pending.onDelivered?.(); } };
+		const delivered = await onNew(pending.message, settle);
 		if (pending.deliveryKey) activeDeliveryKeysRef.current.delete(pending.deliveryKey);
-		if (delivered) pending.onDelivered?.();
+		// Local-only outcomes (unsupported attachment errors) never reach admission.
+		if (delivered) settle();
 	}, [onNew]);
   const queueOrSend = useCallback(
 	(message: AppendMessage, options: Omit<PendingSend, "message"> = {}) => {
@@ -4405,10 +4429,18 @@ function AssistantThread({
 
 	useEffect(() => {
 		if (!agent) return;
+		const sent = new Set(agent.context.messages.flatMap((message) => {
+			if (message.role !== "user") return [];
+			const content = message.content;
+			return [typeof content === "string" ? content
+				: content.filter((part) => part.type === "text").map((part) => part.text).join("\n")];
+		}));
 		for (const pending of callbacks.getPendingLearnerResponses?.() ?? []) {
-			queueLearnerResponse(pending);
+			// Already in the transcript (an earlier tab admitted it, then reloaded).
+			if (sent.has(pending.serialized)) callbacks.onLearnerResponseDelivered?.(pending);
+			else queueLearnerResponse(pending);
 		}
-	}, [agent, callbacks.getPendingLearnerResponses, queueLearnerResponse]);
+	}, [agent, callbacks.getPendingLearnerResponses, callbacks.onLearnerResponseDelivered, queueLearnerResponse]);
 
   useEffect(() => {
     if (isRunning || !agent) return;

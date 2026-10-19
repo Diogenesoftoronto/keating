@@ -2,6 +2,7 @@ import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { Model } from "@earendil-works/pi-ai";
 import type { SessionData, SessionMetadata } from "../types/session";
 import { learnerResponseReviewText } from "../keating/learner-response";
+import { stripReviewNotice } from "../keating/judgement/review-notice";
 
 export function createSessionId(): string {
 	return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -96,11 +97,11 @@ const emptyUsage: SessionMetadata["usage"] = {
 function messageText(message: AgentMessage): string {
 	const msg = message as any;
 	const content = msg.content;
-	if (typeof content === "string") return learnerResponseReviewText(content);
+	if (typeof content === "string") return learnerResponseReviewText(stripReviewNotice(content));
 	if (Array.isArray(content)) {
 		return content
 			.filter((part) => part?.type === "text" && typeof part.text === "string")
-			.map((part) => learnerResponseReviewText(part.text))
+			.map((part) => learnerResponseReviewText(stripReviewNotice(part.text)))
 			.join(" ");
 	}
 	return "";

@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { createAssistantMessageEventStream, type AssistantMessage, type Api, type Context, type Model } from "@earendil-works/pi-ai";
 import type { JudgementAnswer, JudgementCaller } from "@keating/learner-contracts";
 import { withTeachingDraftGate, type TeachingDraftReceipt } from "../keating/judgement/draft-gate";
+import { withReviewNotice } from "../keating/judgement/review-notice";
 
 const model = { id: "selected-teacher", api: "openai-completions", provider: "fixture", name: "Fixture", reasoning: false,
   input: ["text"], contextWindow: 32000, maxTokens: 1000, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } } as Model<Api>;
@@ -41,7 +42,7 @@ test("final reserved generation recovers a visible answer with tools disabled an
   expect(seen[2]!.tools).toEqual([]);
   expect(seen[2]!.systemPrompt).toContain("Do not call tools or claim");
   expect(seen[2]!.messages[0]).toEqual(original.messages[0]);
-  expect(result.content).toEqual([{ type: "text", text: "Four factorial is 4 × 3 × 2 × 1 = 24." }]);
+  expect(result.content).toEqual([{ type: "text", text: withReviewNotice("unverified", "Four factorial is 4 × 3 × 2 × 1 = 24.") }]);
   expect(events.map(event => event.type)).toEqual(["start", "text_start", "text_delta", "text_end", "done"]);
   expect(receipts[0]!.snapshot.reason).toBe("best-effort-draft");
   expect(receipts[0]!.snapshot.attempts[2]!.status).toBe("fail");
