@@ -44,6 +44,8 @@ describe("staging upload snapshots", () => {
     write("web/src/tracked.ts", "export const state = 'edited';\n");
     write("web/src/untracked.ts", "export const newFeature = true;\n");
     write("shared/new-domain.ts", "export const domain = 'new';\n");
+    write("packages/runtime-config/package.json", '{"name":"@keating/runtime-config"}\n');
+    write("packages/runtime-config/src/index.ts", "export const config = 'public';\n");
     write("docs/private-notes.md", "Not part of the app upload.\n");
     write("web/artwork/stop-motion-v1/raw/frame.png", "authoring original\n");
     write("web/public/brand/stop-motion-v1/frame.avif", "runtime frame\n");
@@ -55,6 +57,8 @@ describe("staging upload snapshots", () => {
     expect(readFileSync(join(destination, "web/src/tracked.ts"), "utf8")).toContain("edited");
     expect(existsSync(join(destination, "web/src/untracked.ts"))).toBe(true);
     expect(existsSync(join(destination, "shared/new-domain.ts"))).toBe(true);
+    expect(readFileSync(join(destination, "packages/runtime-config/package.json"), "utf8")).toBe('{"name":"@keating/runtime-config"}\n');
+    expect(readFileSync(join(destination, "packages/runtime-config/src/index.ts"), "utf8")).toBe("export const config = 'public';\n");
     expect(existsSync(join(destination, "web/src/deleted.ts"))).toBe(false);
     expect(existsSync(join(destination, "docs/private-notes.md"))).toBe(false);
     expect(existsSync(join(destination, "web/artwork/stop-motion-v1/raw/frame.png"))).toBe(false);
