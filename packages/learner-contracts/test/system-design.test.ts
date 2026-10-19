@@ -334,7 +334,7 @@ describe("domain-neutral diagrams and category palettes", () => {
 
   test("defaults cover generic learning and legacy system-design diagrams", () => {
     expect(getDiagramKinds(spec)).toBe(DIAGRAM_KINDS);
-    for (const kind of ["concept", "step", "decision", "input", "output", "actor", "state", "service", "database"]) expect(DIAGRAM_KINDS).toContain(kind);
+    for (const kind of ["concept", "step", "decision", "input", "output", "actor", "state", "service", "database"] as const) expect(DIAGRAM_KINDS).toContain(kind);
     const processSpec: DiagramSpec = { components: [], connections: [], checks: [
       { id: "route", label: "Input to output", type: "path", fromKind: "input", toKind: "output" },
     ] };

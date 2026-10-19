@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS, SERVICE_ENDPOINTS, PROVIDER_ENDPOINTS } from "@keating/runtime-config";
 import type { ProviderId } from "./types";
 
 export type TranscriptionProvider = "openai" | "google";
@@ -54,8 +55,8 @@ export async function transcribeAudioUri(
 async function transcribeOpenAi(uri: string, mimeType: string, apiKey: string, fetchImpl: typeof fetch): Promise<string> {
   const form = new FormData();
   form.append("file", { uri, name: "keating-dictation.m4a", type: mimeType } as unknown as Blob);
-  form.append("model", "gpt-4o-transcribe");
-  const response = await fetchImpl("https://api.openai.com/v1/audio/transcriptions", {
+  form.append("model", DEFAULT_MODELS.speech.sttOpenai);
+  const response = await fetchImpl(PROVIDER_ENDPOINTS.openaiTranscription, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}` },
     body: form,
@@ -69,7 +70,7 @@ async function transcribeOpenAi(uri: string, mimeType: string, apiKey: string, f
 
 async function transcribeGoogle(audio: string, mimeType: string, apiKey: string, fetchImpl: typeof fetch): Promise<string> {
   const response = await fetchImpl(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+    `${SERVICE_ENDPOINTS.google}/models/${DEFAULT_MODELS.speech.sttGoogle}:generateContent?key=${encodeURIComponent(apiKey)}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

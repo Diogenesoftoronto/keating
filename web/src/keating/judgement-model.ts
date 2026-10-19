@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS } from "@keating/runtime-config";
 /**
  * The judgement model is configured separately from the tutor model.
  *
@@ -111,7 +112,7 @@ const judgementModelSetting = createLocalSetting<JudgementModelSettings>({
       ...(parsed.hostedProvider === "typesafe" ? {
         hostedProvider: "typesafe" as const,
       } : {}),
-      ...(parsed.customModel !== undefined || parsed.hostedProvider === "typesafe" ? { customModel: cleanString(parsed.customModel).slice(0, 200) || "jev-latest" } : {}),
+      ...(parsed.customModel !== undefined || parsed.hostedProvider === "typesafe" ? { customModel: cleanString(parsed.customModel).slice(0, 200) || DEFAULT_MODELS.judgement.systemOne } : {}),
       localModelId: cleanString(parsed.localModelId) || defaults.localModelId,
       gatewayPath: normalizeGatewayPath(parsed.gatewayPath),
       requestTokens: normalizeContextWindow(parsed.requestTokens),

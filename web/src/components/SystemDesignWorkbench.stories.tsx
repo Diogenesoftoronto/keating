@@ -71,7 +71,7 @@ export const EditAndSubmit: Story = {
     await userEvent.click(canvas.getByRole("button", { name: "Add component" }));
     const name = canvas.getByRole("textbox", { name: "Component 4" });
     await userEvent.clear(name); await userEvent.type(name, "Hot link cache");
-    await userEvent.selectOptions(canvas.getAllByRole("combobox", { name: "Type" })[3]!, "cache");
+    await userEvent.selectOptions(canvas.getAllByRole("combobox", { name: "Category" })[3]!, "cache");
     await userEvent.selectOptions(canvas.getByRole("combobox", { name: "From" }), "api");
     const cacheId = (canvas.getByRole("combobox", { name: "To" }) as HTMLSelectElement).options[4]!.value;
     await userEvent.selectOptions(canvas.getByRole("combobox", { name: "To" }), cacheId);

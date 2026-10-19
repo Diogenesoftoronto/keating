@@ -98,11 +98,12 @@ function changedDeck(deck: FlashcardDeck, updatedAt: string, cards: Flashcard[] 
   return next;
 }
 
-/**
- * Creates a fresh deck at a caller-supplied stable id. Retrying the exact
- * create is a no-op; the same id with any divergent source fails closed.
- */
-export function createDeck(data: PortableLearnerData, input: CreateDeckInput): PortableLearnerData {
+/** Applies the common validation, identity, and snapshot rules for new decks. */
+function createDeckSnapshot(
+  data: PortableLearnerData,
+  input: CreateDeckInput,
+  createCards: () => Flashcard[],
+): PortableLearnerData {
   requireSource(data);
   requireTimestamp(input.createdAt);
   if (!isContractId(input.id)) throw new Error("Deck creation requires a contract-valid id.");
@@ -112,7 +113,7 @@ export function createDeck(data: PortableLearnerData, input: CreateDeckInput): P
     topic: input.topic,
     createdAt: input.createdAt,
     updatedAt: input.createdAt,
-    cards: [],
+    cards: createCards(),
   };
   if (!validateFlashcardDeck(deck)) throw new Error("Deck creation input is invalid.");
   const existing = data.decks.find((candidate) => candidate.id === input.id);
@@ -124,6 +125,14 @@ export function createDeck(data: PortableLearnerData, input: CreateDeckInput): P
 }
 
 /**
+ * Creates a fresh deck at a caller-supplied stable id. Retrying the exact
+ * create is a no-op; the same id with any divergent source fails closed.
+ */
+export function createDeck(data: PortableLearnerData, input: CreateDeckInput): PortableLearnerData {
+  return createDeckSnapshot(data, input, () => []);
+}
+
+/**
  * Creates a complete learner-authored deck in one repository mutation. The
  * deck and every fresh card share the transaction timestamp, so no partially
  * created empty deck can escape if a card is invalid or persistence fails.
@@ -132,30 +141,13 @@ export function createDeckWithCards(
   data: PortableLearnerData,
   input: CreateDeckWithCardsInput,
 ): PortableLearnerData {
-  requireSource(data);
-  requireTimestamp(input.createdAt);
-  if (!isContractId(input.id)) throw new Error("Deck creation requires a contract-valid id.");
-  const deck: FlashcardDeck = {
-    id: input.id,
-    title: input.title,
-    topic: input.topic,
-    createdAt: input.createdAt,
-    updatedAt: input.createdAt,
-    cards: input.cards.map((card) => ({
-      id: card.id,
-      front: card.front,
-      back: card.back,
-      tags: structuredClone(card.tags),
-      srs: initialSrsState(input.createdAt),
-    })),
-  };
-  if (!validateFlashcardDeck(deck)) throw new Error("Deck creation input is invalid.");
-  const existing = data.decks.find((candidate) => candidate.id === input.id);
-  if (existing) {
-    if (sameJson(existing, deck)) return data;
-    throw new Error(`Deck identity conflict for ${input.id}.`);
-  }
-  return requireResult({ ...data, generatedAt: input.createdAt, decks: [...data.decks, deck] });
+  return createDeckSnapshot(data, input, () => input.cards.map((card) => ({
+    id: card.id,
+    front: card.front,
+    back: card.back,
+    tags: structuredClone(card.tags),
+    srs: initialSrsState(input.createdAt),
+  })));
 }
 
 /**

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from "bun:test";
+import * as fc from "fast-check";
 import type { AgentOptions } from "@earendil-works/pi-agent-core";
 import {
   createAssistantMessageEventStream,
@@ -10,7 +11,6 @@ import {
   type SimpleStreamOptions,
 } from "@earendil-works/pi-ai";
 import type {
-  JudgementAnswer,
   JudgementBackendKey,
   JudgementCaller,
   JudgementOutcome,
@@ -27,13 +27,13 @@ import { DEFAULT_TEACHER_PERSONA } from "../keating/persona";
 import operationalProtocolMarkdown from "../keating/prompts/operational-protocol.md?raw";
 import { configureJudgementDiagnostics, getJudgementDiagnostics, observeJudgementCaller } from "../keating/judgement/diagnostics";
 import type { WebJudgementRuntime } from "../keating/judgement/runtime";
+import { answerDraftGateReview as answer } from "./helpers/teaching-draft-judge";
 
 type StreamFn = NonNullable<AgentOptions["streamFn"]>;
 const MODEL = {
   id: "fixture-actor", name: "Fixture actor", provider: "fixture", api: "openai-completions", baseUrl: "https://unused.test",
   reasoning: true, input: ["text"], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 100_000, maxTokens: 1_000,
 } as Model<Api>;
-const JUDGE: JudgementBackendKey = { backend: "fixture", model: "fixture-judge-v1", calibrationSha256: null };
 const BASE = DEFAULT_TEACHER_PERSONA + "\n\n" + operationalProtocolMarkdown.trim();
 const context = (text = "What is 4 factorial?"): Context => ({
   systemPrompt: BASE + "\n\nOPENUI GRAMMAR\nLIVE CAPABILITIES\nRECALL CONTEXT",
@@ -72,25 +72,6 @@ function streamOf(value: AssistantMessage) {
   return stream;
 }
 
-function answer(request: JudgementRequest, options: { violation?: number; noMatch?: boolean; standard?: "concise" | "supported" } = {}): JudgementOutcome {
-  const state = request.state as { reply?: { text: string } };
-  const answers: Record<string, JudgementAnswer> = {};
-  for (const [id, question] of Object.entries(request.questions)) {
-    if (question.type === "choice") {
-      const choice = id === "draft_reasoning" ? "high"
-        : id === "draft_standard" ? options.standard ?? "concise"
-          : options.noMatch ? "no_match" : Object.keys(question.criteria).find((key) => key !== "no_match")!;
-      answers[id] = { type: "choice", choice, confidence: 1,
-        probabilities: Object.fromEntries(Object.keys(question.criteria).map((key) => [key, key === choice ? 1 : 0])) };
-    } else if (question.type === "noul") {
-      const violation = options.violation ?? (state.reply?.text.includes("REJECTED") ? 1 : 0);
-      answers[id] = { type: "noul", noul: id.startsWith("quality_") ? 1 : state.reply ? (id === "identity_invented" ? violation : 0)
-        : ["direct_answer_requested", "learning_task"].includes(id) ? 1 : 0 };
-    }
-  }
-  return { ok: true, response: { backend: JUDGE, answers, usage: { inputTokens: 10, outputTokens: 1 } } };
-}
-
 const caller: JudgementCaller = async (request) => answer(request);
 const gate = (stream: StreamFn, options: Partial<Parameters<typeof withTeachingDraftGate>[1]> = {}) => withTeachingDraftGate(stream, {
   sessionId: "fixture-session", basePrompt: () => BASE, makeCaller: () => caller, ...options,
@@ -105,6 +86,36 @@ const text = (value: AssistantMessage) => value.content.filter((part) => part.ty
 afterEach(() => configureJudgementDiagnostics({ enabled: false, details: false }));
 
 describe("private teaching draft stream", () => {
+	test("public output is independent of provider chunk boundaries and contains no private thinking", async () => {
+		await fc.assert(fc.asyncProperty(
+			fc.array(fc.integer({ min: 1, max: 12 }), { minLength: 1, maxLength: 12 }),
+			async sizes => {
+				const candidate = "The learner-visible answer stays whole across every chunk.";
+				const chunks: string[] = [];
+				let offset = 0;
+				for (const size of sizes) {
+					if (offset >= candidate.length) break;
+					chunks.push(candidate.slice(offset, offset + size));
+					offset += size;
+				}
+				if (offset < candidate.length) chunks.push(candidate.slice(offset));
+				const generate: StreamFn = () => {
+					const complete = message(candidate);
+					const stream = createAssistantMessageEventStream();
+					stream.push({ type: "start", partial: complete });
+					stream.push({ type: "thinking_delta", contentIndex: 0, delta: "PRIVATE THINKING", partial: complete });
+					for (const chunk of chunks) stream.push({ type: "text_delta", contentIndex: 1, delta: chunk, partial: complete });
+					stream.push({ type: "done", reason: "stop", message: complete });
+					stream.end(complete);
+					return stream;
+				};
+				const { events, result } = await collect(await gate(generate)(MODEL, context()));
+				expect(text(result)).toBe(candidate);
+				expect(JSON.stringify(events)).not.toContain("PRIVATE THINKING");
+			},
+		), { numRuns: 12 });
+	});
+
   test("ordinary web turns publish once despite uncertain presentation and report the shared ten-attempt ceiling", async () => {
     let calls = 0;
     const updates: TeachingDraftSnapshot[] = [];
@@ -674,7 +685,14 @@ describe("private judgement transport boundary", () => {
       { key: local, call: observeJudgementCaller(async () => { calls.push("local"); return { ok: false, error: { code: "backend-unavailable", retryable: false } }; }, local) },
       { key: hosted, call: observeJudgementCaller(async () => { calls.push("hosted"); return result(hosted); }, hosted) },
     ];
-    expect((await createDraftGateJudgementCaller(runtime(tiers, "off"))(request)).ok).toBe(false);
+    expect(await createDraftGateJudgementCaller(runtime(tiers, "off"))(request)).toEqual({
+      ok: false, error: { code: "backend-unavailable", retryable: false },
+    });
+    const aborted = new AbortController();
+    aborted.abort();
+    expect(await createDraftGateJudgementCaller(runtime(tiers, "hosted"))(request, aborted.signal)).toEqual({
+      ok: false, error: { code: "cancelled", retryable: false },
+    });
     expect(calls).toEqual([]);
     expect((await createDraftGateJudgementCaller(runtime(tiers, "local"))(request)).ok).toBe(false);
     expect(calls).toEqual(["local"]);

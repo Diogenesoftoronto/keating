@@ -1,5 +1,8 @@
-import type { ReactNode } from "react";
+import { createContext, useId, type ReactNode } from "react";
 import { css, cx } from "../../styled-system/css";
+
+/** Ids a control inside a row uses to take its name and description from the row's visible text. */
+export const SettingRowContext = createContext<{ titleId: string; descriptionId?: string } | null>(null);
 
 interface SettingRowProps {
 	title: string;
@@ -30,13 +33,18 @@ const descriptionClass = css({
 });
 
 export function SettingRow({ title, description, children, id, className }: SettingRowProps) {
+	const base = useId();
+	const titleId = `${base}-title`;
+	const descriptionId = description ? `${base}-description` : undefined;
 	return (
-		<div id={id} className={cx(outerClass, className)}>
-			<div>
-				<div className={titleClass}>{title}</div>
-				{description && <p className={descriptionClass}>{description}</p>}
+		<SettingRowContext.Provider value={{ titleId, descriptionId }}>
+			<div id={id} className={cx(outerClass, className)}>
+				<div>
+					<div id={titleId} className={titleClass}>{title}</div>
+					{description && <p id={descriptionId} className={descriptionClass}>{description}</p>}
+				</div>
+				{children}
 			</div>
-			{children}
-		</div>
+		</SettingRowContext.Provider>
 	);
 }

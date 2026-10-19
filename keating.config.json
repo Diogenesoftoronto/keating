@@ -9,7 +9,6 @@
   "speech": {
     "enabled": false,
     "defaultVoice": "conversational",
-    "fastModel": "gemini-3.1-flash-live-preview",
     "steeringModel": "default"
   },
   "debug": {

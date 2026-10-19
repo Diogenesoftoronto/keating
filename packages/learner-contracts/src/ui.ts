@@ -11,9 +11,11 @@ export type DocumentLifecycle = "draft" | "streaming" | "ready" | "submitted" | 
 export type UiDocumentRetention = "ephemeral" | "resumable" | "workspace";
 export type UiGoalStepStatus = "not_started" | "in_progress" | "done";
 export type UiArtifactFormat = "markdown" | "text" | "json" | "uri";
-export type UiQuestionType = "choice" | "text" | "blanks" | "classification" | "matching"
-  | "multiple_choice" | "multi_select" | "true_false" | "fill_in" | "short_answer"
-  | "transfer" | "slider" | "dropdown" | "ordering";
+/** Runtime source of truth for question kinds; the validator and the type both derive from it. */
+export const UI_QUESTION_TYPES = ["choice", "text", "blanks", "classification", "matching",
+  "multiple_choice", "multi_select", "true_false", "fill_in", "short_answer",
+  "transfer", "slider", "dropdown", "ordering"] as const;
+export type UiQuestionType = typeof UI_QUESTION_TYPES[number];
 export type UiQuestionLevel = "recall" | "comprehension" | "application" | "analysis" | "transfer";
 
 export interface UiOption {
@@ -586,7 +588,7 @@ function validateQuestionFields(value: Record<string, unknown>): boolean {
   const items = value.items;
   const blanks = value.blanks;
   const questionType = value.kind;
-  const allowedTypes = new Set<UiQuestionType>(["choice", "text", "blanks", "classification", "matching", "multiple_choice", "multi_select", "true_false", "fill_in", "short_answer", "transfer", "slider", "dropdown"]);
+  const allowedTypes = new Set<UiQuestionType>(UI_QUESTION_TYPES);
   const allowedLevels = new Set<UiQuestionLevel>(["recall", "comprehension", "application", "analysis", "transfer"]);
   if (!boundedString(value.prompt, 4096)) return false;
   if (choices !== undefined && !(boundedArray(choices, MAX_CHOICES) && choices.length > 0 && choices.every(validateUiOption) && uniqueIds(choices))) return false;
@@ -615,6 +617,7 @@ function validateQuestionFields(value: Record<string, unknown>): boolean {
   if (typeof value.step === "number" && value.step <= 0) return false;
   if (value.multiSelect === true && choices === undefined) return false;
   if ((questionType === "classification" || questionType === "matching") && (items === undefined || choices === undefined)) return false;
+  if (questionType === "ordering" && items === undefined) return false;
   if ((questionType === "choice" || questionType === "multiple_choice" || questionType === "multi_select" || questionType === "dropdown") && choices === undefined && value.allowText !== true) return false;
   if (questionType === "matching" && Array.isArray(value.correctMatches) && value.correctMatches.length !== (items as unknown[]).length) return false;
 	if (questionType === "matching" && Array.isArray(value.correctMatches)) {
@@ -890,6 +893,8 @@ export function validateUiDocument(value: unknown): value is UiDocument {
   if (!hasOnlyKeys(value, DOCUMENT_KEYS)) return false;
   const document = value as UiDocument;
   const resources = Array.isArray(document.nodes) ? document.nodes.flatMap((node) => {
+    // Shape is validated below; malformed entries must not throw while collecting.
+    if (!node || typeof node !== "object") return [];
     if (node.type === "study-plan") return node.resource ? [node.resource] : [];
     if (node.type === "artifact" || node.type === "image" || node.type === "media") return [node.resource];
     return [];

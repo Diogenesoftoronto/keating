@@ -161,7 +161,12 @@ export function formatInterval(intervalDays: number): string {
 }
 
 export function formatDueIn(dueAt: string, now: string): string {
-  const diffMs = timestampMillis(dueAt) - timestampMillis(now);
+  return formatDueInMillis(timestampMillis(dueAt), timestampMillis(now));
+}
+
+/** Numeric adapter kernel; string timestamps retain their validation above. */
+export function formatDueInMillis(dueAt: number, now: number): string {
+  const diffMs = dueAt - now;
   const days = diffMs / MS_PER_DAY;
   if (Math.abs(days) < 0.001) return "now";
   if (diffMs < 0) {

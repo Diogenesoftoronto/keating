@@ -29,6 +29,14 @@ describe("applySourceEdit", () => {
     expect(await readFile(join(cwd, "test.ts"), "utf8")).toBe("const a = 42;\nconst b = 2;\n");
   });
 
+  test("inserts replacement text literally, including $ sequences", async () => {
+    await writeFile(join(cwd, "test.ts"), "const price = 1;\n", "utf8");
+    const replace = "const price = `$$${amount}`; // $& $1 $' $`";
+    const result = await applySourceEdit(cwd, { file: "test.ts", search: "const price = 1;", replace, reason: "dollar" });
+    expect(result.success).toBe(true);
+    expect(await readFile(join(cwd, "test.ts"), "utf8")).toBe(`${replace}\n`);
+  });
+
   test("rejects when search block not found", async () => {
     await writeFile(join(cwd, "test.ts"), "const a = 1;\n", "utf8");
     const result = await applySourceEdit(cwd, {

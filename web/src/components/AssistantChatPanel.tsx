@@ -1,8 +1,6 @@
 import { clearPendingChatTurn } from "../notorganic-provider/pending-chat-turn";
 import {
   assistantTextParts,
-  makeAttachmentErrorMessage,
-  makePromptErrorMessage,
   textFromContent,
   mergeConsecutiveAssistantMessages,
   shouldRenderFlueMessage,
@@ -15,17 +13,13 @@ import {
   quizTagPattern,
 } from "./interactive-segments";
 import type { FlueConversationMessage } from "@flue/sdk";
-import { type KeatingAudioContent } from "../keating/flue/conversation";
 import "./keating-interaction-motion.css";
-import { KeatingBot } from "./KeatingBot";
 import { chatMascotState } from "./chat-mascot-state";
 import { ChatMascotMenu } from "./ChatMascotMenu";
 import "./chat-mascot.css";
-import { RecordingWaveform } from "./RecordingWaveform";
 import { DraftReviewStatus } from "./DraftReviewStatus";
 import { clearTeachingDraftContents, getTeachingDraftStatus, subscribeTeachingDraftStatus, teachingDraftIsActive } from "../keating/judgement/draft-status";
 import { prepareAudioAttachment } from "../lib/audio-attachment";
-import { rememberRecordingTranscript, recordingHasTranscript } from "../lib/recording-transcripts";
 import type { FlueConversation } from "../keating/flue/conversation";
 import {
   createContext,
@@ -42,12 +36,10 @@ import {
 } from "react";
 import type { Key, ReactNode } from "react";
 const DeveloperChatDetails = createContext(false);
-import { createPortal } from "react-dom";
 import type {
   AgentMessage,
   ThinkingLevel,
 } from "@earendil-works/pi-agent-core";
-import type { ImageContent, TextContent } from "@earendil-works/pi-ai";
 import type { Api, Model } from "@earendil-works/pi-ai/compat";
 import {
   AssistantRuntimeProvider,
@@ -71,32 +63,24 @@ import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { css, cx } from "../../styled-system/css";
 import {
-  AudioLines,
   Cpu,
   Plus,
   ChevronRight,
   CircleAlert,
   CircleCheck,
-  CircleDollarSign,
   Check,
   Copy,
   CopyPlus,
-  KeyRound,
-  Keyboard,
   LibraryBig,
   Lightbulb,
   Loader2,
-  Mic,
-  MicOff,
   Paperclip,
   Send,
   Server,
-  ShieldAlert,
   Square,
   ThumbsDown,
   ThumbsUp,
   User,
-  Wifi,
   Wrench,
   X,
 } from "lucide-react";
@@ -109,10 +93,7 @@ import {
   loadKeatingUiSettings,
   subscribeKeatingUiSettings,
 } from "../keating/ui-settings";
-import { modelSupportsAudio } from "../lib/provider-models";
-import { getProviderApiKey } from "../lib/provider-models";
-import { isOpenEnded, QuizRenderer } from "./QuizRenderer";
-import { formatQuizDuration, isQuickQuizAnswer } from "./quiz/game";
+import { QuizRenderer } from "./QuizRenderer";
 import {
   foldedToolResult,
   hasMeaningfulToolResult,
@@ -129,7 +110,7 @@ import { ImageGenerationRetryButton } from "./ImageGenerationRetryButton";
 import { SceneRenderer } from "./SceneRenderer";
 import { AnimatedScene, parseAnimationPayload } from "./AnimatedScene";
 import { QuestionRenderer, normalizeQuestionForm } from "./QuestionRenderer";
-import type { AnsweredQuestion, QuestionFormData } from "./QuestionRenderer";
+import type { QuestionFormData } from "./QuestionRenderer";
 import { GoalRenderer } from "./GoalRenderer";
 import { normalizeGoal } from "../keating/goals";
 import type {
@@ -149,23 +130,9 @@ import {
   type QuizGradesContextValue,
 } from "./quiz-grades-context";
 import {
-  isDuplexSpeechProvider,
   KEATING_VOICE_TOOL_NAME,
-  loadWebSpeechSettings,
-  primeSpeechAudio,
-  resolveSpeechRealtimeTier,
-  resolveSpeechCredential,
 } from "../keating/speech";
-import {
-  startVideoCapture,
-  type VideoCaptureHandle,
-} from "../keating/video-capture";
 import { type LiveTranscriptTurn } from "../keating/live-transcript";
-import LiveConversation from "./live/LiveConversation";
-import {
-  liveCredentialProvider,
-  useLiveSession,
-} from "./live/use-live-session";
 import {
   IMAGE_PROGRESS_EVENT,
   type ImageProgressDetail,
@@ -174,12 +141,6 @@ import {
   ANIMATION_PROGRESS_EVENT,
   type AnimationProgressDetail,
 } from "../keating/tool-arg-stream";
-import {
-  startMicRecording,
-  transcribeAudio,
-  transcriptionErrorMessage,
-  type MicRecorder,
-} from "../keating/speech-providers/stt";
 import { JsonCrackBlock } from "./JsonCrackBlock";
 import { WebSearchPart } from "./WebSearchPart";
 import { isWebSearchToolName, splitSearchSources } from "./web-search-result";
@@ -206,18 +167,22 @@ import {
   KeatingOpenUIActionProvider,
   KeatingOpenUIRenderer,
 } from "../keating/openui/renderer";
-import type {
-  KeatingOpenUIAction,
-  OpenUIDocumentScope,
-} from "../keating/openui/types";
-import {
-  createOpenUIActionLearnerResponse,
-  createQuestionLearnerResponse,
-  parseLearnerResponse,
-  serializeLearnerResponse,
-} from "../keating/learner-response";
+import type { OpenUIDocumentScope } from "../keating/openui/types";
+import { parseLearnerResponse } from "../keating/learner-response";
+import { useLearnerDelivery } from "./chat/useLearnerDelivery";
+import { useQuizConversationEvents } from "./chat/useQuizConversationEvents";
+import { useGoogleKeyForUrls, useLoadingStep } from "./chat/thread-status";
+import { quizSubmittedDetail } from "./chat/quiz-conversation";
 import { LearnerResponseReview } from "./LearnerResponseReview";
 import { classifyLlmError, type LlmErrorDetails } from "../core/api-retry";
+import { composerIconButtonClass, srInteractiveClass } from "./chat/composer-styles";
+import { SpeechComposerControl } from "./chat/SpeechComposerControl";
+import {
+  classifyError,
+  diagnosticsSummaryForFailure,
+  VOICE_ERROR_PATTERNS,
+  type ClassifiedError,
+} from "./chat/error-classification";
 
 const AuthErrorContext = createContext<(provider: string) => Promise<boolean>>(
   () => Promise.resolve(false),
@@ -230,14 +195,8 @@ const MAX_CAPTURED_API_ERROR_KEYS = 256;
 
 const mutedTextClass = css({ color: "var(--muted-foreground)" });
 const foregroundTextClass = css({ color: "var(--foreground)" });
-const primaryTextClass = css({ color: "var(--primary)" });
 const pulseClass = css({
   animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-});
-const srInteractiveClass = css({
-  transitionProperty:
-    "color, background-color, border-color, opacity, box-shadow, transform",
-  transitionDuration: "150ms",
 });
 const iconButtonClass = css({
   display: "inline-flex",
@@ -254,30 +213,6 @@ const iconButtonClass = css({
     opacity: 0.72,
   },
 });
-const composerIconButtonStyles = css.raw({
-  display: "inline-flex",
-  width: "2rem",
-  height: "2rem",
-  flexShrink: 0,
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "0.375rem",
-  border: "1px solid var(--border)",
-  color: "var(--muted-foreground)",
-  _hover: {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
-  },
-  _disabled: {
-    color: "var(--muted-foreground)",
-    opacity: 0.72,
-  },
-  sm: { width: "2.25rem", height: "2.25rem" },
-});
-const composerIconButtonClass = cx(
-  srInteractiveClass,
-  css(composerIconButtonStyles),
-);
 const dialogButtonClass = cx(
   "dialog-compact-button",
   css({
@@ -326,7 +261,6 @@ function QuizGradeApplier({ payload }: { payload: QuizGradePayload }) {
 
 const ERROR_TEXT_PREFIX = "\x00__KEATING_ERROR__\x00";
 
-type PromptContent = TextContent | ImageContent | KeatingAudioContent;
 
 const PREFILL_STATUS_LINES = [
   "Reading the board before answering...",
@@ -708,99 +642,6 @@ function stripArtifactLinks(text: string): string {
   return text.replace(artifactLinkPattern, "").trim();
 }
 
-const VOICE_ERROR_PATTERNS =
-  /keating_voice|gemini live speech|voice layer|speech model|speech failed|speech timed out/i;
-
-interface ClassifiedError extends LlmErrorDetails {
-  icon: typeof CircleAlert;
-}
-
-/**
- * Categories the learner can act on directly: a missing key, missing credits,
- * a prompt that is too long or malformed, or a safety refusal. Everything else
- * (server faults, withdrawn models, unrecognized failures) cannot be fixed from
- * the UI, so those are the ones worth reporting.
- */
-const NON_REPORTABLE_ERROR_CATEGORIES = new Set([
-	"auth",
-	"billing",
-	"context-length",
-	"invalid-request",
-	"safety",
-	"aborted",
-	"network",
-	"rate-limit",
-	"timeout",
-	"missing-key",
-	"permission",
-	"model-unavailable",
-	"unsupported-provider",
-	"microphone-denied",
-	"microphone-unavailable",
-	"camera-denied",
-	"camera-unavailable",
-	"camera-in-use",
-	"screen-denied",
-	"vision-unsupported",
-]);
-
-/** Report summary for a failure with no known learner-side recovery. */
-function diagnosticsSummaryForFailure(
-	failure: { category?: string; kind?: string; title?: string },
-	prefix?: string,
-): string | undefined {
-	const category = failure.category ?? failure.kind ?? "unknown";
-	if (NON_REPORTABLE_ERROR_CATEGORIES.has(category)) return undefined;
-	const summary = failure.title ? `${category}: ${failure.title}` : category;
-	return prefix ? `${prefix}: ${summary}` : summary;
-}
-
-function speechDiagnosticsSummary(errorText: string): string | undefined {
-	if (/no speech was detected|microphone unavailable|could not attach|speech provider key/i.test(errorText)) return undefined;
-	return diagnosticsSummaryForFailure(classifyError(errorText), "speech");
-}
-
-function classifyError(errorText: string): ClassifiedError {
-  const isVoiceError = VOICE_ERROR_PATTERNS.test(errorText);
-  if (isVoiceError) {
-    const underlying = classifyLlmError(errorText);
-    return {
-      ...underlying,
-      title:
-        underlying.category === "auth"
-          ? "Voice sign-in failed"
-          : "Voice model failed",
-      description:
-        "The optional speech layer failed. The main chat model may still be working.",
-      recovery:
-        underlying.category === "auth"
-          ? "Update the speech provider credentials, or turn speech off and continue with text."
-          : "Turn speech off and continue with text, or retry the voice connection.",
-      icon: underlying.category === "auth" ? KeyRound : Wifi,
-    };
-  }
-
-  const details = classifyLlmError(errorText);
-  const icon =
-    details.category === "auth"
-      ? KeyRound
-      : details.category === "billing"
-        ? CircleDollarSign
-        : details.category === "permission" || details.category === "safety"
-          ? ShieldAlert
-          : details.category === "server" ||
-              details.category === "model-unavailable"
-            ? Server
-            : details.category === "network" ||
-                details.category === "rate-limit" ||
-                details.category === "timeout"
-              ? Wifi
-              : details.category === "aborted"
-                ? Square
-                : CircleAlert;
-  return { ...details, icon };
-}
-
 function ErrorBadge({
   classified,
   rawMessage,
@@ -915,489 +756,6 @@ function ImagePart({ image, filename }: { image: string; filename?: string }) {
         </figcaption>
       ) : null}
     </figure>
-  );
-}
-
-// Voice is a real composer mode, not a small attachment action. Duplex models
-// open the realtime surface; other providers use press-and-hold dictation and
-// place the transcript back into the text composer for review.
-function SpeechComposerControl({
-  expanded,
-  onExpandedChange,
-  onRecordingChange,
-  onConversationComplete,
-  onRequestCredential,
-}: {
-  expanded: boolean;
-  onExpandedChange: (expanded: boolean) => void;
-  onRecordingChange?: (recording: boolean) => void;
-  onConversationComplete: (turns: LiveTranscriptTurn[]) => void | Promise<void>;
-  onRequestCredential?: (provider: string) => Promise<boolean>;
-}) {
-  const composer = useAui().composer;
-  const [available, setAvailable] = useState<boolean | null>(null);
-  const [recording, setRecording] = useState(false);
-  useEffect(() => {
-    onRecordingChange?.(recording);
-    return () => onRecordingChange?.(false);
-  }, [recording, onRecordingChange]);
-  const [recordingStream, setRecordingStream] = useState<MediaStream | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [audioError, setAudioError] = useState("");
-  const retryAudioRef = useRef<Blob | null>(null);
-  const [liveOpen, setLiveOpen] = useState(false);
-  const [forceStt, setForceStt] = useState(false);
-  const recorderRef = useRef<MicRecorder | null>(null);
-  const recordingPromiseRef = useRef<Promise<MicRecorder> | null>(null);
-  useEffect(() => () => {
-    const pending = recordingPromiseRef.current;
-    recordingPromiseRef.current = null;
-    if (pending) void pending.then(recorder => recorder.cancel()).catch(() => {});
-  }, []);
-  const pendingLiveVideoRef = useRef<Promise<VideoCaptureHandle | null> | null>(
-    null,
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    const check = () => {
-      const settings = loadWebSpeechSettings();
-      const requiredProvider = liveCredentialProvider(settings.providerId);
-      const credential = requiredProvider
-        ? getProviderApiKey(requiredProvider)
-        : resolveSpeechCredential(getProviderApiKey).then(
-            (value) => value?.apiKey,
-          );
-      credential
-        .then((apiKey) => {
-          if (!cancelled) setAvailable(Boolean(apiKey));
-        })
-        .catch(() => {
-          if (!cancelled) setAvailable(false);
-        });
-    };
-    check();
-    // Re-check when a key is added/changed via the API-key prompt.
-    window.addEventListener("keating:api-key-prompt-changed", check);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("keating:api-key-prompt-changed", check);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (
-      !forceStt &&
-      isDuplexSpeechProvider(loadWebSpeechSettings().providerId) &&
-      expanded
-    ) {
-      onExpandedChange(false);
-    }
-  }, [expanded, forceStt, onExpandedChange]);
-
-  // Let anything outside the composer start a live conversation — the /live
-  // route is just this event fired on arrival. Kept as an event rather than a
-  // prop so the trigger does not have to be a descendant of the chat panel.
-  useEffect(() => {
-    const onExternalStart = () => {
-      // No pre-flight screen capture here: without a click of its own this
-      // has no transient user activation to spend, and the learner can turn
-      // sharing on from inside the session.
-      pendingLiveVideoRef.current = null;
-      void primeSpeechAudio().catch(() => {});
-      setLiveOpen(true);
-    };
-    window.addEventListener("keating:start-live", onExternalStart);
-    return () =>
-      window.removeEventListener("keating:start-live", onExternalStart);
-  }, []);
-
-  const appendToComposer = (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    const existing = composer.getState().text;
-    composer.setText(existing ? `${existing.trimEnd()} ${trimmed}` : trimmed);
-  };
-
-  const beginPushToTalk = () => {
-    if (busy || recordingPromiseRef.current) return;
-    setAudioError("");
-    retryAudioRef.current = null;
-    setRecording(true);
-    const pending = startMicRecording();
-    recordingPromiseRef.current = pending;
-    void pending
-      .then((recorder) => {
-        if (recordingPromiseRef.current !== pending) return;
-        recorderRef.current = recorder;
-        setRecordingStream(recorder.stream);
-      })
-      .catch((error) => {
-        recordingPromiseRef.current = null;
-        setRecording(false);
-        setAudioError(error instanceof Error ? error.message : "Microphone unavailable.");
-      });
-  };
-
-  const transcribeRecording = async (blob: Blob) => {
-    const cred = await resolveSpeechCredential(getProviderApiKey);
-    if (!cred) {
-      setAudioError("Add a speech provider key in Settings to create a transcript. You can still send the recording to an audio-capable model.");
-      return;
-    }
-    const text = await transcribeAudio(blob, { provider: cred.provider, apiKey: cred.apiKey });
-    if (!text.trim()) {
-      setAudioError("No speech was detected. Retry if you spoke, or send the audio without a transcript.");
-      return;
-    }
-    appendToComposer(text);
-    rememberRecordingTranscript(blob, text);
-    retryAudioRef.current = null;
-    setAudioError("");
-    onExpandedChange(false);
-  };
-
-  const retryTranscription = async () => {
-    if (!retryAudioRef.current || busy) return;
-    setBusy(true);
-    setAudioError("");
-    try { await transcribeRecording(retryAudioRef.current); }
-    catch (error) { setAudioError(transcriptionErrorMessage(error)); }
-    finally { setBusy(false); }
-  };
-
-  const finishPushToTalk = async () => {
-    const pending = recordingPromiseRef.current;
-    if (!pending) return;
-    setRecording(false);
-    setBusy(true);
-    let attached = false;
-    try {
-      const recorder = recorderRef.current ?? (await pending);
-      const blob = await recorder.stop();
-      const file = new File([blob], `Recording-${Date.now()}.webm`, {type: blob.type || "audio/webm"});
-      await composer.addAttachment(file);
-      attached = true;
-      retryAudioRef.current = file;
-      await transcribeRecording(file);
-    } catch (error) {
-      setAudioError(attached ? transcriptionErrorMessage(error) : "Could not attach the recording. Check microphone access and try recording again.");
-    } finally {
-      recorderRef.current = null;
-      recordingPromiseRef.current = null;
-      setRecordingStream(null);
-      setBusy(false);
-    }
-  };
-
-  const openLiveVoice = (settings = loadWebSpeechSettings()) => {
-    void primeSpeechAudio().catch(() => {});
-    // getDisplayMedia requires transient user activation in browsers that
-    // enforce the screen-sharing permission contract. Start this request from
-    // the button click; the overlay will consume the resulting handle after
-    // the provider connection is ready.
-    const liveTier = resolveSpeechRealtimeTier(settings);
-    if (settings.providerId !== "tavus" && liveTier.video && settings.videoEnabled && settings.videoSource === "screen") {
-      pendingLiveVideoRef.current = startVideoCapture({
-        source: settings.videoSource,
-        intervalMs: settings.frameIntervalMs,
-      }).catch((error) => {
-        console.warn("[keating:live] screen capture unavailable", error);
-        return null;
-      });
-    } else {
-      pendingLiveVideoRef.current = null;
-    }
-    setLiveOpen(true);
-  };
-
-  const settings = loadWebSpeechSettings();
-  const mode =
-    forceStt || !isDuplexSpeechProvider(settings.providerId) ? "stt" : "duplex";
-  const activateVoice = () => {
-    if (mode === "stt") {
-      onExpandedChange(true);
-      return;
-    }
-    // Unlock playback from this direct learner gesture even when credential
-    // setup has to finish before the provider session can be opened.
-    void primeSpeechAudio().catch(() => {});
-    if (available === true) {
-      openLiveVoice(settings);
-      return;
-    }
-    const requiredProvider = liveCredentialProvider(settings.providerId);
-    if (!requiredProvider || !onRequestCredential) {
-      openLiveVoice(settings);
-      return;
-    }
-    void onRequestCredential(requiredProvider).then((allowed) => {
-      if (!allowed) return;
-      setAvailable(true);
-      openLiveVoice(loadWebSpeechSettings());
-    });
-  };
-  const liveOverlay =
-    liveOpen && typeof document !== "undefined"
-      ? createPortal(
-          <LiveVoiceOverlay
-            onClose={() => setLiveOpen(false)}
-            onConversationComplete={onConversationComplete}
-            initialVideoPromise={pendingLiveVideoRef.current}
-            onOpenSettings={(tab) => {
-              window.dispatchEvent(
-                new CustomEvent("keating:open-settings", {
-                  detail: { tab: tab === "speech" ? "learning" : "models" },
-                }),
-              );
-            }}
-            onFallback={() => {
-              setLiveOpen(false);
-              setForceStt(true);
-              onExpandedChange(true);
-            }}
-          />,
-          document.body,
-        )
-      : null;
-
-  const audioErrorToast = audioError ? createPortal(
-    <div role="status" aria-live="polite" className={css({
-      position: "fixed", bottom: "calc(1rem + env(safe-area-inset-bottom))", right: "1rem",
-      zIndex: 10000, width: "min(24rem, calc(100vw - 2rem))", padding: "1rem",
-      animation: "keating-notice-enter 240ms cubic-bezier(.16,1,.3,1) both",
-      "@media (prefers-reduced-motion: reduce)": {animation: "none"},
-      backgroundColor: "var(--background)", color: "var(--foreground)",
-      border: "1px solid var(--border)", borderRadius: "0.5rem",
-      boxShadow: "0 4px 24px #0003", fontSize: "0.8125rem", lineHeight: 1.5,
-    })}>
-      <div className={css({display: "flex", alignItems: "center", gap: "0.5rem"})}>
-        <CircleAlert size={16} aria-hidden="true" />
-        <strong className={css({flex: 1})}>{retryAudioRef.current ? "Transcript unavailable" : "Recording unavailable"}</strong>
-        <button type="button" onClick={() => setAudioError("")} aria-label="Dismiss notification"
-          className={composerIconButtonClass}><X size={16} /></button>
-      </div>
-      <p>{audioError}</p>
-      {retryAudioRef.current && <>
-        <p className={css({color: "var(--muted-foreground)", marginTop: "0.25rem"})}>Your audio is still attached.</p>
-        <button type="button" disabled={busy} onClick={() => void retryTranscription()}
-          className={css({marginTop: "0.5rem", textDecoration: "underline", cursor: "pointer"})}>Retry transcription</button>
-      </>}
-      {speechDiagnosticsSummary(audioError) && <ErrorDiagnosticsActions summary={speechDiagnosticsSummary(audioError)!} />}
-    </div>, document.body) : null;
-
-  if (!expanded) {
-    // Dictation and live conversation are different jobs, so they get
-    // different buttons rather than one button whose meaning depends on a
-    // setting the learner cannot see from here. Dictation puts words in the
-    // composer to edit before sending; live opens a conversation that Keating
-    // answers out loud.
-    return (
-      <>
-        <button
-          type="button"
-          onClick={() => {
-            setForceStt(true);
-            onExpandedChange(true);
-          }}
-          title="Record an audio message"
-          aria-label="Record an audio message"
-          className={cx(
-            composerIconButtonClass,
-            css({
-              _hover: {
-                backgroundColor: "var(--muted)",
-                color: "var(--foreground)",
-              },
-            }),
-          )}
-        >
-          <Mic size={16} />
-        </button>
-        <button
-          type="button"
-          onClick={activateVoice}
-          title="Start a live conversation"
-          aria-label="Start a live conversation"
-          aria-haspopup="dialog"
-          className={cx(
-            srInteractiveClass,
-            css(composerIconButtonStyles, {
-              borderColor: "transparent",
-              backgroundColor: "var(--foreground)",
-              color: "var(--background)",
-              _hover: {
-                backgroundColor:
-                  "color-mix(in srgb, var(--foreground) 85%, var(--background))",
-                color: "var(--background)",
-              },
-              _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "3px" },
-            }),
-          )}
-        >
-          <AudioLines size={16} />
-        </button>
-        {audioErrorToast}
-        {liveOverlay}
-      </>
-    );
-  }
-
-  return (
-    <>
-      <div
-        className={css({
-          display: "flex",
-          minWidth: 0,
-          flex: 1,
-          alignItems: "center",
-          gap: "0.375rem",
-        })}
-      >
-        <button
-          type="button"
-          disabled={busy}
-          onPointerDown={(event) => {
-            event.currentTarget.setPointerCapture(event.pointerId);
-            beginPushToTalk();
-          }}
-          onPointerUp={() => void finishPushToTalk()}
-          onPointerCancel={() => void finishPushToTalk()}
-          onKeyDown={(event) => {
-            if ((event.key === " " || event.key === "Enter") && !event.repeat) {
-              event.preventDefault();
-              beginPushToTalk();
-            }
-          }}
-          onKeyUp={(event) => {
-            if (event.key === " " || event.key === "Enter") {
-              event.preventDefault();
-              void finishPushToTalk();
-            }
-          }}
-          aria-label="Hold to speak"
-          aria-pressed={recording}
-          className={cx(
-            css({
-              display: "inline-flex",
-              minWidth: 0,
-              minHeight: "2.25rem",
-              flex: 1,
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
-              borderRadius: "0.375rem",
-              backgroundColor: "var(--primary)",
-              paddingInline: "0.75rem",
-              fontSize: "0.8125rem",
-              fontWeight: 650,
-              color: "var(--primary-foreground)",
-              touchAction: "none",
-              userSelect: "none",
-              _hover: {
-                backgroundColor:
-                  "color-mix(in srgb, var(--primary) 88%, black)",
-              },
-              _disabled: { opacity: 0.65 },
-            }),
-
-          )}
-        >
-          {busy ? (
-            <KeatingBot state="thinking" size={32} label="" />
-          ) : recording ? (
-            <KeatingBot state="listening" size={32} label="" />
-          ) : (
-            <Mic size={16} />
-          )}
-          {recording && recordingStream && <RecordingWaveform stream={recordingStream} />}
-          <span>
-            {busy
-              ? "Preparing audio"
-              : recording
-                ? "Release to attach"
-                : "Hold to speak"}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onExpandedChange(false)}
-          aria-label="Switch to keyboard"
-          title="Switch to keyboard"
-          className={composerIconButtonClass}
-        >
-          <Keyboard size={16} />
-        </button>
-      </div>
-      {audioErrorToast}
-      {liveOverlay}
-    </>
-  );
-}
-
-// The live conversation surface, rendered over the chat. The session runtime
-// and every pixel of it live in components/live so the /live route and this
-// overlay cannot drift apart again.
-function LiveVoiceOverlay({
-  onClose,
-  onConversationComplete,
-  onFallback,
-  initialVideoPromise,
-  onOpenSettings,
-}: {
-  onClose: () => void;
-  onConversationComplete: (turns: LiveTranscriptTurn[]) => void | Promise<void>;
-  onFallback: () => void;
-  initialVideoPromise?: Promise<VideoCaptureHandle | null> | null;
-  onOpenSettings?: (tab: "providers" | "speech") => void;
-}) {
-  const session = useLiveSession({
-    onConversationComplete,
-    initialVideoPromise,
-  });
-  const liveDiagnosticsSummary = session.failure
-    ? diagnosticsSummaryForFailure(session.failure, "live session")
-    : undefined;
-
-  // Ending is the learner's decision, so the surface closes only once the
-  // session has flushed its transcript into the chat.
-  useEffect(() => {
-    if (session.phase === "ended") onClose();
-  }, [session.phase, onClose]);
-
-  // Escape ends the call rather than abandoning an open microphone.
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") session.end();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [session]);
-
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Live voice conversation"
-      className={css({
-        position: "fixed",
-        inset: 0,
-        zIndex: 60,
-        backgroundColor: "var(--background)",
-      })}
-    >
-      <LiveConversation
-        session={session}
-        onClose={session.end}
-        onOpenSettings={onOpenSettings}
-        onUseDictation={onFallback}
-      />
-      {liveDiagnosticsSummary && (
-        <div className={css({ position: "absolute", left: "1rem", right: "1rem", bottom: "7.5rem", zIndex: 1, display: "flex", justifyContent: "center" })}>
-          <ErrorDiagnosticsActions summary={liveDiagnosticsSummary} />
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -1763,28 +1121,7 @@ function renderInteractiveSegment(
           onSubmit={(result) => {
             window.dispatchEvent(
               new CustomEvent("keating:quiz-submitted", {
-                detail: {
-                  resultId: result.resultId,
-                  quizId: parsed.slug,
-                  topic: parsed.topic,
-                  total: parsed.questions.length,
-                  questions: parsed.questions.map((q) => ({
-                    id: q.id,
-                    question: q.question,
-                    correctAnswer: q.correctAnswer,
-                    type: q.type,
-                    timeLimit: q.timeLimit,
-                    openEnded: isOpenEnded(q),
-                  })),
-                  answers: result.answers,
-                  score: result.score,
-                  partialCreditPoints: result.partialCreditPoints,
-                  partialCredits: result.partialCredits,
-                  flagged: result.flagged,
-                  timing: result.timing,
-                  timedOutQuestionIds: result.timedOutQuestionIds,
-                  examTimedOut: result.examTimedOut,
-                },
+                detail: quizSubmittedDetail(parsed, result),
               }),
             );
           }}
@@ -1803,13 +1140,7 @@ function renderInteractiveSegment(
         result: QuizResult;
       };
       return (
-        <QuizResultCard
-          key={key}
-          data={data}
-          onReview={() => {
-            // Review logic can be wired later
-          }}
-        />
+        <QuizResultCard key={key} data={data} />
       );
     } catch {
       return null;
@@ -2974,71 +2305,10 @@ function messagePartComponents(
   };
 }
 
-function dataUrlToImageContent(dataUrl: string): ImageContent | null {
-  const match = dataUrl.match(/^data:([^;,]+);base64,(.*)$/);
-  if (!match) return null;
-  return { type: "image", mimeType: match[1], data: match[2] };
-}
-
-function modelSupportsImages(model: unknown): boolean {
-  const input = (model as { input?: unknown })?.input;
-  return Array.isArray(input) && input.includes("image");
-}
-
-function modelDisplayName(model: unknown): string {
-  const m = model as { name?: string; id?: string };
-  return m?.name ?? m?.id ?? "The selected model";
-}
-
-function visionCapabilityError(model: unknown): string {
-  return `${modelDisplayName(model)} cannot read image attachments. Choose a vision-capable model from the model selector, such as Gemini Flash/Pro or GPT-4o, then send the image again.`;
-}
-
 function displayTextFromAgentText(text: string): string {
   const match = text.match(/^<attachment name="([^"]+)"/);
   if (match) return `[attached file: ${match[1]}]`;
   return text;
-}
-
-function contentFromAppendMessage(message: AppendMessage): PromptContent[] {
-  const content: PromptContent[] = [];
-  for (const part of message.content) {
-    if (part.type === "text" && part.text.trim()) {
-      content.push({ type: "text", text: part.text });
-    } else if (part.type === "image") {
-      const image = dataUrlToImageContent(part.image);
-      if (image) content.push(image);
-    } else if (part.type === "file" && part.mimeType.startsWith("audio/")) {
-      content.push({type: "audio", mimeType: part.mimeType, data: part.data.replace(/^data:[^,]+,/, ""), filename: part.filename});
-    } else if (part.type === "file") {
-      content.push({
-        type: "text",
-        text: `[file: ${part.filename ?? "attachment"}]\n${part.data}`,
-      });
-    }
-  }
-
-  for (const attachment of message.attachments ?? []) {
-    for (const part of attachment.content ?? []) {
-      if (part.type === "text" && part.text.trim()) {
-        content.push({ type: "text", text: part.text });
-      } else if (part.type === "image") {
-        const image = dataUrlToImageContent(part.image);
-        if (image) content.push(image);
-      } else if (part.type === "file" && part.mimeType.startsWith("audio/")) {
-        const text = message.content.filter(part => part.type === "text").map(part => part.text).join("\n");
-        content.push({type: "audio", mimeType: part.mimeType, data: part.data.replace(/^data:[^,]+,/, ""), filename: part.filename,
-          sendToModel: recordingHasTranscript(attachment.file, text) ? false : undefined});
-      } else if (part.type === "file") {
-        content.push({
-          type: "text",
-          text: `[file: ${part.filename ?? attachment.name}]\n${part.data}`,
-        });
-      }
-    }
-  }
-
-  return content;
 }
 
 function assistantContentFromAgentContent(content: unknown) {
@@ -3458,26 +2728,6 @@ function flueThreadMessage(message: FlueConversationMessage, running: boolean): 
       active ? { type: "running" } : { type: "complete", reason: "stop" } } : {}),
     metadata: { custom: { ...message.metadata, keatingRetryable: !!failed } },
   } as ThreadMessageLike;
-}
-
-function makeUserMessageFromAppend(
-  message: AppendMessage,
-): AgentMessage | null {
-  const content = contentFromAppendMessage(message);
-  if (content.length === 0) return null;
-  return {
-    role: "user",
-    content,
-    timestamp: Date.now(),
-  } as AgentMessage;
-}
-
-function makeUserTextMessage(text: string): AgentMessage {
-  return {
-    role: "user",
-    content: [{ type: "text", text }],
-    timestamp: Date.now(),
-  } as AgentMessage;
 }
 
 function messagesFromLiveTranscript(
@@ -4150,6 +3400,36 @@ function WebGroundingHint({
   );
 }
 
+/**
+ * Thread rows for assistant-ui. Without native Flue history the legacy agent
+ * messages are projected directly; otherwise legacy, native and local messages
+ * are merged by time.
+ */
+function projectThreadMessages(
+  agent: FlueConversation | null,
+  messages: AgentMessage[],
+  isRunning: boolean,
+  speechEnabled: boolean,
+  provider: string | undefined,
+): ThreadMessageLike[] {
+  const native = agent?.getSnapshot().conversation;
+  if (!native || !agent) return messages.map((message, index) => toAssistantMessage(message, index, messages.length, isRunning, provider));
+  const legacy = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent.legacyMessages, speechEnabled)));
+  const local = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent.localMessages, speechEnabled)));
+  // Native history replaces the legacy projection, but preparation and
+  // provider latency still need the same immediate assistant activity cue.
+  const pendingStatus = messages.at(-1) as (AgentMessage & { __keatingPrefillStatus?: boolean }) | undefined;
+  if (pendingStatus?.__keatingPrefillStatus) local.push(pendingStatus);
+  const localError = local.some(message => message.role === "assistant" && ["error", "aborted"].includes(message.stopReason));
+  const visibleNative = native.messages.filter(message => shouldRenderFlueMessage(message) && !(localError && message.settlement));
+  const totalMessages = legacy.length + visibleNative.length + local.length;
+  return [
+    ...legacy.map((message, index) => toAssistantMessage(message, index, totalMessages, false, provider)),
+    ...visibleNative.map(message => flueThreadMessage(message, isRunning)),
+    ...local.map((message, index) => toAssistantMessage(message, legacy.length + visibleNative.length + index, totalMessages, false, provider)),
+  ].sort((left, right) => (left.createdAt?.getTime() ?? 0) - (right.createdAt?.getTime() ?? 0));
+}
+
 function AssistantThread({
   agent,
   callbacks,
@@ -4174,13 +3454,13 @@ function AssistantThread({
   const posthog = usePostHog();
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
   const [localVersion, setLocalVersion] = useState(0);
-  const [loadingStep, setLoadingStep] = useState(0);
   const [composerHasUrl, setComposerHasUrl] = useState(false);
   const [voiceComposerOpen, setVoiceComposerOpen] = useState(false);
   const [micRecording, setMicRecording] = useState(false);
   const [dismissedQuizId, setDismissedQuizId] = useState<string | null>(null);
-  const [hasGoogleKey, setHasGoogleKey] = useState<boolean | null>(null);
+  const hasGoogleKey = useGoogleKeyForUrls(composerHasUrl);
   const isRunning = agent?.getSnapshot().running ?? false;
+  const loadingStep = useLoadingStep(isRunning);
   const draftStatus = useSyncExternalStore(subscribeTeachingDraftStatus,
     () => getTeachingDraftStatus(agent?.sessionId), () => null);
   const draftActive = teachingDraftIsActive(draftStatus);
@@ -4245,98 +3525,12 @@ function AssistantThread({
   const modelRef = useRef(agent?.context.model);
   if (agent) modelRef.current = agent.context.model;
 
-  const threadMessages = useMemo(() => {
-    const native = agent?.getSnapshot().conversation;
-    if (!native) return messages.map((message, index) => toAssistantMessage(message, index, messages.length, isRunning, modelRef.current?.provider));
-    const legacy = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent!.legacyMessages, speechEnabled)));
-    const local = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent!.localMessages, speechEnabled)));
-    // Native history replaces the legacy projection, but preparation and
-    // provider latency still need the same immediate assistant activity cue.
-    const pendingStatus = messages.at(-1) as (AgentMessage & { __keatingPrefillStatus?: boolean }) | undefined;
-    if (pendingStatus?.__keatingPrefillStatus) local.push(pendingStatus);
-    const localError = local.some(message => message.role === "assistant" && ["error", "aborted"].includes(message.stopReason));
-    const visibleNative = native.messages.filter(message => shouldRenderFlueMessage(message) && !(localError && message.settlement));
-    const totalMessages = legacy.length + visibleNative.length + local.length;
-    return [
-      ...legacy.map((message, index) => toAssistantMessage(message, index, totalMessages, false, modelRef.current?.provider)),
-      ...visibleNative.map(message => flueThreadMessage(message, isRunning)),
-      ...local.map((message, index) => toAssistantMessage(message, legacy.length + visibleNative.length + index, totalMessages, false, modelRef.current?.provider)),
-    ].sort((left, right) => (left.createdAt?.getTime() ?? 0) - (right.createdAt?.getTime() ?? 0));
-  }, [agent, version, localVersion, messages, isRunning, speechEnabled]);
+  const threadMessages = useMemo(
+    () => projectThreadMessages(agent, messages, isRunning, speechEnabled, modelRef.current?.provider),
+    [agent, version, localVersion, messages, isRunning, speechEnabled],
+  );
   const mascotState = chatMascotState({ messages: threadMessages, running: isRunning, recording: micRecording });
   const convertMessage = useCallback((message: ThreadMessageLike) => message, []);
-
-  const sendUserMessage = useCallback(async (userMessage: AgentMessage, onAdmitted?: () => void) => {
-    if (!agent || agent.context.isStreaming) return false;
-    setComposerHasUrl(false);
-    try {
-      await agent.sendPrepared(userMessage, async (signal) => {
-        // The turn is in the saved transcript now. Durable deliveries settle
-        // here, not when the reply finishes: a reload mid-reply must not
-        // submit the same learner response a second time.
-        await callbacks.onLocalMessagesChanged?.();
-        onAdmitted?.();
-        const provider = agent.context.model.provider;
-        if (callbacks.onApiKeyRequired && !(await callbacks.onApiKeyRequired(provider))) {
-          throw new Error(`Authentication error: no credentials are available for ${provider}. Open Settings → Providers & Models, connect the provider, then retry this message.`);
-        }
-        signal.throwIfAborted();
-        await callbacks.onBeforeSend?.();
-      });
-    } catch (error) {
-      console.error("Keating send failed:", error);
-      posthog.capture("message_send_failed", { error_type: "prompt_error" });
-      agent.context.messages.push(makePromptErrorMessage(agent, error));
-      setLocalVersion(current => current + 1);
-    }
-    await callbacks.onLocalMessagesChanged?.();
-    return true;
-  }, [agent, callbacks, posthog]);
-
-  const sendText = useCallback(async (text: string) => {
-    if (text.trim()) await sendUserMessage(makeUserTextMessage(text));
-  }, [sendUserMessage]);
-
-  const onNew = useCallback(
-    async (message: AppendMessage, onAdmitted?: () => void) => {
-      if (!agent) return false;
-      const userMessage = makeUserMessageFromAppend(message);
-      if (!userMessage) return false;
-      if (agent.context.isStreaming) return false;
-
-      const content = (userMessage as any).content;
-      const audioParts = Array.isArray(content) ? content.filter((part: any) => part?.type === "audio") : [];
-      if (audioParts.length && !modelSupportsAudio(agent.context.model)) {
-        if (audioParts.some((part: KeatingAudioContent) => part.sendToModel !== false)) {
-          agent.context.messages.push(userMessage, makeAttachmentErrorMessage(agent,
-            `${modelDisplayName(agent.context.model)} cannot listen to audio. Choose an audio-capable model, or configure transcription in Settings → Speech and transcribe the recording. To send a transcript you typed yourself, remove the audio attachment first. Your recording is kept here.`));
-          setLocalVersion(current => current + 1);
-          await callbacks.onLocalMessagesChanged?.();
-          return true;
-        }
-      } else if (audioParts.length) {
-        for (const part of audioParts) part.sendToModel = true;
-      }
-      const hasImage =
-        Array.isArray(content) &&
-        content.some((part: any) => part?.type === "image");
-      if (hasImage && !modelSupportsImages(agent.context.model)) {
-        agent.context.messages.push(userMessage);
-        agent.context.messages.push(
-          makeAttachmentErrorMessage(
-            agent,
-            visionCapabilityError(agent.context.model),
-          ),
-        );
-        setLocalVersion((current) => current + 1);
-        await callbacks.onLocalMessagesChanged?.();
-        return true;
-      }
-
-      return sendUserMessage(userMessage, onAdmitted);
-    },
-    [agent, callbacks, sendUserMessage],
-  );
 
   const onCancel = useCallback(async () => {
     posthog.capture("message_cancelled", {});
@@ -4344,9 +3538,6 @@ function AssistantThread({
     agent?.cancel();
   }, [agent, posthog, callbacks.sessionId]);
 
-  // System-initiated sends (quiz remediation/reframe requests, etc.) can fire
-  // while the agent is mid-stream, where onNew silently drops them. Queue those
-  // and flush when the agent goes idle so the request is never lost.
   const [quizGrades, setQuizGrades] = useState<
     Record<string, QuizQuestionGrade[]>
   >({});
@@ -4359,293 +3550,17 @@ function AssistantThread({
     [quizGrades],
   );
 
-	type PendingSend = {
-		message: AppendMessage;
-		deliveryKey?: string;
-		onDelivered?: () => void;
-	};
-	const pendingSendsRef = useRef<PendingSend[]>([]);
-	const activeDeliveryKeysRef = useRef(new Set<string>());
-	const deliverPendingSend = useCallback(async (pending: PendingSend) => {
-		let settled = false;
-		const settle = () => { if (!settled) { settled = true; pending.onDelivered?.(); } };
-		const delivered = await onNew(pending.message, settle);
-		if (pending.deliveryKey) activeDeliveryKeysRef.current.delete(pending.deliveryKey);
-		// Local-only outcomes (unsupported attachment errors) never reach admission.
-		if (delivered) settle();
-	}, [onNew]);
-  const queueOrSend = useCallback(
-	(message: AppendMessage, options: Omit<PendingSend, "message"> = {}) => {
-		if (options.deliveryKey) {
-			if (activeDeliveryKeysRef.current.has(options.deliveryKey)) return;
-			activeDeliveryKeysRef.current.add(options.deliveryKey);
-		}
-		const pending = { message, ...options };
-      if (agent && !agent.context.isStreaming) {
-		void deliverPendingSend(pending);
-      } else {
-		pendingSendsRef.current.push(pending);
-      }
-    },
-	[agent, deliverPendingSend],
-  );
-
-	const queueLearnerResponse = useCallback((pending: import("../keating/event-store").PendingLearnerResponse) => {
-		queueOrSend({
-			role: "user",
-			content: [{ type: "text", text: pending.serialized }],
-		} as unknown as AppendMessage, {
-			deliveryKey: pending.receiptId,
-			onDelivered: () => callbacks.onLearnerResponseDelivered?.(pending),
-		});
-	}, [callbacks.onLearnerResponseDelivered, queueOrSend]);
-
-  const handleOpenUIAction = useCallback(
-	async (action: KeatingOpenUIAction) => {
-	  const detail: {
-		kind: "keating-openui-dispatch";
-		action: KeatingOpenUIAction;
-		persisted?: Promise<void>;
-	  } = { kind: "keating-openui-dispatch", action };
-      window.dispatchEvent(
-		new CustomEvent("keating:openui-action", { detail }),
-      );
-	  await detail.persisted;
-	  if (action.kind === "canonical") {
-		const receiptId = `${action.action.documentId}-${action.action.idempotencyKey}`;
-		const pending = callbacks.getPendingLearnerResponses?.()
-			.find((candidate) => candidate.receiptId === receiptId);
-		if (!pending) return false;
-		queueLearnerResponse(pending);
-		return true;
-	  }
-      const response = createOpenUIActionLearnerResponse(action);
-      queueOrSend({
-        role: "user",
-        content: [{ type: "text", text: serializeLearnerResponse(response) }],
-      } as unknown as AppendMessage);
-	  return true;
-    },
-	[callbacks.getPendingLearnerResponses, queueLearnerResponse, queueOrSend],
-  );
-
-	useEffect(() => {
-		if (!agent) return;
-		const sent = new Set(agent.context.messages.flatMap((message) => {
-			if (message.role !== "user") return [];
-			const content = message.content;
-			return [typeof content === "string" ? content
-				: content.filter((part) => part.type === "text").map((part) => part.text).join("\n")];
-		}));
-		for (const pending of callbacks.getPendingLearnerResponses?.() ?? []) {
-			// Already in the transcript (an earlier tab admitted it, then reloaded).
-			if (sent.has(pending.serialized)) callbacks.onLearnerResponseDelivered?.(pending);
-			else queueLearnerResponse(pending);
-		}
-	}, [agent, callbacks.getPendingLearnerResponses, callbacks.onLearnerResponseDelivered, queueLearnerResponse]);
-
-  useEffect(() => {
-    if (isRunning || !agent) return;
-    if (pendingSendsRef.current.length === 0) return;
-	const next = pendingSendsRef.current.shift();
-	if (next) void deliverPendingSend(next);
-	}, [isRunning, agent, deliverPendingSend]);
-
-  // When the learner submits a legacy question form, feed its answers back into
-  // the conversation. New question interactions arrive through OpenUI actions.
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent).detail as
-        | { answers?: AnsweredQuestion[]; topic?: string }
-        | undefined;
-      const answers = detail?.answers;
-      if (!agent || !answers || answers.length === 0) return;
-      const response = createQuestionLearnerResponse({
-        answers,
-        topic: detail?.topic,
-        source: "legacy",
-      });
-      void onNew({
-        role: "user",
-        content: [{ type: "text", text: serializeLearnerResponse(response) }],
-      } as unknown as AppendMessage);
-    };
-    window.addEventListener("keating:question-answered", handler);
-    return () =>
-      window.removeEventListener("keating:question-answered", handler);
-  }, [agent, onNew]);
-
-  // When the learner finishes a quiz, report their score, timing, partial
-  // credits, and flagged questions back to the agent.
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent).detail as
-        | {
-            resultId?: string;
-            quizId?: string;
-            topic?: string;
-            total?: number;
-            score?: number;
-            partialCreditPoints?: number;
-            partialCredits?: Record<string, number>;
-            flagged?: string[];
-            timedOutQuestionIds?: string[];
-            examTimedOut?: boolean;
-            timing?: { totalMs: number; perQuestionMs: Record<string, number> };
-            questions?: Array<{
-              id: string;
-              question: string;
-              correctAnswer: string;
-              type?: string;
-              timeLimit?: number;
-              openEnded?: boolean;
-            }>;
-            answers?: Record<string, string>;
-          }
-        | undefined;
-      if (!agent || !detail || typeof detail.score !== "number") return;
-      const total = detail.total ?? 0;
-      const resultId =
-        detail.resultId ?? `${detail.quizId ?? "quiz"}-${Date.now()}`;
-      // Open-ended answers (short answer / transfer / free-text fill-in) have no
-      // single correct string, so they're not auto-scored — the model judges them
-      // by meaning via grade_quiz. detail.score counts objective questions only.
-      const isOpen = (question: { type?: string; openEnded?: boolean }) =>
-        question.openEnded ??
-        (question.type === "short_answer" ||
-          question.type === "transfer" ||
-          question.type === "fill_in");
-      const openEndedTotal = (detail.questions ?? []).filter(isOpen).length;
-      const objectiveTotal = total - openEndedTotal;
-      const duration = detail.timing
-        ? formatQuizDuration(detail.timing.totalMs)
-        : null;
-      const lines: string[] = [
-        `I finished the quiz${detail.topic ? ` on "${detail.topic}"` : ""}.`,
-        `Objective score: ${detail.score}/${objectiveTotal}${openEndedTotal > 0 ? ` (${openEndedTotal} open-ended pending your review)` : ""}${duration !== null ? ` in ${duration}` : ""}.`,
-      ];
-      if (detail.examTimedOut) lines.push("The exam time budget expired.");
-      const timedOutIds = new Set(detail.timedOutQuestionIds ?? []);
-      if (typeof detail.partialCreditPoints === "number") {
-        lines.push(
-          `Partial-credit points: ${detail.partialCreditPoints.toFixed(2)}/${objectiveTotal}.`,
-        );
-      }
-      if (detail.questions && detail.answers && detail.timing) {
-        const perQ = detail.timing.perQuestionMs;
-        let hasOpenEnded = false;
-        for (const q of detail.questions) {
-          const mine = (detail.answers[q.id] ?? "").trim();
-          const parts: string[] = [];
-          if (isOpen(q)) {
-            hasOpenEnded = true;
-            parts.push(
-              `- [open-ended id=${q.id}] ${q.question} → my answer: "${mine || "(blank)"}" (reference: "${q.correctAnswer}")`,
-            );
-          } else {
-            const correct =
-              mine.toLowerCase() === q.correctAnswer.trim().toLowerCase();
-            const pc = detail.partialCredits?.[q.id];
-            parts.push(
-              `- ${q.question} → my answer: "${mine || "(blank)"}" ${correct ? "✓" : "✗"}`,
-            );
-            if (typeof pc === "number" && !correct) {
-              parts.push(`(partial credit: ${Math.round(pc * 100)}%)`);
-            }
-          }
-          if (typeof perQ[q.id] === "number") parts.push(`(${formatQuizDuration(perQ[q.id])})`);
-          if (timedOutIds.has(q.id)) parts.push("[timed out]");
-          else if (isQuickQuizAnswer({ timeMs: perQ[q.id], timeLimitSeconds: q.timeLimit, answered: Boolean(mine) })) parts.push("[quick answer: within 25% of question time budget; timing only]");
-          lines.push(parts.join(" "));
-        }
-        if (hasOpenEnded) {
-          lines.push(
-            `Grade the open-ended answers (marked [open-ended id=…]) by calling the grade_quiz tool with result_id "${resultId}" and a verdict (correct/partial/incorrect) per question id. Judge by meaning, not exact wording — the reference is one acceptable answer, not the only one. Your verdicts update the result card. Briefly explain anything I got wrong.`,
-          );
-        }
-      }
-      if (detail.flagged && detail.flagged.length > 0) {
-        lines.push(
-          `Bookmarked ${detail.flagged.length} question${detail.flagged.length > 1 ? "s" : ""} for review.`,
-        );
-      }
-      lines.push(
-        "Please review my answers and timing, then guide what to work on next.",
-      );
-      const resultPayload = {
-        id: resultId,
-        timestamp: Date.now(),
-        quiz: {
-          slug: detail.quizId ?? "",
-          topic: detail.topic ?? "",
-          questions: detail.questions ?? [],
-        },
-        result: {
-          answers: detail.answers ?? {},
-          score: detail.score ?? 0,
-          partialCreditPoints: detail.partialCreditPoints ?? 0,
-          timing: detail.timing,
-          partialCredits: detail.partialCredits ?? {},
-          flagged: detail.flagged ?? [],
-          timedOutQuestionIds: detail.timedOutQuestionIds ?? [],
-          examTimedOut: detail.examTimedOut,
-        },
-      };
-      const tag = `<keating-quiz-result json=${JSON.stringify(JSON.stringify(resultPayload))} />`;
-      void onNew({
-        role: "user",
-        content: [{ type: "text", text: lines.join("\n") + "\n\n" + tag }],
-      } as unknown as AppendMessage);
-    };
-    window.addEventListener("keating:quiz-submitted", handler);
-    return () => window.removeEventListener("keating:quiz-submitted", handler);
-  }, [agent, onNew]);
-
-  // Handle quiz remediation requests: learner clicked "Review" on a missed Bloom's level.
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent).detail as
-        | { level?: string; topic?: string; slug?: string }
-        | undefined;
-      if (!detail?.level) return;
-      posthog.capture("quiz_remediation_requested", { level: detail.level });
-      queueOrSend({
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: `I need help with "${detail.level}" level questions on "${detail.topic || detail.slug || "this topic"}". Please generate targeted review material for this area.`,
-          },
-        ],
-      } as unknown as AppendMessage);
-    };
-    window.addEventListener("keating:quiz-remediation-requested", handler);
-    return () =>
-      window.removeEventListener("keating:quiz-remediation-requested", handler);
-  }, [queueOrSend]);
-
-  // Handle quiz reframe requests: learner selected a reframe mode with no pre-generated text.
-  useEffect(() => {
-    const handler = (event: Event) => {
-      const detail = (event as CustomEvent).detail as
-        | { questionId?: string; mode?: string; topic?: string }
-        | undefined;
-      if (!detail?.mode || !detail?.questionId) return;
-      posthog.capture("quiz_reframe_requested", { mode: detail.mode });
-      queueOrSend({
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: `Please reframe question "${detail.questionId}" in "${detail.mode}" mode for "${detail.topic || "this topic"}".`,
-          },
-        ],
-      } as unknown as AppendMessage);
-    };
-    window.addEventListener("keating:quiz-reframe-requested", handler);
-    return () =>
-      window.removeEventListener("keating:quiz-reframe-requested", handler);
-  }, [queueOrSend]);
+  // Learner submissions (quiz results, question answers, remediation/reframe
+  // requests, OpenUI responses) can fire mid-reply, where onNew refuses them.
+  // They are retained for this session and delivered once it is idle.
+  const { onNew, sendText, submitLearnerTurn, handleOpenUIAction } = useLearnerDelivery({
+    agent,
+    callbacks,
+    isRunning,
+    onLocalMessagesShown: () => setLocalVersion((current) => current + 1),
+    onSendStarted: () => setComposerHasUrl(false),
+  });
+  useQuizConversationEvents({ agent, submitLearnerTurn });
 
   const storeAdapter = useMemo(
     () => ({
@@ -4676,37 +3591,6 @@ function AssistantThread({
     });
   }, []);
 
-  useEffect(() => {
-    if (!composerHasUrl) {
-      setHasGoogleKey(null);
-      return;
-    }
-
-    let cancelled = false;
-    getProviderApiKey("google")
-      .then((key) => {
-        if (!cancelled) setHasGoogleKey(!!key);
-      })
-      .catch(() => {
-        if (!cancelled) setHasGoogleKey(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [composerHasUrl]);
-
-  useEffect(() => {
-    if (!isRunning) {
-      setLoadingStep(0);
-      return;
-    }
-    const id = window.setInterval(
-      () => setLoadingStep((current) => current + 1),
-      2200,
-    );
-    return () => window.clearInterval(id);
-  }, [isRunning]);
 
   const UserMessageComponent = useCallback(
     () => (
@@ -4817,254 +3701,29 @@ function AssistantThread({
                   })}
                 >
                   {responseComparison}
-                  {visibleActiveQuiz && (
-                    <div
-                      className={css({
-                        marginInline: "auto",
-                        marginBottom: "0.375rem",
-                        width: "100%",
-                        maxWidth: "56rem",
-                        overflowX: "hidden",
-                        maxHeight: "min(55dvh, 30rem)",
-                        overflowY: "auto",
-                        overscrollBehavior: "contain",
-                        paddingInline: "0.375rem",
-                        sm: {
-                          marginBottom: "0.5rem",
-                          maxHeight: "none",
-                          overflowY: "visible",
-                          paddingInline: 0,
-                        },
-                      })}
-                    >
-                      <QuizSessionPanel
-                        quiz={visibleActiveQuiz}
-                        onSubmit={(result) => {
-                          window.dispatchEvent(
-                            new CustomEvent("keating:quiz-submitted", {
-                              detail: {
-                                resultId: result.resultId,
-                                quizId: visibleActiveQuiz.slug,
-                                topic: visibleActiveQuiz.topic,
-                                total: visibleActiveQuiz.questions.length,
-                                questions: visibleActiveQuiz.questions.map(
-                                  (q) => ({
-                                    id: q.id,
-                                    question: q.question,
-                                    correctAnswer: q.correctAnswer,
-                                    type: q.type,
-                                    timeLimit: q.timeLimit,
-                                    openEnded: isOpenEnded(q),
-                                  }),
-                                ),
-                                answers: result.answers,
-                                score: result.score,
-                                partialCreditPoints: result.partialCreditPoints,
-                                partialCredits: result.partialCredits,
-                                flagged: result.flagged,
-                                timing: result.timing,
-                                timedOutQuestionIds: result.timedOutQuestionIds,
-                                examTimedOut: result.examTimedOut,
-                              },
-                            }),
-                          );
-                        }}
-                        onDismiss={() => {
-                          setDismissedQuizId(visibleActiveQuiz.slug);
-                        }}
-                      />
-                    </div>
-                  )}
-                  {activeQuestion && (
-                    <div
-                      className={css({
-                        marginInline: "auto",
-                        marginBottom: "0.375rem",
-                        width: "100%",
-                        maxWidth: "56rem",
-                        overflowX: "hidden",
-                        paddingInline: "0.375rem",
-                        sm: { marginBottom: "0.5rem", paddingInline: 0 },
-                      })}
-                    >
-                      <QuestionRenderer
-                        data={activeQuestion}
-                        onSubmit={(answers) => {
-                          window.dispatchEvent(
-                            new CustomEvent("keating:question-answered", {
-                              detail: { answers, topic: activeQuestion.topic },
-                            }),
-                          );
-                        }}
-                      />
-                    </div>
-                  )}
+                  <ActiveInteractionPanels
+                    visibleActiveQuiz={visibleActiveQuiz}
+                    activeQuestion={activeQuestion}
+                    onDismissQuiz={setDismissedQuizId}
+                  />
                   <ChatMascotMenu state={mascotState} busy={isRunning || micRecording} />
-                  <ComposerPrimitive.Root
-                    className={cx(
-                      "composer-root",
-                      css({
-                        marginInline: "auto",
-                        display: "flex",
-                        width: "100%",
-                        maxWidth: "56rem",
-                        flexDirection: "column",
-                        gap: "0.375rem",
-                        borderRadius: "0.5rem",
-                        border: "1px solid var(--border)",
-                        backgroundColor: "var(--background)",
-                        padding: "0.375rem",
-                        boxShadow: "var(--shadow-card)",
-                        sm: { width: "100%", gap: "0.5rem", padding: "0.5rem" },
-                      }),
-                    )}
-                  >
-                    <ComposerPrefill text={pendingPrompt} />
-                    <WebGroundingHint
-                      hasUrl={composerHasUrl}
-                      hasGoogleKey={hasGoogleKey}
-                      groundingEnabled={uiSettings.webSearch === "auto"}
-                      usingGoogleModel={usingGoogleModel}
-                    />
-                    <ComposerPrimitive.Attachments>
-                      {({ attachment }) => (
-                        <ComposerAttachmentChip attachment={attachment} />
-                      )}
-                    </ComposerPrimitive.Attachments>
-                    <div
-                      className={css({
-                        display: "flex",
-                        width: "100%",
-                        minWidth: 0,
-                        alignItems: "center",
-                        gap: "0.375rem",
-                        sm: { gap: "0.5rem" },
-                      })}
-                    >
-                      <ComposerActionsMenu
-                        modelLabel={modelLabel}
-                        onModelSelect={callbacks.onModelSelect}
-                        thinkingLevel={selectedThinkingLevel}
-                        onThinkingLevelChange={handleThinkingLevelChange}
-                        thinkingDisabled={isRunning}
-                      />
-                      <SpeechComposerControl
-                        expanded={voiceComposerOpen}
-                        onExpandedChange={setVoiceComposerOpen}
-                        onRecordingChange={setMicRecording}
-                        onConversationComplete={preserveLiveConversation}
-                        onRequestCredential={callbacks.onApiKeyRequired}
-                      />
-                      {voiceComposerOpen ? null : (
-                        <ComposerPrimitive.Input
-                          className={css({
-                            maxHeight: "10rem",
-                            minHeight: "2rem",
-                            minWidth: 0,
-                            flex: 1,
-                            resize: "none",
-                            alignSelf: "center",
-                            backgroundColor: "transparent",
-                            paddingInline: "0.25rem",
-                            paddingBlock: "0.375rem",
-                            fontSize: "0.875rem",
-                            lineHeight: "1.25rem",
-                            color: "var(--foreground)",
-                            outline: "none",
-                            _placeholder: { color: "var(--muted-foreground)" },
-                            sm: {
-                              minHeight: "2.25rem",
-                              paddingBlock: "0.5rem",
-                            },
-                          })}
-                          placeholder="Message Keating"
-                          rows={1}
-                          onChange={(event) =>
-                            setComposerHasUrl(
-                              URL_IN_TEXT_PATTERN.test(
-                                event.currentTarget.value,
-                              ),
-                            )
-                          }
-                        />
-                      )}
-                      {/* Only show Send OR Cancel — never both */}
-                      {isRunning ? (
-                        <ComposerPrimitive.Cancel
-                          aria-label="Stop generating"
-                          title="Stop generating"
-                          className={cx(
-                            composerIconButtonClass,
-                            pulseClass,
-                            css({
-                              borderWidth: "2px",
-                              borderColor: "var(--destructive)",
-                              color: "var(--destructive)",
-                              _hover: {
-                                backgroundColor: "var(--destructive)",
-                                color: "var(--destructive-foreground)",
-                              },
-                            }),
-                          )}
-                        >
-                          <Square
-                            size={15}
-                            className={css({
-                              sm: { width: "1rem", height: "1rem" },
-                            })}
-                          />
-                        </ComposerPrimitive.Cancel>
-                      ) : voiceComposerOpen ? null : (
-                        <ComposerPrimitive.Send
-                          aria-label="Send message"
-                          title="Send message"
-                          className={cx(
-                            composerIconButtonClass,
-                            css({
-                              borderColor: "transparent",
-                              backgroundColor: "var(--primary)",
-                              color: "var(--primary-foreground)",
-                            }),
-                          )}
-                        >
-                          <Send
-                            size={15}
-                            className={css({
-                              sm: { width: "1rem", height: "1rem" },
-                            })}
-                          />
-                        </ComposerPrimitive.Send>
-                      )}
-                    </div>
-                  </ComposerPrimitive.Root>
-                  <div
-                    className={cx(
-                      "composer-hint",
-                      css({
-                        marginInline: "auto",
-                        display: "flex",
-                        width: "100%",
-                        maxWidth: "56rem",
-                        justifyContent: "space-between",
-                        gap: "0.75rem",
-                        paddingInline: "0.25rem",
-                        paddingTop: "0.375rem",
-                      }),
-                    )}
-                  >
-                    <span>
-                      keating won&apos;t give you the answer —{" "}
-                      <span className="ok">that&apos;s the point</span>
-                    </span>
-                    <span
-                      className={css({
-                        display: "none",
-                        sm: { display: "inline" },
-                      })}
-                    >
-                      enter to send // shift+enter for newline
-                    </span>
-                  </div>
+                  <ThreadComposer
+                    pendingPrompt={pendingPrompt}
+                    composerHasUrl={composerHasUrl}
+                    onComposerHasUrlChange={setComposerHasUrl}
+                    hasGoogleKey={hasGoogleKey}
+                    groundingEnabled={uiSettings.webSearch === "auto"}
+                    usingGoogleModel={usingGoogleModel}
+                    modelLabel={modelLabel}
+                    callbacks={callbacks}
+                    thinkingLevel={selectedThinkingLevel}
+                    onThinkingLevelChange={handleThinkingLevelChange}
+                    isRunning={isRunning}
+                    voiceComposerOpen={voiceComposerOpen}
+                    onVoiceComposerOpenChange={setVoiceComposerOpen}
+                    onMicRecordingChange={setMicRecording}
+                    onConversationComplete={preserveLiveConversation}
+                  />
                 </ThreadPrimitive.ViewportFooter>
               </ThreadPrimitive.Viewport>
             </ThreadPrimitive.Root>
@@ -5074,6 +3733,288 @@ function AssistantThread({
 		</OpenUISessionScopeContext.Provider>
       </QuizGradesContext.Provider>
     </AuthErrorContext.Provider>
+  );
+}
+
+
+
+/** The open quiz and question form above the composer; submissions go out as window events. */
+function ActiveInteractionPanels({
+  visibleActiveQuiz,
+  activeQuestion,
+  onDismissQuiz,
+}: {
+  visibleActiveQuiz: Quiz | null;
+  activeQuestion: ReturnType<typeof extractActiveQuestion>;
+  onDismissQuiz: (slug: string) => void;
+}) {
+  return (
+    <>
+      {visibleActiveQuiz && (
+        <div
+          className={css({
+            marginInline: "auto",
+            marginBottom: "0.375rem",
+            width: "100%",
+            maxWidth: "56rem",
+            overflowX: "hidden",
+            maxHeight: "min(55dvh, 30rem)",
+            overflowY: "auto",
+            overscrollBehavior: "contain",
+            paddingInline: "0.375rem",
+            sm: {
+              marginBottom: "0.5rem",
+              maxHeight: "none",
+              overflowY: "visible",
+              paddingInline: 0,
+            },
+          })}
+        >
+          <QuizSessionPanel
+            quiz={visibleActiveQuiz}
+            onSubmit={(result) => {
+              window.dispatchEvent(
+                new CustomEvent("keating:quiz-submitted", {
+                  detail: quizSubmittedDetail(visibleActiveQuiz, result),
+                }),
+              );
+            }}
+            onDismiss={() => {
+              onDismissQuiz(visibleActiveQuiz.slug);
+            }}
+          />
+        </div>
+      )}
+      {activeQuestion && (
+        <div
+          className={css({
+            marginInline: "auto",
+            marginBottom: "0.375rem",
+            width: "100%",
+            maxWidth: "56rem",
+            overflowX: "hidden",
+            paddingInline: "0.375rem",
+            sm: { marginBottom: "0.5rem", paddingInline: 0 },
+          })}
+        >
+          <QuestionRenderer
+            data={activeQuestion}
+            onSubmit={(answers) => {
+              window.dispatchEvent(
+                new CustomEvent("keating:question-answered", {
+                  detail: { answers, topic: activeQuestion.topic },
+                }),
+              );
+            }}
+          />
+        </div>
+      )}
+    </>
+  );
+}
+
+/** The message composer: attachments, actions menu, voice control, input and send/stop. */
+function ThreadComposer({
+  pendingPrompt,
+  composerHasUrl,
+  onComposerHasUrlChange,
+  hasGoogleKey,
+  groundingEnabled,
+  usingGoogleModel,
+  modelLabel,
+  callbacks,
+  thinkingLevel,
+  onThinkingLevelChange,
+  isRunning,
+  voiceComposerOpen,
+  onVoiceComposerOpenChange,
+  onMicRecordingChange,
+  onConversationComplete,
+}: {
+  pendingPrompt?: string;
+  composerHasUrl: boolean;
+  onComposerHasUrlChange: (hasUrl: boolean) => void;
+  hasGoogleKey: boolean | null;
+  groundingEnabled: boolean;
+  usingGoogleModel: boolean;
+  modelLabel: string;
+  callbacks: ChatPanelSetupCallbacks;
+  thinkingLevel: ThinkingLevel;
+  onThinkingLevelChange: (level: ThinkingLevel) => void;
+  isRunning: boolean;
+  voiceComposerOpen: boolean;
+  onVoiceComposerOpenChange: (open: boolean) => void;
+  onMicRecordingChange: (recording: boolean) => void;
+  onConversationComplete: (turns: LiveTranscriptTurn[]) => void | Promise<void>;
+}) {
+  return (
+    <>
+      <ComposerPrimitive.Root
+        className={cx(
+          "composer-root",
+          css({
+            marginInline: "auto",
+            display: "flex",
+            width: "100%",
+            maxWidth: "56rem",
+            flexDirection: "column",
+            gap: "0.375rem",
+            borderRadius: "0.5rem",
+            border: "1px solid var(--border)",
+            backgroundColor: "var(--background)",
+            padding: "0.375rem",
+            boxShadow: "var(--shadow-card)",
+            sm: { width: "100%", gap: "0.5rem", padding: "0.5rem" },
+          }),
+        )}
+      >
+        <ComposerPrefill text={pendingPrompt} />
+        <WebGroundingHint
+          hasUrl={composerHasUrl}
+          hasGoogleKey={hasGoogleKey}
+          groundingEnabled={groundingEnabled}
+          usingGoogleModel={usingGoogleModel}
+        />
+        <ComposerPrimitive.Attachments>
+          {({ attachment }) => (
+            <ComposerAttachmentChip attachment={attachment} />
+          )}
+        </ComposerPrimitive.Attachments>
+        <div
+          className={css({
+            display: "flex",
+            width: "100%",
+            minWidth: 0,
+            alignItems: "center",
+            gap: "0.375rem",
+            sm: { gap: "0.5rem" },
+          })}
+        >
+          <ComposerActionsMenu
+            modelLabel={modelLabel}
+            onModelSelect={callbacks.onModelSelect}
+            thinkingLevel={thinkingLevel}
+            onThinkingLevelChange={onThinkingLevelChange}
+            thinkingDisabled={isRunning}
+          />
+          <SpeechComposerControl
+            expanded={voiceComposerOpen}
+            onExpandedChange={onVoiceComposerOpenChange}
+            onRecordingChange={onMicRecordingChange}
+            onConversationComplete={onConversationComplete}
+            onRequestCredential={callbacks.onApiKeyRequired}
+          />
+          {voiceComposerOpen ? null : (
+            <ComposerPrimitive.Input
+              className={css({
+                maxHeight: "10rem",
+                minHeight: "2rem",
+                minWidth: 0,
+                flex: 1,
+                resize: "none",
+                alignSelf: "center",
+                backgroundColor: "transparent",
+                paddingInline: "0.25rem",
+                paddingBlock: "0.375rem",
+                fontSize: "0.875rem",
+                lineHeight: "1.25rem",
+                color: "var(--foreground)",
+                outline: "none",
+                _placeholder: { color: "var(--muted-foreground)" },
+                sm: {
+                  minHeight: "2.25rem",
+                  paddingBlock: "0.5rem",
+                },
+              })}
+              placeholder="Message Keating"
+              rows={1}
+              onChange={(event) =>
+                onComposerHasUrlChange(
+                  URL_IN_TEXT_PATTERN.test(
+                    event.currentTarget.value,
+                  ),
+                )
+              }
+            />
+          )}
+          {/* Only show Send OR Cancel — never both */}
+          {isRunning ? (
+            <ComposerPrimitive.Cancel
+              aria-label="Stop generating"
+              title="Stop generating"
+              className={cx(
+                composerIconButtonClass,
+                pulseClass,
+                css({
+                  borderWidth: "2px",
+                  borderColor: "var(--destructive)",
+                  color: "var(--destructive)",
+                  _hover: {
+                    backgroundColor: "var(--destructive)",
+                    color: "var(--destructive-foreground)",
+                  },
+                }),
+              )}
+            >
+              <Square
+                size={15}
+                className={css({
+                  sm: { width: "1rem", height: "1rem" },
+                })}
+              />
+            </ComposerPrimitive.Cancel>
+          ) : voiceComposerOpen ? null : (
+            <ComposerPrimitive.Send
+              aria-label="Send message"
+              title="Send message"
+              className={cx(
+                composerIconButtonClass,
+                css({
+                  borderColor: "transparent",
+                  backgroundColor: "var(--primary)",
+                  color: "var(--primary-foreground)",
+                }),
+              )}
+            >
+              <Send
+                size={15}
+                className={css({
+                  sm: { width: "1rem", height: "1rem" },
+                })}
+              />
+            </ComposerPrimitive.Send>
+          )}
+        </div>
+      </ComposerPrimitive.Root>
+      <div
+        className={cx(
+          "composer-hint",
+          css({
+            marginInline: "auto",
+            display: "flex",
+            width: "100%",
+            maxWidth: "56rem",
+            justifyContent: "space-between",
+            gap: "0.75rem",
+            paddingInline: "0.25rem",
+            paddingTop: "0.375rem",
+          }),
+        )}
+      >
+        <span>
+          keating won&apos;t give you the answer —{" "}
+          <span className="ok">that&apos;s the point</span>
+        </span>
+        <span
+          className={css({
+            display: "none",
+            sm: { display: "inline" },
+          })}
+        >
+          enter to send // shift+enter for newline
+        </span>
+      </div>
+    </>
   );
 }
 

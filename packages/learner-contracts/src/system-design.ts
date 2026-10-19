@@ -21,11 +21,13 @@ export interface SystemDesignSubmission {
   explanation: string;
 }
 
-const MAX_COMPONENTS = 40;
-const MAX_CONNECTIONS = 80;
+/** Public bounds so editors can disable controls at the same limits the validators enforce. */
+export const DIAGRAM_LIMITS = { components: 40, connections: 80, label: 160, explanation: 8_000 } as const;
+const MAX_COMPONENTS = DIAGRAM_LIMITS.components;
+const MAX_CONNECTIONS = DIAGRAM_LIMITS.connections;
 const MAX_CHECKS = 24;
-const MAX_LABEL = 160;
-const MAX_EXPLANATION = 8_000;
+const MAX_LABEL = DIAGRAM_LIMITS.label;
+const MAX_EXPLANATION = DIAGRAM_LIMITS.explanation;
 // Keep canonical submit-task content inside the shared UI action boundary.
 const MAX_SUBMISSION_JSON = 131_072;
 const GRAPH_KEYS = new Set(["components", "connections"]);
@@ -82,7 +84,8 @@ export function getDiagramKinds(spec: SystemDesignSpec): readonly string[] {
   return spec.kinds ?? DIAGRAM_KINDS;
 }
 
-function graphUsesPalette(spec: SystemDesignSpec, graph: SystemDesignGraph): boolean {
+/** True when every component category belongs to the spec's palette. */
+export function diagramGraphUsesPalette(spec: SystemDesignSpec, graph: SystemDesignGraph): boolean {
   const kinds = new Set(getDiagramKinds(spec));
   return graph.components.every((component) => kinds.has(component.kind));
 }
@@ -95,7 +98,7 @@ export function validateSystemDesignSpec(value: unknown): value is SystemDesignS
     || !Array.from(value.kinds).every(isKind) || new Set(value.kinds).size !== value.kinds.length)) return false;
   const spec = value as unknown as SystemDesignSpec;
   const kinds = new Set(getDiagramKinds(spec));
-  return graphUsesPalette(spec, spec) && spec.checks.every((check) => check.type === "component"
+  return diagramGraphUsesPalette(spec, spec) && spec.checks.every((check) => check.type === "component"
     ? kinds.has(check.kind) : kinds.has(check.fromKind) && kinds.has(check.toKind));
 }
 
@@ -120,7 +123,7 @@ export function systemDesignMermaid(graph: SystemDesignGraph): string {
 
 /** These checks describe graph structure only; they never grade a design's quality. */
 export function evaluateSystemDesignChecks(spec: SystemDesignSpec, graph: SystemDesignGraph): SystemDesignCheckResult[] {
-  if (!validateSystemDesignSpec(spec) || !validateSystemDesignGraph(graph) || !graphUsesPalette(spec, graph)) throw new Error("Invalid diagram specification or graph categories.");
+  if (!validateSystemDesignSpec(spec) || !validateSystemDesignGraph(graph) || !diagramGraphUsesPalette(spec, graph)) throw new Error("Invalid diagram specification or graph categories.");
   const kinds = new Map(graph.components.map((component) => [component.id, component.kind]));
   const adjacency = new Map<string, string[]>();
   for (const connection of graph.connections) {
@@ -160,7 +163,7 @@ export function evaluateSystemDesignChecks(spec: SystemDesignSpec, graph: System
 }
 
 export function createSystemDesignSubmission(spec: SystemDesignSpec, graph: SystemDesignGraph, explanation: string): SystemDesignSubmission {
-  if (!validateSystemDesignSpec(spec) || !validateSystemDesignGraph(graph) || !graphUsesPalette(spec, graph)
+  if (!validateSystemDesignSpec(spec) || !validateSystemDesignGraph(graph) || !diagramGraphUsesPalette(spec, graph)
     || typeof explanation !== "string" || explanation.length > MAX_EXPLANATION) throw new Error("Invalid diagram submission.");
   const snapshot: SystemDesignGraph = {
     components: graph.components.map((component) => ({ ...component })),

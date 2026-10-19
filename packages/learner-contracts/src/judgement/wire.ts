@@ -11,6 +11,7 @@
  *   - Noul carries no confidence; Choice and Score do.
  *   - Score keys its probabilities by level-as-string.
  */
+import { DEFAULT_SYSTEM_ONE_MODEL } from "../../../runtime-config/src/index.js";
 import {
   type JudgementAnswer,
   type JudgementError,
@@ -19,8 +20,7 @@ import {
   type JudgementUsage,
 } from "./contracts.js";
 
-export const SYSTEM_ONE_ENDPOINT = "https://api.typesafe.ai/v1/systemone";
-export const DEFAULT_SYSTEM_ONE_MODEL = "jev-latest";
+export { SYSTEM_ONE_ENDPOINT, DEFAULT_SYSTEM_ONE_MODEL } from "../../../runtime-config/src/index.js";
 
 export interface SystemOneRequestBody {
   readonly state: unknown;

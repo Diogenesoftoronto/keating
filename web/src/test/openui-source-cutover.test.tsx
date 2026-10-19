@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { parseOpenUIMessageSegments } from "../keating/openui/segments";
-import { __test_InertOpenUISourceRecovery, __claimOpenUICompileRecovery, __resetOpenUICompileRecovery, KeatingOpenUIRenderer } from "../keating/openui/renderer";
+import { __test_InertOpenUISourceRecovery, __claimOpenUICompileRecovery, __resetOpenUICompileRecovery, KeatingOpenUIActionProvider, KeatingOpenUIRenderer, type KeatingOpenUIActionHandler } from "../keating/openui/renderer";
+import { createReactMountHarness } from "./helpers/react-mount";
 
 const metadata = {
 	id: "session-message-source",
@@ -105,13 +106,46 @@ test("a stopped unfinished simulation removes inert content instead of claiming 
 });
 
 
-test("automatic repair is bounded and deduplicated across failed render remounts", () => {
+test("automatic repair claims are bounded and deduplicated", () => {
 	__resetOpenUICompileRecovery();
 	expect(__claimOpenUICompileRecovery("first", "invalid")).toBe(1);
 	expect(__claimOpenUICompileRecovery("first", "invalid")).toBeNull();
 	expect(__claimOpenUICompileRecovery("second", "unsupported")).toBe(2);
 	expect(__claimOpenUICompileRecovery("third", "invalid")).toBe(3);
 	expect(__claimOpenUICompileRecovery("fourth", "invalid")).toBeNull();
+	__resetOpenUICompileRecovery();
+});
+
+test("mounted repair requests deduplicate remounts and stay isolated by document and session", async () => {
+	__resetOpenUICompileRecovery();
+	const attempts: number[] = [];
+	const documentIds: string[] = [];
+	const onAction: KeatingOpenUIActionHandler = action => {
+		attempts.push(Number(action.params.attempt));
+		documentIds.push(action.document.id);
+		return true;
+	};
+	const invalid = 'root = LearningSurface([missing], "Broken interaction")';
+	const elementFor = (id: string) => (
+		<KeatingOpenUIActionProvider onAction={onAction}>
+			<KeatingOpenUIRenderer program={invalid} metadata={{ ...metadata, id }} developerMode />
+		</KeatingOpenUIActionProvider>
+	);
+	const firstSession = createReactMountHarness();
+	await firstSession.render(elementFor("document-a"));
+	await firstSession.unmount();
+	await firstSession.render(elementFor("document-a"));
+	await firstSession.render(elementFor("document-b"));
+	expect(attempts).toEqual([1, 2]);
+	expect(documentIds).toEqual(["document-a", "document-b"]);
+	await firstSession.unmount();
+
+	__resetOpenUICompileRecovery();
+	const secondSession = createReactMountHarness();
+	await secondSession.render(elementFor("document-a"));
+	expect(attempts).toEqual([1, 2, 1]);
+	expect(documentIds).toEqual(["document-a", "document-b", "document-a"]);
+	await secondSession.unmount();
 	__resetOpenUICompileRecovery();
 });
 

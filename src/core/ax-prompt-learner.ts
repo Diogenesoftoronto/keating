@@ -1,3 +1,4 @@
+import { MODEL_PREFERENCES } from "../../packages/runtime-config/src/index.js";
 import { mkdir, writeFile, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ai, ax, optimize, axSerializeOptimizedProgram } from "@ax-llm/ax";
@@ -7,9 +8,9 @@ import { DEFAULT_PI_MODEL, loadKeatingConfig } from "./config.js";
 
 // Helper to convert typical string models to Ax model enums or strings
 function mapToAxModel(keatingModel: string): string {
-  if (keatingModel.includes("gpt-4o-mini")) return "gpt-4o-mini";
-  if (keatingModel.includes("gpt-4o")) return "gpt-4o";
-  if (keatingModel.includes("claude-3-5-sonnet")) return "claude-3-5-sonnet-20240620";
+  if (keatingModel.includes(MODEL_PREFERENCES.axCompatibility.smallOpenai.match)) return MODEL_PREFERENCES.axCompatibility.smallOpenai.model;
+  if (keatingModel.includes(MODEL_PREFERENCES.axCompatibility.openai.match)) return MODEL_PREFERENCES.axCompatibility.openai.model;
+  if (keatingModel.includes(MODEL_PREFERENCES.axCompatibility.anthropic.match)) return MODEL_PREFERENCES.axCompatibility.anthropic.model;
   // fallback
   return keatingModel;
 }

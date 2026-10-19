@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS } from "@keating/runtime-config";
 import { useEffect, useRef, useState } from "react";
 import { AppLink as Link } from "../components/AppLink";
 import { ArrowRight, Check, RefreshCw } from "lucide-react";
@@ -45,7 +46,7 @@ const REQUIRED_PUBLIC_SCOPES = [
 	"wallet:read",
 	"usage:read",
 	"billing:checkout",
-	"infer:balanced",
+	`infer:${DEFAULT_MODELS.web.notorganic}`,
 ] as const;
 
 export function isPublicCheckoutConfigured(
@@ -68,10 +69,14 @@ export function pricingAvailability(
 	return providerConnected ? "checkout" : "checkout_connect_required";
 }
 
-export function pricingPackAction(checkoutConfigured: boolean, providerConnected: boolean, wallet: CreditWallet | undefined, walletLoading: boolean, packId: string): "waitlist" | "connect" | "loading" | "unavailable" | "checkout" {
+/** `balance_error` = the wallet request failed (retry); `unavailable` = the product itself is not offered (waitlist). */
+export type PricingAction = "waitlist" | "connect" | "loading" | "unavailable" | "checkout" | "balance_error";
+
+export function pricingPackAction(checkoutConfigured: boolean, providerConnected: boolean, wallet: CreditWallet | undefined, walletLoading: boolean, packId: string, walletFailed = false): PricingAction {
 	if (!checkoutConfigured) return "waitlist";
 	if (!providerConnected) return "connect";
 	if (walletLoading) return "loading";
+	if (!wallet && walletFailed) return "balance_error";
 	return availableCreditPacks(wallet, true).some(pack => pack.id === packId) ? "checkout" : "unavailable";
 }
 
@@ -79,10 +84,11 @@ function readPricingSession(client: NotOrganicPublicClient | null) {
 	try { return client?.getSession() ?? null; } catch { return null; }
 }
 
-export function pricingPlanAction(plansEnabled: boolean, providerConnected: boolean, wallet: CreditWallet | undefined, walletLoading: boolean): "waitlist" | "connect" | "loading" | "unavailable" | "checkout" {
+export function pricingPlanAction(plansEnabled: boolean, providerConnected: boolean, wallet: CreditWallet | undefined, walletLoading: boolean, walletFailed = false): PricingAction {
 	if (!plansEnabled) return "waitlist";
 	if (!providerConnected) return "connect";
 	if (walletLoading) return "loading";
+	if (!wallet && walletFailed) return "balance_error";
 	if (!wallet) return "unavailable";
 	return subscriptionAvailable(wallet, true) ? "checkout" : "waitlist";
 }
@@ -100,6 +106,7 @@ export function Pricing() {
 	const [walletSummary, setWalletSummary] = useState<string | null>(null);
 	const [wallet, setWallet] = useState<CreditWallet>();
 	const [walletLoading, setWalletLoading] = useState(Boolean(providerSession));
+	const [walletFailed, setWalletFailed] = useState(false);
 	const [pendingPack, setPendingPack] = useState<string | null>(null);
 	const checkoutPending = useRef(false);
 	const walletRequest = useRef(0);
@@ -112,6 +119,7 @@ export function Pricing() {
 			setWallet(undefined);
 			setWalletSummary(null);
 			setWalletLoading(Boolean(next));
+			setWalletFailed(false);
 			setBillingError(null);
 		};
 		window.addEventListener(PROVIDER_CREDENTIALS_CHANGED_EVENT, syncSession);
@@ -152,6 +160,7 @@ export function Pricing() {
 		if (!publicClient || !providerSession) return;
 		const request = ++walletRequest.current;
 		setWalletLoading(true);
+		setWalletFailed(false);
 		setWallet(undefined);
 		setWalletSummary(null);
 		try {
@@ -163,11 +172,13 @@ export function Pricing() {
 			const verified = normalizeCreditWallet(result);
 			if (request !== walletRequest.current) return;
 			setWallet(verified);
+			setWalletFailed(false);
 			setWalletSummary(`${formatCreditBalance(verified.availableMicros)} available`);
 			setBillingError(null);
 		} catch (cause) {
 			if (request !== walletRequest.current) return;
 			setWallet(undefined);
+			setWalletFailed(true);
 			setWalletSummary(null);
 			if (!readPricingSession(publicClient)) setProviderSession(null);
 			setBillingError("We couldn’t load your credit balance. Try refreshing it.");
@@ -199,8 +210,9 @@ export function Pricing() {
 	const buyPack = async (pack: NotOrganicPack) => {
 		if (checkoutPending.current) return;
 		const connected = Boolean(readPricingSession(publicClient));
-		const action = pricingPackAction(checkoutConfigured, connected, wallet, walletLoading, pack.id);
+		const action = pricingPackAction(checkoutConfigured, connected, wallet, walletLoading, pack.id, walletFailed);
 		if (action === "loading") return;
+		if (action === "balance_error") { void refreshWallet(); return; }
 		recordPackIntent(pack);
 		if (!publicClient || action === "waitlist" || action === "unavailable") {
 			window.location.assign(purchaseWaitlistUrl("credits", pack.id));
@@ -231,7 +243,7 @@ export function Pricing() {
 
 	const plansEnabled = checkoutConfigured && subscriptionCheckoutEnabled(import.meta.env);
 	const planAvailable = subscriptionAvailable(wallet, plansEnabled);
-	const planAction = pricingPlanAction(plansEnabled, Boolean(providerSession), wallet, walletLoading);
+	const planAction = pricingPlanAction(plansEnabled, Boolean(providerSession), wallet, walletLoading, walletFailed);
 	const buySubscription = async () => {
 		if (checkoutPending.current || !plansEnabled || !publicClient) return;
 		checkoutPending.current = true;
@@ -275,7 +287,7 @@ export function Pricing() {
 				<section className="pricing-own-key" aria-labelledby="personal-title">
 					<div className="pricing-own-key-copy"><p className="pricing-eyebrow">Monthly subscription</p><h2 id="personal-title">Keating {KEATING_PERSONAL_PLAN.name}</h2><p>${KEATING_PERSONAL_PLAN.monthlyCreditUsd} in hosted AI credit each month.<br />Unused monthly credit rolls forward one billing cycle. Top up when you need more.</p></div>
 					<div className="pricing-free-price"><span>${KEATING_PERSONAL_PLAN.priceUsdMonthly}</span><span>USD / month, before tax</span></div>
-					{planAction === "waitlist" ? <a className="pricing-button" href={purchaseWaitlistUrl("subscription", KEATING_PERSONAL_PLAN.id)}>Join the Personal waitlist<ArrowRight size={17} aria-hidden="true" /></a> : <button type="button" className="pricing-button" disabled={pendingPack !== null || planAction === "loading" || planAction === "unavailable"} onClick={() => void buySubscription()}>{planAction === "loading" ? "Checking availability…" : planAction === "unavailable" ? "Couldn't check availability" : pendingPack === KEATING_PERSONAL_PLAN.id ? "Opening…" : providerSession ? "Choose Personal" : "Connect for Personal"}<ArrowRight size={17} aria-hidden="true" /></button>}
+					{planAction === "waitlist" ? <a className="pricing-button" href={purchaseWaitlistUrl("subscription", KEATING_PERSONAL_PLAN.id)}>Join the Personal waitlist<ArrowRight size={17} aria-hidden="true" /></a> : <button type="button" className="pricing-button" disabled={pendingPack !== null || planAction === "loading" || planAction === "unavailable"} onClick={() => void (planAction === "balance_error" ? refreshWallet() : buySubscription())}>{planAction === "loading" ? "Checking availability…" : planAction === "balance_error" ? "Retry checking availability" : planAction === "unavailable" ? "Couldn't check availability" : pendingPack === KEATING_PERSONAL_PLAN.id ? "Opening…" : providerSession ? "Choose Personal" : "Connect for Personal"}<ArrowRight size={17} aria-hidden="true" /></button>}
 				</section>
 				<p className="pricing-notice">Existing subscriptions keep their current terms. Personal includes metered hosted usage; custom model training and premium voice are not included.</p>
 				<section className="pricing-own-key" aria-labelledby="subscriber-benefits-title">
@@ -291,15 +303,15 @@ export function Pricing() {
 					<div className="pricing-section-heading"><div><p className="pricing-eyebrow">Prepaid credits</p><h2 id="credits-title">A balance that fits you.</h2></div><p>No subscription required. Buy credit with a free account and pay for the AI you use.</p></div>
 					{providerSession && <div className="pricing-wallet" aria-live="polite"><div><span className="pricing-wallet-label">Your credit balance</span><strong>{walletSummary ?? (walletLoading ? "Loading…" : "Balance unavailable")}</strong></div><button type="button" className="pricing-text-button" disabled={walletLoading} onClick={() => void refreshWallet()}><RefreshCw size={15} aria-hidden="true" />{walletLoading ? "Refreshing…" : "Refresh balance"}</button></div>}
 					{checkoutReturned && <p className="pricing-notice" role="status">You’re back from checkout. Your balance updates once payment is confirmed. Refresh your balance if it hasn’t changed yet.</p>}
-					{billingError && <p className="pricing-error" role="alert">{billingError}</p>}
+					{billingError && <p className="pricing-error" role="alert">{billingError}{walletFailed && providerSession && <> <button type="button" className="pricing-text-button" disabled={walletLoading} onClick={() => void refreshWallet()}>Retry</button></>}</p>}
 					<div className="pricing-packs" aria-busy={pendingPack !== null}>
 						{NOTORGANIC_PACKS.map(pack => {
-							const action = pricingPackAction(checkoutConfigured, Boolean(providerSession), wallet, walletLoading, pack.id);
+							const action = pricingPackAction(checkoutConfigured, Boolean(providerSession), wallet, walletLoading, pack.id, walletFailed);
 							return <article key={pack.id} className={`pricing-pack${pack.popular ? " pricing-pack--featured" : ""}`}>
 							<h3>{pack.label}</h3>
 							<p className="pricing-pack-amount"><span>$</span>{pack.priceUsd}</p>
 							<p className="pricing-pack-value">${pack.priceUsd} in AI credits</p>
-							{action === "waitlist" || action === "unavailable" ? <a className={`pricing-button${pack.popular ? "" : " pricing-button--outline"}`} href={purchaseWaitlistUrl("credits", pack.id)} onClick={() => recordPackIntent(pack)}>Join waitlist for ${pack.priceUsd} credit<ArrowRight size={17} aria-hidden="true" /></a> : <button type="button" className={`pricing-button${pack.popular ? "" : " pricing-button--outline"}`} disabled={pendingPack !== null || action === "loading"} onClick={() => void buyPack(pack)}>{pendingPack === pack.id ? (providerSession ? "Opening checkout…" : "Opening sign-in…") : action === "loading" ? "Checking availability…" : pricingWaitlistCta(pack, pricingVariant)}<ArrowRight size={17} aria-hidden="true" /></button>}
+							{action === "waitlist" || action === "unavailable" ? <a className={`pricing-button${pack.popular ? "" : " pricing-button--outline"}`} href={purchaseWaitlistUrl("credits", pack.id)} onClick={() => recordPackIntent(pack)}>Join waitlist for ${pack.priceUsd} credit<ArrowRight size={17} aria-hidden="true" /></a> : <button type="button" className={`pricing-button${pack.popular ? "" : " pricing-button--outline"}`} disabled={pendingPack !== null || action === "loading"} onClick={() => void buyPack(pack)}>{pendingPack === pack.id ? (providerSession ? "Opening checkout…" : "Opening sign-in…") : action === "loading" ? "Checking availability…" : action === "balance_error" ? `Retry for ${pack.label}` : pricingWaitlistCta(pack, pricingVariant)}<ArrowRight size={17} aria-hidden="true" /></button>}
 						</article>; })}
 					</div>
 					<div className="pricing-pack-notes"><span><Check size={15} aria-hidden="true" /> One-time payment, no subscription</span><span><Check size={15} aria-hidden="true" /> Same teaching tools</span><span>Prices in USD</span></div>

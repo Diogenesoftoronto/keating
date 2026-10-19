@@ -1,3 +1,4 @@
+import { MODEL_CHOICES, SERVICE_ENDPOINTS } from "../../packages/runtime-config/src/index.js";
 import { existsSync, statSync, readFileSync } from "node:fs";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -99,26 +100,26 @@ const CLI_AGENT_PACKAGES = [
 ];
 
 const ZYPHRA_PI_PROVIDER = {
-  baseUrl: "https://api.zyphracloud.com/v1",
+  baseUrl: SERVICE_ENDPOINTS.zyphra,
   api: "openai-completions",
   apiKey: "$ZYPHRA_API_KEY",
   models: [
-    { id: "zyphra/ZAYA1-8B", name: "ZAYA1-8B" }
+    { id: MODEL_CHOICES.piProviders.zyphra[0].value, name: MODEL_CHOICES.piProviders.zyphra[0].label }
   ]
 } as const;
 
 const MINIMAX_PI_PROVIDER = {
-  baseUrl: "https://api.minimax.io/v1",
+  baseUrl: SERVICE_ENDPOINTS.minimax,
   api: "openai-completions",
   apiKey: "$MINIMAX_API_KEY",
 	compat: { supportsDeveloperRole: false, supportsReasoningEffort: false },
   models: [
 	{
-		id: "MiniMax-M2.7-highspeed", name: "MiniMax M2.7 Highspeed", reasoning: true,
+		id: MODEL_CHOICES.piProviders.minimax[0].value, name: MODEL_CHOICES.piProviders.minimax[0].label, reasoning: true,
 		input: ["text"], contextWindow: 204_800, maxTokens: 32_768,
 		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
 	},
-    { id: "MiniMax-M3", name: "MiniMax-M3", reasoning: true }
+    { id: MODEL_CHOICES.piProviders.minimax[1].value, name: MODEL_CHOICES.piProviders.minimax[1].label, reasoning: true }
   ]
 } as const;
 
@@ -233,7 +234,7 @@ export function selectAuthenticatedProvider(cwd: string, config: KeatingConfig, 
       "  ANTHROPIC_API_KEY or ANTHROPIC_OAUTH_TOKEN",
       "  OPENROUTER_API_KEY (free models available at https://openrouter.ai)",
       "  ZYPHRA_API_KEY (ZAYA1-8B via https://cloud.zyphra.com)",
-      "  MINIMAX_API_KEY (minimax-m2.7-highspeed via https://platform.minimax.io)"
+      `  MINIMAX_API_KEY (${MODEL_CHOICES.webCompatibility.minimax[1].value} via https://platform.minimax.io)`
     ].join("\n")
     };
   }

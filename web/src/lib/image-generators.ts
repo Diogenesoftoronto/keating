@@ -1,3 +1,4 @@
+import { IMAGE_MODEL_IDS, PROVIDER_ENDPOINTS } from "@keating/runtime-config";
 // Central source of truth for image-generation backends and their model
 // choices. The `generate_image` tool and the settings UI both read from here so
 // model ids never get hardcoded in more than one place.
@@ -45,18 +46,11 @@ export const IMAGE_GENERATORS: ImageGeneratorOption[] = [
 		description: "Hosted OpenAI image models. Needs an OpenAI API key in Providers & Models.",
 		protocol: "openai-images",
 		auth: "api-key",
-		fixedEndpoint: "https://api.openai.com/v1/images/generations",
+		fixedEndpoint: PROVIDER_ENDPOINTS.openaiImages,
 		providerKey: "openai",
 		needsBaseUrl: false,
 		// Newest first: the first entry is the default when no model is chosen.
-		models: [
-			"gpt-image-2.5-flare",
-			"gpt-image-2.5-sunburst",
-			"gpt-image-2",
-			"gpt-image-1.5",
-			"gpt-image-1",
-			"gpt-image-1-mini",
-		],
+		models: [...IMAGE_MODEL_IDS.openai],
 		sizes: ["1024x1024", "1536x1024", "1024x1536"],
 		qualities: ["medium", "low", "high"],
 	},
@@ -66,15 +60,10 @@ export const IMAGE_GENERATORS: ImageGeneratorOption[] = [
 		description: "Hosted Gemini image models. Needs a Google API key in Providers & Models.",
 		protocol: "gemini-generate-content",
 		auth: "api-key",
-		fixedEndpoint: "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+		fixedEndpoint: PROVIDER_ENDPOINTS.googleImageTemplate,
 		providerKey: "google",
 		needsBaseUrl: false,
-		models: [
-			"gemini-3.1-flash-image",
-			"gemini-3.1-flash-lite-image",
-			"gemini-3-pro-image",
-			"gemini-2.5-flash-image",
-		],
+		models: [...IMAGE_MODEL_IDS.google],
 		// Gemini takes an aspect ratio rather than a pixel size.
 		sizes: ["1:1", "3:2", "2:3", "16:9", "9:16"],
 		// Gemini's quality knob is the output resolution tier.

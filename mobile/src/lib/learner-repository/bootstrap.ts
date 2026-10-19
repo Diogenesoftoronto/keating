@@ -3,6 +3,7 @@ import { clearAllComposerDrafts } from "../composer-draft-storage";
 import { clearComposerAttachmentFiles } from "../composer-attachments";
 import { saveLearnerContext } from "../learner-context-storage";
 import { clearPersistedState, loadPersistedStateSource } from "../storage";
+import { learningDataClearDependencies } from "./learning-data-clear";
 import { resumePendingLearningDataClear } from "./clear-recovery";
 import { openExpoLearnerRepository } from "./expo";
 import {
@@ -22,12 +23,13 @@ export interface BootstrappedLearnerRepository {
 export async function bootstrapLearnerRepository(): Promise<BootstrappedLearnerRepository> {
   const repository = await openExpoLearnerRepository();
   try {
-    const recoveredClear = await resumePendingLearningDataClear(repository.records, {
+    // Same store set as an in-app clear, so diagram drafts don't survive a force-kill mid-clear.
+    const recoveredClear = await resumePendingLearningDataClear(repository.records, learningDataClearDependencies({
       clearPersistedState,
       clearComposerDrafts: clearAllComposerDrafts,
       clearComposerAttachmentFiles,
       clearLearnerContext: () => saveLearnerContext(""),
-    });
+    }));
     if (recoveredClear) return { repository, migration: null, recoveredClear: true };
     const existing = await repository.migrations.get(LEGACY_ASYNC_STORAGE_MIGRATION_ID);
     if (existing?.phase === "completed") return { repository, migration: null, recoveredClear: false };

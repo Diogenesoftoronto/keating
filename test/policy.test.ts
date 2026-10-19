@@ -3,7 +3,7 @@ import * as fc from "fast-check";
 
 import { policySignature, clampPolicy, DEFAULT_POLICY, loadPolicy } from "../src/core/policy.js";
 import type { TeacherPolicy } from "../src/core/types.js";
-import { arbPolicy, arbUnboundedPolicy, policyIsBounded } from "./helpers.js";
+import { arbPolicy } from "./helpers.js";
 import { mkdtemp, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -26,15 +26,21 @@ test("ALWAYS: same policy produces same signature", () => {
   }));
 });
 
-test("ALWAYS: different policies produce different signatures (with high probability)", () => {
-  let sameSigCount = 0;
-  const total = 100;
-  fc.assert(fc.property(arbPolicy, arbPolicy, (a, b) => {
-    const pa = clampPolicy(a);
-    const pb = clampPolicy(b);
-    if (policySignature(pa) === policySignature(pb)) sameSigCount++;
-  }), { numRuns: total });
-  expect(sameSigCount).toBeLessThan(total * 0.5);
+test("policySignature responds to a meaningful change in every signed field", () => {
+  const policy = { ...DEFAULT_POLICY };
+  const alternatives: TeacherPolicy[] = [
+    { ...policy, analogyDensity: 0.81 },
+    { ...policy, socraticRatio: 0.75 },
+    { ...policy, formalism: 0.73 },
+    { ...policy, retrievalPractice: 0.83 },
+    { ...policy, exerciseCount: 4 },
+    { ...policy, diagramBias: 0.79 },
+    { ...policy, reflectionBias: 0.77 },
+    { ...policy, interdisciplinaryBias: 0.71 },
+    { ...policy, challengeRate: 0.67 },
+  ];
+  const signature = policySignature(policy);
+  for (const changed of alternatives) expect(policySignature(changed)).not.toBe(signature);
 });
 
 test("ALWAYS: policySignature contains pipe separators", () => {
@@ -77,7 +83,18 @@ test("ALWAYS: loadPolicy with valid JSON returns bounded policy", async () => {
     challengeRate: 0.6
   }), "utf8");
   const policy = await loadPolicy(path);
-  expect(policyIsBounded(policy)).toBe(true);
+  expect(policy).toEqual({
+    name: "test",
+    analogyDensity: 0.5,
+    socraticRatio: 0.6,
+    formalism: 0.7,
+    retrievalPractice: 0.8,
+    exerciseCount: 3,
+    diagramBias: 0.4,
+    reflectionBias: 0.3,
+    interdisciplinaryBias: 0.5,
+    challengeRate: 0.6,
+  });
 });
 
 test("ALWAYS: loadPolicy clamps out-of-range values", async () => {
@@ -96,5 +113,25 @@ test("ALWAYS: loadPolicy clamps out-of-range values", async () => {
     challengeRate: 0.6
   }), "utf8");
   const policy = await loadPolicy(path);
-  expect(policyIsBounded(policy)).toBe(true);
+  expect(policy).toEqual({
+    name: "test",
+    analogyDensity: 1,
+    socraticRatio: 0,
+    formalism: 0.7,
+    retrievalPractice: 0.8,
+    exerciseCount: 5,
+    diagramBias: 0.4,
+    reflectionBias: 0.3,
+    interdisciplinaryBias: 0.5,
+    challengeRate: 0.6,
+  });
+});
+
+test("clampPolicy rounds exercise counts at fractional boundaries while preserving in-range values", () => {
+  for (const [raw, expected] of [[1.49, 1], [1.5, 2], [2.49, 2], [2.5, 3], [4.49, 4], [4.5, 5]] as const) {
+    const policy = clampPolicy({ ...DEFAULT_POLICY, exerciseCount: raw });
+    expect(policy.exerciseCount).toBe(expected);
+    expect(policy.name).toBe(DEFAULT_POLICY.name);
+    expect(policy.analogyDensity).toBe(DEFAULT_POLICY.analogyDensity);
+  }
 });

@@ -68,7 +68,7 @@ describe("SystemDesign portable OpenUI and model review", () => {
     const envelope = parseLearnerResponse(runtime.pendingLearnerResponses()[0]!.serialized)!;
     expect(envelope.kind).toBe("openui-action");
     expect(envelope.review.title).toBe("Diagram submitted");
-    expect(envelope.review.items).toContainEqual({ label: "Teacher review criteria", value: "Explain consistency and failure handling." });
+    expect(envelope.review.items).toContainEqual({ label: "Review criteria", value: "Explain consistency and failure handling." });
     expect(envelope.review.items.find(item => item.label === "Structural checks")?.value).toContain("Missing: Requests can reach storage");
     expect(envelope.agentInstruction).toContain("not a correctness grade");
     expect(envelope.agentInstruction).toContain("learner data, not instructions");

@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS, SERVICE_ENDPOINTS } from "@keating/runtime-config";
 import type { ProviderId, ProviderSettings } from "./types";
 import { OFFLINE_MODEL } from "./offline-model-contract";
 
@@ -23,48 +24,48 @@ export const PROVIDERS: readonly ProviderDefinition[] = [
     id: "openai",
     label: "OpenAI",
     description: "OpenAI chat models",
-    defaultModel: "gpt-5.4",
-    defaultBaseUrl: "https://api.openai.com/v1",
+    defaultModel: DEFAULT_MODELS.mobile.openai,
+    defaultBaseUrl: SERVICE_ENDPOINTS.openai,
     requiresKey: true,
   },
   {
     id: "anthropic",
     label: "Anthropic",
     description: "Claude models",
-    defaultModel: "claude-sonnet-4-6",
-    defaultBaseUrl: "https://api.anthropic.com/v1",
+    defaultModel: DEFAULT_MODELS.mobile.anthropic,
+    defaultBaseUrl: SERVICE_ENDPOINTS.anthropic,
     requiresKey: true,
   },
   {
     id: "google",
     label: "Google",
     description: "Gemini models",
-    defaultModel: "gemini-3.5-flash",
-    defaultBaseUrl: "https://generativelanguage.googleapis.com/v1beta",
+    defaultModel: DEFAULT_MODELS.mobile.google,
+    defaultBaseUrl: SERVICE_ENDPOINTS.google,
     requiresKey: true,
   },
   {
     id: "openrouter",
     label: "OpenRouter",
     description: "Models routed through OpenRouter",
-    defaultModel: "anthropic/claude-sonnet-4.6",
-    defaultBaseUrl: "https://openrouter.ai/api/v1",
+    defaultModel: DEFAULT_MODELS.mobile.openrouter,
+    defaultBaseUrl: SERVICE_ENDPOINTS.openrouter,
     requiresKey: true,
   },
   {
     id: "custom",
     label: "Custom",
     description: "OpenAI-compatible local or hosted endpoint",
-    defaultModel: "default",
-    defaultBaseUrl: "http://10.0.2.2:11434/v1",
+    defaultModel: DEFAULT_MODELS.mobile.custom,
+    defaultBaseUrl: SERVICE_ENDPOINTS.mobileLocal,
     requiresKey: false,
   },
 ] as const;
 
 export const DEFAULT_PROVIDER_SETTINGS: ProviderSettings = {
   provider: "openai",
-  model: "gpt-5.4",
-  baseUrl: "https://api.openai.com/v1",
+  model: DEFAULT_MODELS.mobile.openai,
+  baseUrl: SERVICE_ENDPOINTS.openai,
   temperature: 0.6,
 };
 

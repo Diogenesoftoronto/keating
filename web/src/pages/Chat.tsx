@@ -1,43 +1,34 @@
-import { AppLink as Link } from "../components/AppLink";
-import { applicationRootHref, WEBSITE_ORIGIN, APP_ORIGIN } from "../lib/hosted-navigation";
+import { APP_ORIGIN } from "../lib/hosted-navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { usePostHog } from "@posthog/react";
 import {
-  BarChart3,
   BookOpen,
-  Bug,
   ChevronDown,
   ChevronRight,
-  ClipboardCheck,
-  Cpu,
   LibraryBig,
   Map as MapIcon,
-  Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
   Play,
-  Plus,
-  Settings,
-  Share2,
   Sparkles,
-  Volume2,
-  VolumeX,
   Wrench,
   X,
 } from "lucide-react";
-import { useNavigate, useSearch } from "@tanstack/react-router";
-import { DOCUMENTATION_URL } from "../lib/tutorial-links";
-import { BLOG_URL } from "../lib/blog-links";
+import { useSearch } from "@tanstack/react-router";
 import { css, cx } from "../../styled-system/css";
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
-import { KnowledgeSourcesButton } from "../components/settings/KnowledgeSources";
+import { ChatHeader } from "./chat/ChatHeader";
+import { useSessionSharing } from "./chat/useSessionSharing";
+import { useChatActivationTracking } from "./chat/useChatActivationTracking";
+import {
+  CourseContextBanner,
+  PersistentStorageBanner,
+  ShareStatusBanner,
+} from "./chat/ChatBanners";
 import { JudgementDiagnostics } from "../components/JudgementDiagnostics";
 import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-storage";
 import { ChatOnboarding, hasCompletedChatOnboarding } from "../components/ChatOnboarding";
 import { TourSpotlight } from "../components/tour/TourSpotlight";
 import { hasSeenInterfaceTour, subscribeInterfaceTourRequests } from "../keating/interface-tour";
 import { hasNotOrganicProductSession, promptNotOrganicAccess } from "../components/NotOrganicAccessPromptDialog";
-import { NotOrganicAccountMenuItem } from "../components/NotOrganicAccountMenuItem";
 import { notOrganicCheckoutReturn } from "../notorganic-provider/checkout-return";
 import { beginNotOrganicAuthorization } from "../notorganic-provider";
 import { useSeo } from "../hooks/useSeo";
@@ -51,12 +42,10 @@ import { ForkBanner } from "../components/ForkBanner";
 import { MermaidRenderer } from "../components/MermaidRenderer";
 import { MarkdownBlock } from "../components/MarkdownBlock";
 import { SandboxView } from "../components/SandboxView";
-import { ThemeToggle } from "../components/ThemeToggle";
 import {
   loadKeatingUiSettings,
-  saveKeatingUiSettings,
   subscribeKeatingUiSettings,
-  shareModeExposesDataPublicly,
+  type KeatingUiSettings,
 } from "../keating/ui-settings";
 import type {
   LessonPlan,
@@ -73,9 +62,6 @@ import {
   courseChatContext,
   courseCollaborationStarterPrompts,
 } from "../keating/course-collaboration";
-
-const GITHUB_ISSUE_URL =
-  "https://github.com/Diogenesoftoronto/keating/issues/new";
 
 const proseBlockClass = css({
   maxWidth: "none",
@@ -94,43 +80,6 @@ const iconButtonClass = css({
   borderRadius: "0.375rem",
   color: "var(--muted-foreground)",
   transitionProperty: "color, background-color, border-color, opacity",
-  transitionDuration: "150ms",
-  _hover: {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
-  },
-});
-
-const actionButtonPandaClass = css({
-  display: "inline-flex",
-  flexShrink: 0,
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "0.375rem",
-  fontSize: "0.875rem",
-  fontWeight: 500,
-  transitionProperty: "color, background-color, border-color, opacity",
-  transitionDuration: "150ms",
-  _hover: {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
-  },
-  _disabled: {
-    pointerEvents: "none",
-    opacity: 0.5,
-  },
-});
-
-const menuItemClass = css({
-  display: "flex",
-  alignItems: "center",
-  gap: "0.5rem",
-  borderRadius: "0.375rem",
-  paddingInline: "0.75rem",
-  paddingBlock: "0.5rem",
-  textAlign: "left",
-  fontSize: "0.875rem",
-  transitionProperty: "color, background-color, border-color",
   transitionDuration: "150ms",
   _hover: {
     backgroundColor: "var(--accent)",
@@ -777,6 +726,100 @@ async function resolveInlineArtifact(
   return null;
 }
 
+/**
+ * Artifact browser and inline artifact previews for the active session. Both
+ * reset when the session changes, and stay closed when the canvas is off.
+ */
+function useChatArtifacts({
+  canvasEnabled,
+  activeSessionId,
+  uiSettings,
+}: {
+  canvasEnabled: boolean;
+  activeSessionId: string;
+  uiSettings: Pick<KeatingUiSettings, "autoOpenArtifacts" | "limitInlineArtifactPreviews">;
+}) {
+  const posthog = usePostHog();
+  const [artifactBrowserOpen, setArtifactBrowserOpen] = useState(false);
+  const [artifactTarget, setArtifactTarget] = useState<string | undefined>(
+    undefined,
+  );
+  const [inlineArtifacts, setInlineArtifacts] = useState<InlineArtifact[]>([]);
+
+  useEffect(() => {
+    // Artifact previews are transient branch state. Never carry a parent's
+    // canvas selection into a fork or a sibling session.
+    setArtifactBrowserOpen(false);
+    setArtifactTarget(undefined);
+    setInlineArtifacts([]);
+  }, [activeSessionId]);
+
+  const toggleArtifactBrowser = (source: "toolbar" | "mobile_menu") => {
+    if (!canvasEnabled) return;
+    setArtifactBrowserOpen((open) => {
+      const next = !open;
+      if (!next) setArtifactTarget(undefined);
+      posthog.capture(
+        next ? "artifact_browser_opened" : "artifact_browser_closed",
+        { source, canvas_enabled: true },
+      );
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!canvasEnabled) {
+      setArtifactBrowserOpen(false);
+      setArtifactTarget(undefined);
+      setInlineArtifacts([]);
+      return;
+    }
+    const openArtifacts = () => {
+      if (uiSettings.autoOpenArtifacts) setArtifactBrowserOpen(true);
+    };
+    const openArtifactTarget = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.id) {
+        setArtifactTarget(detail.id);
+        setArtifactBrowserOpen(true);
+      }
+    };
+    const captureInlineArtifact = async (e: Event) => {
+      const detail = (e as CustomEvent).detail ?? {};
+      const next = await resolveInlineArtifact(detail);
+      if (!next) return;
+      setInlineArtifacts((prev) => {
+        if (prev.some((a) => a.id === next.id && a.type === next.type))
+          return prev;
+        if (uiSettings.limitInlineArtifactPreviews) return [next];
+        return [...prev, next];
+      });
+      if (uiSettings.autoOpenArtifacts) setArtifactBrowserOpen(true);
+    };
+    window.addEventListener("keating:artifact-created", openArtifacts);
+    window.addEventListener("keating:artifact-created", captureInlineArtifact);
+    window.addEventListener("keating:open-artifact", openArtifactTarget);
+    return () => {
+      window.removeEventListener("keating:artifact-created", openArtifacts);
+      window.removeEventListener(
+        "keating:artifact-created",
+        captureInlineArtifact,
+      );
+      window.removeEventListener("keating:open-artifact", openArtifactTarget);
+    };
+  }, [canvasEnabled, uiSettings.autoOpenArtifacts, uiSettings.limitInlineArtifactPreviews]);
+
+  return {
+    artifactBrowserOpen,
+    setArtifactBrowserOpen,
+    artifactTarget,
+    setArtifactTarget,
+    inlineArtifacts,
+    setInlineArtifacts,
+    toggleArtifactBrowser,
+  };
+}
+
 function ChatContent() {
   const canvasEnabled = isCanvasFeatureEnabled();
   useSeo({
@@ -785,8 +828,6 @@ function ChatContent() {
       "Start a Socratic tutoring session with Keating. Diagnose what you know, reconstruct understanding from memory, and test transfer to new contexts.",
     canonical: `${APP_ORIGIN}/`,
   });
-  const posthog = usePostHog();
-  const navigate = useNavigate();
   const search = useSearch({ strict: false }) as {
     course?: string;
     courseMode?: "create" | "edit";
@@ -856,68 +897,19 @@ function ChatContent() {
     responseComparison,
     chooseResponse,
   } = useKeatingAgent({ courseContext });
-  const [artifactBrowserOpen, setArtifactBrowserOpen] = useState(false);
   const isWideViewport = useMediaQuery("(min-width: 1024px)");
   const [uiSettings, setUiSettings] = useState(() => loadKeatingUiSettings());
-  const [shareState, setShareState] = useState<
-    "idle" | "confirm" | "sharing" | "copied" | "error"
-  >("idle");
-  const [shareUrl, setShareUrl] = useState<string | null>(null);
-  const [shareMessage, setShareMessage] = useState<string | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const {
+    shareState,
+    shareUrl,
+    shareMessage,
+    handleShare,
+    confirmShare,
+    dismissShare,
+  } = useSessionSharing({ activeSessionId, shareSession });
   const [nodePodOpen, setNodePodOpen] = useState(false);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const sessionId = activeSessionId;
-    let activated = false;
-    posthog.capture("chat_composer_viewed", {
-      session_id: sessionId,
-      activation_wait_ms: 45_000,
-    });
-
-    const handleMessageSent = (event: Event) => {
-      const detail = (event as CustomEvent<{ sessionId?: string }>).detail;
-      if (!detail?.sessionId || detail.sessionId === sessionId)
-        activated = true;
-    };
-    window.addEventListener("keating:message-sent", handleMessageSent);
-    const timer = window.setTimeout(() => {
-      if (activated || document.visibilityState !== "visible") return;
-      posthog.capture("chat_activation_stalled", {
-        session_id: sessionId,
-        wait_ms: 45_000,
-        survey_trigger: "activation_blocker",
-      });
-    }, 45_000);
-
-    return () => {
-      window.removeEventListener("keating:message-sent", handleMessageSent);
-      window.clearTimeout(timer);
-    };
-  }, [activeSessionId, posthog]);
-
-  // Close mobile menu on click outside or escape
-  useEffect(() => {
-    if (!mobileMenuOpen) return;
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileMenuOpen(false);
-    };
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        mobileMenuRef.current &&
-        !mobileMenuRef.current.contains(e.target as Node)
-      ) {
-        setMobileMenuOpen(false);
-      }
-    };
-    document.addEventListener("keydown", handleEscape);
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("keydown", handleEscape);
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [mobileMenuOpen]);
+  useChatActivationTracking(activeSessionId);
 
   useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
 
@@ -927,145 +919,16 @@ function ChatContent() {
     return () => document.body.classList.remove("chat-shell-active");
   }, []);
 
-  const [artifactTarget, setArtifactTarget] = useState<string | undefined>(
-    undefined,
-  );
-  const [inlineArtifacts, setInlineArtifacts] = useState<InlineArtifact[]>([]);
+  const {
+    artifactBrowserOpen,
+    setArtifactBrowserOpen,
+    artifactTarget,
+    setArtifactTarget,
+    inlineArtifacts,
+    setInlineArtifacts,
+    toggleArtifactBrowser,
+  } = useChatArtifacts({ canvasEnabled, activeSessionId, uiSettings });
 
-  useEffect(() => {
-    // Artifact previews are transient branch state. Never carry a parent's
-    // canvas selection into a fork or a sibling session.
-    setArtifactBrowserOpen(false);
-    setArtifactTarget(undefined);
-    setInlineArtifacts([]);
-  }, [activeSessionId]);
-
-  const toggleArtifactBrowser = (source: "toolbar" | "mobile_menu") => {
-    if (!canvasEnabled) return;
-    setArtifactBrowserOpen((open) => {
-      const next = !open;
-      if (!next) setArtifactTarget(undefined);
-      posthog.capture(
-        next ? "artifact_browser_opened" : "artifact_browser_closed",
-        { source, canvas_enabled: true },
-      );
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    if (!canvasEnabled) {
-      setArtifactBrowserOpen(false);
-      setArtifactTarget(undefined);
-      setInlineArtifacts([]);
-      return;
-    }
-    const openArtifacts = () => {
-      if (uiSettings.autoOpenArtifacts) setArtifactBrowserOpen(true);
-    };
-    const openArtifactTarget = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail?.id) {
-        setArtifactTarget(detail.id);
-        setArtifactBrowserOpen(true);
-      }
-    };
-    const captureInlineArtifact = async (e: Event) => {
-      const detail = (e as CustomEvent).detail ?? {};
-      const next = await resolveInlineArtifact(detail);
-      if (!next) return;
-      setInlineArtifacts((prev) => {
-        if (prev.some((a) => a.id === next.id && a.type === next.type))
-          return prev;
-        if (uiSettings.limitInlineArtifactPreviews) return [next];
-        return [...prev, next];
-      });
-      if (uiSettings.autoOpenArtifacts) setArtifactBrowserOpen(true);
-    };
-    window.addEventListener("keating:artifact-created", openArtifacts);
-    window.addEventListener("keating:artifact-created", captureInlineArtifact);
-    window.addEventListener("keating:open-artifact", openArtifactTarget);
-    return () => {
-      window.removeEventListener("keating:artifact-created", openArtifacts);
-      window.removeEventListener(
-        "keating:artifact-created",
-        captureInlineArtifact,
-      );
-      window.removeEventListener("keating:open-artifact", openArtifactTarget);
-    };
-  }, [canvasEnabled, uiSettings.autoOpenArtifacts, uiSettings.limitInlineArtifactPreviews]);
-
-  const performShare = async () => {
-    setShareState("sharing");
-    setShareMessage(null);
-    setShareUrl(null);
-    try {
-      const result = await shareSession();
-      setShareUrl(result.url);
-      const linkType =
-        result.mode === "portable-short"
-          ? "Portable share link"
-          : result.mode === "compressed-hash"
-            ? "Snapshot share link"
-            : "Local share link";
-      setShareMessage(
-        `${linkType} ready${result.fallback ? " after portable storage was unavailable" : ""}. It was copied if your browser allowed clipboard access.`,
-      );
-      setShareState("copied");
-      posthog.capture("session_shared", {
-        share_mode: result.mode,
-        fallback: result.fallback,
-        session_id: activeSessionId,
-      });
-      window.setTimeout(() => setShareState("idle"), 1600);
-    } catch (error) {
-      console.warn("Failed to share session:", error);
-      setShareMessage(
-        error instanceof Error
-          ? error.message
-          : "Could not create a share link yet.",
-      );
-      setShareState("error");
-      window.setTimeout(() => setShareState("idle"), 2200);
-    }
-  };
-
-  // Rich session shares publish more than the old transcript-only links. Gate
-  // the first expanded share behind fresh consent even when the legacy
-  // transcript warning was already acknowledged. Local links stay on-device.
-  const handleShare = async () => {
-    const settings = loadKeatingUiSettings();
-    const exposesPublicly = shareModeExposesDataPublicly(
-      settings.shareLinkMode,
-    );
-    if (exposesPublicly && !settings.trajectoryShareWarningAcknowledged) {
-      setShareUrl(null);
-      setShareMessage(
-        "This link publishes the visible conversation, safe session artifacts, and any finalized review feedback. It excludes drafts, hidden tool traffic, and unsupported or oversized artifacts. Anyone with the link can read it. Share again to confirm.",
-      );
-      setShareState("confirm");
-      return;
-    }
-    await performShare();
-  };
-
-  // Second click after the warning: remember the acknowledgement so the prompt
-  // never shows again, then create the link.
-  const confirmShare = async () => {
-    const settings = loadKeatingUiSettings();
-    if (!settings.trajectoryShareWarningAcknowledged) {
-      saveKeatingUiSettings({
-        ...settings,
-        shareWarningAcknowledged: true,
-        trajectoryShareWarningAcknowledged: true,
-      });
-    }
-    await performShare();
-  };
-
-  // Panda globalCss drives responsive visibility via `.chat-only-desktop` (header icons,
-  // md+) and `.chat-only-compact` (overflow-menu duplicates, < md).
-  const actionButtonClass = cx("chat-action-button", actionButtonPandaClass);
   const showPersistenceBanner =
     persistentStorageStatus === "declined" && !persistentBannerDismissed;
 
@@ -1085,454 +948,28 @@ function ChatContent() {
       )}
     >
       {/* Header */}
-      <nav
-        className={cx(
-          "chat-header",
-          css({
-            position: "relative",
-            display: "flex",
-            height: "3.5rem",
-            flexShrink: 0,
-            alignItems: "center",
-            gap: "0.5rem",
-            borderBottom: "1px solid var(--border)",
-            paddingInline: "0.5rem",
-            paddingBlock: "0.5rem",
-            sm: { paddingInline: "1rem" },
-          }),
-        )}
-        aria-label="Chat navigation"
-      >
-        <button
-          type="button"
-          className={cx(
-            actionButtonClass,
-            css({ display: "inline-flex", lg: { display: "none" } }),
-          )}
-          title={
-            mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel"
-          }
-          aria-label={
-            mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel"
-          }
-          aria-pressed={mobileSidebarOpen}
-          onClick={toggleMobileSidebar}
-        >
-          {mobileSidebarOpen ? (
-            <PanelLeftClose size={16} />
-          ) : (
-            <PanelLeftOpen size={16} />
-          )}
-        </button>
-        <Link
-          to={applicationRootHref(window.location.hostname, import.meta.env.KEATING_WEB_BUILD_TARGET === "app")}
-          className={cx(
-            "chat-brand",
-            css({
-              display: "inline-flex",
-              minWidth: 0,
-              flexShrink: 0,
-              alignItems: "center",
-              gap: "0.5rem",
-              borderRadius: "0.375rem",
-              paddingInline: "0.5rem",
-              paddingBlock: "0.25rem",
-            }),
-          )}
-          aria-label="Go to Keating chat"
-        >
-          <img
-								src="/brand/logo-lockup-compact.avif"
-            alt="Keating"
-            className={css({
-              height: "1.5rem",
-              width: "auto",
-              objectFit: "contain",
-            })}
-          />
-        </Link>
-        {/*
-         * Model belongs in the top-left, next to the identity, not buried in
-         * the composer: it frames the whole conversation rather than the one
-         * message you are typing, and it needs to be readable at a glance
-         * without opening anything.
-         */}
-        <button
-          type="button"
-          onClick={openModelSelector}
-          title={`Model: ${modelLabel}`}
-          aria-label={`Change model. Current model: ${modelLabel}`}
-          className={cx(
-            "chat-model-button",
-            css({
-              display: "inline-flex",
-              minWidth: 0,
-              maxWidth: "11rem",
-              flexShrink: 1,
-              alignItems: "center",
-              gap: "0.25rem",
-              borderRadius: "0.5rem",
-              paddingInline: "0.5rem",
-              paddingBlock: "0.25rem",
-              fontSize: "0.8125rem",
-              fontWeight: 500,
-              color: "var(--muted-foreground)",
-              cursor: "pointer",
-              _hover: {
-                backgroundColor: "var(--accent)",
-                color: "var(--accent-foreground)",
-              },
-            }),
-          )}
-        >
-          <span
-            className={css({
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            })}
-          >
-            {modelLabel}
-          </span>
-          <ChevronDown size={13} className={css({ flexShrink: 0 })} />
-        </button>
-        <KnowledgeSourcesButton />
-        <span className="chat-mode-badge chat-only-desktop">
-          MODE: SOCRATIC
-        </span>
-
-        {/* Actions */}
-        <div
-          className={cx(
-            "chat-actions",
-            css({
-              marginLeft: "auto",
-              display: "flex",
-              minWidth: 0,
-              alignItems: "center",
-              justifyContent: "flex-end",
-              gap: "0.25rem",
-              overflow: "hidden",
-              sm: { flex: 1 },
-            }),
-          )}
-        >
-          <button className={actionButtonClass} aria-label="Settings" title="Settings" onClick={openSettings}><Settings size={16}/></button>
-          {canvasEnabled && <button className={actionButtonClass} aria-label={artifactBrowserOpen ? "Close materials" : "Open materials"} aria-pressed={artifactBrowserOpen} onClick={() => toggleArtifactBrowser("toolbar")}><LibraryBig size={16}/></button>}
-          <button
-            className={actionButtonClass}
-            title="Menu"
-            aria-label="More menu"
-            aria-expanded={mobileMenuOpen}
-            aria-haspopup="true"
-            onClick={() => setMobileMenuOpen((o) => !o)}
-          >
-            {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
-          </button>
-        </div>
-
-        {/* Overflow menu */}
-        {mobileMenuOpen && (
-          <div
-            ref={mobileMenuRef}
-            role="navigation" aria-label="Chat actions"
-            className={cx(
-              "font-terminal",
-              css({
-                position: "absolute",
-                right: "0.5rem",
-                top: "100%",
-                zIndex: 50,
-                marginTop: "0.25rem",
-                width: "16rem",
-                maxHeight: "min(70dvh, 36rem)",
-                overflowY: "auto",
-                borderRadius: "0.375rem",
-                border: "1px solid var(--border)",
-                backgroundColor: "var(--background)",
-                boxShadow:
-                  "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-                fontSize: "0.875rem",
-              }),
-            )}
-          >
-            <div
-              className={css({
-                display: "flex",
-                flexDirection: "column",
-                padding: "0.25rem",
-              })}
-            >
-              <NotOrganicAccountMenuItem className={menuItemClass} onSignIn={() => setMobileMenuOpen(false)} />
-              <button
-                className={cx(menuItemClass, "")}
-                disabled={isPending}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  newSession();
-                }}
-              >
-
-                New session
-              </button>
-              <button
-                className={cx(
-                  menuItemClass,
-                  "",
-                  shareState === "copied"
-                    ? css({ color: "var(--primary)" })
-                    : "",
-                  shareState === "error"
-                    ? css({ color: "var(--destructive)" })
-                    : "",
-                )}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  if (shareState === "confirm") confirmShare();
-                  else handleShare();
-                }}
-                disabled={isPending || shareState === "sharing"}
-              >
-
-                {shareState === "copied"
-                  ? "Link copied"
-                  : shareState === "confirm"
-                    ? "Confirm public share"
-                    : "Share session"}
-              </button>
-              <button
-                className={cx(
-                  menuItemClass,
-                  "",
-                  speechEnabled ? css({ color: "var(--primary)" }) : "",
-                )}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  posthog.capture("speech_toggled", {
-                    enabled: !speechEnabled,
-                  });
-                  toggleSpeech();
-                }}
-              >
-
-                {speechEnabled ? "Disable speech" : "Enable speech"}
-              </button>
-              <ThemeToggle
-                className=""
-                variant="menu"
-                onToggled={() => setMobileMenuOpen(false)}
-              />
-              <Link
-                to="/courses"
-                className={menuItemClass}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-
-                Courses
-              </Link>
-              {import.meta.env.DEV && (
-                <button
-                  className={cx(menuItemClass, "")}
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setNodePodOpen(true);
-                  }}
-                >
-
-                  NodePod runtime
-                </button>
-              )}
-              <button
-                className={cx(menuItemClass, "")}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate({ to: "/usage" });
-                }}
-              >
-
-                Learning usage
-              </button>
-              <Link
-                to="/bench"
-                className={menuItemClass}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Model benchmark
-              </Link>
-              <Link
-                to="/coming-up"
-                className={menuItemClass}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Coming up
-              </Link>
-              <Link
-                to="/live"
-                className={menuItemClass}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Live sessions
-              </Link>
-              <button
-                className={menuItemClass}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  if (activeSessionId) {
-                    navigate({ to: "/review/sessions/$sessionId", params: { sessionId: activeSessionId } });
-                  } else {
-                    navigate({ to: "/review" });
-                  }
-                }}
-              >
-
-                Review session
-              </button>
-              <div
-                className={cx(
-                  "",
-                  css({
-                    marginBlock: "0.25rem",
-                    borderTop: "1px solid var(--border)",
-                  }),
-                )}
-              />
-              <Link
-                to={`${WEBSITE_ORIGIN}/`}
-                className={menuItemClass}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Keating website
-              </Link>
-              <a
-                href={DOCUMENTATION_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={menuItemClass}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Documentation
-              </a>
-              <a
-                href={BLOG_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={menuItemClass}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Blog
-              </a>
-              <Link
-                to="/paper"
-                className={menuItemClass}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Paper
-              </Link>
-              <a
-                href="https://github.com/Diogenesoftoronto/keating"
-                target="_blank"
-                rel="noreferrer"
-                className={menuItemClass}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                GitHub
-              </a>
-              <a
-                href={GITHUB_ISSUE_URL}
-                target="_blank"
-                rel="noreferrer"
-                className={cx(menuItemClass, "")}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Report issue
-              </a>
-            </div>
-          </div>
-        )}
-      </nav>
+      <ChatHeader
+        isPending={isPending}
+        modelLabel={modelLabel}
+        activeSessionId={activeSessionId}
+        mobileSidebarOpen={mobileSidebarOpen}
+        speechEnabled={speechEnabled}
+        canvasEnabled={canvasEnabled}
+        artifactBrowserOpen={artifactBrowserOpen}
+        shareState={shareState}
+        toggleMobileSidebar={toggleMobileSidebar}
+        openModelSelector={openModelSelector}
+        openSettings={openSettings}
+        toggleArtifactBrowser={toggleArtifactBrowser}
+        newSession={newSession}
+        handleShare={handleShare}
+        confirmShare={confirmShare}
+        toggleSpeech={toggleSpeech}
+        onOpenNodePod={() => setNodePodOpen(true)}
+      />
 
       {courseContext && (
-        <section
-          aria-label="Course collaboration context"
-          className={css({
-            flexShrink: 0,
-            borderBottom: "1px solid var(--border)",
-            backgroundColor:
-              "color-mix(in srgb, var(--primary) 8%, var(--background))",
-            paddingInline: "0.75rem",
-            paddingBlock: "0.5rem",
-          })}
-        >
-          <div
-            className={css({
-              marginInline: "auto",
-              display: "flex",
-              maxWidth: "56rem",
-              flexWrap: "wrap",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "0.75rem",
-            })}
-          >
-            <div
-              className={css({
-                display: "flex",
-                minWidth: 0,
-                alignItems: "center",
-                gap: "0.55rem",
-              })}
-            >
-              <BookOpen size={16} aria-hidden="true" />
-              <div className={css({ minWidth: 0 })}>
-                <p className={css({ fontSize: "0.8rem", fontWeight: 650 })}>
-                  {courseContext.mode === "create"
-                    ? "Design a course with Keating"
-                    : "Keating is working in this course"}
-                </p>
-                <p
-                  className={css({
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    fontSize: "0.7rem",
-                    color: "var(--muted-foreground)",
-                  })}
-                >
-                  Agree on the shape first, then Keating can create and revise
-                  the durable workspace.
-                </p>
-              </div>
-            </div>
-            <div
-              className={css({
-                display: "flex",
-                flexShrink: 0,
-                alignItems: "center",
-                gap: "0.5rem",
-                fontSize: "0.75rem",
-              })}
-            >
-              {courseContext.activeCourseId && (
-                <Link
-                  to={`/courses/${encodeURIComponent(courseContext.activeCourseId)}`}
-                  className={css({
-                    fontWeight: 650,
-                    textDecoration: "underline",
-                    textUnderlineOffset: "3px",
-                  })}
-                >
-                  Open course
-                </Link>
-              )}
-              <Link
-                to="/chat"
-                className={css({ color: "var(--muted-foreground)" })}
-              >
-                Leave course mode
-              </Link>
-            </div>
-          </div>
-        </section>
+        <CourseContextBanner courseContext={courseContext} />
       )}
 
       {forkInfo && (
@@ -1543,89 +980,10 @@ function ChatContent() {
       )}
 
       {showPersistenceBanner && (
-        <div
-          className={css({
-            flexShrink: 0,
-            borderBottom: "1px solid var(--border)",
-            backgroundColor: "rgb(245 158 11 / 0.1)",
-            paddingInline: "0.75rem",
-            paddingBlock: "0.5rem",
-          })}
-        >
-          <div
-            className={css({
-              marginInline: "auto",
-              display: "flex",
-              maxWidth: "48rem",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "0.75rem",
-            })}
-          >
-            <div
-              className={css({
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                fontSize: "0.75rem",
-                fontWeight: 500,
-                color: "rgb(146 64 14)",
-                _dark: { color: "rgb(253 230 138)" },
-              })}
-            >
-              <span
-                className={css({ display: "none", sm: { display: "inline" } })}
-              >
-                Browser storage persistence is not enabled. Sessions still save
-                locally, but the browser may clear them under storage pressure.
-              </span>
-              <span className={css({ sm: { display: "none" } })}>
-                Storage persistence is not enabled.
-              </span>
-            </div>
-            <div
-              className={css({
-                display: "flex",
-                flexShrink: 0,
-                alignItems: "center",
-                gap: "0.5rem",
-              })}
-            >
-              <button
-                type="button"
-                className={css({
-                  display: "inline-flex",
-                  height: "1.5rem",
-                  alignItems: "center",
-                  borderRadius: "0.25rem",
-                  backgroundColor: "var(--primary)",
-                  paddingInline: "0.5rem",
-                  fontSize: "10px",
-                  fontWeight: 500,
-                  color: "var(--primary-foreground)",
-                  _hover: {
-                    backgroundColor:
-                      "color-mix(in srgb, var(--primary) 90%, transparent)",
-                  },
-                })}
-                onClick={retryPersistentStorage}
-              >
-                Try again
-              </button>
-              <button
-                type="button"
-                className={cx(
-                  iconButtonClass,
-                  css({ width: "1.5rem", height: "1.5rem" }),
-                )}
-                onClick={dismissPersistentBanner}
-                aria-label="Dismiss persistence warning"
-              >
-                <X size={12} />
-              </button>
-            </div>
-          </div>
-        </div>
+        <PersistentStorageBanner
+          onRetry={retryPersistentStorage}
+          onDismiss={dismissPersistentBanner}
+        />
       )}
 
       <JudgementDiagnostics sessionId={activeSessionId} teachingAdjustment={teachingAdjustment} />
@@ -1720,98 +1078,13 @@ function ChatContent() {
       )}
 
       {(shareUrl || shareMessage) && (
-        <div
-          className={css({
-            borderTop: "1px solid var(--border)",
-            backgroundColor: "var(--background)",
-            paddingInline: "1rem",
-            paddingBlock: "0.75rem",
-            fontSize: "0.875rem",
-          })}
-        >
-          <div
-            className={css({
-              marginInline: "auto",
-              display: "flex",
-              maxWidth: "56rem",
-              flexDirection: "column",
-              gap: "0.5rem",
-              sm: { flexDirection: "row", alignItems: "center" },
-            })}
-          >
-            <span
-              className={
-                shareState === "error"
-                  ? css({ color: "var(--destructive)" })
-                  : css({ color: "var(--muted-foreground)" })
-              }
-            >
-              {shareMessage}
-            </span>
-            {shareUrl && (
-              <input
-                className={css({
-                  minWidth: 0,
-                  flex: 1,
-                  borderRadius: "0.375rem",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--muted)",
-                  paddingInline: "0.75rem",
-                  paddingBlock: "0.5rem",
-                  fontFamily: "var(--mono-body)",
-                  fontSize: "0.75rem",
-                  color: "var(--foreground)",
-                })}
-                readOnly
-                value={shareUrl}
-                onFocus={(event) => event.currentTarget.select()}
-              />
-            )}
-            {shareState === "confirm" && (
-              <button
-                className={css({
-                  display: "inline-flex",
-                  height: "2rem",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "0.375rem",
-                  border: "1px solid var(--border)",
-                  backgroundColor: "var(--primary)",
-                  paddingInline: "0.75rem",
-                  fontSize: "0.75rem",
-                  color: "var(--primary-foreground)",
-                  _hover: {
-                    backgroundColor:
-                      "color-mix(in srgb, var(--primary) 90%, transparent)",
-                  },
-                })}
-                onClick={confirmShare}
-              >
-                Share publicly
-              </button>
-            )}
-            <button
-              className={css({
-                display: "inline-flex",
-                height: "2rem",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "0.375rem",
-                border: "1px solid var(--border)",
-                paddingInline: "0.75rem",
-                fontSize: "0.75rem",
-                _hover: { backgroundColor: "var(--accent)" },
-              })}
-              onClick={() => {
-                setShareState("idle");
-                setShareUrl(null);
-                setShareMessage(null);
-              }}
-            >
-              {shareState === "confirm" ? "Cancel" : "Dismiss"}
-            </button>
-          </div>
-        </div>
+        <ShareStatusBanner
+          shareState={shareState}
+          shareUrl={shareUrl}
+          shareMessage={shareMessage}
+          onConfirm={confirmShare}
+          onDismiss={dismissShare}
+        />
       )}
 
       <ArtifactBrowserOverlay

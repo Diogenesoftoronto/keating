@@ -54,7 +54,7 @@ describe("system-design editor boundaries", () => {
     const html = renderToStaticMarkup(<SystemDesignWorkbench documentId="doc" documentRevision={0} node={node} disabled={false} />);
     expect(html).toContain("Structural checks"); expect(html).toContain("Missing");
     expect(html).toContain("do not judge your design or block submission");
-    expect(html).toContain("Teacher review criteria"); expect(html).toContain("Discuss failures and consistency");
+    expect(html).toContain("Review criteria"); expect(html).not.toContain("Teacher review criteria"); expect(html).toContain("Discuss failures and consistency");
     expect(html).toContain("Explain your diagram"); expect(html).not.toContain("Submission recorded for review.");
   });
 
@@ -67,6 +67,7 @@ describe("system-design editor boundaries", () => {
     };
     const html = renderToStaticMarkup(<SystemDesignWorkbench documentId="biology-doc" documentRevision={0} node={biology} disabled={false} />);
     expect(html).toContain("Build your diagram"); expect(html).toContain("Explain your diagram");
+    expect(html).toContain("Category"); expect(html).not.toContain(">Type<");
     expect(html).toContain('value="organism"'); expect(html).toContain('value="process"'); expect(html).toContain('value="resource"');
     expect(html).not.toContain('value="service"'); expect(html).not.toContain('value="database"');
     expect(html).not.toContain("Build your architecture"); expect(html).not.toContain("System design");

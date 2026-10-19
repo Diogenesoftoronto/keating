@@ -1,3 +1,5 @@
+/** Project settings and persistence; public runtime defaults live in runtime-config. */
+import { DEFAULT_MODELS } from "../../packages/runtime-config/src/index.js";
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
@@ -34,17 +36,17 @@ export interface KeatingConfig {
 }
 
 export const DEFAULT_PI_PROVIDER = "openai";
-export const DEFAULT_PI_MODEL = "gpt-5.5";
+export const DEFAULT_PI_MODEL = DEFAULT_MODELS.cli.openai;
 export const FALLBACK_PI_MODELS: Record<string, string> = {
-  notorganic: "balanced",
-  google: "gemini-3.5-flash",
+  notorganic: DEFAULT_MODELS.cli.notorganic,
+  google: DEFAULT_MODELS.cli.google,
   openai: DEFAULT_PI_MODEL,
   // Keep fallback ids within the installed Pi registry; an unknown model makes
   // Pi RPC exit cleanly before the OpenTUI host can recover in-app.
-  anthropic: "claude-sonnet-4-6",
-  openrouter: "poolside/laguna-m.1:free",
-  zyphra: "zyphra/ZAYA1-8B",
-	minimax: "MiniMax-M2.7-highspeed"
+  anthropic: DEFAULT_MODELS.cli.anthropic,
+  openrouter: DEFAULT_MODELS.cli.openrouter,
+  zyphra: DEFAULT_MODELS.cli.zyphra,
+	minimax: DEFAULT_MODELS.cli.minimax
 };
 
 export const DEFAULT_KEATING_CONFIG: KeatingConfig = {
@@ -57,8 +59,8 @@ export const DEFAULT_KEATING_CONFIG: KeatingConfig = {
   speech: {
     enabled: false,
     defaultVoice: "conversational",
-    fastModel: "gemini-3.1-flash-live-preview",
-    steeringModel: "default"
+    fastModel: DEFAULT_MODELS.speech.liveGoogle,
+    steeringModel: DEFAULT_MODELS.speech.steering
   },
   debug: {
     persistTraces: true,

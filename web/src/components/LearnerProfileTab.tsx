@@ -92,7 +92,8 @@ export function LearnerProfileTab({
 }: { store?: LearnerProfileStore; profileStore?: DeclaredProfileStore }) {
 	const [stored, setStored] = useState<DeclaredLearnerProfile>(() => ({ ...profileStore.load(), notes: store.load() }));
 	const [draft, setDraft] = useState<DeclaredLearnerProfile>(stored);
-	const [saved, setSaved] = useState(false);
+	const [saved, setSaved] = useState<"saved" | "cleared" | false>(false);
+	const [confirmingClear, setConfirmingClear] = useState(false);
 	const savedTimer = useRef<number | null>(null);
 
 	// An outside write (another tab, onboarding, the legacy writer) replaces an untouched draft only.
@@ -118,8 +119,8 @@ export function LearnerProfileTab({
 	const answered = useMemo(() => answeredDeclaredProfileFields(draft).length, [draft]);
 	const patch = useCallback((next: Partial<DeclaredLearnerProfile>) => setDraft((current) => ({ ...current, ...next })), []);
 
-	const flashSaved = useCallback(() => {
-		setSaved(true);
+	const flashSaved = useCallback((kind: "saved" | "cleared" = "saved") => {
+		setSaved(kind);
 		if (savedTimer.current) window.clearTimeout(savedTimer.current);
 		savedTimer.current = window.setTimeout(() => setSaved(false), 1600);
 	}, []);
@@ -129,7 +130,7 @@ export function LearnerProfileTab({
 		// Keep the free-text store authoritative for `notes`, including an injected one.
 		store.save(draft.notes);
 		setStored(draft);
-		flashSaved();
+		flashSaved("saved");
 	}, [draft, flashSaved, profileStore, store]);
 
 	const handleReset = useCallback(() => {
@@ -138,7 +139,8 @@ export function LearnerProfileTab({
 		const cleared = defaultDeclaredProfile();
 		setStored(cleared);
 		setDraft(cleared);
-		flashSaved();
+		setConfirmingClear(false);
+		flashSaved("cleared");
 	}, [flashSaved, profileStore, store]);
 
 	const groupProps = { profile: draft, onChange: patch, idPrefix: "learner-profile" };
@@ -146,7 +148,7 @@ export function LearnerProfileTab({
 	return (
 		<div className={stackClass}>
 			<p className={descriptionClass}>
-				Anything you fill in here shapes how Keating teaches you — the examples it picks, the language it uses, how much it asks before it explains. Every field is optional, and it all stays in this browser.
+				Anything you fill in here shapes how Keating teaches you — the examples it picks, the language it uses, how much it asks before it explains. Every field is optional, and it is saved in this browser. Keating includes it in requests to your tutor model so it can tailor lessons.
 			</p>
 
 			<section id="settings-section-profile-identity" className={sectionClass}>
@@ -200,13 +202,25 @@ export function LearnerProfileTab({
 
 			<div className={actionRowClass}>
 				<button type="button" onClick={handleSave} disabled={!dirty} className={primaryButton()}>
-					{saved ? <Check size={15} /> : <Save size={15} />}
-					{saved ? "Saved" : "Save profile"}
+					{saved === "saved" ? <Check size={15} /> : <Save size={15} />}
+					{saved === "saved" ? "Saved" : "Save profile"}
 				</button>
-				<button type="button" onClick={handleReset} className={outlineButton()}>
-					<RotateCcw size={14} />
-					Clear profile
-				</button>
+				{confirmingClear ? (
+					<>
+						<span className={footnoteClass} role="alert">Clear everything you have told Keating about yourself? This can’t be undone.</span>
+						<button type="button" onClick={handleReset} className={outlineButton()}>
+							<RotateCcw size={14} />
+							Yes, clear profile
+						</button>
+						<button type="button" onClick={() => setConfirmingClear(false)} className={outlineButton()} autoFocus>Keep my profile</button>
+					</>
+				) : (
+					<button type="button" onClick={() => setConfirmingClear(true)} className={outlineButton()}>
+						<RotateCcw size={14} />
+						Clear profile
+					</button>
+				)}
+				<span role="status" aria-live="polite" className={footnoteClass}>{saved === "cleared" ? "Profile cleared" : ""}</span>
 			</div>
 			<p className={footnoteClass}>Changes apply to the current conversation on the next message and to every new session.</p>
 		</div>

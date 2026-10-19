@@ -6,11 +6,11 @@
 import type { EditResult, SourceEdit } from "../../../shared/source-edit";
 
 export type StringEdit = Omit<SourceEdit, "file">;
-export type StringEditResult = Omit<EditResult, "file">;
+export type StringEditResult = Omit<EditResult, "file"> & { content?: string };
 
 /**
- * Apply a search/replace to a string, matching the exact algorithm used
- * by both CLI `applySourceEdit` and NodePod `nodePodApplyEdit`.
+ * Replace one unique normalized search block literally and return the edited
+ * text. This helper stays independent of filesystem and provider adapters.
  */
 export function applyStringEdit(
 	content: string,
@@ -34,9 +34,11 @@ export function applyStringEdit(
 		};
 	}
 
-	const output = contentNormalized.replace(searchNormalized, edit.replace);
+	const index = contentNormalized.indexOf(searchNormalized);
+	const output = contentNormalized.slice(0, index) + edit.replace + contentNormalized.slice(index + searchNormalized.length);
 	return {
 		success: true,
+		content: output,
 		message: `Edited: replaced ${searchNormalized.split("\n").length} lines with ${edit.replace.split("\n").length} lines`,
 		diff: {
 			linesRemoved: searchNormalized.split("\n").length,

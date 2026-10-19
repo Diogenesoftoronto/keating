@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS } from "@keating/runtime-config";
 import { NotOrganicPublicClient, publicClientConfig, publicClientMaxCostMicrousd } from "../../notorganic-provider/public-client";
 import type { OnlineDecisionRequest } from "../../../../packages/learner-contracts/src/judgement/online-decision-policy";
 
@@ -30,7 +31,7 @@ function accountBoundClient(scope: string, signal?: AbortSignal, current?: () =>
   }) as typeof fetch;
   return new NotOrganicPublicClient(config, guardedFetch);
 }
-export type TabularModelPreference = "off" | "v3.5_default";
+export type TabularModelPreference = "off" | typeof DEFAULT_MODELS.judgement.tabular;
 export type ActivityLearningMode = "background" | "live";
 /** Missing/older preferences always choose learning outside the reply's waiting path. */
 export function onlineLearningChatMode(scope: string | null): ActivityLearningMode {
@@ -41,7 +42,7 @@ export function setOnlineLearningChatMode(scope: string, mode: ActivityLearningM
   window.dispatchEvent(new Event(ONLINE_LEARNING_CHANGED));
 }
 export function onlineLearningModel(scope: string | null): TabularModelPreference {
-  try { return scope && localStorage.getItem(`keating.tabular-model.v1:${scope}`) === "v3.5_default" ? "v3.5_default" : "off"; } catch { return "off"; }
+  try { return scope && localStorage.getItem(`keating.tabular-model.v1:${scope}`) === DEFAULT_MODELS.judgement.tabular ? DEFAULT_MODELS.judgement.tabular : "off"; } catch { return "off"; }
 }
 export function onlineLearningEnabled(scope: string | null): boolean { return onlineLearningModel(scope) !== "off"; }
 export function setOnlineLearningModel(scope: string, model: TabularModelPreference): void {
@@ -49,7 +50,7 @@ export function setOnlineLearningModel(scope: string, model: TabularModelPrefere
   window.dispatchEvent(new Event(ONLINE_LEARNING_CHANGED));
 }
 export interface TabularModelListing {
-  id: "v3.5_default"; name: string; provider: string; available: boolean; priceMicrousd: number | null;
+  id: typeof DEFAULT_MODELS.judgement.tabular; name: string; provider: string; available: boolean; priceMicrousd: number | null;
 }
 export async function onlineLearningModels(scope: string, signal?: AbortSignal): Promise<TabularModelListing[]> {
   const provider = accountBoundClient(scope, signal);
@@ -58,7 +59,7 @@ export async function onlineLearningModels(scope: string, signal?: AbortSignal):
   const body: unknown = await response.json();
   requireOnlineLearningAccount(scope, signal);
   if (!body || typeof body !== "object" || !("models" in body) || !Array.isArray(body.models)) throw new Error("Invalid model catalogue.");
-  return body.models.filter((row): row is TabularModelListing => !!row && row.id === "v3.5_default" && typeof row.name === "string"
+  return body.models.filter((row): row is TabularModelListing => !!row && row.id === DEFAULT_MODELS.judgement.tabular && typeof row.name === "string"
     && typeof row.provider === "string" && typeof row.available === "boolean"
     && (row.priceMicrousd === null || (Number.isSafeInteger(row.priceMicrousd) && row.priceMicrousd > 0)));
 }

@@ -52,20 +52,42 @@ export function hasCompletedChatOnboarding(storage: OnboardingStorage | undefine
 
 /** Where to resume. Only an unfinished v2 record carries a step; anything else starts at the beginning. */
 export function readChatOnboardingStep(storage: OnboardingStorage | undefined = browserStorage()): number {
-	const saved = readRecord(storage);
-	if (!saved || saved.version !== 2 || saved.outcome !== "in-progress") return 0;
-	const step = typeof saved.step === "number" && Number.isInteger(saved.step) ? saved.step : 0;
-	return Math.min(Math.max(step, 0), ONBOARDING_STEPS.length - 1);
+	return readChatOnboardingResume(storage).step;
+}
+
+export type OnboardingAccess = "keating" | "byok" | "offline";
+export interface OnboardingResume { step: number; access: OnboardingAccess; mode: IntakeMode }
+
+const ACCESS_CHOICES: readonly OnboardingAccess[] = ["keating", "byok", "offline"];
+
+/**
+ * Where to resume, together with the choices that give the position meaning. A step number only
+ * identifies a screen within one intake mode, so the record stores the stable step id plus the
+ * access and intake choices. Records written before that carry only a numeric step; they resume
+ * on the form track with the default access choice.
+ */
+export function readChatOnboardingResume(storage: OnboardingStorage | undefined = browserStorage()): OnboardingResume {
+	const fresh: OnboardingResume = { step: 0, access: "keating", mode: "form" };
+	const saved = readRecord(storage) as (ReturnType<typeof readRecord> & { stepId?: unknown; access?: unknown; mode?: unknown }) | null;
+	if (!saved || saved.version !== 2 || saved.outcome !== "in-progress") return fresh;
+	const mode: IntakeMode = saved.mode === "conversation" ? "conversation" : "form";
+	const access = ACCESS_CHOICES.find(choice => choice === saved.access) ?? "keating";
+	const steps = onboardingStepsFor(mode);
+	const byId = typeof saved.stepId === "string" ? steps.findIndex(definition => definition.id === saved.stepId) : -1;
+	if (byId >= 0) return { step: byId, access, mode };
+	const numeric = typeof saved.step === "number" && Number.isInteger(saved.step) ? saved.step : 0;
+	return { step: Math.min(Math.max(numeric, 0), steps.length - 1), access, mode };
 }
 
 /** Outcome, position and timestamp only — never a goal, a name or anything else the learner typed. */
-export function markChatOnboarding(outcome: OnboardingOutcome, storage: OnboardingStorage | undefined = browserStorage(), step = 0): boolean {
+export function markChatOnboarding(outcome: OnboardingOutcome, storage: OnboardingStorage | undefined = browserStorage(), step = 0, position?: { stepId: string; access: OnboardingAccess; mode: IntakeMode }): boolean {
 	try {
 		if (!storage) return false;
 		storage.setItem(CHAT_ONBOARDING_STORAGE_KEY, JSON.stringify({
 			version: 2,
 			outcome,
 			step,
+			...position,
 			completedAt: outcome === "in-progress" ? null : new Date().toISOString(),
 		}));
 		return true;
@@ -193,14 +215,15 @@ function sessionFlag(action: "read" | "set" | "clear"): boolean {
 }
 
 export function ChatOnboarding({ onUseKeating, onConnectAccount, isSignedIn, onChooseModel, onComplete, onSkip, onStartTour, initialStep }: ChatOnboardingProps) {
-	const [step, setStep] = useState(() => initialStep ?? readChatOnboardingStep());
-	const [access, setAccess] = useState<"keating" | "byok" | "offline">("keating");
+	const [resume] = useState(() => initialStep === undefined ? readChatOnboardingResume() : null);
+	const [step, setStep] = useState(() => initialStep ?? resume?.step ?? 0);
+	const [access, setAccess] = useState<OnboardingAccess>(() => resume?.access ?? "keating");
 	const [profile, setProfile] = useState<DeclaredLearnerProfile>(() => loadDeclaredProfile());
 	const [pending, setPending] = useState(false);
 	const [error, setError] = useState("");
 	const title = useRef<HTMLHeadingElement>(null);
 	const finished = useRef(false);
-	const [mode, setMode] = useState<IntakeMode>("form");
+	const [mode, setMode] = useState<IntakeMode>(() => resume?.mode ?? "form");
 	const [proposals, setProposals] = useState<readonly ProfileProposal[] | null>(null);
 	const steps = onboardingStepsFor(mode);
 	const lastStep = steps.length - 1;
@@ -240,8 +263,8 @@ export function ChatOnboarding({ onUseKeating, onConnectAccount, isSignedIn, onC
 	/** Answers survive a reload even if the learner never reaches the end. */
 	const persist = useCallback((nextStep: number) => {
 		try { saveDeclaredProfile(profile); } catch { /* a blocked store must not trap anyone mid-flow */ }
-		markChatOnboarding("in-progress", browserStorage(), nextStep);
-	}, [profile]);
+		markChatOnboarding("in-progress", browserStorage(), nextStep, { stepId: steps[nextStep]?.id ?? current.id, access, mode });
+	}, [profile, steps, current.id, access, mode]);
 
 	function skip() {
 		if (finished.current) return;

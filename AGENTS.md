@@ -24,14 +24,22 @@ Keep local pedagogy logic separate from model execution and account authority.
 
 | Work | Start here |
 | --- | --- |
-| Core artifacts and CLI | `src/core/`, `src/cli/main.ts`, `src/core/project.ts` |
+| Core artifacts and CLI | `src/core/`, `src/cli/main.ts`, `src/core/project.ts`, `packages/runtime-config/` (models, services, budgets; [configuration](docs/configuration.md)) |
 | Pi tools and runtime | `src/pi/hyper-teacher/`, `src/runtime/`, `pi/prompts/`, `pi/skills/` |
 | Terminal UI | `src/tui/` |
 | Web UI and agent | `web/src/components/`, `web/src/hooks/useKeatingAgent.tsx`, `web/src/keating/` |
-| Mobile and shared contracts | `mobile/`, `packages/learner-contracts/`, `shared/` |
+| Mobile and shared contracts | `mobile/`, `packages/learner-contracts/` (including `src/diagram-edit.ts`), `shared/` |
 | Teaching evaluation | `shared/evolution/`, [teaching evolution](docs/teaching-evolution.md) |
 | Product design | [PRODUCT.md](PRODUCT.md); inspect neighboring components and existing interaction patterns |
-| Tests | `test/` at root; `web/src/test/` for web |
+| Operations | `scripts/ops.ts`; [operations](docs/operations.md) |
+
+| Test location | Run from |
+| --- | --- |
+| `test/` | root: `rtk bun test test/` or `keating:test` |
+| `web/src/test/`, `web/test/` | `web/`: `rtk bun test` or `keating:test-web` |
+| `packages/*/test/` | package directory: `rtk bun test test/` |
+| `mobile/test/` | `mobile/`: `rtk bun test test/` |
+| `spikes/flue-host/test/` | `spikes/flue-host/`: `rtk bun test test/` |
 
 ## Development
 
@@ -50,7 +58,7 @@ Root and web have separate packages. Discover tasks with `rtk devenv tasks list`
 - Web production builds include Vite and Nitro; Vite alone is insufficient.
 - Use `bun:test` and existing fixtures. Favor behavior, invariants, and integration boundaries over implementation snapshots.
 - Wait for checks to finish before claiming success. Distinguish local tests from browser, provider, deployment, and release verification.
-- Releases use `bun pm version` through `keating:bump-version`; synchronize versions and changelog. Preserve Devenv hooks.
+- For worktrees, verification, mutation, releases and deployment, use [operations](docs/operations.md) and `rtk bun scripts/ops.ts --help`; preserve Devenv hooks.
 - Keep generated `.keating/`, `dist/`, `web/dist/`, and `web/.output/` out of commits.
 
 ## Architectural safeguards

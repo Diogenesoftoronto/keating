@@ -58,7 +58,8 @@ export async function applySourceEdit(
     };
   }
 
-  const nextContent = contentNormalized.replace(searchNormalized, edit.replace);
+  // A replacer function keeps `$&`, `$$`, and `$1` in the replacement literal.
+  const nextContent = contentNormalized.replace(searchNormalized, () => edit.replace);
 
   // Create backup if requested
   if (backupDir) {

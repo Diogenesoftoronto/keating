@@ -7,14 +7,14 @@ import {
   arbPolicy,
   benchmarkScoresAreBounded,
   CANONICAL_TOPICS,
-  suppressConsoleError
+  suppressConsoleError,
+  withOfflineBenchmark,
 } from "./helpers.js";
 
 // ─── Fuzz: benchmark scores stay bounded for random policies ───────────────
 
 test("ALWAYS: benchmark scores stay in [0, 100] for random policies", async () => {
-  if (!process.env.GOOGLE_API_KEY && !process.env.GEMINI_API_KEY) return;
-  await suppressConsoleError(async () => {
+  await withOfflineBenchmark(() => suppressConsoleError(async () => {
     await fc.assert(fc.asyncProperty(
       arbPolicy,
       fc.constantFrom(...CANONICAL_TOPICS),
@@ -30,5 +30,5 @@ test("ALWAYS: benchmark scores stay in [0, 100] for random policies", async () =
         }
       }
     ), { numRuns: 5 });
-  });
+  }));
 }, 60000);

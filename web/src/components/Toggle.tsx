@@ -1,4 +1,6 @@
+import { useContext } from "react";
 import { css } from "../../styled-system/css";
+import { SettingRowContext } from "./SettingRow";
 
 export interface ToggleProps {
 	checked: boolean;
@@ -15,6 +17,7 @@ const wrapperClass = css({
 	display: "inline-flex",
 	cursor: "pointer",
 	alignItems: "center",
+	"&:has(input:focus-visible) > span": { outline: "2px solid var(--ring)", outlineOffset: "2px" },
 });
 const srOnlyClass = css({
 	position: "absolute",
@@ -64,9 +67,15 @@ const knobOnClass = css({ transform: "translateX(1rem)" });
  */
 export function Toggle({ checked, onChange, disabled, tone = "primary", "aria-label": ariaLabel }: ToggleProps) {
 	const trackClass = checked ? trackToneClass[tone] : trackOffClass;
+	const row = useContext(SettingRowContext);
+	// An explicit aria-label wins; otherwise take the name/description from the enclosing SettingRow.
+	const labelledBy = ariaLabel ? undefined : row?.titleId;
 	return (
-		<label className={wrapperClass} aria-label={ariaLabel}>
+		<label className={wrapperClass}>
 			<input
+				aria-label={ariaLabel}
+				aria-labelledby={labelledBy}
+				aria-describedby={row?.descriptionId}
 				type="checkbox"
 				className={srOnlyClass}
 				checked={checked}

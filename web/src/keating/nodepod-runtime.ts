@@ -391,7 +391,8 @@ export async function nodePodApplyEdit(edit: SourceEdit): Promise<EditResult> {
 		}
 	}
 
-	const nextContent = contentNormalized.replace(searchNormalized, edit.replace);
+	// A replacer function keeps `$&`, `$$`, and `$1` in the replacement literal.
+	const nextContent = contentNormalized.replace(searchNormalized, () => edit.replace);
 	await pod.fs.writeFile(edit.file, nextContent);
 
 	const linesRemoved = searchNormalized.split("\n").length;

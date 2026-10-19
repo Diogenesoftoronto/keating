@@ -11,6 +11,7 @@
  * Pure data plus lookups: no DOM, no provider imports, so it can be unit tested
  * and reused by the settings tab and the live surface alike.
  */
+import { LIVE_MODEL_CHOICES } from "@keating/runtime-config";
 
 export type LiveProviderId = "tavus" | "gemini-live" | "openai-realtime" | "gpt-live";
 
@@ -54,113 +55,9 @@ export interface LiveSpeechModelOption {
  * next entry that is not the one that just failed.
  */
 export const LIVE_MODELS: readonly LiveModelOption[] = [
-	{
-		providerId: "gpt-live",
-		value: "gpt-live-1",
-		label: "GPT Live",
-		grade: "recommended",
-		video: "none",
-		image: false,
-		note: "Voice conversation through your Not Organic account. Audio only; no live tools or visual input.",
-	},
-	{
-		providerId: "tavus",
-		value: "keatingbot",
-		label: "KeatingBot PAL",
-		grade: "recommended",
-		video: "native",
-		image: false,
-		surface: "embedded",
-		note: "Interactive Tavus video PAL with voice, vision, and Magic Canvas activities.",
-	},
-	{
-		providerId: "gemini-live",
-		value: "gemini-3.1-flash-live-preview",
-		label: "Gemini 3.1 Flash Live",
-		grade: "recommended",
-		video: "native",
-		image: true,
-		note: "Native live video and the fastest turn-taking.",
-	},
-	{
-		providerId: "gemini-live",
-		value: "gemini-2.5-flash-live-preview",
-		label: "Gemini 2.5 Flash Live",
-		grade: "capable",
-		video: "native",
-		image: true,
-		note: "Widest availability. Runs tools without pausing the conversation.",
-	},
-	{
-		providerId: "gemini-live",
-		value: "gemini-3.0-flash-live-preview",
-		label: "Gemini 3.0 Flash Live",
-		grade: "capable",
-		video: "native",
-		image: true,
-	},
-	{
-		providerId: "gemini-live",
-		value: "gemini-2.0-flash-live-001",
-		label: "Gemini 2.0 Flash Live",
-		grade: "legacy",
-		video: "native",
-		image: true,
-		note: "Older generation. Keep it for accounts without preview access.",
-	},
-	{
-		providerId: "openai-realtime",
-		value: "gpt-realtime-2.1",
-		label: "gpt-realtime-2.1",
-		grade: "recommended",
-		video: "none",
-		image: true,
-		note: "Full-duplex voice with still-image input; no live video.",
-	},
-	{
-		providerId: "openai-realtime",
-		value: "gpt-realtime",
-		label: "gpt-realtime",
-		grade: "capable",
-		video: "none",
-		image: true,
-	},
-	{
-		providerId: "openai-realtime",
-		value: "gpt-realtime-2.1-mini",
-		label: "gpt-realtime-2.1-mini",
-		grade: "capable",
-		video: "none",
-		image: true,
-		note: "Cheaper and quicker; less patient with a long explanation.",
-	},
-	{
-		providerId: "openai-realtime",
-		value: "gpt-realtime-mini",
-		label: "gpt-realtime-mini",
-		grade: "capable",
-		video: "none",
-		image: true,
-	},
-	{
-		providerId: "openai-realtime",
-		value: "gpt-4o-realtime-preview-2024-12-17",
-		label: "gpt-4o-realtime-preview",
-		grade: "legacy",
-		video: "none",
-		image: false,
-		note: "Voice only — this generation cannot look at your camera or screen.",
-	},
-	{
-		providerId: "openai-realtime",
-		value: "gpt-4o-mini-realtime-preview-2024-12-17",
-		label: "gpt-4o-mini-realtime-preview",
-		grade: "legacy",
-		video: "none",
-		image: false,
-		note: "Voice only — this generation cannot look at your camera or screen.",
-	},
-] as const;
+  ...LIVE_MODEL_CHOICES.notorganic, ...LIVE_MODEL_CHOICES.tavus,
+  ...LIVE_MODEL_CHOICES.google, ...LIVE_MODEL_CHOICES.openai,
+];
 
 export function isLiveProviderId(id: string): id is LiveProviderId {
 	return id === "tavus" || id === "gemini-live" || id === "openai-realtime" || id === "gpt-live";

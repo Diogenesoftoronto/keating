@@ -20,6 +20,10 @@ Without a palette, general defaults include concepts, steps, decisions, inputs, 
 
 Named structural checks count a category (`component`), require a directed edge (`connection`), or check directed reachability (`path`). Their results update locally. Missing checks do not block submission. Model `criteria` evaluate meaning and reasoning in the task's domain. Direction alone does not establish causation, correct ordering, or domain correctness.
 
-The shared task submission retains graph data, safely generated Mermaid, recomputed structural observations, and explanation. New submissions use `kind: "diagram"`; existing `kind: "system-design"` submissions and the `SystemDesign` OpenUI preset remain supported. The existing limits, receipt replay, and local web draft recovery apply. Mobile edits the same graph; terminal displays the exercise and points to the editors.
+The shared task submission retains graph data, safely generated Mermaid, recomputed structural observations, and explanation. New submissions use `kind: "diagram"`; existing `kind: "system-design"` submissions and the `SystemDesign` OpenUI preset remain supported. The existing limits and receipt replay apply.
+
+Web and mobile edit the same graph through the same pure contract functions (`addDiagramComponent`, `renameDiagramComponent`, `setDiagramComponentKind`, `removeDiagramComponent`, `connectDiagramComponents`, `relabelDiagramConnection`, `disconnectDiagramConnection`, and `prepareDiagramSubmission`). Ids come from an injected generator, so platforms choose their own id style. Both surfaces keep an unsubmitted draft on the device, scoped to the document, revision, and node, restore it before editing, and show whether it was saved. A draft stores only the graph and explanation, never derived checks or Mermaid. Terminal displays the exercise and points to the editors.
+
+Across surfaces the labels are **Category** (a component's role), **Structural checks** (topology observations), and **Review criteria** (what the tutor judges).
 
 See [the system design example](system-design.md) for interview-specific constraints and criteria.

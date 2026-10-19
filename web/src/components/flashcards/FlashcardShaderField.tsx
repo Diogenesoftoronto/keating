@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 
 import { css, cx } from "../../../styled-system/css";
 import { useReducedMotion } from "../../hooks/use-media-query";
+import { compileWebGLShader, linkWebGLProgram } from "../../lib/webgl";
 import type { FlashcardShaderPreset } from "./game";
 
 const VERTEX_SOURCE = `
@@ -214,22 +215,6 @@ const PRESET_BACKGROUNDS: Record<FlashcardShaderPreset, string> = {
 	still: "linear-gradient(145deg, color-mix(in srgb, var(--crt) 92%, var(--accent-green)), var(--crt))",
 };
 
-function compileShader(
-	gl: WebGLRenderingContext,
-	type: number,
-	source: string,
-): WebGLShader | null {
-	const shader = gl.createShader(type);
-	if (!shader) return null;
-	gl.shaderSource(shader, source);
-	gl.compileShader(shader);
-	if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-		gl.deleteShader(shader);
-		return null;
-	}
-	return shader;
-}
-
 function parseCssColor(value: string, fallback: string): [number, number, number] {
 	const candidate = value.trim() || fallback;
 	const hex = candidate.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i)?.[1];
@@ -286,24 +271,15 @@ export function FlashcardShaderField({
 		}) as WebGLRenderingContext | null;
 		if (!context) return;
 		const gl = context;
-		const vertex = compileShader(gl, gl.VERTEX_SHADER, VERTEX_SOURCE);
-		const fragment = compileShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SOURCE);
+		const vertex = compileWebGLShader(gl, gl.VERTEX_SHADER, VERTEX_SOURCE);
+		const fragment = compileWebGLShader(gl, gl.FRAGMENT_SHADER, FRAGMENT_SOURCE);
 		if (!vertex || !fragment) {
 			if (vertex) gl.deleteShader(vertex);
 			if (fragment) gl.deleteShader(fragment);
 			return;
 		}
-		const program = gl.createProgram();
+		const program = linkWebGLProgram(gl, vertex, fragment);
 		if (!program) {
-			gl.deleteShader(vertex);
-			gl.deleteShader(fragment);
-			return;
-		}
-		gl.attachShader(program, vertex);
-		gl.attachShader(program, fragment);
-		gl.linkProgram(program);
-		if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-			gl.deleteProgram(program);
 			gl.deleteShader(vertex);
 			gl.deleteShader(fragment);
 			return;

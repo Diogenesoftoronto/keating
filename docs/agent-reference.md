@@ -3,6 +3,7 @@
 On-demand archive of the previous detailed AGENTS.md. Consult relevant sections only.
 Implementation details may drift; verify them against current source. Current working
 instructions and entry points are in [AGENTS.md](../AGENTS.md).
+For central model, service, and budget configuration, see [configuration](configuration.md).
 
 # AGENTS.md — Keating
 
@@ -74,7 +75,7 @@ The new teaching experiment path is a separate nondeterministic boundary: `src/c
 
 - **CLI commands** (`src/cli/main.ts`) → `src/core/project.ts` artifact functions → write to `.keating/outputs/`
 - **Pi extension** (`src/pi/hyperteacher-extension.ts`) → same `project.ts` functions but wired to `ctx.ui.setEditorText()`, `ctx.ui.notify()`
-- **Web** (`web/src/hooks/useKeatingAgent.tsx`) → `@mariozechner/pi-agent-core` Agent → `web/src/keating/browser-tools.ts` (tool definitions) → tool execution
+- **Web** (`web/src/hooks/useKeatingAgent.tsx`) → `FlueConversation` (`web/src/keating/flue/conversation.ts`) → browser tools and conversation execution
 - **Synthetic learner simulation** (`helpers.ts` stub) → deterministic score based on policy/weights → no real LLM in tests
 
 ### Browser Port
@@ -212,23 +213,14 @@ All system-level dev dependencies are managed by devenv (`devenv.nix`):
 - **devenv tasks** — namespaced task runner (`keating:*`)
 - **bun pm version** — canonical package-version bumps
 
-Run `devenv shell` to enter the dev environment (or use direnv via the existing `.envrc`). Repo-local git hooks are also configured via devenv:
-- `pre-commit`: `devenv tasks run keating:check-version`
-- `pre-push`: root/web tests and `devenv tasks run keating:mirror-radicle`.
-  For pushes targeting `main`, the mirror hook initializes a private Radicle
-  repository if the `rad` remote is absent, then pushes the exact outgoing commit
-  and reachable `v*` release tags. Install Radicle and unlock your identity with
-  `rad auth` first. It preserves the GitHub upstream and never force-pushes.
-  Other branches, tag-only pushes, deletions, and pushes directly to Radicle skip
-  mirroring. The internal Radicle push bypasses hooks to prevent recursion.
-  A mirror failure stops the original push; a later GitHub failure can leave
-  Radicle ahead because pre-push runs before GitHub accepts the update.
-  Local Radicle storage acceptance does not prove replication to another peer.
+Run `rtk devenv shell` (or direnv) to enter the environment. Devenv configures
+pre-commit version, environment-documentation and artifact-atlas checks, and
+pre-push root/web tests. The Radicle mirror hook is currently disabled.
 
-`devenv tasks run keating:bump-version --input version=minor` runs `bun pm version`
-with `--no-git-tag-version`, then synchronizes version strings. Use `patch`,
-`minor`, `major`, or an exact stable version. Update the changelog and run release
-checks before committing and tagging the complete release.
+For worktrees, sequential verification, mutation, releases, staging deployment,
+promotion and monitoring, follow [operations.md](operations.md) and
+`rtk bun scripts/ops.ts --help`. Use `keating:ops-verify` for repository checks;
+`keating:verify` remains teaching verification. Preserve the existing hooks.
 
 ## Speech Module
 

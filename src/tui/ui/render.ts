@@ -199,7 +199,7 @@ function nodePresentation(node: UiDocumentNode): UiDocumentPresentation {
               ...nonEmpty(item.note && `  ${aside(`noted: ${item.note}`)}`),
             ])]
             : []),
-          ...(node.criteria?.length ? ["", "**Judged on**", ...node.criteria.map((criterion) => `- ${criterion}`)] : []),
+          ...(node.criteria?.length ? ["", node.diagram ? "**Review criteria**" : "**Judged on**", ...node.criteria.map((criterion) => `- ${criterion}`)] : []),
         ],
       };
     }

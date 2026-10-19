@@ -14,6 +14,7 @@
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { lockVersions } from "./ops/versions.js";
 
 // ---------------------------------------------------------------------------
 // Files that must contain the root package.json version
@@ -182,6 +183,13 @@ for (const target of targets) {
     console.log(`    ${target.path}`);
     console.log(`    ${" ".repeat(4)}${status}${result.current ? `  (${result.current})` : ""}`);
   }
+}
+
+// Workspace versions follow their own manifests, including independently versioned packages.
+for (const file of lockVersions(process.cwd(), rootVersion, checkMode)) {
+  changed++;
+  if (checkMode) errors++;
+  console.log(`  ${file}: ${checkMode ? "OUT OF SYNC" : "UPDATED"}`);
 }
 
 // ---------------------------------------------------------------------------

@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS, MODEL_CHOICES } from "@keating/runtime-config";
 import type { PortableLearnerData } from "@keating/learner-contracts";
 import { rankingHoldoutAssignment } from "../../../../packages/learner-contracts/src/judgement/ranking-holdout";
 import { DECISION_POLICY_TARGETS, normalizeDecisionPolicyTopic, type DecisionPolicyTarget } from "../../../../packages/learner-contracts/src/judgement/decision-policy-data";
@@ -5,7 +6,7 @@ import { onlineDecisionEvidenceId, type OnlineDecisionPrediction } from "../../.
 import type { OnlineLearningResults } from "../../../../shared/online-learning-session";
 import type { ComingUp } from "../learner-study";
 
-export const MOBILE_ONLINE_MODELS = [{ id: "v3.5_default", label: "TabPFN 3.5 · Not Organic" }] as const;
+export const MOBILE_ONLINE_MODELS = [{ id: DEFAULT_MODELS.judgement.tabular, label: MODEL_CHOICES.judgement.tabular.label }] as const;
 export type MobileOnlineModel = "off" | typeof MOBILE_ONLINE_MODELS[number]["id"];
 export type MobileActivityLearningMode = "background" | "live";
 interface PreferenceStorage { getItem(key: string): Promise<string | null>; setItem(key: string, value: string): Promise<void> }
@@ -39,7 +40,7 @@ export class MobileOnlineLearningPreferences {
     const work = (async () => {
       try {
         const [choice, mode] = await Promise.all([this.storage.getItem(this.key(scope)), this.storage.getItem(`${this.key(scope)}.chat-mode`)]);
-        if (!this.choices.has(scope)) this.choices.set(scope, choice === "v3.5_default" ? choice : "off");
+        if (!this.choices.has(scope)) this.choices.set(scope, choice === DEFAULT_MODELS.judgement.tabular ? choice : "off");
         if (!this.chatModes.has(scope)) this.chatModes.set(scope, mode === "live" ? "live" : "background");
       } catch { if (!this.choices.has(scope)) this.choices.set(scope, "off"); }
       this.publish();

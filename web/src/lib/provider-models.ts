@@ -1,3 +1,4 @@
+import { MODEL_CHOICES, SERVICE_ENDPOINTS, MODEL_PREFERENCES } from "@keating/runtime-config";
 import { getModels, getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
 import { getAppStorage, type CustomProvider } from "../keating/app-storage";
 import { proxiedProviderRequestUrl } from "./provider-proxy";
@@ -404,10 +405,10 @@ export async function hasProviderCredential(providerName: string): Promise<boole
 
 const FALLBACK_CHAT_MODEL_IDS: Record<string, string[]> = {
 	[NOTORGANIC_PROVIDER_ID]: [NOTORGANIC_DEFAULT_MODEL.id],
-	"openai-codex": ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex-spark"],
-	openai: ["gpt-5.5", "gpt-5.5-pro", "gpt-5.4", "gpt-5.3-chat-latest", "gpt-5.2", "gpt-5.1", "gpt-5"],
-	anthropic: ["claude-sonnet-4-6", "claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-4-5", "claude-haiku-4-5"],
-	google: ["gemini-3.1-pro-preview", "gemini-3.5-flash", "gemini-3-pro-preview", "gemini-2.5-pro"],
+	"openai-codex": [...MODEL_PREFERENCES.webChat["openai-codex"]],
+	openai: [...MODEL_PREFERENCES.webChat["openai"]],
+	anthropic: [...MODEL_PREFERENCES.webChat["anthropic"]],
+	google: [...MODEL_PREFERENCES.webChat["google"]],
 };
 
 function providerNeedsKey(provider: string): boolean {
@@ -481,10 +482,7 @@ export const UNKNOWN_MAX_TOKENS = 4096;
 
 function keatingCompatibilityModels(filter?: (provider: string) => boolean): Array<Model<Api>> {
 	const models: Array<Model<Api>> = [];
-	const minimaxModels: Array<[id: string, name: string]> = [
-		["MiniMax-M3", "MiniMax-M3"],
-		["minimax-m2.7-highspeed", "MiniMax M2.7 Highspeed"],
-	];
+	const minimaxModels: Array<[id: string, name: string]> = MODEL_CHOICES.webCompatibility.minimax.map(({ value, label }) => [value, label]);
 	const maybeAdd = (provider: string, baseUrl: string) => {
 		if (filter && !filter(provider)) return;
 		for (const [id, name] of minimaxModels) {
@@ -502,8 +500,8 @@ function keatingCompatibilityModels(filter?: (provider: string) => boolean): Arr
 			});
 		}
 	};
-	maybeAdd("minimax", "https://api.minimax.io/v1");
-	maybeAdd("minimax-cn", "https://api.minimaxi.com/v1");
+	maybeAdd("minimax", SERVICE_ENDPOINTS.minimax);
+	maybeAdd("minimax-cn", SERVICE_ENDPOINTS.minimaxCn);
 	return models;
 }
 

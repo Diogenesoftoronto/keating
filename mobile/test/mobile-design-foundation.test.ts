@@ -1,5 +1,13 @@
 import { expect, test } from "bun:test";
+import { MODELS_DEV_CATALOG_URL } from "../src/lib/model-catalog";
 import { keatingDesignContract } from "@keating/design-contract";
+
+/** The provider was split into src/state/*; architecture checks read the whole state layer. */
+async function stateLayerSource(): Promise<string> {
+  const files = [...new Bun.Glob("src/state/*.{ts,tsx}").scanSync(".")].sort();
+  return (await Promise.all(files.map(file => Bun.file(file).text()))).join("\n");
+}
+
 
 test("design contract supplies complete semantic anchors for native light and dark themes", () => {
   for (const name of ["light", "dark"] as const) {
@@ -68,10 +76,9 @@ test("native shell references canonical Keating identity rather than legacy owl 
 test("mobile model selector occupies the web-equivalent header location", async () => {
   const tutor = await Bun.file("src/app/(tabs)/index.tsx").text();
   const selector = await Bun.file("src/components/ModelSelectorSheet.tsx").text();
-  const catalog = await Bun.file("src/lib/model-catalog.ts").text();
   const header = tutor.indexOf("style={styles.header}>");
   const modelSelector = tutor.indexOf("Change model. Current model:");
-  const composer = tutor.indexOf("<Composer");
+  const composer = tutor.indexOf("<Composer\n");
   expect(header).toBeGreaterThan(-1);
   expect(modelSelector).toBeGreaterThan(header);
   expect(modelSelector).toBeLessThan(composer);
@@ -85,7 +92,7 @@ test("mobile model selector occupies the web-equivalent header location", async 
   expect(selector).toContain("Couldn’t refresh models.dev");
   expect(selector).toContain("refreshController.current?.abort()");
   expect(tutor).toContain("selectionDisabled={isGenerating}");
-  expect(catalog).toContain('https://models.dev/api.json');
+  expect(MODELS_DEV_CATALOG_URL).toBe("https://models.dev/api.json");
   expect(tutor).not.toContain("styles.modelLabel");
 });
 
@@ -120,7 +127,7 @@ test("additive session lineage migrates persisted mobile state to schema two", a
   const types = await Bun.file("src/lib/types.ts").text();
   const storage = await Bun.file("src/lib/storage.ts").text();
   const migration = await Bun.file("src/lib/persisted-state.ts").text();
-  const provider = await Bun.file("src/state/KeatingProvider.tsx").text();
+  const provider = await stateLayerSource();
     expect(types).toContain("schemaVersion: 4");
   expect(types).toContain("parentSessionId?: string");
   expect(storage).toContain("migratePersistedState");
@@ -132,19 +139,25 @@ test("additive session lineage migrates persisted mobile state to schema two", a
 });
 
 test("generation locks before credential I/O and keeps forks out of partial turns", async () => {
-  const provider = await Bun.file("src/state/KeatingProvider.tsx").text();
-  const completionStart = provider.indexOf("const runCompletion");
-  const lock = provider.indexOf("generationBusyRef.current = true", completionStart);
-  const credentialRead = provider.indexOf("await getProviderKey", completionStart);
-  const forkGuard = provider.indexOf("if (generationBusyRef.current) return null", credentialRead);
-  expect(completionStart).toBeGreaterThan(-1);
-  expect(lock).toBeGreaterThan(completionStart);
-  expect(credentialRead).toBeGreaterThan(lock);
-  expect(provider.indexOf("const controller = new AbortController()", completionStart)).toBeLessThan(credentialRead);
-  expect(provider.indexOf("if (controller.signal.aborted)", credentialRead)).toBeGreaterThan(credentialRead);
-  expect(forkGuard).toBeGreaterThan(credentialRead);
-  expect(provider).toContain("if ((!trimmed && attachments.length === 0) || generationBusyRef.current) return");
-  expect(provider).toContain("if (generationBusyRef.current) return;");
+  // The turn is a chain of named steps in teaching-turn.ts: the busy lock and
+  // abort controller are set in beginTurn, which runs before resolveApiKey.
+  const turn = await Bun.file("src/state/teaching-turn.ts").text();
+  const runStart = turn.indexOf("export async function runTeachingTurn");
+  const begin = turn.indexOf("beginTurn(env, controller)", runStart);
+  const resolve = turn.indexOf("resolveApiKey(env, controller", runStart);
+  expect(runStart).toBeGreaterThan(-1);
+  expect(turn.indexOf("const controller = new AbortController()", runStart)).toBeLessThan(begin);
+  expect(begin).toBeGreaterThan(runStart);
+  expect(resolve).toBeGreaterThan(begin);
+  const beginBody = turn.slice(turn.indexOf("function beginTurn"), turn.indexOf("function finishBeforeStream"));
+  expect(beginBody).toContain("generationBusyRef.current = true");
+  const resolveBody = turn.slice(turn.indexOf("async function resolveApiKey"));
+  expect(resolveBody.indexOf("if (controller.signal.aborted)")).toBeGreaterThan(resolveBody.indexOf("await getProviderKey"));
+  const actions = await Bun.file("src/state/use-session-actions.ts").text();
+  expect(actions).toContain("if (generationBusyRef.current) return null");
+  const run = await Bun.file("src/state/use-teaching-run.ts").text();
+  expect(run).toContain("if ((!trimmed && attachments.length === 0) || generationBusyRef.current) return");
+  expect(run).toContain("if (generationBusyRef.current) return;");
 });
 
 test("bottom navigation exposes the four primary mobile destinations", async () => {
@@ -208,7 +221,7 @@ test("courses reads the course API natively and names what stays on the web", as
 
 test("Usage exposes confirmed, recoverable, secret-free portable learning-data controls", async () => {
   const usage = await Bun.file("src/app/usage.tsx").text();
-  const provider = await Bun.file("src/state/KeatingProvider.tsx").text();
+  const provider = await stateLayerSource();
   expect(usage).toContain("Portable learning data");
   expect(usage).toContain("Export JSON");
   expect(usage).toContain("Choose JSON to import");
@@ -255,7 +268,7 @@ test("Learn is a first-class surface and Tutor cards commit durable learner evid
   const quiz = await Bun.file("src/components/cards/QuizCard.tsx").text();
   const questions = await Bun.file("src/components/cards/QuestionCard.tsx").text();
   const goals = await Bun.file("src/components/cards/GoalCard.tsx").text();
-  const provider = await Bun.file("src/state/KeatingProvider.tsx").text();
+  const provider = await stateLayerSource();
 
   expect(more).toContain("Learn & Coming Up");
   expect(more).toContain('router.push("/learn" as never)');

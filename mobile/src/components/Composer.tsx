@@ -2,11 +2,14 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder } from "expo-audio";
 import { useRef, useState } from "react";
 import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { mergeDictation } from "@/lib/composer-dictation";
 import { radii, spacing, useKeatingTheme } from "@/constants/theme";
 import type { ChatAttachment } from "@/lib/types";
 import { REASONING_LEVEL_OPTIONS, type ReasoningLevel } from "@/lib/ui-settings";
 
 interface ComposerProps {
+  /** Session + draft generation; a late transcript from another scope is dropped. */
+  draftScope: string;
   value: string;
   onChangeText: (text: string) => void;
   onSubmit: () => void;
@@ -40,6 +43,7 @@ interface ComposerProps {
  * teaching reminder sitting underneath.
  */
 export function Composer({
+  draftScope,
   value,
   onChangeText,
   onSubmit,
@@ -75,20 +79,29 @@ export function Composer({
   const dictationPhaseRef = useRef(dictationPhase);
   const holdModeRef = useRef(false);
   const ignoreNextPressRef = useRef(false);
+  const valueRef = useRef(value);
+  const draftScopeRef = useRef(draftScope);
+  const dictationScopeRef = useRef<string | null>(null);
+  valueRef.current = value;
+  draftScopeRef.current = draftScope;
   const sendDisabled = !isGenerating && ((!value.trim() && attachments.length === 0) || !enabled || attachmentBusy);
 
   const setPhase = (phase: typeof dictationPhase) => {
     dictationPhaseRef.current = phase;
     setDictationPhase(phase);
   };
-  const appendTranscript = (text: string) => {
-    const transcript = text.trim();
-    if (transcript) onChangeText(value.trim() ? `${value.trimEnd()} ${transcript}` : transcript);
+  const appendTranscript = (text: string, startScope: string) => {
+    const merged = mergeDictation(valueRef.current, text, { startScope, currentScope: draftScopeRef.current });
+    if (merged !== null && merged !== valueRef.current) {
+      valueRef.current = merged;
+      onChangeText(merged);
+    }
   };
   const beginDictation = (): Promise<boolean> => {
     if (dictationPhaseRef.current !== "idle") return Promise.resolve(false);
     setDictationError(null);
     setPhase("starting");
+    dictationScopeRef.current = draftScopeRef.current;
     const pending = (async () => {
       try {
         const permission = await requestRecordingPermissionsAsync();
@@ -111,7 +124,8 @@ export function Composer({
     setPhase("transcribing");
     setDictationError(null);
     try {
-      appendTranscript(await onTranscribeAudio(uri, "audio/mp4"));
+      const startScope = dictationScopeRef.current ?? draftScopeRef.current;
+      appendTranscript(await onTranscribeAudio(uri, "audio/mp4"), startScope);
       lastRecordingRef.current = null;
       setPhase("idle");
     } catch (error) {

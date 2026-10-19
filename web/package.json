@@ -63,6 +63,7 @@
     "@jason.today/webmcp": "0.1.13",
     "@keating/agent-runtime": "file:../packages/agent-runtime",
     "@keating/learner-contracts": "file:../packages/learner-contracts",
+    "@keating/runtime-config": "file:../packages/runtime-config",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/exporter-trace-otlp-proto": "^0.222.0",
     "@opentelemetry/resources": "^2.11.0",

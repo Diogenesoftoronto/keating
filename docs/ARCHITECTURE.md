@@ -24,7 +24,7 @@ The project is intentionally divided into four layers:
 3. Self-improvement layer
    - verifies factual claims before teaching
    - benchmarks a teaching policy against synthetic learners
-   - mutates the policy with novelty and safety gates
+   - proposes policy mutations; these proposals remain unvalidated and do not activate a policy
    - evolves prompt templates from natural-language feedback
    - records learner feedback and persistent traces
    - persists an explicit decision ledger for every candidate
@@ -80,7 +80,7 @@ The project is intentionally divided into four layers:
 - `/animate <topic>` creates a browser-runnable animation bundle with storyboard and manifest.
 - `/verify <topic>` creates a fact-checking checklist before instruction.
 - `/bench [topic]` evaluates the current policy on a benchmark suite.
-- `/evolve [topic]` mutates and selects safer, stronger policies.
+- `/evolve [topic]` writes unvalidated policy mutation proposals; the active policy is unchanged.
 - `/prompt-evolve [prompt]` revises a prompt template and writes an evolved prompt artifact instead of silently overwriting the checked-in prompt.
 - `/feedback <up|down|confused> [topic]` records learner-state signals for later teaching sessions.
 - `/trace [substring]` browses persisted benchmark and evolution traces.
@@ -142,6 +142,6 @@ Real tutoring quality depends on human feedback, but synthetic learners are stil
 - gating clearly worse policies
 - making properties and fuzz tests meaningful
 
-Prompt evolution in Keating currently uses deterministic heuristics over prompt text, not live LLM judge calls. That is deliberate: the architecture keeps the local harness testable while still borrowing the control-loop shape from prompt-learning systems.
+Prompt evolution can use a typed evaluator, including a configured model-backed judgement path; when unavailable, it records a heuristic keyword baseline. Evaluation provenance is recorded with the artifacts. These prompt proposals do not activate teaching revisions or replace source prompts.
 
 They are not a substitute for human evaluation. They are an engineering harness.

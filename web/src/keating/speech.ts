@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS } from "@keating/runtime-config";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import { createLocalSetting } from "./local-setting";
 import { isLiveProviderId, liveSpeechModelsFor } from "./live-models";
@@ -10,7 +11,7 @@ import {
 } from "./providers";
 
 export const KEATING_VOICE_TOOL_NAME = "keating_voice";
-export const GEMINI_LIVE_SPEECH_MODEL = "gemini-3.1-flash-live-preview";
+export const GEMINI_LIVE_SPEECH_MODEL = DEFAULT_MODELS.speech.liveGoogle;
 export const TAVUS_KEATINGBOT_MODEL = "keatingbot";
 export const DEFAULT_SPEECH_VOICE = "Kore";
 const SPEECH_SETTINGS_KEY = "keating:web:speech";

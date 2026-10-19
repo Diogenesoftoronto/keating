@@ -4,13 +4,7 @@ import { createConversationRuntime, recordOpenUIAction } from "../../keating/int
 import type { KeatingOpenUIAction } from "../../keating/openui/types";
 import { dispatchSharedUiAction } from "../../keating/openui/shared-actions";
 import type { UiDocument } from "@keating/learner-contracts";
-
-class MemoryStorage {
-	data = new Map<string, string>();
-	getItem(key: string) { return this.data.get(key) ?? null; }
-	setItem(key: string, value: string) { this.data.set(key, value); }
-	removeItem(key: string) { this.data.delete(key); }
-}
+import { MemoryStorage } from "../helpers/memory-storage";
 
 function action(revision: number, type = "answer"): KeatingOpenUIAction {
 	return {

@@ -1,3 +1,4 @@
+import { questionResponse as responseForQuestion } from "@keating/learner-contracts";
 import { useQuizPerformance } from "../../components/QuizPerformanceEstimate";
 import { ResponseCapture } from "../../components/ResponseCapture";
 import { LessonPlanJudgementReview } from "../../components/LessonPlanJudgementReview";
@@ -99,18 +100,6 @@ function completedNodeReceipt(receipts: UiActionReceipt[], nodeId: string, types
 		if (receipt?.state === "completed" && "nodeId" in receipt.action && receipt.action.nodeId === nodeId && types.includes(receipt.action.type)) return receipt;
 	}
 	return undefined;
-}
-
-function responseForQuestion(node: UiQuestion, answer: string, selected: string[], blankAnswers: string[], rowSelections: string[], rowReasons: string[], order: string[] = []): UiQuestionGroupResponse {
-	if (node.kind === "ordering") return { questionId: node.id, type: "order", items: order };
-	if (node.kind === "classification" || node.kind === "matching") return {
-		questionId: node.id,
-		type: "rows",
-		rows: (node.items ?? []).map((item, index) => ({ item, optionId: rowSelections[index] ?? "", ...(node.requireReasons ? { reason: rowReasons[index] ?? "" } : {}) })),
-	};
-	if (node.kind === "blanks" || node.kind === "fill_in") return { questionId: node.id, type: "blanks", answers: blankAnswers };
-	if (node.choices) return { questionId: node.id, type: "choice", optionIds: selected, ...(node.allowText ? { text: answer } : {}) };
-	return { questionId: node.id, type: "text", answer };
 }
 
 function responseReady(node: UiQuestion, answer: string, selected: string[], blankAnswers: string[], rowSelections: string[], rowReasons: string[], order: string[] = []): boolean {

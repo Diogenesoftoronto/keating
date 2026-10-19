@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, MODEL_CHOICES } from "@keating/runtime-config";
 import { checkoutSelection, subscriptionAvailable, subscriptionCheckoutEnabled } from "./plans";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { availableCreditPacks, normalizeCreditWallet } from "./credit-wallet";
@@ -9,8 +10,8 @@ import {
 } from "./public-client";
 
 export const NOTORGANIC_PROVIDER_ID = "notorganic";
-export const NOTORGANIC_MODEL_ALIAS = "balanced";
-export const NOTORGANIC_IMAGE_MODEL_ALIAS = "image";
+export const NOTORGANIC_MODEL_ALIAS = DEFAULT_MODELS.web.notorganic;
+export const NOTORGANIC_IMAGE_MODEL_ALIAS = DEFAULT_MODELS.image.notorganic;
 export const NOTORGANIC_FEATURE = "keating:web-chat";
 export const NOTORGANIC_PROXY_BASE_PATH = "/api/notorganic/openai/v1";
 
@@ -28,7 +29,7 @@ export function notOrganicOpenAiImageEndpoint(origin = currentOrigin()): string 
 export const NOTORGANIC_DEFAULT_MODEL: Model<"openai-completions"> = {
 	id: NOTORGANIC_MODEL_ALIAS,
 	// The public capability keeps its stable alias; Portkey owns the upstream route.
-	name: "Inkling Small",
+	name: MODEL_CHOICES.notorganicChat[0].label,
 	api: "openai-completions",
 	provider: NOTORGANIC_PROVIDER_ID,
 	baseUrl: notOrganicOpenAiBaseUrl(),
@@ -47,8 +48,8 @@ export const NOTORGANIC_DEFAULT_MODEL: Model<"openai-completions"> = {
 };
 
 export const NOTORGANIC_SOL_MODEL: Model<"openai-responses"> = {
-	id: "gpt-6.1-sol",
-	name: "GPT-6.1 Sol",
+	id: NOTORGANIC_CHAT_MODEL_IDS[1],
+	name: MODEL_CHOICES.notorganicChat[1].label,
 	api: "openai-responses",
 	provider: NOTORGANIC_PROVIDER_ID,
 	baseUrl: notOrganicOpenAiBaseUrl(),

@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS } from "../../../runtime-config/src/index.js";
 /** Predicts proximal recorded performance after released replies; it makes no causal claim. */
 import { tryCompileOpenUISourceToSharedDocument } from "../openui-source.js";
 import { validateUiDocument, type UiDocument } from "../ui.js";
@@ -27,7 +28,7 @@ export interface ActivityExposure extends ActivityBoundary {
 export interface ActivitySelectionReceipt {
   version: 1;
   status: "active" | "baseline-retained" | "insufficient-history" | "insufficient-validation" | "unsupported-candidates" | "invalid-response" | "failed" | "cancelled";
-  target: "next-linked-objective-score"; model: "v3.5_default"; asOf: number;
+  target: "next-linked-objective-score"; model: typeof DEFAULT_MODELS.judgement.tabular; asOf: number;
   baselineAttempt: number; selectedAttempt: number;
   counts: { exposures: number; labelled: number; train: number; validation: number; candidates: number };
   validation: { kind: "squared-error"; modelLoss: number; baselineLoss: number; passed: boolean } | null;
@@ -77,7 +78,7 @@ const receiptReasons = new Set([
 const validAttempt = (value: unknown): value is number => Number.isSafeInteger(value) && (value as number) >= 1 && (value as number) <= 8;
 function validReceipt(value: unknown): value is ActivitySelectionReceipt {
   if (!record(value) || value.version !== 1 || !["active", "baseline-retained", "insufficient-history", "insufficient-validation", "unsupported-candidates", "invalid-response", "failed", "cancelled"].includes(value.status as string)
-    || value.target !== "next-linked-objective-score" || value.model !== "v3.5_default" || !instant(value.asOf) || value.asOf > 8_640_000_000_000_000
+    || value.target !== "next-linked-objective-score" || value.model !== DEFAULT_MODELS.judgement.tabular || !instant(value.asOf) || value.asOf > 8_640_000_000_000_000
     || !validAttempt(value.baselineAttempt) || !validAttempt(value.selectedAttempt)
     || !record(value.counts) || !Array.isArray(value.reasons) || value.reasons.length > 16 || value.reasons.some(reason => typeof reason !== "string" || !receiptReasons.has(reason))
     || value.scope !== "chronological-within-learner" || value.causal !== false || value.unaidedLearning !== "unknown") return false;
@@ -91,7 +92,7 @@ function validReceipt(value: unknown): value is ActivitySelectionReceipt {
 export function projectActivitySelectionReceipt(value: unknown): ActivitySelectionReceipt | null {
   if (!validReceipt(value)) return null;
   return {
-    version: 1, status: value.status, target: "next-linked-objective-score", model: "v3.5_default", asOf: value.asOf,
+    version: 1, status: value.status, target: "next-linked-objective-score", model: DEFAULT_MODELS.judgement.tabular, asOf: value.asOf,
     baselineAttempt: value.baselineAttempt, selectedAttempt: value.selectedAttempt,
     counts: { exposures: value.counts.exposures, labelled: value.counts.labelled, train: value.counts.train,
       validation: value.counts.validation, candidates: value.counts.candidates },
@@ -203,7 +204,7 @@ export interface ActivityLearningBatch {
   receipt: ActivitySelectionReceipt;
 }
 export function buildActivityLearningBatch(input: ActivitySelectionInput, exposures: readonly ActivityExposure[], asOf: number): ActivityLearningBatch {
-  const receipt: ActivitySelectionReceipt = { version: 1, status: "insufficient-history", target: "next-linked-objective-score", model: "v3.5_default", asOf,
+  const receipt: ActivitySelectionReceipt = { version: 1, status: "insufficient-history", target: "next-linked-objective-score", model: DEFAULT_MODELS.judgement.tabular, asOf,
     baselineAttempt: input.baselineAttempt, selectedAttempt: input.baselineAttempt, counts: { exposures: exposures.length, labelled: 0, train: 0, validation: 0, candidates: 0 },
     validation: null, predictedScores: [], reasons: [], scope: "chronological-within-learner", causal: false, unaidedLearning: "unknown" };
   const batch: ActivityLearningBatch = { request: null, train: [], validation: [], candidates: [], baselinePredictions: [], receipt };
@@ -249,7 +250,7 @@ export function buildActivityLearningBatch(input: ActivitySelectionInput, exposu
     return matching.length >= 5 ? mean(matching.map(row => row.outcome!.score!)) : globalMean;
   });
   const features = (observations: ActivityObservations, value: ActivityDescriptor) => [...activityObservationFeatures(observations), ...value.features];
-  batch.request = { schemaVersion: 1, task: "regression", model: "v3.5_default", featureNames: [...ACTIVITY_OBSERVATION_FEATURES, ...ACTIVITY_DESCRIPTOR_FEATURES],
+  batch.request = { schemaVersion: 1, task: "regression", model: DEFAULT_MODELS.judgement.tabular, featureNames: [...ACTIVITY_OBSERVATION_FEATURES, ...ACTIVITY_DESCRIPTOR_FEATURES],
     trainFeatures: train.map(row => features(row.observations, row.candidate)), trainTargets: train.map(row => row.outcome!.score!),
     testFeatures: [...validation.map(row => features(row.observations, row.candidate)), ...candidates.map(row => features(input.observations, row.descriptor))] };
   receipt.status = "baseline-retained";
@@ -272,7 +273,7 @@ export async function selectActivityCandidate(input: ActivitySelectionInput, opt
     });
     const response = await Promise.race([options.transport(batch.request, controller.signal), stopped]);
     if (input.signal.aborted) throw new Error("activity_selection_cancelled");
-    if (!record(response) || response.model !== "v3.5_default" || !Array.isArray(response.predictions)
+    if (!record(response) || response.model !== DEFAULT_MODELS.judgement.tabular || !Array.isArray(response.predictions)
       || response.predictions.length !== batch.request.testFeatures.length || !response.predictions.every(probability)) {
       batch.receipt.status = "invalid-response"; batch.receipt.reasons = ["invalid-provider-predictions"]; return baseline();
     }

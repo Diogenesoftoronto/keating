@@ -1,3 +1,4 @@
+import { SERVICE_ENDPOINTS, SPENDING_LIMITS, DEFAULT_MODELS } from "../../packages/runtime-config/src/index.js";
 import { randomBytes, randomUUID, webcrypto } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -9,14 +10,14 @@ import { AuthStorage, type ApiKeyCredential } from "@earendil-works/pi-coding-ag
 import { configDir } from "./paths.js";
 
 export const NOTORGANIC_PROVIDER_ID = "notorganic";
-export const NOTORGANIC_MODEL_ID = "balanced";
-export const NOTORGANIC_SCOPE = "infer:balanced";
-export const NOTORGANIC_JUDGEMENT_LOGIN_SCOPE = "infer:balanced judgement:evaluate";
+export const NOTORGANIC_MODEL_ID = DEFAULT_MODELS.cli.notorganic;
+export const NOTORGANIC_SCOPE = `infer:${DEFAULT_MODELS.cli.notorganic}` as const;
+export const NOTORGANIC_JUDGEMENT_LOGIN_SCOPE = `${NOTORGANIC_SCOPE} judgement:evaluate` as const;
 export type NotOrganicLoginScope = typeof NOTORGANIC_SCOPE | typeof NOTORGANIC_JUDGEMENT_LOGIN_SCOPE;
-export const NOTORGANIC_DEFAULT_ISSUER = "https://api.notorganic.info";
-export const NOTORGANIC_DEFAULT_AUTHORIZATION_URL = "https://id.notorganic.info/authorize";
+export const NOTORGANIC_DEFAULT_ISSUER: string = SERVICE_ENDPOINTS.notorganic.api;
+export const NOTORGANIC_DEFAULT_AUTHORIZATION_URL: string = SERVICE_ENDPOINTS.notorganic.authorization;
 export const NOTORGANIC_CAPABILITY_SECONDS = 300;
-export const NOTORGANIC_DEFAULT_MAX_COST_MICROUSD = 100_000;
+export const NOTORGANIC_DEFAULT_MAX_COST_MICROUSD: number = SPENDING_LIMITS.notorganicRequestMicrousd;
 
 export const NOTORGANIC_AUTH_ENV = {
   issuer: "NOTORGANIC_ISSUER",
@@ -143,7 +144,7 @@ function secureHttpUrl(value: string, label: string): URL {
   return url;
 }
 
-export function resolveNotOrganicIssuer(value = NOTORGANIC_DEFAULT_ISSUER): string {
+export function resolveNotOrganicIssuer(value: string = NOTORGANIC_DEFAULT_ISSUER): string {
   const issuer = secureHttpUrl(value, "Not Organic issuer");
   if (issuer.pathname !== "/" || issuer.search) {
     throw new Error("Not Organic issuer must be an origin without a path or query.");
@@ -152,7 +153,7 @@ export function resolveNotOrganicIssuer(value = NOTORGANIC_DEFAULT_ISSUER): stri
 }
 
 export function resolveNotOrganicAuthorizationUrl(
-  value = NOTORGANIC_DEFAULT_AUTHORIZATION_URL
+  value: string = NOTORGANIC_DEFAULT_AUTHORIZATION_URL
 ): string {
   const authorization = secureHttpUrl(value, "Not Organic authorization URL");
   if (authorization.search) {
@@ -424,7 +425,7 @@ async function safeTokenError(response: Response): Promise<Error> {
 /** Recognize only the two supported CLI grants, without expanding authority. */
 export function parseNotOrganicLoginScope(value: unknown): NotOrganicLoginScope | undefined {
   if (value === NOTORGANIC_SCOPE) return NOTORGANIC_SCOPE;
-  if (value === NOTORGANIC_JUDGEMENT_LOGIN_SCOPE || value === "judgement:evaluate infer:balanced") {
+  if (value === NOTORGANIC_JUDGEMENT_LOGIN_SCOPE || value === `judgement:evaluate ${NOTORGANIC_SCOPE}`) {
     return NOTORGANIC_JUDGEMENT_LOGIN_SCOPE;
   }
   return undefined;

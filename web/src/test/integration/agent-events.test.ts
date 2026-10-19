@@ -2,13 +2,7 @@ import { describe, expect, test } from "bun:test";
 import type { AgentEvent, AgentMessage } from "@earendil-works/pi-agent-core";
 import { StorageConversationEventStore } from "../../keating/event-store";
 import { createConversationRuntime, recordAgentEvent } from "../../keating/integration";
-
-class MemoryStorage {
-	data = new Map<string, string>();
-	getItem(key: string) { return this.data.get(key) ?? null; }
-	setItem(key: string, value: string) { this.data.set(key, value); }
-	removeItem(key: string) { this.data.delete(key); }
-}
+import { MemoryStorage } from "../helpers/memory-storage";
 
 function assistant(stopReason: "stop" | "error" | "aborted", errorMessage?: string): AgentMessage {
 	return {

@@ -1,6 +1,16 @@
 import {
+  DIAGRAM_LIMITS,
+  addDiagramComponent,
+  connectDiagramComponents,
+  copyDiagramGraph,
+  disconnectDiagramConnection,
   getDiagramKinds,
-  createDiagramSubmission,
+  prepareDiagramSubmission,
+  relabelDiagramConnection,
+  removeDiagramComponent,
+  renameDiagramComponent,
+  sequentialDiagramId,
+  setDiagramComponentKind,
   evaluateSystemDesignChecks,
   parseSystemDesignSubmission,
   systemDesignMermaid,
@@ -13,12 +23,13 @@ import {
   type UiDocument,
   type UiTaskNode,
 } from "@keating/learner-contracts";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Button } from "@/components/Buttons";
 import { MarkdownText } from "@/components/MarkdownText";
 import { MermaidDiagram } from "@/components/MermaidDiagram";
 import { radii, spacing, useKeatingTheme } from "@/constants/theme";
+import { clearDiagramDraft, createDiagramDraftWriter, loadDiagramDraft, mobileDiagramDraftKey, type DiagramDraftWriter } from "@/lib/diagram-draft-storage";
 
 interface Props {
   node: UiTaskNode & { diagram: SystemDesignSpec };
@@ -29,22 +40,16 @@ interface Props {
   onSubmit: (submission: string) => Promise<boolean>;
 }
 
-function copyGraph(spec: SystemDesignSpec): SystemDesignGraph {
-  return { components: spec.components.map((component) => ({ ...component })), connections: spec.connections.map((connection) => ({ ...connection })) };
-}
-
-function nextId(prefix: string, ids: readonly string[]): string {
-  let sequence = 1;
-  while (ids.includes(`${prefix}-${sequence}`)) sequence += 1;
-  return `${prefix}-${sequence}`;
-}
+const { components: MAX_COMPONENTS, connections: MAX_CONNECTIONS, label: MAX_LABEL, explanation: MAX_EXPLANATION } = DIAGRAM_LIMITS;
+const AUTOSAVE_MS = 350;
+const SAVE_FAILED = "This draft could not be saved on this device. Keep this screen open and retry Save draft.";
 
 /** Native graph editing shares the web submission and structural check contract. */
 export function SystemDesignWorkbench({ node, document, disabled, busy, submitted, onSubmit }: Props) {
   const theme = useKeatingTheme();
   const styles = createStyles(theme);
   const kinds = getDiagramKinds(node.diagram);
-  const [graph, setGraph] = useState<SystemDesignGraph>(() => copyGraph(node.diagram));
+  const [graph, setGraph] = useState<SystemDesignGraph>(() => copyDiagramGraph(node.diagram));
   const [explanation, setExplanation] = useState("");
   const [newLabel, setNewLabel] = useState(`Component ${node.diagram.components.length + 1}`);
   const [newKind, setNewKind] = useState<SystemDesignKind>(kinds[0]!);
@@ -53,17 +58,63 @@ export function SystemDesignWorkbench({ node, document, disabled, busy, submitte
   const [connectionLabel, setConnectionLabel] = useState("");
   const [error, setError] = useState<string>();
   const [locallySubmitted, setLocallySubmitted] = useState<string>();
+  const [restored, setRestored] = useState(false);
+  const [edited, setEdited] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("");
+  const [storageError, setStorageError] = useState("");
+  const storageKey = mobileDiagramDraftKey(document.id, document.revision, node.id);
+  // A re-parsed spec with the same content must not discard the learner's work.
+  const specSignature = useMemo(() => JSON.stringify(node.diagram), [node.diagram]);
+  const submittedRef = useRef(submitted);
+  submittedRef.current = submitted;
+  const specRef = useRef(node.diagram);
+  specRef.current = node.diagram;
+  // One writer per mounted draft; clearing learning data invalidates it so teardown cannot resurrect deleted work.
+  const writer = useRef<DiagramDraftWriter | undefined>(undefined);
+  const latest = useRef({ graph, explanation, flushable: false });
+
   useEffect(() => {
-    setGraph(copyGraph(node.diagram));
+    let active = true;
+    const spec = specRef.current;
+    setGraph(copyDiagramGraph(spec));
     setExplanation("");
-    setNewLabel(`Component ${node.diagram.components.length + 1}`);
-    setNewKind(getDiagramKinds(node.diagram)[0]!);
+    setNewLabel(`Component ${spec.components.length + 1}`);
+    setNewKind(getDiagramKinds(spec)[0]!);
     setFrom("");
     setTo("");
     setConnectionLabel("");
     setError(undefined);
     setLocallySubmitted(undefined);
-  }, [document.id, document.revision, node.id, node.diagram]);
+    setEdited(false);
+    setSaveStatus("");
+    setStorageError("");
+    const draftWriter = createDiagramDraftWriter(storageKey);
+    writer.current = draftWriter;
+    if (submittedRef.current) {
+      setRestored(true);
+      return undefined;
+    }
+    setRestored(false);
+    void loadDiagramDraft(storageKey, spec).then((saved) => {
+      if (!active) return;
+      if (saved) {
+        setGraph(saved.graph);
+        setExplanation(saved.explanation);
+        setSaveStatus("Draft restored from this device.");
+      }
+      setRestored(true);
+    }).catch(() => {
+      if (!active) return;
+      setStorageError("Your local draft could not be restored. You can keep working; Save draft replaces the local copy.");
+      setRestored(true);
+    });
+    return () => {
+      active = false;
+      // Write only edits that never reached storage; a stale writer (after a clear) drops the write.
+      const pending = latest.current;
+      if (pending.flushable) void draftWriter.flush({ graph: pending.graph, explanation: pending.explanation }).catch(() => undefined);
+    };
+  }, [storageKey, specSignature]);
 
   const savedSource = submitted?.submission ?? locallySubmitted;
   const saved = useMemo(() => savedSource === undefined ? undefined : parseSystemDesignSubmission(savedSource, node.diagram), [savedSource, node.diagram]);
@@ -71,39 +122,83 @@ export function SystemDesignWorkbench({ node, document, disabled, busy, submitte
   const shownGraph = saved?.graph ?? graph;
   const validGraph = validateSystemDesignGraph(shownGraph);
   const checks = validGraph ? evaluateSystemDesignChecks(node.diagram, shownGraph) : [];
-  const locked = disabled || busy || readonly;
+  const locked = disabled || busy || readonly || !restored;
   const source = validGraph && shownGraph.components.length ? systemDesignMermaid(shownGraph) : undefined;
 
+  latest.current = { graph, explanation, flushable: restored && !readonly && validGraph };
+
+  useEffect(() => {
+    if (!restored || !edited || readonly || !validGraph) return undefined;
+    let active = true;
+    const timer = setTimeout(() => {
+      void writer.current?.save({ graph, explanation }).then((written) => {
+        if (!active || !written) return;
+        setSaveStatus("Draft saved on this device.");
+        setStorageError("");
+        if (!writer.current?.dirty) setEdited(false);
+      }).catch(() => { if (active) setStorageError(SAVE_FAILED); });
+    }, AUTOSAVE_MS);
+    return () => { active = false; clearTimeout(timer); };
+  }, [graph, explanation, restored, edited, readonly, validGraph, storageKey]);
+
+  const editGraph = (change: (current: SystemDesignGraph) => SystemDesignGraph) => {
+    writer.current?.noteEdit();
+    setGraph(change);
+    setEdited(true);
+    setSaveStatus("");
+  };
+  const editExplanation = (text: string) => {
+    writer.current?.noteEdit();
+    setExplanation(text);
+    setEdited(true);
+    setSaveStatus("");
+  };
+  const saveDraft = async () => {
+    try {
+      const written = await writer.current?.save({ graph, explanation });
+      if (!written) return;
+      setStorageError("");
+      setSaveStatus("Draft saved on this device.");
+      if (!writer.current?.dirty) setEdited(false);
+    } catch { setStorageError(SAVE_FAILED); }
+  };
   const updateComponent = (id: string, patch: Partial<Pick<SystemDesignComponent, "label" | "kind">>) => {
-    setGraph((current) => ({ ...current, components: current.components.map((component) => component.id === id ? { ...component, ...patch } : component) }));
+    editGraph((current) => {
+      const renamed = patch.label === undefined ? current : renameDiagramComponent(current, id, patch.label);
+      return patch.kind === undefined ? renamed : setDiagramComponentKind(renamed, id, patch.kind);
+    });
   };
   const removeComponent = (id: string) => {
-    setGraph((current) => ({ components: current.components.filter((component) => component.id !== id), connections: current.connections.filter((connection) => connection.from !== id && connection.to !== id) }));
+    editGraph((current) => removeDiagramComponent(current, id));
     if (from === id) setFrom("");
     if (to === id) setTo("");
   };
   const addComponent = () => {
-    if (locked || !newLabel.trim() || graph.components.length >= 40) return;
-    setGraph((current) => ({ ...current, components: [...current.components, { id: nextId("component", current.components.map((component) => component.id)), label: newLabel.trim(), kind: newKind }] }));
+    if (locked || !newLabel.trim() || graph.components.length >= MAX_COMPONENTS) return;
+    editGraph((current) => addDiagramComponent(current, { label: newLabel.trim(), kind: newKind }, sequentialDiagramId));
     setNewLabel(`Component ${graph.components.length + 2}`);
     setError(undefined);
   };
   const addConnection = () => {
-    if (locked || !graph.components.some((component) => component.id === from) || !graph.components.some((component) => component.id === to) || graph.connections.length >= 80) return;
-    setGraph((current) => ({ ...current, connections: [...current.connections, { id: nextId("connection", current.connections.map((connection) => connection.id)), from, to, ...(connectionLabel.trim() ? { label: connectionLabel.trim() } : {}) }] }));
+    if (locked || !graph.components.some((component) => component.id === from) || !graph.components.some((component) => component.id === to) || graph.connections.length >= MAX_CONNECTIONS) return;
+    editGraph((current) => connectDiagramComponents(current, { from, to, label: connectionLabel }, sequentialDiagramId));
     setConnectionLabel("");
     setError(undefined);
   };
   const submit = async () => {
     if (locked) return;
-    if (!validGraph || !graph.components.length || !explanation.trim()) {
-      setError("Give every component a name and explain your diagram before submitting.");
+    const prepared = prepareDiagramSubmission(node.diagram, graph, explanation.trim());
+    if (!prepared.ok) {
+      setError(prepared.message);
       return;
     }
     setError(undefined);
     try {
-      const payload = JSON.stringify(createDiagramSubmission(node.diagram, graph, explanation.trim()));
-      if (await onSubmit(payload)) setLocallySubmitted(payload);
+      if (await onSubmit(prepared.source)) {
+        setLocallySubmitted(prepared.source);
+        setSaveStatus("");
+        void clearDiagramDraft(storageKey).catch(() => undefined);
+      }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not submit the diagram. Your draft is still here.");
     }
@@ -118,21 +213,21 @@ export function SystemDesignWorkbench({ node, document, disabled, busy, submitte
       <Text selectable style={styles.body}>{savedSource}</Text>
     </View> : <>
       {readonly ? <Text accessibilityLiveRegion="polite" style={styles.notice}>Diagram submitted. Your diagram and explanation are saved.</Text> : <Text style={styles.notice}>Add components, connect them, and explain their relationships. Removing a component also removes its connections.</Text>}
-      <Text style={styles.heading}>Components ({shownGraph.components.length}/40)</Text>
+      <Text style={styles.heading}>Components ({shownGraph.components.length}/{MAX_COMPONENTS})</Text>
       {shownGraph.components.map((component) => <View key={component.id} style={styles.card}>
         {readonly ? <Text style={styles.body}>{component.label} · {component.kind}</Text> : <>
-          <TextInput style={styles.input} value={component.label} maxLength={160} editable={!locked} placeholder="Component name" placeholderTextColor={theme.colors.textMuted} accessibilityLabel={`Name for ${component.label || component.id}`} onChangeText={(label) => updateComponent(component.id, { label })} />
+          <TextInput style={styles.input} value={component.label} maxLength={MAX_LABEL} editable={!locked} placeholder="Component name" placeholderTextColor={theme.colors.textMuted} accessibilityLabel={`Name for ${component.label || component.id}`} onChangeText={(label) => updateComponent(component.id, { label })} />
           <KindSelector label={`Category for ${component.label || component.id}`} kinds={kinds} value={component.kind} disabled={locked} onChange={(kind) => updateComponent(component.id, { kind })} />
           <Button compact variant="quiet" accessibilityLabel={`Remove ${component.label || component.id} and its connections`} disabled={locked} onPress={() => removeComponent(component.id)}>Remove component</Button>
         </>}
       </View>)}
       {!readonly ? <View style={styles.card}>
         <Text style={styles.label}>Add a component</Text>
-        <TextInput style={styles.input} value={newLabel} maxLength={160} editable={!locked} placeholder="Component name" placeholderTextColor={theme.colors.textMuted} accessibilityLabel="New component name" onChangeText={setNewLabel} />
+        <TextInput style={styles.input} value={newLabel} maxLength={MAX_LABEL} editable={!locked} placeholder="Component name" placeholderTextColor={theme.colors.textMuted} accessibilityLabel="New component name" onChangeText={setNewLabel} />
         <KindSelector label="New component category" kinds={kinds} value={newKind} disabled={locked} onChange={setNewKind} />
-        <Button compact variant="secondary" disabled={locked || !newLabel.trim() || graph.components.length >= 40} onPress={addComponent}>Add component</Button>
+        <Button compact variant="secondary" disabled={locked || !newLabel.trim() || graph.components.length >= MAX_COMPONENTS} onPress={addComponent}>Add component</Button>
       </View> : null}
-      <Text style={styles.heading}>Connections ({shownGraph.connections.length}/80)</Text>
+      <Text style={styles.heading}>Connections ({shownGraph.connections.length}/{MAX_CONNECTIONS})</Text>
       {!shownGraph.connections.length ? <Text style={styles.notice}>No connections yet.</Text> : null}
       {shownGraph.connections.map((connection) => {
         const fromName = shownGraph.components.find((component) => component.id === connection.from)?.label ?? connection.from;
@@ -140,8 +235,8 @@ export function SystemDesignWorkbench({ node, document, disabled, busy, submitte
         return <View key={connection.id} style={styles.card}>
           <Text style={styles.body}>{fromName} → {toName}{readonly && connection.label ? ` · ${connection.label}` : ""}</Text>
           {!readonly ? <>
-            <TextInput style={styles.input} value={connection.label ?? ""} maxLength={160} editable={!locked} placeholder="Connection label (optional)" placeholderTextColor={theme.colors.textMuted} accessibilityLabel={`Connection label from ${fromName} to ${toName}`} onChangeText={(label) => setGraph((current) => ({ ...current, connections: current.connections.map((candidate) => candidate.id === connection.id ? { ...candidate, label } : candidate) }))} />
-            <Button compact variant="quiet" accessibilityLabel={`Remove connection from ${fromName} to ${toName}`} disabled={locked} onPress={() => setGraph((current) => ({ ...current, connections: current.connections.filter((candidate) => candidate.id !== connection.id) }))}>Remove connection</Button>
+            <TextInput style={styles.input} value={connection.label ?? ""} maxLength={MAX_LABEL} editable={!locked} placeholder="Connection label (optional)" placeholderTextColor={theme.colors.textMuted} accessibilityLabel={`Connection label from ${fromName} to ${toName}`} onChangeText={(label) => editGraph((current) => relabelDiagramConnection(current, connection.id, label))} />
+            <Button compact variant="quiet" accessibilityLabel={`Remove connection from ${fromName} to ${toName}`} disabled={locked} onPress={() => editGraph((current) => disconnectDiagramConnection(current, connection.id))}>Remove connection</Button>
           </> : null}
         </View>;
       })}
@@ -149,13 +244,13 @@ export function SystemDesignWorkbench({ node, document, disabled, busy, submitte
         <Text style={styles.label}>Add a directed connection</Text>
         <ComponentSelector label="From component" components={graph.components} value={from} disabled={locked} onChange={setFrom} />
         <ComponentSelector label="To component" components={graph.components} value={to} disabled={locked} onChange={setTo} />
-        <TextInput style={styles.input} value={connectionLabel} maxLength={160} editable={!locked} placeholder="e.g. causes, follows, depends on (optional)" placeholderTextColor={theme.colors.textMuted} accessibilityLabel="New connection label" onChangeText={setConnectionLabel} />
-        <Button compact variant="secondary" disabled={locked || !from || !to || graph.connections.length >= 80} onPress={addConnection}>Connect components</Button>
+        <TextInput style={styles.input} value={connectionLabel} maxLength={MAX_LABEL} editable={!locked} placeholder="e.g. causes, follows, depends on (optional)" placeholderTextColor={theme.colors.textMuted} accessibilityLabel="New connection label" onChangeText={setConnectionLabel} />
+        <Button compact variant="secondary" disabled={locked || !from || !to || graph.connections.length >= MAX_CONNECTIONS} onPress={addConnection}>Connect components</Button>
       </View> : null}
       <Text style={styles.heading}>Diagram preview</Text>
       {source ? <MermaidDiagram key={source} source={source} decodeEntityLabels /> : <Text style={styles.notice}>{validGraph ? "Add a component to see your diagram." : "Give each component a name to update the preview and checks."}</Text>}
       {node.diagram.checks.length ? <View style={styles.section}>
-        <Text style={styles.heading}>Structure checks</Text>
+        <Text style={styles.heading}>Structural checks</Text>
         <Text style={styles.notice}>These check diagram structure. They do not prove correctness or learning. Keating reviews your explanation against the task criteria. Unmet checks do not block submission.</Text>
         {checks.map((check) => <View key={check.id} style={styles.check}>
           <Text style={[styles.label, { color: check.passed ? theme.colors.success : theme.colors.warning }]}>{check.passed ? "Met" : "Not yet"}: {check.label}</Text>
@@ -167,9 +262,14 @@ export function SystemDesignWorkbench({ node, document, disabled, busy, submitte
         {node.criteria.map((criterion, index) => <Text key={index} style={styles.body}>• {criterion}</Text>)}
       </View> : null}
       <Text style={styles.heading}>Explain your diagram</Text>
-      {readonly ? <MarkdownText content={saved!.explanation} /> : <TextInput style={[styles.input, styles.explanation]} multiline textAlignVertical="top" value={explanation} maxLength={8000} editable={!locked} accessibilityLabel="Diagram explanation" placeholder="Explain the components, their relationships, and how they answer the task." placeholderTextColor={theme.colors.textMuted} onChangeText={setExplanation} />}
-      {!readonly ? <Button disabled={locked || !validGraph || !graph.components.length || !explanation.trim()} loading={busy} onPress={() => void submit()}>Submit diagram</Button> : null}
+      {readonly ? <MarkdownText content={saved!.explanation} /> : <TextInput style={[styles.input, styles.explanation]} multiline textAlignVertical="top" value={explanation} maxLength={MAX_EXPLANATION} editable={!locked} accessibilityLabel="Diagram explanation" placeholder="Explain the components, their relationships, and how they answer the task." placeholderTextColor={theme.colors.textMuted} onChangeText={editExplanation} />}
+      {!readonly ? <>
+        <Button disabled={locked || !validGraph || !graph.components.length || !explanation.trim()} loading={busy} onPress={() => void submit()}>Submit diagram</Button>
+        <Button compact variant="secondary" disabled={locked || !validGraph} onPress={() => void saveDraft()}>Save draft</Button>
+        <Text accessibilityLiveRegion="polite" style={styles.notice}>{!restored ? "Restoring draft…" : !validGraph ? "Name every component before saving or submitting." : !graph.components.length || !explanation.trim() ? "Add a component and an explanation to submit." : saveStatus}</Text>
+      </> : null}
     </>}
+    {storageError ? <Text accessibilityRole="alert" style={styles.error}>{storageError}</Text> : null}
     {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
   </View>;
 }

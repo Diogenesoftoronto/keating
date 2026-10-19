@@ -1,3 +1,4 @@
+import { MODEL_PREFERENCES } from "@keating/runtime-config";
 import { browserInputMessages } from "../lib/browser-model-input";
 import {
 	createAssistantMessageEventStream,
@@ -88,11 +89,7 @@ export function withProviderWebSearch(
 }
 
 const AUXILIARY_SEARCH_PROVIDERS = ["openai", "google", "anthropic"] as const;
-const PREFERRED_AUXILIARY_SEARCH_MODELS: Record<(typeof AUXILIARY_SEARCH_PROVIDERS)[number], readonly string[]> = {
-	openai: ["gpt-5-mini", "gpt-5.6-sol", "gpt-5.5", "gpt-5.4", "gpt-4.1-mini"],
-	google: ["gemini-2.5-flash", "gemini-3.5-flash", "gemini-3.1-pro-preview"],
-	anthropic: ["claude-haiku-4-5", "claude-sonnet-4-6", "claude-sonnet-5"],
-};
+const PREFERRED_AUXILIARY_SEARCH_MODELS: Record<(typeof AUXILIARY_SEARCH_PROVIDERS)[number], readonly string[]> = MODEL_PREFERENCES.auxiliarySearch;
 
 export function selectAuxiliaryWebSearchModel(
 	models: readonly Model<Api>[],

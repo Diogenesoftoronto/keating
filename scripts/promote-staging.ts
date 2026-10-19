@@ -8,11 +8,8 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 
-export const WAIT_MS = 8 * 60 * 60 * 1000;
-const PROJECT = "314d5558-957b-4e19-9ae0-bc08c8b5cf78";
-const SERVICE = "a3937c22-5298-4079-aa29-e009e7efbe61";
-const STAGING = "65227e01-d875-4707-8467-e27165c820b8";
-const PRODUCTION = "343e403a-fac6-4a18-a413-d3bfd5f758f1";
+import { WAIT_MS, STAGING_PROJECT as PROJECT, STAGING_SERVICE as SERVICE, STAGING_ENVIRONMENT as STAGING, PRODUCTION_ENVIRONMENT as PRODUCTION, PRODUCTION_URL } from "./ops/config.js";
+export { WAIT_MS } from "./ops/config.js";
 const SHA = /^[0-9a-f]{40}$/;
 const DIGEST = /^[0-9a-f]{64}$/;
 export type Candidate = { sha: string; branch: string; dirty: boolean; fingerprint: string; files: number; createdAt: string; verifiedAt?: string; promotionEligible: boolean; deploymentId: string; url: string; archivePath?: string; archiveSha256?: string };
@@ -158,7 +155,7 @@ async function promote(candidate: Candidate, directory: string, immediate: boole
     if (!state.ready) throw new Error(state.reason);
   }
   const archivePath = verifyArchive(candidate);
-  const productionUrl = process.env.PRODUCTION_URL || "https://keating.help/";
+  const productionUrl = process.env.PRODUCTION_URL || `${PRODUCTION_URL}/`;
   healthUrl(productionUrl);
   const temporary = mkdtempSync(join(tmpdir(), "keating-promotion-"));
   const operation = randomUUID();

@@ -1,6 +1,7 @@
 /** Background prediction research distilled into a bounded, synchronously served policy.
  * Scores predict a later recorded objective answer; they do not establish causal learning gain.
  */
+import { DEFAULT_MODELS } from "../../../runtime-config/src/index.js";
 import { ACTIVITY_KINDS, linkActivityOutcomes, validateActivityExposure,
   type ActivityExposure, type ActivityKind } from "./activity-learning.js";
 import { ACTIVITY_OBSERVATION_FEATURES, ACTIVITY_SIGNALS, ACTIVITY_QUESTION_FINGERPRINT, activityObservationFeatures,
@@ -8,7 +9,7 @@ import { ACTIVITY_OBSERVATION_FEATURES, ACTIVITY_SIGNALS, ACTIVITY_QUESTION_FING
 import type { OnlineDecisionRequest, OnlineDecisionTransport } from "./online-decision-policy.js";
 
 export const BACKGROUND_ACTIVITY_POLICY = Object.freeze({
-  featureVersion: "activity-observations-v1-kind-v1", model: "v3.5_default", maxExposures: 500,
+  featureVersion: "activity-observations-v1-kind-v1", model: DEFAULT_MODELS.judgement.tabular, maxExposures: 500,
   minTrainRows: 20, minValidationRows: 5, maxValidationRows: 32, minKindRows: 5,
   maxPrototypes: 8, maxTestRows: 64, radius: 0.25, ttlMs: 86_400_000, timeoutMs: 60_000,
 } as const);
@@ -23,7 +24,7 @@ interface PolicyValidation {
 export interface BackgroundActivityPolicy {
   version: 1; featureVersion: typeof BACKGROUND_ACTIVITY_POLICY.featureVersion;
   questionFingerprint: string;
-  model: "v3.5_default"; judgeModel: string; createdAt: number; expiresAt: number;
+  model: typeof DEFAULT_MODELS.judgement.tabular; judgeModel: string; createdAt: number; expiresAt: number;
   kinds: ActivityKind[];
   /** Raw observation bounds and centers come exclusively from training rows. */
   bounds: { min: number[]; max: number[] };
@@ -40,7 +41,7 @@ export type BackgroundActivityReason = "invalid-or-unattributed-history" | "fewe
   | "local-policy-has-insufficient-holdout-coverage" | "held-out-model-and-local-predictions-improved"
   | "research-cancelled" | "research-unavailable-or-timed-out";
 export interface BackgroundActivityReceipt {
-  version: 1; status: BackgroundActivityStatus; model: "v3.5_default"; asOf: number;
+  version: 1; status: BackgroundActivityStatus; model: typeof DEFAULT_MODELS.judgement.tabular; asOf: number;
   target: "next-linked-objective-score";
   counts: { exposures: number; labelled: number; train: number; validation: number; kinds: number; prototypes: number };
   validation: PolicyValidation | null; reasons: BackgroundActivityReason[];
@@ -141,7 +142,7 @@ export function rankBackgroundActivityKinds(policy: BackgroundActivityPolicy | n
 
 /** Builds the batch before any held-out label is examined for model or prototype selection. */
 export function buildBackgroundActivityBatch(exposures: readonly ActivityExposure[], judgeModel: string, asOf: number): ResearchBatch {
-  const receipt: BackgroundActivityReceipt = { version: 1, status: "insufficient-history", model: "v3.5_default", asOf,
+  const receipt: BackgroundActivityReceipt = { version: 1, status: "insufficient-history", model: DEFAULT_MODELS.judgement.tabular, asOf,
     target: "next-linked-objective-score", counts: { exposures: Math.min(exposures.length, 500), labelled: 0, train: 0, validation: 0, kinds: 0, prototypes: 0 },
     validation: null, reasons: [], scope: "chronological-within-learner", causal: false, unaidedLearning: "unknown" };
   const batch: ResearchBatch = { request: null, receipt, train: [], validation: [], kinds: [], bounds: { min: [], max: [] }, prototypes: [], baselinePredictions: [] };
@@ -191,7 +192,7 @@ export function buildBackgroundActivityBatch(exposures: readonly ActivityExposur
     return matching.length >= 5 ? mean(matching.map(example => example.outcome!.score!)) : globalMean;
   });
   const features = (observations: readonly number[], kind: ActivityKind) => [...observations, ...ACTIVITY_KINDS.map(value => Number(value === kind))];
-  batch.request = { schemaVersion: 1, model: "v3.5_default", task: "regression", featureNames: [...BACKGROUND_ACTIVITY_FEATURES],
+  batch.request = { schemaVersion: 1, model: DEFAULT_MODELS.judgement.tabular, task: "regression", featureNames: [...BACKGROUND_ACTIVITY_FEATURES],
     trainFeatures: batch.train.map((row, index) => features(trainFeatures[index], row.candidate.kind)), trainTargets: batch.train.map(row => row.outcome!.score!),
     testFeatures: [...batch.validation.map(row => features(activityObservationFeatures(row.observations), row.candidate.kind)),
       ...batch.prototypes.flatMap(center => batch.kinds.map(kind => features(center, kind)))] };
@@ -218,14 +219,14 @@ export async function learnBackgroundActivityPolicy(options: { exposures: readon
     if (controller.signal.aborted) { await cancelled; return result(); }
     const response = await Promise.race([options.transport(batch.request, controller.signal), cancelled]);
     if (controller.signal.aborted || options.signal.aborted) throw new Error("background_activity_cancelled");
-    if (!record(response) || response.model !== "v3.5_default" || !Array.isArray(response.predictions)
+    if (!record(response) || response.model !== DEFAULT_MODELS.judgement.tabular || !Array.isArray(response.predictions)
       || response.predictions.length !== batch.request.testFeatures.length || !response.predictions.every(probability)) {
       receipt.status = "invalid-response"; receipt.reasons = ["invalid-provider-predictions"]; return result();
     }
     const predictions = response.predictions as number[];
     const policy: BackgroundActivityPolicy = { version: 1, featureVersion: BACKGROUND_ACTIVITY_POLICY.featureVersion,
       questionFingerprint: BACKGROUND_ACTIVITY_QUESTION_FINGERPRINT,
-      model: "v3.5_default", judgeModel: options.judgeModel, createdAt: options.asOf, expiresAt: options.asOf + BACKGROUND_ACTIVITY_POLICY.ttlMs,
+      model: DEFAULT_MODELS.judgement.tabular, judgeModel: options.judgeModel, createdAt: options.asOf, expiresAt: options.asOf + BACKGROUND_ACTIVITY_POLICY.ttlMs,
       kinds: [...batch.kinds], bounds: batch.bounds, trainRows: batch.train.length,
       prototypes: batch.prototypes.map((features, index) => ({ features, scores: predictions.slice(batch.validation.length + index * batch.kinds.length,
         batch.validation.length + (index + 1) * batch.kinds.length) })),

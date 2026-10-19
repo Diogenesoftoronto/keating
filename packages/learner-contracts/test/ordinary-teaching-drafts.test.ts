@@ -4,7 +4,7 @@ import type { JudgementAnswer, JudgementCaller, JudgementRequest } from "../src/
 import type { TeachingPolicyTurn } from "../src/judgement/teaching-policy-types.js";
 
 const turn: TeachingPolicyTurn = { learnerMessage: "Help me with this code.", conversation: [], learnerEvidence: [], availableTools: [], toolResults: [], sources: [], assessment: "none", improvementRuns: 0, domain: "unknown" };
-type Scores = Record<string, string | number>;
+type Scores = Record<string, string | number | undefined>;
 function judge(scores: (request: JudgementRequest) => Scores = () => ({})): JudgementCaller {
   return async request => {
     const override = scores(request);
