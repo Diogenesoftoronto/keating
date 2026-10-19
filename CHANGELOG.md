@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.15
+
+- Tell the tutor when each learner message was sent and how long since the previous one, so it can reorient learners returning after days or weeks and reason about dates and deadlines.
+- Show best-effort replies that did not pass every review check inside a "Not fully verified" card, and show withheld turns as a distinct card instead of plain text.
+- Fix a reload during drafting re-sending the last interactive learner response and restarting the reply.
+
 ## 4.0.14
 
 - Release ordinary usable replies in one attempt when semantic scores are uncertain; allow only one repair for concrete semantic failures before best-effort text.

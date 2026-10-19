@@ -21,6 +21,7 @@ import type {
 } from "@keating/learner-contracts";
 import { projectActiveWork } from "@keating/learner-contracts";
 import { buildActivityLearningBatch } from "../../../packages/learner-contracts/src/judgement/activity-learning";
+import { withReviewNotice } from "../keating/judgement/review-notice";
 import { createDraftGateJudgementCaller, withTeachingDraftGate, type TeachingDraftReceipt } from "../keating/judgement/draft-gate";
 import { DEFAULT_TEACHER_PERSONA } from "../keating/persona";
 import operationalProtocolMarkdown from "../keating/prompts/operational-protocol.md?raw";
@@ -134,7 +135,7 @@ describe("private teaching draft stream", () => {
     expect(updates.at(-1)?.phase).toBe("released");
     expect(updates.at(-1)?.attempts).toHaveLength(2);
     expect(updates.at(-1)?.reason).toBe("best-effort-draft");
-    expect(text(result)).toBe("REJECTED PRIVATE DRAFT");
+    expect(text(result)).toBe(withReviewNotice("unverified", "REJECTED PRIVATE DRAFT"));
     expect(JSON.stringify(events)).toContain("REJECTED PRIVATE DRAFT");
   });
 
@@ -342,7 +343,7 @@ describe("private teaching draft stream", () => {
     })(MODEL, context());
     const { events, result } = await collect(output);
     expect(events.map((event) => event.type)).toEqual(["start", "text_start", "text_delta", "text_end", "done"]);
-    expect(text(result)).toBe("NEVER DISPLAY THIS");
+    expect(text(result)).toBe(withReviewNotice("unverified", "NEVER DISPLAY THIS"));
     expect(JSON.stringify(events)).not.toMatch(/PRIVATE THINKING|PRIVATE STREAM/);
   });
 
@@ -387,7 +388,7 @@ describe("private teaching draft stream", () => {
     })(MODEL, context()));
     expect(updates.at(-1)?.reason).toBe("best-effort-draft");
     expect(updates.at(-1)?.attempts[0]?.status).not.toBe("pass");
-    expect(text(result)).toBe("PRIVATE DRAFT");
+    expect(text(result)).toBe(withReviewNotice("unverified", "PRIVATE DRAFT"));
   });
 
   test("reports context loading failures without exposing exception text", async () => {
@@ -405,7 +406,7 @@ describe("private teaching draft stream", () => {
       if (++calls === 1) throw new Error("PRIVATE provider failure");
       return streamOf(message("REJECTED PRIVATE DRAFT"));
     }, { maxAttempts: 2 })(MODEL, context()));
-    expect(text(result)).toBe("REJECTED PRIVATE DRAFT");
+    expect(text(result)).toBe(withReviewNotice("unverified", "REJECTED PRIVATE DRAFT"));
     expect(calls).toBe(2);
   });
 

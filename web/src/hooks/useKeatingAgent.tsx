@@ -23,7 +23,7 @@ import {
 } from "../keating/account-evolution";
 import { useDialogState } from "./useDialogState";
 import { type Model, type Api, type Context } from "@earendil-works/pi-ai";
-import { toModelMessages } from "../keating/flue/model-messages";
+import { toModelMessages, toModelMessagesWithTime } from "../keating/flue/model-messages";
 import { SettingsDialog } from "../components/SettingsDialog";
 import { StartTab } from "../components/settings/StartTab";
 import {
@@ -1513,7 +1513,7 @@ export function useKeatingAgent(
       });
       const agent: FlueConversation = new FlueConversation({
         initialState: nextState,
-        convertToLlm: toModelMessages,
+        convertToLlm: (messages) => toModelMessagesWithTime(messages),
         streamFn: withDesktopNeedleRecall(withWebMemoryBank(withTeachingAdjustment(withTeachingDraftGate(hybridStreamFn, {
           sessionId: agentSessionId,
           basePrompt: () => systemPromptBaseRef.current,
