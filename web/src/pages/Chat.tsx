@@ -36,9 +36,10 @@ import { getInitPromise, keatingStorage, sessions } from "../hooks/keating-stora
 import { ChatOnboarding, hasCompletedChatOnboarding } from "../components/ChatOnboarding";
 import { TourSpotlight } from "../components/tour/TourSpotlight";
 import { hasSeenInterfaceTour, subscribeInterfaceTourRequests } from "../keating/interface-tour";
-import { promptNotOrganicAccess } from "../components/NotOrganicAccessPromptDialog";
+import { hasNotOrganicProductSession, promptNotOrganicAccess } from "../components/NotOrganicAccessPromptDialog";
 import { NotOrganicAccountMenuItem } from "../components/NotOrganicAccountMenuItem";
 import { notOrganicCheckoutReturn } from "../notorganic-provider/checkout-return";
+import { beginNotOrganicAuthorization } from "../notorganic-provider";
 import { useSeo } from "../hooks/useSeo";
 import { useMediaQuery } from "../hooks/use-media-query";
 import { isCanvasFeatureEnabled } from "../lib/feature-flags";
@@ -1631,7 +1632,8 @@ function ChatContent() {
       {showOnboarding && <div className={css({ flex: 1, minHeight: 0, overflowY: "auto", paddingInline: "1rem" })}>
         <ChatOnboarding
           onUseKeating={chooseKeatingModel}
-          onConnectAccount={async () => { await promptNotOrganicAccess({ allowSignIn: true }); }}
+          onConnectAccount={() => beginNotOrganicAuthorization()}
+          isSignedIn={hasNotOrganicProductSession}
           onChooseModel={openModelSelector}
           onSkip={() => setShowOnboarding(false)}
           onComplete={goal => { setOnboardingGoal(goal); setShowOnboarding(false); }}

@@ -74,7 +74,10 @@ export function markChatOnboarding(outcome: OnboardingOutcome, storage: Onboardi
 
 export interface ChatOnboardingProps {
 	onUseKeating: () => void | Promise<void>;
+	/** Starts Not Organic sign-in. Normally navigates away; onboarding resumes on return. */
 	onConnectAccount: () => void | Promise<void>;
+	/** Whether a Not Organic session already exists. Signed-in learners never see the sign-in step. */
+	isSignedIn?: () => Promise<boolean>;
 	onChooseModel: () => void | Promise<void>;
 	onComplete: (goal?: string) => void;
 	onSkip: () => void;
@@ -172,7 +175,24 @@ const DESCRIPTIONS: Record<string, string> = {
 };
 
 /** Non-modal setup so account and model dialogs can open without competing focus traps. */
-export function ChatOnboarding({ onUseKeating, onConnectAccount, onChooseModel, onComplete, onSkip, onStartTour, initialStep }: ChatOnboardingProps) {
+/** The neighbouring step, passing over the sign-in step when the learner already has an account session. */
+export function adjacentOnboardingStep(steps: readonly { id: string }[], from: number, direction: 1 | -1, signedInToKeating: boolean): number {
+	let target = from + direction;
+	while (signedInToKeating && steps[target]?.id === "setup") target += direction;
+	return Math.min(Math.max(target, 0), steps.length - 1);
+}
+
+/** Set just before the sign-in redirect so a return without a session reads as a failed attempt. */
+const SIGN_IN_ATTEMPT_KEY = "keating:onboarding-sign-in-attempted";
+function sessionFlag(action: "read" | "set" | "clear"): boolean {
+	try {
+		if (action === "set") sessionStorage.setItem(SIGN_IN_ATTEMPT_KEY, "1");
+		else if (action === "clear") sessionStorage.removeItem(SIGN_IN_ATTEMPT_KEY);
+		return sessionStorage.getItem(SIGN_IN_ATTEMPT_KEY) === "1";
+	} catch { return false; }
+}
+
+export function ChatOnboarding({ onUseKeating, onConnectAccount, isSignedIn, onChooseModel, onComplete, onSkip, onStartTour, initialStep }: ChatOnboardingProps) {
 	const [step, setStep] = useState(() => initialStep ?? readChatOnboardingStep());
 	const [access, setAccess] = useState<"keating" | "byok" | "offline">("keating");
 	const [profile, setProfile] = useState<DeclaredLearnerProfile>(() => loadDeclaredProfile());
@@ -186,8 +206,29 @@ export function ChatOnboarding({ onUseKeating, onConnectAccount, onChooseModel, 
 	const lastStep = steps.length - 1;
 	const current = steps[step] ?? steps[0];
 	const track = useOnboardingAnalytics();
+	// null while checking. Without a checker (stories) the step is shown but never gated.
+	const [signedIn, setSignedIn] = useState<boolean | null>(isSignedIn ? null : false);
+	const [signInFailed] = useState(() => sessionFlag("read"));
+	const gated = !!isSignedIn && current.id === "setup" && access === "keating" && signedIn !== true;
+	useEffect(() => {
+		if (!isSignedIn) return;
+		let live = true;
+		isSignedIn().then(value => { if (live) setSignedIn(value); }, () => { if (live) setSignedIn(false); });
+		return () => { live = false; };
+	}, [isSignedIn]);
+	/** The sign-in step exists only for learners choosing Keating who are not yet signed in. */
+	const stepFrom = useCallback((from: number, direction: 1 | -1) =>
+		adjacentOnboardingStep(steps, from, direction, access === "keating" && signedIn === true), [steps, access, signedIn]);
 
 	useEffect(() => { title.current?.focus({ preventScroll: true }); }, [step]);
+
+	// Returning from sign-in (or reloading) lands on the sign-in step; move on once a session exists.
+	useEffect(() => {
+		if (current.id !== "setup" || access !== "keating" || signedIn !== true) return;
+		sessionFlag("clear");
+		goTo(stepFrom(step, 1));
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [current.id, access, signedIn]);
 
 	// One view event per screen reached, positions and ids only.
 	useEffect(() => {
@@ -246,7 +287,16 @@ export function ChatOnboarding({ onUseKeating, onConnectAccount, onChooseModel, 
 			finally { setPending(false); }
 		}
 		track("onboarding_step_completed", { step_id: current.id, step_index: step, skipped: false });
-		goTo(Math.min(step + 1, lastStep));
+		goTo(stepFrom(step, 1));
+	}
+	async function signIn() {
+		// Save the position first: sign-in leaves the page and onboarding resumes here.
+		persist(step);
+		sessionFlag("set");
+		setPending(true); setError("");
+		try { await onConnectAccount(); }
+		catch { sessionFlag("clear"); setError("Sign-in couldn’t open. Try again, or go back and choose your own provider."); }
+		finally { setPending(false); }
 	}
 
 	const setupTitle = access === "keating" ? "Make yourself at home." : access === "offline" ? "Set up your offline tutor." : "Connect your model.";
@@ -300,7 +350,13 @@ export function ChatOnboarding({ onUseKeating, onConnectAccount, onChooseModel, 
 				<label><input type="radio" name="onboarding-access" value="byok" checked={access === "byok"} onChange={() => { setAccess("byok"); setError(""); }} /><span><strong>Bring your own key</strong><span>Your provider, your choice of model</span></span></label>
 				{desktopOfflineBridge() && <label><input type="radio" name="onboarding-access" value="offline" checked={access === "offline"} onChange={() => { setAccess("offline"); setError(""); }} /><span><strong>Use an offline tutor</strong><span>Optional 1.55 GB download · No account needed</span></span></label>}
 			</fieldset>}
-			{current.id === "setup" && access === "keating" && <button type="button" className="chat-onboarding__primary" disabled={pending} onClick={() => void openSetup(onConnectAccount)}>{pending ? "Opening…" : "Connect or create an account"}</button>}
+			{current.id === "setup" && access === "keating" && <>
+				<button type="button" className="chat-onboarding__primary" disabled={pending || signedIn === null} onClick={() => void signIn()}>{pending ? "Opening sign-in…" : "Sign in or create an account"}</button>
+				{gated && signedIn === false && (signInFailed && !error
+					? <p className="chat-onboarding__error" role="alert">Sign-in didn’t finish, so you’re not signed in yet. Try again, or go back and choose your own provider.</p>
+					: <p className="chat-onboarding__hint" role="status">Sign in to continue. Prefer not to? Go back and bring your own key instead.</p>)}
+				{gated && signedIn === null && <p className="chat-onboarding__hint" role="status">Checking your account…</p>}
+			</>}
 			{current.id === "setup" && access === "byok" && <button type="button" className="chat-onboarding__primary" disabled={pending} onClick={() => void openSetup(onChooseModel)}>{pending ? "Opening…" : "Choose a model and provider"}</button>}
 			{current.id === "setup" && access === "offline" && <><OfflineTutorSettings /><button type="button" className="chat-onboarding__secondary" disabled={pending} onClick={() => void openSetup(onChooseModel)}>Choose the offline model</button></>}
 			{current.id === "identity" && mode === "form" && <div className="chat-onboarding__fields"><IdentityFields {...groupProps} /><LanguageFields {...groupProps} /></div>}
@@ -349,11 +405,11 @@ export function ChatOnboarding({ onUseKeating, onConnectAccount, onChooseModel, 
 			{error && <p className="chat-onboarding__error" role="alert">{error}</p>}
 		</div>
 		<footer className="chat-onboarding__navigation">
-			<div>{step > 0 && <button type="button" className="chat-onboarding__secondary" disabled={pending} onClick={() => { setError(""); goTo(step - 1); }}>Back</button>}</div>
+			<div>{step > 0 && <button type="button" className="chat-onboarding__secondary" disabled={pending} onClick={() => { setError(""); goTo(stepFrom(step, -1)); }}>Back</button>}</div>
 			<div className="chat-onboarding__advance">
 				{current.group && <button type="button" className="chat-onboarding__skip" disabled={pending} onClick={skipStep}>Skip this</button>}
 				{!(current.id === "identity" && mode === "conversation" && proposals === null) && (step < lastStep
-					? <button type="button" className="chat-onboarding__secondary" disabled={pending} onClick={() => void next()}>{pending && current.id === "access" ? "Selecting…" : "Next"}</button>
+					? !(gated) && <button type="button" className="chat-onboarding__secondary" disabled={pending} onClick={() => void next()}>{pending && current.id === "access" ? "Selecting…" : "Next"}</button>
 					: <button type="button" className="chat-onboarding__primary" onClick={finish}>Start chatting</button>)}
 			</div>
 		</footer>

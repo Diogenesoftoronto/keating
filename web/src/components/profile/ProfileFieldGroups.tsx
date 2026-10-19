@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
 	type DeclaredLearnerProfile,
+	type LanguageFluency,
 	type PursuitStatus,
 	currentPursuit,
 	retirePursuit,
@@ -70,6 +71,67 @@ function Field({ id, label, hint, children }: { id: string; label: string; hint?
 	);
 }
 
+const OTHER = "__other__";
+
+/**
+ * A dropdown of common answers with an "Other…" escape to a short text box,
+ * so unusual answers stay possible without inviting a free-for-all.
+ */
+function ChoiceWithOther({ id, ariaLabel, value, options, otherLabel, placeholder, maxLength, disabled, onChange }: {
+	id: string;
+	ariaLabel: string;
+	value: string;
+	options: readonly string[];
+	otherLabel: string;
+	placeholder: string;
+	maxLength: number;
+	disabled?: boolean;
+	onChange: (value: string) => void;
+}) {
+	const listed = options.find(option => option.toLowerCase() === value.trim().toLowerCase());
+	// "Other" must stay open while its box is still empty.
+	const [otherOpen, setOtherOpen] = useState(false);
+	const other = !listed && (value.trim() !== "" || otherOpen);
+	return (
+		<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem", minWidth: 0 })}>
+			<Select id={id} aria-label={ariaLabel} disabled={disabled} value={other ? OTHER : listed ?? ""} onValueChange={(next) => {
+				setOtherOpen(next === OTHER);
+				onChange(next === OTHER ? "" : next);
+			}}>
+				<option value="">Not answered</option>
+				{options.map(option => <option key={option} value={option}>{option}</option>)}
+				<option value={OTHER}>{otherLabel}</option>
+			</Select>
+			{other && <input
+				id={`${id}-other`}
+				aria-label={`${ariaLabel} (other)`}
+				className={fieldInput()}
+				type="text"
+				maxLength={maxLength}
+				disabled={disabled}
+				autoFocus={otherOpen && value === ""}
+				value={value}
+				onChange={(event) => onChange(event.target.value)}
+				placeholder={placeholder}
+			/>}
+		</div>
+	);
+}
+
+const PRONOUN_OPTIONS = ["she/her", "he/him", "they/them", "she/they", "he/they", "Any pronouns", "Use my name"] as const;
+const LANGUAGE_OPTIONS = [
+	"Arabic", "Bengali", "Cantonese", "Dutch", "English", "Farsi", "French", "German", "Greek", "Gujarati", "Hebrew",
+	"Hindi", "Indonesian", "Italian", "Japanese", "Korean", "Malay", "Mandarin Chinese", "Polish", "Portuguese",
+	"Punjabi", "Romanian", "Russian", "Somali", "Spanish", "Swahili", "Tagalog", "Tamil", "Thai", "Turkish",
+	"Ukrainian", "Urdu", "Vietnamese",
+] as const;
+const FLUENCY_LABELS: Record<LanguageFluency, string> = {
+	beginner: "Beginner",
+	intermediate: "Intermediate",
+	fluent: "Fluent",
+	native: "Native speaker",
+};
+
 function ToggleRow({ title, description, checked, onChange }: { title: string; description: string; checked: boolean; onChange: (next: boolean) => void }) {
 	return (
 		<div className={toggleRowClass}>
@@ -106,15 +168,16 @@ export function IdentityFields({ profile, onChange, idPrefix = "profile" }: Prof
 						placeholder="Sam"
 					/>
 				</Field>
-				<Field id={`${idPrefix}-pronouns`} label="Pronouns" hint="Optional. Free text — write whatever is right for you.">
-					<input
+				<Field id={`${idPrefix}-pronouns`} label="Pronouns" hint="Optional. Choose “Something else” if yours aren’t listed.">
+					<ChoiceWithOther
 						id={`${idPrefix}-pronouns`}
-						className={fieldInput()}
-						type="text"
-						maxLength={40}
+						ariaLabel="Pronouns"
 						value={profile.pronouns}
-						onChange={(event) => onChange({ pronouns: event.target.value })}
-						placeholder="they/them"
+						options={PRONOUN_OPTIONS}
+						otherLabel="Something else…"
+						placeholder="xe/xem"
+						maxLength={40}
+						onChange={(pronouns) => onChange({ pronouns })}
 					/>
 				</Field>
 			</div>
@@ -145,6 +208,16 @@ export function IdentityFields({ profile, onChange, idPrefix = "profile" }: Prof
 }
 
 export function LanguageFields({ profile, onChange, idPrefix = "profile" }: ProfileGroupProps) {
+	const languages = profile.otherLanguages.length ? profile.otherLanguages : [""];
+	const fluencies = profile.otherLanguageFluencies ?? {};
+	const fluencyFor = (language: string): LanguageFluency | "" => Object.hasOwn(fluencies, language) ? fluencies[language] ?? "" : "";
+	/** Ratings follow their language through renames and are dropped with it. */
+	function changeLanguages(next: string[], renamed?: { from: string; to: string }) {
+		const entries = Object.entries(fluencies).filter(([language]) => next.includes(language));
+		const carried = renamed ? fluencyFor(renamed.from) : "";
+		if (renamed?.to.trim() && carried && !entries.some(([language]) => language === renamed.to)) entries.push([renamed.to, carried]);
+		onChange({ otherLanguages: next, otherLanguageFluencies: Object.fromEntries(entries) });
+	}
 	return (
 		<div className={groupClass}>
 			<div className={rowClass}>
@@ -156,18 +229,19 @@ export function LanguageFields({ profile, onChange, idPrefix = "profile" }: Prof
 					</Select>
 				</Field>
 				<Field id={`${idPrefix}-explain-language`} label="Explain things in" hint="Any language. Keating will teach in it even when the interface stays in English.">
-					<input
+					<ChoiceWithOther
 						id={`${idPrefix}-explain-language`}
-						className={fieldInput()}
-						type="text"
-						maxLength={60}
+						ariaLabel="Explain things in"
 						value={profile.explainInLanguage}
-						onChange={(event) => onChange({ explainInLanguage: event.target.value })}
-						placeholder="English"
+						options={LANGUAGE_OPTIONS}
+						otherLabel="Another language…"
+						placeholder="Yoruba"
+						maxLength={60}
+						onChange={(explainInLanguage) => onChange({ explainInLanguage })}
 					/>
 				</Field>
 			</div>
-			<div className={rowClass}>
+			<div>
 				<Field id={`${idPrefix}-fluency`} label="Your fluency in that language" hint="Sets vocabulary and sentence length — not difficulty.">
 					<Select id={`${idPrefix}-fluency`} aria-label="Fluency in the language of instruction" value={profile.instructionLanguageFluency} onValueChange={(value) => onChange({ instructionLanguageFluency: value as DeclaredLearnerProfile["instructionLanguageFluency"] })}>
 						<option value="">Not answered</option>
@@ -177,17 +251,43 @@ export function LanguageFields({ profile, onChange, idPrefix = "profile" }: Prof
 						<option value="native">Native speaker</option>
 					</Select>
 				</Field>
-				<Field id={`${idPrefix}-other-languages`} label="Other languages you speak" hint="Comma separated. Lets Keating borrow a word when it explains something better.">
-					<input
-						id={`${idPrefix}-other-languages`}
-						className={fieldInput()}
-						type="text"
-						value={listValue(profile.otherLanguages)}
-						onChange={(event) => onChange({ otherLanguages: parseList(event.target.value) })}
-						placeholder="French, Tagalog"
-					/>
-				</Field>
 			</div>
+			<fieldset className={css({ display: "flex", flexDirection: "column", gap: "0.75rem", border: 0, padding: 0, margin: 0, minWidth: 0 })}>
+				<legend className={labelClass}>Other languages you speak</legend>
+				<p className={hintClass}>One language per row, with your fluency in it. Lets Keating borrow a word when it explains something better.</p>
+				{languages.map((language, index) => {
+					const name = language.trim() || `language ${index + 1}`;
+					return <div key={index} className={rowClass}>
+						<ChoiceWithOther
+							id={`${idPrefix}-other-language-${index}`}
+							ariaLabel={`Other language ${index + 1}`}
+							value={language}
+							options={LANGUAGE_OPTIONS}
+							otherLabel="Another language…"
+							placeholder="Yoruba"
+							maxLength={60}
+							onChange={(next) => changeLanguages(languages.map((value, row) => row === index ? next : value), { from: language, to: next })}
+						/>
+						<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", minWidth: 0, "& > :first-child": { flex: 1, minWidth: 0 } })}>
+							<Select id={`${idPrefix}-other-fluency-${index}`} aria-label={`Fluency in ${name}`} value={fluencyFor(language)} disabled={!language.trim()}
+								onValueChange={(value) => onChange({ otherLanguageFluencies: Object.fromEntries([
+									...Object.entries(fluencies).filter(([entry]) => entry !== language),
+									...(value ? [[language, value as LanguageFluency]] : []),
+								]) })}>
+								<option value="">Fluency</option>
+								{(Object.keys(FLUENCY_LABELS) as LanguageFluency[]).map(level => <option key={level} value={level}>{FLUENCY_LABELS[level]}</option>)}
+							</Select>
+							<button type="button" className={outlineButton()} aria-label={`Remove ${name}`}
+								disabled={languages.length === 1 && !language.trim()}
+								onClick={() => changeLanguages(languages.filter((_, row) => row !== index))}>Remove</button>
+						</div>
+					</div>;
+				})}
+				<div>
+					<button type="button" className={outlineButton()} disabled={languages.length >= 8 || languages.some(language => !language.trim())}
+						onClick={() => changeLanguages([...languages, ""])}>Add another language</button>
+				</div>
+			</fieldset>
 		</div>
 	);
 }
