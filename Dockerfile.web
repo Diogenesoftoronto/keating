@@ -9,6 +9,9 @@ COPY packages/learner-contracts/ ./
 WORKDIR /app/packages/agent-runtime
 COPY packages/agent-runtime/ ./
 
+WORKDIR /app/packages/runtime-config
+COPY packages/runtime-config/ ./
+
 WORKDIR /app/spikes/flue-host
 COPY spikes/flue-host/package.json spikes/flue-host/bun.lock ./
 RUN bun install --frozen-lockfile
