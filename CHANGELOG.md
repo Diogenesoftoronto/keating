@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.17
+
+### Operations and configuration
+- Add documented, guarded worktree, verification, release, staging, promotion, status and mutation commands with matching Devenv tasks.
+- Centralize public model roles, service URLs, Not Organic scopes and cost limits in `packages/runtime-config`, with a guardrail against scattered model IDs.
+
+### Reliability and accessibility
+- Preserve queued learner answers with their originating session across navigation, and prevent mobile data clearing from restoring drafts.
+- Fix ordering-question validation, literal replacement text, TUI sidebar refresh, release-note insertion and lockfile version consistency.
+- Improve accessible settings, language entry, profile clearing, pricing retries and onboarding recovery.
+- Preserve mobile lesson and diagram drafts, prevent late dictation from restoring sent text, and keep chat from scrolling while the reader reviews earlier messages.
+
+### Maintainability and verification
+- Extract large agent, TUI, mobile, course and teaching functions; share diagram editing, question serialization, string distance and draft-store logic.
+- Expand behavioral and property tests and repair TypeScript 7 mutation testing support.
+- Local verification passed all nine typechecks, the production web build and root, web, contracts, Flue and runtime-config suites. Mobile retains one known native-core baseline failure.
+- Real browser, live TUI and device behavior remain unverified.
+
 ## 4.0.16
 
 - Add an interactive Diagram workbench for building and explaining relationship graphs (concept maps, cycles, process flows, system design interviews) on web and mobile, with structural checks the tutor reviews against the original brief and criteria.
