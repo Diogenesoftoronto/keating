@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS } from "../../packages/runtime-config/src/index.js";
 import { relative } from "node:path";
 import { join, resolve } from "node:path";
 import { spawn } from "node:child_process";
@@ -678,7 +679,7 @@ async function setupProject(cwd: string, args: string[]): Promise<void> {
     const answers = await runInteractiveSetup({
       runtimePreference: next.pi.runtimePreference,
       defaultProvider: next.pi.defaultProvider ?? DEFAULT_KEATING_CONFIG.pi.defaultProvider ?? "openai",
-      defaultModel: next.pi.defaultModel ?? DEFAULT_KEATING_CONFIG.pi.defaultModel ?? "gpt-5.5",
+      defaultModel: next.pi.defaultModel ?? DEFAULT_KEATING_CONFIG.pi.defaultModel ?? DEFAULT_MODELS.cli.openai,
       defaultThinking: next.pi.defaultThinking ?? "medium"
     });
 

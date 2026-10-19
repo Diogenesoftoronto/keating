@@ -31,8 +31,16 @@ describe("pricing availability", () => {
 	});
 	test("requires the feature gate and the complete public client contract", () => {
 		expect(isPublicCheckoutConfigured(completePublicConfig)).toBe(true);
-		for (const key of Object.keys(completePublicConfig)) {
+		for (const key of [
+			"VITE_NOTORGANIC_ENABLED", "VITE_NOTORGANIC_CHECKOUT_ENABLED",
+			"VITE_NOTORGANIC_PUBLIC_ISSUER", "VITE_NOTORGANIC_AUTHORIZATION_URL",
+			"VITE_NOTORGANIC_CLIENT_ID", "VITE_NOTORGANIC_REDIRECT_URI",
+		]) {
 			expect(isPublicCheckoutConfigured({ ...completePublicConfig, [key]: "" })).toBe(false);
+		}
+		// The scope is optional: an empty override derives the canonical grant.
+		for (const scope of [undefined, "", "   "]) {
+			expect(isPublicCheckoutConfigured({ ...completePublicConfig, VITE_NOTORGANIC_SCOPE: scope })).toBe(true);
 		}
 		expect(isPublicCheckoutConfigured({
 			...completePublicConfig,
@@ -50,6 +58,17 @@ describe("pricing availability", () => {
 		expect(pricingPackAction(true, true, undefined, true, "keating_pack_10")).toBe("loading");
 		expect(pricingPackAction(true, true, undefined, false, "keating_pack_10")).toBe("unavailable");
 		expect(pricingPackAction(false, true, undefined, false, "keating_pack_10")).toBe("waitlist");
+	});
+
+	test("a failed balance request asks for a retry instead of the waitlist", () => {
+		expect(pricingPackAction(true, true, undefined, false, "keating_pack_10", true)).toBe("balance_error");
+		expect(pricingPlanAction(true, true, undefined, false, true)).toBe("balance_error");
+		expect(pricingPackAction(true, true, undefined, true, "keating_pack_10", true)).toBe("loading");
+		expect(pricingPackAction(false, true, undefined, false, "keating_pack_10", true)).toBe("waitlist");
+		expect(pricingPackAction(true, false, undefined, false, "keating_pack_10", true)).toBe("connect");
+		const wallet = normalizeCreditWallet({ availableMicros: 5_000_000, checkout: { available: true, packIds: ["keating_pack_25"] } });
+		// A loaded wallet that omits the pack is genuinely unavailable: waitlist, not retry.
+		expect(pricingPackAction(true, true, wallet, false, "keating_pack_10", true)).toBe("unavailable");
 	});
 
 	test("checks the selected pack and offers reconnection after logout", () => {

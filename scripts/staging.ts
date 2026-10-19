@@ -5,11 +5,8 @@ import { lstat, mkdir, mkdtemp, readFile, rm, writeFile, chmod } from "node:fs/p
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 
-export const STAGING_PROJECT = "314d5558-957b-4e19-9ae0-bc08c8b5cf78";
-export const STAGING_SERVICE = "a3937c22-5298-4079-aa29-e009e7efbe61";
-export const STAGING_ENVIRONMENT = "65227e01-d875-4707-8467-e27165c820b8";
-const PROMOTION_SERVICE = "a1fef6d6-698e-4e0b-8647-452ac4399614";
-const PRODUCTION_ENVIRONMENT = "343e403a-fac6-4a18-a413-d3bfd5f758f1";
+import { STAGING_PROJECT, STAGING_SERVICE, STAGING_ENVIRONMENT, PROMOTION_SERVICE, PRODUCTION_ENVIRONMENT, STAGING_URL } from "./ops/config.js";
+export { STAGING_PROJECT, STAGING_SERVICE, STAGING_ENVIRONMENT } from "./ops/config.js";
 
 // Match the Dockerfile's source inputs. Never include local credentials or
 // generated state, even if someone accidentally tracked them in Git.
@@ -79,17 +76,10 @@ export async function makeStagingSnapshot(root: string, destination: string) {
   return receipt;
 }
 
-async function stagingUrl(): Promise<string> {
-  const status = JSON.parse(await run(["railway", "status", "--json"]));
-  if (status.id !== STAGING_PROJECT) throw new Error("Link this checkout to the Keating Railway project before uploading staging.");
-  const env = status.environments.edges.find((edge: any) => edge.node.id === STAGING_ENVIRONMENT)?.node;
-  const service = env?.serviceInstances.edges.find((edge: any) => edge.node.serviceId === STAGING_SERVICE)?.node;
-  const domain = service?.domains.serviceDomains[0]?.domain;
-  if (!domain) throw new Error("Keating staging has no Railway-generated domain.");
-  return `https://${domain}`;
-}
+// Explicit project/environment/service flags below remove checkout-local linking.
+async function stagingUrl(): Promise<string> { return STAGING_URL; }
 
-async function liveReceipt(url: string): Promise<any> {
+export async function liveReceipt(url: string): Promise<any> {
   try {
     const response = await fetch(`${url}/staging-build.json?t=${Date.now()}`, { signal: AbortSignal.timeout(15000), cache: "no-store" });
     return response.ok ? await response.json() : null;
@@ -106,7 +96,8 @@ async function publishCandidate(root: string, snapshot: string, receipt: Awaited
   const bundle = await mkdtemp(join(tmpdir(), "keating-promotion-bundle-"));
   try {
     await mkdir(join(bundle, "candidate"));
-    await mkdir(join(bundle, "scripts"));
+    await mkdir(join(bundle, "scripts/ops"), { recursive: true });
+    await writeFile(join(bundle, "scripts/ops/config.ts"), await readFile(join(root, "scripts/ops/config.ts")));
     await writeFile(join(bundle, "scripts/promote-staging.ts"), await readFile(join(root, "scripts/promote-staging.ts")));
     await writeFile(join(bundle, "Dockerfile"), await readFile(join(root, "scripts/staging-scheduler/Dockerfile")));
     await writeFile(join(bundle, "railway.toml"), await readFile(join(root, "scripts/staging-scheduler/railway.toml")));
@@ -140,7 +131,7 @@ async function main() {
     const url = await stagingUrl();
     const live = await liveReceipt(url);
     if (live?.fingerprint === receipt.fingerprint && live.dirty === receipt.dirty) {
-      const deployments = JSON.parse(await run(["railway", "deployment", "list", "--service", STAGING_SERVICE, "--environment", STAGING_ENVIRONMENT, "--limit", "1", "--json"], root));
+      const deployments = JSON.parse(await run(["railway", "deployment", "list", "--project", STAGING_PROJECT, "--service", STAGING_SERVICE, "--environment", STAGING_ENVIRONMENT, "--limit", "1", "--json"], root));
       const latest = deployments[0];
       if (latest?.status === "SUCCESS" && latest.meta?.cliMessage === `keating-staging:${receipt.fingerprint}`) {
         console.log(`Staging already matches ${receipt.branch} (${receipt.sha.slice(0, 8)}): ${url}/chat`);
@@ -159,7 +150,7 @@ async function main() {
     const deadline = Date.now() + 30 * 60 * 1000;
     let lastStatus = "";
     while (Date.now() < deadline) {
-      const deployments = JSON.parse(await run(["railway", "deployment", "list", "--service", STAGING_SERVICE, "--environment", STAGING_ENVIRONMENT, "--limit", "10", "--json"], root));
+      const deployments = JSON.parse(await run(["railway", "deployment", "list", "--project", STAGING_PROJECT, "--service", STAGING_SERVICE, "--environment", STAGING_ENVIRONMENT, "--limit", "10", "--json"], root));
       const deployment = deployments.find((item: any) => item.id === upload.deploymentId);
       if (deployment && deployment.status !== lastStatus) { console.log(`Staging ${deployment.id}: ${deployment.status}`); lastStatus = deployment.status; }
       if (deployment && ["FAILED", "CRASHED", "REMOVED", "SKIPPED"].includes(deployment.status)) throw new Error(`Staging deployment ${deployment.status}: ${deployment.id}`);

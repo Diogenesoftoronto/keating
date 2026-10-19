@@ -20,6 +20,7 @@
     "src/**/*.d.ts",
     "shared/**/*.ts",
     "packages/learner-contracts/src/**/*.ts",
-    "packages/design-contract/src/**/*.ts"
+    "packages/design-contract/src/**/*.ts",
+    "packages/runtime-config/src/**/*.ts"
   ]
 }

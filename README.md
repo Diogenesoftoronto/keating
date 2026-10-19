@@ -270,12 +270,18 @@ devenv tasks run keating:build
 devenv tasks run keating:doctor
 devenv tasks run keating:bench
 devenv tasks run keating:evolve
-devenv tasks run keating:prompt-evolve learn
-devenv tasks run keating:map derivative
-devenv tasks run keating:animate derivative
+devenv tasks run keating:prompt-evolve # defaults to learn
+devenv tasks run keating:map --input topic=derivative
+devenv tasks run keating:animate --input topic=derivative
 devenv tasks run keating:trace
 devenv tasks run keating:shell
 ```
+
+For fresh worktrees, sequential verification, mutation testing, releases,
+staging deployment and monitoring, see [operations](docs/operations.md) or run
+`rtk bun scripts/ops.ts --help`. Devenv equivalents include `keating:ops-verify`,
+`keating:release`, `keating:release-status`, `keating:deploy-staging` and
+`keating:promote`; outward ops actions require `--yes` / `--input yes=true`.
 
 Keating reads runtime/model defaults from `keating.config.json`.
 
@@ -499,11 +505,12 @@ keating trace derivative
 
 ## Documentation
 
+- [Repository documentation index](docs/README.md)
 - User guides and setup: [docs.keating.help](https://docs.keating.help)
 - Developer handbook: [dev.keating.help](https://dev.keating.help)
 - Standard.site blog: [blog.keating.help](https://blog.keating.help)
-- Architecture overview: `docs/ARCHITECTURE.md`
-- Development environment and task reference: `docs/DEVELOPMENT.md`
-- Visual system architecture: `docs/VISUAL-ARCHITECTURE.md`
-- Browser/remote self-modifying agent plan: `docs/self-modifying-agent-architecture.md`
-- Storage, AT Protocol, and educator-tools roadmap: `docs/plans/storage-atproto-educator-tools.md`
+- Architecture overview: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- Development environment and task reference: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
+- Visual system architecture: [docs/VISUAL-ARCHITECTURE.md](docs/VISUAL-ARCHITECTURE.md)
+- Browser/remote self-modifying agent plan: [docs/self-modifying-agent-architecture.md](docs/self-modifying-agent-architecture.md)
+- Storage, AT Protocol, and educator-tools roadmap: [docs/plans/storage-atproto-educator-tools.md](docs/plans/storage-atproto-educator-tools.md)

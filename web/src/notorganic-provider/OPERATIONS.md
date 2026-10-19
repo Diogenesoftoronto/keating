@@ -64,12 +64,14 @@ Browser gate:
 - `VITE_NOTORGANIC_REDIRECT_URI` — exact callback URL for this Keating deployment.
   When blank, uses `/notorganic/callback` on the current HTTPS or HTTP loopback
   origin. This keeps the callback on the origin holding the PKCE transaction.
-- `VITE_NOTORGANIC_SCOPE` — requested public capability scopes. Keating needs
-  `wallet:read usage:read billing:checkout infer:balanced infer:gpt-6.1-sol web:search web:fetch realtime:connect`
-  for wallet, checkout, hosted web access, and the Inkling Small and GPT-6.1 Sol chat options.
-  Existing connections must reconnect to approve missing model and web scopes. Sol uses the
-  Responses API for tool calls; its gateway alias must be enabled and routed to
-  OpenAI. Keep any explicit scope override in sync when deploying this option.
+- `VITE_NOTORGANIC_SCOPE` — optional explicit capability override. Blank or omitted
+  derives consent from the chat/image model lists and capabilities in
+  `packages/runtime-config/src/oauth.ts`; this includes image generation.
+  A non-empty override is used as supplied after trimming and is never expanded.
+  Existing connections must reconnect to approve missing model and web scopes.
+  Sol uses the Responses API; its gateway route must be enabled by the provider.
+  See [configuration](../../../docs/configuration.md) for the former environment
+  default discrepancy and instructions for adding a model.
 - With Not Organic enabled and its public OAuth client configured, web search
   uses the hosted `/v1/web/search` endpoint by default, including for chat models
   from other providers. The server's Keenable credential stays in Skate; never

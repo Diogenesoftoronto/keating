@@ -1,3 +1,4 @@
+import { API_VERSIONS } from "@keating/runtime-config";
 import {
   anthropicMaxTokens,
   anthropicThinkingBudget,
@@ -387,7 +388,7 @@ export function buildProviderRequest(
 
   if (settings.provider === "anthropic") {
     if (apiKey) commonHeaders["x-api-key"] = apiKey;
-    commonHeaders["anthropic-version"] = "2023-06-01";
+    commonHeaders["anthropic-version"] = API_VERSIONS.anthropic;
     const thinkingBudget = anthropicThinkingBudget(reasoningLevel);
     return {
       url: `${withoutTrailingSlash(settings.baseUrl)}/messages`,

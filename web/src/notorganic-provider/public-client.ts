@@ -1,3 +1,4 @@
+import { DEFAULT_NOTORGANIC_SCOPE, SPENDING_LIMITS } from "@keating/runtime-config";
 import { isNotOrganicDesktop, NOTORGANIC_DESKTOP_ORIGIN, NOTORGANIC_DESKTOP_CALLBACK } from "../keating/notorganic-desktop";
 import { APP_ORIGIN, WEBSITE_ORIGIN, isApplicationPath } from "../lib/hosted-navigation";
 
@@ -272,13 +273,12 @@ export function publicClientConfig(
 		authorizationUrl,
 		clientId,
 		redirectUri,
-		 scope: env.VITE_NOTORGANIC_SCOPE
-			?? "wallet:read usage:read billing:checkout infer:balanced infer:gpt-6.1-sol web:search web:fetch infer:image realtime:connect",
+		 scope: env.VITE_NOTORGANIC_SCOPE?.trim() || DEFAULT_NOTORGANIC_SCOPE,
 	};
 }
 
 export function publicClientMaxCostMicrousd(env: Record<string, string | undefined> = publicClientEnv()): number {
-	const configured = Number(env.VITE_NOTORGANIC_MAX_COST_MICROUSD ?? "100000");
+	const configured = Number(env.VITE_NOTORGANIC_MAX_COST_MICROUSD ?? SPENDING_LIMITS.notorganicRequestMicrousd);
 	if (!Number.isSafeInteger(configured) || configured <= 0) {
 		throw new NotOrganicPublicClientError("VITE_NOTORGANIC_MAX_COST_MICROUSD must be a positive integer.");
 	}

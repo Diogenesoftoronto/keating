@@ -20,13 +20,15 @@ import { ModelSelectorSheet } from "@/components/ModelSelectorSheet";
 import { OfflineTutorSettings } from "@/components/OfflineTutorSettings";
 import { Screen } from "@/components/Screen";
 import { radii, spacing, useKeatingTheme } from "@/constants/theme";
+import { isNearBottom, shouldFollowContent, shouldShowLatest } from "@/lib/chat-scroll";
+import { dictationScopeKey } from "@/lib/composer-dictation";
 import { providerDefinition } from "@/lib/provider-config";
 import {
   MAX_COMPOSER_ATTACHMENTS,
   pickComposerAttachments,
   removeComposerAttachmentFile,
 } from "@/lib/composer-attachments";
-import { clearComposerDraft, loadComposerDraft, saveComposerDraft } from "@/lib/composer-draft-storage";
+import { clearComposerDraft, createComposerDraftWriter, loadComposerDraft, type ComposerDraftWriter } from "@/lib/composer-draft-storage";
 import { isChatMessageVisible } from "@/lib/message-visibility";
 import { transcribeAudioUri } from "@/lib/speech-to-text";
 import type { ChatAttachment, ChatAttachmentKind, ChatMessage } from "@/lib/types";
@@ -50,6 +52,11 @@ export default function TutorScreen() {
   const [draft, setDraft] = useState("");
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const draftRef = useRef("");
+  const draftWriterRef = useRef<ComposerDraftWriter | null>(null);
+  const draftGenerationRef = useRef(0);
+  const nearBottomRef = useRef(true);
+  const scrollMetricsRef = useRef({ contentHeight: 0, viewportHeight: 0 });
+  const [showLatest, setShowLatest] = useState(false);
   const attachmentsRef = useRef<ChatAttachment[]>([]);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [attachmentBusy, setAttachmentBusy] = useState(false);
@@ -127,21 +134,23 @@ export default function TutorScreen() {
     return () => { cancelled = true; };
   }, [activeSession.id, hydrated]);
 
+  // One epoch-bound writer per session: after "clear my data" the old session's writer is stale, so its
+  // teardown flush cannot resurrect typed text or attachment records.
   useEffect(() => {
     if (!hydrated) return undefined;
-    const sessionId = activeSession.id;
+    const writer = createComposerDraftWriter(activeSession.id);
+    draftWriterRef.current = writer;
     return () => {
-      void saveComposerDraft(sessionId, {
-        text: draftRef.current,
-        attachments: attachmentsRef.current,
-      });
+      void writer.flush({ text: draftRef.current, attachments: attachmentsRef.current });
+      if (draftWriterRef.current === writer) draftWriterRef.current = null;
     };
   }, [activeSession.id, hydrated]);
 
   useEffect(() => {
     if (draftReadySessionId !== activeSession.id) return undefined;
+    draftWriterRef.current?.noteEdit();
     const timer = setTimeout(() => {
-      void saveComposerDraft(activeSession.id, { text: draft, attachments }).catch((error) => {
+      void draftWriterRef.current?.save({ text: draft, attachments }).catch((error) => {
         setAttachmentError(error instanceof Error ? error.message : "Could not save this draft.");
       });
     }, 180);
@@ -158,6 +167,7 @@ export default function TutorScreen() {
     setAttachments([]);
     setAttachmentError(null);
     void clearComposerDraft(activeSession.id);
+    draftGenerationRef.current += 1;
     void sendMessage(content, sentAttachments);
   };
 
@@ -232,13 +242,11 @@ export default function TutorScreen() {
             ) : null}
           </View>
               <Button compact variant="secondary" onPress={() => {
-                for (const attachment of attachments) removeComposerAttachmentFile(attachment);
-                attachmentsRef.current = [];
-                draftRef.current = "";
-                setAttachments([]);
-                setDraft("");
+                // Keep this session's unsent draft and attachment files under its
+                // own key; the new lesson loads its own (empty) draft.
                 setAttachmentError(null);
-                void clearComposerDraft(activeSession.id);
+                void (draftWriterRef.current?.save({ text: draftRef.current, attachments: attachmentsRef.current }) ?? Promise.resolve(false))
+                  .catch((error) => setAttachmentError(error instanceof Error ? error.message : "Could not save this draft."));
                 newSession();
               }} accessibilityLabel="Start a new lesson">
             New lesson
@@ -276,7 +284,22 @@ export default function TutorScreen() {
           keyboardShouldPersistTaps="handled"
           // Streaming resizes the list every flush, so follow it without
           // animation to avoid queued, stuttering scrolls.
-          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: !streamingMessageId })}
+          onContentSizeChange={(_width, height) => {
+            scrollMetricsRef.current.contentHeight = height;
+            if (shouldFollowContent(nearBottomRef.current)) {
+              listRef.current?.scrollToEnd({ animated: !streamingMessageId });
+            } else {
+              setShowLatest(shouldShowLatest(false, visibleMessages.length > 0));
+            }
+          }}
+          onLayout={(event) => { scrollMetricsRef.current.viewportHeight = event.nativeEvent.layout.height; }}
+          scrollEventThrottle={64}
+          onScroll={(event) => {
+            const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+            const near = isNearBottom({ contentHeight: contentSize.height, viewportHeight: layoutMeasurement.height, offsetY: contentOffset.y });
+            nearBottomRef.current = near;
+            setShowLatest(shouldShowLatest(near, visibleMessages.length > 0));
+          }}
           renderItem={({ item }) => (
             <MessageBubble
               message={item}
@@ -326,7 +349,24 @@ export default function TutorScreen() {
           ListFooterComponent={awaitingFirstToken ? <ThinkingIndicator styles={styles} /> : null}
         />
 
+        {showLatest ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Scroll to latest message"
+            onPress={() => {
+              nearBottomRef.current = true;
+              setShowLatest(false);
+              listRef.current?.scrollToEnd({ animated: true });
+            }}
+            style={styles.latestButton}
+          >
+            <Ionicons name="arrow-down" size={14} color={colors.primaryText} />
+            <Text style={styles.latestButtonText}>Latest</Text>
+          </Pressable>
+        ) : null}
+
         <Composer
+          draftScope={dictationScopeKey(activeSession.id, draftGenerationRef.current)}
           value={draft}
           onChangeText={setDraft}
           onSubmit={submit}
@@ -442,6 +482,20 @@ function createStyles(theme: ReturnType<typeof useKeatingTheme>) {
   forkLabel: { ...type.caption, ...type.monoBold, color: colors.primaryText, textTransform: "uppercase" },
   forkTitle: { ...type.caption, color: colors.textMuted, marginTop: 2 },
   messageList: { flex: 1 },
+  latestButton: {
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  latestButtonText: { ...type.caption, color: colors.primaryText },
   messageContent: { paddingVertical: spacing.md },
   emptyMessageContent: { flexGrow: 1, justifyContent: "center" },
   intro: { alignItems: "center", paddingVertical: spacing.xl },

@@ -15,6 +15,7 @@
  * This is pure logic, easily testable, no LLM, no IO.
  */
 
+import { formatDueInMillis } from "@keating/learner-contracts";
 import type { CardSrsState, Flashcard, FlashcardDeck, SrsRating } from "./flashcard-types";
 export type { CardSrsState, Flashcard, FlashcardDeck, SrsRating } from "./flashcard-types";
 
@@ -123,22 +124,7 @@ export function formatInterval(intervalDays: number): string {
 
 /** Format a timestamp as a relative due label ("now", "in 3d", "5d overdue"). */
 export function formatDueIn(dueAt: number, now: number = Date.now()): string {
-	const diffMs = dueAt - now;
-	const days = diffMs / MS_PER_DAY;
-	if (Math.abs(days) < 0.001) return "now";
-	if (diffMs < 0) {
-		const overdueDays = Math.abs(days);
-		if (overdueDays < 1) {
-			const overdueMin = Math.round(overdueDays * 24 * 60);
-			return overdueMin <= 60 ? `${overdueMin}m overdue` : `${Math.round(overdueDays)}d overdue`;
-		}
-		return `${Math.round(overdueDays)}d overdue`;
-	}
-	if (days < 1) {
-		const minutes = Math.round(days * 24 * 60);
-		return minutes <= 60 ? `in ${minutes}m` : "in <1d";
-	}
-	return `in ${Math.round(days)}d`;
+	return formatDueInMillis(dueAt, now);
 }
 
 // ---------------------------------------------------------------------------

@@ -1,7 +1,8 @@
+import { SERVICE_ENDPOINTS, DEFAULT_MODELS } from "@keating/runtime-config";
 export const NOTORGANIC_MOBILE_CLIENT_ID = "https://keating.help/mobile";
 export const NOTORGANIC_MOBILE_REDIRECT_URI = "keating:///notorganic/callback";
 export const NOTORGANIC_MOBILE_SCOPE = [
-  "infer:balanced",
+  `infer:${DEFAULT_MODELS.account.mobileChat}`,
   "realtime:connect",
   "sync:key:read",
   "usage:read",
@@ -62,8 +63,8 @@ export interface NotOrganicAccountResponse {
 }
 
 export const defaultNotOrganicAccountConfig = (): NotOrganicAccountConfig => ({
-  issuer: (process.env.EXPO_PUBLIC_NOTORGANIC_ISSUER ?? "https://api.notorganic.info").replace(/\/$/, ""),
-  authorizationUrl: process.env.EXPO_PUBLIC_NOTORGANIC_AUTHORIZATION_URL ?? "https://id.notorganic.info/authorize",
+  issuer: (process.env.EXPO_PUBLIC_NOTORGANIC_ISSUER ?? SERVICE_ENDPOINTS.notorganic.api).replace(/\/$/, ""),
+  authorizationUrl: process.env.EXPO_PUBLIC_NOTORGANIC_AUTHORIZATION_URL ?? SERVICE_ENDPOINTS.notorganic.authorization,
   clientId: NOTORGANIC_MOBILE_CLIENT_ID,
   redirectUri: NOTORGANIC_MOBILE_REDIRECT_URI,
   scope: NOTORGANIC_MOBILE_SCOPE,

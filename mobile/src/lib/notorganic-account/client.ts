@@ -1,3 +1,4 @@
+import { SPENDING_LIMITS, DEFAULT_MODELS } from "@keating/runtime-config";
 import type {
   NotOrganicAccountConfig,
   NotOrganicAccountResponse,
@@ -175,7 +176,7 @@ export async function notOrganicJudgementRequest(
   if (signal?.aborted || generation !== deviceSessionGeneration()) return new Response(null, { status: 403 });
   return accountFetch(url, { method: "POST", body, signal, redirect: "error",
     headers: { "content-type": "application/json", authorization: `DPoP ${session.accessToken}`, dpop: proof,
-      "idempotency-key": idempotencyKey, "x-notorganic-max-cost-microusd": "100000" } });
+      "idempotency-key": idempotencyKey, "x-notorganic-max-cost-microusd": String(SPENDING_LIMITS.notorganicRequestMicrousd) } });
 }
 
 /** Numerical learner predictions use a separately granted, issuer-bound first-party capability. */
@@ -204,13 +205,13 @@ export async function notOrganicTabularRequest(
     || signal?.aborted || generation !== deviceSessionGeneration()) return new Response(null, { status: 403 });
   const response = await accountFetch(url, { method: "POST", body: JSON.stringify(body), signal, redirect: "error",
     headers: { "content-type": "application/json", authorization: `DPoP ${session.accessToken}`, dpop: proof,
-      "idempotency-key": idempotencyKey, "x-notorganic-max-cost-microusd": "100000" } });
+      "idempotency-key": idempotencyKey, "x-notorganic-max-cost-microusd": String(SPENDING_LIMITS.notorganicRequestMicrousd) } });
   return signal?.aborted || generation !== deviceSessionGeneration() || !await current()
     || signal?.aborted || generation !== deviceSessionGeneration() ? new Response(null, { status: 403 }) : response;
 }
 
 export interface MobileTabularModel {
-  id: "v3.5_default"; name: string; provider: string; task: "regression"; available: boolean;
+  id: typeof DEFAULT_MODELS.judgement.tabular; name: string; provider: string; task: "regression"; available: boolean;
   priceMicrousd: number | null;
   limits: { maxTrainRows: number; maxTestRows: number; maxFeatures: number };
 }
@@ -229,7 +230,7 @@ export async function loadMobileTabularModels(signal?: AbortSignal, config = def
   if (signal?.aborted || generation !== deviceSessionGeneration()) throw Error("The account changed.");
   const body = await parseResponse<{ models?: unknown }>(response);
   if (!Array.isArray(body?.models)) throw Error("The model catalogue is unavailable.");
-  return body.models.filter((value): value is MobileTabularModel => !!value && typeof value === "object" && value.id === "v3.5_default"
+  return body.models.filter((value): value is MobileTabularModel => !!value && typeof value === "object" && value.id === DEFAULT_MODELS.judgement.tabular
     && value.task === "regression" && typeof value.available === "boolean" && typeof value.name === "string" && typeof value.provider === "string"
     && (value.priceMicrousd === null || Number.isSafeInteger(value.priceMicrousd) && value.priceMicrousd >= 0)
     && !!value.limits && Number.isSafeInteger(value.limits.maxTrainRows) && Number.isSafeInteger(value.limits.maxTestRows) && Number.isSafeInteger(value.limits.maxFeatures));

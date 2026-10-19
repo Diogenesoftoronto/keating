@@ -1,3 +1,4 @@
+import { MODEL_CHOICES } from "@keating/runtime-config";
 import {
 	GEMINI_LIVE_SPEECH_MODEL,
 	schedulePcmAudio,
@@ -552,12 +553,7 @@ const geminiLiveProviderDefinition: Omit<SpeechProvider, "startLiveSession"> = {
 	kind: "duplex",
 	status: "stable",
 	description: "Google Gemini Live bidirectional voice and video. Native live video, tool calls, and expressive prebuilt voices.",
-	models: [
-		{ value: "gemini-2.0-flash-live-001", label: "Gemini 2.0 Flash Live" },
-		{ value: "gemini-2.5-flash-live-preview", label: "Gemini 2.5 Flash Live (Preview)" },
-		{ value: "gemini-3.0-flash-live-preview", label: "Gemini 3.0 Flash Live (Preview)" },
-		{ value: "gemini-3.1-flash-live-preview", label: "Gemini 3.1 Flash Live (Preview)" },
-	],
+	models: MODEL_CHOICES.googleSpeech,
 	voices: GEMINI_VOICES,
 	needsApiKey: "google",
 	synthesize,

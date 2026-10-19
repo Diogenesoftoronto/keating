@@ -42,7 +42,7 @@ test("a generic diagram reaches tutor review with its original subject criteria 
     action: dispatched.action, sourceDocument: dispatched.sourceDocument, receipt: dispatched.receipt,
   });
   expect(response.review.title).toBe("Diagram submitted");
-  expect(response.review.items).toContainEqual({ label: "Teacher review criteria", value: "Distinguish movement of water from the energy driving the process." });
+  expect(response.review.items).toContainEqual({ label: "Review criteria", value: "Distinguish movement of water from the energy driving the process." });
   expect(response.review.items.find(item => item.label === "Structural checks")?.value).toContain("Present: Resource reaches a process");
   expect(response.agentInstruction).toContain("do not assume every diagram is software architecture");
   expect(response.agentInstruction).toContain("not a correctness grade");

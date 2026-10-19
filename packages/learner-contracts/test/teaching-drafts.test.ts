@@ -1,20 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { runTeachingDrafts, type TeachingDraftSnapshot } from "../src/judgement/teaching-drafts.js";
+import type { JudgementRequest, JudgementAnswer } from "../src/judgement/contracts.js";
 import type { TeachingPolicyTurn } from "../src/judgement/teaching-policy-types.js";
-import type { JudgementCaller, JudgementRequest, JudgementAnswer } from "../src/judgement/contracts.js";
-import { measureStateComposition } from "../src/judgement/state-metrics.js";
+import { makeTeachingDraftJudge as makeJudge, teachingDraftTurn as turn } from "./fixtures/teaching-drafts.js";
 
-const turn: TeachingPolicyTurn = { learnerMessage: "Explain division.", conversation: [], learnerEvidence: [], availableTools: [], toolResults: [], sources: [], assessment: "none", improvementRuns: 0, domain: "general" };
-function answers(request: JudgementRequest, override: Record<string, string | number> = {}): Record<string, JudgementAnswer> {
-  return Object.fromEntries(Object.entries(request.questions).map(([id, question]) => {
-    if (question.type === "choice") {
-      const choice = typeof override[id] === "string" ? override[id] as string : id === "draft_standard" ? "concise" : id === "draft_reasoning" ? "low" : Object.keys(question.criteria)[0]!;
-      return [id, { type: "choice", choice, confidence: 0.99, probabilities: Object.fromEntries(Object.keys(question.criteria).map((key) => [key, key === choice ? 1 : 0])) }];
-    }
-    return [id, { type: "noul", noul: typeof override[id] === "number" ? override[id] : id.startsWith("quality_") ? 0.99 : 0.01 }];
-  }));
-}
-const makeJudge = (mutate: (request: JudgementRequest) => Record<string, string | number> = () => ({})): JudgementCaller => async (request) => ({ ok: true, response: { answers: answers(request, mutate(request)), backend: { backend: "fixture", model: "fixture-v1", calibrationSha256: null }, usage: { inputTokens: 10, outputTokens: 2 } } });
 
 describe("explicit extended private draft loop", () => {
   test("complementary reviewed drafts produce one freshly reviewed synthesis within the attempt budget", async () => {
@@ -237,6 +226,13 @@ describe("explicit extended private draft loop", () => {
     });
     expect(result.status).toBe("released");
     expect(result.value).toBe("PRIVATE");
+    expect(result.receipt.attempts[0]!.checks.find(check => check.id === Object.keys(scores)[0]))
+      .toMatchObject({ source: "jev", probability: Object.values(scores)[0], status: "unknown" });
+    if (Object.keys(scores)[0] === "identity_invented") {
+      expect(result.receipt.attempts[0]!.checks.find(check => check.id === "identity_invented")?.severity).toBe("critical");
+    }
+    expect(result.receipt.selectedAttempt).toBe(1);
+    expect(result.receipt.reason).toBe("best-effort-draft");
   });
 
   test("missing stylistic review answers remain honest in best effort", async () => {
@@ -250,6 +246,10 @@ describe("explicit extended private draft loop", () => {
       generate: async () => ({ reply: { text: "PRIVATE", toolCalls: [] }, value: "PRIVATE" }),
     });
     expect(result.status).toBe("released");
+    expect(result.receipt.attempts[0]!.checks.find(check => check.id === "explanation_missing"))
+      .toEqual({ id: "explanation_missing", source: "jev", severity: "major", probability: null, status: "unknown" });
+    expect(result.receipt.selectedAttempt).toBe(1);
+    expect(result.receipt.reason).toBe("best-effort-draft");
   });
 
   test("preflight rebuilds the window and diagnostics measure each actual batch", async () => {
@@ -268,8 +268,12 @@ describe("explicit extended private draft loop", () => {
     expect(retained.length).toBeLessThan(conversation.length);
     expect(retained).toEqual(conversation.slice(-retained.length));
     expect(result.receipt.stateHistory).toHaveLength(calls.length);
-    expect(result.receipt.stateHistory!.map(sample => sample.state)).toEqual(calls.map(request => measureStateComposition(request, 4000)));
-    expect(result.receipt.state).toEqual(measureStateComposition(calls.at(-1)!, 4000));
+    const independentlyCountedBytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).byteLength;
+    expect(result.receipt.stateHistory!.map(sample => sample.state.totalBytes))
+      .toEqual(calls.map(request => independentlyCountedBytes(request.state)));
+    expect(result.receipt.state!.totalBytes).toBe(independentlyCountedBytes(calls.at(-1)!.state));
+    const finalState = calls.at(-1)!.state as { turn: { learnerMessage: string } };
+    expect(result.receipt.state!.sections.learnerMessage.bytes).toBe(independentlyCountedBytes(finalState.turn.learnerMessage));
     expect(result.receipt.slides![0]!.after!.fillRatio).toBeLessThanOrEqual(.65);
     expect(progress.some(snapshot => snapshot.phase === "checking" && snapshot.state?.sections.reply.bytes! > 0)).toBe(true);
     expect(JSON.stringify(progress)).not.toContain("PRIVATE_");

@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS, PROVIDER_ENDPOINTS } from "@keating/runtime-config";
 // One-shot speech-to-text used by the prompt mic button. Routes to OpenAI's
 // transcription endpoint or Gemini depending on the resolved credential.
 import { proxiedProviderRequestUrl } from "../../lib/provider-proxy";
@@ -69,10 +70,10 @@ async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 async function transcribeOpenAi(blob: Blob, opts: SttOptions): Promise<string> {
-	const proxied = proxiedProviderRequestUrl("https://api.openai.com/v1/audio/transcriptions");
+	const proxied = proxiedProviderRequestUrl(PROVIDER_ENDPOINTS.openaiTranscription);
 	const form = new FormData();
 	form.append("file", blob, "speech.webm");
-	form.append("model", opts.model || "gpt-4o-transcribe");
+	form.append("model", opts.model || DEFAULT_MODELS.speech.sttOpenai);
 
 	const response = await fetch(proxied.url, {
 		method: "POST",
@@ -100,7 +101,7 @@ async function transcribeGoogle(blob: Blob, opts: SttOptions): Promise<string> {
 	const ai = new GoogleGenAI({ apiKey: opts.apiKey });
 	const audio = await blobToBase64(blob);
 	const result = await ai.models.generateContent({
-		model: opts.model || "gemini-2.5-flash",
+		model: opts.model || DEFAULT_MODELS.speech.sttGoogle,
 		contents: [
 			{
 				role: "user",

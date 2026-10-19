@@ -215,7 +215,7 @@ export default function SettingsScreen() {
 
       <Section
         title="About you"
-        body="Goals, what you already know, interests, preferred examples, languages, or accessibility needs. Keating uses this as background, never as instructions. It stays on this device."
+        body="Goals, what you already know, interests, preferred examples, languages, or accessibility needs. Keating treats this as background, never as instructions. Saved on this device. Keating includes it in requests to your tutor model so it can tailor lessons."
       >
         <TextInput
           accessibilityLabel="About you"

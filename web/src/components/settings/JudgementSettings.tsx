@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS } from "@keating/runtime-config";
 import { JudgementCalibrationSettings } from "./JudgementCalibrationSettings";
 import { useEffect, useId, useState } from "react";
 import {
@@ -43,18 +44,18 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
   keyInput = "", keySaved = false, checkingKey = false, savingKey = false, keyError = "", onKeyInput, onSaveKey, onRemoveKey }: JudgementSettingsViewProps) {
   const id = useId();
   const typesafeSelected = settings.backend === "hosted" && settings.hostedProvider === "typesafe";
-  const [modelInput, setModelInput] = useState(settings.customModel ?? "jev-latest");
+  const [modelInput, setModelInput] = useState(settings.customModel ?? DEFAULT_MODELS.judgement.systemOne);
   const [modelError, setModelError] = useState("");
-  useEffect(() => { setModelInput(settings.customModel ?? "jev-latest"); setModelError(""); }, [settings.customModel]);
+  useEffect(() => { setModelInput(settings.customModel ?? DEFAULT_MODELS.judgement.systemOne); setModelError(""); }, [settings.customModel]);
   const saveModel = () => {
-    const model = modelInput.trim() || "jev-latest";
+    const model = modelInput.trim() || DEFAULT_MODELS.judgement.systemOne;
     if (!/^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,199}$/.test(model)) {
       setModelError("Use a model ID of up to 200 letters, numbers, periods, underscores, colons, slashes or hyphens, starting with a letter or number.");
       return;
     }
     setModelError("");
     setModelInput(model);
-    if (model !== (settings.customModel ?? "jev-latest")) onChange({ ...settings, customModel: model });
+    if (model !== (settings.customModel ?? DEFAULT_MODELS.judgement.systemOne)) onChange({ ...settings, customModel: model });
   };
   const localModels = [
     ...(juliaId ? [{ id: juliaId, name: "Julia 1 · local decision model" }] : []),
@@ -112,7 +113,7 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
       <label className="judgement-settings__field" htmlFor={`${id}-typesafe-model`}>
         <span>Model ID</span>
         <input id={`${id}-typesafe-model`} type="text" value={modelInput}
-          placeholder="jev-latest" maxLength={200} aria-invalid={Boolean(modelError)}
+          placeholder={DEFAULT_MODELS.judgement.systemOne} maxLength={200} aria-invalid={Boolean(modelError)}
           aria-describedby={modelError ? `${id}-model-error` : undefined}
           onChange={(event) => { setModelInput(event.target.value); setModelError(""); }} onBlur={saveModel}
           onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />
@@ -266,7 +267,7 @@ export function JudgementSettings() {
     const saved = loadJudgementModelSettings();
     setSettings(saved);
     if (saved.backend !== next.backend || (saved.hostedProvider ?? "notorganic") !== (next.hostedProvider ?? "notorganic")
-      || (saved.customModel ?? "jev-latest") !== (next.customModel?.trim() || "jev-latest") || saved.localModelId !== next.localModelId
+      || (saved.customModel ?? DEFAULT_MODELS.judgement.systemOne) !== (next.customModel?.trim() || DEFAULT_MODELS.judgement.systemOne) || saved.localModelId !== next.localModelId
       || saved.requestTokens !== (next.requestTokens ?? null)
       || saved.stateQuestionTokens !== (next.stateQuestionTokens ?? null)) {
       setError("This browser could not save the judgement setting. Allow local storage and try again.");

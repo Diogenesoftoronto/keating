@@ -593,6 +593,8 @@ describe("Not Organic input validation", () => {
 
 describe("Not Organic CLI argument safety", () => {
   const cliEntry = join(process.cwd(), "src", "cli", "main.ts");
+  // These tests spawn full CLI processes (~1s each); under full-suite load that can exceed bun's 5s default.
+  const CLI_TEST_TIMEOUT_MS = 30_000;
 
   function runCli(cwd: string, ...args: string[]) {
     return spawnSync(process.execPath, [cliEntry, ...args], {
@@ -613,7 +615,7 @@ describe("Not Organic CLI argument safety", () => {
     expect(logoutHelp.status).toBe(0);
     expect(logoutHelp.stdout).toContain("Usage: keating logout");
     expect(existsSync(notOrganicAuthPath(cwd))).toBe(false);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   test("status cannot silently ignore a judgement authorization request", async () => {
     const cwd = await temporaryProject();
@@ -621,7 +623,7 @@ describe("Not Organic CLI argument safety", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("status cannot be combined");
     expect(existsSync(notOrganicAuthPath(cwd))).toBe(false);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   test("the CLI judgement flag reaches the authorization URL before any exchange", async () => {
     const cwd = await temporaryProject();
@@ -635,7 +637,7 @@ describe("Not Organic CLI argument safety", () => {
     expect(authorization).toBeDefined();
     expect(new URL(authorization!).searchParams.get("scope")).toBe(NOTORGANIC_JUDGEMENT_LOGIN_SCOPE);
     expect(existsSync(notOrganicAuthPath(cwd))).toBe(false);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   test("logout rejects status and unknown flags without touching auth storage", async () => {
     const cwd = await temporaryProject();
@@ -647,7 +649,7 @@ describe("Not Organic CLI argument safety", () => {
     expect(statusFlag.status).toBe(1);
     expect(statusFlag.stderr).toContain("Unknown logout option: --status");
     expect(existsSync(notOrganicAuthPath(cwd))).toBe(false);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 
   test("login rejects unknown options without starting authorization", async () => {
     const cwd = await temporaryProject();
@@ -657,5 +659,5 @@ describe("Not Organic CLI argument safety", () => {
     expect(result.stderr).toContain("Unknown login option");
     expect(result.stdout).not.toContain("https://id.notorganic.info/authorize");
     expect(existsSync(notOrganicAuthPath(cwd))).toBe(false);
-  });
+  }, CLI_TEST_TIMEOUT_MS);
 });

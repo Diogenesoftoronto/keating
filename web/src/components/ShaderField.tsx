@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { css, cx } from "../../styled-system/css";
 import { useReducedMotion } from "../hooks/use-media-query";
+import { compileWebGLShader, linkWebGLProgram } from "../lib/webgl";
 
 /**
  * Animated halftone texture rendered with a single WebGL fragment shader.
@@ -101,18 +102,6 @@ void main() {
 }
 `;
 
-function compile(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null {
-  const shader = gl.createShader(type);
-  if (!shader) return null;
-  gl.shaderSource(shader, source);
-  gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    gl.deleteShader(shader);
-    return null;
-  }
-  return shader;
-}
-
 /** `#rrggbb` (or `#rgb`) → normalised rgb triple. Falls back to phosphor green. */
 function parseHex(value: string): [number, number, number] {
   const hex = value.trim().replace("#", "");
@@ -170,18 +159,11 @@ export function ShaderField({
     // Rebound as a non-nullable const so the hoisted helpers below keep the narrowing.
     const gl: WebGLRenderingContext = context;
 
-    const vert = compile(gl, gl.VERTEX_SHADER, VERT_SOURCE);
-    const frag = compile(gl, gl.FRAGMENT_SHADER, FRAG_SOURCE);
-    const program = vert && frag ? gl.createProgram() : null;
+    const vert = compileWebGLShader(gl, gl.VERTEX_SHADER, VERT_SOURCE);
+    const frag = compileWebGLShader(gl, gl.FRAGMENT_SHADER, FRAG_SOURCE);
+    const program = vert && frag ? linkWebGLProgram(gl, vert, frag) : null;
     if (!vert || !frag || !program) return;
 
-    gl.attachShader(program, vert);
-    gl.attachShader(program, frag);
-    gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      gl.deleteProgram(program);
-      return;
-    }
     gl.useProgram(program);
 
     const buffer = gl.createBuffer();

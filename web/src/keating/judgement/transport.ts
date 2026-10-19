@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS } from "@keating/runtime-config";
 /**
  * The web surface's `JudgementCaller`.
  *
@@ -145,7 +146,7 @@ export function webJudgementBackendKey(
 		const concrete = model !== WEB_JUDGEMENT_MODEL_ALIAS && !model.endsWith("-latest");
 		return { backend: "system-one", model, calibrationSha256: concrete ? calibrationSha256 : null };
 	}
-	return { backend: "system-one", model: environment.model ?? "jev-latest", calibrationSha256 };
+	return { backend: "system-one", model: environment.model ?? DEFAULT_MODELS.judgement.systemOne, calibrationSha256 };
 }
 
 function browserFetch(): FetchLike {

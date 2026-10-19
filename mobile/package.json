@@ -38,6 +38,7 @@
     "@huggingface/tokenizers": "0.2.0",
     "@keating/design-contract": "workspace:*",
     "@keating/learner-contracts": "workspace:*",
+    "@keating/runtime-config": "workspace:*",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~57.0.26",
     "expo-audio": "~57.0.5",

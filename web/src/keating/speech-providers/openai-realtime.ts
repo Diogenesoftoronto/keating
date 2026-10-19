@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS, PROVIDER_ENDPOINTS } from "@keating/runtime-config";
 import {
 	getAudioContext,
 	type LiveHistoryTurn,
@@ -72,7 +73,7 @@ export function buildRealtimeSessionConfig(
 				// Semantic VAD waits on meaning rather than a fixed silence
 				// window, so a learner thinking mid-sentence is not cut off.
 				turn_detection: { type: "semantic_vad", create_response: true, interrupt_response: true },
-				transcription: { model: "gpt-4o-transcribe" },
+				transcription: { model: DEFAULT_MODELS.speech.sttOpenai },
 			},
 			output: {
 				format: { type: "audio/pcm" },
@@ -200,7 +201,7 @@ function cleanRealtimeVoice(value: string | undefined): string {
 
 async function mintEphemeralKey(apiKey: string, model: string, voice: string, signal?: AbortSignal): Promise<string> {
 	const response = await withApiRetry(async () => {
-		const result = await fetch("https://api.openai.com/v1/realtime/client_secrets", {
+		const result = await fetch(PROVIDER_ENDPOINTS.openaiRealtimeSecrets, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -251,7 +252,7 @@ async function exchangeSdp(
 			form.set("session", JSON.stringify(session));
 			return form;
 		})();
-		const result = await fetch("https://api.openai.com/v1/realtime/calls", {
+		const result = await fetch(PROVIDER_ENDPOINTS.openaiRealtimeCalls, {
 			method: "POST",
 			headers: {
 				Authorization: `Bearer ${ephemeralKey}`,
@@ -294,7 +295,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 		throw new Error("No OpenAI API key configured. Add one in Settings → Providers & Models.");
 	}
 
-	const model = settings.model || "gpt-realtime-2.1";
+	const model = settings.model || DEFAULT_MODELS.speech.realtimeOpenai;
 	const voice = cleanRealtimeVoice(utterance.voice || settings.voiceName);
 
 	const ephemeralKey = await mintEphemeralKey(apiKey, model, voice, signal);
@@ -409,10 +410,10 @@ async function startLiveSession(
 	const setupStartedAt = telemetry.start();
 	telemetry.emit("connection.setup.started", {
 		provider: "openai",
-		model: settings.model || "gpt-realtime-2.1",
+		model: settings.model || DEFAULT_MODELS.speech.realtimeOpenai,
 		transport: "webrtc",
 	});
-	const capability = negotiateOpenAIRealtimeSession(settings.model || "gpt-realtime-2.1");
+	const capability = negotiateOpenAIRealtimeSession(settings.model || DEFAULT_MODELS.speech.realtimeOpenai);
 	if (capability.realtimeAudio !== "native" || capability.transport !== "webrtc" || capability.toolCalls !== "native") {
 		telemetry.emit("session.error", { provider: "openai", errorCode: "capability_mismatch" });
 		telemetry.emit("session.completed", { provider: "openai", outcome: "error" });
@@ -433,7 +434,7 @@ async function startLiveSession(
 		throw error;
 	}
 
-	const model = settings.model || "gpt-realtime-2.1";
+	const model = settings.model || DEFAULT_MODELS.speech.realtimeOpenai;
 	const voice = cleanRealtimeVoice(settings.voiceName);
 
 	let reconnectAttempt = 0;

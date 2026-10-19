@@ -7,6 +7,14 @@ import {
 	buildSearchBlock,
 } from "../src/keating/sandbox-engine";
 
+function overlappingOccurrences(content: string, search: string): number {
+	let count = 0;
+	for (let index = 0; index <= content.length - search.length; index++) {
+		if (content.startsWith(search, index)) count++;
+	}
+	return count;
+}
+
 describe("applyStringEdit", () => {
 	it("always succeeds on unique search block", () => {
 		fc.assert(
@@ -17,19 +25,16 @@ describe("applyStringEdit", () => {
 				fc.string({ minLength: 1, maxLength: 50 }),
 				fc.string({ minLength: 1, maxLength: 30 }),
 				(before, search, mid, after, replace) => {
-					// Ensure before/after don't contain search
-					fc.pre(!before.includes(search));
-					fc.pre(!after.includes(search));
-					fc.pre(!mid.includes(search));
-					const content = `${before}${search}${mid}${search}${after}`;
-					// This would be ambiguous (2 occurrences), so let's make it unique:
 					const uniqueContent = `${before}${search}${mid}${after}`;
+					// Count overlapping matches in the complete concatenation, including boundaries.
+					fc.pre(overlappingOccurrences(uniqueContent, search) === 1);
 
 					const result = applyStringEdit(uniqueContent, { search, replace });
 					expect(result.success).toBe(true);
 					expect(result.message).toContain("Edited");
 					expect(result.diff).toBeDefined();
 					expect(result.diff!.charDelta).toBe(replace.length - search.length);
+					expect(result.content).toBe(`${before}${replace}${mid}${after}`);
 				}
 			),
 			{ numRuns: 500 }
@@ -43,13 +48,15 @@ describe("applyStringEdit", () => {
 				fc.string({ minLength: 1, maxLength: 30 }),
 				(searchLines, replace) => {
 					const search = searchLines.join("\n");
-					const before = `before_${Math.random().toString(36).slice(2)}`;
-					const after = `after_${Math.random().toString(36).slice(2)}`;
+					const before = "prefix";
+					const after = "suffix";
 					const content = `${before}\n${search}\n${after}`;
+					fc.pre(overlappingOccurrences(content, search) === 1);
 
 					const result = applyStringEdit(content, { search, replace });
 					expect(result.success).toBe(true);
 					expect(result.diff).toBeDefined();
+					expect(result.content).toBe(`${before}\n${replace}\n${after}`);
 				}
 			),
 			{ numRuns: 300 }
@@ -107,9 +114,12 @@ describe("applyStringEdit", () => {
 
 					const result = applyStringEdit(content, { search: target, replace: replacement });
 					expect(result.success).toBe(true);
-					const output = content.replace(target, replacement);
-					expect(content).toContain(before); // original unchanged
-					expect(content).toContain(after);
+					const normalized = content.replace(/\r\n/g, "\n");
+					const normalizedTarget = target.replace(/\r\n/g, "\n");
+					const index = normalized.indexOf(normalizedTarget);
+					expect(result.content).toBe(
+						normalized.slice(0, index) + replacement + normalized.slice(index + normalizedTarget.length)
+					);
 				}
 			),
 			{ numRuns: 500 }

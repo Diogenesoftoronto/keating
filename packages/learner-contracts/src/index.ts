@@ -25,3 +25,6 @@ export * from "./needle-index.js";
 export * from "./judgement/memory-bank.js";
 export * from "./system-design.js";
 export * from "./diagram.js";
+export * from "./diagram-edit.js";
+export * from "./text-distance.js";
+export * from "./question-response.js";

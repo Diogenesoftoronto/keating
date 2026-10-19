@@ -3,9 +3,7 @@
 import { readFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 
-const PROJECT = "314d5558-957b-4e19-9ae0-bc08c8b5cf78";
-const SERVICE = "a1fef6d6-698e-4e0b-8647-452ac4399614";
-const ENVIRONMENT = "343e403a-fac6-4a18-a413-d3bfd5f758f1";
+import { STAGING_PROJECT as PROJECT, PROMOTION_SERVICE as SERVICE, PRODUCTION_ENVIRONMENT as ENVIRONMENT } from "./ops/config.js";
 const TARGET = ["--project", PROJECT, "--service", SERVICE, "--environment", ENVIRONMENT];
 type Dependencies = { run: (args: string[]) => Promise<string>; sleep: (ms: number) => Promise<unknown>; now: () => number };
 type Deployment = { id: string; status: string; createdAt: string };

@@ -32,6 +32,18 @@ export function suppressConsoleError<T>(fn: () => T | Promise<T>): T | Promise<T
   }
 }
 
+/** Keep benchmark tests on the deterministic simulator even when a developer opts into hosted scoring. */
+export async function withOfflineBenchmark<T>(fn: () => Promise<T>): Promise<T> {
+  const configured = process.env.KEATING_LLM_BENCHMARK;
+  delete process.env.KEATING_LLM_BENCHMARK;
+  try {
+    return await fn();
+  } finally {
+    if (configured === undefined) delete process.env.KEATING_LLM_BENCHMARK;
+    else process.env.KEATING_LLM_BENCHMARK = configured;
+  }
+}
+
 // ─── fast-check Arbitraries ────────────────────────────────────────────────
 
 export const arbPolicyName = fc.string({ minLength: 1, maxLength: 32 });
@@ -49,13 +61,16 @@ export const arbPolicy: fc.Arbitrary<TeacherPolicy> = fc.record({
   challengeRate: fc.double({ min: 0, max: 1, noNaN: true }),
 });
 
+/** Includes values on both sides of Math.round's half-step boundaries. */
+export const arbFractionalExerciseCount = fc.double({ min: -1, max: 7, noNaN: true });
+
 export const arbUnboundedPolicy: fc.Arbitrary<TeacherPolicy> = fc.record({
   name: arbPolicyName,
   analogyDensity: fc.double({ min: -10, max: 10, noNaN: true }),
   socraticRatio: fc.double({ min: -10, max: 10, noNaN: true }),
   formalism: fc.double({ min: -10, max: 10, noNaN: true }),
   retrievalPractice: fc.double({ min: -10, max: 10, noNaN: true }),
-  exerciseCount: fc.integer({ min: -100, max: 100 }),
+  exerciseCount: arbFractionalExerciseCount,
   diagramBias: fc.double({ min: -10, max: 10, noNaN: true }),
   reflectionBias: fc.double({ min: -10, max: 10, noNaN: true }),
   interdisciplinaryBias: fc.double({ min: -10, max: 10, noNaN: true }),

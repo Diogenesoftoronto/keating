@@ -25,6 +25,13 @@ const REVIEW_SOURCE_FILES = [
   "packages/learner-contracts/src/judgement/wire.ts",
   "packages/learner-contracts/src/judgement/router.ts",
   "packages/learner-contracts/src/judgement/assessment.ts",
+  // Public model/service defaults imported by src/core and judgement/wire.ts.
+  "packages/runtime-config/src/index.ts",
+  "packages/runtime-config/src/models.ts",
+  "packages/runtime-config/src/model-identities.ts",
+  "packages/runtime-config/src/services.ts",
+  "packages/runtime-config/src/oauth.ts",
+  "packages/runtime-config/src/budgets.ts",
   "src/judgement/cli-readiness.ts",
   "src/judgement/calibration-artifact.ts",
   "src/judgement/cli-lesson-plan.ts",

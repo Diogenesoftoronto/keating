@@ -1,34 +1,13 @@
 import { expect, test } from "bun:test";
-import { Database } from "bun:sqlite";
 import { createHash } from "node:crypto";
 import { createPortableLearnerEnvelope, type PortableLearnerData, type UiDocument, type UiAction, type JudgementRequest, type JudgementResponse } from "@keating/learner-contracts";
-import { initializeRepositorySchema, LearnerRecordStore, UiActionStore, type AsyncSqlDatabase, type AsyncSqlExecutor, type SqlBindValue } from "../src/lib/learner-repository";
+import { initializeRepositorySchema, LearnerRecordStore, UiActionStore } from "../src/lib/learner-repository";
 import { MobileQuizPerformanceStore } from "../src/lib/learner-repository/quiz-performance";
 import { MobileQuizPerformanceSession } from "../src/lib/judgement/quiz-performance";
 import { createMobileJudgementRuntime, type MobileJudgementRuntime } from "../src/lib/judgement/runtime";
 import { MOBILE_LOCAL_JUDGEMENT_MODEL } from "../src/lib/judgement/local-scorer";
 import { applyLocalUiAction } from "../src/lib/ui-action-mutations";
-
-class Sqlite implements AsyncSqlDatabase {
-  db = new Database(":memory:");
-  tail: Promise<void> = Promise.resolve();
-  failEvidence = false;
-  async execAsync(sql: string) { this.db.exec(sql); }
-  async runAsync(sql: string, ...params: SqlBindValue[]) {
-    if (this.failEvidence && sql.startsWith("INSERT INTO repository_meta") && params[0] === "quiz_performance_evidence_v1") throw new Error("evidence quota");
-    const r = this.db.query(sql).run(...params); return { changes: r.changes, lastInsertRowId: Number(r.lastInsertRowid) };
-  }
-  async getFirstAsync<T>(sql: string, ...params: SqlBindValue[]) { return this.db.query(sql).get(...params) as T | null; }
-  async getAllAsync<T>(sql: string, ...params: SqlBindValue[]) { return this.db.query(sql).all(...params) as T[]; }
-  withExclusiveTransactionAsync(work: (transaction: AsyncSqlExecutor) => Promise<void>) {
-    const task = this.tail.catch(() => undefined).then(async () => {
-      this.db.exec("BEGIN IMMEDIATE");
-      try { await work(this); this.db.exec("COMMIT"); } catch (error) { this.db.exec("ROLLBACK"); throw error; }
-    });
-    this.tail = task.catch(() => undefined); return task;
-  }
-  async closeAsync() { await this.tail; this.db.close(); }
-}
+import { SqliteTestDatabase } from "./helpers/sqlite";
 const backend = { backend: "system-one" as const, model: "jev-test-1", calibrationSha256: null };
 const answer = (request: JudgementRequest): JudgementResponse => ({ backend, answers: Object.fromEntries(Object.keys(request.questions).map(id => [id, { type: "noul", noul: 0.75 }])) });
 const runtime = (call = async (request: JudgementRequest) => answer(request), enabled = true): MobileJudgementRuntime => ({ hostedEnabled: enabled,
@@ -37,7 +16,11 @@ const hash = async (text: string) => createHash("sha256").update(text).digest("h
 async function fixture() {
   let time = Date.parse("2026-09-20T00:00:00Z");
   let id = 0;
-  const db = new Sqlite(); await initializeRepositorySchema(db);
+  const db = new SqliteTestDatabase();
+  db.beforeRun = (sql, params) => {
+    if (db.failEvidence && sql.startsWith("INSERT INTO repository_meta") && params[0] === "quiz_performance_evidence_v1") throw new Error("evidence quota");
+  };
+  await initializeRepositorySchema(db);
   const records = new LearnerRecordStore(db, () => new Date(time).toISOString());
   const initial: PortableLearnerData = { generatedAt: new Date(time).toISOString(), sessions: [], artifacts: [], goals: [], questionChecks: [],
     quizResults: [{ id: "earlier", topic: "Fractions", createdAt: new Date(time - 1000).toISOString(), score: 1, totalQuestions: 1, answers: { old: "one half" } }],

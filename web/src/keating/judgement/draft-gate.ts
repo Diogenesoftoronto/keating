@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS } from "@keating/runtime-config";
 import type { AgentOptions } from "@earendil-works/pi-agent-core";
 import {
   createAssistantMessageEventStream,
@@ -372,7 +373,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       const judgementModel = options.judgementModel ?? runtime?.judgementModel ?? (() => {
         const settings = loadJudgementModelSettings();
         const hosted = settings.backend === "hosted";
-        return { id: settings.backend === "hosted" ? "jev-latest" : settings.localModelId,
+        return { id: settings.backend === "hosted" ? DEFAULT_MODELS.judgement.systemOne : settings.localModelId,
         requestTokens: settings.requestTokens ?? (hosted ? JEV_REQUEST_TOKEN_LIMIT : null),
         stateQuestionTokens: settings.stateQuestionTokens ?? settings.contextWindowTokens
             ?? (hosted ? JEV_STATE_QUESTION_TOKEN_LIMIT : null) };

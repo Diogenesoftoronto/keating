@@ -1,3 +1,4 @@
+import { SPENDING_LIMITS, DEFAULT_MODELS, LIVE_MODEL_CHOICES } from "@keating/runtime-config";
 import { notOrganicPublicClient } from "../../notorganic-provider";
 import { startPcmCapture, type PcmCaptureHandle } from "../pcm-capture-worklet";
 import { safeLiveContextText } from "../live-context";
@@ -10,7 +11,7 @@ import { createRealtimeCanonicalBridge, protocolError } from "./live-session-sha
 /** A reservation ceiling, not a quoted model price. The gateway owns pricing. */
 export function gptLiveMaxCostMicrousd(): number {
 	const configured = Number(import.meta.env?.VITE_NOTORGANIC_MAX_COST_MICROUSD);
-	return Number.isSafeInteger(configured) && configured > 0 ? configured : 100_000;
+	return Number.isSafeInteger(configured) && configured > 0 ? configured : SPENDING_LIMITS.notorganicRequestMicrousd;
 }
 
 export function gptLiveInstructions(request: Pick<LiveSpeechRequest, "instructions" | "history" | "context">): string {
@@ -54,7 +55,7 @@ interface GptLiveDependencies {
 export async function startGptLiveSession(request: LiveSpeechRequest, dependencies: GptLiveDependencies = {}): Promise<LiveSpeechSession> {
 	const abortError = () => new DOMException("GPT Live was cancelled.", "AbortError");
 	if (request.signal?.aborted) throw abortError();
-	if (request.settings.model && request.settings.model !== "gpt-live-1") throw new Error("Not Organic GPT Live supports gpt-live-1.");
+	if (request.settings.model && request.settings.model !== DEFAULT_MODELS.speech.liveNotOrganic) throw new Error(`Not Organic GPT Live supports ${DEFAULT_MODELS.speech.liveNotOrganic}.`);
 	request.onState?.("connecting");
 	const credentials = await (dependencies.credentials ?? connectionCredentials)();
 	if (request.signal?.aborted) throw abortError();
@@ -201,7 +202,7 @@ export async function startGptLiveSession(request: LiveSpeechRequest, dependenci
 export const gptLiveProvider: SpeechProvider = {
 	id: "gpt-live", label: "GPT Live · Not Organic", kind: "duplex", status: "stable",
 	description: "Full-duplex GPT Live voice through your Not Organic account. Audio only.",
-	models: [{ value: "gpt-live-1", label: "GPT Live" }], voices: ["marin"],
+	models: [{ value: DEFAULT_MODELS.speech.liveNotOrganic, label: LIVE_MODEL_CHOICES.notorganic[0].label }], voices: ["marin"],
 	async synthesize() { throw new Error("Choose Live to talk with GPT Live."); },
 	startLiveSession: startGptLiveSession,
 };

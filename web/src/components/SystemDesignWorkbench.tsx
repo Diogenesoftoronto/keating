@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  createDiagramSubmission, getDiagramKinds, evaluateDiagramChecks,
-  parseDiagramSubmission, diagramMermaid, validateDiagramGraph,
+  DIAGRAM_LIMITS, addDiagramComponent, connectDiagramComponents, copyDiagramGraph, diagramDraftKey, disconnectDiagramConnection,
+  getDiagramKinds, evaluateDiagramChecks, parseDiagramDraftContent, parseDiagramSubmission, diagramMermaid, prepareDiagramSubmission,
+  removeDiagramComponent, renameDiagramComponent, setDiagramComponentKind, validateDiagramGraph,
   type DiagramGraph, type DiagramSpec,
   type UiActionReceipt, type UiTaskNode,
 } from "@keating/learner-contracts";
@@ -29,30 +30,25 @@ export interface SystemDesignWorkbenchProps {
 }
 
 export function systemDesignDraftKey(documentId: string, revision: number, nodeId: string): string {
-  return JSON.stringify(["system-design", documentId, revision, nodeId]);
+  return diagramDraftKey(documentId, revision, nodeId);
 }
 
 /** Restore graph data only; derived checks and Mermaid never come from a saved draft. */
 export function parseSystemDesignDraft(value: unknown, node: SystemDesignWorkbenchProps["node"]): SystemDesignDraft | undefined {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
-  const draft = value as Partial<SystemDesignDraft>;
-  if (Object.keys(value).some(key => !["version", "graph", "explanation", "pending"].includes(key))
-    || draft.version !== 1 || !validateDiagramGraph(draft.graph)
-    || typeof draft.explanation !== "string" || draft.explanation.length > 8000) return undefined;
-  if (draft.pending !== undefined) {
-    const intent = draft.pending;
+  const content = parseDiagramDraftContent(value, node.diagram, ["pending"]);
+  if (!content) return undefined;
+  const { pending } = value as Partial<SystemDesignDraft>;
+  if (pending !== undefined) {
+    const intent = pending;
     if (!intent || typeof intent !== "object" || intent.type !== "submit-task" || intent.nodeId !== node.id
       || intent.round !== node.round || Object.keys(intent).some(key => !["type", "nodeId", "submission", "round"].includes(key))) return undefined;
     const parsed = parseDiagramSubmission(intent.submission, node.diagram);
-    if (!parsed || JSON.stringify(parsed.graph) !== JSON.stringify(draft.graph) || parsed.explanation !== draft.explanation) return undefined;
+    if (!parsed || JSON.stringify(parsed.graph) !== JSON.stringify(content.graph) || parsed.explanation !== content.explanation) return undefined;
   }
-  return { version: 1, graph: draft.graph, explanation: draft.explanation, ...(draft.pending ? { pending: draft.pending } : {}) };
+  return { version: 1, graph: content.graph, explanation: content.explanation, ...(pending ? { pending } : {}) };
 }
 
-export function removeSystemDesignComponent(graph: DiagramGraph, id: string): DiagramGraph {
-  return { components: graph.components.filter(component => component.id !== id),
-    connections: graph.connections.filter(connection => connection.from !== id && connection.to !== id) };
-}
+export const removeSystemDesignComponent = removeDiagramComponent;
 
 /** Keep the same intent on a rejected or thrown delivery; the editor clears it on edits. */
 export function deliverSystemDesignAttempt(event: SharedUiActionEvent, deliver?: SystemDesignWorkbenchProps["onAction"]): boolean {
@@ -61,6 +57,7 @@ export function deliverSystemDesignAttempt(event: SharedUiActionEvent, deliver?:
 
 const kindLabel = (kind: string) => kind[0].toUpperCase() + kind.slice(1).replaceAll("-", " ");
 const newId = (prefix: string) => `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`;
+const { components: MAX_COMPONENTS, connections: MAX_CONNECTIONS, label: MAX_LABEL, explanation: MAX_EXPLANATION } = DIAGRAM_LIMITS;
 
 export function SystemDesignWorkbench(props: SystemDesignWorkbenchProps) {
   return <WorkbenchSession key={systemDesignDraftKey(props.documentId, props.documentRevision, props.node.id)} {...props} />;
@@ -73,10 +70,7 @@ function WorkbenchSession({ documentId, documentRevision, node, receipt, disable
     && receipt.action.round === node.round ? receipt.action : undefined;
   const received = useMemo(() => acknowledged ? parseDiagramSubmission(acknowledged.submission, node.diagram) : undefined,
     [acknowledged, node.diagram]);
-  const [graph, setGraph] = useState<DiagramGraph>(() => received?.graph ?? {
-    components: node.diagram.components.map(component => ({ ...component })),
-    connections: node.diagram.connections.map(connection => ({ ...connection })),
-  });
+  const [graph, setGraph] = useState<DiagramGraph>(() => received?.graph ?? copyDiagramGraph(node.diagram));
   const [explanation, setExplanation] = useState(received?.explanation ?? "");
   const [pending, setPending] = useState<SubmitIntent>();
   const [recorded, setRecorded] = useState(false);
@@ -146,14 +140,14 @@ function WorkbenchSession({ documentId, documentRevision, node, receipt, disable
   };
   const submit = () => {
     if (!editable || !validGraph || !graph.components.length || !explanation.trim()) return;
-    let intent: SubmitIntent;
-    try {
-      intent = pending ?? { type: "submit-task", nodeId: node.id,
-        submission: JSON.stringify(createDiagramSubmission(node.diagram, graph, explanation)),
-        ...(node.round !== undefined ? { round: node.round } : {}) };
-    } catch (cause) {
-      setDeliveryError(cause instanceof Error ? cause.message : "This diagram could not be submitted. Shorten your labels or explanation and retry.");
-      return;
+    let intent = pending;
+    if (!intent) {
+      const prepared = prepareDiagramSubmission(node.diagram, graph, explanation);
+      if (!prepared.ok) {
+        if (prepared.reason === "rejected") setDeliveryError(prepared.message);
+        return;
+      }
+      intent = { type: "submit-task", nodeId: node.id, submission: prepared.source, ...(node.round !== undefined ? { round: node.round } : {}) };
     }
     setPending(intent);
     if (deliverSystemDesignAttempt({ intent, humanFriendlyMessage: `Diagram submitted: ${node.title}` }, onAction)) {
@@ -176,28 +170,28 @@ function WorkbenchSession({ documentId, documentRevision, node, receipt, disable
 
     <fieldset disabled={!editable} className="sd-editor">
       <legend>Build your diagram</legend>
-      <div className="sd-section-heading"><h4>Components <span className="sd-muted">{graph.components.length}/40</span></h4>
-        <button type="button" disabled={graph.components.length >= 40} onClick={() => edit({ ...graph, components: [...graph.components, { id: newId("component"), label: `Component ${graph.components.length + 1}`, kind: kinds[0] }] })}>Add component</button>
+      <div className="sd-section-heading"><h4>Components <span className="sd-muted">{graph.components.length}/{MAX_COMPONENTS}</span></h4>
+        <button type="button" disabled={graph.components.length >= MAX_COMPONENTS} onClick={() => edit(addDiagramComponent(graph, { label: `Component ${graph.components.length + 1}`, kind: kinds[0] }, newId))}>Add component</button>
       </div>
       {!graph.components.length ? <p className="sd-muted">Add the parts you want to show, then connect them.</p> : null}
       <ol className="sd-components">
         {graph.components.map((component, index) => <li className="sd-component" key={component.id}>
-          <label>Component {index + 1}<input maxLength={160} value={component.label} onChange={event => edit({ ...graph, components: graph.components.map(item => item.id === component.id ? { ...item, label: event.currentTarget.value } : item) })} /></label>
-          <label>Type<select value={component.kind} onChange={event => edit({ ...graph, components: graph.components.map(item => item.id === component.id ? { ...item, kind: event.currentTarget.value } : item) })}>{kinds.map(kind => <option key={kind} value={kind}>{kindLabel(kind)}</option>)}</select></label>
-          <button className="sd-remove" type="button" aria-label={`Remove ${component.label || `component ${index + 1}`}`} onClick={() => edit(removeSystemDesignComponent(graph, component.id))}>Remove</button>
+          <label>Component {index + 1}<input maxLength={MAX_LABEL} value={component.label} onChange={event => edit(renameDiagramComponent(graph, component.id, event.currentTarget.value))} /></label>
+          <label>Category<select value={component.kind} onChange={event => edit(setDiagramComponentKind(graph, component.id, event.currentTarget.value))}>{kinds.map(kind => <option key={kind} value={kind}>{kindLabel(kind)}</option>)}</select></label>
+          <button className="sd-remove" type="button" aria-label={`Remove ${component.label || `component ${index + 1}`}`} onClick={() => edit(removeDiagramComponent(graph, component.id))}>Remove</button>
         </li>)}
       </ol>
-      <div className="sd-section-heading"><h4>Connections <span className="sd-muted">{graph.connections.length}/80</span></h4></div>
+      <div className="sd-section-heading"><h4>Connections <span className="sd-muted">{graph.connections.length}/{MAX_CONNECTIONS}</span></h4></div>
       <ul className="sd-connections">{graph.connections.map(connection => <li key={connection.id}>
         <span>{graph.components.find(item => item.id === connection.from)?.label} <span aria-label="to">→</span> {graph.components.find(item => item.id === connection.to)?.label}{connection.label ? <small>{connection.label}</small> : null}</span>
-        <button className="sd-remove" type="button" aria-label={`Remove connection ${graph.components.find(item => item.id === connection.from)?.label} to ${graph.components.find(item => item.id === connection.to)?.label}`} onClick={() => edit({ ...graph, connections: graph.connections.filter(item => item.id !== connection.id) })}>Remove</button>
+        <button className="sd-remove" type="button" aria-label={`Remove connection ${graph.components.find(item => item.id === connection.from)?.label} to ${graph.components.find(item => item.id === connection.to)?.label}`} onClick={() => edit(disconnectDiagramConnection(graph, connection.id))}>Remove</button>
       </li>)}</ul>
       <div className="sd-connection-form">
         <label>From<select value={graph.components.some(item => item.id === from) ? from : ""} onChange={event => setFrom(event.currentTarget.value)}><option value="">Choose component</option>{graph.components.map(component => <option key={component.id} value={component.id}>{component.label}</option>)}</select></label>
         <label>To<select value={graph.components.some(item => item.id === to) ? to : ""} onChange={event => setTo(event.currentTarget.value)}><option value="">Choose component</option>{graph.components.map(component => <option key={component.id} value={component.id}>{component.label}</option>)}</select></label>
-        <label>Connection label <span className="sd-muted">(optional)</span><input maxLength={160} value={connectionLabel} placeholder="Describe the relationship" onChange={event => setConnectionLabel(event.currentTarget.value)} /></label>
-        <button type="button" disabled={graph.connections.length >= 80 || !graph.components.some(item => item.id === from) || !graph.components.some(item => item.id === to)} onClick={() => {
-          edit({ ...graph, connections: [...graph.connections, { id: newId("connection"), from, to, ...(connectionLabel.trim() ? { label: connectionLabel.trim() } : {}) }] }); setConnectionLabel("");
+        <label>Connection label <span className="sd-muted">(optional)</span><input maxLength={MAX_LABEL} value={connectionLabel} placeholder="Describe the relationship" onChange={event => setConnectionLabel(event.currentTarget.value)} /></label>
+        <button type="button" disabled={graph.connections.length >= MAX_CONNECTIONS || !graph.components.some(item => item.id === from) || !graph.components.some(item => item.id === to)} onClick={() => {
+          edit(connectDiagramComponents(graph, { from, to, label: connectionLabel }, newId)); setConnectionLabel("");
         }}>Connect</button>
       </div>
     </fieldset>
@@ -209,8 +203,8 @@ function WorkbenchSession({ documentId, documentRevision, node, receipt, disable
         return <li key={check.id}><span className={result?.passed ? "sd-check-pass" : "sd-muted"}>{result?.passed ? "Present" : "Missing"}</span><span>{check.label}<small>{result?.detail ?? "Name each component to update this check."}</small></span></li>;
       })}</ul>
     </section> : null}
-    {node.criteria?.length ? <section className="sd-review" aria-label="Teacher review criteria"><h4>Teacher review criteria</h4><ul className="sd-criteria">{node.criteria.map(criterion => <li key={criterion}>{criterion}</li>)}</ul></section> : null}
-    <label className="sd-explanation">Explain your diagram<textarea disabled={!editable} maxLength={8000} rows={5} value={explanation} placeholder="Explain what the components and connections mean, and any assumptions or decisions behind them." onChange={event => { setExplanation(event.currentTarget.value); setPending(undefined); setDeliveryError(""); setSaveStatus(""); }} /></label>
+    {node.criteria?.length ? <section className="sd-review" aria-label="Review criteria"><h4>Review criteria</h4><ul className="sd-criteria">{node.criteria.map(criterion => <li key={criterion}>{criterion}</li>)}</ul></section> : null}
+    <label className="sd-explanation">Explain your diagram<textarea disabled={!editable} maxLength={MAX_EXPLANATION} rows={5} value={explanation} placeholder="Explain what the components and connections mean, and any assumptions or decisions behind them." onChange={event => { setExplanation(event.currentTarget.value); setPending(undefined); setDeliveryError(""); setSaveStatus(""); }} /></label>
     <div className="sd-footer">
       {received || recorded ? <p role="status">Submission recorded for review.</p> : <>
         <button type="button" className="sd-submit" disabled={!editable || !validGraph || !graph.components.length || !explanation.trim()} onClick={submit}>{deliveryError ? "Retry submission" : "Submit diagram"}</button>

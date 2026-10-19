@@ -278,7 +278,7 @@ function openUIActionReview(action: KeatingOpenUIAction): LearnerResponseReview 
         { label: "Components", value: design.graph.components.map((component) => `${component.id}: ${component.label} (${component.kind})`).join("\n") },
         { label: "Connections", value: design.graph.connections.map((connection) => `${connection.from} → ${connection.to}${connection.label ? `: ${connection.label}` : ""}`).join("\n") || "No connections" },
         { label: "Structural checks", value: design.checks.map((check) => `${check.passed ? "Present" : "Missing"}: ${check.label}. ${check.detail}`).join("\n") || "No structural checks specified" },
-        ...(node.criteria?.length ? [{ label: "Teacher review criteria", value: node.criteria.join("\n") }] : []),
+        ...(node.criteria?.length ? [{ label: "Review criteria", value: node.criteria.join("\n") }] : []),
         { label: "Explanation", value: design.explanation },
       ],
     };

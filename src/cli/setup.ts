@@ -1,3 +1,4 @@
+import { MODEL_CHOICES } from "../../packages/runtime-config/src/index.js";
 import React, { useState } from "react";
 import { Box, Text, render, useApp, useInput } from "ink";
 
@@ -21,47 +22,7 @@ const PROVIDERS: SetupChoice[] = [
   { label: "Custom", value: "custom", hint: "Type a provider name" }
 ];
 
-const MODELS_BY_PROVIDER: Record<string, SetupChoice[]> = {
-  notorganic: [
-    { label: "Balanced", value: "balanced", hint: "Five-minute device-bound capability" }
-  ],
-  zyphra: [
-    { label: "ZAYA1-8B", value: "zyphra/ZAYA1-8B", hint: "Recommended" },
-    { label: "Custom", value: "custom", hint: "Type a model name" }
-  ],
-  openrouter: [
-    { label: "Poolside Laguna M.1 (free)", value: "poolside/laguna-m.1:free", hint: "Recommended" },
-    { label: "Poolside Laguna XS.2 (free)", value: "poolside/laguna-xs.2:free", hint: "Faster/smaller" },
-    { label: "OpenAI GPT-OSS 120B (free)", value: "openai/gpt-oss-120b:free" },
-    { label: "DeepSeek V4 Flash (free)", value: "deepseek/deepseek-v4-flash:free" },
-    { label: "Google Gemma 4 31B (free)", value: "google/gemma-4-31b-it:free" },
-    { label: "Nvidia Nemotron 120B (free)", value: "nvidia/nemotron-3-super-120b-a12b:free" },
-    { label: "MoonshotAI Kimi K2.6 (free)", value: "moonshotai/kimi-k2.6:free" },
-    { label: "Custom", value: "custom", hint: "Type a model name" }
-  ],
-  google: [
-    { label: "Gemini 3.1 Pro Preview", value: "gemini-3.1-pro-preview", hint: "Recommended" },
-    { label: "Gemini 3.5 Flash", value: "gemini-3.5-flash", hint: "Faster" },
-    { label: "Gemma 31b", value: "gemma-31b-it", hint: "Free" },
-    { label: "Custom", value: "custom", hint: "Type a model name" }
-  ],
-  openai: [
-    { label: "GPT-5.5", value: "gpt-5.5", hint: "Recommended" },
-    { label: "GPT-5.5 Pro", value: "gpt-5.5-pro" },
-    { label: "GPT-5.4", value: "gpt-5.4" },
-    { label: "Custom", value: "custom", hint: "Type a model name" }
-  ],
-  anthropic: [
-    { label: "Claude Sonnet 5", value: "claude-sonnet-5", hint: "Recommended" },
-    { label: "Claude Opus 4.8", value: "claude-opus-4-8" },
-    { label: "Claude Fable 5", value: "claude-fable-5" },
-    { label: "Claude Haiku 4.5", value: "claude-haiku-4-5", hint: "Faster" },
-    { label: "Custom", value: "custom", hint: "Type a model name" }
-  ],
-  custom: [
-    { label: "Custom", value: "custom", hint: "Type a model name" }
-  ]
-};
+const MODELS_BY_PROVIDER: Record<string, SetupChoice[]> = MODEL_CHOICES.cliSetup;
 
 const THINKING: SetupChoice[] = [
   { label: "Medium", value: "medium", hint: "Recommended" },

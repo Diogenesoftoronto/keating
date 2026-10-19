@@ -13,6 +13,7 @@ import type { PersistedAppState, StudyArtifact } from "../types";
 import type { LearnerRepository } from "./index";
 import type { LocalAttachmentLocation } from "./records";
 import { durableAgentEvents } from "../durable-agent-events";
+import { stableRelatedId } from "./ids";
 
 export const LEGACY_ASYNC_STORAGE_MIGRATION_ID = "async-storage-v1-to-sqlite-v2";
 
@@ -35,19 +36,6 @@ function isoTimestamp(value: number, label: string): string {
 function requireContractId(value: string, label: string): string {
   if (!isContractId(value)) throw new Error(`Legacy ${label} id cannot be migrated without changing learner data.`);
   return value;
-}
-
-function stableRelatedId(prefix: string, ...parts: string[]): string {
-  const raw = `${prefix}.${parts.join(".")}`;
-  if (/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(raw)) return raw;
-  let hash = 0x811c9dc5;
-  for (const character of raw) {
-    hash ^= character.codePointAt(0) ?? 0;
-    hash = Math.imul(hash, 0x01000193) >>> 0;
-  }
-  const suffix = hash.toString(16).padStart(8, "0");
-  const shortened = raw.slice(0, 118 - suffix.length).replace(/[^A-Za-z0-9._-]/g, "-");
-  return `${shortened}.${suffix}`;
 }
 
 function artifactKind(artifact: StudyArtifact): LearnerArtifact["kind"] {

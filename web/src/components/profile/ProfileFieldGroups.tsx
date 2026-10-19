@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
 	type DeclaredLearnerProfile,
 	type LanguageFluency,
@@ -148,8 +148,36 @@ function ToggleRow({ title, description, checked, onChange }: { title: string; d
 function listValue(entries: string[]): string {
 	return entries.join(", ");
 }
-function parseList(raw: string): string[] {
+export function parseList(raw: string): string[] {
 	return raw.split(",").map((entry) => entry.trim()).filter(Boolean);
+}
+
+/** Keep what the learner is typing unless the list was changed from outside. */
+export function reconcileListText(raw: string, entries: string[]): string {
+	return listValue(parseList(raw)) === listValue(entries) ? raw : listValue(entries);
+}
+
+/**
+ * Comma-separated list input. Keeps the raw text while typing (so "cooking, " survives the
+ * round trip) and reports the parsed list upward on every change; the raw text is only
+ * replaced when the list changes from outside.
+ */
+export function ListInput({ id, entries, onEntries, placeholder }: { id: string; entries: string[]; onEntries: (next: string[]) => void; placeholder?: string }) {
+	const [raw, setRaw] = useState(() => listValue(entries));
+	useEffect(() => {
+		setRaw((current) => reconcileListText(current, entries));
+	}, [entries]);
+	return (
+		<input
+			id={id}
+			className={fieldInput()}
+			type="text"
+			value={raw}
+			onChange={(event) => { setRaw(event.target.value); onEntries(parseList(event.target.value)); }}
+			onBlur={() => setRaw(listValue(parseList(raw)))}
+			placeholder={placeholder}
+		/>
+	);
 }
 
 export function IdentityFields({ profile, onChange, idPrefix = "profile" }: ProfileGroupProps) {
@@ -207,7 +235,16 @@ export function IdentityFields({ profile, onChange, idPrefix = "profile" }: Prof
 	);
 }
 
+const normalizeLanguage = (language: string) => language.trim().replace(/\s+/gu, " ").toLowerCase();
+
+/** True when `next` repeats another row's language (case and spacing ignored). */
+export function isDuplicateLanguage(languages: string[], index: number, next: string): boolean {
+	const key = normalizeLanguage(next);
+	return key !== "" && languages.some((language, row) => row !== index && normalizeLanguage(language) === key);
+}
+
 export function LanguageFields({ profile, onChange, idPrefix = "profile" }: ProfileGroupProps) {
+	const [duplicateOf, setDuplicateOf] = useState<string | null>(null);
 	const languages = profile.otherLanguages.length ? profile.otherLanguages : [""];
 	const fluencies = profile.otherLanguageFluencies ?? {};
 	const fluencyFor = (language: string): LanguageFluency | "" => Object.hasOwn(fluencies, language) ? fluencies[language] ?? "" : "";
@@ -266,7 +303,11 @@ export function LanguageFields({ profile, onChange, idPrefix = "profile" }: Prof
 							otherLabel="Another language…"
 							placeholder="Yoruba"
 							maxLength={60}
-							onChange={(next) => changeLanguages(languages.map((value, row) => row === index ? next : value), { from: language, to: next })}
+							onChange={(next) => {
+								if (isDuplicateLanguage(languages, index, next)) { setDuplicateOf(next.trim()); return; }
+								setDuplicateOf(null);
+								changeLanguages(languages.map((value, row) => row === index ? next : value), { from: language, to: next });
+							}}
 						/>
 						<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", minWidth: 0, "& > :first-child": { flex: 1, minWidth: 0 } })}>
 							<Select id={`${idPrefix}-other-fluency-${index}`} aria-label={`Fluency in ${name}`} value={fluencyFor(language)} disabled={!language.trim()}
@@ -279,13 +320,14 @@ export function LanguageFields({ profile, onChange, idPrefix = "profile" }: Prof
 							</Select>
 							<button type="button" className={outlineButton()} aria-label={`Remove ${name}`}
 								disabled={languages.length === 1 && !language.trim()}
-								onClick={() => changeLanguages(languages.filter((_, row) => row !== index))}>Remove</button>
+								onClick={() => { setDuplicateOf(null); changeLanguages(languages.filter((_, row) => row !== index)); }}>Remove</button>
 						</div>
 					</div>;
 				})}
+				{duplicateOf && <p className={hintClass} role="alert">{duplicateOf} is already in your list — each language can only appear once.</p>}
 				<div>
 					<button type="button" className={outlineButton()} disabled={languages.length >= 8 || languages.some(language => !language.trim())}
-						onClick={() => changeLanguages([...languages, ""])}>Add another language</button>
+						onClick={() => { setDuplicateOf(null); changeLanguages([...languages, ""]); }}>Add another language</button>
 				</div>
 			</fieldset>
 		</div>
@@ -320,14 +362,7 @@ export function ContextFields({ profile, onChange, idPrefix = "profile" }: Profi
 				/>
 			</Field>
 			<Field id={`${idPrefix}-interests`} label="Things you are into" hint="Comma separated. These become the analogies and examples Keating reaches for.">
-				<input
-					id={`${idPrefix}-interests`}
-					className={fieldInput()}
-					type="text"
-					value={listValue(profile.interests)}
-					onChange={(event) => onChange({ interests: parseList(event.target.value) })}
-					placeholder="cooking, basketball, synthesizers"
-				/>
+				<ListInput id={`${idPrefix}-interests`} entries={profile.interests} onEntries={(interests) => onChange({ interests })} placeholder="cooking, basketball, synthesizers" />
 			</Field>
 		</div>
 	);
@@ -539,14 +574,7 @@ export function PedagogyFields({ profile, onChange, idPrefix = "profile" }: Prof
 					</Select>
 				</Field>
 				<Field id={`${idPrefix}-analogies`} label="Draw analogies from" hint="Comma separated. Fields you know well enough to reason by comparison.">
-					<input
-						id={`${idPrefix}-analogies`}
-						className={fieldInput()}
-						type="text"
-						value={listValue(profile.analogyDomains)}
-						onChange={(event) => onChange({ analogyDomains: parseList(event.target.value) })}
-						placeholder="cooking, music, carpentry"
-					/>
+					<ListInput id={`${idPrefix}-analogies`} entries={profile.analogyDomains} onEntries={(analogyDomains) => onChange({ analogyDomains })} placeholder="cooking, music, carpentry" />
 				</Field>
 			</div>
 		</div>

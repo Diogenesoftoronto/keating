@@ -250,7 +250,8 @@ in
     VITE_NOTORGANIC_ACCOUNT_URL = "";
     VITE_NOTORGANIC_CLIENT_ID = "";
     VITE_NOTORGANIC_REDIRECT_URI = "";
-    VITE_NOTORGANIC_SCOPE = "wallet:read usage:read billing:checkout infer:balanced infer:gpt-6.1-sol web:search web:fetch realtime:connect";
+    # Optional restrictive override; empty derives model/capability scopes from runtime-config.
+    VITE_NOTORGANIC_SCOPE = "";
 
     # Browser inference reservation ceiling (100000 micro-USD = $0.10).
     VITE_NOTORGANIC_MAX_COST_MICROUSD = "100000";
@@ -565,10 +566,40 @@ in
   };
 
   tasks."keating:mutate" = {
-    description = "Run mutation testing with Stryker against src/core/";
-    exec = ''
-      stryker run
-    '';
+    description = "Mutation-test a target (or repository defaults) with isolated Stryker";
+    input = { target = ""; tests = []; threshold = 60; args = []; };
+    exec = "bun scripts/ops.ts mutate --task-input";
+  };
+
+  tasks."keating:worktree" = {
+    description = "Plan or prepare a fresh worktree with build prerequisites";
+    input = { path = ""; branch = ""; base = "origin/main"; yes = false; args = []; };
+    exec = "bun scripts/ops.ts worktree --task-input";
+  };
+  tasks."keating:ops-verify" = {
+    description = "Prepare generated sources and verify suites sequentially";
+    input = { only = "root,contracts,web,mobile,flue,typecheck"; args = []; };
+    exec = "bun scripts/ops.ts verify --task-input";
+  };
+  tasks."keating:release" = {
+    description = "Plan/prepare an annotated release, or publish a prepared release";
+    input = { version = ""; title = ""; notes = ""; push = false; yes = false; args = []; };
+    exec = "bun scripts/ops.ts release --task-input";
+  };
+  tasks."keating:release-status" = {
+    description = "Inspect workflows and live versions, or wait for a tag on staging";
+    input = { tag = ""; wait = false; timeout = "30m"; interval = "30s"; args = []; };
+    exec = "bun scripts/ops.ts status --task-input";
+  };
+  tasks."keating:deploy-staging" = {
+    description = "Plan or deploy a bounded staging snapshot with explicit Railway IDs";
+    input = { yes = false; args = []; };
+    exec = "bun scripts/ops.ts deploy-staging --task-input";
+  };
+  tasks."keating:promote" = {
+    description = "Plan or promote the immutable staging candidate with existing safeguards";
+    input = { now = false; yes = false; args = []; };
+    exec = "bun scripts/ops.ts promote --task-input";
   };
 
   # ── Mobile (Expo / React Native) ────────────────────────────────

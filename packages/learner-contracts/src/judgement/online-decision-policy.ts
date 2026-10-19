@@ -1,4 +1,5 @@
 /** Online adaptation uses observed local outcomes as context, without updating model weights. */
+import { DEFAULT_MODELS } from "../../../runtime-config/src/index.js";
 import { validatePortableLearnerData, type PortableLearnerData } from "../portable.js";
 import {
   buildDecisionPolicyDatasets, compareDecisionPolicyUrgency, compareDecisionPolicyWebUrgency,
@@ -10,15 +11,15 @@ import {
 export const ONLINE_DECISION_POLICY = {
   minTrainRows: 20, minValidationRows: 5, maxTrainRows: 500, maxValidationRows: 32,
   maxTestRows: 64, minRankingPairs: 3, minRankingCohorts: 2,
-  clockBucketMs: 3_600_000, maxAgeMs: 86_400_000, model: "v3.5_default",
+  clockBucketMs: 3_600_000, maxAgeMs: 86_400_000, model: DEFAULT_MODELS.judgement.tabular,
 } as const;
 
 /** Only this numerical payload crosses the transport boundary. Identifiers and prose stay local. */
 export interface OnlineDecisionRequest {
-  schemaVersion: 1; task: "regression"; model: "v3.5_default"; featureNames: string[];
+  schemaVersion: 1; task: "regression"; model: typeof DEFAULT_MODELS.judgement.tabular; featureNames: string[];
   trainFeatures: number[][]; trainTargets: number[]; testFeatures: number[][];
 }
-export interface OnlineDecisionResponse { model: "v3.5_default"; predictions: number[] }
+export interface OnlineDecisionResponse { model: typeof DEFAULT_MODELS.judgement.tabular; predictions: number[] }
 export interface OnlineDecisionCandidate { key: string; topic: string; deckId?: string; cardId?: string }
 export interface OnlineDecisionPrediction extends OnlineDecisionCandidate { value: number }
 export interface OnlineDecisionValidation {
@@ -30,7 +31,7 @@ export interface OnlineDecisionValidation {
 export type OnlineDecisionStatus = "ready" | "active" | "insufficient-history" | "insufficient-validation"
   | "no-candidates" | "baseline-retained" | "failed" | "invalid-response" | "stale";
 export interface OnlineDecisionReceipt {
-  status: OnlineDecisionStatus; target: DecisionPolicyTarget; model: "v3.5_default";
+  status: OnlineDecisionStatus; target: DecisionPolicyTarget; model: typeof DEFAULT_MODELS.judgement.tabular;
   evidenceId: string; requestId: string; asOf: number; updatedAt: number | null; expiresAt: number;
   counts: { observedRows: number; trainRows: number; validationRows: number; candidateCount: number; omittedCandidates: number };
   validation: OnlineDecisionValidation | null; reasons: string[];

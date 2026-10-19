@@ -1,0 +1,32 @@
+[
+  {
+    "suite": "mobile",
+    "name": "native core compiles against the real header and bounds outputs, reuses one model and serializes calls",
+    "reason": "Pre-existing native-core compilation failure in the polish worktree; requires the native toolchain/header boundary to be repaired.",
+    "added": "2026-10-19"
+  },
+  {
+    "suite": "flue",
+    "name": "dispatches through the real harness, tool loop, and persistent state",
+    "reason": "Pre-existing standalone Flue/NodePod integration failure from the polish baseline.",
+    "added": "2026-10-19"
+  },
+  {
+    "suite": "flue",
+    "name": "activates a skill, reads an allowlisted MCP tool, and delegates a critique",
+    "reason": "Pre-existing standalone Flue/NodePod integration failure from the polish baseline.",
+    "added": "2026-10-19"
+  },
+  {
+    "suite": "flue",
+    "name": "registers and executes portable browser tool names through the real Flue harness",
+    "reason": "Pre-existing standalone Flue/NodePod integration failure from the polish baseline.",
+    "added": "2026-10-19"
+  },
+  {
+    "suite": "flue",
+    "name": "reviewed canonical stream commits an animation tool and subsequent assistant response",
+    "reason": "Pre-existing standalone Flue/NodePod integration failure from the polish baseline.",
+    "added": "2026-10-19"
+  }
+]

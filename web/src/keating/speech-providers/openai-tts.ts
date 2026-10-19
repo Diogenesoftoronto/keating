@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS, MODEL_CHOICES, MODEL_PREFERENCES, PROVIDER_ENDPOINTS } from "@keating/runtime-config";
 import {
 	scheduleAudioBlob,
 	type SpeechProvider,
@@ -22,11 +23,7 @@ const OPENAI_TTS_VOICES = [
 	"verse",
 ];
 
-const OPENAI_TTS_MODELS = [
-	{ value: "gpt-4o-mini-tts", label: "GPT-4o mini TTS (steerable)" },
-	{ value: "tts-1", label: "tts-1 (fast)" },
-	{ value: "tts-1-hd", label: "tts-1 HD (higher quality)" },
-];
+const OPENAI_TTS_MODELS = MODEL_CHOICES.openaiTts;
 
 const LEGACY_TTS_VOICES = new Set([
 	"alloy",
@@ -42,7 +39,7 @@ const LEGACY_TTS_VOICES = new Set([
 
 function cleanVoice(value: string | undefined, model: string): string {
 	const requested = (value ?? "").trim().toLowerCase();
-	if (model === "tts-1" || model === "tts-1-hd") {
+	if (model === MODEL_CHOICES.openaiTts[1].value || model === MODEL_CHOICES.openaiTts[2].value) {
 		return LEGACY_TTS_VOICES.has(requested) ? requested : "alloy";
 	}
 	return OPENAI_TTS_VOICES.includes(requested) ? requested : "marin";
@@ -55,7 +52,7 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 		throw new Error("No OpenAI API key configured. Add one in Settings → Providers & Models.");
 	}
 
-	const model = settings.model || "gpt-4o-mini-tts";
+	const model = settings.model || DEFAULT_MODELS.speech.ttsOpenai;
 	const voice = cleanVoice(utterance.voice || settings.voiceName, model);
 	const body: Record<string, unknown> = {
 		model,
@@ -64,12 +61,12 @@ async function synthesize(request: SpeechSynthesisRequest): Promise<SpeechSynthe
 		response_format: "mp3",
 	};
 
-	if (model === "gpt-4o-mini-tts" && utterance.affect) {
+	if (model === MODEL_PREFERENCES.speech.steerableTts[0] && utterance.affect) {
 		body.instructions = `Speak with a ${utterance.affect} affect at a ${utterance.pace} pace.`;
 	}
 
 	const response = await withApiRetry(async () => {
-		const result = await fetch("https://api.openai.com/v1/audio/speech", {
+		const result = await fetch(PROVIDER_ENDPOINTS.openaiSpeech, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
@@ -102,7 +99,7 @@ export const openAITtsProvider: SpeechProvider = {
 	label: "OpenAI TTS",
 	kind: "tts",
 	status: "stable",
-	description: "OpenAI Audio TTS REST API. Steerable affect/pace on gpt-4o-mini-tts.",
+	description: `OpenAI Audio TTS REST API. Steerable affect/pace on ${MODEL_PREFERENCES.speech.steerableTts[0]}.`,
 	models: OPENAI_TTS_MODELS,
 	voices: OPENAI_TTS_VOICES,
 	needsApiKey: "openai",

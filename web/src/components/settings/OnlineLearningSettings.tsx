@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS, MODEL_CHOICES } from "@keating/runtime-config";
 import { useEffect, useState } from "react";
 import { useOnlineLearningPreference } from "../../hooks/useOnlineLearning";
 import { connectOnlineLearning, onlineLearningModels, setOnlineLearningChatMode, setOnlineLearningModel, type ActivityLearningMode, type TabularModelListing, type TabularModelPreference } from "../../keating/judgement/tabular-account";
@@ -26,7 +27,7 @@ export function OnlineLearningSettings() {
         catch { setError("Could not save this preference."); }
       }}>
         <option value="off">Off · usual learning rules</option>
-        <option value="v3.5_default" disabled={!models.some(model => model.id === "v3.5_default" && model.available)}>TabPFN 3.5{loading ? " · checking availability" : models.some(model => model.available) ? "" : " · unavailable"}</option>
+        <option value={DEFAULT_MODELS.judgement.tabular} disabled={!models.some(model => model.id === DEFAULT_MODELS.judgement.tabular && model.available)}>{MODEL_CHOICES.judgement.tabular.shortLabel}{loading ? " · checking availability" : models.some(model => model.available) ? "" : " · unavailable"}</option>
       </select></label>
       {account.enabled && <label>Chat learning <select aria-label="Chat learning" value={account.chatMode} onChange={event => {
         try { setOnlineLearningChatMode(account.scope!, event.target.value as ActivityLearningMode); setError(""); }

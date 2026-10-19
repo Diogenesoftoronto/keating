@@ -1,13 +1,16 @@
 {
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
-  "_comment": "Mutation testing via Stryker. Uses the command runner because the project's tests run on bun, which has no native Stryker plugin.",
+  "_comment": "Mutation testing via Stryker. Uses the command runner because the project's tests run on bun, which has no native Stryker plugin. TypeScript 7 is native and has no JS parseConfigFileTextToJson API; a nonexistent tsconfigFile bypasses TSConfigPreprocessor. Typecheck separately.",
   "packageManager": "npm",
   "testRunner": "command",
   "commandRunner": {
     "command": "bun test ./test/*.test.ts"
   },
   "coverageAnalysis": "off",
-  "reporters": ["html", "clear-text", "progress"],
+  "reporters": [
+    "json",
+    "clear-text"
+  ],
   "htmlReporter": {
     "fileName": "reports/mutation/mutation.html"
   },
@@ -39,31 +42,36 @@
   "thresholds": {
     "high": 80,
     "low": 60,
-    "break": null
+    "break": 60
   },
-  "tempDirName": ".stryker-tmp",
+  "tempDirName": "/tmp/keating-stryker-default",
   "cleanTempDir": true,
   "ignorePatterns": [
-    ".bun-install",
-    ".bun-tmp",
-    ".entire",
-    ".claude",
-    ".keating",
-    ".chrysalis",
-    ".codex",
-    ".crush",
-    ".opencode",
-    ".agents",
-    ".github",
-    "web/.output",
-    "web/dist",
-    "web/node_modules",
-    "data",
-    "video",
-    "analysis",
-    "test/traces",
-    "test/final_dataset.json",
-    "reports",
-    "*.tsbuildinfo"
-  ]
+    "/.bun-install",
+    "/.bun-tmp",
+    "/.entire",
+    "/.claude",
+    "/.keating",
+    "/.chrysalis",
+    "/.codex",
+    "/.crush",
+    "/.opencode",
+    "/.agents",
+    "/.github",
+    "/web/.output",
+    "/web/dist",
+    "/web/node_modules",
+    "/data",
+    "/video",
+    "/analysis",
+    "/test/traces",
+    "/test/final_dataset.json",
+    "/reports",
+    "/*.tsbuildinfo"
+  ],
+  "tsconfigFile": "stryker-no-tsconfig.json",
+  "inPlace": false,
+  "jsonReporter": {
+    "fileName": "reports/mutation/mutation.json"
+  }
 }

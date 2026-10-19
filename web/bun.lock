@@ -20,6 +20,7 @@
         "@jason.today/webmcp": "0.1.13",
         "@keating/agent-runtime": "file:../packages/agent-runtime",
         "@keating/learner-contracts": "file:../packages/learner-contracts",
+        "@keating/runtime-config": "file:../packages/runtime-config",
         "@opentelemetry/api": "^1.9.1",
         "@opentelemetry/exporter-trace-otlp-proto": "^0.222.0",
         "@opentelemetry/resources": "^2.11.0",
@@ -613,6 +614,8 @@
     "@keating/agent-runtime": ["@keating/agent-runtime@file:../packages/agent-runtime", { "devDependencies": { "@types/bun": "^1.4.2", "typescript": "^7.0.2" } }],
 
     "@keating/learner-contracts": ["@keating/learner-contracts@file:../packages/learner-contracts", {}],
+
+    "@keating/runtime-config": ["@keating/runtime-config@file:../packages/runtime-config", {}],
 
     "@mermaid-js/parser": ["@mermaid-js/parser@2.0.0", "", { "dependencies": { "@chevrotain/types": "~11.1.2" } }, "sha512-K8BeapFUfrfxbRAUQAG5oBOCwo1+bNWzaVnPxTCutkfrTBn6T/j91FIhqxWJ32SUeQ9T3iy1zcmPZ5ROZEvDrg=="],
 

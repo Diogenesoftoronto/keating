@@ -1,3 +1,4 @@
+import { DEFAULT_MODELS, MODEL_PREFERENCES } from "@keating/runtime-config";
 import { guardCalibrationCall, webJudgementCalibrationStore, type WebJudgementCalibrationStore } from "./calibration";
 /** Settings-to-runtime assembly. No inference, downloads, or learner activation. */
 import {
@@ -99,7 +100,7 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   const requested = options.settings ?? loadJudgementModelSettings();
   const settings: JudgementModelSettings = Object.freeze({
     backend: requested.backend === "hosted" || requested.backend === "off" ? requested.backend : "local",
-    ...(requested.hostedProvider === "typesafe" ? { hostedProvider: "typesafe" as const, customModel: requested.customModel?.trim() || "jev-latest" } : {}),
+    ...(requested.hostedProvider === "typesafe" ? { hostedProvider: "typesafe" as const, customModel: requested.customModel?.trim() || DEFAULT_MODELS.judgement.systemOne } : {}),
     localModelId: requested.localModelId,
     gatewayPath: gatewayPath(requested.gatewayPath),
     requestTokens: typeof requested.requestTokens === "number" && Number.isSafeInteger(requested.requestTokens)
@@ -136,7 +137,7 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   }
 
   if (settings.backend === "hosted") {
-    const model = settings.hostedProvider === "typesafe" ? settings.customModel ?? "jev-latest"
+    const model = settings.hostedProvider === "typesafe" ? settings.customModel ?? DEFAULT_MODELS.judgement.systemOne
       : options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;
     const key = calibrationKey("system-one", model, calibration?.hosted);
     const sameOrigin = import.meta.env?.VITE_KEATING_JUDGEMENT_SAME_ORIGIN === "true";
@@ -161,9 +162,9 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
     calibration: Object.freeze({ entries: Object.freeze(entries) }),
     ...(options.pinnedBackend ? { pinnedBackend: Object.freeze({ ...options.pinnedBackend }) } : {}),
   });
-  const hostedModel = settings.hostedProvider === "typesafe" ? settings.customModel ?? "jev-latest"
+  const hostedModel = settings.hostedProvider === "typesafe" ? settings.customModel ?? DEFAULT_MODELS.judgement.systemOne
     : options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;
-  const isJevModel = hostedModel === "jev-latest" || hostedModel === "jev-preview" || /^jev-\d/.test(hostedModel);
+  const isJevModel = MODEL_PREFERENCES.judgement.aliases.some(alias => hostedModel === alias) || /^jev-\d/.test(hostedModel);
   const localNativeContextWindow = options.localScorer?.contextWindowTokens
     ?? (settings.localModelId === JULIA_MODEL_ID || settings.localModelId === JULIA_BROWSER_MODEL_ID ? JULIA_MODEL.contextTokens
       : settings.localModelId === DESKTOP_OFFLINE_MODEL.id && typeof (options.desktopBridge ?? desktopOfflineBridge())?.scoreLabels === "function"

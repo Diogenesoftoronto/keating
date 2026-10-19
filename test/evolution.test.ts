@@ -11,7 +11,7 @@ import type { TeacherPolicy, SimulationWeights } from "../src/core/types.js";
 import {
   arbPolicy, arbWeights, arbUnboundedPolicy, arbUnboundedWeights, arbLearnerProfile,
   policyIsBounded, weightsAreNormalized, weightsAreBounded,
-  benchmarkScoresAreBounded, suppressConsoleError, createDeterministicBenchmark
+  benchmarkScoresAreBounded, suppressConsoleError, withOfflineBenchmark
 } from "./helpers.js";
 
 // ─── Novelty score: pure-function properties (no I/O) ──────────────────────
@@ -165,12 +165,15 @@ test("ALWAYS: clampWeights on unbounded input is idempotent after first clamp", 
 // ─── Integration tests (using deterministic benchmark stub) ────────────────
 
 test("accepted evolution candidates never underperform the current best by construction", async () => {
-  if (!process.env.GOOGLE_API_KEY && !process.env.GEMINI_API_KEY) return;
-  await suppressConsoleError(async () => {
+  await withOfflineBenchmark(() => suppressConsoleError(async () => {
     const workdir = await mkdtemp(join(tmpdir(), "keating-evolution-"));
     const archivePath = join(workdir, "archive.json");
     const run = await evolvePolicy(archivePath, DEFAULT_POLICY, undefined, 3, 1234);
 
+    expect(run.exploredCandidates).toHaveLength(3);
+    expect(run.acceptedCandidates.length).toBeGreaterThan(0);
+    expect(run.exploredCandidates.every(candidate => Number.isFinite(candidate.benchmark.overallScore))).toBe(true);
+    expect(run.exploredCandidates.some(candidate => !candidate.accepted)).toBe(true);
     expect(run.best.overallScore).toBeGreaterThanOrEqual(run.baseline.overallScore - 0.01);
     for (const candidate of run.acceptedCandidates) {
       expect(candidate.novelty).toBeGreaterThanOrEqual(0.05);
@@ -182,14 +185,16 @@ test("accepted evolution candidates never underperform the current best by const
     expect(saved.currentPolicy.name).toBe(run.best.policy.name);
     expect(benchmarkScoresAreBounded(run.best)).toBe(true);
     expect(benchmarkScoresAreBounded(run.baseline)).toBe(true);
-  });
+  }));
 }, 60000);
 
 test("benchmark suite remains deterministic for fixed policy and seed", async () => {
-  if (!process.env.GOOGLE_API_KEY && !process.env.GEMINI_API_KEY) return;
-  await suppressConsoleError(async () => {
+  await withOfflineBenchmark(() => suppressConsoleError(async () => {
     const left = await runBenchmarkSuite(process.cwd(), DEFAULT_POLICY, "derivative", 99);
     const right = await runBenchmarkSuite(process.cwd(), DEFAULT_POLICY, "derivative", 99);
     expect(left).toEqual(right);
-  });
+    expect(left.topicBenchmarks).toHaveLength(1);
+    expect(left.trace.dataSource).toBe("synthetic");
+    expect(left.trace.syntheticFallback).toBe(true);
+  }));
 }, 60000);

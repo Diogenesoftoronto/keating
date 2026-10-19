@@ -1,9 +1,10 @@
+import { SERVICE_ENDPOINTS, DEFAULT_MODELS, MODEL_CHOICES } from "@keating/runtime-config";
 import { providerDefinition } from "./provider-config";
 import type { ProviderId, ProviderSettings } from "./types";
 import type { ReasoningLevel } from "./ui-settings";
 import { OFFLINE_MODELS } from "./offline-model-contract";
 
-export const MODELS_DEV_CATALOG_URL = "https://models.dev/api.json";
+export const MODELS_DEV_CATALOG_URL = SERVICE_ENDPOINTS.modelsDev;
 export const LONG_CONTEXT_THRESHOLD = 256_000;
 
 export const MODEL_CAPABILITY_FILTERS = [
@@ -432,11 +433,11 @@ export const BUILT_IN_MODEL_CATALOG: readonly CatalogModel[] = [
     callable: true, unavailabilityReason: null, recoveryHint: null, source: "built-in",
   })),
   {
-    key: "openai::gpt-5.4",
+    key: `openai::${DEFAULT_MODELS.mobile.openai}`,
     provider: "openai",
     providerLabel: "OpenAI",
-    id: "gpt-5.4",
-    name: "GPT-5.4",
+    id: DEFAULT_MODELS.mobile.openai,
+    name: MODEL_CHOICES.mobileFallback.openai.label,
     description: "Built-in offline fallback",
     reasoning: true,
     reasoningLevels: ["off", "low", "medium", "high", "xhigh"],
@@ -453,11 +454,11 @@ export const BUILT_IN_MODEL_CATALOG: readonly CatalogModel[] = [
     source: "built-in",
   },
   {
-    key: "anthropic::claude-sonnet-4-6",
+    key: `anthropic::${DEFAULT_MODELS.mobile.anthropic}`,
     provider: "anthropic",
     providerLabel: "Anthropic",
-    id: "claude-sonnet-4-6",
-    name: "Claude Sonnet 4.6",
+    id: DEFAULT_MODELS.mobile.anthropic,
+    name: MODEL_CHOICES.mobileFallback.anthropic.label,
     description: "Built-in offline fallback",
     reasoning: true,
     reasoningLevels: ["off", "low", "medium", "high", "xhigh"],
@@ -474,11 +475,11 @@ export const BUILT_IN_MODEL_CATALOG: readonly CatalogModel[] = [
     source: "built-in",
   },
   {
-    key: "google::gemini-3.5-flash",
+    key: `google::${DEFAULT_MODELS.mobile.google}`,
     provider: "google",
     providerLabel: "Google",
-    id: "gemini-3.5-flash",
-    name: "Gemini 3.5 Flash",
+    id: DEFAULT_MODELS.mobile.google,
+    name: MODEL_CHOICES.mobileFallback.google.label,
     description: "Built-in offline fallback",
     reasoning: true,
     reasoningLevels: ["off", "minimal", "low", "medium", "high"],
@@ -495,11 +496,11 @@ export const BUILT_IN_MODEL_CATALOG: readonly CatalogModel[] = [
     source: "built-in",
   },
   {
-    key: "openrouter::anthropic/claude-sonnet-4.6",
+    key: `openrouter::${DEFAULT_MODELS.mobile.openrouter}`,
     provider: "openrouter",
     providerLabel: "OpenRouter",
-    id: "anthropic/claude-sonnet-4.6",
-    name: "Claude Sonnet 4.6",
+    id: DEFAULT_MODELS.mobile.openrouter,
+    name: MODEL_CHOICES.mobileFallback.openrouter.label,
     description: "Built-in offline fallback",
     reasoning: true,
     reasoningLevels: ["off", "low", "medium", "high", "xhigh"],

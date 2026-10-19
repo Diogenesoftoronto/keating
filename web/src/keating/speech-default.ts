@@ -1,7 +1,8 @@
+import { DEFAULT_MODELS } from "@keating/runtime-config";
 import { DEFAULT_WEB_SPEECH_SETTINGS, loadWebSpeechSettings, saveWebSpeechSettings } from "./speech";
 
 const SPEECH_SETTINGS_STORAGE_KEY = "keating:web:speech";
-export const GPT_LIVE_DEFAULT_MODEL = "gpt-live-1";
+export const GPT_LIVE_DEFAULT_MODEL = DEFAULT_MODELS.speech.liveNotOrganic;
 
 /** True only when the learner never touched voice settings, so we never override a choice. */
 export function shouldDefaultToGptLive(input: { stored: string | null; signedIn: boolean }): boolean {

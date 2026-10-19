@@ -5,7 +5,17 @@
     "moduleResolution": "NodeNext",
     "strict": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": [
+      "bun",
+      "node"
+    ],
+    "typeRoots": [
+      "../../node_modules/@types"
+    ]
   },
-  "include": ["src/**/*.ts", "test/**/*.ts"]
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ]
 }
