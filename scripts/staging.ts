@@ -18,7 +18,7 @@ export function stagingSourcePath(path: string): boolean {
   if (path.split("/").some(part => part === ".." || part.startsWith(".env") || ["node_modules", "dist", ".output", ".git", ".keating", "styled-system"].includes(part))) return false;
   if (/\.(?:pem|key|p12|pfx|log|sqlite|db)$/i.test(path)) return false;
   return ["Dockerfile.web", "railway.toml", ".dockerignore", "desktop/src/navigation.ts"].includes(path)
-    || ["web/", "shared/", "packages/learner-contracts/", "packages/agent-runtime/", "packages/p2p-core/", "spikes/flue-host/src/"].some(prefix => path.startsWith(prefix))
+    || ["web/", "shared/", "packages/learner-contracts/", "packages/agent-runtime/", "packages/runtime-config/", "packages/p2p-core/", "spikes/flue-host/src/"].some(prefix => path.startsWith(prefix))
     || ["spikes/flue-host/package.json", "spikes/flue-host/bun.lock"].includes(path);
 }
 
