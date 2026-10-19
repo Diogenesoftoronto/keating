@@ -46,7 +46,7 @@
     },
     "desktop": {
       "name": "@keating/desktop",
-      "version": "4.0.16",
+      "version": "4.0.17",
       "dependencies": {
         "@keating/p2p-core": "workspace:*",
         "onnxruntime-node": "1.30.0",
@@ -60,7 +60,7 @@
     },
     "mobile": {
       "name": "keating-mobile",
-      "version": "4.0.16",
+      "version": "4.0.17",
       "dependencies": {
         "@daily-co/config-plugin-rn-daily-js": "0.0.12",
         "@daily-co/react-native-daily-js": "0.87.1",
@@ -132,7 +132,7 @@
     },
     "packages/browser-agent-runtime": {
       "name": "@keating/browser-agent-runtime",
-      "version": "4.0.16",
+      "version": "4.0.17",
       "devDependencies": {
         "@types/bun": "^1.4.2",
         "typescript": "^7.0.2",
@@ -146,7 +146,7 @@
     },
     "packages/design-contract": {
       "name": "@keating/design-contract",
-      "version": "4.0.16",
+      "version": "4.0.17",
       "devDependencies": {
         "@types/bun": "^1.4.2",
         "typescript": "^7.0.2",
