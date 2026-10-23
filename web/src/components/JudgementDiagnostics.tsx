@@ -3,6 +3,7 @@ import { css } from "../../styled-system/css";
 import { clearJudgementDiagnostics, configureJudgementDiagnostics, getJudgementDiagnostics, subscribeJudgementDiagnostics, type JudgementDiagnostic } from "../keating/judgement/diagnostics";
 import type { TeachingAdjustmentController } from "../keating/judgement/teaching-adjustment";
 import { Toggle } from "./Toggle";
+import { LearningIntelligenceDiagnostics } from "./LearningIntelligenceDiagnostics";
 
 const stack = css({ display: "flex", flexDirection: "column", gap: ".75rem", minWidth: 0 });
 const row = css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" });
@@ -60,6 +61,7 @@ export function JudgementDiagnostics({ controls = false, sessionId, teachingAdju
       <div className={row}><span>Review live transcripts</span><Toggle aria-label="Review live transcripts" checked={state.reviewLiveTranscripts} onChange={reviewLiveTranscripts => configureJudgementDiagnostics({ reviewLiveTranscripts })} /></div>
       <p className={muted}>Review paired learner and tutor transcript text after a short pause. Hosted mode sends bounded, redacted text to your judgement service. Reviews appear in the live inspector and never interrupt speech or change learning records.</p>
     </>}
+    <LearningIntelligenceDiagnostics controls={controls} sessionId={sessionId} />
     {state.enabled && <details open={controls}>
       <summary className={summary}>Judgements · {reply?.status ?? "idle"} · {events.length} recent {events.length === 1 ? "call" : "calls"}</summary>
       <div className={css({ maxHeight: "22rem", overflowY: "auto", paddingBlock: ".5rem", display: "flex", flexDirection: "column", gap: ".75rem" })}>

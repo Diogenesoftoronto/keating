@@ -63,6 +63,24 @@ test("uncalibrated reviews stay receipts and cannot create durable proxy memorie
   expect(await f.controller.prompt()).toBe(""); f.controller.dispose();
 });
 
+test("external exact extraction candidates use the same calibration and source gates as recall", async () => {
+  for (const calibrated of [true, false]) {
+    const f = fixture();
+    const candidates = await webMemoryCandidates(await f.result(), f.sessions);
+    if (!calibrated) f.unfitted();
+    f.controller.reviewExtracted(candidates, "extraction-clairic/clairic-v1", () => true);
+    await f.controller.settled();
+    const saved = await f.store.read("account-a");
+    expect(saved.bank.length).toBe(calibrated ? 1 : 0);
+    expect(saved.reviews[0]?.needleModel).toBe("extraction-clairic/clairic-v1");
+    f.replace([{ id: "learner", role: "user", content: "Edited source", timestamp: 1 }]);
+    f.controller.reviewExtracted(candidates, "extraction-clairic/clairic-v1", () => true);
+    await f.controller.settled();
+    expect((await f.store.read("account-a")).reviews).toHaveLength(1);
+    f.controller.dispose();
+  }
+});
+
 test("source, account, turn, calibration, retrieval and opt-in changes reject late writes", async () => {
   for (const change of [
     (f: ReturnType<typeof fixture>) => f.replace([{ id: "learner", role: "user", content: "Edited source", timestamp: 1 }]),

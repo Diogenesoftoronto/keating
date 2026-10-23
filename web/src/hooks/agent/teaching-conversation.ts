@@ -20,6 +20,7 @@ import { createWebActivityLearning } from "../../keating/judgement/activity-lear
 import { createTeachingAdjustmentController, withTeachingAdjustment, type TeachingAdjustmentController } from "../../keating/judgement/teaching-adjustment";
 import { createDesktopNeedleRecall, withDesktopNeedleRecall } from "../../keating/needle-retrieval";
 import { createWebMemoryAdmission, withWebMemoryBank } from "../../keating/judgement/memory-admission";
+import { createLearningIntelligence, withLearningIntelligence } from "../../keating/learning-intelligence/runtime";
 import { notOrganicPublicClient } from "../../notorganic-provider";
 import { createKeatingTools, type KeatingToolsOptions } from "../../keating/browser-tools";
 import { loadAgentRuntimeConfig } from "../../keating/agent-runtime";
@@ -60,6 +61,7 @@ export interface TeachingConversation {
   adjustment: TeachingAdjustmentController;
   memory: ReturnType<typeof createWebMemoryAdmission>;
   recall: ReturnType<typeof createDesktopNeedleRecall>;
+  intelligence: ReturnType<typeof createLearningIntelligence>;
 }
 
 export function createTeachingConversation({
@@ -106,6 +108,14 @@ export function createTeachingConversation({
       learner: latestLearnerMessage(),
     }),
   });
+  const intelligence = createLearningIntelligence({
+    sessionId, sessions, current: isLive, ready: () => !agent.context.isStreaming, messages: () => agent.context.messages,
+    history: async () => {
+      const [checks, reviews, decks] = await Promise.all([keatingStorage.getQuestionChecks(), keatingStorage.getCardReviews(), keatingStorage.getDecks()]);
+      return { checks, reviews, decks };
+    },
+    reviewMemory: (candidates, model, current) => memory.reviewExtracted(candidates, model, current),
+  });
   clearTeachingDraftStatus(sessionId);
   const activityLearning = createWebActivityLearning({
     sessionId,
@@ -143,12 +153,12 @@ export function createTeachingConversation({
   const agent: FlueConversation = new FlueConversation({
     initialState: nextState,
     convertToLlm: (messages) => toModelMessagesWithTime(messages),
-    streamFn: withDesktopNeedleRecall(withWebMemoryBank(withTeachingAdjustment(draftGate, adjustment), memory), recall),
+    streamFn: withDesktopNeedleRecall(withWebMemoryBank(withLearningIntelligence(withTeachingAdjustment(draftGate, adjustment), intelligence), memory), recall),
     sessionId,
   }, flueRuntimeUrl);
   agent.getApiKey = (provider: string) => getProviderApiKey(provider);
   agent.context.tools = [...tools] as typeof agent.context.tools;
-  return { agent, adjustment, memory, recall };
+  return { agent, adjustment, memory, recall, intelligence };
 }
 
 /**

@@ -28,3 +28,4 @@ export * from "./diagram.js";
 export * from "./diagram-edit.js";
 export * from "./text-distance.js";
 export * from "./question-response.js";
+export * from "./learning-intelligence.js";

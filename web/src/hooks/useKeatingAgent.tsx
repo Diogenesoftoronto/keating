@@ -12,7 +12,7 @@
  *   usePersistentStorage, useSettingsDialogLinks, useLearnerSignalEvents,
  *   useAgentEnvironmentSync    page-level settings and window events
  */
-import { useCallback, use, useRef, useState, useTransition } from "react";
+import { useCallback, use, useEffect, useRef, useState, useTransition } from "react";
 import { usePostHog } from "@posthog/react";
 import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import type { Api, Model } from "@earendil-works/pi-ai";
@@ -37,7 +37,9 @@ import {
 } from "../stores/keating-agent-store";
 import type { ChatPanelHandle } from "../types/chat-panel";
 import { DEFAULT_MODEL } from "./keating-stream";
-import { getInitPromise, updateSessionTitle } from "./keating-storage";
+import { getInitPromise, sessions, updateSessionTitle } from "./keating-storage";
+import { LEARNING_SOURCE_NAVIGATE, openLearningSource, resolveLearningSource, revealLearningPassage, waitForLearningSession, type LearningNavigationRequest } from "../keating/learning-intelligence/source-navigation";
+import type { SessionData } from "../types/session";
 import { renderAgentDialogs } from "./agent/agent-dialogs";
 import { createToolOptions } from "./agent/agent-tools";
 import { maybeGenerateAlternativeResponse as generateAlternativeResponse } from "./agent/alternative-response";
@@ -241,6 +243,54 @@ export function useKeatingAgent(
     clearForkedSessionId: store.clearForkedSessionId,
   });
   const { newSession, loadSession, loadSessionById, forkSession } = navigation;
+  useEffect(() => {
+    const navigate = (event: Event) => {
+      const detail = (event as CustomEvent<LearningNavigationRequest>).detail;
+      if (!detail?.anchor || typeof detail.resolve !== "function") return;
+      if (detail.signal?.aborted) { detail.resolve("unavailable"); return; }
+      if (!refs.panelRef.current) { detail.resolve("unavailable"); return; }
+      if (refs.sessionIdRef.current !== detail.anchor.sessionId && refs.agentRef.current?.context.isStreaming) { detail.resolve("busy"); return; }
+      const request = refs.sessionSwitchRequestsRef.current.begin();
+      const current = () => !detail.signal?.aborted && refs.sessionSwitchRequestsRef.current.isCurrent(request);
+      const onAbort = () => { if (refs.sessionSwitchRequestsRef.current.isCurrent(request)) refs.sessionSwitchRequestsRef.current.begin(); };
+      detail.signal?.addEventListener("abort", onAbort, { once: true });
+      // Session preparation may await storage/provider setup. A new learner
+      // reply during that wait wins instead of being cancelled by the switch.
+      let replyStarted = false, attachmentTimedOut = false;
+      const stopObserving = refs.sessionIdRef.current !== detail.anchor.sessionId
+        ? refs.agentRef.current?.observeExecution(event => {
+          if (event.type === "agent_start" && current() && refs.sessionIdRef.current !== detail.anchor.sessionId) {
+            replyStarted = true;
+            refs.sessionSwitchRequestsRef.current.begin();
+          }
+        }) : undefined;
+      void openLearningSource(detail.anchor, {
+        read: async id => {
+          if (refs.sessionIdRef.current === id && refs.agentRef.current) return { id, messages: refs.agentRef.current.context.messages };
+          return await sessions.loadSession(id) as SessionData | null;
+        },
+        activeSessionId: () => refs.sessionIdRef.current,
+        hasPanel: () => !!refs.panelRef.current,
+        isStreaming: () => refs.agentRef.current?.context.isStreaming === true,
+        beforeReveal: settingsDialog.onClose,
+        load: async id => {
+          await loadSessionById(id, request);
+          await waitForLearningSession(id, {
+            activeSessionId: () => refs.sessionIdRef.current,
+            ready: () => !!refs.panelRef.current && refs.agentRef.current?.sessionId === id,
+            current,
+            onTimeout: () => { attachmentTimedOut = true; onAbort(); },
+          });
+        }, current,
+        reveal: (anchor, source) => revealLearningPassage(anchor, source, () => current()
+          && refs.sessionIdRef.current === anchor.sessionId
+          && !!resolveLearningSource(anchor, { id: anchor.sessionId, messages: refs.agentRef.current?.context.messages ?? [] })),
+      }).then(result => detail.resolve(attachmentTimedOut ? "unavailable" : replyStarted ? "busy" : result), () => detail.resolve(replyStarted ? "busy" : "unavailable"))
+        .finally(() => { stopObserving?.(); detail.signal?.removeEventListener("abort", onAbort); });
+    };
+    window.addEventListener(LEARNING_SOURCE_NAVIGATE, navigate);
+    return () => window.removeEventListener(LEARNING_SOURCE_NAVIGATE, navigate);
+  }, [loadSessionById, refs, settingsDialog.onClose]);
   forkSessionRef.current = forkSession;
 
   const shareSession = useCallback(

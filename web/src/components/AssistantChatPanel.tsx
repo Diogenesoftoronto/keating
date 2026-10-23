@@ -1,4 +1,6 @@
 import { clearPendingChatTurn } from "../notorganic-provider/pending-chat-turn";
+import { LearningSourcePassage } from "./LearningIntelligenceDiagnostics";
+import { learningRowSourceIds } from "../keating/learning-intelligence/source-navigation";
 import {
   assistantTextParts,
   textFromContent,
@@ -3412,8 +3414,14 @@ function projectThreadMessages(
   speechEnabled: boolean,
   provider: string | undefined,
 ): ThreadMessageLike[] {
+  const decorate = (rows: ThreadMessageLike[]): ThreadMessageLike[] => {
+    const sourceIds = learningRowSourceIds(rows, agent?.context.messages ?? messages);
+    return rows.map((row, index) => ({ ...row, metadata: { ...row.metadata, custom: {
+      ...row.metadata?.custom, keatingLearningSourceIds: sourceIds[index],
+    } } }));
+  };
   const native = agent?.getSnapshot().conversation;
-  if (!native || !agent) return messages.map((message, index) => toAssistantMessage(message, index, messages.length, isRunning, provider));
+  if (!native || !agent) return decorate(messages.map((message, index) => toAssistantMessage(message, index, messages.length, isRunning, provider)));
   const legacy = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent.legacyMessages, speechEnabled)));
   const local = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent.localMessages, speechEnabled)));
   // Native history replaces the legacy projection, but preparation and
@@ -3423,11 +3431,11 @@ function projectThreadMessages(
   const localError = local.some(message => message.role === "assistant" && ["error", "aborted"].includes(message.stopReason));
   const visibleNative = native.messages.filter(message => shouldRenderFlueMessage(message) && !(localError && message.settlement));
   const totalMessages = legacy.length + visibleNative.length + local.length;
-  return [
+  return decorate([
     ...legacy.map((message, index) => toAssistantMessage(message, index, totalMessages, false, provider)),
     ...visibleNative.map(message => flueThreadMessage(message, isRunning)),
     ...local.map((message, index) => toAssistantMessage(message, legacy.length + visibleNative.length + index, totalMessages, false, provider)),
-  ].sort((left, right) => (left.createdAt?.getTime() ?? 0) - (right.createdAt?.getTime() ?? 0));
+  ].sort((left, right) => (left.createdAt?.getTime() ?? 0) - (right.createdAt?.getTime() ?? 0)));
 }
 
 function AssistantThread({
@@ -4025,9 +4033,14 @@ function UserMessage({
   components: ReturnType<typeof messagePartComponents>;
   profileImage?: string | null;
 }) {
+  const sessionId = useContext(OpenUISessionScopeContext);
+  const sourceIds = useAuiState(({ message }) => message.metadata.custom?.keatingLearningSourceIds as string[] | undefined);
   const ownText = useAuiState(({ message }) => message.content.filter(part => part.type === "text").map(part => part.type === "text" ? part.text : "").join("\n\n"));
   return (
     <MessagePrimitive.Root
+      data-learning-session-id={sessionId}
+      data-learning-message-ids={JSON.stringify(sourceIds ?? [])}
+      tabIndex={-1}
       className={css({
         marginInline: "auto",
         marginBottom: "1rem",
@@ -4109,6 +4122,7 @@ function UserMessage({
           >
             <MessagePrimitive.Content components={components} />
           </div>
+          <LearningSourcePassage sessionId={sessionId} sourceIds={sourceIds ?? []} />
         </div>
       </div>
     </MessagePrimitive.Root>
@@ -4280,6 +4294,8 @@ function AssistantMessage({
   const [feedbackType, setFeedbackType] = useState<"up" | "down">("up");
   const onAuthError = useContext(AuthErrorContext);
   const developerMode = useContext(DeveloperChatDetails);
+  const learningSessionId = useContext(OpenUISessionScopeContext);
+  const learningSourceIds = useAuiState(({ message }) => message.metadata.custom?.keatingLearningSourceIds as string[] | undefined);
   const authError = useAuiState(
     ({ message }) =>
       message.metadata.custom?.keatingAuthError as AuthErrorEntry | undefined,
@@ -4360,6 +4376,9 @@ function AssistantMessage({
   return (
     <>
       <MessagePrimitive.Root
+        data-learning-session-id={learningSessionId}
+        data-learning-message-ids={JSON.stringify(learningSourceIds ?? [])}
+        tabIndex={-1}
         className={css({
           marginInline: "auto",
           marginBottom: "1rem",
@@ -4398,6 +4417,7 @@ function AssistantMessage({
                 onRecover={onAuthError}
               />}
             </div>
+            <LearningSourcePassage sessionId={learningSessionId} sourceIds={learningSourceIds ?? []} />
             {llmFailure && canRetry && onRetry && (
               <FailedResponseRecovery
                 recovery={developerMode ? llmFailure.recovery : undefined}

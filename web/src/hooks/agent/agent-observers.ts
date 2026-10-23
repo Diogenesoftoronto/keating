@@ -134,7 +134,7 @@ export function observeConversationPersistence({
   /** Runs after the turn's final save, once the agent is idle. */
   onIdle: () => Promise<void>;
 }): { persistSnapshot: () => Promise<void>; dispose: () => void } {
-  const { agent, adjustment, recall, memory } = conversation;
+  const { agent, adjustment, recall, memory, intelligence } = conversation;
   const scheduler = createSnapshotScheduler(save);
   const { persistSnapshot } = scheduler;
   persistCurrentSnapshotRef.current = persistSnapshot;
@@ -154,6 +154,7 @@ export function observeConversationPersistence({
   });
   const unsubscribePersistence = agent.observeExecution((ev) => {
     if (ev.type === "agent_start") {
+      intelligence.cancel();
       adjustment.startRun(agent.context.messages);
       judgementObserver.start(agent.context.messages.length);
     }
@@ -195,6 +196,8 @@ export function observeConversationPersistence({
         .whenIdle()
         .then(() => persistSnapshot())
         .then(async () => {
+          // Derived evidence runs after the durable save, independently of optional idle work.
+          void intelligence.update();
           await keatingLifecycle.emit({
             type: "session_idle",
             sessionId,
@@ -209,6 +212,7 @@ export function observeConversationPersistence({
     adjustment.dispose();
     recall.dispose();
     memory.dispose();
+    intelligence.dispose();
     unsubscribePersistence();
     scheduler.cancel();
     if (persistCurrentSnapshotRef.current === persistSnapshot) {
