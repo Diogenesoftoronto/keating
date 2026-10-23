@@ -202,10 +202,8 @@ export function createWebMemoryAdmission(options: {
     for (const candidate of candidates) if (!await bounded(webMemorySourceCurrent(candidate, options.sessions), signal)) return false;
     return true;
   }
-  return {
-    refresh,
-    /** The recall owner supplies a model/source generation guard valid beyond retrieval. */
-    review(result: NeedleSearchResult, retrievalCurrent: () => boolean): void {
+  /** Every extractor uses the same calibrated admission and original-source checks. */
+  function reviewCandidates(load: () => Promise<MemoryAdmissionCandidate[]>, model: string, retrievalCurrent: () => boolean): void {
       refresh();
       const scope = account.current();
       if (!applicable() || !scope || leases.size || active || !retrievalCurrent()) return;
@@ -213,10 +211,9 @@ export function createWebMemoryAdmission(options: {
       const current = () => applicable() && generation === epoch && !abort.signal.aborted && account.current() === scope
         && options.requestIdentity() === request && retrievalCurrent();
       const timer = setTimeout(() => abort.abort(), options.timeoutMs ?? 30_000);
-      const source = structuredClone(result);
       pending = (async () => {
         try {
-          const candidates = await bounded(webMemoryCandidates(source, options.sessions), abort.signal);
+          const candidates = await bounded(load(), abort.signal);
           if (!candidates.length || !current() || !await exact(candidates, abort.signal)) return;
           const configured = await bounded((options.runtime ?? configuredRuntime)(), abort.signal);
           // Calibration loading can publish a configuration event; a later retrieval retries safely.
@@ -232,10 +229,21 @@ export function createWebMemoryAdmission(options: {
           const decisions = await bounded(reviewMemoryCandidates(candidates, guardedCall, configured.runtime.policy.calibration, abort.signal), abort.signal);
           if (!current() || !configured.current() || !await exact(candidates, abort.signal) || !current()) return;
           const bank = admitMemoryBank(before.bank, decisions, configured.runtime.policy.calibration);
-          await bounded(storage().commit(scope, before.revision, bank, { needleModel: source.model, decisions }, () => current() && configured.current()), abort.signal);
+          await bounded(storage().commit(scope, before.revision, bank, { needleModel: model, decisions }, () => current() && configured.current()), abort.signal);
         } catch { /* Optional review never changes reply delivery or explicit profile facts. */ }
         finally { clearTimeout(timer); if (active === abort) active = undefined; }
       })();
+    }
+  return {
+    refresh,
+    /** The recall owner supplies a model/source generation guard valid beyond retrieval. */
+    review(result: NeedleSearchResult, retrievalCurrent: () => boolean): void {
+      const source = structuredClone(result);
+      reviewCandidates(() => webMemoryCandidates(source, options.sessions), source.model, retrievalCurrent);
+    },
+    reviewExtracted(candidates: readonly MemoryAdmissionCandidate[], model: string, sourceCurrent: () => boolean): void {
+      const source = structuredClone(candidates.slice(0, 4));
+      reviewCandidates(async () => [...source], model, sourceCurrent);
     },
     /** Only bounded local reads may delay prompt assembly; admission and identity HTTP never do. */
     async prompt(): Promise<string> {
