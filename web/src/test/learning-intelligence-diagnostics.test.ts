@@ -5,6 +5,20 @@ import { learningSourceHash } from "@keating/learner-contracts";
 
 afterEach(() => { configureJudgementDiagnostics({ enabled: false, details: false }); clearLearningDiagnostics(); });
 const evidence = [{ sessionId: "source", messageId: "user-0-42", quote: "private words", start: 0, end: 13, sourceHash: learningSourceHash("private words") }];
+test("external-store snapshots retain identity while capture is off and after revocation", () => {
+  configureJudgementDiagnostics({ enabled: false, details: false });
+  const empty = getLearningDiagnostics();
+  expect(getLearningDiagnostics()).toBe(empty);
+  recordLearningDiagnostic({ kind: "extraction", status: "completed", sessionId: "source", reasons: [], evidence });
+  expect(getLearningDiagnostics()).toBe(empty);
+  configureJudgementDiagnostics({ enabled: true, details: true });
+  recordLearningDiagnostic({ kind: "extraction", status: "completed", sessionId: "source", reasons: [], evidence });
+  const captured = getLearningDiagnostics();
+  expect(captured).toHaveLength(1); expect(getLearningDiagnostics()).toBe(captured);
+  configureJudgementDiagnostics({ enabled: false });
+  const revoked = getLearningDiagnostics();
+  expect(revoked).toEqual([]); expect(getLearningDiagnostics()).toBe(revoked);
+});
 test("extraction capture defaults off; details off never retain original quote text", () => {
   recordLearningDiagnostic({ kind: "extraction", status: "completed", sessionId: "source", reasons: [], evidence });
   expect(getLearningDiagnostics()).toEqual([]);
