@@ -21,7 +21,7 @@ const identifier = (value: string) => /^[a-zA-Z0-9_.:/-]{1,200}$/.test(value) ? 
 function publish(next: readonly LearningDiagnostic[]) { events = next; for (const listener of listeners) listener(); }
 export const getLearningDiagnostics = () => {
   const state = getJudgementDiagnostics();
-  if (!state.enabled || !state.details && events.some(event => event.evidence?.length)) events = [];
+  if (events.length && (!state.enabled || !state.details && events.some(event => event.evidence?.length))) events = [];
   return events;
 };
 export function subscribeLearningDiagnostics(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; }
