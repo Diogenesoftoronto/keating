@@ -1,6 +1,6 @@
 /** Optional, account-scoped proxy memory. Review never delays the teacher. */
-import { admitMemoryBank, memoryBankPrompt, reviewMemoryCandidates, type MemoryBank,
-  type MemoryAdmissionCandidate, type MemoryAdmissionDecision,
+import { MEMORY_CATEGORIES, admitMemoryBank, memoryBankPrompt, reviewMemoryCandidates, type MemoryBank,
+  type MemoryAdmissionCandidate, type MemoryAdmissionDecision, type MemoryCategory, type ReviewerMemory,
   type JudgementCaller, type NeedleSearchResult } from "@keating/learner-contracts";
 import type { AgentOptions } from "@earendil-works/pi-agent-core";
 import { createLocalSetting } from "../local-setting";
@@ -61,18 +61,50 @@ export async function webMemorySourceCurrent(candidate: MemoryAdmissionCandidate
   return text === candidate.message && text.slice(candidate.start, candidate.end) === candidate.evidence;
 }
 
-interface BankRecord { revision: number; bank: MemoryBank; reviews: readonly { needleModel: string; decisions: readonly MemoryAdmissionDecision[] }[] }
+/** Reviewer corrections: rejected candidates never enter the bank; admitted ones are added by hand. */
+export interface MemoryOverrides { rejected: readonly string[]; admitted: readonly ReviewerMemory[] }
+interface BankRecord { revision: number; bank: MemoryBank; reviews: readonly { needleModel: string; decisions: readonly MemoryAdmissionDecision[] }[]; overrides: MemoryOverrides }
+export type MemoryOverride =
+  | { kind: "reject"; candidateId: string }
+  | { kind: "admit"; candidate: MemoryAdmissionCandidate; category: MemoryCategory }
+  | { kind: "clear"; candidateId: string };
 export interface WebMemoryStore {
   read(scope: string): Promise<BankRecord>;
   commit(scope: string, revision: number, bank: MemoryBank, review: BankRecord["reviews"][number], current: () => boolean): Promise<boolean>;
+  override?(scope: string, change: MemoryOverride): Promise<void>;
 }
-const empty = (): BankRecord => ({ revision: 0, bank: [], reviews: [] });
+const OVERRIDE_LIMIT = 128;
+const noOverrides = (): MemoryOverrides => ({ rejected: [], admitted: [] });
+const empty = (): BankRecord => ({ revision: 0, bank: [], reviews: [], overrides: noOverrides() });
+const candidateShape = (value: unknown): value is MemoryAdmissionCandidate => object(value)
+  && typeof value.id === "string" && value.id.length <= 128 && typeof value.evidence === "string" && value.evidence.length <= 240
+  && typeof value.sessionId === "string" && typeof value.messageId === "string" && typeof value.message === "string" && value.message.length <= 4000
+  && Number.isSafeInteger(value.start) && Number.isSafeInteger(value.end) && (value.start as number) >= 0 && (value.end as number) <= value.message.length
+  && value.message.slice(value.start as number, value.end as number) === value.evidence;
+function overrides(value: unknown): MemoryOverrides {
+  if (value === undefined) return noOverrides();
+  if (!object(value) || !Array.isArray(value.rejected) || !Array.isArray(value.admitted) || value.rejected.length > OVERRIDE_LIMIT || value.admitted.length > OVERRIDE_LIMIT
+    || !value.rejected.every(id => typeof id === "string" && id.length <= 128)
+    || !value.admitted.every(row => object(row) && candidateShape(row.candidate) && MEMORY_CATEGORIES.includes(row.category as MemoryCategory))) throw new Error("memory_bank_invalid");
+  return { rejected: [...value.rejected as string[]], admitted: structuredClone(value.admitted as ReviewerMemory[]) };
+}
 function record(value: unknown): BankRecord {
   if (value === undefined) return empty();
   if (!object(value) || !Number.isSafeInteger(value.revision) || (value.revision as number) < 0 || !Array.isArray(value.bank) || !Array.isArray(value.reviews)
     || value.reviews.length > 8 || JSON.stringify(value).length > 2_000_000) throw new Error("memory_bank_invalid");
   const bank = admitMemoryBank(value.bank, [], { entries: {} });
-  return { revision: value.revision as number, bank, reviews: value.reviews as BankRecord["reviews"] };
+  return { revision: value.revision as number, bank, reviews: value.reviews as BankRecord["reviews"], overrides: overrides(value.overrides) };
+}
+/** Pure override application; a rejection also removes the candidate from the proxy bank. */
+export function applyMemoryOverride(before: BankRecord, change: MemoryOverride): BankRecord {
+  const id = change.kind === "admit" ? change.candidate.id : change.candidateId;
+  const rejected = before.overrides.rejected.filter(row => row !== id);
+  const admitted = before.overrides.admitted.filter(row => row.candidate.id !== id);
+  if (change.kind === "reject") rejected.push(id);
+  if (change.kind === "admit") admitted.push({ candidate: structuredClone(change.candidate), category: change.category });
+  const bank = change.kind === "reject" ? before.bank.filter(row => row.candidate.id !== id) : before.bank;
+  return record({ revision: before.revision + 1, bank, reviews: before.reviews,
+    overrides: { rejected: rejected.slice(-OVERRIDE_LIMIT), admitted: admitted.slice(-OVERRIDE_LIMIT) } });
 }
 
 /** IndexedDB compare-and-swap protects another tab's bank; never shares the explicit profile store. */
@@ -104,13 +136,24 @@ export function createIndexedDbWebMemoryStore(factory: IDBFactory = indexedDB, n
           try {
             const before = record(request.result);
             if (!current() || before.revision !== revision) { tx.abort(); return; }
-            const next = record({ revision: revision + 1, bank, reviews: [...before.reviews, structuredClone(review)].slice(-8) });
+            const next = record({ revision: revision + 1, bank, reviews: [...before.reviews, structuredClone(review)].slice(-8), overrides: before.overrides });
             storage.put(next, scope); saved = true;
           } catch { tx.abort(); }
         };
         tx.oncomplete = () => resolve(saved);
         tx.onabort = () => resolve(false);
         tx.onerror = () => reject(new Error("memory_storage_unavailable"));
+      });
+    },
+    async override(scope, change) {
+      const db = await open();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction("banks", "readwrite"), storage = tx.objectStore("banks"), request = storage.get(scope);
+        request.onsuccess = () => {
+          try { storage.put(applyMemoryOverride(record(request.result), change), scope); } catch { tx.abort(); }
+        };
+        tx.oncomplete = () => resolve();
+        tx.onerror = tx.onabort = () => reject(new Error("memory_storage_unavailable"));
       });
     },
   };
@@ -180,6 +223,8 @@ export function createWebMemoryAdmission(options: {
   account?: ReturnType<typeof createWebMemoryAccount>; store?: WebMemoryStore;
   runtime?: () => Promise<MemoryRuntime>; enabled?: () => boolean; timeoutMs?: number;
   subscribe?: (listener: () => void) => () => void;
+  /** Observes every reviewed decision, whether or not the bank write won. */
+  onDecisions?: (decisions: readonly MemoryAdmissionDecision[], scope: string, committed: boolean) => void;
 }) {
   const account = options.account ?? createWebMemoryAccount(), enabled = options.enabled ?? webMemoryAdmissionEnabled;
   let database: WebMemoryStore | undefined = options.store;
@@ -228,8 +273,11 @@ export function createWebMemoryAdmission(options: {
             : Promise.resolve({ ok: false, error: { code: "cancelled", retryable: false } });
           const decisions = await bounded(reviewMemoryCandidates(candidates, guardedCall, configured.runtime.policy.calibration, abort.signal), abort.signal);
           if (!current() || !configured.current() || !await exact(candidates, abort.signal) || !current()) return;
-          const bank = admitMemoryBank(before.bank, decisions, configured.runtime.policy.calibration);
-          await bounded(storage().commit(scope, before.revision, bank, { needleModel: model, decisions }, () => current() && configured.current()), abort.signal);
+          // A reviewer rejection outranks a later model admission of the same passage.
+          const rejected = new Set(before.overrides.rejected);
+          const bank = admitMemoryBank(before.bank, decisions.filter(row => !rejected.has(row.candidate.id)), configured.runtime.policy.calibration);
+          const committed = await bounded(storage().commit(scope, before.revision, bank, { needleModel: model, decisions }, () => current() && configured.current()), abort.signal);
+          try { options.onDecisions?.(decisions, scope, committed); } catch { /* Observers cannot alter admission. */ }
         } catch { /* Optional review never changes reply delivery or explicit profile facts. */ }
         finally { clearTimeout(timer); if (active === abort) active = undefined; }
       })();
@@ -254,12 +302,18 @@ export function createWebMemoryAdmission(options: {
       const current = () => applicable() && !abort.signal.aborted && epoch === generation && account.current() === scope && request === options.requestIdentity();
       try {
         const saved = await bounded(storage().read(scope), abort.signal);
+        const rejected = new Set(saved.overrides.rejected);
         const live: MemoryAdmissionDecision[] = [];
         for (const row of saved.bank) {
           if (!current()) return "";
-          if (await bounded(webMemorySourceCurrent(row.candidate, options.sessions), abort.signal)) live.push(row);
+          if (!rejected.has(row.candidate.id) && await bounded(webMemorySourceCurrent(row.candidate, options.sessions), abort.signal)) live.push(row);
         }
-        const prompt = current() ? memoryBankPrompt(live) : "";
+        const reviewer: ReviewerMemory[] = [];
+        for (const row of saved.overrides.admitted) {
+          if (!current()) return "";
+          if (await bounded(webMemorySourceCurrent(row.candidate, options.sessions), abort.signal)) reviewer.push(row);
+        }
+        const prompt = current() ? memoryBankPrompt(live, 4000, reviewer) : "";
         return prompt ? `\n\n${prompt}` : "";
       } catch { return ""; } finally { clearTimeout(timer); }
     },
@@ -282,4 +336,17 @@ export function withWebMemoryBank(stream: NonNullable<AgentOptions["streamFn"]>,
       return stream(model, prompt ? { ...context, systemPrompt: `${context.systemPrompt ?? ""}${prompt}` } : context, options);
     })();
   };
+}
+
+let sharedStore: WebMemoryStore | undefined;
+let sharedAccount: ReturnType<typeof createWebMemoryAccount> | undefined;
+/** The memory account signed in on this device, or null while it cannot be resolved. */
+export async function currentWebMemoryScope(account = sharedAccount ??= createWebMemoryAccount()): Promise<string | null> {
+  await account.refresh();
+  return account.current();
+}
+/** Apply a reviewer correction to the memory the tutor sees on later turns. */
+export async function applyWebMemoryOverride(scope: string, change: MemoryOverride, store: WebMemoryStore = sharedStore ??= createIndexedDbWebMemoryStore()): Promise<void> {
+  if (!store.override) throw new Error("memory_storage_unavailable");
+  await store.override(scope, change);
 }

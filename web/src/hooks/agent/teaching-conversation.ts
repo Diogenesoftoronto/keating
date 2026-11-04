@@ -40,6 +40,7 @@ import type { AgentHostRefs, SessionStartRecord } from "./host-refs";
 import { runPortableBrowserDelegate } from "./portable-delegate";
 import { sessionHasSettledReply } from "./session-records";
 import { buildAgentSystemPrompt } from "./system-prompt";
+import { noteTurnDraft, noteTurnExtraction, noteTurnMemoryDecisions, noteTurnReceipt, setTurnJudgementSink } from "../../keating/judgement/turn-ledger";
 
 export type PortableHosts = Parameters<typeof authorKeatingBrowserAgent>[0]["hosts"];
 
@@ -85,9 +86,11 @@ export function createTeachingConversation({
       streaming: agent.context.isStreaming,
       model: `${agent.context.model.provider}/${agent.context.model.id}` }),
   });
+  setTurnJudgementSink(record => keatingStorage.putTurnJudgement(record));
   const memory = createWebMemoryAdmission({
     sessions,
     current: isLive,
+    onDecisions: (decisions, scope, committed) => noteTurnMemoryDecisions(sessionId, decisions, scope, committed),
     requestIdentity: () => JSON.stringify({ model: [agent.context.model.provider, agent.context.model.id],
       profile: agent.context.systemPrompt,
       learner: latestLearnerMessage() }),
@@ -115,6 +118,7 @@ export function createTeachingConversation({
       return { checks, reviews, decks };
     },
     reviewMemory: (candidates, model, current) => memory.reviewExtracted(candidates, model, current),
+    onExtraction: ({ messageTimestamp, ...extraction }) => noteTurnExtraction(sessionId, messageTimestamp, extraction),
   });
   clearTeachingDraftStatus(sessionId);
   const activityLearning = createWebActivityLearning({
@@ -136,10 +140,11 @@ export function createTeachingConversation({
       ]);
       return { ...teachingDraftEvidence(profile), activeWork };
     },
-    onProgress: snapshot => publishTeachingDraftStatus(sessionId, snapshot),
+    onProgress: snapshot => { publishTeachingDraftStatus(sessionId, snapshot); try { noteTurnDraft(sessionId, snapshot); } catch { /* Diagnostics only. */ } },
     captureDraftContent: () => loadKeatingUiSettings().showDeveloperDetails,
     onDraftContent: candidate => publishTeachingDraftContent(sessionId, candidate),
     onReceipt: receipt => {
+      try { noteTurnReceipt(sessionId, receipt.messageTimestamp, receipt.snapshot); } catch { /* Diagnostics only. */ }
       void keatingStorage.recordTeachingDraftReceipt({
         id: `${sessionId}:${receipt.messageTimestamp}`,
         sessionId,

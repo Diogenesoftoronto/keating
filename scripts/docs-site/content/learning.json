@@ -186,7 +186,7 @@
   {
     "slug": "courses-and-sharing",
     "title": "Work with courses and sharing",
-    "description": "Find course work, save submissions, invite collaborators, and understand what a shared session reveals.",
+    "description": "Find course work, save submissions, invite collaborators, and choose between shared study rooms and private continuations.",
     "group": "Learning",
     "sections": [
       {
@@ -263,6 +263,19 @@
         ]
       },
       {
+        "heading": "Study with a group or continue privately",
+        "paragraphs": [
+          "A study room is a shared conversation with classmates, teachers, and Keating. Course teachers can create a room from a lesson's Study rooms section; course members can review its join disclosure and join without another invitation. Standalone study groups use role-based invitation links and QR codes.",
+          "To work through a passage on your own, choose Continue privately below the lesson reading or on a public message when you are a learner in a room. Choose an exact excerpt, optionally prepare a question, and open your own Chat. The source stays shared; the private continuation does not complete a lesson or submit course work."
+        ],
+        "links": [
+          {
+            "label": "Use study rooms and private continuations",
+            "href": "/study-rooms/"
+          }
+        ]
+      },
+      {
         "heading": "Share a tutoring session as a snapshot",
         "paragraphs": [
           "Use Share session from chat to share a conversation. Settings, App, Share Links controls how the link carries its snapshot. Public modes upload or embed the visible conversation, supported session artifacts, and finalized review feedback so anyone with the link can read them. Local links work only from that browser's cache.",
@@ -280,6 +293,82 @@
             "label": "Manage sessions and review feedback",
             "href": "/sessions-and-review/"
           }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "study-rooms",
+    "title": "Study together and continue privately",
+    "description": "Join a shared study room, understand teacher oversight, and take a chosen passage into your own Chat.",
+    "group": "Learning",
+    "sections": [
+      {
+        "heading": "Join or create a room",
+        "paragraphs": [
+          "Open Rooms in the web app, or follow an invitation link from the organiser. Before joining, read who can see the transcript, which teachers oversee the room, and whose AI provider processes messages. Choose a display name and confirm the role shown on the join screen.",
+          "To start a standalone group, choose New room and set its title, topic, and goal. The Invite panel creates links and QR codes with a role, expiry, and use limit. A course owner or teacher can also open a room from a lesson's Study rooms section. Course members can join through that section after reviewing the disclosure."
+        ],
+        "links": [
+          {
+            "label": "Open Rooms",
+            "href": "https://chat.keating.help/rooms"
+          },
+          {
+            "label": "Work with courses and invitations",
+            "href": "/courses-and-sharing/"
+          }
+        ]
+      },
+      {
+        "heading": "Understand what the room shares",
+        "paragraphs": [
+          "The room has one shared transcript, including earlier messages and replies from Keating. Members can export what they can see. Hosts and teachers can moderate the room, mute or remove members, pause Keating, and review held replies. Observers can read but cannot post or run Keating.",
+          "Private teacher guidance and held replies are visible only to hosts and teachers. Joining a room does not give them access to your personal Chat history or course progress. Participation counts describe contributions in the loaded transcript; they do not measure your understanding."
+        ]
+      },
+      {
+        "heading": "Run Keating from one browser",
+        "paragraphs": [
+          "A permitted member chooses Run Keating from this tab, reads the disclosure naming their configured Chat model, then confirms Use my model access. That browser sends the room context to its chosen model provider and uses its own provider access or credits. Keep the tab open while facilitating.",
+          "Teachers' facilitating browsers also send private teacher guidance. Learners' facilitating browsers receive only shared context. The room settings decide who may facilitate; teacher review restricts facilitation to teachers. Members can keep talking while Keating is off."
+        ]
+      },
+      {
+        "heading": "Take a chosen passage into private Chat",
+        "bullets": [
+          "As a room learner, choose Continue privately on a visible public message from a person or Keating. In a course, choose Continue privately below the lesson reading.",
+          "Review the source. Expand Choose a passage to select text in the original-source field; the excerpt above it shows exactly what will be used. Select a nonempty passage of up to 8,000 characters. Use whole source restores the full message or reading when it fits; longer readings require an excerpt.",
+          "Optionally enter Your question, then choose Open private Chat. The source stays in the room or lesson. Room context ends at your chosen message and excludes later messages, hidden content, private guidance, and held replies.",
+          "Chat opens with the imported context and your question prepared in the composer. Nothing is sent and no model runs merely by opening it. Press Send message when you are ready; the conversation uses your own chosen Chat model."
+        ]
+      },
+      {
+        "heading": "Accept or dismiss an offer from Keating",
+        "paragraphs": [
+          "Keating may offer you a private continuation from an existing public message. Only you receive it under Your private study offers. Choose Review private offer to inspect its source, or Dismiss offer. Opening it remains your choice.",
+          "When teacher review is enabled, a teacher first uses Approve private-study offer or Reject offer. Pausing Keating during a turn can also hold its offer for review. The teacher reviews an invitation to continue privately; they do not edit a private message body or gain access to your subsequent Chat.",
+          "Opened offers show Reopen private Chat, which checks your room membership and source access before returning to the same saved continuation without replacing its history. Dismissed offers disappear. An existing saved continuation remains available through normal Chat history even when the room offer cannot reopen it."
+        ]
+      },
+      {
+        "heading": "Keep the source and privacy boundaries clear",
+        "paragraphs": [
+          "Imported room context and Imported lesson context identify copied source material separately from your own answers. Expand View full imported context to inspect the saved quotation and attribution. Those imported quotations are excluded from learner-evidence extraction; your later answers follow your normal learning settings.",
+          "The continuation is saved in normal Chat history with the usual storage, sync, export, and explicit-sharing controls. Room teachers and classmates cannot read it through the room. A shared browser profile can still contain the same local history, and sharing or exporting the private chat may include the copied source. Opening it never completes a lesson or sends a course submission."
+        ],
+        "links": [
+          {
+            "label": "Understand storage, sync, and sharing",
+            "href": "/privacy-and-data/"
+          }
+        ]
+      },
+      {
+        "heading": "Return to the source or recover an error",
+        "paragraphs": [
+          "Return to source room or Return to source lesson opens a new tab at the exact message or lesson reading. For older room messages, use Load earlier source messages until the requested message is loaded. A lesson's current reading may have changed since your private copy was saved.",
+          "If the source changed, was hidden, or is no longer available to you, return to the source and choose it again. Keating does not substitute a nearby passage. Your saved private copy remains in Chat history. If no model is configured or your selected model is unavailable, choose or connect one in Chat settings, then retry Open private Chat."
         ]
       }
     ]
@@ -469,6 +558,7 @@
         "heading": "Know where your work is saved",
         "paragraphs": [
           "Keating keeps browser conversations, learning artifacts, and settings in browser storage. Provider keys you enter in the website are stored locally too. Another browser profile or device has separate storage.",
+          "Study rooms also keep a shared transcript on the room server. A private continuation from a room or lesson is saved in your normal Chat history, with its usual sync, export, and sharing settings. Room membership does not grant access to that private history; using a shared browser profile can still expose the same local records.",
           "A Not Organic account manages hosted access and account credit; signing in is not an automatic backup of your browser's lesson library. Native mobile learning storage is also local to the device. Desktop peer-to-peer sync is a separate device-connection feature, not a promise of account-based cloud backup.",
           "Clearing site data or losing a device can remove local work. Export a copy before changing browsers, deleting app data, or uninstalling."
         ]
@@ -477,6 +567,7 @@
         "heading": "Understand what leaves the device",
         "paragraphs": [
           "When you use a remote model, the prompt and relevant conversation material are sent through the configured connection to the service providing the response. Attachments and speech may also be sent to the services used for those features. Review your chosen provider's data practices before submitting private material.",
+          "In a study room, Keating runs from one permitted member's browser using that member's chosen model provider. Review the join disclosure before posting. Continuing privately uses your own chosen Chat model; opening the copied source does not run inference or send a question until you choose Send message.",
           "A browser or native offline model generates locally. Other features you choose, such as sharing, online speech, or optional evaluation sharing, can still send data out. Local generation does not turn those features off.",
           "Keep API keys in credential fields. A key pasted into a conversation becomes conversation content and can be included in a model request, share, or export."
         ]

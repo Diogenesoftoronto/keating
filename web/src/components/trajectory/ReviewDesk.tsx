@@ -312,59 +312,61 @@ export function ReviewDesk({
 				</div>
 			</header>
 
-			{passes && passCallbacks ? (
-				<SocraticPass
-					options={passOptions}
-					pools={modelPools}
-					poolId={data.activeModelPoolId ?? modelPools[0]?.id ?? ""}
-					onPoolChange={callbacks.onSelectModelPool}
-					running={passes.running}
-					onRun={passCallbacks.onRunPass}
-					onCancel={passCallbacks.onCancelPass}
-					footnote={passes.footnote}
-				/>
-			) : null}
-
-			{passes?.error ? (
-				<div
-					role="alert"
-					className={css({
-						display: "flex",
-						alignItems: "flex-start",
-						gap: "0.4rem",
-						borderBottom: "1px solid color-mix(in srgb, var(--destructive) 35%, var(--line))",
-						background: "color-mix(in srgb, var(--destructive) 8%, var(--paper))",
-						padding: "0.55rem 0.75rem",
-						fontSize: "0.72rem",
-						lineHeight: 1.45,
-						color: "var(--destructive)",
-					})}
-				>
-					<KeatingIcon icon={reviewIcon.problem} size={14} className={css({ marginTop: "0.05rem" })} />
-					<span className={css({ minWidth: 0, flex: 1 })}>{passes.error}</span>
-					<button type="button" className={iconButtonClass} aria-label="Dismiss pass error" onClick={passCallbacks?.onDismissPassError}>
-						<KeatingIcon icon={reviewIcon.dismiss} size={13} />
-					</button>
-				</div>
-			) : null}
-
-			{data.error ? (
-				<div
-					role="alert"
-					className={css({
-						borderBottom: "1px solid color-mix(in srgb, var(--destructive) 35%, var(--line))",
-						background: "color-mix(in srgb, var(--destructive) 8%, var(--paper))",
-						padding: "0.625rem 0.75rem",
-						fontSize: "0.75rem",
-						lineHeight: 1.4,
-						color: "var(--destructive)",
-					})}
-				>
-					{data.error}
-				</div>
-			) : null}
-
+			{/* The pass and alerts scroll with the desk: as fixed blocks they could push
+			    their own controls below the frame on short or zoomed viewports. */}
 			<div className={css({ minHeight: 0, flex: 1, overflowY: "auto" })}>
+				{passes && passCallbacks ? (
+					<SocraticPass
+						options={passOptions}
+						pools={modelPools}
+						poolId={data.activeModelPoolId ?? modelPools[0]?.id ?? ""}
+						onPoolChange={callbacks.onSelectModelPool}
+						running={passes.running}
+						onRun={passCallbacks.onRunPass}
+						onCancel={passCallbacks.onCancelPass}
+						footnote={passes.footnote}
+					/>
+				) : null}
+
+				{passes?.error ? (
+					<div
+						role="alert"
+						className={css({
+							display: "flex",
+							alignItems: "flex-start",
+							gap: "0.4rem",
+							borderBottom: "1px solid color-mix(in srgb, var(--destructive) 35%, var(--line))",
+							background: "color-mix(in srgb, var(--destructive) 8%, var(--paper))",
+							padding: "0.55rem 0.75rem",
+							fontSize: "0.72rem",
+							lineHeight: 1.45,
+							color: "var(--destructive)",
+						})}
+					>
+						<KeatingIcon icon={reviewIcon.problem} size={14} className={css({ marginTop: "0.05rem" })} />
+						<span className={css({ minWidth: 0, flex: 1 })}>{passes.error}</span>
+						<button type="button" className={iconButtonClass} aria-label="Dismiss pass error" onClick={passCallbacks?.onDismissPassError}>
+							<KeatingIcon icon={reviewIcon.dismiss} size={13} />
+						</button>
+					</div>
+				) : null}
+
+				{data.error ? (
+					<div
+						role="alert"
+						className={css({
+							borderBottom: "1px solid color-mix(in srgb, var(--destructive) 35%, var(--line))",
+							background: "color-mix(in srgb, var(--destructive) 8%, var(--paper))",
+							padding: "0.625rem 0.75rem",
+							fontSize: "0.75rem",
+							lineHeight: 1.4,
+							color: "var(--destructive)",
+						})}
+					>
+						{data.error}
+					</div>
+				) : null}
+
 				{/* ---------------------------------------------------------- Margin */}
 				<MovementHeader
 					id="trajectory-desk-margin-tab"

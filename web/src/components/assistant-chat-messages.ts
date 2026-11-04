@@ -83,6 +83,25 @@ export function assistantTextParts(text: string): AssistantTextPart[] {
   return parts.length > 0 ? parts : [{ type: "text", text: "" }];
 }
 
+/**
+ * Flue orders its history by array position, never by timestamp. Keep that
+ * order and use timestamps only to slot local-only rows (pending sends, failure
+ * notices) between native rows.
+ */
+export function interleaveLocalRows<T>(
+  native: readonly { row: T; time: number }[],
+  local: readonly T[],
+  localTime: (row: T) => number,
+): T[] {
+  const merged: T[] = [];
+  let next = 0;
+  for (const { row, time } of native) {
+    while (next < local.length && localTime(local[next]) < time) merged.push(local[next++]);
+    merged.push(row);
+  }
+  return [...merged, ...local.slice(next)];
+}
+
 /** Failed model attempts can leave visible but empty native assistant records. */
 export function shouldRenderFlueMessage(message: FlueConversationMessage): boolean {
   // A settlement is the recoverable failure/stop notice, not an empty attempt.

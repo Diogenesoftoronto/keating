@@ -1,8 +1,11 @@
 import { clearPendingChatTurn } from "../notorganic-provider/pending-chat-turn";
 import { LearningSourcePassage } from "./LearningIntelligenceDiagnostics";
 import { learningRowSourceIds } from "../keating/learning-intelligence/source-navigation";
+import { isPrivateForkContextMessage } from "../keating/private-fork-provenance";
+import { ImportedPrivateForkContext } from "./private-fork/ImportedPrivateForkContext";
 import {
   assistantTextParts,
+  interleaveLocalRows,
   textFromContent,
   mergeConsecutiveAssistantMessages,
   shouldRenderFlueMessage,
@@ -2701,6 +2704,10 @@ function toAssistantMessage(
     role: "user",
     createdAt: timestamp,
     content: assistantContentFromAgentContent(msg.content),
+    // Presentation metadata only: preserve the full user-role seed for the model.
+    ...(isPrivateForkContextMessage(message) ? {
+      metadata: { custom: { keatingPrivateFork: msg.keatingPrivateFork } },
+    } : {}),
   };
 }
 
@@ -3432,11 +3439,22 @@ function projectThreadMessages(
   const localError = local.some(message => message.role === "assistant" && ["error", "aborted"].includes(message.stopReason));
   const visibleNative = native.messages.filter(message => shouldRenderFlueMessage(message) && !(localError && message.settlement));
   const totalMessages = legacy.length + visibleNative.length + local.length;
+  const at = (row: ThreadMessageLike) => row.createdAt?.getTime() ?? 0;
+  // Native user rows borrow local timestamps by index, so sorting by them can
+  // lift a learner turn above earlier replies. Place by Flue's capture time.
+  const nativeRows = visibleNative.map(message => {
+    const row = flueThreadMessage(message, isRunning);
+    const captured = message.timestamp ? Date.parse(message.timestamp) : NaN;
+    return { row, time: Number.isFinite(captured) ? captured : at(row) };
+  });
   return decorate([
     ...legacy.map((message, index) => toAssistantMessage(message, index, totalMessages, false, provider)),
-    ...visibleNative.map(message => flueThreadMessage(message, isRunning)),
-    ...local.map((message, index) => toAssistantMessage(message, legacy.length + visibleNative.length + index, totalMessages, false, provider)),
-  ].sort((left, right) => (left.createdAt?.getTime() ?? 0) - (right.createdAt?.getTime() ?? 0)));
+    ...interleaveLocalRows(
+      nativeRows,
+      local.map((message, index) => toAssistantMessage(message, legacy.length + visibleNative.length + index, totalMessages, false, provider)),
+      at,
+    ),
+  ]);
 }
 
 function AssistantThread({
@@ -4040,6 +4058,23 @@ function UserMessage({
   const sessionId = useContext(OpenUISessionScopeContext);
   const sourceIds = useAuiState(({ message }) => message.metadata.custom?.keatingLearningSourceIds as string[] | undefined);
   const ownText = useAuiState(({ message }) => message.content.filter(part => part.type === "text").map(part => part.type === "text" ? part.text : "").join("\n\n"));
+  const provenance = useAuiState(({ message }) => message.metadata.custom?.keatingPrivateFork);
+  if (isPrivateForkContextMessage({ keatingPrivateFork: provenance })) {
+    return (
+      <MessagePrimitive.Root
+        data-learning-session-id={sessionId}
+        data-learning-message-ids={JSON.stringify(sourceIds ?? [])}
+        tabIndex={-1}
+        className={css({ marginInline: "auto", marginBottom: "1rem", width: "100%", maxWidth: "56rem" })}
+      >
+        <ImportedPrivateForkContext
+          provenance={provenance}
+          content={ownText}
+          copyAction={ownText ? <CopyButton text={ownText} label="Copy imported context" variant="ghost" /> : null}
+        />
+      </MessagePrimitive.Root>
+    );
+  }
   return (
     <MessagePrimitive.Root
       data-learning-session-id={sessionId}

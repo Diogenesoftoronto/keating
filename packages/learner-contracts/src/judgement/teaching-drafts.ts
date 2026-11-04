@@ -140,6 +140,9 @@ export interface TeachingDraftOptions<T> {
   readonly judgementModel?: { readonly id: string; readonly requestTokens: number | null; readonly stateQuestionTokens: number | null };
   readonly generate: (input: TeachingDraftGenerationInput) => Promise<{ readonly reply: TeachingPolicyReply; readonly value: T }>;
   readonly maxAttempts?: number;
+  /** Explicit research capture: collect the full bounded attempt budget before selection.
+   * Generation failures remain attempts, never fabricated completed candidates. */
+  readonly collectAllAttempts?: boolean;
   /** Longer comparison/synthesis is opt-in; response depth alone does not expand retries. */
   readonly refinement?: TeachingDraftRefinement;
   readonly maxReasoning?: TeachingDraftReasoning;

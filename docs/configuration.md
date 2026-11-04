@@ -55,6 +55,20 @@ explicit project override and is not silently upgraded to the CLI default.
 
 ## Adding a Not Organic model
 
+Flint is a dormant preview registered as `notorganic/flint`. Its provisional
+`contextWindow: 12288` and `maxTokens: 4096` describe the prepared serving profile;
+they have not been GPU-verified. It uses Chat Completions, fixed greedy decoding,
+and `max_completion_tokens`. The browser offers it for selection only after a
+consented gateway lists `flint` in `/v1/models`. Existing sessions gain no scopes.
+
+After the provider operator validates the worker, provisions the private route
+from public `flint` to upstream `flint-multichannel`, establishes pricing and
+explicitly enables the gateway alias, CLI users can request fresh consent with
+`rtk bun src/cli/main.ts login notorganic --model=flint`, then run
+`rtk bun src/cli/main.ts shell --provider notorganic --model flint`.
+No Runpod URL or credential belongs in Keating's browser configuration.
+Registration alone does not activate or verify inference.
+
 1. Define the ID in the private model registry and add it to `NOTORGANIC_CHAT_MODEL_IDS` or
    `NOTORGANIC_IMAGE_MODEL_IDS`.
 2. Add the corresponding metadata entry to the Not Organic adapter's picker.

@@ -237,6 +237,18 @@ export default defineNitroConfig({
       handler: "server/api/courses/[...path].ts",
     },
     {
+      route: "/api/rooms",
+      handler: "server/api/rooms/[...path].ts",
+    },
+    {
+      route: "/api/rooms/**",
+      handler: "server/api/rooms/[...path].ts",
+    },
+    {
+      route: "/api/rooms/realtime",
+      handler: "server/api/rooms/realtime.ts",
+    },
+    {
       route: "/api/oauth/token",
       handler: "server/api/oauth/token.ts",
     },

@@ -18,6 +18,7 @@ import { css, cx } from "../../../styled-system/css";
 import { CourseDocumentUploadButton } from "../../components/courses/CourseAddMenu";
 import type { CourseBuilderSection } from "../../components/courses/CourseBuilder";
 import { courseEmptyClass } from "../../components/courses/course-ui";
+import { LessonPrivateFork } from "../../components/private-fork/LessonPrivateFork";
 import type {
   CourseArtifact,
   CourseAssignment,
@@ -97,6 +98,17 @@ export function DeskView(props: DeskViewProps) {
       <LessonReading
         lesson={lesson}
         canEditCourse={snapshot.permissions.canEditCourse}
+      />
+      <LessonPrivateFork
+        key={snapshot.viewer.accountId}
+        context={{
+          courseId: course.id,
+          courseTitle: course.title,
+          lessonId: lesson.id,
+          lessonTitle: lesson.title,
+          revision: course.revision,
+          reading: lesson.reading,
+        }}
       />
       {lessonMaterials.length ? (
         <section className={css({ mt: "2rem" })}>
@@ -352,8 +364,12 @@ function LessonReading({
     );
   return (
     <div
+      id={`lesson-reading-${lesson.id}`}
+      tabIndex={-1}
+      aria-label={`${lesson.title} reading`}
       className={css({
         mt: "2rem",
+        scrollMarginTop: "8rem",
         fontFamily: "Georgia, serif",
         fontSize: { base: "1.08rem", md: "1.17rem" },
         lineHeight: 1.85,

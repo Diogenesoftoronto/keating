@@ -36,7 +36,11 @@ export const DEFAULT_MODELS = {
   judgement: { systemOne: MODEL_IDS.jev_latest, tabular: MODEL_IDS.tabular },
 } as const;
 
-export const NOTORGANIC_CHAT_MODEL_IDS = [DEFAULT_MODELS.web.notorganic, MODEL_IDS.gpt_6_1_sol] as const;
+export const NOTORGANIC_CHAT_MODEL_IDS = [DEFAULT_MODELS.web.notorganic, MODEL_IDS.gpt_6_1_sol, MODEL_IDS.flint] as const;
+/** Provisional native serving profile; not GPU-verified. Gateway enablement and fresh consent are required. */
+export const FLINT_PREVIEW_PROFILE = {
+  id: MODEL_IDS.flint, name: "Flint (preview)", contextWindow: 12_288, maxTokens: 4_096,
+} as const;
 export const NOTORGANIC_IMAGE_MODEL_IDS = [DEFAULT_MODELS.image.notorganic] as const;
 
 /** Discovery preferences; provider catalogs still own availability and metadata. */
@@ -126,6 +130,7 @@ const TTS_MODEL_LABELS: Record<string, string> = {
 };
 const NOTORGANIC_MODEL_LABELS: Record<string, string> = {
   [MODEL_IDS.balanced]: "Inkling Small", [MODEL_IDS.gpt_6_1_sol]: "GPT-6.1 Sol",
+  [MODEL_IDS.flint]: FLINT_PREVIEW_PROFILE.name,
 };
 const TABULAR_MODEL_LABELS: Record<string, string> = { [MODEL_IDS.tabular]: "TabPFN 3.5" };
 const PI_PROVIDER_LABELS: Record<string, string> = {

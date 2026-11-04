@@ -375,4 +375,66 @@ describe("trajectory review archive", () => {
 		expect(chatml.messages[1].content).toContain("[Generated image artifact: Recursion diagram]");
 		expect(chatml.messages[1].content).not.toContain(dataUrl);
 	});
+
+	it("exports saved turn judgements and reviewer labels beside the model's verdicts", () => {
+		const input = fixture();
+		const sessionId = input.session!.id;
+		const snapshot = { phase: "released", attempt: 1, maxAttempts: 2, reasoning: "low", standard: "supported", elapsedMs: 1, judgeModel: "jev", selectedAttempt: 1, reason: null,
+			attempts: [{ attempt: 1, reasoning: "low", standard: "supported", generationMs: 1, judgementMs: 1, status: "pass", variant: "default",
+				checks: [{ id: "mastery_overclaimed", status: "fail", source: "jev", severity: "critical", probability: 0.42 }] }] } as any;
+		input.judgements = {
+			turns: [{ id: `${sessionId}:2000`, sessionId, assistantTimestamp: 2000, learnerTimestamp: 1000, createdAt: 1, updatedAt: 1, extraction: [], memory: [] }],
+			receipts: [{ id: `${sessionId}:2000`, sessionId, messageTimestamp: 2000, createdAt: 1, snapshot }],
+			labels: [{ id: "label-1", sessionId, assistantTimestamp: 2000, target: { kind: "draft-check", attempt: 1, checkId: "mastery_overclaimed" },
+				model: { status: "fail", probability: 0.42, judge: "jev" }, verdict: "no-violation", note: "Independent work shown.", effect: "none", createdAt: 2, updatedAt: 3 }],
+		};
+		const archive = buildTrajectoryReviewArchive(input, { now: NOW });
+		const files = unzipSync(archive.bytes);
+		const [turn] = parseJsonl(files["data/judgement/turn-judgements.jsonl"]);
+		expect(turn.draft.attempts[0].checks[0].id).toBe("mastery_overclaimed");
+		const [label] = parseJsonl(files["data/judgement/human-labels.jsonl"]);
+		expect(label).toMatchObject({ kind: "draft-check", released: true, judge: "jev", reviewer: { verdict: "no-violation", note: "Independent work shown." },
+			model: { status: "fail", probability: 0.42 }, reply: "Recursion is when a function calls itself." });
+		expect(label.question).toContain("mastery");
+		expect(label.learner).not.toContain(SECRET);
+		expect(archive.manifest.counts).toMatchObject({ judgedTurns: 1, judgementLabels: 1 });
+		const [hindsight] = parseJsonl(files["data/hindsight/turns.jsonl"]);
+		expect(hindsight).toMatchObject({ assistantTimestamp: 2000, reply: "Recursion is when a function calls itself.", nextLearner: null,
+			labels: [{ verdict: "no-violation" }] });
+		expect(hindsight.prompt.at(-1).role).toBe("user");
+		expect(hindsight.judgements.draft.attempts[0].checks[0].probability).toBe(0.42);
+		expect(JSON.stringify(hindsight)).not.toContain(SECRET);
+	});
+
+	it("pairs each judged reply with the learner's actual next message for hindsight", () => {
+		const input = fixture();
+		const sessionId = input.session!.id;
+		input.session = { ...input.session!, messages: [...input.session!.messages,
+			{ role: "user", content: "So a loop that never ends is recursion?", timestamp: 3000 } as any] };
+		input.judgements = { turns: [{ id: `${sessionId}:2000`, sessionId, assistantTimestamp: 2000, learnerTimestamp: 1000, createdAt: 1, updatedAt: 1,
+			replyReview: { backend: "jev", model: "jev-latest", calibrated: true, answers: [{ id: "q", choice: "no", confidence: 0.8, probabilities: [] }] },
+			extraction: [], memory: [] }], receipts: [], labels: [] };
+		const files = unzipSync(buildTrajectoryReviewArchive(input, { now: NOW }).bytes);
+		const [row] = parseJsonl(files["data/hindsight/turns.jsonl"]);
+		expect(row.nextLearner).toMatchObject({ text: "So a loop that never ends is recursion?", timestamp: 3000 });
+		expect(row.judgements.replyReview.answers[0].choice).toBe("no");
+		expect(row.prompt.map((m: { content: string }) => m.content).join(" ")).not.toContain("loop that never ends");
+	});
+
+	it("exports draft receipts even when turn judgements were not being saved", () => {
+		const input = fixture();
+		const sessionId = input.session!.id;
+		const snapshot = { phase: "released", attempt: 2, maxAttempts: 10, reasoning: "low", standard: "supported", elapsedMs: 1, judgeModel: "jev", selectedAttempt: 1,
+			reason: "best-effort-draft", attempts: [{ attempt: 1, reasoning: "low", standard: "supported", generationMs: 1, judgementMs: 1, status: "unknown", variant: "default",
+				checks: [{ id: "research_skipped", status: "unknown", source: "jev", severity: "major", probability: 0.5 }] }] } as any;
+		input.judgements = { turns: [], labels: [],
+			receipts: [{ id: `${sessionId}:2000`, sessionId, messageTimestamp: 2000, createdAt: 1, snapshot }] };
+		const [row] = parseJsonl(unzipSync(buildTrajectoryReviewArchive(input, { now: NOW }).bytes)["data/judgement/turn-judgements.jsonl"]);
+		expect(row).toMatchObject({ assistantTimestamp: 2000, draft: { reason: "best-effort-draft", attempts: [{ checks: [{ id: "research_skipped", probability: 0.5 }] }] } });
+	});
+
+	it("omits judgement files when nothing was saved for review", () => {
+		const files = unzipSync(buildTrajectoryReviewArchive(fixture(), { now: NOW }).bytes);
+		expect(files["data/judgement/human-labels.jsonl"]).toBeUndefined();
+	});
 });

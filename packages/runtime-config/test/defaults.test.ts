@@ -32,8 +32,8 @@ describe("public runtime configuration", () => {
     expect(API_VERSIONS).toEqual({ anthropic: "2023-06-01", google: "v1beta" });
     expect(SPENDING_LIMITS).toEqual({ notorganicRequestMicrousd: 100000, notorganicServerRequestMicrousd: 50000 });
   });
-  test("derived browser consent is byte-identical to the shipped code fallback", () => {
-    expect(DEFAULT_NOTORGANIC_SCOPE).toBe("wallet:read usage:read billing:checkout infer:balanced infer:gpt-6.1-sol web:search web:fetch infer:image realtime:connect");
+  test("derived browser consent includes the preview only in a fresh authorization request", () => {
+    expect(DEFAULT_NOTORGANIC_SCOPE).toBe("wallet:read usage:read billing:checkout infer:balanced infer:flint infer:gpt-6.1-sol web:search web:fetch infer:image realtime:connect");
     for (const model of [...NOTORGANIC_CHAT_MODEL_IDS, ...NOTORGANIC_IMAGE_MODEL_IDS]) {
       expect(DEFAULT_NOTORGANIC_SCOPE.split(" ")).toContain(`infer:${model}`);
     }

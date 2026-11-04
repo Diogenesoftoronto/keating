@@ -21,9 +21,17 @@ export function nativeSurfaceSystemPrompt(source: string, surface: NativeSurface
   const mandate = 'Author learner-facing interactions and artifacts as OpenUI.';
   const heading = '## OpenUI interaction contract\n';
   const start = source.indexOf(heading);
-  const end = source.indexOf('\nCurrent date:', start);
-  if (start < 0 || end <= start || source.indexOf(heading, start + 1) !== -1
-    || source.split(mandate).length !== 2) throw new Error('native_chat_policy_projection_drift');
+  // Bound the rendering section by its own exact closing paragraph, not an
+  // optional runtime date footer. Preserve every byte of later runtime context.
+  const closing = "Supported nodes are `markdown`, `callout`, `question`, `question-group`, `quiz`, `goal`, `deck`, `study-plan`, `artifact`, `concept-map`, `notes`, `image`, `media`, and `handoff`. Use ordinary Markdown only for prose that does not benefit from a component.\n";
+  const closingStart = source.indexOf(closing, start);
+  const end = closingStart + closing.length;
+  if (start < 0 || closingStart <= start || source.indexOf(heading, start + 1) !== -1
+    || source.indexOf(closing) !== closingStart || source.indexOf(closing, end) !== -1
+    || source.split(mandate).length !== 2 || source.indexOf(mandate) >= start
+    || /\n## /.test(source.slice(start + heading.length, closingStart))) {
+    throw new Error('native_chat_policy_projection_drift');
+  }
   const projected = (source.slice(0, start) + '## Chat interaction contract\n\n'
     + 'Ask focused questions in ordinary text and wait for the learner. This surface has no interactive documents.\n'
     + source.slice(end)).replace(mandate, 'Author learner-facing interactions as ordinary text on this chat surface.');

@@ -33,3 +33,12 @@ test("other APIs preserve temperature and options unchanged", () => {
 		expect(normalizeProviderStreamOptions({ api }, options)).toBe(options);
 	}
 });
+
+test("only the native Not Organic Flint preview uses fixed greedy decoding", () => {
+	const options: SimpleStreamOptions = { temperature: 0.85, maxTokens: 4096 };
+	expect(normalizeProviderStreamOptions({ api: "openai-completions", provider: "notorganic", id: "flint" }, options))
+		.toEqual({ temperature: 0, maxTokens: 4096 });
+	expect(normalizeProviderStreamOptions({ api: "openai-completions", provider: "notorganic", id: "balanced" }, options)).toBe(options);
+	expect(normalizeProviderStreamOptions({ api: "openai-completions", provider: "custom", id: "flint" }, options)).toBe(options);
+	expect(options.temperature).toBe(0.85);
+});

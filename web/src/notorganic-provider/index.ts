@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, MODEL_CHOICES } from "@keating/runtime-config";
+import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, MODEL_CHOICES, FLINT_PREVIEW_PROFILE } from "@keating/runtime-config";
 import { checkoutSelection, subscriptionAvailable, subscriptionCheckoutEnabled } from "./plans";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { availableCreditPacks, normalizeCreditWallet } from "./credit-wallet";
@@ -61,7 +61,34 @@ export const NOTORGANIC_SOL_MODEL: Model<"openai-responses"> = {
 	maxTokens: 128_000,
 };
 
-export const NOTORGANIC_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL];
+/** Provisional native profile; activation and actual pricing belong to the gateway. */
+export const NOTORGANIC_FLINT_MODEL: Model<"openai-completions"> = {
+  ...FLINT_PREVIEW_PROFILE,
+  api: "openai-completions", provider: NOTORGANIC_PROVIDER_ID,
+  baseUrl: notOrganicOpenAiBaseUrl(), reasoning: false, input: ["text"],
+  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  compat: { supportsDeveloperRole: false, supportsReasoningEffort: false,
+    supportsUsageInStreaming: true, supportsStore: false, maxTokensField: "max_completion_tokens" },
+};
+
+export const NOTORGANIC_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL];
+
+/** Keep existing choices; a preview becomes selectable only after consent and gateway discovery. */
+export async function getAvailableNotOrganicChatModels(
+  client: { getSession(): { scope: string } | null; request(path: string): Promise<Response> } | null = notOrganicPublicClient(),
+): Promise<Array<Model<Api>>> {
+  const established = NOTORGANIC_CHAT_MODELS.filter(model => model.id !== FLINT_PREVIEW_PROFILE.id);
+  if (!client?.getSession()?.scope.split(/\s+/).includes(`infer:${FLINT_PREVIEW_PROFILE.id}`)) return established;
+  try {
+    const response = await client.request("/v1/models");
+    if (!response.ok) return established;
+    const body = await response.json();
+    return Array.isArray(body?.data) && body.data.some((model: { id?: unknown } | null) => model?.id === FLINT_PREVIEW_PROFILE.id)
+      ? [...established, NOTORGANIC_FLINT_MODEL] : established;
+  } catch {
+    return established;
+  }
+}
 
 /** A stored account session does not imply consent to every selectable model. */
 export function notOrganicModelNeedsConsent(

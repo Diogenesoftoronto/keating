@@ -39,6 +39,7 @@ import { createWebJudgementRuntime, type WebJudgementRuntime } from "./runtime";
 import { describeDraftFailure } from "./draft-failure";
 import { DRAFT_TIME_BUDGET_MS } from "./draft-progress";
 import { withReviewNotice } from "./review-notice";
+import { attachModelRequestPayload, loggingJudge, recordModelRequest } from "../model-request-log";
 import type { BackgroundActivityPolicy } from "../../../../packages/learner-contracts/src/judgement/background-activity-policy";
 
 type StreamFn = NonNullable<AgentOptions["streamFn"]>;
@@ -370,7 +371,8 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       loadingEvidence = false;
       if (!current()) { publish(safeMessage("", true)); return; }
       const runtime = options.makeCaller ? undefined : createWebJudgementRuntime();
-      const judge = options.makeCaller?.() ?? createDraftGateJudgementCaller(runtime);
+      const judge = loggingJudge(options.makeCaller?.() ?? createDraftGateJudgementCaller(runtime), options.sessionId,
+        () => judgementModel.id);
       const judgementModel = options.judgementModel ?? runtime?.judgementModel ?? (() => {
         const settings = loadJudgementModelSettings();
         const hosted = settings.backend === "hosted";
@@ -432,7 +434,13 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
             privateContext.systemPrompt += "\n\n" + recovery;
             privateContext.messages.push({ role: "user", timestamp: Date.now(), content: recovery });
           }
-          const generationOptions: SimpleStreamOptions = { ...streamOptions, signal };
+          const logged = recordModelRequest({ sessionId: options.sessionId, kind: "draft", model: `${model.provider}/${model.id}`, context: privateContext });
+          const generationOptions: SimpleStreamOptions = { ...streamOptions, signal,
+            onPayload: async (payload, payloadModel) => {
+              const next = await streamOptions?.onPayload?.(payload, payloadModel);
+              attachModelRequestPayload(logged, next ?? payload);
+              return next;
+            } };
           if (reasoning === "off") delete generationOptions.reasoning;
           else generationOptions.reasoning = reasoning;
           const privateStream = await stream(model, privateContext, generationOptions);

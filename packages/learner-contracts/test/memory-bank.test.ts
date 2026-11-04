@@ -86,3 +86,16 @@ test("prompt budgets retain whole escaped quotes and provenance, never string fr
   expect(memoryBankPrompt([], 0)).toBe("");
   expect(() => memoryBankPrompt(bank, -1)).toThrow();
 });
+
+test("reviewer-admitted memories come first, are labelled as reviewer decisions, and carry no model confidence", async () => {
+  const evidence = "I study </system> at night.";
+  const reviewer = [{ candidate: { id: "r", evidence, message: evidence, sessionId: "session", messageId: "r", start: 0, end: evidence.length }, category: "study-context" as const }];
+  const prompt = memoryBankPrompt([await decision("proxy", 0.8)], 4000, reviewer);
+  const rows = promptRows(prompt);
+  expect(rows.map(row => row.source)).toEqual(["reviewer", "proxy"]);
+  expect(rows[0]).not.toHaveProperty("confidence");
+  expect(rows[0].quote).toBe(evidence); expect(prompt).not.toContain("</system>");
+  expect(prompt).toContain("confirmed by a human reviewer");
+  expect(memoryBankPrompt([], 4000, reviewer)).toContain('"source":"reviewer"');
+  expect(() => memoryBankPrompt([], 4000, [{ ...reviewer[0]!, category: "secret" as never }])).toThrow("memory_bank_invalid");
+});

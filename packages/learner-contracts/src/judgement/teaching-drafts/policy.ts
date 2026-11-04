@@ -62,14 +62,17 @@ export function blocksDraft(check: TeachingPolicyCheck): boolean {
     && (advisoryTeachingChecks.has(check.id) || uncertainTeachingChecks.has(check.id)));
 }
 export const MAX_QUESTIONS_PER_SUBQUERY = 64;
-/** Presentation and usefulness scores rank completed replies; they are not release vetoes. */
+/**
+ * Presentation and usefulness scores rank completed replies and guide repair;
+ * they are not release vetoes. Every other unknown blocks: the band is narrow,
+ * so an unknown is a genuine coin-flip on a rule that matters.
+ */
 export function blocksRelease(check: TeachingPolicyCheck): boolean {
   if (check.status === "pass") return false;
   return !(check.source === "jev" && check.severity !== "critical"
     && check.probability !== null && Number.isFinite(check.probability)
     && check.probability >= 0 && check.probability <= 1
-    && (advisoryTeachingChecks.has(check.id) || check.id === "quality_progress" || check.id === "quality_scope"
-      || check.status === "unknown" && check.probability < 0.8 && uncertainTeachingChecks.has(check.id)));
+    && (advisoryTeachingChecks.has(check.id) || check.id === "quality_progress" || check.id === "quality_scope"));
 }
 
 /** Shared by hosts so their progress display reports the real drafting budget. */

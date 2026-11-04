@@ -18,6 +18,7 @@ import {
 import { loadKeatingUiSettings, saveKeatingUiSettings, subscribeKeatingUiSettings } from "../../keating/ui-settings";
 import { Toggle } from "../Toggle";
 import { JudgementDiagnostics } from "../JudgementDiagnostics";
+import { ModelRequestLog } from "./ModelRequestLog";
 import { CopyDiagnosticButton } from "./CopyDiagnosticButton";
 import { explainDiagnostic, buildHealthChecks, buildHealthText, groupProblems, overallStatus, type CheckStatus } from "../../lib/diagnostics-insights";
 import { diagnosticReportMailto, readDiagnosticRuntimeSnapshot, sendDiagnosticReport } from "../../lib/diagnostics";
@@ -366,7 +367,7 @@ export function DiagnosticsTab() {
 			<details>
 				<summary className={summaryClass}>Advanced: technical logs and session inspector</summary>
 				<div className={cx(stackClass, css({ marginTop: "1rem" }))}>
-					<JudgementDiagnostics controls /><SessionInspector /><SanitizedDiagnostics />
+					<JudgementDiagnostics controls /><SessionInspector /><ModelRequestLog /><SanitizedDiagnostics />
 				</div>
 			</details>
 		</div>

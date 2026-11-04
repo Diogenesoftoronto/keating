@@ -50,12 +50,10 @@ describe("public release eligibility", () => {
       for (const probability of [0, .5, 1]) expect(blocksRelease(check(id, { status, probability }))).toBe(false);
     }
   });
-  test.each(uncertain)("uncertainty about %s is advisory only below the concern threshold", id => {
-    expect(blocksRelease(check(id, { probability: 0 }))).toBe(false);
-    expect(blocksRelease(check(id, { probability: .799999 }))).toBe(false);
-    expect(blocksRelease(check(id, { probability: .8 }))).toBe(true);
-    expect(blocksRelease(check(id, { probability: 1 }))).toBe(true);
-    expect(blocksRelease(check(id, { status: "fail", probability: .5 }))).toBe(true);
+  test.each(uncertain)("an unknown on %s blocks release; only a pass releases", id => {
+    for (const probability of [0, .5, .799999, 1]) expect(blocksRelease(check(id, { probability }))).toBe(true);
+    expect(blocksRelease(check(id, { status: "fail", probability: .7 }))).toBe(true);
+    expect(blocksRelease(check(id, { status: "pass", probability: .1 }))).toBe(false);
   });
   test("untrusted probabilities never turn a missing review into an advisory pass", () => {
     for (const id of [...advisory, ...uncertain]) {
