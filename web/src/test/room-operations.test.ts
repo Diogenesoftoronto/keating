@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { ROOM_MAX_MESSAGES, roomSchema, type Room, type RoomOperation, type RoomOperationInput } from "../rooms/contracts";
+import { ROOM_MAX_MESSAGES, ROOM_MAX_TRANSCRIPT_CHARS, roomSchema, type Room, type RoomOperation, type RoomOperationInput } from "../rooms/contracts";
 import {
   applyRoomOperation,
+  availableDisplayName,
   hasPendingTurnRequest,
   permissionsForRoom,
   projectRoomForViewer,
@@ -423,3 +424,40 @@ describe("pagination", () => {
     expect(windowed.hasEarlierMessages).toBe(true);
   });
 });
+
+describe("room abuse limits", () => {
+  test("names cannot copy Keating, the room, or another member, ignoring case and spacing", () => {
+    for (const name of ["Keating", "room", "  ms   RIVERA "]) {
+      expect(() => apply(room(), "maya", { type: "member.rename", displayName: name })).toThrow(/already uses that name/);
+    }
+    expect(apply(room(), "maya", { type: "member.rename", displayName: "maya" }).members.find((m) => m.accountId === "maya")?.displayName).toBe("Maya");
+    expect(apply(room(), "maya", { type: "member.rename", displayName: "  Maya   B " }).members.find((m) => m.accountId === "maya")?.displayName).toBe("Maya B");
+    expect(availableDisplayName(room(), "new", "Maya")).toBe("Maya 2");
+    expect(availableDisplayName(room(), "new", "keating")).toBe("keating 2");
+    expect(availableDisplayName(room(), "maya", "Maya")).toBe("Maya");
+  });
+
+  test("an unreviewed reply from a learner's browser names that learner; a teacher's does not", () => {
+    const open = apply(room(), "host", { type: "settings.update", patch: { facilitators: "anyone" } });
+    const claimed = apply(open, "maya", { type: "facilitator.claim", facilitatorId: "browser_maya", modelLabel: "m", takeOver: false });
+    const posted = post(claimed, "sam", "hi");
+    const begun = apply(posted, "maya", { type: "turn.begin", facilitatorId: "browser_maya", turnId: "turn_a", throughSeq: posted.nextSeq - 1 });
+    const spoke = apply(begun, "maya", { type: "turn.complete", facilitatorId: "browser_maya", turnId: "turn_a", outcome: "spoke", body: "Anything", model: "m" });
+    expect(spoke.messages.at(-1)?.keating?.facilitatorName).toBe("Maya");
+    const teacherBegun = apply(post(facilitated(), "sam", "hi"), "host", { type: "turn.begin", facilitatorId: "browser_test", turnId: "turn_b", throughSeq: 2 });
+    const teacherSpoke = apply(teacherBegun, "host", { type: "turn.complete", facilitatorId: "browser_test", turnId: "turn_b", outcome: "spoke", body: "Hi", model: "m" });
+    expect(teacherSpoke.messages.at(-1)?.keating?.facilitatorName).toBeUndefined();
+  });
+
+  test("the transcript stops growing at its character budget, but moderation still applies", () => {
+    const big = "x".repeat(8_000);
+    const messages: Room["messages"] = Array.from({ length: ROOM_MAX_TRANSCRIPT_CHARS / 8_000 }, (_, index) => ({
+      id: `msg_big_${index}`, seq: index + 1, kind: "chat", authorAccountId: "maya",
+      authorName: "Maya", authorRole: "learner", body: big, createdAt: T0, audience: "room",
+    }));
+    const full = room({ messages, nextSeq: messages.length + 1 });
+    expect(() => post(full, "maya", "one more")).toThrow(/transcript limit/);
+    expect(apply(full, "host", { type: "member.mute", accountId: "maya", muted: true }).members.find((m) => m.accountId === "maya")?.muted).toBe(true);
+  });
+});
+

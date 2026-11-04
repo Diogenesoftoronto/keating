@@ -31,7 +31,15 @@ The host can invite teachers, learners, and observers. Teachers can invite
 learners and observers. Learners can invite other learners only when that room
 setting is enabled. An invitation specifies its role, expiry, and use limit;
 the creator receives a link and QR code. Revoke a link to prevent future joins.
-Removing a member also blocks that account from rejoining the room.
+A room keeps at most 200 open links and each learner at most 10; at the cap a
+new link is refused rather than replacing an open one.
+Removing a member also blocks that account from rejoining the room. Hosts and
+teachers can undo this under **Settings → Removed people**; only the host can
+let a removed teacher back in. The person then needs a new or still-open link.
+
+Display names are unique within a room, ignoring case and spacing, and
+"Keating" and "Room" are reserved. Someone joining under a taken name is
+numbered ("Maya 2"); renaming to a taken name is refused.
 
 Everyone in a room can read its shared transcript, including messages sent
 before they joined. Teachers can read and moderate the conversation. Joining a
@@ -55,8 +63,15 @@ turn. A per-tab lease and heartbeat allow one browser to run Keating at a time;
 a teacher can explicitly take over. Closing the facilitating tab attempts to
 release its lease. Heartbeats run every 15 seconds; if release fails or the
 browser disappears, the facilitator lease expires 45 seconds after its last
-heartbeat. An individual unfinished turn has a separate 90-second deadline.
+heartbeat. The server keeps heartbeats in memory and writes one to storage at
+most every 30 seconds, so a restart cannot expire a live lease. An individual
+unfinished turn has a separate 90-second deadline.
 Members can keep talking while Keating is offline.
+
+When a learner runs Keating and teacher review is off, each reply Keating
+publishes is labelled with that learner's name and "not reviewed", because the
+learner's browser composed it. Turn on teacher review to keep learners from
+facilitating.
 
 In facilitation mode, Keating reads attributed contributions and decides whether
 to reply or pass. In on-request mode, a mention of Keating or a teacher's explicit
@@ -161,19 +176,23 @@ deployment. The default is `web/.data/keating-courses` when running from `web/`.
 Room writes and realtime fan-out are coordinated within one server process;
 run a single writer instance. Multiple replicas require shared transactional
 coordination and pub/sub before they can serve the same rooms safely.
-Rooms support at most 200 members, 4,000 messages, and 20,000 durable operation
-receipts.
-When the message limit is reached, new content is rejected with an explicit
-error; joins and moderation can continue without adding system notices. At the
-receipt limit, new operations that require a receipt are rejected rather than
-forgetting idempotency records. Successful operation retries still work and
-heartbeats are exempt; joins and invitation management use separate paths.
-Start another room for further receipt-consuming activity.
+Rooms support at most 200 members, 4,000 messages and 2,000,000 characters
+of message text, which keeps each room record to a few megabytes. An account
+can host at most 50 rooms; deleting one frees a slot.
+When the transcript limit is reached, new content is rejected with an explicit
+error; joins and moderation can continue without adding system notices.
+Operation receipts (for retry idempotency) keep the newest 20,000 and drop the
+oldest, so no amount of activity can lock a room. Heartbeats take no receipt.
+Socket frames are limited to 10 a second per connection, with bursts of 30.
+Invitation pointers are deleted when a revoked, used-up or expired link is
+tried, and when the room is deleted.
 
 The web build must include both Vite and Nitro. Room HTTP routes are under
 `/api/rooms`; the WebSocket endpoint is `/api/rooms/realtime?roomId=…`.
 WebSocket authorization runs before upgrade: outsiders are rejected with HTTP
-404, malformed room IDs with 400, and foreign origins with 403. Membership is
+404, malformed room IDs with 400, and foreign origins with 403. Behind a
+TLS-terminating proxy (such as Railway), the `X-Forwarded-Proto` scheme is
+accepted for the same host. Membership is
 checked again before opening and handling socket messages.
 Durable changes use the authenticated HTTP operations endpoint. Sockets carry
 projected updates, presence, typing, previews, and ping; attempts to send room

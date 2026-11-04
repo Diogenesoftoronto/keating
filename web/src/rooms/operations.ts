@@ -13,6 +13,7 @@ import {
   facilitatorIsFresh,
   KEATING_DISPLAY_NAME,
   ROOM_MAX_MESSAGES,
+  ROOM_MAX_TRANSCRIPT_CHARS,
   ROOM_MAX_PRIVATE_FORK_OFFERS,
   ROOM_MAX_PENDING_PRIVATE_FORKS_PER_LEARNER,
   ROOM_MESSAGE_WINDOW,
@@ -83,6 +84,25 @@ export function findRoomMember(
   return room.members.find((member) => member.accountId === accountId);
 }
 
+const RESERVED_DISPLAY_NAMES = new Set([KEATING_DISPLAY_NAME, "Room"].map((name) => name.toLowerCase()));
+const nameKey = (name: string) => name.trim().replace(/\s+/g, " ").toLowerCase();
+
+/** Whether another member, Keating or the room itself already uses this name. Keating addresses people by name. */
+function displayNameTaken(room: Pick<Room, "members">, accountId: string, displayName: string): boolean {
+  const key = nameKey(displayName);
+  return RESERVED_DISPLAY_NAMES.has(key) || room.members.some((member) => member.accountId !== accountId && nameKey(member.displayName) === key);
+}
+
+/** A unique, unreserved name for someone joining, numbering it on collision. */
+export function availableDisplayName(room: Pick<Room, "members">, accountId: string, displayName: string): string {
+  const base = displayName.trim().replace(/\s+/g, " ").slice(0, 110);
+  if (!displayNameTaken(room, accountId, base)) return base;
+  for (let index = 2; ; index++) {
+    const candidate = `${base} ${index}`;
+    if (!displayNameTaken(room, accountId, candidate)) return candidate;
+  }
+}
+
 function memberFor(room: Room, accountId: string): RoomMember {
   const member = findRoomMember(room, accountId);
   if (!member) throw new RoomAuthorizationError("You are not in this room.", "room_not_member");
@@ -132,8 +152,13 @@ function derivedId(operationId: string, suffix: string): string {
   return `${operationId.slice(0, 96 - suffix.length - 1)}-${suffix}`;
 }
 
-function requireHistoryCapacity(room: Pick<Room, "messages">): void {
-  if (room.messages.length >= ROOM_MAX_MESSAGES) {
+function hasHistoryCapacity(room: Pick<Room, "messages">, adding = 0): boolean {
+  if (room.messages.length >= ROOM_MAX_MESSAGES) return false;
+  return room.messages.reduce((total, message) => total + message.body.length, adding) <= ROOM_MAX_TRANSCRIPT_CHARS;
+}
+
+function requireHistoryCapacity(room: Pick<Room, "messages">, adding = 0): void {
+  if (!hasHistoryCapacity(room, adding)) {
     throw new RoomConflictError("This room reached its transcript limit. Open another room to continue.", "room_history_full");
   }
 }
@@ -146,7 +171,7 @@ function appendMessage(
   if (room.messages.some((existing) => existing.id === message.id)) {
     throw new RoomConflictError("That message was already posted.", "room_message_exists");
   }
-  requireHistoryCapacity(room);
+  requireHistoryCapacity(room, message.body.length);
   const created: RoomMessage = { ...message, seq: room.nextSeq };
   room.nextSeq += 1;
   room.messages.push(created);
@@ -164,7 +189,7 @@ function appendSystem(
 ): void {
   // State and moderation changes still apply after the transcript fills.
   // Their notices must never displace the conversation they describe.
-  if (room.messages.length >= ROOM_MAX_MESSAGES) return;
+  if (!hasHistoryCapacity(room, body.length)) return;
   appendMessage(
     room,
     {
@@ -501,7 +526,11 @@ export function applyRoomOperation(
       break;
     }
     case "member.rename": {
-      actor.displayName = operation.displayName;
+      if (nameKey(actor.displayName) === nameKey(operation.displayName)) break;
+      if (displayNameTaken(next, actor.accountId, operation.displayName)) {
+        throw new RoomConflictError("Someone in this room already uses that name. Choose another.", "room_name_taken");
+      }
+      actor.displayName = operation.displayName.trim().replace(/\s+/g, " ");
       if (next.facilitator?.accountId === actor.accountId) {
         next.facilitator.displayName = operation.displayName;
       }
@@ -680,6 +709,9 @@ export function applyRoomOperation(
       const meta = {
         turnId: operation.turnId,
         facilitatorAccountId: actor.accountId,
+        // A learner's browser composed this reply and no teacher checked it, so
+        // the room is told whose browser it came from.
+        ...(roleCanOversee(actor.role) ? {} : { facilitatorName: actor.displayName }),
         model: operation.model,
         edited: false,
       };

@@ -80,7 +80,9 @@ export function RoomMessageItem({
         {message.keating ? (
           <span className={css({ fontSize: "0.68rem", color: "var(--ink-soft)" })}>
             {message.keating.model}
-            {message.keating.reviewedBy ? (message.keating.edited ? " · edited and approved by a teacher" : " · approved by a teacher") : ""}
+            {message.keating.reviewedBy
+              ? (message.keating.edited ? " · edited and approved by a teacher" : " · approved by a teacher")
+              : message.keating.facilitatorName ? ` · run in ${message.keating.facilitatorName}'s browser, not reviewed` : ""}
           </span>
         ) : null}
       </div>

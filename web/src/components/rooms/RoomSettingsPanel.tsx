@@ -1,7 +1,7 @@
-import { useId, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useId, useState, type FormEvent } from "react";
 import { Download } from "lucide-react";
 import { css } from "../../../styled-system/css";
-import { deleteRoom, roomTranscriptUrl } from "../../rooms/client";
+import { allowRemovedRoomMember, deleteRoom, listRemovedRoomMembers, roomTranscriptUrl, type RoomRemovedMember } from "../../rooms/client";
 import type { RoomOperationInput, RoomSettings, RoomViewerSnapshot } from "../../rooms/contracts";
 import { PARTICIPATION_OPTIONS, REPLY_REVIEW_OPTIONS, RoomChoice } from "./RoomCreateForm";
 import { errorMessage, roomStyles as s } from "./room-ui";
@@ -159,6 +159,51 @@ function Lifecycle({ snapshot, mutate, onDeleted }: { snapshot: RoomViewerSnapsh
   );
 }
 
+function RemovedPeople({ snapshot }: { snapshot: RoomViewerSnapshot }) {
+  const roomId = snapshot.room.id;
+  // Refetch after membership changes so a fresh removal shows up.
+  const membership = snapshot.room.members.length;
+  const [removed, setRemoved] = useState<RoomRemovedMember[] | null>(null);
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+  const load = useCallback(async () => {
+    try {
+      setRemoved(await listRemovedRoomMembers(roomId));
+    } catch (cause) {
+      setError(errorMessage(cause, "Removed people could not be loaded."));
+    }
+  }, [roomId]);
+  useEffect(() => { void load(); }, [load, membership]);
+  const allow = async (accountId: string) => {
+    setBusy(accountId);
+    setError("");
+    try {
+      await allowRemovedRoomMember(roomId, accountId);
+      await load();
+    } catch (cause) {
+      setError(errorMessage(cause, "That person could not be let back in."));
+    } finally {
+      setBusy("");
+    }
+  };
+  if (!removed?.length && !error) return null;
+  return (
+    <section aria-labelledby="room-removed-heading" className={s.section}>
+      <h2 id="room-removed-heading" className={s.heading}>Removed people</h2>
+      <p className={s.help}>Removed people cannot rejoin. Letting someone back in means they can join again with a new invitation.</p>
+      <ul className={css({ mt: "0.45rem", display: "grid", gap: "0.35rem", listStyle: "none", p: 0 })}>
+        {removed?.map((person) => (
+          <li key={person.accountId} className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", fontSize: "0.78rem" })}>
+            <span>{person.displayName} <span className={css({ color: "var(--ink-soft)" })}>· {person.role}</span></span>
+            <button type="button" className={s.button} disabled={busy === person.accountId} onClick={() => void allow(person.accountId)}>Let back in</button>
+          </li>
+        ))}
+      </ul>
+      {error ? <p role="alert" className={s.error}>{error}</p> : null}
+    </section>
+  );
+}
+
 export function RoomSettingsPanel({ snapshot, mutate, onDeleted }: { snapshot: RoomViewerSnapshot; mutate: Mutate; onDeleted: () => void }) {
   return (
     <>
@@ -170,6 +215,7 @@ export function RoomSettingsPanel({ snapshot, mutate, onDeleted }: { snapshot: R
         <h2 id="room-settings-heading" className={s.heading}>Keating settings</h2>
         <SettingsForm snapshot={snapshot} mutate={mutate} />
       </section>
+      {snapshot.permissions.canOversee ? <RemovedPeople snapshot={snapshot} /> : null}
       <section aria-labelledby="room-lifecycle-heading" className={s.section}>
         <h2 id="room-lifecycle-heading" className={s.heading}>Session</h2>
         <div className={css({ mt: "0.5rem" })}><RoomTranscriptExport roomId={snapshot.room.id} /></div>
