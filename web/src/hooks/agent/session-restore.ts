@@ -38,17 +38,29 @@ export function latestRestorableSessionId(items: readonly SessionMetadata[]): st
     )[0]?.id ?? null;
 }
 
+const TAB_SESSION_KEY = "keating:tab-chat-session";
+
+/** Records the chat this tab shows, so a same-tab redirect (such as sign-in) returns to it. */
+export function rememberTabSession(sessionId: string): void {
+  try { sessionStorage.setItem(TAB_SESSION_KEY, sessionId); } catch { /* restore falls back to the latest session */ }
+}
+
+export function tabSessionId(): string | null {
+  try { return sessionStorage.getItem(TAB_SESSION_KEY); } catch { return null; }
+}
+
 /**
- * An explicit `?session=` wins; otherwise a signed-in turn interrupted by an
- * account redirect reopens its session.
+ * An explicit `?session=` wins; otherwise the tab reopens the chat it last
+ * showed. A new chat that was never saved does not load, so a fresh one starts
+ * rather than an older chat (and its pending turns) taking its place.
  */
 export function requestedSessionId(
   search: string,
-  pending: () => { ready?: boolean; sessionId: string } | null | undefined,
+  tabSession: () => string | null,
 ): string | null {
   return new URLSearchParams(search)
     .get("session")
-    ?.trim() || (pending()?.ready ? pending()!.sessionId : null);
+    ?.trim() || tabSession();
 }
 
 /** The location without its `session` parameter, for history.replaceState. */

@@ -98,13 +98,12 @@ describe("session restore", () => {
     expect(latestRestorableSessionId([])).toBeNull();
   });
 
-  test("an explicit ?session= wins over a pending signed-in turn, which needs to be ready", () => {
+  test("an explicit ?session= wins over the chat this tab last showed", () => {
     let reads = 0;
-    const pending = () => { reads += 1; return { ready: true, sessionId: "pending" }; };
-    expect(requestedSessionId("?session=%20abc%20", pending)).toBe("abc");
+    const tab = () => { reads += 1; return "tab-chat"; };
+    expect(requestedSessionId("?session=%20abc%20", tab)).toBe("abc");
     expect(reads).toBe(0);
-    expect(requestedSessionId("?session=", pending)).toBe("pending");
-    expect(requestedSessionId("", () => ({ ready: false, sessionId: "pending" }))).toBeNull();
+    expect(requestedSessionId("?session=", tab)).toBe("tab-chat");
     expect(requestedSessionId("", () => null)).toBeNull();
   });
 

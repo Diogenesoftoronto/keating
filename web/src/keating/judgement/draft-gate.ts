@@ -37,6 +37,7 @@ import { JEV_REQUEST_TOKEN_LIMIT, JEV_STATE_QUESTION_TOKEN_LIMIT, loadJudgementM
 import { markDiagnosticOperation, unmarkDiagnosticOperation } from "./diagnostics";
 import { createWebJudgementRuntime, type WebJudgementRuntime } from "./runtime";
 import { describeDraftFailure } from "./draft-failure";
+import { DRAFT_TIME_BUDGET_MS } from "./draft-progress";
 import { withReviewNotice } from "./review-notice";
 import type { BackgroundActivityPolicy } from "../../../../packages/learner-contracts/src/judgement/background-activity-policy";
 
@@ -280,7 +281,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
     if (streamOptions?.signal?.aborted) abort();
     const unsubscribe = subscribeJudgementModelSettings(abort);
     const usage = emptyUsage();
-    const budget = Math.min(180_000, Math.max(1, options.timeoutMs ?? 90_000));
+    const budget = Math.min(180_000, Math.max(1, options.timeoutMs ?? DRAFT_TIME_BUDGET_MS));
     let timedOut = false;
     const timer = setTimeout(() => { timedOut = true; abort(); }, budget);
     const current = () => !controller.signal.aborted && (options.isCurrent?.() ?? true);
