@@ -19,19 +19,48 @@ export function localizeHarnessDependency(root: string, path: string, dependency
 
 export interface HarnessSourceInventory {
   hashes: Record<string, string>;
+  external_sources: Record<string, string>;
   readonly_resources: Record<string, string>;
   unresolved_optional_imports: Array<{ from: string; specifier: string }>;
   scope: string;
 }
 
 /** Inventory literal transitive imports plus complete built trees for computed local imports. */
-export async function captureHarnessSources(root: string): Promise<HarnessSourceInventory> {
+export async function captureHarnessSources(root: string, modules: readonly { path: string; sha256: string }[] = []): Promise<HarnessSourceInventory> {
+  const external_sources: Record<string, string> = {};
+  for (const module of modules) {
+    if (!isAbsolute(module.path) || digest(await readFile(module.path)) !== module.sha256) throw new Error("harness_research_module_changed");
+    external_sources[module.path] = module.sha256;
+  }
   const dependencyRoot = await realpath(join(root, "node_modules"));
   const queue: string[] = [
     "scripts/training/benchmark_harness_v3.ts", "scripts/training/benchmark_harness_v3_extension.ts",
     "scripts/training/benchmark_harness_v3_provenance.ts", "dist/src/runtime/pi-rpc-entry.js",
     "dist/src/runtime/pi-pty-relay.js", "dist/src/pi/hyper-teacher/index.js", "SYSTEM.md", "package.json", "bun.lock",
   ].map((path) => join(root, path));
+  // Authorized service entrypoints may live in the research sibling. Record
+  // their literal dependency closure too, without exposing it as readable tool data.
+  const externalQueue = modules.map(module => module.path);
+  const externalSeen = new Set<string>();
+  for (let cursor = 0; cursor < externalQueue.length; cursor++) {
+    const path = resolve(externalQueue[cursor]!);
+    if (externalSeen.has(path)) continue;
+    externalSeen.add(path);
+    if (externalSeen.size > 25_000) throw new Error("harness_source_inventory_limit");
+    const local = relative(root, path);
+    if (local !== ".." && !local.startsWith("../") && !isAbsolute(local)) { queue.push(path); continue; }
+    const bytes = await readFile(path);
+    external_sources[path] = digest(bytes);
+    if (![".js", ".mjs", ".cjs", ".ts", ".tsx", ".jsx"].includes(extname(path)) || path.endsWith(".d.ts")) continue;
+    const imports = (path.endsWith(".tsx") || path.endsWith(".jsx") ? jsxScanner : scanner).scanImports(bytes.toString("utf8").replace(/^#![^\n]*\n/, ""));
+    for (const imported of imports) {
+      if (builtins.has(imported.path) || imported.path.startsWith("node:") || imported.path.startsWith("bun:")) continue;
+      try {
+        const dependency = Bun.resolveSync(imported.path, dirname(path));
+        if (isAbsolute(dependency)) externalQueue.push(dependency);
+      } catch { throw new Error("harness_research_dependency_missing"); }
+    }
+  }
   const readonly_resources: Record<string, string> = {};
   async function tree(path: string, required = false): Promise<void> {
     const entries = await readdir(path, { withFileTypes: true }).catch(() => {
@@ -88,16 +117,20 @@ export async function captureHarnessSources(root: string): Promise<HarnessSource
       }
     }
   }
-  return { hashes: Object.fromEntries(Object.entries(hashes).sort(([a], [b]) => a.localeCompare(b))), readonly_resources,
+  return { hashes: Object.fromEntries(Object.entries(hashes).sort(([a], [b]) => a.localeCompare(b))), readonly_resources, external_sources,
     unresolved_optional_imports,
-    scope: "Literal transitive JS/TS imports including installed dependencies, package metadata, complete built src/shared/packages trees, shipped prompts/skills, and node-pty native bindings. Computed external imports are not an exhaustive runtime module-load trace; unresolved optional platform imports are listed." };
+    scope: "Literal transitive JS/TS imports including installed dependencies, package metadata, complete built src/shared/packages trees, shipped prompts/skills, node-pty native bindings, and authorized research service entrypoints and their literal imports. Computed external imports are not an exhaustive runtime module-load trace; unresolved optional platform imports are listed." };
 }
 
-export async function changedHarnessSources(root: string, hashes: Record<string, string>): Promise<string[]> {
+export async function changedHarnessSources(root: string, hashes: Record<string, string>, external: Record<string, string> = {}): Promise<string[]> {
   const changed: string[] = [];
   for (const [name, expected] of Object.entries(hashes)) {
     try { if (digest(await readFile(join(root, name))) !== expected) changed.push(name); }
     catch { changed.push(name); }
+  }
+  for (const [path, expected] of Object.entries(external)) {
+    try { if (digest(await readFile(path)) !== expected) changed.push(path); }
+    catch { changed.push(path); }
   }
   return changed;
 }

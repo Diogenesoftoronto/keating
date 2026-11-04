@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { FlueConversationMessage } from "@flue/sdk";
-import { shouldRenderFlueMessage } from "../components/assistant-chat-messages";
+import { interleaveLocalRows, shouldRenderFlueMessage } from "../components/assistant-chat-messages";
 
 function message(id: string, overrides: Partial<FlueConversationMessage> = {}): FlueConversationMessage {
   return { id, role: "assistant", purpose: "assistant", display: "visible", parts: [], ...overrides };
@@ -61,5 +61,24 @@ describe("dropped-request transcript rows", () => {
   it("does not remove learner turns, including attachments awaiting their URL", () => {
     const user = message("upload", { role: "user", purpose: "user", parts: [{ type: "file", mediaType: "image/png", id: "attachment" }] });
     expect(shouldRenderFlueMessage(user)).toBe(true);
+  });
+});
+
+describe("native transcript order", () => {
+  const time = (row: { at: number }) => row.at;
+
+  it("keeps Flue array order when borrowed user timestamps are stale", () => {
+    // The last learner turn borrowed an older local timestamp (t=1), which a
+    // timestamp sort would lift above the three earlier replies.
+    const native = [
+      { id: "u1", at: 0 }, { id: "a1", at: 2 }, { id: "a2", at: 3 }, { id: "a3", at: 4 }, { id: "u2", at: 1 }, { id: "a4", at: 6 },
+    ].map(row => ({ row, time: row.at }));
+    expect(interleaveLocalRows(native, [], time).map(row => row.id)).toEqual(["u1", "a1", "a2", "a3", "u2", "a4"]);
+  });
+
+  it("slots local-only rows by time without reordering native rows", () => {
+    const native = [{ id: "u1", at: 0 }, { id: "a1", at: 10 }, { id: "u2", at: 20 }].map(row => ({ row, time: row.at }));
+    const local = [{ id: "failed", at: 15 }, { id: "pending", at: 30 }];
+    expect(interleaveLocalRows(native, local, time).map(row => row.id)).toEqual(["u1", "a1", "failed", "u2", "pending"]);
   });
 });

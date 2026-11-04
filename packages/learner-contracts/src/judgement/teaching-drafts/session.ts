@@ -22,7 +22,7 @@ import { measureStateComposition, prepareTeachingWindow, type StateComposition }
 
 import type { TeachingDraftReasoning, TeachingDraftStandard, TeachingDraftVariant, TeachingDraftInteraction, TeachingDraftAttempt, TeachingDraftPhase, TeachingStateSample, TeachingWindowSlide } from "../teaching-drafts.js";
 import { effort, standardInstructions, variantPrompt, interactionSummary, qualityFloors, blocksDraft, blocksRelease, teachingDraftAttemptLimit, draftQuality, reasoningQuestions, selectedReasoning, standardQuestion, qualityQuestions, selected, splitJudgementRequest } from "./policy.js";
-import { rankDraftCandidates, canRetainTextDraft, bestEffortQuality, needsTextOnlyRecovery, buildRepairFeedback, selectSynthesis } from "./policy.js";
+import { rankDraftCandidates, canRetainTextDraft, bestEffortQuality, needsTextOnlyRecovery, buildRepairFeedback, selectSynthesis, advisoryTeachingChecks } from "./policy.js";
 
 interface DraftContext<T> {
   backgroundPolicy: BackgroundActivityPolicy | null;
@@ -71,7 +71,8 @@ function createDraftContext<T>(options: TeachingDraftOptions<T>): DraftContext<T
     ? structuredClone(options.backgroundActivityPolicy) : null;
   const extended = options.refinement === "extended";
   const maxAttempts = teachingDraftAttemptLimit(options.maxAttempts, options.refinement);
-  const timeoutMs = Math.min(180_000, Math.max(1, options.timeoutMs ?? 90_000));
+  // Only explicit research collection may use the longer whole-decision budget.
+  const timeoutMs = Math.min(options.collectAllAttempts ? 3_600_000 : 180_000, Math.max(1, options.timeoutMs ?? 90_000));
   if (!Number.isFinite(maxAttempts) || !Number.isFinite(timeoutMs)) throw new Error("invalid-teaching-draft-budget");
   const now = options.now ?? (() => performance.now());
   const start = now();
@@ -291,7 +292,7 @@ export class TeachingDraftSession<T> {
       const provenance = this.context.synthesisSourceAttempts ? { synthesisSourceAttempts: [...this.context.synthesisSourceAttempts] } : {};
       const generation = await this.generateCandidate(plan, variant, feedback, synthesis, provenance);
       if (!generation) {
-        if (!this.context.extended && this.context.usableDrafts.length) break;
+        if (!this.options.collectAllAttempts && !this.context.extended && this.context.usableDrafts.length) break;
         continue;
       }
       const { generated, generationMs, textOnlyRecovery } = generation;
@@ -303,11 +304,12 @@ export class TeachingDraftSession<T> {
       if (status === "pass") {
         approvedVariants.add(variant);
         this.context.candidates.push({ attempt: this.context.attempt, ...generated, quality: draftQuality(checks) });
-        if ((!this.context.extended || !revisionChecks.length) && this.context.candidates.length >= targetCandidates) break;
+        if (!this.options.collectAllAttempts && (!this.context.extended || !revisionChecks.length) && this.context.candidates.length >= targetCandidates) break;
       }
       // Ordinary semantic repair stops after one retry; only unusable output enters the recovery tail.
-      if (!this.context.extended && status !== "pass" && this.context.usableDrafts.length
-        && (this.context.attempt >= 2 || !blocking.some(check => check.status === "fail"))) break;
+      // A judge-scored gray-zone concern earns that retry too; an unanswered review does not.
+      if (!this.options.collectAllAttempts && !this.context.extended && status !== "pass" && this.context.usableDrafts.length
+        && (this.context.attempt >= 2 || !blocking.some(check => check.status === "fail" || check.source === "jev" && check.probability !== null))) break;
       feedback = buildRepairFeedback(revisionChecks, this.context.standard);
       if (feedback.length) this.context.reasoning = effort[Math.min(this.context.ceiling, effort.indexOf(this.context.reasoning) + 1)]!;
     }
@@ -371,7 +373,11 @@ export class TeachingDraftSession<T> {
         status: probability === null ? "unknown" : probability >= qualityFloors[this.context.standard] ? "pass" : probability <= 0.2 ? "fail" : "unknown" });
     }
     const blocking = checks.filter(blocksRelease);
-    const revisionChecks = this.context.extended ? checks.filter(blocksDraft) : blocking;
+    // Advisory concerns never veto release, but a repair that is already
+    // happening should also fix a likely one (such as a prose-only question).
+    const advisory = blocking.length ? checks.filter(check => !blocking.includes(check) && advisoryTeachingChecks.has(check.id)
+      && check.status !== "pass" && (check.probability ?? 0) >= 0.5) : [];
+    const revisionChecks = this.context.extended ? checks.filter(blocksDraft) : [...blocking, ...advisory];
     const status: TeachingDraftAttempt["status"] = blocking.some((check) => check.status === "fail") ? "fail" : blocking.length ? "unknown" : "pass";
     this.context.attempts.push({ attempt: this.context.attempt, reasoning: this.context.reasoning, standard: this.context.standard, generationMs, judgementMs: this.context.now() - checkStarted, status, checks, variant, ...provenance });
     return { status, checks, blocking, revisionChecks, assessment, hostChecks };

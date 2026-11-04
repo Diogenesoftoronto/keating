@@ -28,6 +28,7 @@ import operationalProtocolMarkdown from "../keating/prompts/operational-protocol
 import { configureJudgementDiagnostics, getJudgementDiagnostics, observeJudgementCaller } from "../keating/judgement/diagnostics";
 import type { WebJudgementRuntime } from "../keating/judgement/runtime";
 import { answerDraftGateReview as answer } from "./helpers/teaching-draft-judge";
+import { getModelRequestLog, setModelRequestLogEnabled } from "../keating/model-request-log";
 
 type StreamFn = NonNullable<AgentOptions["streamFn"]>;
 const MODEL = {
@@ -86,6 +87,23 @@ const text = (value: AssistantMessage) => value.content.filter((part) => part.ty
 afterEach(() => configureJudgementDiagnostics({ enabled: false, details: false }));
 
 describe("private teaching draft stream", () => {
+  test("the opt-in request log records each draft, its provider payload and its review", async () => {
+    setModelRequestLogEnabled(true);
+    try {
+      const generate: StreamFn = async (_model, _context, options) => {
+        await options?.onPayload?.({ messages: ["provider body"] }, MODEL);
+        return streamOf(message("24"));
+      };
+      await collect(await gate(generate)(MODEL, context()));
+      const log = getModelRequestLog().filter(entry => entry.sessionId === "fixture-session");
+      expect(log.find(entry => entry.kind === "draft")).toMatchObject({ payload: { messages: ["provider body"] } });
+      expect(log.find(entry => entry.kind === "draft")?.context?.systemPrompt).toBeString();
+      expect(log.some(entry => entry.kind === "judge" && entry.judgement)).toBe(true);
+    } finally { setModelRequestLogEnabled(false); }
+    await collect(await gate(() => streamOf(message("24")))(MODEL, context()));
+    expect(getModelRequestLog()).toEqual([]);
+  });
+
 	test("public output is independent of provider chunk boundaries and contains no private thinking", async () => {
 		await fc.assert(fc.asyncProperty(
 			fc.array(fc.integer({ min: 1, max: 12 }), { minLength: 1, maxLength: 12 }),
@@ -125,7 +143,7 @@ describe("private teaching draft stream", () => {
         const outcome = answer(request, { standard: "supported" });
         if (outcome.ok && request.questions.checkpoint_continued) {
           return { ...outcome, response: { ...outcome.response, answers: { ...outcome.response.answers,
-            checkpoint_continued: { type: "noul", noul: .5 }, quality_scope: { type: "noul", noul: .3 } } } };
+            checkpoint_not_interactive: { type: "noul", noul: .5 }, quality_scope: { type: "noul", noul: .3 } } } };
         }
         return outcome;
       },

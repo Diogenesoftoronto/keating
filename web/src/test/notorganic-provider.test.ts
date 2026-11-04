@@ -3,6 +3,8 @@ import { mockEvent } from "h3";
 import {
 	NOTORGANIC_DEFAULT_MODEL,
 	NOTORGANIC_SOL_MODEL,
+	NOTORGANIC_FLINT_MODEL,
+	getAvailableNotOrganicChatModels,
 	NOTORGANIC_IMAGE_MODEL_ALIAS,
 	NOTORGANIC_MODEL_ALIAS,
 	NOTORGANIC_PROVIDER_ID,
@@ -25,6 +27,31 @@ import {
 } from "../notorganic-provider/server";
 
 describe("Not Organic provider definition", () => {
+	it("registers provisional Flint metadata without granting an existing session new authority", () => {
+		expect(NOTORGANIC_FLINT_MODEL).toMatchObject({ id: "flint", name: "Flint (preview)", api: "openai-completions",
+			provider: "notorganic", baseUrl: NOTORGANIC_DEFAULT_MODEL.baseUrl, input: ["text"], reasoning: false,
+			contextWindow: 12288, maxTokens: 4096, compat: { maxTokensField: "max_completion_tokens", supportsStore: false } });
+		const existing = { scope: "infer:balanced web:search web:fetch" };
+		expect(notOrganicModelNeedsConsent(NOTORGANIC_FLINT_MODEL, existing)).toBe(true);
+		expect(existing.scope).toBe("infer:balanced web:search web:fetch");
+		expect(notOrganicModelNeedsConsent(NOTORGANIC_FLINT_MODEL, { scope: "infer:flint web:search web:fetch" })).toBe(false);
+	});
+	it("makes Flint selectable only when the consented gateway advertises it", async () => {
+		const baseline = [NOTORGANIC_DEFAULT_MODEL.id, NOTORGANIC_SOL_MODEL.id];
+		let calls = 0;
+		const client = (scope: string, response: () => Response | Promise<Response>) => ({
+			getSession: () => ({ scope }), request: async (path: string) => { calls++; expect(path).toBe("/v1/models"); return response(); },
+		});
+		expect((await getAvailableNotOrganicChatModels(null)).map(model => model.id)).toEqual(baseline);
+		expect((await getAvailableNotOrganicChatModels(client("infer:balanced", () => { throw new Error("Must not discover without consent"); }))).map(model => model.id)).toEqual(baseline);
+		expect(calls).toBe(0);
+		for (const response of [() => Response.json({ data: [{ id: "balanced" }] }),
+			() => Response.json({ error: "unavailable" }, { status: 503 }), () => { throw new Error("offline"); }]) {
+			expect((await getAvailableNotOrganicChatModels(client("infer:flint", response))).map(model => model.id)).toEqual(baseline);
+		}
+		expect((await getAvailableNotOrganicChatModels(client("infer:flint", () => Response.json({ data: [{ id: "flint" }] })))).map(model => model.id))
+			.toEqual([...baseline, "flint"]);
+	});
 	it("offers Sol through Responses and requires its own model consent", () => {
 		expect(NOTORGANIC_SOL_MODEL).toMatchObject({
 			id: "gpt-6.1-sol", name: "GPT-6.1 Sol", provider: "notorganic",

@@ -218,7 +218,7 @@ describe("explicit extended private draft loop", () => {
   });
 
   test.each([
-    { identity_invented: 0.5 }, { profile_evidence_invented: 0.21 },
+    { identity_invented: 0.5 }, { profile_evidence_invented: 0.41 },
   ] as Record<string, number>[])("records semantic uncertainty without rejecting usable drafts: %j", async scores => {
     const result = await runTeachingDrafts({ refinement: "extended", turn: { ...turn, domain: "unknown" }, maxAttempts: 1,
       judge: makeJudge(() => scores),

@@ -1,0 +1,4 @@
+{"judges": [
+ {"id": "astra", "kind": "codex_exec", "endpoint": "codex-cli (ChatGPT sign-in)", "model": "gpt-6-astra", "reasoning": "high", "timeout_seconds": 1200},
+ {"id": "kimi", "kind": "openai_chat", "endpoint": "https://api.neuralwatt.com/v1/chat/completions", "model": "kimi-k3", "key_env": "KEATING_BENCHMARK_NEURALWATT_KEY", "max_output_tokens": 8000}
+]}

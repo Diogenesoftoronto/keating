@@ -29,7 +29,7 @@ const generate = async () => ({ reply: { text: "A concrete hint for the learner'
 describe("ordinary teaching draft release", () => {
   test("a useful unpaired reply releases once without chasing uncertain style or stronger reasoning", async () => {
     let generated = 0;
-    const result = await runTeachingDrafts({ turn, judge: judge(() => ({ draft_standard: "deep", checkpoint_continued: .61,
+    const result = await runTeachingDrafts({ turn, judge: judge(() => ({ draft_standard: "deep", checkpoint_continued: .35,
       checkpoint_repeated: .28, checkpoint_not_interactive: .69, explanation_missing: .44, quality_scope: .3 })),
       generate: async () => { generated++; return generate(); } });
     expect(generated).toBe(1);
@@ -37,7 +37,9 @@ describe("ordinary teaching draft release", () => {
     expect(result.receipt.maxAttempts).toBe(10);
     expect(result.receipt.standard).toBe("deep");
     expect(result.receipt.attempts[0]!.checks.find(check => check.id === "checkpoint_continued"))
-      .toMatchObject({ probability: .61, status: "unknown" });
+      .toMatchObject({ probability: .35, status: "pass" });
+    expect(result.receipt.attempts[0]!.checks.find(check => check.id === "checkpoint_not_interactive"))
+      .toMatchObject({ probability: .69, status: "fail" });
   });
 
   test.each([undefined, 10, 50])("ordinary semantic failures receive at most one repair with budget %s", async maxAttempts => {
@@ -104,7 +106,7 @@ describe("ordinary teaching draft release", () => {
     const result = await runTeachingDrafts({ turn, maxAttempts: 1, judge: judge(() => ({ fresh_sources_needed, research_skipped: .35 })), generate });
     expect(result.status).toBe("released");
     expect(result.receipt.attempts[0]!.checks.find(check => check.id === "research_skipped"))
-      .toMatchObject({ probability: .35, status: "unknown" });
+      .toMatchObject({ probability: .35, status: "pass" });
   });
 
   test.each([
@@ -118,6 +120,30 @@ describe("ordinary teaching draft release", () => {
     expect(result.receipt.attempt).toBe(1);
     expect(result.receipt.reason).toBe("best-effort-draft");
     expect(result.receipt.attempts[0]!.checks.find(check => check.id === id)?.status).toBe("unknown");
+  });
+
+  test("a gray-zone blocking concern gets one repair that also carries a likely prose-only question", async () => {
+    // Shape of a real receipt: unlinked source plus a question asked in prose.
+    const feedback: string[][] = [];
+    const result = await runTeachingDrafts({ turn,
+      judge: judge(request => String((request.state as { reply?: { text?: string } }).reply?.text).includes("repaired") ? {}
+        : { source_link_missing: .47, checkpoint_not_interactive: .62 }),
+      generate: async input => {
+        feedback.push(input.feedback.map(entry => entry.id));
+        return { reply: { text: feedback.length > 1 ? "A repaired reply." : "A first reply.", toolCalls: [] }, value: `draft-${feedback.length}` };
+      } });
+    expect(feedback).toEqual([[], ["source_link_missing", "checkpoint_not_interactive"]]);
+    expect(result).toMatchObject({ status: "released", value: "draft-2" });
+    expect(result.receipt.reason).not.toBe("best-effort-draft");
+  });
+
+  test("an unanswered review does not spend a repair", async () => {
+    let generated = 0;
+    const result = await runTeachingDrafts({ turn, judge: async (request, signal) => (request.state as { reply?: unknown }).reply
+      ? { ok: false, error: { code: "backend-unavailable", retryable: false } } : judge()(request, signal),
+      generate: async () => { generated++; return generate(); } });
+    expect(generated).toBe(1);
+    expect(result.receipt.reason).toBe("best-effort-draft");
   });
 
   test("semantic checkpoint concerns remain recorded in best effort", async () => {

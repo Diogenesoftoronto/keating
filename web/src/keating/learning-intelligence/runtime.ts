@@ -1,3 +1,4 @@
+import { fieldsFor, LEARNING_EXTRACTION_NULL_THRESHOLD, LEARNING_EXTRACTION_MAX_SOURCE_CHARS } from "../../../../packages/learner-contracts/src/learning-extraction-contract.js";
 import { groundLearningExtractions, learningSourceHash, rankImportantLearningQuestions, verifyLearningEvidence,
   type GroundedLearningExtraction, type LearningExtractionKind, type LearningEvidenceAnchor, type MemoryAdmissionCandidate } from "@keating/learner-contracts";
 import type { AgentOptions } from "@earendil-works/pi-agent-core";
@@ -23,20 +24,20 @@ export interface LearningIntelligenceOptions {
   subscribe?: (listener: () => void) => () => void;
   request?: typeof requestLearningExtraction;
   diagnostic?: (event: LearningDiagnosticInput) => void;
+  /** Per-message extraction result for the turn record; quotes are trimmed by the receiver. */
+  onExtraction?: (result: LearningExtractionReport) => void;
   storage?: Pick<Storage, "getItem" | "setItem" | "removeItem"> | null;
   now?: () => number;
 }
-const fieldsFor = (learner: boolean): Record<string, { kind: LearningExtractionKind; instructions: string }> => learner ? {
-  step_1: { kind: "answer-step", instructions: "The learner's first explicit reasoning step, explanation, equation or assumption. Copy an exact self-contained passage. Null when no reasoning is present." },
-  step_2: { kind: "answer-step", instructions: "A different explicit reasoning step or assumption from the learner. Exact passage, or null. Do not judge correctness." },
-  constraint: { kind: "learning-constraint", instructions: "An explicit learning goal, deadline, time budget or tool constraint stated by the learner. Include negation and time limits. Exact passage or null; do not infer preferences." },
-  memory: { kind: "memory", instructions: "A short self-contained, learner-endorsed statement about their durable interests, study context or communication preferences. Exact passage of at most 240 characters, or null. Exclude sensitive data, secrets, task answers, quoted third parties and temporary requests." },
-  question: { kind: "important-question", instructions: "An explicit unresolved question the learner asks or says is important to understand. Exact passage including context, or null. Do not invent questions or predict exam content." },
-} : {
-  fact_1: { kind: "lesson-fact", instructions: "An exact self-contained definition, claim or worked explanation explicitly taught in this message. Preserve qualifications and negation. Null if none. Presence in tutor text does not prove truth." },
-  fact_2: { kind: "lesson-fact", instructions: "A different exact definition, claim or worked step explicitly taught here. Preserve context and qualifications, or null." },
-  question: { kind: "important-question", instructions: "An exact comprehension question or key unresolved question explicitly posed in this lesson. Copy the question and necessary context, or null. Do not invent an exam prediction." },
-};
+export interface LearningExtractionReport {
+  role: "learner" | "tutor";
+  messageTimestamp: number | undefined;
+  status: "completed" | "abstained" | "failed" | "unavailable";
+  model?: string;
+  elapsedMs: number;
+  items: { kind: LearningExtractionKind; messageId: string; start: number; end: number; quote: string }[];
+  reasons: string[];
+}
 const budgets = new Map<string, { at: number; count: number }>();
 function reserve(scope: string, now: number): boolean {
   const previous = budgets.get(scope), budget = previous && now >= previous.at && now - previous.at < 60_000 ? previous : { at: now, count: 0 };
@@ -159,21 +160,28 @@ export function createLearningIntelligence(options: LearningIntelligenceOptions)
         for (const entry of [lastLearner, lastTeacher]) {
           if (!entry || !current()) continue;
           const { source, row } = entry, identity = `${source.messageId}:${source.sourceHash}`;
-          if (seen.has(identity) || source.text.length > 12_000) continue;
+          if (seen.has(identity) || source.text.length > LEARNING_EXTRACTION_MAX_SOURCE_CHARS) continue;
           const fields = fieldsFor(row.role !== "assistant");
           const started = now(), result = await call({ state: source.text, fields: Object.fromEntries(Object.entries(fields)
-            .map(([id, field]) => [id, { type: "text" as const, instructions: field.instructions, null_threshold: 0.25 }])), reference_date: new Date(now()).toISOString().slice(0, 10) });
+            .map(([id, field]) => [id, { type: "text" as const, instructions: field.instructions, null_threshold: LEARNING_EXTRACTION_NULL_THRESHOLD }])), reference_date: new Date(now()).toISOString().slice(0, 10) });
           if (!current()) return;
+          const role = row.role === "assistant" ? "tutor" as const : "learner" as const;
+          const messageTimestamp = typeof row.timestamp === "number" ? row.timestamp : undefined;
+          const report = (input: Omit<LearningExtractionReport, "role" | "messageTimestamp">) => {
+            try { options.onExtraction?.({ role, messageTimestamp, ...input }); } catch { /* Observers cannot alter extraction. */ }
+          };
           if (!result.ok) {
-            diagnostic({ kind: "extraction", status: result.error === "unavailable" || result.error === "unauthorized" ? "unavailable" : "failed",
+            const status = result.error === "unavailable" || result.error === "unauthorized" ? "unavailable" as const : "failed" as const;
+            diagnostic({ kind: "extraction", status,
               sessionId: options.sessionId, elapsedMs: now() - started, reasons: [result.error] });
+            report({ status, elapsedMs: now() - started, items: [], reasons: [result.error] });
             if (result.error === "rate-limited") return;
             continue;
           }
           seen.add(identity);
           const candidates = Object.entries(fields).flatMap(([id, field]) => {
             const answer = result.answers[id];
-            return answer && typeof answer.value === "string" && answer.span && typeof answer.p_null === "number" && answer.p_null <= 0.25
+            return answer && typeof answer.value === "string" && answer.span && typeof answer.p_null === "number" && answer.p_null <= LEARNING_EXTRACTION_NULL_THRESHOLD
               ? [{ kind: field.kind, quote: answer.value, start: answer.span[0], end: answer.span[1], sourceHash: source.sourceHash }] : [];
           });
           const grounded = groundLearningExtractions(source, candidates);
@@ -183,6 +191,9 @@ export function createLearningIntelligence(options: LearningIntelligenceOptions)
             model: result.model, elapsedMs: now() - started, evidence: grounded.items.map(item => item.evidence),
             reasons: [grounded.items.length ? "Exact source spans verified. Extracted claims remain evidence, not correctness or mastery judgments." : "No sufficiently supported exact passage returned.",
               ...grounded.items.map(item => `Extracted ${item.kind}.`), ...grounded.abstentions.map(item => item.reason)] });
+          report({ status: grounded.items.length ? "completed" : "abstained", model: result.model, elapsedMs: now() - started,
+            items: grounded.items.map(item => ({ kind: item.kind, messageId: item.evidence.messageId, start: item.evidence.start, end: item.evidence.end, quote: item.evidence.quote })),
+            reasons: grounded.abstentions.map(item => item.reason) });
           for (const item of grounded.items) await extractMemory(item, result.model, current);
         }
         const history = await options.history();

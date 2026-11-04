@@ -22,6 +22,8 @@ import {
   NOTORGANIC_MODEL_ID,
   NOTORGANIC_PROVIDER_ID,
   NOTORGANIC_SCOPE,
+  NOTORGANIC_FLINT_SCOPE,
+  NOTORGANIC_FLINT_JUDGEMENT_SCOPE,
   notOrganicAuthPath,
   notOrganicAuthStatus,
   notOrganicCallbackHtml,
@@ -34,6 +36,7 @@ import {
   createNotOrganicProviderConfig,
   createNotOrganicRequestHeaders,
   NOTORGANIC_BALANCED_MODEL,
+  NOTORGANIC_FLINT_MODEL,
   NOTORGANIC_LIVE_ACCEPTANCE_VERIFIED,
   NOTORGANIC_PI_API,
   notOrganicChatCompletionsUrl,
@@ -98,6 +101,32 @@ async function privateJwk(): Promise<Record<string, unknown>> {
 }
 
 describe("Not Organic CLI public-client login", () => {
+  test.each([false, true])("fresh Flint login requests only the selected model (judgement %s)", async (judgement) => {
+    const cwd = await temporaryProject();
+    let authorizationUrl = "";
+    const scope = judgement ? NOTORGANIC_FLINT_JUDGEMENT_SCOPE : NOTORGANIC_FLINT_SCOPE;
+    const result = await loginNotOrganic(cwd, { onAuth: ({ url }) => { authorizationUrl = url; } }, {
+      model: "flint", judgement, callbackListenerFactory: listenerFactory(),
+      fetch: (async () => Response.json({ access_token: "flint-account-capability", token_type: "DPoP", expires_in: 300, scope })) as typeof fetch,
+    });
+    expect(new URL(authorizationUrl).searchParams.get("scope")).toBe(scope);
+    expect(result.model).toBe("flint");
+    expect(result.message).toContain("preview");
+    expect(notOrganicAuthStatus(cwd).scope).toBe(scope);
+    expect(providerIsConfigured(cwd, {}, "notorganic")).toBe(true);
+  });
+
+  test("a Flint request cannot upgrade an existing Balanced grant without fresh consent", async () => {
+    const cwd = await temporaryProject();
+    const storage = AuthStorage.create(notOrganicAuthPath(cwd));
+    storage.set("notorganic", { type: "api_key", key: "existing-balanced-capability" });
+    await expect(loginNotOrganic(cwd, { onAuth: () => undefined }, {
+      model: "flint", callbackListenerFactory: listenerFactory(), fetch: (async () => successfulTokenResponse()) as typeof fetch,
+    })).rejects.toThrow("invalid or over-broad capability");
+    expect(AuthStorage.create(notOrganicAuthPath(cwd)).get("notorganic")?.type).toBe("api_key");
+    expect(AuthStorage.create(notOrganicAuthPath(cwd)).get("notorganic")).toEqual({ type: "api_key", key: "existing-balanced-capability" });
+  });
+
   test.each([NOTORGANIC_JUDGEMENT_LOGIN_SCOPE, "judgement:evaluate infer:balanced"])(
     "explicit judgement login preserves inference and normalizes returned scope %s", async (scope) => {
       const cwd = await temporaryProject();
@@ -449,7 +478,8 @@ describe("Not Organic DPoP and provider contract", () => {
     })).rejects.toThrow("five-minute Not Organic capability expired");
   });
 
-  test("serializes supported system and tool roles and preserves Not Organic API and protected headers", async () => {
+  test.each([{ index: 0, id: NOTORGANIC_MODEL_ID, scope: NOTORGANIC_SCOPE }, { index: 1, id: "flint", scope: NOTORGANIC_FLINT_SCOPE }])(
+    "serializes system and tool roles with protected account headers for $id", async ({ index, id, scope }) => {
     const originalFetch = globalThis.fetch;
     let requestHeaders: Headers | undefined;
     let requestUrl = "";
@@ -462,12 +492,12 @@ describe("Not Organic DPoP and provider contract", () => {
       const chunks = [
         {
           id: "cmpl_keating_1",
-          model: NOTORGANIC_MODEL_ID,
+          model: id,
           choices: [{ index: 0, delta: { role: "assistant", content: "A careful answer." }, finish_reason: null }]
         },
         {
           id: "cmpl_keating_1",
-          model: NOTORGANIC_MODEL_ID,
+          model: id,
           choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
           usage: { prompt_tokens: 2, completion_tokens: 3, total_tokens: 5 }
         }
@@ -482,7 +512,7 @@ describe("Not Organic DPoP and provider contract", () => {
       const now = Date.now();
       const provider = createNotOrganicProviderConfig("https://gateway.test");
       const registeredModel = {
-        ...provider.models![0]!,
+        ...provider.models![index]!,
         provider: NOTORGANIC_PROVIDER_ID,
         baseUrl: provider.baseUrl!
       };
@@ -497,12 +527,12 @@ describe("Not Organic DPoP and provider contract", () => {
           { role: "toolResult", toolCallId: "call_lookup", toolName: "lookup", content: [{ type: "text", text: "A pivot point." }], isError: false, timestamp: now },
         ]
       }, {
-        apiKey: "capability-token",
+        apiKey: "capability-token", maxTokens: 4096, temperature: 0.7,
         env: {
           [NOTORGANIC_AUTH_ENV.issuer]: "https://gateway.test",
           [NOTORGANIC_AUTH_ENV.privateJwk]: JSON.stringify(jwk),
           [NOTORGANIC_AUTH_ENV.expiresAt]: String(now + 60_000),
-          [NOTORGANIC_AUTH_ENV.scope]: NOTORGANIC_SCOPE,
+          [NOTORGANIC_AUTH_ENV.scope]: scope,
           [NOTORGANIC_AUTH_ENV.tokenType]: "DPoP",
           [NOTORGANIC_AUTH_ENV.maxCostMicrousd]: "100000"
         }
@@ -521,6 +551,14 @@ describe("Not Organic DPoP and provider contract", () => {
       expect(requestBody?.messages[2].tool_calls[0]).toMatchObject({ id: "call_lookup", type: "function", function: { name: "lookup", arguments: '{"topic":"hinge"}' } });
       expect(requestBody?.messages[3]).toMatchObject({ tool_call_id: "call_lookup", content: "A pivot point." });
       expect(requestBody?.tools[0].function).toMatchObject({ name: "lookup", parameters: { type: "object", properties: { topic: { type: "string" } } } });
+      expect(requestBody?.model).toBe(id);
+      expect(requestBody?.stream).toBe(true);
+      expect(requestBody?.stream_options).toEqual({ include_usage: true });
+      expect(requestBody?.max_completion_tokens).toBe(4096);
+      expect(requestBody).not.toHaveProperty("max_tokens");
+      expect(requestBody?.temperature).toBe(id === "flint" ? 0 : 0.7);
+      expect(requestBody).not.toHaveProperty("reasoning_effort");
+      expect(requestBody).not.toHaveProperty("store");
       expect(done?.type === "done" ? done.message.api : undefined).toBe(NOTORGANIC_PI_API);
       expect(events.every((event) => !("partial" in event) || event.partial.api === NOTORGANIC_PI_API)).toBe(true);
     } finally {
@@ -528,7 +566,21 @@ describe("Not Organic DPoP and provider contract", () => {
     }
   });
 
-  test("registers only the balanced alias with truthful metadata", () => {
+  test("refuses model switching with an existing capability before inference dispatch", async () => {
+    const now = Date.now();
+    const env = {
+      [NOTORGANIC_AUTH_ENV.scope]: NOTORGANIC_SCOPE,
+      [NOTORGANIC_AUTH_ENV.tokenType]: "DPoP",
+      [NOTORGANIC_AUTH_ENV.expiresAt]: String(now + 60000),
+      [NOTORGANIC_AUTH_ENV.privateJwk]: JSON.stringify(await privateJwk()),
+    };
+    await expect(createNotOrganicRequestHeaders({ accessToken: "balanced-capability", env,
+      model: "flint", url: "https://gateway.test/v1/chat/completions" })).rejects.toThrow("fresh consent");
+    await expect(createNotOrganicRequestHeaders({ accessToken: "flint-capability", env: { ...env, [NOTORGANIC_AUTH_ENV.scope]: NOTORGANIC_FLINT_SCOPE },
+      model: "balanced", url: "https://gateway.test/v1/chat/completions" })).rejects.toThrow("fresh consent");
+  });
+
+  test("registers Balanced and dormant Flint preview metadata", () => {
     const config = createNotOrganicProviderConfig("https://gateway.test");
     expect(config).toMatchObject({
       name: "Not Organic Hosted",
@@ -536,7 +588,10 @@ describe("Not Organic DPoP and provider contract", () => {
       apiKey: "$NOTORGANIC_ACCESS_TOKEN",
       api: NOTORGANIC_PI_API
     });
-    expect(config.models).toHaveLength(1);
+    expect(config.models).toHaveLength(2);
+    expect(config.models?.[1]).toMatchObject({ id: "flint", name: "Flint (preview)", contextWindow: 12288,
+      maxTokens: 4096, reasoning: false, api: NOTORGANIC_PI_API, compat: { maxTokensField: "max_completion_tokens" } });
+    expect(NOTORGANIC_FLINT_MODEL.input).toEqual(["text"]);
     expect(config.models?.[0]).toMatchObject({
       id: NOTORGANIC_MODEL_ID,
       name: "Not Organic Balanced",
@@ -623,6 +678,25 @@ describe("Not Organic CLI argument safety", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("status cannot be combined");
     expect(existsSync(notOrganicAuthPath(cwd))).toBe(false);
+  }, CLI_TEST_TIMEOUT_MS);
+
+  test("Flint selection reaches fresh authorization in both CLI argument forms", async () => {
+    const cwd = await temporaryProject();
+    for (const args of [["--model=flint"], ["--model", "flint"]]) {
+      const result = spawnSync(process.execPath, [cliEntry, "login", "--manual", ...args], {
+        cwd, encoding: "utf8", input: "not-a-callback", timeout: 15_000, env: { ...process.env, NO_COLOR: "1" },
+      });
+      expect(result.status).toBe(1);
+      const authorization = result.stdout.match(/https:\/\/id\.notorganic\.info\/authorize\?[^\s]+/u)?.[0];
+      expect(authorization).toBeDefined();
+      expect(new URL(authorization!).searchParams.get("scope")).toBe(NOTORGANIC_FLINT_SCOPE);
+      expect(existsSync(notOrganicAuthPath(cwd))).toBe(false);
+    }
+    for (const args of [["--model=flint", "--status"], ["--model=unknown"], ["--model"], ["--model=flint", "--model=balanced"]]) {
+      const result = runCli(cwd, "login", ...args);
+      expect(result.status).toBe(1);
+      expect(result.stdout).not.toContain("https://id.notorganic.info/authorize");
+    }
   }, CLI_TEST_TIMEOUT_MS);
 
   test("the CLI judgement flag reaches the authorization URL before any exchange", async () => {

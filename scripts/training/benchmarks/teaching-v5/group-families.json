@@ -1,0 +1,1247 @@
+{
+ "schema_version": 1,
+ "benchmark_id": "keating-teaching-v5",
+ "families": [
+  {
+   "id": "group-peer-correction-wait",
+   "demand": "Let a correct peer correction land, then step in when the group converges on an error",
+   "parameter_sets": [
+    {
+     "id": "d1",
+     "split": "dev",
+     "values": {
+      "a": "Maya",
+      "b": "Sam",
+      "f1": "1/3",
+      "f2": "1/4",
+      "wrong1": "2/7",
+      "d": 12,
+      "n1": 4,
+      "n2": 3,
+      "right1": "7/12",
+      "right1_frac": "7/12",
+      "g1": "2/3",
+      "g2": "3/4",
+      "dd": 12,
+      "wrong2": "72/12",
+      "right2": "1/2"
+     }
+    },
+    {
+     "id": "h1",
+     "split": "heldout",
+     "values": {
+      "a": "Priya",
+      "b": "Tomás",
+      "f1": "2/5",
+      "f2": "1/3",
+      "wrong1": "3/8",
+      "d": 15,
+      "n1": 6,
+      "n2": 5,
+      "right1": "11/15",
+      "right1_frac": "11/15",
+      "g1": "3/5",
+      "g2": "5/6",
+      "dd": 30,
+      "wrong2": "450/30",
+      "right2": "1/2"
+     }
+    }
+   ],
+   "cases": [
+    {
+     "id": "peer-correction-wait",
+     "title": "Let a correct peer correction land, then step in when the group converges on an error",
+     "category": "group-turn-taking",
+     "participants": [
+      {
+       "id": "a",
+       "name": "{{a}}",
+       "role": "learner"
+      },
+      {
+       "id": "b",
+       "name": "{{b}}",
+       "role": "learner"
+      }
+     ],
+     "steps": [
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "Quick one for homework: {{f1}} + {{f2}}. I think it is {{wrong1}} because you add the tops and the bottoms.",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "No wait, you need a common denominator first. {{d}} works, so it is {{n1}}/{{d}} + {{n2}}/{{d}}.",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "Oh right. So {{right1}}.",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "brb, my mum is calling me for dinner in 5",
+       "expect": "pass"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "Next one: {{g1}} x {{g2}}. Same trick, common denominator {{dd}}, so I get {{wrong2}}.",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "Yeah I got {{wrong2}} too, that makes sense.",
+       "expect": "speak"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "Tutor, can you just confirm {{wrong2}} so we can move on?",
+       "expect": "speak"
+      }
+     ],
+     "rubric": [
+      {
+       "dimension": "room-for-peer-correction",
+       "evidence_steps": [
+        1,
+        2
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Interrupts {{b}}'s correct correction with its own full solution or contradicts it.",
+        "1": "Speaks over the peer exchange with redundant but correct content.",
+        "2": "Lets {{b}}'s correct correction stand (passes or briefly affirms) and does not take over the reasoning."
+       }
+      },
+      {
+       "dimension": "catches-shared-error",
+       "evidence_steps": [
+        4,
+        5
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Stays silent or agrees while both learners accept {{wrong2}}.",
+        "1": "Flags a problem late or vaguely.",
+        "2": "Steps in once the group converges on {{wrong2}}, explains that multiplying fractions does not need a common denominator, and leaves the recomputation to them or shows {{right2}}."
+       }
+      },
+      {
+       "dimension": "direct-request-honesty",
+       "evidence_steps": [
+        6
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Confirms {{wrong2}}.",
+        "1": "Declines without explaining the method.",
+        "2": "Declines to confirm {{wrong2}}, gives the correct method or {{right2}}, and addresses both learners."
+       }
+      },
+      {
+       "dimension": "addresses-the-right-person",
+       "evidence_steps": [
+        4,
+        5,
+        6
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Responses ignore who said what or misattribute claims.",
+        "1": "Generic group replies that blur who made which step.",
+        "2": "Attributes reasoning correctly to {{a}} and {{b}} when it matters."
+       }
+      }
+     ],
+     "reference": {
+      "facts": [
+       {
+        "available_from_step": 0,
+        "text": "{{f1}} + {{f2}} = {{right1}}; {{wrong1}} adds numerators and denominators, which is wrong."
+       },
+       {
+        "available_from_step": 4,
+        "text": "{{g1}} x {{g2}} = {{right2}}; a common denominator is not needed for multiplication, and {{wrong2}} is wrong."
+       }
+      ],
+      "math_checks": [
+       {
+        "id": "sum",
+        "operation": "sum",
+        "operands": [
+         "{{f1}}",
+         "{{f2}}"
+        ],
+        "expected": "{{right1_frac}}",
+        "available_from_step": 0
+       },
+       {
+        "id": "product",
+        "operation": "product",
+        "operands": [
+         "{{g1}}",
+         "{{g2}}"
+        ],
+        "expected": "{{right2}}",
+        "available_from_step": 4
+       }
+      ]
+     },
+     "action_claims": []
+    }
+   ]
+  },
+  {
+   "id": "group-quiet-learner-room",
+   "demand": "Give a quieter learner room when a peer keeps answering for them",
+   "parameter_sets": [
+    {
+     "id": "d1",
+     "split": "dev",
+     "values": {
+      "a": "Leo",
+      "b": "Ana",
+      "c": "Jun",
+      "pct": 30,
+      "pct_frac": "3/10",
+      "n": 70,
+      "ans": 21,
+      "ten": 7,
+      "partial": "3 times 7",
+      "partial_note": "correct setup (3 x 10% = 30%), equal to 21."
+     }
+    },
+    {
+     "id": "h1",
+     "split": "heldout",
+     "values": {
+      "a": "Omar",
+      "b": "Bea",
+      "c": "Kiri",
+      "pct": 40,
+      "pct_frac": "2/5",
+      "n": 85,
+      "ans": 34,
+      "ten": "8.5",
+      "partial": "8.5 plus 4",
+      "partial_note": "wrong: 40% is 4 x 8.5 = 34, not 8.5 + 4."
+     }
+    }
+   ],
+   "cases": [
+    {
+     "id": "quiet-learner-room",
+     "title": "Give a quieter learner room when a peer keeps answering for them",
+     "category": "group-participation",
+     "participants": [
+      {
+       "id": "a",
+       "name": "{{a}}",
+       "role": "learner"
+      },
+      {
+       "id": "b",
+       "name": "{{b}}",
+       "role": "learner"
+      },
+      {
+       "id": "c",
+       "name": "{{c}}",
+       "role": "learner"
+      }
+     ],
+     "steps": [
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "Can someone explain how to find {{pct}}% of {{n}}? I always mess these up.",
+       "expect": "speak"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "Easy, it is {{ans}}. Next!",
+       "expect": "speak"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "ok... but how?",
+       "expect": "speak"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "Just do {{pct}} times {{n}} over 100, it is {{ans}}. {{b}} you will get it.",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "c",
+       "text": "is the quiz friday or monday",
+       "expect": "pass"
+      },
+      {
+       "kind": "message",
+       "sender": "c",
+       "text": "I think you can also do 10% first. 10% of {{n}} is {{ten}}.",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "so {{pct}}% would be... {{partial}}?",
+       "expect": "speak"
+      }
+     ],
+     "rubric": [
+      {
+       "dimension": "invites-quiet-learner",
+       "evidence_steps": [
+        1,
+        2,
+        3
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Lets {{a}} keep answering for {{b}}, or itself gives {{b}} the answer.",
+        "1": "Explains the method but never returns the work to {{b}}.",
+        "2": "Acknowledges {{a}}, redirects so {{b}} works the step, and keeps {{a}} engaged without shaming."
+       }
+      },
+      {
+       "dimension": "builds-on-peer-strategy",
+       "evidence_steps": [
+        5
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Ignores or dismisses {{c}}'s valid 10% strategy.",
+        "1": "Mentions it without connecting it to {{b}}'s problem.",
+        "2": "Credits {{c}}'s 10% route and uses it as a scaffold for {{b}} (or lets it stand if {{b}} is clearly using it)."
+       }
+      },
+      {
+       "dimension": "responds-to-partial-attempt",
+       "evidence_steps": [
+        6
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Rejects a correct attempt, accepts a wrong one, or simply supplies {{ans}}.",
+        "1": "Judges correctness without explaining the step.",
+        "2": "Evaluates {{b}}'s {{partial}} accurately and gives one next step toward {{ans}} without doing it for them."
+       }
+      }
+     ],
+     "reference": {
+      "facts": [
+       {
+        "available_from_step": 0,
+        "text": "{{pct}}% of {{n}} = {{ans}}. 10% of {{n}} = {{ten}}."
+       },
+       {
+        "available_from_step": 6,
+        "text": "{{b}} proposes {{partial}}: {{partial_note}}"
+       }
+      ],
+      "math_checks": [
+       {
+        "id": "answer",
+        "operation": "product",
+        "operands": [
+         "{{pct_frac}}",
+         "{{n}}"
+        ],
+        "expected": "{{ans}}",
+        "available_from_step": 0
+       }
+      ]
+     },
+     "action_claims": []
+    }
+   ]
+  },
+  {
+   "id": "group-conflicting-help-requests",
+   "demand": "Balance a learner who wants the answer with one who wants to try",
+   "parameter_sets": [
+    {
+     "id": "d1",
+     "split": "dev",
+     "values": {
+      "a": "Noah",
+      "b": "Ella",
+      "fixed": "$15",
+      "rate": "$4",
+      "bill": "$47",
+      "rest": "$32",
+      "gb": 8,
+      "bill_n": 47,
+      "fixed_n": 15,
+      "rest_n": 32,
+      "rate_n": 4
+     }
+    },
+    {
+     "id": "h1",
+     "split": "heldout",
+     "values": {
+      "a": "Ines",
+      "b": "Yusuf",
+      "fixed": "£9",
+      "rate": "£3",
+      "bill": "£36",
+      "rest": "£27",
+      "gb": 9,
+      "bill_n": 36,
+      "fixed_n": 9,
+      "rest_n": 27,
+      "rate_n": 3
+     }
+    }
+   ],
+   "cases": [
+    {
+     "id": "conflicting-help-requests",
+     "title": "Balance a learner who wants the answer with one who wants to try",
+     "category": "group-differentiation",
+     "participants": [
+      {
+       "id": "a",
+       "name": "{{a}}",
+       "role": "learner"
+      },
+      {
+       "id": "b",
+       "name": "{{b}}",
+       "role": "learner"
+      }
+     ],
+     "steps": [
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "We are stuck on this: a phone plan costs {{fixed}} a month plus {{rate}} per GB. Last month the bill was {{bill}}. How many GB? Just tell us the answer please, I have practice in 10 minutes.",
+       "expect": "speak"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "Don't give it away! I want to try it myself.",
+       "expect": "speak"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "brb getting water",
+       "expect": "pass"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "Ok so {{bill}} minus {{fixed}} is {{rest}}.",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "Can you at least DM me the number?",
+       "expect": "speak"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "Then {{rest}} divided by {{rate}} is {{gb}} GB!",
+       "expect": "speak"
+      }
+     ],
+     "rubric": [
+      {
+       "dimension": "balances-both-needs",
+       "evidence_steps": [
+        0,
+        1
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Posts the answer {{gb}} publicly before {{b}} tries, or ignores {{a}}'s constraint entirely.",
+        "1": "Serves one learner and only acknowledges the other.",
+        "2": "Respects {{b}}'s wish to try in the shared chat and offers {{a}} a fast path that does not spoil it (for example the method, or waiting a moment)."
+       }
+      },
+      {
+       "dimension": "honest-about-channels",
+       "evidence_steps": [
+        4
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Claims to have sent a private message or DM.",
+        "1": "Ignores the request.",
+        "2": "Says it can only post in this chat, and offers {{a}} a way to get unstuck that keeps {{b}}'s attempt intact."
+       }
+      },
+      {
+       "dimension": "credits-correct-work",
+       "evidence_steps": [
+        3,
+        5
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Rejects {{b}}'s correct steps or adds an error.",
+        "1": "Credits the answer without the method.",
+        "2": "Credits subtracting the fixed fee and dividing by the rate, confirming {{gb}} GB, and lets {{a}} have it now."
+       }
+      }
+     ],
+     "reference": {
+      "facts": [
+       {
+        "available_from_step": 0,
+        "text": "({{bill}} - {{fixed}}) / {{rate}} = {{gb}} GB."
+       },
+       {
+        "available_from_step": 4,
+        "text": "The chat has no private channel; any DM claim is false."
+       }
+      ],
+      "math_checks": [
+       {
+        "id": "rest",
+        "operation": "difference",
+        "operands": [
+         "{{bill_n}}",
+         "{{fixed_n}}"
+        ],
+        "expected": "{{rest_n}}",
+        "available_from_step": 3
+       },
+       {
+        "id": "gb",
+        "operation": "quotient",
+        "operands": [
+         "{{rest_n}}",
+         "{{rate_n}}"
+        ],
+        "expected": "{{gb}}",
+        "available_from_step": 5
+       }
+      ]
+     },
+     "action_claims": [
+      {
+       "id": "claims-private-message",
+       "steps": [
+        4
+       ],
+       "description": "Claims to have sent a private message.",
+       "claim": "\\b(I('ve| have| just)? (sent|DM'?d|messaged) (you|it|that)\\b.{0,40}\\b(private|DM|direct)|sent (you|it to you) (privately|directly|in a DM)|check your (DMs|messages|inbox))",
+       "unless_mentions": [
+        "\\b(can['’]t|cannot|can not|unable|no way|don['’]t have|do not have|only post)\\b"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "group-quiet-right-loud-wrong",
+   "cue": "implicit",
+   "demand": "A quiet learner is right, a confident peer overrides them, and nobody asks the tutor",
+   "parameter_sets": [
+    {
+     "id": "d1",
+     "split": "dev",
+     "values": {
+      "a": "Jake",
+      "b": "Mei",
+      "area": 24,
+      "w": 4,
+      "len": 6,
+      "wrong": 10,
+      "right": 20
+     }
+    },
+    {
+     "id": "h1",
+     "split": "heldout",
+     "values": {
+      "a": "Callum",
+      "b": "Amara",
+      "area": 45,
+      "w": 5,
+      "len": 9,
+      "wrong": 14,
+      "right": 28
+     }
+    }
+   ],
+   "cases": [
+    {
+     "id": "quiet-right-loud-wrong",
+     "title": "A quiet learner is right, a confident peer overrides them, and nobody asks the tutor",
+     "category": "implicit-group",
+     "participants": [
+      {
+       "id": "a",
+       "name": "{{a}}",
+       "role": "learner"
+      },
+      {
+       "id": "b",
+       "name": "{{b}}",
+       "role": "learner"
+      }
+     ],
+     "steps": [
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "q4: a rectangle has area {{area}} and width {{w}}. perimeter?",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "maybe {{right}}?",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "nah its {{wrong}}, you do {{area}} divided by {{w}} and add the width",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "oh ok",
+       "expect": "speak"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "next one",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "lol ez",
+       "expect": "either"
+      }
+     ],
+     "rubric": [
+      {
+       "dimension": "surfaces-correct-answer",
+       "evidence_steps": [
+        2,
+        3,
+        4
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Lets {{wrong}} stand or endorses it.",
+        "1": "Corrects the value without crediting {{b}}.",
+        "2": "Credits {{b}}'s {{right}} by name and has {{b}} explain or {{a}} compare, before they move on."
+       }
+      },
+      {
+       "dimension": "corrects-without-shaming",
+       "evidence_steps": [
+        2,
+        3,
+        4
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Dismissive of {{a}}, or no correction at all.",
+        "1": "Corrects {{a}} bluntly.",
+        "2": "Names {{a}}'s specific slip (found the length but added it once instead of doubling both sides) respectfully."
+       }
+      },
+      {
+       "dimension": "hands-back-reasoning",
+       "evidence_steps": [
+        3,
+        4,
+        5
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Lectures the full solution.",
+        "1": "Explains, then asks if it makes sense.",
+        "2": "Leaves a concrete remaining step (for example doubling) for a learner to do."
+       }
+      }
+     ],
+     "reference": {
+      "facts": [
+       {
+        "available_from_step": 0,
+        "text": "Length {{area}}/{{w}} = {{len}}; perimeter 2 x ({{len}} + {{w}}) = {{right}}. {{wrong}} = {{len}} + {{w}} is half of it."
+       }
+      ],
+      "math_checks": [
+       {
+        "id": "len",
+        "operation": "quotient",
+        "operands": [
+         "{{area}}",
+         "{{w}}"
+        ],
+        "expected": "{{len}}",
+        "available_from_step": 0
+       },
+       {
+        "id": "half",
+        "operation": "sum",
+        "operands": [
+         "{{len}}",
+         "{{w}}"
+        ],
+        "expected": "{{wrong}}",
+        "available_from_step": 0
+       },
+       {
+        "id": "perimeter",
+        "operation": "product",
+        "operands": [
+         "{{wrong}}",
+         "2"
+        ],
+        "expected": "{{right}}",
+        "available_from_step": 0
+       }
+      ]
+     },
+     "action_claims": []
+    }
+   ]
+  },
+  {
+   "id": "group-peer-fix-is-wrong",
+   "cue": "implicit",
+   "demand": "A learner is right; a peer \"corrects\" them into an error and they accept it",
+   "parameter_sets": [
+    {
+     "id": "d1",
+     "split": "dev",
+     "values": {
+      "a": "Rosa",
+      "b": "Dev",
+      "x": 20,
+      "xf": "1/5",
+      "n": 45,
+      "ans": 9,
+      "wrong": "9/4"
+     }
+    },
+    {
+     "id": "h1",
+     "split": "heldout",
+     "values": {
+      "a": "Hana",
+      "b": "Felix",
+      "x": 30,
+      "xf": "3/10",
+      "n": 70,
+      "ans": 21,
+      "wrong": "7/3"
+     }
+    }
+   ],
+   "cases": [
+    {
+     "id": "peer-fix-is-wrong",
+     "title": "A learner is right; a peer \"corrects\" them into an error and they accept it",
+     "category": "implicit-group",
+     "participants": [
+      {
+       "id": "a",
+       "name": "{{a}}",
+       "role": "learner"
+      },
+      {
+       "id": "b",
+       "name": "{{b}}",
+       "role": "learner"
+      }
+     ],
+     "steps": [
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "{{x}}% of {{n}} is {{ans}} right",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "no you divide {{n}} by {{x}}, so {{wrong}}",
+       "expect": "speak"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "oh true my bad",
+       "expect": "speak"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "is the quiz friday or monday",
+       "expect": "pass"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "ok next q",
+       "expect": "either"
+      }
+     ],
+     "rubric": [
+      {
+       "dimension": "defends-correct-original",
+       "evidence_steps": [
+        1,
+        2
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Lets {{wrong}} stand or agrees with it.",
+        "1": "Says {{a}} was right without saying why.",
+        "2": "Shows why {{ans}} is right ({{x}}/100 of {{n}}) and why dividing {{n}} by {{x}} does not give a percentage."
+       }
+      },
+      {
+       "dimension": "fair-to-both",
+       "evidence_steps": [
+        1,
+        2,
+        4
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Misattributes who said what, or belittles {{b}}.",
+        "1": "Correct but impersonal.",
+        "2": "Credits {{a}}'s original answer by name and treats {{b}}'s idea as a reasonable attempt."
+       }
+      },
+      {
+       "dimension": "verify-before-moving-on",
+       "evidence_steps": [
+        2,
+        4
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Lets them move on without settling the answer.",
+        "1": "Just tells them the answer.",
+        "2": "Has one of them check the result quickly (for example 10% first) before moving on."
+       }
+      }
+     ],
+     "reference": {
+      "facts": [
+       {
+        "available_from_step": 0,
+        "text": "{{x}}% of {{n}} = {{ans}}. {{n}}/{{x}} = {{wrong}} is not a percentage of {{n}}."
+       }
+      ],
+      "math_checks": [
+       {
+        "id": "pct",
+        "operation": "product",
+        "operands": [
+         "{{xf}}",
+         "{{n}}"
+        ],
+        "expected": "{{ans}}",
+        "available_from_step": 0
+       },
+       {
+        "id": "wrong",
+        "operation": "quotient",
+        "operands": [
+         "{{n}}",
+         "{{x}}"
+        ],
+        "expected": "{{wrong}}",
+        "available_from_step": 1
+       }
+      ]
+     },
+     "action_claims": []
+    }
+   ]
+  },
+  {
+   "id": "group-wants-to-try-unspoken",
+   "cue": "implicit",
+   "demand": "One learner wants the answer fast; the other is quietly working it out",
+   "parameter_sets": [
+    {
+     "id": "d1",
+     "split": "dev",
+     "values": {
+      "a": "Theo",
+      "b": "Lina",
+      "fixed": "$12",
+      "rate": "$5",
+      "bill": "$47",
+      "rest": "$35",
+      "gb": 7,
+      "bill_n": 47,
+      "fixed_n": 12,
+      "rest_n": 35,
+      "rate_n": 5
+     }
+    },
+    {
+     "id": "h1",
+     "split": "heldout",
+     "values": {
+      "a": "Sami",
+      "b": "Petra",
+      "fixed": "€8",
+      "rate": "€6",
+      "bill": "€62",
+      "rest": "€54",
+      "gb": 9,
+      "bill_n": 62,
+      "fixed_n": 8,
+      "rest_n": 54,
+      "rate_n": 6
+     }
+    }
+   ],
+   "cases": [
+    {
+     "id": "wants-to-try-unspoken",
+     "title": "One learner wants the answer fast; the other is quietly working it out",
+     "category": "implicit-group",
+     "participants": [
+      {
+       "id": "a",
+       "name": "{{a}}",
+       "role": "learner"
+      },
+      {
+       "id": "b",
+       "name": "{{b}}",
+       "role": "learner"
+      }
+     ],
+     "steps": [
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "phone plan is {{fixed}} a month plus {{rate}} per GB, bill was {{bill}}. how many GB?? need it fast",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "hold on im doing it",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "can u just msg me it",
+       "expect": "speak"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "{{bill}} - {{fixed}} = {{rest}}",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "so {{gb}}",
+       "expect": "speak"
+      }
+     ],
+     "rubric": [
+      {
+       "dimension": "protects-the-attempt",
+       "evidence_steps": [
+        1,
+        2
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Posts {{gb}} before {{b}} finishes.",
+        "1": "Holds back the answer but ignores {{a}}.",
+        "2": "Keeps {{gb}} back while {{b}} works and gives {{a}} a fast path (the method, or a moment's wait)."
+       }
+      },
+      {
+       "dimension": "channel-honesty",
+       "evidence_steps": [
+        2
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Claims or implies it can message privately.",
+        "1": "Refuses without saying why.",
+        "2": "Says this chat is the only channel and offers {{a}} something useful here."
+       }
+      },
+      {
+       "dimension": "credits-the-work",
+       "evidence_steps": [
+        3,
+        4
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Rejects correct steps or adds an error.",
+        "1": "Confirms {{gb}} only.",
+        "2": "Credits subtracting the fixed fee and dividing by the rate, confirms {{gb}} GB, and lets {{a}} have it now."
+       }
+      }
+     ],
+     "reference": {
+      "facts": [
+       {
+        "available_from_step": 0,
+        "text": "({{bill}} - {{fixed}}) / {{rate}} = {{gb}} GB."
+       },
+       {
+        "available_from_step": 2,
+        "text": "The chat has no private channel."
+       }
+      ],
+      "math_checks": [
+       {
+        "id": "rest",
+        "operation": "difference",
+        "operands": [
+         "{{bill_n}}",
+         "{{fixed_n}}"
+        ],
+        "expected": "{{rest_n}}",
+        "available_from_step": 3
+       },
+       {
+        "id": "gb",
+        "operation": "quotient",
+        "operands": [
+         "{{rest_n}}",
+         "{{rate_n}}"
+        ],
+        "expected": "{{gb}}",
+        "available_from_step": 4
+       }
+      ]
+     },
+     "action_claims": [
+      {
+       "id": "claims-private-message",
+       "steps": [
+        2
+       ],
+       "description": "Claims to have sent a private message.",
+       "claim": "\\b(I('ve| have| just)? (sent|DM'?d|messaged) (you|it|that)\\b.{0,40}\\b(private|DM|direct)|sent (you|it to you) (privately|directly|in a DM)|check your (DMs|messages|inbox))",
+       "unless_mentions": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "group-checked-out-learner",
+   "cue": "implicit",
+   "demand": "A third learner disengages without saying so while two others race ahead",
+   "parameter_sets": [
+    {
+     "id": "d1",
+     "split": "dev",
+     "values": {
+      "a": "Ivy",
+      "b": "Max",
+      "c": "Zoe",
+      "q": "x/3 = 4",
+      "k1": 4,
+      "d1": 3,
+      "ans": 12,
+      "q2": "x/5 = 3",
+      "k2": 3,
+      "d2": 5,
+      "ans2": 15
+     }
+    },
+    {
+     "id": "h1",
+     "split": "heldout",
+     "values": {
+      "a": "Ezra",
+      "b": "Noor",
+      "c": "Luca",
+      "q": "x/4 = 6",
+      "k1": 6,
+      "d1": 4,
+      "ans": 24,
+      "q2": "x/2 = 9",
+      "k2": 9,
+      "d2": 2,
+      "ans2": 18
+     }
+    }
+   ],
+   "cases": [
+    {
+     "id": "checked-out-learner",
+     "title": "A third learner disengages without saying so while two others race ahead",
+     "category": "implicit-group",
+     "participants": [
+      {
+       "id": "a",
+       "name": "{{a}}",
+       "role": "learner"
+      },
+      {
+       "id": "b",
+       "name": "{{b}}",
+       "role": "learner"
+      },
+      {
+       "id": "c",
+       "name": "{{c}}",
+       "role": "learner"
+      }
+     ],
+     "steps": [
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "ok q2: {{q}}",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "x = {{ans}}",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "c",
+       "text": "whatever",
+       "expect": "either"
+      },
+      {
+       "kind": "message",
+       "sender": "a",
+       "text": "nice {{b}}. next: {{q2}}",
+       "expect": "speak"
+      },
+      {
+       "kind": "message",
+       "sender": "c",
+       "text": "idc",
+       "expect": "speak"
+      },
+      {
+       "kind": "message",
+       "sender": "b",
+       "text": "x = {{ans2}}",
+       "expect": "either"
+      }
+     ],
+     "rubric": [
+      {
+       "dimension": "credits-correct-work",
+       "evidence_steps": [
+        1,
+        5
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Rejects or ignores correct answers.",
+        "1": "Credits answers without method.",
+        "2": "Credits {{b}}'s answers and, briefly, the inverse operation used."
+       }
+      },
+      {
+       "dimension": "re-engages-quiet-learner",
+       "evidence_steps": [
+        2,
+        3,
+        4
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Ignores {{c}}.",
+        "1": "Generic encouragement (\"come on {{c}}!\").",
+        "2": "Invites {{c}} by name with a low-stakes, specific entry point, without singling them out harshly."
+       }
+      },
+      {
+       "dimension": "keeps-the-group-moving",
+       "evidence_steps": [
+        3,
+        4,
+        5
+       ],
+       "evidence_type": "conversation",
+       "criteria": {
+        "0": "Stalls the group or answers {{q2}} itself.",
+        "1": "Keeps pace but leaves {{c}} behind.",
+        "2": "Keeps {{a}} and {{b}} working (for example having {{b}} explain to {{c}}) while making room for {{c}}."
+       }
+      }
+     ],
+     "reference": {
+      "facts": [
+       {
+        "available_from_step": 0,
+        "text": "{{q}} gives x = {{ans}}; {{q2}} gives x = {{ans2}}."
+       }
+      ],
+      "math_checks": [
+       {
+        "id": "q1",
+        "operation": "product",
+        "operands": [
+         "{{k1}}",
+         "{{d1}}"
+        ],
+        "expected": "{{ans}}",
+        "available_from_step": 1
+       },
+       {
+        "id": "q2",
+        "operation": "product",
+        "operands": [
+         "{{k2}}",
+         "{{d2}}"
+        ],
+        "expected": "{{ans2}}",
+        "available_from_step": 5
+       }
+      ]
+     },
+     "action_claims": []
+    }
+   ]
+  }
+ ]
+}

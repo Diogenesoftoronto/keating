@@ -1,0 +1,11 @@
+{
+ "schema_version": 1,
+ "benchmark_id": "keating-teaching-v5",
+ "version": "5.1.0-dev",
+ "status": "development-unfrozen",
+ "files": {
+  "families.json": "7d885d4b17f898c4d97138a8aba696254658c1ee3dd29c7b0982f296aae6a2fe",
+  "group-families.json": "31217257e0269e0c4f252480182f11d3fe9647bf8d8ececad7fd7cf57166968b",
+  "README.md": "fb348a7eba7953d7b6c17e22784541deb67d626002c18106f200433655407ca4"
+ }
+}

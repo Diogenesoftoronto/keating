@@ -1,9 +1,12 @@
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { css } from "../../styled-system/css";
 import { clearJudgementDiagnostics, configureJudgementDiagnostics, getJudgementDiagnostics, subscribeJudgementDiagnostics, type JudgementDiagnostic } from "../keating/judgement/diagnostics";
 import type { TeachingAdjustmentController } from "../keating/judgement/teaching-adjustment";
 import { Toggle } from "./Toggle";
 import { LearningIntelligenceDiagnostics } from "./LearningIntelligenceDiagnostics";
+import { TurnJudgementSummary } from "./TurnJudgementSummary";
+import { clearTurnLedger, getTurnLedger, setTurnJudgementSavingEnabled, subscribeTurnJudgementSaving, subscribeTurnLedger, turnJudgementSavingEnabled } from "../keating/judgement/turn-ledger";
+import { keatingStorage } from "../hooks/keating-storage";
 
 const stack = css({ display: "flex", flexDirection: "column", gap: ".75rem", minWidth: 0 });
 const row = css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem" });
@@ -40,6 +43,30 @@ function EventDetails({ event }: { event: JudgementDiagnostic }) {
   </details>;
 }
 
+/** Latest turn first; each turn shows its judgements in the order they ran. */
+function TurnJudgementTimeline({ sessionId }: { sessionId?: string | null }) {
+  const ledger = useSyncExternalStore(subscribeTurnLedger, getTurnLedger, getTurnLedger);
+  const turns = ledger.filter(turn => !sessionId || turn.sessionId === sessionId).slice(-8).reverse();
+  if (!turns.length) return <p className={muted}>Turns appear here as the tutor answers. Each one lists its draft checks, reply review, extraction and memory decisions.</p>;
+  return <div aria-label="Judgements by turn" className={stack}>
+    {turns.map((turn, index) => <TurnJudgementSummary key={turn.key} open={index === 0} status={turn.status}
+      draft={turn.draft ? { snapshot: turn.draft } : undefined} record={turn} />)}
+  </div>;
+}
+
+function SaveForReviewControls() {
+  const saving = useSyncExternalStore(subscribeTurnJudgementSaving, turnJudgementSavingEnabled, () => false);
+  const [deleted, setDeleted] = useState<"idle" | "deleting" | "done" | "failed">("idle");
+  return <>
+    <div className={row}><span>Save judgements for review</span><Toggle aria-label="Save judgements for review" checked={saving} onChange={setTurnJudgementSavingEnabled} /></div>
+    <p className={muted}>Keep each turn's judgements, extracted passages and memory decisions with the conversation so the review view can show them and you can correct them. Saved on this device only and deleted with the conversation.</p>
+    <button type="button" disabled={deleted === "deleting"} className={css({ alignSelf: "flex-start", padding: ".5rem .75rem", border: "1px solid var(--border)", borderRadius: ".375rem", fontSize: ".75rem", cursor: "pointer" })}
+      onClick={() => { setDeleted("deleting"); void keatingStorage.deleteSessionJudgements().then(() => setDeleted("done"), () => setDeleted("failed")); }}>Delete saved judgement records</button>
+    {deleted === "done" && <p role="status" className={muted}>Saved judgement records and your labels were deleted. Draft receipts stay with their conversations.</p>}
+    {deleted === "failed" && <p role="status" className={muted}>Saved records could not be deleted. Try again.</p>}
+  </>;
+}
+
 /** Settings controls and a compact inspector share the same ephemeral store. */
 export function JudgementDiagnostics({ controls = false, sessionId, teachingAdjustment }: { controls?: boolean; sessionId?: string | null; teachingAdjustment?: TeachingAdjustmentController | null }) {
   const state = useSyncExternalStore(subscribeJudgementDiagnostics, getJudgementDiagnostics, getJudgementDiagnostics);
@@ -60,17 +87,19 @@ export function JudgementDiagnostics({ controls = false, sessionId, teachingAdju
       <p className={muted}>Run a background move / learner need / response fit review using your independent judgement model setting. Hosted mode sends bounded, redacted turn text to the selected account service. These reviews never update learner grades.</p>
       <div className={row}><span>Review live transcripts</span><Toggle aria-label="Review live transcripts" checked={state.reviewLiveTranscripts} onChange={reviewLiveTranscripts => configureJudgementDiagnostics({ reviewLiveTranscripts })} /></div>
       <p className={muted}>Review paired learner and tutor transcript text after a short pause. Hosted mode sends bounded, redacted text to your judgement service. Reviews appear in the live inspector and never interrupt speech or change learning records.</p>
+      <SaveForReviewControls />
     </>}
+    {!controls && <TurnJudgementTimeline sessionId={sessionId} />}
     <LearningIntelligenceDiagnostics controls={controls} sessionId={sessionId} />
     {state.enabled && <details open={controls}>
-      <summary className={summary}>Judgements · {reply?.status ?? "idle"} · {events.length} recent {events.length === 1 ? "call" : "calls"}</summary>
+      <summary className={summary}>{controls ? "Judgements" : "All judgement calls (raw)"} · {reply?.status ?? "idle"} · {events.length} recent {events.length === 1 ? "call" : "calls"}</summary>
       <div className={css({ maxHeight: "22rem", overflowY: "auto", paddingBlock: ".5rem", display: "flex", flexDirection: "column", gap: ".75rem" })}>
         <p role="status" className={muted}>{status} Judgements evaluate explicit questions, not every generated token.</p>
         {reply && <span className={mono}>{reply.sessionId} / {reply.id}</span>}
         {!controls && teachingAdjustment && sessionId && <TeachingAdjustmentReview controller={teachingAdjustment} sessionId={sessionId} />}
         {events.map(event => <EventDetails key={event.id} event={event} />)}
         {!events.length && <p className={muted}>Waiting for a judgement operation. Enable completed-reply reviews or run a course, prompt, or assessment review.</p>}
-        <button type="button" onClick={clearJudgementDiagnostics} className={css({ alignSelf: "flex-start", padding: ".5rem .75rem", border: "1px solid var(--border)", borderRadius: ".375rem", fontSize: ".75rem", cursor: "pointer" })}>Clear captured calls</button>
+        <button type="button" onClick={() => { clearJudgementDiagnostics(); clearTurnLedger(); }} className={css({ alignSelf: "flex-start", padding: ".5rem .75rem", border: "1px solid var(--border)", borderRadius: ".375rem", fontSize: ".75rem", cursor: "pointer" })}>Clear captured calls</button>
       </div>
     </details>}
   </section>;

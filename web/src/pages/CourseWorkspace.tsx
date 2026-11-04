@@ -5,18 +5,20 @@
  * overlays. This file reads top to bottom as: gather data → derive → compose.
  */
 import { useMemo, useReducer } from "react";
-import { useParams } from "@tanstack/react-router";
+import { useLocation, useParams, useSearch } from "@tanstack/react-router";
 import { CoursesAccessGate } from "../components/courses/CoursesAccessGate";
+import {
+  LessonReadingSourceReturn,
+  LessonReadingUnavailable,
+  resolveLessonReadingContext,
+} from "../components/private-fork/LessonReadingSourceReturn";
 import { commentCounts } from "../courses/course-comments";
 import { allCourseLessons } from "../courses/contracts";
 import { useCoursesAccess } from "../courses/useCoursesAccess";
 import { useSeo } from "../hooks/useSeo";
 import { CourseOutline } from "./course-workspace/CourseOutline";
 import { LiveRoomRail } from "./course-workspace/LiveRoomRail";
-import {
-  networkStatusOf,
-  resolveLessonContext,
-} from "./course-workspace/model";
+import { networkStatusOf } from "./course-workspace/model";
 import { resolveSearchNavigation } from "./course-workspace/search-navigation";
 import {
   courseWorkspaceReducer,
@@ -44,10 +46,20 @@ import {
 
 export function CourseWorkspace() {
   const { courseId } = useParams({ strict: false }) as { courseId: string };
+  const { lesson } = useSearch({ strict: false }) as { lesson?: string };
+  const hash = useLocation({ select: (location) => location.hash });
+  // Remount for a different source URL so an old snapshot, draft, or pending
+  // private continuation cannot carry across course/lesson navigation.
+  return <CourseWorkspaceContent key={JSON.stringify([courseId, lesson, hash])} courseId={courseId} requestedLessonId={lesson} hash={hash} />;
+}
+
+function CourseWorkspaceContent({
+  courseId, requestedLessonId, hash,
+}: { courseId: string; requestedLessonId: string | undefined; hash: string }) {
   const [access, retryAccess] = useCoursesAccess();
   const [state, dispatch] = useReducer(
     courseWorkspaceReducer,
-    INITIAL_WORKSPACE_STATE,
+    { ...INITIAL_WORKSPACE_STATE, activeLessonId: requestedLessonId ?? "" },
   );
   const { snapshot, loading, error, saving, view, activeLessonId } = state;
 
@@ -64,12 +76,14 @@ export function CourseWorkspace() {
     () => (course ? allCourseLessons(course) : []),
     [course],
   );
-  const lesson = resolveLessonContext(
+  const { returningToSource, sourceIssue, lesson } = resolveLessonReadingContext({
     course,
     lessons,
     activeLessonId,
-    snapshot?.viewer.accountId,
-  );
+    requestedLessonId,
+    hash,
+    viewerAccountId: snapshot?.viewer.accountId,
+  });
   const threadCounts = useMemo(
     () => (course ? commentCounts(course.comments) : {}),
     [course],
@@ -96,7 +110,7 @@ export function CourseWorkspace() {
       </div>
     );
   if (loading) return <WorkspaceLoading />;
-  if (!snapshot || !course) return <WorkspaceUnavailable error={error} />;
+  if (!snapshot || !course || course.id !== courseId) return <WorkspaceUnavailable error={error} />;
 
   const { viewer, permissions } = snapshot;
   const actions = createWorkspaceActions(course, mutate);
@@ -110,6 +124,11 @@ export function CourseWorkspace() {
 
   return (
     <div className={s.page}>
+      <LessonReadingSourceReturn
+        lessonId={returningToSource ? requestedLessonId : undefined}
+        hash={hash}
+        ready={view === "read" || !!sourceIssue}
+      />
       <WorkspaceHeader
         snapshot={snapshot}
         activeLessonId={lesson.activeLesson?.id}
@@ -143,7 +162,11 @@ export function CourseWorkspace() {
           onOpenBuilder={nav.openBuilder}
           onOpenCourseThread={nav.openCourseThread}
         />
-        <WorkspaceMain
+        {sourceIssue && requestedLessonId ? (
+          <main className={s.center}>
+            <LessonReadingUnavailable courseId={courseId} lessonId={requestedLessonId} message={sourceIssue} />
+          </main>
+        ) : <WorkspaceMain
           snapshot={snapshot}
           state={state}
           lesson={lesson}
@@ -155,7 +178,7 @@ export function CourseWorkspace() {
           onOpenBuilder={nav.openBuilder}
           onSnapshot={setSnapshot}
           onError={setError}
-        />
+        />}
         <LiveRoomRail
           snapshot={snapshot}
           onlineAccountIds={new Set(realtime.presentAccountIds)}

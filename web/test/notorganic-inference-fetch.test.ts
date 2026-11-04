@@ -3,7 +3,7 @@ import type { Api, Context, Model } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { streamSimple } from "@earendil-works/pi-ai/compat";
 import { createNotOrganicInferenceFetch } from "../src/notorganic-provider/inference-fetch";
-import { NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL } from "../src/notorganic-provider";
+import { NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL } from "../src/notorganic-provider";
 import { streamWithApiRetry, WEB_API_RETRY_POLICY } from "../src/keating/api-retry";
 const url = "https://api.notorganic.test/v1/chat/completions";
 const model: Model<Api> = {
@@ -11,6 +11,44 @@ const model: Model<Api> = {
 	baseUrl: "https://api.notorganic.test/v1", reasoning: false, input: ["text"],
 	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 8192, maxTokens: 1024,
 };
+
+test("Flint uses account-only Chat Completions parameters and consumes buffered text plus tool-call SSE", async () => {
+	const selected = { ...NOTORGANIC_FLINT_MODEL, baseUrl: "https://api.notorganic.test/v1" };
+	let outbound: Request | undefined;
+	const authenticated = createNotOrganicInferenceFetch({ async headersFor(_method, target, initial) {
+		expect(target).toBe(url);
+		const headers = new Headers(initial);
+		headers.set("authorization", "DPoP flint-account-capability"); headers.set("dpop", "flint-proof");
+		return headers;
+	} }, url, { idempotencyKey: "flint-request", maxCostMicrousd: 100000, fetch: (async (input, init) => {
+		outbound = new Request(input, init);
+		const chunks = [
+			{ id: "flint_test", model: "flint-multichannel", choices: [{ index: 0, delta: { role: "assistant", content: "Let us check.",
+				tool_calls: [{ index: 0, id: "call_verify", type: "function", function: { name: "verify", arguments: '{"topic":"hinge"}' } }] }, finish_reason: null }] },
+			{ id: "flint_test", model: "flint-multichannel", choices: [{ index: 0, delta: {}, finish_reason: "tool_calls" }] },
+			{ id: "flint_test", model: "flint-multichannel", choices: [], usage: { prompt_tokens: 20, completion_tokens: 10, total_tokens: 30 } },
+		];
+		return new Response(chunks.map(chunk => `data: ${JSON.stringify(chunk)}\n\n`).join("") + "data: [DONE]\n\n", { headers: { "content-type": "text/event-stream" } });
+	}) as typeof fetch });
+	const result = await streamSimple(selected, {
+		systemPrompt: "Help the learner", messages: [{ role: "user", content: "Check hinge", timestamp: 1 }],
+		tools: [{ name: "verify", description: "Verify understanding", parameters: Type.Object({ topic: Type.String() }) }],
+	}, { fetch: authenticated, headers: { authorization: "DPoP initial" }, maxTokens: 4096, temperature: 0, maxRetries: 0 }).result();
+	expect(outbound?.url).toBe(url);
+	expect(outbound?.headers.get("authorization")).toBe("DPoP flint-account-capability");
+	expect(outbound?.headers.get("x-notorganic-max-cost-microusd")).toBe("100000");
+	const body = await outbound!.json();
+	expect(body).toMatchObject({ model: "flint", stream: true, stream_options: { include_usage: true }, max_completion_tokens: 4096, temperature: 0 });
+	expect(body).not.toHaveProperty("max_tokens");
+	expect(body).not.toHaveProperty("store");
+	expect(body).not.toHaveProperty("reasoning_effort");
+	expect(body.messages[0].role).toBe("system");
+	expect(body.tools[0].function.name).toBe("verify");
+	expect(result.stopReason).toBe("toolUse");
+	expect(result.content).toEqual([{ type: "text", text: "Let us check." }, { type: "toolCall", id: "call_verify", name: "verify", arguments: { topic: "hinge" } }]);
+	expect(result.usage.input).toBe(20);
+	expect(result.usage.output).toBe(10);
+});
 for (const sdkRetries of [0, 1]) {
 	test(`fresh proofs across retries (SDK retries ${sdkRetries})`, async () => {
 		let proofs = 0;

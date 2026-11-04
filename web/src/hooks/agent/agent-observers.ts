@@ -7,6 +7,12 @@
 import type { PostHog } from "posthog-js";
 import type { FlueConversation } from "../../keating/flue/conversation";
 import { createReplyJudgementObserver } from "../../keating/judgement/reply-review";
+import { beginTurn, finishTurn, noteTurnReplyReview } from "../../keating/judgement/turn-ledger";
+
+/** Turn records are diagnostics; they must never interrupt persistence or the reply. */
+function recordTurn(work: () => void) {
+  try { work(); } catch { /* The conversation continues without this turn record. */ }
+}
 import { keatingLifecycle } from "../../keating/lifecycle";
 import { recordAgentEvent, type ConversationRuntime } from "../../keating/integration";
 import { toolExecutionSucceeded } from "../../keating/tool-result";
@@ -145,6 +151,10 @@ export function observeConversationPersistence({
         && `${agent.context.model.provider}/${agent.context.model.id}` === reviewedModel;
     },
     onReview: (response, messages, replyId, calibration, current) => {
+      recordTurn(() => {
+        const assistant = [...messages].reverse().find(message => message.role === "assistant") as { timestamp?: unknown } | undefined;
+        noteTurnReplyReview(sessionId, typeof assistant?.timestamp === "number" ? assistant.timestamp : undefined, response, !!calibration);
+      });
       // agent_end observers run before Flue clears its streaming flag. Even
       // an immediate local judgement must wait for idle before offering it.
       void agent.whenIdle().then(() => {
@@ -157,10 +167,12 @@ export function observeConversationPersistence({
       intelligence.cancel();
       adjustment.startRun(agent.context.messages);
       judgementObserver.start(agent.context.messages.length);
+      recordTurn(() => beginTurn(sessionId, agent.context.messages));
     }
     if (ev.type === "agent_end") {
       adjustment.finishRun();
       judgementObserver.finish(agent.context.messages);
+      recordTurn(() => finishTurn(sessionId, agent.context.messages));
     }
     if (ev.type === "message_update" || ev.type === "message_end" || ev.type === "message_start") sessionSnapshots.changed(agent);
     recordSessionDebugAgentEvent(agent, ev);

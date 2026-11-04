@@ -5,7 +5,7 @@ app remains at `https://chat.keating.help/`; developer documentation remains at
 `https://dev.keating.help`. The learner tutorials live here.
 
 Use the chat origin for application links, including `/usage`, `/bench`,
-`/courses`, `/coming-up`, `/review`, and `/live`. Its homepage opens the tutor
+`/courses`, `/rooms`, `/coming-up`, `/review`, and `/live`. Its homepage opens the tutor
 directly; `/chat` remains a compatibility route. Keep product, downloads,
 pricing, and privacy links on `https://keating.help/`.
 

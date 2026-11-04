@@ -9,6 +9,7 @@ import {
   type SimpleStreamOptions
 } from "@earendil-works/pi-ai/compat";
 import type { ProviderConfig } from "@earendil-works/pi-coding-agent";
+import { FLINT_PREVIEW_PROFILE } from "../../packages/runtime-config/src/index.js";
 
 import {
   createNotOrganicDpopProof,
@@ -17,7 +18,6 @@ import {
   NOTORGANIC_DEFAULT_MAX_COST_MICROUSD,
   NOTORGANIC_MODEL_ID,
   NOTORGANIC_PROVIDER_ID,
-  NOTORGANIC_JUDGEMENT_LOGIN_SCOPE,
   parseNotOrganicLoginScope,
   parseNotOrganicPrivateJwk,
   resolveNotOrganicIssuer
@@ -42,6 +42,19 @@ export const NOTORGANIC_BALANCED_MODEL = {
   }
 } as const;
 
+/** Dormant preview: the account gateway, not registration, authorizes and enables this route. */
+export const NOTORGANIC_FLINT_MODEL = {
+  ...FLINT_PREVIEW_PROFILE,
+  reasoning: false,
+  input: ["text"] as const,
+  cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+  compat: {
+    supportsDeveloperRole: false, supportsReasoningEffort: false,
+    supportsUsageInStreaming: true, supportsStore: false,
+    maxTokensField: "max_completion_tokens" as const,
+  },
+} as const;
+
 export interface NotOrganicRequestHeadersInput {
   accessToken: string;
   env?: Record<string, string>;
@@ -50,6 +63,7 @@ export interface NotOrganicRequestHeadersInput {
   now?: () => number;
   jti?: string;
   idempotencyKey?: string;
+  model?: string;
 }
 
 function positiveInteger(value: string | undefined, fallback: number, label: string): number {
@@ -60,21 +74,24 @@ function positiveInteger(value: string | undefined, fallback: number, label: str
   return parsed;
 }
 
-function assertCapability(env: Record<string, string> | undefined, now: () => number): {
+function assertCapability(env: Record<string, string> | undefined, now: () => number, model?: string): {
   issuer: string;
   privateJwk: string;
   maxCostMicrousd: number;
 } {
   if (!env || !parseNotOrganicLoginScope(env[NOTORGANIC_AUTH_ENV.scope])) {
-    throw new Error("Not Organic is missing the infer:balanced capability. Run `keating login` again.");
+    throw new Error("Not Organic is missing a supported inference capability. Run `keating login` again.");
+  }
+  const scopes = new Set(env[NOTORGANIC_AUTH_ENV.scope]?.split(" "));
+  if (model && !scopes.has(`infer:${model}`)) {
+    throw new Error(`Not Organic is missing infer:${model}. Run \`keating login --model=${model}\` for fresh consent.`);
   }
   if (env[NOTORGANIC_AUTH_ENV.tokenType] !== "DPoP") {
     throw new Error("The stored Not Organic capability is not DPoP-bound. Run `keating login` again.");
   }
   const expiresAt = Number(env[NOTORGANIC_AUTH_ENV.expiresAt]);
   if (!Number.isFinite(expiresAt) || expiresAt <= now()) {
-    const login = parseNotOrganicLoginScope(env[NOTORGANIC_AUTH_ENV.scope]) === NOTORGANIC_JUDGEMENT_LOGIN_SCOPE
-      ? "keating login --judgement" : "keating login";
+    const login = `keating login${scopes.has(`infer:${FLINT_PREVIEW_PROFILE.id}`) ? ` --model=${FLINT_PREVIEW_PROFILE.id}` : ""}${scopes.has("judgement:evaluate") ? " --judgement" : ""}`;
     throw new Error(
       `Your five-minute Not Organic capability expired. Run \`${login}\` again; this CLI does not invent a refresh token.`
     );
@@ -106,7 +123,7 @@ export async function createNotOrganicRequestHeaders(
     throw new Error("Not Organic is not connected. Run `keating login` to enable hosted inference.");
   }
   const now = input.now ?? Date.now;
-  const capability = assertCapability(input.env, now);
+  const capability = assertCapability(input.env, now, input.model);
   const exactUrl = secureExactRequestUrl(input.url, capability.issuer);
   const dpop = await createNotOrganicDpopProof({
     privateJwk: capability.privateJwk,
@@ -195,6 +212,7 @@ export function streamNotOrganic(
         accessToken: options?.apiKey ?? "",
         env: options?.env,
         method: "POST",
+        model: model.id,
         url: requestUrl
       });
       const requestModel = {
@@ -207,6 +225,7 @@ export function streamNotOrganic(
       const { env: _privateProviderEnvironment, ...safeOptions } = options ?? {};
       const inner = streamSimpleOpenAICompletions(requestModel, context, {
         ...safeOptions,
+        ...(model.id === FLINT_PREVIEW_PROFILE.id ? { temperature: 0 } : {}),
         headers: {
           ...unprotectedHeaders(options?.headers),
           ...protectedHeaders
@@ -238,6 +257,11 @@ export function createNotOrganicProviderConfig(
       {
         ...NOTORGANIC_BALANCED_MODEL,
         input: [...NOTORGANIC_BALANCED_MODEL.input],
+        api: NOTORGANIC_PI_API
+      },
+      {
+        ...NOTORGANIC_FLINT_MODEL,
+        input: [...NOTORGANIC_FLINT_MODEL.input],
         api: NOTORGANIC_PI_API
       }
     ],

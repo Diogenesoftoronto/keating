@@ -228,3 +228,4 @@ test("withheld reviews remain hidden in default chat", () => {
   const status = { id: 1, feedback: null, snapshot: { ...snapshot, phase: "withheld" as const, reason: "backend-payment-required" } };
   expect(renderToStaticMarkup(<DraftReviewStatus sessionId="recovery" status={status} />)).toBe("");
 });
+

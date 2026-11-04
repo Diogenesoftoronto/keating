@@ -108,6 +108,18 @@ const CourseJoin = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/CourseJoin")),
   "CourseJoin",
 );
+const Rooms = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/Rooms")),
+  "Rooms",
+);
+const RoomJoin = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/RoomJoin")),
+  "RoomJoin",
+);
+const RoomWorkspace = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/RoomWorkspace")),
+  "RoomWorkspace",
+);
 import {
   applyKeatingUiTypography,
   loadKeatingUiSettings,
@@ -314,7 +326,28 @@ const courseJoinRoute = createRoute({
 const courseWorkspaceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/courses/$courseId",
+  validateSearch: z.object({
+    lesson: z.string().min(2).max(96).regex(/^[A-Za-z0-9][A-Za-z0-9_-]*$/).optional(),
+  }).passthrough().parse,
   component: CourseWorkspace,
+});
+
+const roomsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/rooms",
+  component: Rooms,
+});
+
+const roomJoinRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/rooms/join/$token",
+  component: RoomJoin,
+});
+
+const roomWorkspaceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/rooms/$roomId",
+  component: RoomWorkspace,
 });
 
 const routeTree = rootRoute.addChildren([
@@ -333,6 +366,9 @@ const routeTree = rootRoute.addChildren([
   coursesRoute,
   courseJoinRoute,
   courseWorkspaceRoute,
+  roomsRoute,
+  roomJoinRoute,
+  roomWorkspaceRoute,
   comingUpRoute,
   trajectoryReviewIndexRoute,
   trajectoryReviewRoute,
