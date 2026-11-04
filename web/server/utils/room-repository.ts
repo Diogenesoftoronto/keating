@@ -49,6 +49,8 @@ const MAX_APPLIED_OPERATIONS = 20_000;
 const MAX_ROOMS_PER_INDEX = 500;
 const MAX_BLOCKED_ACCOUNTS = 5_000;
 const MAX_CACHED_ROOMS = 8;
+const MAX_LIVE_INVITES = 200;
+const MAX_LIVE_INVITES_PER_LEARNER = 10;
 
 const storedRoomRecordSchema = z.object({
   room: roomSchema,
@@ -456,12 +458,11 @@ export async function applyStoredRoomOperation(
       };
     }
     if (!findRoomMember(record.room, accountId)) throw new RoomNotFoundError();
-    // Never evict successful operation keys: replaying an old moderation change
-    // must not undo newer decisions. Heartbeats are lease refreshes, not history.
+    // Keep a bounded window of receipts, oldest first out. Rejecting at the cap
+    // let any member lock the room (including moderation) by spamming cheap
+    // operations; retries arrive within seconds, far inside this window.
+    // Heartbeats are lease refreshes, not history.
     const remember = operation.type !== "facilitator.heartbeat";
-    if (remember && record.operationReceipts.length + record.appliedOperationIds.length >= MAX_APPLIED_OPERATIONS) {
-      throw new RoomConflictError("This room reached its history limit. Open another room to continue.", "room_history_full");
-    }
     if (operation.type === "member.remove" && !record.blockedAccountIds.includes(operation.accountId)) {
       if (record.blockedAccountIds.length >= MAX_BLOCKED_ACCOUNTS) {
         throw new RoomConflictError("This room reached its moderation history limit.", "room_activity_limit");
@@ -486,7 +487,9 @@ export async function applyStoredRoomOperation(
     await saveRecord({
       ...record,
       room: result.room,
-      operationReceipts: remember ? [...record.operationReceipts, { key, digest }] : record.operationReceipts,
+      operationReceipts: remember
+        ? [...record.operationReceipts, { key, digest }].slice(-MAX_APPLIED_OPERATIONS)
+        : record.operationReceipts,
     });
     for (const removed of result.removedAccountIds) {
       await removeFromIndex(await accountIndexKey(removed), result.room.id);
@@ -543,11 +546,16 @@ export async function createRoomInvite(
       uses: 0,
       tokenHash: await sha256(token),
     });
-    // Keep the newest invites; expired and revoked ones age out first.
+    // Expired and revoked invites age out. Live ones are never evicted, so a
+    // learner who may invite cannot silently cancel a teacher's links.
     const live = record.room.invites.filter(
       (candidate) => !candidate.revokedAt && candidate.uses < candidate.maxUses && Date.parse(candidate.expiresAt) > nowMs(),
     );
-    const kept = [...live, invite].slice(-200);
+    const ownLive = live.filter((candidate) => candidate.createdBy === accountId).length;
+    if (live.length >= MAX_LIVE_INVITES || (!roleCanOversee(findRoomMember(record.room, accountId)!.role) && ownLive >= MAX_LIVE_INVITES_PER_LEARNER)) {
+      throw new RoomConflictError("Too many open invitations. Revoke one first.", "room_invite_limit");
+    }
+    const kept = [...live, invite];
     const keptIds = new Set(kept.map((candidate) => candidate.id));
     const removed = record.room.invites.filter((candidate) => !keptIds.has(candidate.id));
     record.room.invites = kept;

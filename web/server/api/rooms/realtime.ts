@@ -18,6 +18,10 @@ import {
 import { currentRoom, getRoomForAccount } from "../../utils/room-repository";
 
 const MAX_CLIENT_MESSAGE_CHARS = 16_000;
+// Per-connection token bucket, checked before any room load. Clients send at
+// most ~7 previews a second plus typing and a periodic ping.
+const FRAME_BURST = 30;
+const FRAMES_PER_SECOND = 10;
 
 function send(peer: { send(data: unknown): unknown }, message: RoomRealtimeMessage): void {
   peer.send(JSON.stringify(message));
@@ -47,6 +51,16 @@ function parseClientMessage(text: string): RoomClientSocketMessage | null {
 
 export default defineWebSocketHandler((event) => {
   let authorized: { roomId: string; accountId: string } | undefined;
+  let tokens = FRAME_BURST;
+  let refilledAt = Date.now();
+  const takeFrame = () => {
+    const now = Date.now();
+    tokens = Math.min(FRAME_BURST, tokens + ((now - refilledAt) / 1000) * FRAMES_PER_SECOND);
+    refilledAt = now;
+    if (tokens < 1) return false;
+    tokens -= 1;
+    return true;
+  };
 
   // Nitro resolves the hooks before CrossWS performs the upgrade. A rejected
   // factory loses its hooks; return HTTP failures from the upgrade hook instead.
@@ -96,6 +110,7 @@ export default defineWebSocketHandler((event) => {
         return;
       }
       const { roomId: id, accountId } = authorized;
+      if (!takeFrame()) return;
       const text = message.text();
       const room = await currentRoom(id);
       if (!room || !findRoomMember(room, accountId)) {

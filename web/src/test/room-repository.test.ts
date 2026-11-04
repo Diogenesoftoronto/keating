@@ -5,7 +5,7 @@ import { ROOM_MAX_MESSAGES, roomSchema, type RoomOperation, type RoomOperationIn
 import {
   applyStoredRoomOperation, createRoom, createRoomInvite, currentRoom, deleteRoom,
   exportRoomTranscript, getRoomForAccount, getRoomMessagesBefore, joinRoomThroughCourse,
-  joinRoomWithInvite, listRoomsForAccount, listRoomsForCourse, previewRoomInvite,
+  joinRoomWithInvite, listRoomInvites, listRoomsForAccount, listRoomsForCourse, previewRoomInvite,
   revokeRoomInvite, withRoomRepositoryStorage,
 } from "../../server/utils/room-repository";
 
@@ -117,14 +117,18 @@ describe("room repository concurrency and durability", () => {
     });
   });
 
-  test("room and operation history quotas reject growth instead of evicting durable keys", async () => {
+  test("a full operation history drops the oldest receipts instead of locking the room", async () => {
     const store = newStore();
     await withRoomRepositoryStorage(store, async () => {
       const roomId = (await createRoom("host", "Teacher", { title: "Bounded" })).room.id;
       const record = await store.getItem<any>(`room:${roomId}`);
       record.operationReceipts = Array.from({ length: 20_000 }, (_, index) => ({ key: index.toString(16).padStart(64, "0"), digest: "a".repeat(64) }));
       await store.setItem(`room:${roomId}`, record);
-      await expect(change(roomId, "host", { type: "room.update", patch: { title: "Too much" } })).rejects.toMatchObject({ code: "room_history_full" });
+      await change(roomId, "host", { type: "room.update", patch: { title: "Still open" } });
+      const trimmed = await store.getItem<any>(`room:${roomId}`);
+      expect(trimmed.room.title).toBe("Still open");
+      expect(trimmed.operationReceipts).toHaveLength(20_000);
+      expect(trimmed.operationReceipts[0].key).toBe((1).toString(16).padStart(64, "0"));
       const indexKey = (await store.getKeys()).find((key) => key.startsWith("room-account:"))!;
       const ids = Array.from({ length: 500 }, (_, index) => `room_existing_${index}`);
       await store.setItem(indexKey, ids);
@@ -262,6 +266,17 @@ describe("room invitations and private history", () => {
       expect((await store.getKeys()).filter((key) => key.startsWith("room:") || key.startsWith("room-invite:"))).toEqual([]);
       expect(await currentRoom(roomId)).toBeNull();
     }, { now: () => now });
+  });
+
+  test("a full set of live invites rejects new links instead of evicting existing ones", async () => {
+    const store = newStore();
+    await withRoomRepositoryStorage(store, async () => {
+      const roomId = (await createRoom("host", "Teacher", { title: "Invites" })).room.id;
+      const teacherInvite = await createRoomInvite(roomId, "host", "teacher", 1, 10);
+      for (let index = 1; index < 200; index++) await createRoomInvite(roomId, "host", "learner", 1, 10);
+      await expect(createRoomInvite(roomId, "host", "learner", 1, 10)).rejects.toMatchObject({ code: "room_invite_limit" });
+      expect((await listRoomInvites(roomId, "host")).some((invite) => invite.id === teacherInvite.invite.id)).toBe(true);
+    });
   });
 
   test.each(["invite", "course"] as const)("joining through %s preserves the entire full transcript", async (via) => {
