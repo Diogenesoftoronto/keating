@@ -20,6 +20,7 @@ import { chatMascotState } from "./chat-mascot-state";
 import { ChatMascotMenu } from "./ChatMascotMenu";
 import "./chat-mascot.css";
 import { DraftReviewStatus } from "./DraftReviewStatus";
+import { DraftProgressCard } from "./DraftProgress";
 import { clearTeachingDraftContents, getTeachingDraftStatus, subscribeTeachingDraftStatus, teachingDraftIsActive } from "../keating/judgement/draft-status";
 import { prepareAudioAttachment } from "../lib/audio-attachment";
 import type { FlueConversation } from "../keating/flue/conversation";
@@ -3500,6 +3501,8 @@ function AssistantThread({
   const messages = useMemo(() => {
     const visibleMessages = visibleAgentMessages(agent, speechEnabled);
     const lastMessage = visibleMessages.at(-1) as any;
+    // A running draft shows its own progress card (learners) or review panel
+    // (developers) below the thread instead of the rotating status line.
     if (agent && isRunning && !draftActive && lastMessage?.role === "user") {
       return [...visibleMessages, makePrefillStatusMessage(agent, loadingStep)];
     }
@@ -3694,6 +3697,7 @@ function AssistantThread({
                     />
                   </AuiIf>
                   <ThreadPrimitive.Messages components={threadComponents} />
+                  {agent && !uiSettings.showDeveloperDetails && <DraftProgressCard status={draftStatus} />}
                   {agent && <DraftReviewStatus sessionId={agent.sessionId} status={draftStatus} showDeveloperDetails={uiSettings.showDeveloperDetails} />}
                 </div>
                 <ThreadPrimitive.ViewportFooter

@@ -120,7 +120,9 @@ function credentialCallbacks({
         rememberChatTurn(sourceSessionId, agent.context.messages);
       }
       const allowed = await promptKeatingApiKey(provider, { force: needsModelConsent });
-      if (isNotOrganicProvider(provider)) clearPendingChatTurn(sourceSessionId);
+      // Connected in place: this call continues the turn. Declined: the turn
+      // stays with its chat and resumes there after a later sign-in.
+      if (allowed && isNotOrganicProvider(provider)) clearPendingChatTurn(sourceSessionId);
       return allowed;
     },
     onAuthError: async (provider: string) => {
@@ -140,7 +142,7 @@ function credentialCallbacks({
         rememberChatTurn(sourceSessionId, agent.context.messages);
       }
       const ok = await promptKeatingApiKey(provider, { force: true });
-      if (isNotOrganicProvider(provider)) clearPendingChatTurn(sourceSessionId);
+      if (ok && isNotOrganicProvider(provider)) clearPendingChatTurn(sourceSessionId);
       posthog.capture("auth_recovery_action", {
         provider,
         session_id: sessionId(),
