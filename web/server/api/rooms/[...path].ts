@@ -51,6 +51,7 @@ import {
   broadcastRoomRemoved,
 } from "../../utils/room-realtime";
 import {
+  allowRemovedRoomMember,
   applyStoredRoomOperation,
   createRoom,
   createRoomInvite,
@@ -61,6 +62,7 @@ import {
   getRoomPrivateForkContext,
   joinRoomThroughCourse,
   joinRoomWithInvite,
+  listRemovedRoomMembers,
   listRoomInvites,
   listRoomsForAccount,
   listRoomsForCourse,
@@ -285,6 +287,17 @@ export default defineEventHandler(async (event) => {
       await consumePublicRateLimit(event, { bucket: "room-invite", key: accountId, limit: 60, windowSeconds: 3_600 });
       const body = inviteBodySchema.parse(await readRoomBody(event));
       return await createRoomInvite(roomId, accountId, body.role, body.expiresInHours, body.maxUses);
+    }
+
+    if (path[1] === "removed" && path.length === 2) {
+      if (event.method !== "GET") return methodNotAllowed();
+      return { removed: await listRemovedRoomMembers(roomId, accountId) };
+    }
+
+    if (path[1] === "removed" && path.length === 3) {
+      if (event.method !== "DELETE") return methodNotAllowed();
+      await allowRemovedRoomMember(roomId, accountId, path[2]!);
+      return { allowed: true };
     }
 
     if (path[1] === "invites" && path.length === 3) {

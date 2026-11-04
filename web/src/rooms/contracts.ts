@@ -23,6 +23,8 @@ const displayNameSchema = z.string().trim().min(1).max(120);
 
 export const ROOM_MESSAGE_MAX_CHARS = 8_000;
 export const ROOM_MAX_MESSAGES = 4_000;
+/** Total message text a room keeps (about 2 MB), so each save stays cheap. */
+export const ROOM_MAX_TRANSCRIPT_CHARS = 2_000_000;
 export const ROOM_MAX_MEMBERS = 200;
 export const ROOM_MAX_PRIVATE_FORK_OFFERS = 200;
 export const ROOM_MAX_PENDING_PRIVATE_FORKS_PER_LEARNER = 20;
@@ -112,6 +114,8 @@ export const roomMessageSchema = z.object({
     .object({
       turnId: idSchema,
       facilitatorAccountId: accountIdSchema,
+      /** Set when a learner's browser ran Keating; shown until a teacher approves. */
+      facilitatorName: displayNameSchema.optional(),
       model: z.string().max(160),
       reviewedBy: accountIdSchema.optional(),
       edited: z.boolean().default(false),

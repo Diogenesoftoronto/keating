@@ -153,6 +153,21 @@ export function revokeRoomInvite(roomId: string, inviteId: string): Promise<{ re
   return roomJson(`${room(roomId)}/invites/${encodeURIComponent(inviteId)}`, { method: "DELETE" });
 }
 
+export interface RoomRemovedMember {
+  accountId: string;
+  displayName: string;
+  role: RoomInviteRole;
+  removedAt: string;
+}
+
+export async function listRemovedRoomMembers(roomId: string): Promise<RoomRemovedMember[]> {
+  return (await roomJson<{ removed: RoomRemovedMember[] }>(`${room(roomId)}/removed`)).removed;
+}
+
+export function allowRemovedRoomMember(roomId: string, accountId: string): Promise<{ allowed: true }> {
+  return roomJson(`${room(roomId)}/removed/${encodeURIComponent(accountId)}`, { method: "DELETE" });
+}
+
 export function roomTranscriptUrl(roomId: string): string {
   return `/api/rooms${room(roomId)}/transcript`;
 }

@@ -34,6 +34,7 @@ import {
   applyRoomOperation,
   findRoomMember,
   invalidateRoomPrivateForks,
+  availableDisplayName,
   permissionsForRoom,
   projectRoomForViewer,
   projectRoomPrivateForkContext,
@@ -47,6 +48,8 @@ import {
 const STORAGE = "keating:courses";
 const MAX_APPLIED_OPERATIONS = 20_000;
 const MAX_ROOMS_PER_INDEX = 500;
+/** With the transcript cap, bounds what one account can store (about 2 MB a room). */
+const MAX_HOSTED_ROOMS = 50;
 const MAX_BLOCKED_ACCOUNTS = 5_000;
 const MAX_CACHED_ROOMS = 8;
 const MAX_LIVE_INVITES = 200;
@@ -57,6 +60,13 @@ const storedRoomRecordSchema = z.object({
   appliedOperationIds: z.array(z.string()).max(MAX_APPLIED_OPERATIONS).default([]),
   operationReceipts: z.array(z.object({ key: z.string().length(64), digest: z.string().length(64) })).max(MAX_APPLIED_OPERATIONS).default([]),
   blockedAccountIds: z.array(z.string().min(1).max(256)).max(MAX_BLOCKED_ACCOUNTS).default([]),
+  /** Who each blocked account was, so a host can let them back in. Older rooms lack entries. */
+  removedMembers: z.array(z.object({
+    accountId: z.string().min(1).max(256),
+    displayName: z.string().max(120),
+    role: z.enum(["teacher", "learner", "observer"]),
+    removedAt: z.string(),
+  })).max(MAX_BLOCKED_ACCOUNTS).default([]),
   memberRestrictions: z.array(z.object({
     accountId: z.string().min(1).max(256),
     role: z.enum(["teacher", "learner", "observer"]).optional(),
@@ -64,29 +74,49 @@ const storedRoomRecordSchema = z.object({
   })).max(MAX_BLOCKED_ACCOUNTS).default([]),
 });
 
+export interface RoomRemovedMember {
+  accountId: string;
+  displayName: string;
+  role: RoomInviteRole;
+  removedAt: string;
+}
+
 interface StoredRoomRecord {
   room: Room;
   appliedOperationIds: string[];
   operationReceipts: Array<{ key: string; digest: string }>;
   blockedAccountIds: string[];
+  removedMembers: RoomRemovedMember[];
   memberRestrictions: Array<{ accountId: string; role?: RoomInviteRole; muted?: boolean }>;
 }
 
 interface RoomRepositoryGlobals {
   __keatingRoomLocks?: Map<string, Promise<void>>;
   __keatingRoomCache?: Map<string, Room>;
+  __keatingRoomLeases?: Map<string, FacilitatorLease>;
+}
+
+/** A heartbeat held in memory between durable writes. */
+interface FacilitatorLease {
+  facilitatorId: string;
+  heartbeatAt: string;
 }
 
 const globals = globalThis as typeof globalThis & RoomRepositoryGlobals;
 const roomLocks = (globals.__keatingRoomLocks ??= new Map());
 /** Latest saved room, for realtime checks that run several times a second. */
 const roomCache = (globals.__keatingRoomCache ??= new Map());
+const roomLeases = (globals.__keatingRoomLeases ??= new Map());
+// Heartbeats arrive every 15 s against a 45 s lease. Writing one in two keeps a
+// restart from expiring a live facilitator without rewriting the room each time.
+const HEARTBEAT_PERSIST_MS = 30_000;
 
 export type RoomStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 interface RepositoryScope {
   storage: RoomStorage;
   locks: Map<string, Promise<void>>;
   cache: Map<string, Room>;
+  leases: Map<string, FacilitatorLease>;
   now: () => number;
 }
 const repositoryScope = new AsyncLocalStorage<RepositoryScope>();
@@ -97,7 +127,7 @@ export function withRoomRepositoryStorage<T>(
   task: () => Promise<T>,
   options: { now?: () => number } = {},
 ): Promise<T> {
-  return repositoryScope.run({ storage: store, locks: new Map(), cache: new Map(), now: options.now ?? Date.now }, task);
+  return repositoryScope.run({ storage: store, locks: new Map(), cache: new Map(), leases: new Map(), now: options.now ?? Date.now }, task);
 }
 
 async function storage(): Promise<RoomStorage> {
@@ -135,6 +165,10 @@ async function sha256(value: string): Promise<string> {
 const roomKey = (roomId: string) => `room:${roomSchema.shape.id.parse(roomId)}`;
 const courseIndexKey = (courseId: string) => `room-course:${roomSchema.shape.id.parse(courseId)}`;
 const inviteIndexKey = (tokenHash: string) => `room-invite:${tokenHash}`;
+async function hostIndexKey(accountId: string): Promise<string> {
+  return `room-host:${await sha256(accountId)}`;
+}
+
 async function accountIndexKey(accountId: string): Promise<string> {
   return `room-account:${await sha256(accountId)}`;
 }
@@ -164,7 +198,18 @@ async function loadRecord(roomId: string, synchronize = true): Promise<StoredRoo
     return null;
   }
   const record = storedRoomRecordSchema.parse(raw);
+  applyLease(record.room);
   return synchronize ? synchronizeCourseMembers(record) : record;
+}
+
+const leases = () => repositoryScope.getStore()?.leases ?? roomLeases;
+
+/** Carry the newest in-memory heartbeat onto a room read from storage. */
+function applyLease(room: Room): void {
+  const lease = leases().get(room.id);
+  const facilitator = room.facilitator;
+  if (!lease || !facilitator || facilitator.facilitatorId !== lease.facilitatorId) return;
+  if (lease.heartbeatAt > facilitator.heartbeatAt) facilitator.heartbeatAt = lease.heartbeatAt;
 }
 
 // Read just course membership authority. Never project learner progress,
@@ -236,8 +281,12 @@ async function withIndexes<T>(keys: string[], task: () => Promise<T>): Promise<T
 async function saveWithIndexes(record: StoredRoomRecord, keys: string[]): Promise<void> {
   await withIndexes(keys, async () => {
     const indexes = await Promise.all(keys.map(async (key) => ({ key, ids: await readIndex(key) })));
-    for (const { ids } of indexes) {
-      if (!ids.includes(record.room.id) && ids.length >= MAX_ROOMS_PER_INDEX) {
+    for (const { key, ids } of indexes) {
+      if (ids.includes(record.room.id)) continue;
+      if (key.startsWith("room-host:") && ids.length >= MAX_HOSTED_ROOMS) {
+        throw new RoomConflictError(`You host ${MAX_HOSTED_ROOMS} rooms. Delete one you no longer need first.`, "room_host_limit");
+      }
+      if (ids.length >= MAX_ROOMS_PER_INDEX) {
         throw new RoomConflictError("This account or course has reached its room limit. Delete an older room first.", "room_index_full");
       }
     }
@@ -334,6 +383,7 @@ export async function createRoom(
   }
   const now = new Date(nowMs()).toISOString();
   const roomId = randomRoomId("room");
+  displayName = availableDisplayName({ members: [] }, accountId, displayName);
   const room = roomSchema.parse({
     schemaVersion: 1,
     id: roomId,
@@ -367,9 +417,9 @@ export async function createRoom(
     settings: parsed.settings ?? {},
     turn: { status: "idle", throughSeq: 0, consideredSeq: 1 },
   });
-  const keys = [await accountIndexKey(accountId)];
+  const keys = [await accountIndexKey(accountId), await hostIndexKey(accountId)];
   if (context.courseId) keys.push(courseIndexKey(context.courseId));
-  await saveWithIndexes({ room, appliedOperationIds: [], operationReceipts: [], blockedAccountIds: [], memberRestrictions: [] }, keys);
+  await saveWithIndexes({ room, appliedOperationIds: [], operationReceipts: [], blockedAccountIds: [], removedMembers: [], memberRestrictions: [] }, keys);
   return projectRoomForViewer(room, accountId);
 }
 
@@ -469,7 +519,14 @@ export async function applyStoredRoomOperation(
       }
       record.blockedAccountIds.push(operation.accountId);
     }
+    const target = operation.type === "member.remove" ? findRoomMember(record.room, operation.accountId) : undefined;
     const result = applyRoomOperation(record.room, accountId, operation, new Date(nowMs()).toISOString());
+    if (target && target.role !== "host") {
+      record.removedMembers = [
+        ...record.removedMembers.filter((removed) => removed.accountId !== target.accountId),
+        { accountId: target.accountId, displayName: target.displayName, role: target.role, removedAt: new Date(nowMs()).toISOString() },
+      ];
+    }
     if (operation.type === "member.role" || operation.type === "member.mute") {
       let restriction = record.memberRestrictions.find((candidate) => candidate.accountId === operation.accountId);
       if (!restriction) {
@@ -483,6 +540,20 @@ export async function applyStoredRoomOperation(
         restriction.role = operation.role;
         if (operation.role === "teacher") restriction.muted = false;
       } else restriction.muted = operation.muted;
+    }
+    if (operation.type === "facilitator.heartbeat" && result.room.facilitator) {
+      const persisted = record.room.facilitator;
+      const changedLabel = persisted?.modelLabel !== result.room.facilitator.modelLabel;
+      leases().set(result.room.id, { facilitatorId: result.room.facilitator.facilitatorId, heartbeatAt: result.room.facilitator.heartbeatAt });
+      if (!changedLabel && persisted && nowMs() - Date.parse(persisted.heartbeatAt) < HEARTBEAT_PERSIST_MS) {
+        // Keep the durable revision: clients drop snapshots older than one they
+        // hold, so an unsaved bump would roll back after a restart.
+        result.room.revision = record.room.revision;
+        result.room.updatedAt = record.room.updatedAt;
+        cacheRoom(result.room);
+        return { room: result.room, snapshot: projectRoomForViewer(result.room, accountId), applied: true,
+          touchedMessageIds: result.touchedMessageIds, removedAccountIds: result.removedAccountIds };
+      }
     }
     await saveRecord({
       ...record,
@@ -578,6 +649,38 @@ export async function listRoomInvites(roomId: string, accountId: string): Promis
   });
 }
 
+/** People removed from the room, for those allowed to let them back in. */
+export async function listRemovedRoomMembers(roomId: string, accountId: string): Promise<RoomRemovedMember[]> {
+  return await withRoomLock(roomId, async () => {
+    const record = await loadRecord(roomId);
+    const member = record && findRoomMember(record.room, accountId);
+    if (!record || !member) throw new RoomNotFoundError();
+    if (!roleCanOversee(member.role)) throw new RoomAuthorizationError("Only hosts and teachers can see removed people.");
+    return record.removedMembers
+      .filter((removed) => record.blockedAccountIds.includes(removed.accountId) && (member.role === "host" || removed.role !== "teacher"))
+      .sort((left, right) => right.removedAt.localeCompare(left.removedAt));
+  });
+}
+
+/** Lets a removed person join again through a new invite. Removing a teacher is host-only, so is undoing it. */
+export async function allowRemovedRoomMember(roomId: string, accountId: string, removedAccountId: string): Promise<void> {
+  await withRoomLock(roomId, async () => {
+    const record = await loadRecord(roomId);
+    const member = record && findRoomMember(record.room, accountId);
+    if (!record || !member) throw new RoomNotFoundError();
+    const removed = record.removedMembers.find((candidate) => candidate.accountId === removedAccountId);
+    if (!roleCanOversee(member.role) || (removed?.role === "teacher" && member.role !== "host")) {
+      throw new RoomAuthorizationError("You cannot let this person back in.");
+    }
+    if (!record.blockedAccountIds.includes(removedAccountId)) return;
+    await saveRecord({
+      ...record,
+      blockedAccountIds: record.blockedAccountIds.filter((id) => id !== removedAccountId),
+      removedMembers: record.removedMembers.filter((candidate) => candidate.accountId !== removedAccountId),
+    });
+  });
+}
+
 export async function revokeRoomInvite(roomId: string, accountId: string, inviteId: string): Promise<void> {
   await withRoomLock(roomId, async () => {
     const record = await loadRecord(roomId);
@@ -609,6 +712,12 @@ async function resolveInvite(token: string, synchronize = false): Promise<Resolv
   const record = await loadRecord(pointer.roomId as string, synchronize);
   if (!record) return null;
   const invite = record.room.invites.find((candidate) => candidate.tokenHash === tokenHash && candidate.id === pointer.inviteId);
+  // Revoked, used-up and expired links never work again, so drop their pointer.
+  // An ended room may reopen, so its links are kept.
+  if (!invite || invite.revokedAt || invite.uses >= invite.maxUses || Date.parse(invite.expiresAt) <= nowMs()) {
+    await (await storage()).removeItem(inviteIndexKey(tokenHash)).catch(() => undefined);
+    return null;
+  }
   if (
     !invite ||
     invite.revokedAt ||
@@ -672,6 +781,7 @@ function addMember(
   }
   const restriction = record.memberRestrictions.find((candidate) => candidate.accountId === accountId);
   const joinedRole = restriction?.role ?? role;
+  displayName = availableDisplayName(room, accountId, displayName);
   room.members.push({ accountId, displayName, role: joinedRole, joinedAt: now, muted: joinedRole === "teacher" ? false : restriction?.muted ?? false, via });
   // Joining remains possible at capacity; omit the notice rather than erase history.
   if (room.messages.length < ROOM_MAX_MESSAGES) {
@@ -764,7 +874,9 @@ export async function deleteRoom(roomId: string, accountId: string): Promise<Roo
     if (record.room.context.courseId) {
       await removeFromIndex(courseIndexKey(record.room.context.courseId), roomId);
     }
+    await removeFromIndex(await hostIndexKey(record.room.hostAccountId), roomId);
     await (await storage()).removeItem(roomKey(roomId));
+    leases().delete(roomId);
     (repositoryScope.getStore()?.cache ?? roomCache).delete(roomId);
     return record.room;
   });

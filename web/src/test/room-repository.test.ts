@@ -5,7 +5,7 @@ import { ROOM_MAX_MESSAGES, roomSchema, type RoomOperation, type RoomOperationIn
 import {
   applyStoredRoomOperation, createRoom, createRoomInvite, currentRoom, deleteRoom,
   exportRoomTranscript, getRoomForAccount, getRoomMessagesBefore, joinRoomThroughCourse,
-  joinRoomWithInvite, listRoomInvites, listRoomsForAccount, listRoomsForCourse, previewRoomInvite,
+  allowRemovedRoomMember, joinRoomWithInvite, listRemovedRoomMembers, listRoomInvites, listRoomsForAccount, listRoomsForCourse, previewRoomInvite,
   revokeRoomInvite, withRoomRepositoryStorage,
 } from "../../server/utils/room-repository";
 
@@ -265,6 +265,71 @@ describe("room invitations and private history", () => {
       await deleteRoom(roomId, "host");
       expect((await store.getKeys()).filter((key) => key.startsWith("room:") || key.startsWith("room-invite:"))).toEqual([]);
       expect(await currentRoom(roomId)).toBeNull();
+    }, { now: () => now });
+  });
+
+  test("a host can let a removed person back in; a teacher cannot undo a teacher's removal", async () => {
+    const store = newStore();
+    await withRoomRepositoryStorage(store, async () => {
+      const roomId = (await createRoom("host", "Teacher", { title: "Second chances" })).room.id;
+      await joinRoomWithInvite((await createRoomInvite(roomId, "host", "teacher", 1, 5)).token, "teacher", "Helper");
+      const learnerToken = (await createRoomInvite(roomId, "host", "learner", 1, 5)).token;
+      await joinRoomWithInvite(learnerToken, "learner", "Learner");
+      await joinRoomWithInvite((await createRoomInvite(roomId, "host", "teacher", 1, 5)).token, "teacher2", "Other");
+      await change(roomId, "host", { type: "member.remove", accountId: "teacher2" });
+      await change(roomId, "teacher", { type: "member.remove", accountId: "learner" });
+      expect((await listRemovedRoomMembers(roomId, "teacher")).map((removed) => removed.displayName)).toEqual(["Learner"]);
+      expect((await listRemovedRoomMembers(roomId, "host")).map((removed) => removed.role).sort()).toEqual(["learner", "teacher"]);
+      await expect(allowRemovedRoomMember(roomId, "teacher", "teacher2")).rejects.toMatchObject({ code: "room_forbidden" });
+      await expect(listRemovedRoomMembers(roomId, "learner")).rejects.toBeDefined();
+      await allowRemovedRoomMember(roomId, "teacher", "learner");
+      expect(await listRemovedRoomMembers(roomId, "teacher")).toEqual([]);
+      const rejoined = await joinRoomWithInvite(learnerToken, "learner", "Learner");
+      expect(rejoined?.snapshot.viewer.role).toBe("learner");
+    });
+  });
+
+  test("heartbeats refresh the lease in memory and only reach storage every 30 seconds", async () => {
+    const store = newStore();
+    let now = T0;
+    await withRoomRepositoryStorage(store, async () => {
+      const roomId = (await createRoom("host", "Teacher", { title: "Heartbeat" })).room.id;
+      await change(roomId, "host", { type: "facilitator.claim", facilitatorId: "browser_a", modelLabel: "m", takeOver: false });
+      const saved = (await store.getItem<any>(`room:${roomId}`)).room;
+      now += 15_000;
+      await change(roomId, "host", { type: "facilitator.heartbeat", facilitatorId: "browser_a" });
+      const afterOne = (await store.getItem<any>(`room:${roomId}`)).room;
+      expect(afterOne.facilitator.heartbeatAt).toBe(saved.facilitator.heartbeatAt);
+      expect((await currentRoom(roomId))?.facilitator?.heartbeatAt).toBe(new Date(now).toISOString());
+      expect((await currentRoom(roomId))?.revision).toBe(saved.revision);
+      // The stored lease is 50 s old (stale), but the in-memory one is 35 s old,
+      // so the facilitator keeps Keating and this beat reaches storage.
+      now += 35_000;
+      await change(roomId, "host", { type: "facilitator.heartbeat", facilitatorId: "browser_a" });
+      expect((await store.getItem<any>(`room:${roomId}`)).room.facilitator.heartbeatAt).toBe(new Date(now).toISOString());
+    }, { now: () => now });
+  });
+
+  test("an account can host at most 50 rooms, and deleting one frees a slot", async () => {
+    const store = newStore();
+    await withRoomRepositoryStorage(store, async () => {
+      let last = "";
+      for (let index = 0; index < 50; index++) last = (await createRoom("host", "Teacher", { title: `Room ${index}` })).room.id;
+      await expect(createRoom("host", "Teacher", { title: "One too many" })).rejects.toMatchObject({ code: "room_host_limit" });
+      await deleteRoom(last, "host");
+      await createRoom("host", "Teacher", { title: "Fits again" });
+    });
+  });
+
+  test("an expired invite drops its token pointer when someone tries it", async () => {
+    const store = newStore();
+    let now = T0;
+    await withRoomRepositoryStorage(store, async () => {
+      const roomId = (await createRoom("host", "Teacher", { title: "Pointers" })).room.id;
+      const { token } = await createRoomInvite(roomId, "host", "learner", 1, 10);
+      now += 3_600_001;
+      expect(await previewRoomInvite(token, "learner")).toBeNull();
+      expect((await store.getKeys()).filter((key) => key.startsWith("room-invite:"))).toEqual([]);
     }, { now: () => now });
   });
 
