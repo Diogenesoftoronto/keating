@@ -5,7 +5,12 @@ export const ROOM_REQUEST_MAX_BYTES = 64 * 1024;
 /** Cookies authorize the account; an untrusted origin must not spend that authority. */
 export function assertRoomRequestOrigin(event: H3Event): void {
   const origin = event.req.headers.get("origin");
-  if (origin && origin !== getRequestURL(event).origin) {
+  const url = getRequestURL(event);
+  // Railway terminates TLS, so the server sees http:// while browsers send
+  // https:// origins. Accept the proxy's scheme for the same host.
+  const forwarded = event.req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const allowed = new Set([url.origin, ...(forwarded === "https" || forwarded === "http" ? [`${forwarded}://${url.host}`] : [])]);
+  if (origin && !allowed.has(origin)) {
     throw createError({ statusCode: 403, statusMessage: "Room requests must come from the same origin.", data: { code: "room_origin_forbidden" } });
   }
 }

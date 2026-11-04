@@ -209,6 +209,13 @@ describe("room HTTP request boundaries", () => {
     expect(() => assertRoomRequestOrigin(request(undefined, { origin: "null" }))).toThrow(/same origin/);
   });
 
+  test("an https origin is accepted behind a TLS-terminating proxy, but only for the same host", () => {
+    const proxied = (origin: string) => new H3Event(new Request("http://keating.test/api/rooms", { method: "POST", headers: { origin, "x-forwarded-proto": "https" } }));
+    expect(() => assertRoomRequestOrigin(proxied("https://keating.test"))).not.toThrow();
+    expect(() => assertRoomRequestOrigin(proxied("https://evil.test"))).toThrow(/same origin/);
+    expect(() => assertRoomRequestOrigin(new H3Event(new Request("http://keating.test/api/rooms", { method: "POST", headers: { origin: "https://keating.test" } })))).toThrow(/same origin/);
+  });
+
   test("JSON accepts empty joins and rejects malformed or non-JSON input without reflection", async () => {
     expect(await readRoomBody(request())).toBeUndefined();
     expect(await readRoomBody(request('{"title":"Group"}', { "content-type": "application/json" }))).toEqual({ title: "Group" });
