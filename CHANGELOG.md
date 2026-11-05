@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.19
+
+### Shared sessions
+- Share pages show interactive components as summary cards instead of raw component source, and best-effort replies no longer show their internal review marker.
+- The shared transcript sits directly under the page header instead of inside a second card that repeated the title, read-only badge, date and counts.
+
+### Previews
+- Response previews in the review workspace, comparisons and shares summarize every component kind: coding challenges, music labs and language practice no longer disappear, and diagram, audio-response and video-response tasks are labelled as such.
+
+### Verification
+- Local verification passed all nine typechecks and the root, web, contracts and Flue suites. Mobile retains the known native-core baseline failure and one pre-existing activity-learning test failure, unchanged since 4.0.17.
+
 ## 4.0.18
 
 ### Sharing and sign-in
