@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.20
+
+### Reliability
+- Shared sessions, courses and submission attachments are stored on the server's persistent volume and survive deployments. Storage locations configured by environment variable were previously ignored at runtime, so these were lost whenever the server was redeployed.
+
+### Verification
+- Local verification passed all nine typechecks and the root, web and contracts suites. A restart test confirmed a share created before a server restart is still served after it.
+
 ## 4.0.19
 
 ### Shared sessions
