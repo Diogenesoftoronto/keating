@@ -5,7 +5,10 @@ import { ArrowLeft, Bot, Copy, GitFork, MessageSquareText, User } from "lucide-r
 import { SharedTrajectoryWorkspace } from "../components/trajectory";
 import { useSeo } from "../hooks/useSeo";
 import { forkSharedSession, loadSharedSessionResultFromUrl, type SharedSession as SharedSessionData } from "../keating/shared-sessions";
-import { MarkdownBlock } from "../components/MarkdownBlock";
+import { OpenUIPreview } from "../components/OpenUIPreview";
+import { buildOpenUIPreview } from "../keating/openui/preview";
+import { learnerResponseReviewMarkdown } from "../keating/learner-response";
+import { stripReviewNotice } from "../keating/judgement/review-notice";
 import { css, cx } from "../../styled-system/css";
 import { sharedSessionOmissionNotice, sharedSessionWorkspaceData } from "./shared-session-view-model";
 
@@ -54,6 +57,15 @@ function formatDate(iso: string) {
 		hour: "numeric",
 		minute: "2-digit",
 	});
+}
+
+/**
+ * A shared reply reads like the chat: interactive components appear as inert
+ * summaries (a stranger's link must not mount live controls), and learner
+ * answers read as their summary rather than raw JSON.
+ */
+function sharedMessageBlocks(message: unknown) {
+	return buildOpenUIPreview(learnerResponseReviewMarkdown(stripReviewNotice(messageText(message))));
 }
 
 function messageText(message: unknown): string {
@@ -215,8 +227,8 @@ function SharedSessionContent() {
 			<header className={styles.header}>
 				<div className={cx(styles.headerInner, workspaceData ? styles.headerInnerRich : undefined)}>
 					<div className={styles.minW0}>
-						<p className={styles.eyebrow}>Shared Keating session</p>
-						{workspaceData ? null : <h1 className={styles.title}>{session.title}</h1>}
+						<p className={styles.eyebrow}>Shared Keating session{workspaceData ? " · Read only" : ""}</p>
+						<h1 className={styles.title}>{session.title}</h1>
 						<p className={styles.meta}>
 							{workspaceData
 								? `${workspaceData.messages.length} turns | ${workspaceData.artifacts.length} artifacts | Shared ${formatDate(session.sharedAt)}`
@@ -258,7 +270,7 @@ function SharedSessionContent() {
 							<div className={styles.omissionMeta}>{omissionNotice.items.join(" · ")}</div>
 						</div>
 					) : null}
-					<SharedTrajectoryWorkspace data={workspaceData} />
+					<SharedTrajectoryWorkspace data={workspaceData} chrome="page" />
 				</div>
 			) : (
 				<main className={styles.main}>
@@ -278,7 +290,7 @@ function SharedSessionContent() {
 										<span>{messageLabel(message)}</span>
 									</div>
 									<div className={styles.markdown}>
-										<MarkdownBlock content={messageText(message)} />
+										<OpenUIPreview blocks={sharedMessageBlocks(message)} />
 									</div>
 								</article>
 							);

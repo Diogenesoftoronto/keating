@@ -38,6 +38,11 @@ export interface SharedTrajectoryWorkspaceProps {
 	data: SharedTrajectoryWorkspaceData;
 	renderArtifact?: ArtifactRenderer;
 	className?: string;
+	/**
+	 * `page`: the host page already shows the title, counts and actions, so the
+	 * workspace drops its own card frame and header instead of repeating them.
+	 */
+	chrome?: "card" | "page";
 }
 
 export interface SharedTrajectoryNavigationState {
@@ -124,7 +129,7 @@ function formattedDate(timestamp: number | undefined): string | null {
 	return new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(timestamp);
 }
 
-export function SharedTrajectoryWorkspace({ data, renderArtifact, className }: SharedTrajectoryWorkspaceProps) {
+export function SharedTrajectoryWorkspace({ data, renderArtifact, className, chrome = "card" }: SharedTrajectoryWorkspaceProps) {
 	const finalAnnotations = useMemo(
 		() => data.annotations.filter((annotation) => annotation.status === "final"),
 		[data.annotations],
@@ -162,8 +167,10 @@ export function SharedTrajectoryWorkspace({ data, renderArtifact, className }: S
 	}
 
 	return (
-		<main aria-label="Shared session" className={cx(css({ display: "flex", width: "100%", height: { base: "auto", md: "min(86dvh, 56rem)" }, minHeight: { base: "38rem", md: "40rem" }, flexDirection: "column", overflow: "hidden", border: "1px solid var(--border)", borderRadius: { base: 0, md: "0.5rem" }, background: "var(--paper, var(--background))", color: "var(--foreground)" }), className)}>
-			<header className={css({ display: "flex", minHeight: "4rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.625rem", borderBottom: "1px solid var(--border)", padding: { base: "0.625rem 0.75rem", md: "0.625rem 1rem" } })}>
+		<main aria-label="Shared session" className={cx(chrome === "card"
+			? css({ display: "flex", width: "100%", height: { base: "auto", md: "min(86dvh, 56rem)" }, minHeight: { base: "38rem", md: "40rem" }, flexDirection: "column", overflow: "hidden", border: "1px solid var(--border)", borderRadius: { base: 0, md: "0.5rem" }, background: "var(--paper, var(--background))", color: "var(--foreground)" })
+			: css({ display: "flex", width: "100%", minHeight: "38rem", flexDirection: "column", color: "var(--foreground)" }), className)}>
+			{chrome === "card" ? <header className={css({ display: "flex", minHeight: "4rem", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.625rem", borderBottom: "1px solid var(--border)", padding: { base: "0.625rem 0.75rem", md: "0.625rem 1rem" } })}>
 				<div className={css({ minWidth: 0 })}>
 					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
 						<h1 className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "serif", fontSize: { base: "1rem", md: "1.125rem" }, fontWeight: 700, color: "var(--foreground)" })}>{data.session.title}</h1>
@@ -179,7 +186,7 @@ export function SharedTrajectoryWorkspace({ data, renderArtifact, className }: S
 					<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem" })}><KeatingIcon icon={reviewIcon.message} size={12} /> {data.messages.length} turns</span>
 					<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem" })}><KeatingIcon icon={reviewIcon.page} size={12} /> {data.artifacts.length} artifacts</span>
 				</div>
-			</header>
+			</header> : null}
 
 			<section aria-label="Shared session content" className={css({ display: "flex", minWidth: 0, minHeight: { base: "32rem", md: 0 }, flex: 1, flexDirection: "column" })}>
 					<TrajectoryCanvas
