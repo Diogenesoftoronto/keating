@@ -64,6 +64,22 @@ describe("explicit extended private draft loop", () => {
     if (exclusion === "tools") expect(result.receipt.attempts[0]!.checks.find(check => check.id === "available_tool")?.status).toBe("pass");
   });
 
+  test("receipts name tools a draft called that the session does not offer, without their arguments", async () => {
+    let generated = 0;
+    const result = await runTeachingDrafts({ turn: { ...turn, availableTools: ["read"] }, maxAttempts: 2,
+      judge: makeJudge(() => ({ quality_progress: .99, quality_scope: .99 })),
+      generate: async () => {
+        generated++;
+        return { reply: { text: `draft ${generated}`, toolCalls: generated === 1
+          ? [{ name: "Fieldwork", arguments: { secret: "PRIVATE_ARGUMENT" } }, { name: "read", arguments: {} }] : [] }, value: generated };
+      },
+    });
+    expect(result.receipt.attempts[0]!.unavailableTools).toEqual(["Fieldwork"]);
+    expect(result.receipt.attempts[0]!.checks.find(check => check.id === "available_tool")?.status).toBe("fail");
+    expect(result.receipt.attempts[1]!.unavailableTools).toBeUndefined();
+    expect(JSON.stringify(result.receipt)).not.toContain("PRIVATE_ARGUMENT");
+  });
+
   test.each(["deadline", "cancel"])("a hanging synthesis respects %s and preserves the release boundary", async boundary => {
     const controller = new AbortController();
     let generated = 0;

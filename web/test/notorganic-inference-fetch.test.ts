@@ -69,7 +69,11 @@ for (const sdkRetries of [0, 1]) {
 		});
 		const context = { messages: [{ role: "user" as const, content: "Hello", timestamp: 1 }] };
 		const stream = streamWithApiRetry(model, context, {
-			fetch: fetcher, headers: { authorization: "DPoP initial-auth", dpop: "stale-proof", "user-agent": "pi (browser)" }, maxRetries: sdkRetries,
+			fetch: fetcher, headers: {
+				authorization: "DPoP initial-auth", dpop: "stale-proof", "user-agent": "pi (browser)",
+				"Session_Id": "learner-session", "X-Client-Request-Id": "learner-session",
+				"X-Session-Affinity": "learner-session", "X-Session-Id": "learner-session",
+			}, maxRetries: sdkRetries,
 		}, (options) => streamSimple(model, context, options), {
 			...WEB_API_RETRY_POLICY, maxAttempts: 3, initialDelayMs: 0, maxDelayMs: 1000, rateLimitIntervalMs: 0, jitterRatio: 0,
 		});
@@ -81,6 +85,9 @@ for (const sdkRetries of [0, 1]) {
 			expect(request.headers.get("idempotency-key")).toBe("logical-request");
 			expect(request.headers.get("x-notorganic-max-cost-microusd")).toBe("123");
 			expect(request.headers.has("user-agent")).toBe(false);
+			for (const name of ["session_id", "x-client-request-id", "x-session-affinity", "x-session-id"]) {
+				expect(request.headers.has(name)).toBe(false);
+			}
 			expect((await request.json()).messages[0].content).toBe("Hello");
 		}
 	});
@@ -92,7 +99,7 @@ test("rejects unexpected endpoints before signing", async () => {
 	expect(signed).toBe(false);
 });
 
-test("Responses models preserve account authorization and use the responses endpoint", async () => {
+test("Responses with a session preserve account authorization and caching without unsupported CORS headers", async () => {
 	const selected = { ...NOTORGANIC_SOL_MODEL, baseUrl: "https://api.notorganic.test/v1" };
 	const context: Context = {
 		tools: [{ name: "lookup", description: "Look up a learning concept", parameters: Type.Object({ topic: Type.String() }) }],
@@ -123,7 +130,7 @@ test("Responses models preserve account authorization and use the responses endp
 		}) as typeof fetch,
 	});
 	const result = await streamSimple(selected, context, {
-		fetch: authenticated, headers: { authorization: "DPoP initial" }, maxRetries: 0,
+		fetch: authenticated, headers: { authorization: "DPoP initial" }, sessionId: "learner-session", maxRetries: 0,
 	}).result();
 	expect(result.stopReason).toBe("stop");
 	expect(outbound?.url).toBe(target);
@@ -131,8 +138,11 @@ test("Responses models preserve account authorization and use the responses endp
 	expect(outbound?.headers.get("dpop")).toBe("responses-proof");
 	expect(outbound?.headers.get("idempotency-key")).toBe("responses-request");
 	expect(outbound?.headers.get("x-notorganic-max-cost-microusd")).toBe("123");
+	expect(outbound?.headers.has("session_id")).toBe(false);
+	expect(outbound?.headers.has("x-client-request-id")).toBe(false);
 	const body = await outbound!.json();
 	expect(body.model).toBe("gpt-6.1-sol");
+	expect(body.prompt_cache_key).toBe("learner-session");
 	expect(body.input[0].content[0].text).toBe("Hello");
 	expect(body.tools[0]).toMatchObject({ type: "function", name: "lookup", description: "Look up a learning concept",
 		parameters: { type: "object", properties: { topic: { type: "string" } }, required: ["topic"] } });

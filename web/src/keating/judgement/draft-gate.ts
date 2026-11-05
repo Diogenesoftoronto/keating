@@ -1,4 +1,5 @@
 import { DEFAULT_MODELS } from "@keating/runtime-config";
+import { isWebSearchToolName, parseWebSearchResult } from "../../components/web-search-result";
 import type { AgentOptions } from "@earendil-works/pi-agent-core";
 import {
   createAssistantMessageEventStream,
@@ -137,6 +138,25 @@ function messageText(message: Context["messages"][number]): string {
   return message.content.filter((part) => part.type === "text").map((part) => part.text).join("\n");
 }
 
+const MAX_SEARCH_SOURCES = 16;
+
+/**
+ * Search results the tutor received this turn, as checkable sources. Without
+ * them the checker judged "link what you used" and "don't invent facts"
+ * against raw tool text, and grounded replies were released as unverified.
+ */
+function searchSources(messages: Context["messages"]): TeachingPolicyTurn["sources"] {
+  const sources: TeachingPolicyTurn["sources"][number][] = [];
+  for (const message of messages) {
+    if (message.role !== "toolResult" || message.isError || !isWebSearchToolName(message.toolName)) continue;
+    for (const site of parseWebSearchResult(message.content, undefined).sites) {
+      if (sources.length >= MAX_SEARCH_SOURCES || sources.some(source => source.url === site.url)) continue;
+      sources.push({ id: `web-${sources.length + 1}`, url: site.url, text: [site.title, site.snippet].filter(Boolean).join(" — ").slice(0, 2_000) || site.url });
+    }
+  }
+  return sources;
+}
+
 function projectedTurn(context: Context, evidence: Partial<TeachingPolicyTurn>, domain?: TeachingPolicyTurn["domain"]): TeachingPolicyTurn {
   let latestIndex = context.messages.length - 1;
   while (latestIndex >= 0 && context.messages[latestIndex]!.role !== "user") latestIndex--;
@@ -155,7 +175,7 @@ function projectedTurn(context: Context, evidence: Partial<TeachingPolicyTurn>, 
     learnerEvidence: (evidence.learnerEvidence ?? []).map(({ kind, content }) => ({ kind, content })),
     availableTools: (context.tools ?? []).map((tool) => tool.name),
     toolResults: [...(evidence.toolResults ?? []).map(({ name, status, content }) => ({ name, status, content })), ...results],
-    sources: (evidence.sources ?? []).map(({ id, url, text }) => ({ id, url, text })),
+    sources: [...(evidence.sources ?? []), ...searchSources(context.messages)].map(({ id, url, text }) => ({ id, url, text })),
     assessment: evidence.assessment ?? "unknown",
     improvementRuns: evidence.improvementRuns ?? null,
     domain: domain ?? evidence.domain ?? "unknown",

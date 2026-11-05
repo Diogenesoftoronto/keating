@@ -111,6 +111,19 @@ export function RoomKeatingPanel({
       <p className={s.help}>{describeKeatingBehavior(room.settings)}</p>
       {outcome ? <p className={s.help}>{outcome}</p> : null}
       {room.turn.requestedAt && run.kind === "running" ? <p className={s.help}>A teacher asked Keating to step in.</p> : null}
+      {room.summary ? (
+        <details className={css({ mt: "0.6rem", fontSize: "0.78rem", lineHeight: 1.5 })}>
+          <summary className={css({ cursor: "pointer", color: "var(--ink-soft)" })}>
+            Keating’s summary of messages 1–{room.summary.throughSeq}
+          </summary>
+          <p className={css({ mt: "0.35rem", whiteSpace: "pre-wrap" })}>{room.summary.text}</p>
+          <p className={s.help}>
+            Keating reads this instead of the older messages themselves.
+            {room.summary.facilitatorName ? ` Written in ${room.summary.facilitatorName}’s browser, not reviewed.` : ""}
+            {permissions.canOversee ? " Hiding a summarized message makes Keating write a new one." : ""}
+          </p>
+        </details>
+      ) : null}
 
       <div className={css({ mt: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.4rem" })}>
         {thisTab ? (

@@ -72,6 +72,12 @@ function projectPlanReview(review: PlanReview | undefined): { planReview?: PlanR
 const nonnegative = (value: number): number => typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : 0;
 const phases = new Set<string>(["planning", "drafting", "checking", "revising", "selecting", "released", "withheld", "cancelled"]);
 const safePhase = (phase: TeachingDraftPhase): TeachingDraftPhase => phases.has(phase) ? phase : "withheld";
+/** Model-chosen names are untrusted text; keep only short identifier-shaped ones. */
+function projectToolNames(names: unknown): { unavailableTools?: readonly string[] } {
+  if (!Array.isArray(names)) return {};
+  const safe = [...new Set(names.filter((name): name is string => typeof name === "string" && /^[\w.:-]{1,64}$/.test(name)))].slice(0, 8);
+  return safe.length ? { unavailableTools: safe } : {};
+}
 function projectSynthesisSources(sources: unknown, attempt: number): { synthesisSourceAttempts?: readonly number[] } {
   if (!Array.isArray(sources)) return {};
   const safe = [...new Set(sources.filter((source): source is number => typeof source === "number"
@@ -112,6 +118,7 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     attempts: snapshot.attempts.map(attempt => ({ attempt: attempt.attempt, reasoning: attempt.reasoning, standard: attempt.standard, variant: attempt.variant ?? "default",
       generationMs: attempt.generationMs, judgementMs: attempt.judgementMs, status: attempt.status,
       ...projectSynthesisSources(attempt.synthesisSourceAttempts, attempt.attempt),
+      ...projectToolNames(attempt.unavailableTools),
       checks: attempt.checks.filter(check => checkIds.has(check.id)).map(check => ({
         id: check.id, source: check.source, severity: check.severity, status: check.status, probability: check.probability,
       })),

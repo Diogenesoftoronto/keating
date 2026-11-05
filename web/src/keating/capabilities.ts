@@ -36,6 +36,8 @@ export const BASELINE_TEACHING_TOOLS = new Set([
   "course_inspect",
   "course_create",
   "course_update",
+  "room_list",
+  "room_invite",
   "feedback",
   "grade_quiz",
   "grade_question_checks",
@@ -203,8 +205,10 @@ export function filterAvailableKeatingTools(
 ): AgentTool[] {
   const registered = new Set(tools.map((tool) => tool.name));
   const visible = new Set(BASELINE_TEACHING_TOOLS);
+  // Study rooms authenticate through the same course product session
+  // (requireCourseProductSession), so they share the course availability probe.
   if (environment.coursesAvailable === false) {
-    for (const name of ["course_list", "course_inspect", "course_create", "course_update"]) visible.delete(name);
+    for (const name of ["course_list", "course_inspect", "course_create", "course_update", "room_list", "room_invite"]) visible.delete(name);
   }
   if (environment.clientWebSearch && registered.has("client-web-search")) {
     visible.add("client-web-search");

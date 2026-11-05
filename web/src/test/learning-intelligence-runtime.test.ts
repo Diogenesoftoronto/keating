@@ -12,8 +12,8 @@ function history(): LearningHistory {
   return { checks: Array.from({ length: 8 }, (_, index) => ({ id: `check-${index}`, topic: "fractions", question: "Explain a half", answer: "a part",
     score: index % 2, grading: "model" as const, createdAt: time - (8 - index) * 86_400_000, sessionId: "lesson" })), reviews: [], decks: [] };
 }
-function fixture() {
-  let messages: unknown[] = [{ id: "learner", role: "user", content: "I enjoy astronomy.", timestamp: 1 },
+function fixture(learner = "I enjoy astronomy.", grounded: Record<string, string> = {}) {
+  let messages: unknown[] = [{ id: "learner", role: "user", content: learner, timestamp: 1 },
     { id: "teacher", role: "assistant", content: "A half is one of two equal parts. Why must the parts be equal?", timestamp: 2 }];
   let scope = `account-${crypto.randomUUID()}`, enabled = true, live = true, calls = 0, invalidate = () => {}, mutate: (request: ExtractionRequest) => void = () => {};
   let currentHistory = history(), currentTime = time, deleted = false;
@@ -23,7 +23,7 @@ function fixture() {
     calls++; mutate(body);
     return { ok: true, model: "extraction-clairic/clairic-v1", truncated: false, answers: Object.fromEntries(Object.entries(body.fields).map(([id, field]) => {
       if (field.type === "forecast") return [id, { type: "forecast", value: [.5], median: [.4], p10: [.1], p90: [.9] }];
-      const value = id === "memory" ? "I enjoy astronomy." : id === "fact_1" ? "A half is one of two equal parts." : null;
+      const value = grounded[id] ?? (id === "memory" ? "I enjoy astronomy." : id === "fact_1" ? "A half is one of two equal parts." : null);
       const start = value ? body.state.indexOf(value) : -1;
       return [id, { type: "text", value: start >= 0 ? value : null, p_null: start >= 0 ? .01 : .99,
         ...(start >= 0 ? { span: [start, start + value!.length] } : {}) }];
@@ -163,4 +163,45 @@ test("card forecasts retain the exact SM-2 due date and original self-rating sca
   expect(lateSeries.reviewIntervals[1].elapsedDays).toBe(30); expect(lateSeries.reviewIntervals[1].scheduledIntervalDays).toBe(6);
   const shuffled = buildLearningForecastBatch({ ...data, reviews: [...data.reviews].reverse() }, time);
   expect(JSON.parse(shuffled.request!.state).series[0].observations.map((row: { at: string }) => row.at)).toEqual([...data.reviews].map(row => new Date(row.createdAt).toISOString()));
+});
+
+
+test("saved questions the learner keeps missing reach the tutor as revisit suggestions", async () => {
+  const plain = fixture(); await plain.runtime.update();
+  expect(await plain.runtime.prompt()).not.toContain("revisitQuestions");
+  plain.runtime.dispose();
+  // "Explain a half" is a saved check in this lesson, missed in 4 of 8 attempts.
+  const f = fixture("Can we redo Explain a half? I keep getting it wrong.", { question: "Explain a half" });
+  await f.runtime.update();
+  const prompt = await f.runtime.prompt();
+  expect(prompt).toContain('"revisitQuestions":[{"question":"Explain a half","missedCount":4,"attempts":8}]');
+  expect(prompt).toContain("never as a grade");
+  f.runtime.dispose();
+});
+
+test("offered passages carry citable refs, are indexed, and are exposed for the draft checker", async () => {
+  const f = fixture(); await f.runtime.update();
+  const prompt = await f.runtime.prompt();
+  const refs = [...prompt.matchAll(/"ref":"(ref-[0-9a-f]{10})"/g)].map(match => match[1]!);
+  expect(refs.length).toBeGreaterThan(0);
+  expect(prompt).toContain("cite it inline as a Markdown link whose target is the ref");
+  expect(f.runtime.references().map(reference => reference.id)).toEqual(refs);
+  const index = JSON.parse(f.data.get("keating:learning-references:v1:lesson") ?? "[]") as { id: string }[];
+  expect(index.map(entry => entry.id)).toEqual(refs);
+  // An edited source invalidates what the checker may verify against.
+  f.edit();
+  expect(f.runtime.references().some(reference => reference.anchor.messageId === "learner")).toBe(false);
+  f.off();
+  expect(f.data.has("keating:learning-references:v1:lesson")).toBe(false);
+  f.runtime.dispose();
+});
+
+test("a completed forecast is saved for Coming up and erased on opt-out", async () => {
+  const f = fixture("Can we redo Explain a half? I keep getting it wrong.", { question: "Explain a half" });
+  await f.runtime.update();
+  const saved = JSON.parse(f.data.get("keating:learning-outlook:v1") ?? "null") as { revisit: unknown[]; historyId: string } | null;
+  expect(saved?.revisit).toEqual([{ question: "Explain a half", missedCount: 4, attempts: 8 }]);
+  f.off();
+  expect(f.data.has("keating:learning-outlook:v1")).toBe(false);
+  f.runtime.dispose();
 });

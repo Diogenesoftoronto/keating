@@ -167,6 +167,16 @@ describe("deterministic adherence", () => {
     expect(failed("````text\n```openui\ninvalid example\n```\n````")).toEqual([]);
   });
 
+  test("UI fences the renderer would open but markdown never closes are failed", () => {
+    // The live renderer opens an OpenUI fence anywhere in a line; an indented or
+    // quoted one can never close, so the learner saw "fence closed" repairs.
+    const source = 'root = LearningSurface([q], "Prep", "", "ephemeral")\n';
+    expect(failed(`1. Try this:\n    \`\`\`openui lifecycle=ephemeral id=q\n    ${source}    \`\`\`\n`)).toContain("openui_valid");
+    expect(failed(`> \`\`\`openui\n> ${source}> \`\`\`\n`)).toContain("openui_valid");
+    expect(failed("Here it is: ```openui-lang\nroot = LearningSurface(\n")).toContain("openui_valid");
+    expect(failed("Mention ```openui``` fences inline.")).not.toContain("openui_valid");
+  });
+
   test("unknown tools and grading without submitted evidence fail even with a passing judge", () => {
     const proposed = { ...reply, toolCalls: [{ name: "invented", arguments: {} }, { name: "grade_quiz", arguments: { result_id: "fabricated" } }] };
     const result = assessTeachingPolicyAdherence(turn, proposed, outcome(teachingPolicyAdherenceRequest(turn, proposed)!));

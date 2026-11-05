@@ -49,6 +49,8 @@ export const KEATING_TOOL_RISKS: Readonly<Record<string, ToolRiskClass>> = {
   course_inspect: "sensitive-read",
   course_create: "state-change",
   course_update: "state-change",
+  room_list: "sensitive-read",
+  room_invite: "state-change",
   quiz: "informational",
   learner_state: "sensitive-read",
   read_project_file: "sensitive-read",

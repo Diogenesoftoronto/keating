@@ -60,6 +60,8 @@ function taskKindLabel(kind: UiTaskNode["kind"]): string {
   if (kind === "practice") return "Practice";
   if (kind === "draft") return "Draft";
   if (kind === "fieldwork") return "Fieldwork";
+  if (kind === "connect") return "Connect";
+  if (kind === "person") return "Person brief";
   return "Assignment";
 }
 
@@ -199,7 +201,7 @@ function nodePresentation(node: UiDocumentNode): UiDocumentPresentation {
               ...nonEmpty(item.note && `  ${aside(`noted: ${item.note}`)}`),
             ])]
             : []),
-          ...(node.criteria?.length ? ["", node.diagram ? "**Review criteria**" : "**Judged on**", ...node.criteria.map((criterion) => `- ${criterion}`)] : []),
+          ...(node.criteria?.length ? ["", node.diagram ? "**Review criteria**" : node.kind === "person" ? "**Sources**" : node.kind === "connect" ? "**Keep in mind**" : "**Judged on**", ...node.criteria.map((criterion) => `- ${criterion}`)] : []),
         ],
       };
     }

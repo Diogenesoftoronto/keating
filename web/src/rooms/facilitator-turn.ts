@@ -8,6 +8,8 @@ import type { RoomOperationInput, RoomViewerSnapshot } from "./contracts";
 import {
   buildFacilitatorContext,
   parseFacilitatorDecision,
+  planRoomSummary,
+  summaryFromReply,
   type FacilitatorDecision,
   type TurnPlan,
 } from "./facilitation";
@@ -156,7 +158,7 @@ export async function runFacilitatorTurn(
             ...(decision.reason ? { detail: decision.reason } : {}),
           },
     );
-    return { status: "completed", decision, snapshot };
+    return { status: "completed", decision, snapshot: await refreshRoomSummary(input, dependencies, snapshot) };
   } catch (error) {
     const code = errorCode(error);
     if (code && SKIP_CODES.has(code)) return { status: "skipped", reason: code };
@@ -182,3 +184,35 @@ export async function runFacilitatorTurn(
     return { status: "failed", error: errorText(error) };
   }
 }
+
+/**
+ * After a turn, folds old messages into the room summary when the verbatim
+ * window is full. Best effort: on any failure Keating keeps the last summary
+ * and tries again after its next turn.
+ */
+async function refreshRoomSummary(
+  input: FacilitatorTurnInput,
+  dependencies: FacilitatorTurnDependencies,
+  snapshot: RoomViewerSnapshot,
+): Promise<RoomViewerSnapshot> {
+  const plan = planRoomSummary(snapshot, input.plan.throughSeq);
+  if (!plan || input.signal?.aborted) return snapshot;
+  try {
+    const stream = await dependencies.stream(input.model, plan.context, { signal: input.signal, hostedWebSearch: false });
+    for await (const _event of stream) input.signal?.throwIfAborted();
+    const final = await stream.result();
+    const text = final.stopReason === "stop" ? summaryFromReply(final) : "";
+    if (!text || input.signal?.aborted) return snapshot;
+    return await dependencies.apply({
+      type: "summary.update",
+      facilitatorId: input.facilitatorId,
+      basedOnThroughSeq: plan.basedOnThroughSeq,
+      throughSeq: plan.throughSeq,
+      text,
+      model: input.modelLabel,
+    });
+  } catch {
+    return snapshot;
+  }
+}
+

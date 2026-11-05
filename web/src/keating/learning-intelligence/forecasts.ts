@@ -1,4 +1,4 @@
-import { forecastLearningSuccess, forecastLearningReview, isLearningForecastInterval, type LearningOutcomePoint } from "@keating/learner-contracts";
+import { forecastLearningSuccess, forecastLearningReview, isLearningForecastInterval, learningSourceHash, type LearningOutcomePoint } from "@keating/learner-contracts";
 import type { CardReviewRecord, FlashcardDeck, QuestionCheckRecord } from "../storage";
 import type { ExtractionRequest, ExtractionAnswer } from "./provider";
 
@@ -21,6 +21,15 @@ export interface LearningForecastProposal extends LearningForecastTarget {
   p10?: number;
   median?: number;
   p90?: number;
+}
+
+/** Fingerprint of the outcomes and schedules forecasts are computed from; any change invalidates them. */
+export function learningHistoryId(history: LearningHistory): string {
+  return learningSourceHash(JSON.stringify({
+    checks: history.checks.map(row => ({ id: row.id, topic: row.topic, question: row.question, score: row.score, grading: row.grading, at: row.createdAt })).sort((a, b) => a.id.localeCompare(b.id)),
+    reviews: [...history.reviews].sort((a, b) => a.id.localeCompare(b.id)),
+    decks: history.decks.map(deck => ({ id: deck.id, cards: deck.cards.map(card => ({ id: card.id, srs: card.srs })).sort((a, b) => a.id.localeCompare(b.id)) })).sort((a, b) => a.id.localeCompare(b.id)),
+  }));
 }
 
 /** Only saved, graded answers and actual review ratings enter a series. No model labels do. */

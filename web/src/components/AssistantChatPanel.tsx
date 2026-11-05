@@ -1,5 +1,8 @@
 import { clearPendingChatTurn } from "../notorganic-provider/pending-chat-turn";
 import { LearningSourcePassage } from "./LearningIntelligenceDiagnostics";
+import { LearningReferenceScope } from "./LearningReferenceLink";
+import { ConstraintPlanChips } from "./ConstraintPlanChips";
+import { PLAN_AROUND_CONSTRAINT_EVENT } from "../keating/learning-intelligence/outlook";
 import { learningRowSourceIds } from "../keating/learning-intelligence/source-navigation";
 import { isPrivateForkContextMessage } from "../keating/private-fork-provenance";
 import { ImportedPrivateForkContext } from "./private-fork/ImportedPrivateForkContext";
@@ -166,6 +169,7 @@ import {
 } from "../keating/starter-prompts";
 import { getTailoredOpening } from "../keating/tailored-opening";
 import {
+  openUISegmentIsStreaming,
   parseOpenUIMessageSegments,
   stripOpenUIPrograms,
 } from "../keating/openui/segments";
@@ -1921,9 +1925,7 @@ const MarkdownText = memo(function MarkdownText({
 			  source={seg.rawProgram}
               metadata={seg.metadata}
 			  sourceComplete={seg.complete}
-              isStreaming={Boolean(
-                isRunning && seg.program !== seg.rawProgram.trimEnd(),
-              )}
+              isStreaming={openUISegmentIsStreaming(Boolean(isRunning), seg)}
             />
           );
         }
@@ -3590,6 +3592,16 @@ function AssistantThread({
     onSendStarted: () => setComposerHasUrl(false),
   });
   useQuizConversationEvents({ agent, submitLearnerTurn });
+  // "Plan around this" on a learner message sends their request in this chat.
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: string; text?: string }>).detail;
+      if (!detail?.text || detail.sessionId !== callbacks.sessionId) return;
+      submitLearnerTurn(detail.text);
+    };
+    window.addEventListener(PLAN_AROUND_CONSTRAINT_EVENT, handler);
+    return () => window.removeEventListener(PLAN_AROUND_CONSTRAINT_EVENT, handler);
+  }, [callbacks.sessionId, submitLearnerTurn]);
 
   const storeAdapter = useMemo(
     () => ({
@@ -3656,6 +3668,7 @@ function AssistantThread({
     >
       <QuizGradesContext.Provider value={quizGradesContextValue}>
 		<OpenUISessionScopeContext.Provider value={callbacks.sessionId}>
+		<LearningReferenceScope.Provider value={callbacks.sessionId}>
 			<KeatingOpenUIActionProvider onAction={handleOpenUIAction}>
           <DeveloperChatDetails.Provider value={uiSettings.showDeveloperDetails}>
           <AssistantRuntimeProvider runtime={runtime}>
@@ -3760,6 +3773,7 @@ function AssistantThread({
           </AssistantRuntimeProvider>
           </DeveloperChatDetails.Provider>
 			</KeatingOpenUIActionProvider>
+		</LearningReferenceScope.Provider>
 		</OpenUISessionScopeContext.Provider>
       </QuizGradesContext.Provider>
     </AuthErrorContext.Provider>
@@ -4162,6 +4176,7 @@ function UserMessage({
             <MessagePrimitive.Content components={components} />
           </div>
           <LearningSourcePassage sessionId={sessionId} sourceIds={sourceIds ?? []} />
+          <ConstraintPlanChips sessionId={sessionId} messageIds={sourceIds ?? []} messageText={ownText} />
         </div>
       </div>
     </MessagePrimitive.Root>

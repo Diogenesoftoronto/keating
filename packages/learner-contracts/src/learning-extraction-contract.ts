@@ -10,10 +10,13 @@ export const fieldsFor = (learner: boolean): Record<string, { kind: LearningExtr
   constraint: { kind: "learning-constraint", instructions: "An explicit learning goal, deadline, time budget or tool constraint stated by the learner. Include negation and time limits. Exact passage or null; do not infer preferences." },
   memory: { kind: "memory", instructions: "A short self-contained, learner-endorsed statement about their durable interests, study context or communication preferences. Exact passage of at most 240 characters, or null. Exclude sensitive data, secrets, task answers, quoted third parties and temporary requests." },
   question: { kind: "important-question", instructions: "An explicit unresolved question the learner asks or says is important to understand. Exact passage including context, or null. Do not invent questions or predict exam content." },
+  idea: { kind: "learner-idea", instructions: "An idea, example, connection or opinion the learner proposes in their own words that the lesson could return to. Exact passage or null. Do not judge it, and exclude restated tutor text." },
 } : {
   fact_1: { kind: "lesson-fact", instructions: "An exact self-contained definition, claim or worked explanation explicitly taught in this message. Preserve qualifications and negation. Null if none. Presence in tutor text does not prove truth." },
   fact_2: { kind: "lesson-fact", instructions: "A different exact definition, claim or worked step explicitly taught here. Preserve context and qualifications, or null." },
   question: { kind: "important-question", instructions: "An exact comprehension question or key unresolved question explicitly posed in this lesson. Copy the question and necessary context, or null. Do not invent an exam prediction." },
+  example: { kind: "worked-example", instructions: "An exact concrete example, analogy or worked case the tutor uses to illustrate the idea. Copy it with enough context to stand alone, or null." },
+  task: { kind: "assigned-task", instructions: "An exact task, homework, practice or next step the tutor explicitly asks the learner to do after this message, including any deadline. Exact passage or null; do not infer tasks." },
 };
 
 export interface ExtractionField {

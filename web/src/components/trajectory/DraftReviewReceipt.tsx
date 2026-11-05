@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { formatActiveWork } from "@keating/learner-contracts";
 import { css } from "../../../styled-system/css";
 import type { PlanReview, TeachingDraftInteraction, TeachingDraftSnapshot, TeachingPolicyCheck } from "@keating/learner-contracts";
@@ -198,6 +199,7 @@ export function DraftReviewReceipt({ receipt, controls, embedded = false, open }
 							{variantLabel(attempt.variant) ? ` · ${attempt.variant}` : ""} · {attempt.status} · {attempt.reasoning} reasoning · {attempt.standard}
 						</summary>
 						<p className={muted}>Generation {Math.round(attempt.generationMs)} ms · review {Math.round(attempt.judgementMs)} ms</p>
+						{attempt.unavailableTools?.length ? <p className={muted}>Tried to call tools this session does not offer: {attempt.unavailableTools.map(name => <code key={name}>{name}</code>).reduce<ReactNode[]>((all, item, index) => index ? [...all, ", ", item] : [item], [])}</p> : null}
 						<CheckTable attempt={attempt.attempt} checks={attempt.checks} controls={controls} />
 					</details>
 				))}

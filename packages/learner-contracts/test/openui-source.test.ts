@@ -22,14 +22,37 @@ describe("trusted OpenUI source compiler", () => {
     expect(document.retention).toBe("workspace");
     expect(document.nodes.map((node) => node.type)).toEqual([
       "markdown", "callout", "question-group", "quiz", "quiz", "language-practice", "deck", "study-plan",
-      "concept-map", "image", "notes", "task", "task", "task", "task", "task", "task", "simulation", "coding-challenge", "music-lab",
+      "concept-map", "image", "notes", "task", "task", "task", "task", "task", "task", "task", "task", "simulation", "coding-challenge", "music-lab",
       "task", "task",
     ]);
     expect(document.nodes.filter((node) => node.type === "task").map((node) => node.kind))
-      .toEqual(["assignment", "practice", "draft", "fieldwork", "practice", "practice", "practice", "practice"]);
+      .toEqual(["assignment", "practice", "draft", "fieldwork", "connect", "person", "practice", "practice", "practice", "practice"]);
     // The current generation fixture contains only advertised components. Persisted
     // LearningAnimation programs are covered separately as a compile-only legacy path.
     expect(document.nodes.some((node) => node.type === "handoff")).toBe(false);
+  });
+
+  test("maps people and community work to debriefable tasks", () => {
+    const source = [
+      'root = LearningSurface([person, connect], "Meeting prep", "Prepare, then share.", "workspace")',
+      'person = PersonBrief("brief-twani", "Erika Twani", "Co-founder of Learning One to One ([about](https://erikatwani.com/about)).", [{ id: "goals", title: "What would make this conversation useful for you?" }], ["https://erikatwani.com/about"], "workspace", "2026-11-05T21:00:00.000Z")',
+      'connect = Connect("connect-relate", "Relate it to others", "Learning sticks when you explain it to someone.", [{ id: "post", title: "Ask an educator community one question" }, { id: "friend", title: "Explain it to a friend over coffee" }], "workspace", 20)',
+    ].join("\n");
+    const result = tryCompileOpenUISourceToSharedDocument(source, { documentId: "people", createdAt: AT });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(validateUiDocument(result.document)).toBe(true);
+    const [person, connect] = result.document.nodes;
+    expect(person).toMatchObject({
+      type: "task", kind: "person", id: "brief-twani", title: "Erika Twani", dueAt: "2026-11-05T21:00:00.000Z",
+      criteria: ["https://erikatwani.com/about"], items: [{ id: "goals", title: "What would make this conversation useful for you?" }],
+      submission: { format: "text", label: "After you talk: what did you learn?" },
+    });
+    expect(connect).toMatchObject({
+      type: "task", kind: "connect", id: "connect-relate", title: "Relate it to others", estimatedMinutes: 20,
+      brief: "Learning sticks when you explain it to someone.", submission: { format: "text", label: "What happened when you shared it?" },
+    });
+    expect(connect?.type === "task" && connect.items?.map((item) => item.id)).toEqual(["post", "friend"]);
   });
 
   test("accepts the browser object form without evaluating it", () => {

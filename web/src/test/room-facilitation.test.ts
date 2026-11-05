@@ -3,7 +3,7 @@ import { createAssistantMessageEventStream, type Api, type AssistantMessage, typ
 import { roomSchema, type Room, type RoomMessage, type RoomOperationInput } from "../rooms/contracts";
 import { applyRoomOperation, projectRoomForViewer } from "../rooms/operations";
 import {
-  buildFacilitatorContext, mentionsKeating, parseFacilitatorDecision, planFacilitatorTurn,
+  buildFacilitatorContext, mentionsKeating, parseFacilitatorDecision, planFacilitatorTurn, planRoomSummary,
   previewAudienceIncludes, previewFromPartial,
 } from "../rooms/facilitation";
 import { runFacilitatorTurn, type FacilitatorTurnInput, type FacilitatorStreamFn } from "../rooms/facilitator-turn";
@@ -340,3 +340,73 @@ describe("decision and preview boundaries", () => {
 function message(seq: number, body: string, seconds: number): RoomMessage {
   return { id: `msg_${seq}`, seq, kind: "chat", body, authorAccountId: "maya", authorName: "Maya", authorRole: "learner", audience: "room", createdAt: at(seconds) };
 }
+
+describe("the sliding window with a running summary", () => {
+  /** A harness whose room already holds `count` public learner messages before Maya's question. */
+  function longHarness(count: number) {
+    const h = harness();
+    for (let index = 0; index < count; index++) {
+      h.update(index % 2 ? "sam" : "maya", { type: "message.post", messageId: `message_bulk_${index}`, body: `idea ${index}` });
+    }
+    h.update("maya", { type: "message.post", messageId: "message_ask", body: "@Keating, can you help?" });
+    const plan = planFacilitatorTurn(h.snapshot(), NOW + 1000);
+    if (!plan.run) throw new Error("Fixture must have a pending turn");
+    // Keep the harness object itself: its `room` getter must stay live.
+    h.input.plan = plan;
+    return h;
+  }
+  const summaryReply = (text: string) => final([{ type: "text", text }], "stop");
+
+  test("short rooms are read verbatim and never summarized", () => {
+    const h = longHarness(10);
+    expect(planRoomSummary(h.snapshot(), h.input.plan.throughSeq)).toBeNull();
+  });
+
+  test("after a turn in a full window, older messages fold into a summary Keating then reads instead", async () => {
+    const h = longHarness(120);
+    const contexts: Context[] = [];
+    const result = await runFacilitatorTurn(h.input, {
+      apply: h.apply, newTurnId: () => "turn_long",
+      stream: (_model, context) => {
+        contexts.push(context);
+        return streamOf(contexts.length === 1 ? speak() : summaryReply("Maya and Sam brainstormed ideas 0–80."));
+      },
+    });
+    expect(result.status).toBe("completed");
+    expect(h.operations.map((op) => op.type)).toEqual(["turn.begin", "turn.complete", "summary.update"]);
+    const summary = h.room.summary!;
+    expect(summary.text).toBe("Maya and Sam brainstormed ideas 0–80.");
+    // The summarizer saw the oldest messages, not the newest 40.
+    const folded = String(contexts[1]!.messages[0]!.content);
+    expect(folded).toContain("idea 0");
+    expect(folded).not.toContain("can you help");
+    // Everyone can read it, and Keating's next context swaps old lines for it.
+    expect(projectRoomForViewer(h.room, "obs").room.summary?.text).toBe(summary.text);
+    const next = buildFacilitatorContext({ snapshot: h.snapshot(), persona: "p", throughSeq: h.room.nextSeq - 1, trigger: "mention" });
+    const text = String(next.messages[0]!.content);
+    expect(text).toContain(`### Summary of messages #1–#${summary.throughSeq}`);
+    expect(text).not.toContain('"idea 0"');
+    expect(text).toContain("can you help");
+  });
+
+  test("a failed summary call keeps the turn's result and the old window", async () => {
+    const h = longHarness(120);
+    let calls = 0;
+    const result = await runFacilitatorTurn(h.input, {
+      apply: h.apply, newTurnId: () => "turn_long",
+      stream: () => { calls += 1; if (calls === 2) throw new Error("rate limited"); return streamOf(speak()); },
+    });
+    expect(result.status).toBe("completed");
+    expect(h.room.summary).toBeUndefined();
+  });
+
+  test("a summary based on an older one is refused, and hiding a summarized message discards it", () => {
+    const h = longHarness(120);
+    h.update("host", { type: "summary.update", facilitatorId: FACILITATOR, basedOnThroughSeq: 0, throughSeq: 50, text: "First.", model: "m" });
+    expect(() => h.update("host", { type: "summary.update", facilitatorId: FACILITATOR, basedOnThroughSeq: 0, throughSeq: 60, text: "Racing.", model: "m" })).toThrow(/summary changed/);
+    expect(() => h.update("maya", { type: "summary.update", facilitatorId: FACILITATOR, basedOnThroughSeq: 50, throughSeq: 60, text: "Spoof.", model: "m" })).toThrow();
+    h.update("host", { type: "message.hide", messageId: "message_bulk_3", hidden: true });
+    expect(h.room.summary).toBeUndefined();
+  });
+});
+
