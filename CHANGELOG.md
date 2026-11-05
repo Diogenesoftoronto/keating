@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.0.18
+
+### Sharing and sign-in
+- Fix shared session links (`/s/:id`) rendering a blank page in production: the page shell is now bundled with the server instead of being read relative to its working directory, and a missing shell returns an error instead of an empty page.
+- Fix hosted chat requests failing CORS preflights: session-affinity headers the account gateway does not accept are no longer sent, while prompt caching keeps its session key in the request body.
+- Not Organic sign-in returns to where it began instead of reopening the chat that last failed; Flint preview models are available with their own inference scope.
+- Leaving a chat for review, share or course pages releases its lock, so returning no longer reports "This chat is open in another tab".
+
+### Study rooms
+- Study rooms: shared, facilitated rooms with invite links and QR codes, teacher review of tutor replies, private follow-ups, and running summaries of long rooms.
+- The tutor can list a learner's rooms or open one and create an invite link from an ordinary chat, only after the learner agrees; the learner sends the link themselves.
+
+### Grounded replies and references
+- Learning extraction now also captures the learner's own ideas, the tutor's worked examples and assigned tasks.
+- The tutor cites passages from earlier in the conversation as references. Hovering one shows the original words; selecting it scrolls to that message and highlights them. A reference that can no longer be found is shown as plain text.
+- Draft checks now see the web search results the tutor received and the passages it was offered, so replies that cite them are verified against the actual sources.
+- Draft receipts name any tool a draft tried to call that the session does not offer.
+
+### Learning outlook
+- Coming up shows an outlook from the learner's own saved answers and card ratings: the likely range of their next graded answer and next recall rating, labelled as unvalidated, plus the saved questions they have missed most often with a "Practice this" shortcut.
+- When a learner mentions a deadline, a "Plan around" chip on their message offers to add it to the goal or study plan; nothing changes unless they choose it.
+- The tutor is offered the learner's most-missed saved questions as optional retrieval practice.
+
+### Teaching components
+- Add `PersonBrief`, for preparing to meet or study someone (a sourced profile, questions to ask and a debrief), and `Connect`, for taking an idea to other people online or offline and reporting back.
+- Drafting progress shows plan, write, check and choose stages, with per-turn judgement summaries in the review workspace.
+
+### Fixes
+- Web search results keep their titles and snippets, and display domains correctly (international domains, parentheses in URLs, trailing dots, ports).
+- Interactive components still arriving are no longer treated as broken, which had triggered spurious "Interaction failed to build" repairs; the draft checker rejects component blocks the chat could never close.
+
+### Verification
+- Local verification passed all nine typechecks and the root, web, contracts and Flue suites. Mobile retains the known native-core baseline failure and one pre-existing activity-learning test failure, unchanged from the deployed build.
+
 ## 4.0.17
 
 ### Operations and configuration
