@@ -2,9 +2,10 @@
 // and Twitter meta injected so Discord/X/Slack/etc. render a rich embed for the
 // specific shared session instead of the generic homepage card. Humans still
 // get the full SPA (the shell boots normally); only the <head> meta differs.
-import { defineEventHandler, getRequestURL, setResponseHeader } from "h3";
+import { createError, defineEventHandler, getRequestURL, setResponseHeader } from "h3";
 import { useStorage } from "nitro/storage";
 import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 
 const SHARE_ID_PATTERN = /^[A-Za-z0-9_-]{8,32}$/;
 
@@ -17,9 +18,23 @@ const SHELL_CANDIDATES = [
 	"./public/index.html",
 ];
 
+function decodeShell(raw: unknown): string | null {
+	if (typeof raw === "string") return raw || null;
+	if (raw instanceof Uint8Array) return new TextDecoder().decode(raw) || null;
+	return null;
+}
+
 async function loadShell(): Promise<string | null> {
 	if (cachedShell) return cachedShell;
-	for (const path of SHELL_CANDIDATES) {
+	try {
+		cachedShell = decodeShell(await useStorage("assets:keating-shell").getItemRaw("index.html"));
+		if (cachedShell) return cachedShell;
+	} catch {
+		// fall back to the filesystem (dev server, older builds)
+	}
+	const entry = process.argv[1];
+	const candidates = entry ? [join(dirname(entry), "../public/index.html"), ...SHELL_CANDIDATES] : SHELL_CANDIDATES;
+	for (const path of candidates) {
 		try {
 			cachedShell = await readFile(path, "utf8");
 			return cachedShell;
@@ -73,9 +88,9 @@ function setMeta(html: string, attr: "property" | "name", key: string, value: st
 
 export default defineEventHandler(async (event) => {
 	const shell = await loadShell();
-	// If we cannot read the shell, let the request fall through to the static
-	// asset pipeline (returning undefined continues to publicAssets).
-	if (!shell) return;
+	// Returning nothing here sends an empty 200, which browsers show as a blank
+	// page. Fail loudly instead so a missing shell is visible in logs and probes.
+	if (!shell) throw createError({ statusCode: 503, statusMessage: "Share page shell unavailable" });
 
 	const url = getRequestURL(event);
 	const id = url.pathname.replace(/^\/s\//, "").split("/")[0] ?? "";

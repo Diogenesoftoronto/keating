@@ -20,6 +20,9 @@ const button = css({ borderRadius: "0.375rem", border: "1px solid var(--border)"
 const extractionKinds: Record<string, string> = {
 	"answer-step": "Learner reasoning step",
 	"lesson-fact": "Taught fact",
+	"learner-idea": "Learner idea",
+	"worked-example": "Worked example",
+	"assigned-task": "Assigned task",
 	"learning-constraint": "Study constraint",
 	memory: "Memory candidate",
 	"important-question": "Important question",

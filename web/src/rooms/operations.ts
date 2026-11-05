@@ -455,6 +455,8 @@ export function applyRoomOperation(
       if (operation.hidden) message.hidden = { by: actor.accountId, at: now };
       else delete message.hidden;
       if (operation.hidden && next.turn.status === "thinking" && message.seq <= next.turn.throughSeq) resetTurn(next);
+      // The summary may quote what was just hidden; Keating rebuilds it.
+      if (operation.hidden && next.summary && message.seq <= next.summary.throughSeq) delete next.summary;
       touched.push(message.id);
       break;
     }
@@ -692,6 +694,25 @@ export function applyRoomOperation(
         startedAt: now,
         leaseExpiresAt: new Date(nowMs + ROOM_TURN_LEASE_MS).toISOString(),
         throughSeq: operation.throughSeq,
+      };
+      break;
+    }
+    case "summary.update": {
+      requireOpen(next);
+      requireFacilitator(next, actor, operation.facilitatorId, nowMs);
+      if (operation.basedOnThroughSeq !== (next.summary?.throughSeq ?? 0)) {
+        throw new RoomConflictError("The room summary changed. Keating will try again.", "room_summary_stale");
+      }
+      if (operation.throughSeq <= operation.basedOnThroughSeq || operation.throughSeq >= next.nextSeq) {
+        throw new RoomConflictError("That summary covers messages that do not exist.", "room_summary_invalid");
+      }
+      next.summary = {
+        text: operation.text,
+        throughSeq: operation.throughSeq,
+        updatedAt: now,
+        model: operation.model,
+        facilitatorAccountId: actor.accountId,
+        ...(roleCanOversee(actor.role) ? {} : { facilitatorName: actor.displayName }),
       };
       break;
     }

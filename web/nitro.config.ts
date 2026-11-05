@@ -119,7 +119,13 @@ export default defineNitroConfig({
   // Bundle the OG renderer's font + resvg wasm so they are readable at runtime
   // via useStorage("assets:keating-og") (see server/utils/og-render.ts).
   // Nitro reserves "server" for its automatically mounted assets directory.
-  serverAssets: [{ baseName: "keating-og", dir: "server/assets" }],
+  serverAssets: [
+    { baseName: "keating-og", dir: "server/assets" },
+    // Share pages rewrite the built shell's meta tags. Bundle it so the lookup
+    // does not depend on the process cwd (production runs from /app, where
+    // .output-app/public/index.html is invisible to cwd-relative paths).
+    { baseName: "keating-shell", dir: "dist", pattern: "index.html" },
+  ],
   handlers: [
     // Register admission explicitly: this Nitro build relies on hand-declared
     // server handlers rather than automatic server/middleware discovery.

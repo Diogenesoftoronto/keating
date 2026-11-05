@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { OPENUI_JSON_PARITY_FIXTURE } from "@keating/learner-contracts";
 
 import {
+	openUISegmentIsStreaming,
 	parseOpenUIMessageSegments,
 	stripOpenUIPrograms,
 } from "../keating/openui/segments";
@@ -231,5 +232,25 @@ describe("OpenUI message segments", () => {
 	it("leaves legacy messages unchanged", () => {
 		const legacy = '<keating-question json={"question":"Why?"} />';
 		expect(parseOpenUIMessageSegments(legacy)).toEqual([{ type: "text", content: legacy }]);
+	});
+});
+
+describe("OpenUI segment streaming state", () => {
+	const statement = 'root = LearningSurface([q], "Prep", "", "ephemeral")\n';
+	it("treats an unclosed fence as streaming while the reply runs, even on a statement boundary", () => {
+		// The typing animation can pause exactly after a newline; that used to read
+		// as a finished-but-broken component and requested a repair turn.
+		const [segment] = parseOpenUIMessageSegments(`\`\`\`openui lifecycle=ephemeral id=prep\n${statement}`).filter((entry) => entry.type === "openui");
+		expect(segment?.type === "openui" && segment.complete).toBe(false);
+		if (segment?.type !== "openui") return;
+		expect(openUISegmentIsStreaming(true, segment)).toBe(true);
+		expect(openUISegmentIsStreaming(false, segment)).toBe(false);
+	});
+
+	it("treats a closed fence as settled once its program is fully committed", () => {
+		const [segment] = parseOpenUIMessageSegments(`\`\`\`openui lifecycle=ephemeral id=prep\n${statement}\`\`\`\n`).filter((entry) => entry.type === "openui");
+		if (segment?.type !== "openui") throw new Error("expected an OpenUI segment");
+		expect(segment.complete).toBe(true);
+		expect(openUISegmentIsStreaming(true, segment)).toBe(segment.program !== segment.rawProgram.trimEnd());
 	});
 });

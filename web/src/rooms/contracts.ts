@@ -182,6 +182,25 @@ export const roomFacilitatorSchema = z.object({
 });
 export type RoomFacilitator = z.infer<typeof roomFacilitatorSchema>;
 
+export const ROOM_SUMMARY_MAX_CHARS = 4_000;
+
+/**
+ * Keating's running summary of the public conversation before its verbatim
+ * window. Built only from public, unhidden messages, so every member may read
+ * it; hiding a summarized message discards it.
+ */
+export const roomSummarySchema = z.object({
+  text: z.string().trim().min(1).max(ROOM_SUMMARY_MAX_CHARS),
+  /** Highest message number the summary covers. */
+  throughSeq: z.number().int().positive(),
+  updatedAt: isoDateSchema,
+  model: z.string().max(160),
+  facilitatorAccountId: accountIdSchema,
+  /** Set when a learner's browser wrote it. */
+  facilitatorName: displayNameSchema.optional(),
+});
+export type RoomSummary = z.infer<typeof roomSummarySchema>;
+
 export const roomTurnOutcomeSchema = z.object({
   kind: z.enum(["spoke", "passed", "drafted", "offered-private", "failed"]),
   at: isoDateSchema,
@@ -241,6 +260,7 @@ export const roomSchema = z.object({
   privateForkOffers: z.array(roomPrivateForkOfferSchema).max(ROOM_MAX_PRIVATE_FORK_OFFERS).default([]),
   settings: roomSettingsSchema,
   facilitator: roomFacilitatorSchema.optional(),
+  summary: roomSummarySchema.optional(),
   turn: roomTurnSchema,
 });
 export type Room = z.infer<typeof roomSchema>;
@@ -422,6 +442,15 @@ export const roomOperationSchema = z.discriminatedUnion("type", [
   }),
   operationBaseSchema.extend({
     type: z.literal("turn.request"),
+  }),
+  operationBaseSchema.extend({
+    type: z.literal("summary.update"),
+    facilitatorId: idSchema,
+    /** The summary this one extends (0 for the first), so concurrent writers cannot clobber each other. */
+    basedOnThroughSeq: z.number().int().nonnegative(),
+    throughSeq: z.number().int().positive(),
+    text: z.string().trim().min(1).max(ROOM_SUMMARY_MAX_CHARS),
+    model: z.string().trim().min(1).max(160),
   }),
   operationBaseSchema.extend({
     type: z.literal("draft.resolve"),

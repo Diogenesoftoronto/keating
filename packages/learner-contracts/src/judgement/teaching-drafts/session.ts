@@ -379,7 +379,9 @@ export class TeachingDraftSession<T> {
       && check.status !== "pass" && (check.probability ?? 0) >= 0.5) : [];
     const revisionChecks = this.context.extended ? checks.filter(blocksDraft) : [...blocking, ...advisory];
     const status: TeachingDraftAttempt["status"] = blocking.some((check) => check.status === "fail") ? "fail" : blocking.length ? "unknown" : "pass";
-    this.context.attempts.push({ attempt: this.context.attempt, reasoning: this.context.reasoning, standard: this.context.standard, generationMs, judgementMs: this.context.now() - checkStarted, status, checks, variant, ...provenance });
+    const unavailableTools = [...new Set(reply.toolCalls.map(call => call.name).filter(name => !this.context.turn.availableTools.includes(name)))];
+    this.context.attempts.push({ attempt: this.context.attempt, reasoning: this.context.reasoning, standard: this.context.standard, generationMs, judgementMs: this.context.now() - checkStarted, status, checks, variant, ...provenance,
+      ...(unavailableTools.length ? { unavailableTools } : {}) });
     return { status, checks, blocking, revisionChecks, assessment, hostChecks };
   }
 

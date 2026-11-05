@@ -24,7 +24,7 @@ export interface LearningEvidenceAnchor {
 export type LearningEvidenceAbstention = "invalid-source" | "missing-passage" | "invalid-range" | "ambiguous-passage" | "passage-mismatch" | "source-changed";
 export type LearningEvidenceGrounding = { status: "grounded"; anchor: LearningEvidenceAnchor }
   | { status: "abstained"; reason: LearningEvidenceAbstention };
-export const LEARNING_EXTRACTION_KINDS = ["answer-step", "lesson-fact", "learning-constraint", "memory", "important-question"] as const;
+export const LEARNING_EXTRACTION_KINDS = ["answer-step", "lesson-fact", "learning-constraint", "memory", "important-question", "learner-idea", "worked-example", "assigned-task"] as const;
 export type LearningExtractionKind = typeof LEARNING_EXTRACTION_KINDS[number];
 export interface LearningExtractionCandidate extends LearningEvidenceCandidate { readonly kind: LearningExtractionKind }
 export interface GroundedLearningExtraction { readonly kind: LearningExtractionKind; readonly evidence: LearningEvidenceAnchor }

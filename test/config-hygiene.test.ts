@@ -222,6 +222,8 @@ const ALLOWLIST: readonly [file: string, literal: string, reason: string][] = [
   ["packages/learner-contracts/src/judgement/teaching-drafts.ts", "default", "UI, document or learner-state discriminator; not an upstream inference model choice."],
   ["packages/learner-contracts/src/judgement/teaching-drafts/policy.ts", "default", "Draft variant discriminator; not an upstream inference model choice."],
   ["packages/learner-contracts/src/judgement/teaching-drafts/session.ts", "default", "Draft variant discriminator; not an upstream inference model choice."],
+  ["web/src/components/DraftProgress.tsx", "default", "Draft variant discriminator; not an upstream inference model choice."],
+  ["web/src/rooms/participation.ts", "balanced", "Room participation status; not an upstream inference model choice."],
   ["packages/learner-contracts/src/learner-profile-declared.ts", "balanced", "UI, document or learner-state discriminator; not an upstream inference model choice."],
   ["packages/learner-contracts/src/learner-profile-declared.ts", "default", "UI, document or learner-state discriminator; not an upstream inference model choice."],
   ["packages/learner-contracts/src/learning.ts", "image", "UI, document or learner-state discriminator; not an upstream inference model choice."],

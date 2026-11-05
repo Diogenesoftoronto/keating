@@ -9,6 +9,8 @@ import "katex/dist/katex.min.css";
 import { MermaidRenderer } from "./MermaidRenderer";
 import { css, cx } from "../../styled-system/css";
 import { RunnableCodeBlock, StreamingCodeContext, inProgressFenceCode } from "./RunnableCodeBlock";
+import { LearningReferenceLink } from "./LearningReferenceLink";
+import { learningReferenceFromHref } from "../keating/learning-intelligence/references";
 
 // Syntax highlighter (react-syntax-highlighter + Prism language packs) is the
 // heaviest part of this module. Load it on demand only when a code block renders.
@@ -313,11 +315,14 @@ const COMPONENTS: Components = {
 	h3: ({ children }) => <h3 className={css({ marginBottom: "0.25rem", marginTop: "0.5rem", fontSize: "0.875rem", fontWeight: 600 })}>{children}</h3>,
 	strong: ({ children }) => <strong className={css({ fontWeight: 600 })}>{children}</strong>,
 	em: ({ children }) => <em className={css({ fontStyle: "italic" })}>{children}</em>,
-	a: ({ children, href }) => (
-		<a href={href} className={css({ color: "var(--primary)", textDecoration: "underline" })} target="_blank" rel="noreferrer">
+	a: ({ children, href }) => {
+		// Clairic citations ([text](#ref-…)) open the cited message in place.
+		const reference = learningReferenceFromHref(href);
+		if (reference) return <LearningReferenceLink id={reference}>{children}</LearningReferenceLink>;
+		return <a href={href} className={css({ color: "var(--primary)", textDecoration: "underline" })} target="_blank" rel="noreferrer">
 			{children}
-		</a>
-	),
+		</a>;
+	},
 	blockquote: ({ children }) => (
 		<blockquote className={css({ marginBlock: "0.5rem", borderLeft: "2px solid var(--border)", paddingLeft: "0.75rem", color: "var(--muted-foreground)" })}>
 			{children}

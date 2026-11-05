@@ -40,6 +40,11 @@ export interface TeachingDraftAttempt {
   readonly status: "pass" | "fail" | "unknown" | "generation-error";
   readonly checks: readonly TeachingPolicyCheck[];
   readonly variant: TeachingDraftVariant;
+  /**
+   * Tool names this draft tried to call that the session does not offer. Names
+   * only, never arguments: without them a failed tool check cannot be traced.
+   */
+  readonly unavailableTools?: readonly string[];
 }
 /** Content-free record of what the planning judgment recommended. */
 export interface TeachingDraftInteraction {

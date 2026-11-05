@@ -745,7 +745,12 @@ const TASK_LABEL: Record<UiTaskNode["kind"], { badge: string; items: string; ver
 	practice: { badge: "Practice", items: "Exercises", verb: "Log this session" },
 	draft: { badge: "Draft", items: "Steps", verb: "Submit draft" },
 	fieldwork: { badge: "Fieldwork", items: "Collection protocol", verb: "Record findings" },
+	connect: { badge: "Connect", items: "Ways to share it", verb: "Share what happened" },
+	person: { badge: "Person brief", items: "Questions to ask", verb: "Save what you learned" },
 };
+
+/** Person briefs list sources where other tasks list grading criteria. */
+const CRITERIA_LABEL: Partial<Record<UiTaskNode["kind"], string>> = { person: "Sources", connect: "Keep in mind" };
 
 /** A date the learner can act on, not an ISO string. */
 function formatSchedule(iso: string): string {
@@ -777,13 +782,13 @@ export function TaskBrief({ node }: { node: UiTaskNode }) {
 			{node.dueAt ? <small
 				className={css({ fontWeight: 650 })}
 				style={{ color: overdue ? "var(--destructive)" : "var(--muted-foreground)" }}
-			>{overdue ? "Was due " : "Due "}{formatSchedule(node.dueAt)}</small> : null}
+			>{node.kind === "person" ? (overdue ? "Met " : "Meeting ") : overdue ? "Was due " : "Due "}{formatSchedule(node.dueAt)}</small> : null}
 		</div>
 		{notYetOpen ? <p role="status" className={css({ color: "var(--muted-foreground)", fontSize: "0.8125rem" })}>Opens {formatSchedule(node.availableFrom!)} — you can read the brief now.</p> : null}
 		<MarkdownBlock content={node.brief} />
 
 		{node.criteria?.length ? <div className={css({ display: "grid", gap: "0.25rem" })}>
-			<strong className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Judged on</strong>
+			<strong className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{CRITERIA_LABEL[node.kind] ?? "Judged on"}</strong>
 			<ul className={css({ display: "grid", gap: "0.125rem", margin: 0, paddingLeft: "1.125rem" })}>
 				{node.criteria.map((criterion) => <li key={criterion} className={css({ fontSize: "0.8125rem" })}>{criterion}</li>)}
 			</ul>

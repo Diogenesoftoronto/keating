@@ -138,7 +138,12 @@ export function createTeachingConversation({
         loadCompleteLearnerStartupContext(keatingStorage),
         loadActiveWork(keatingStorage, sessionId),
       ]);
-      return { ...teachingDraftEvidence(profile), activeWork };
+      // Passages Clairic grounded are checkable sources, so a reply citing
+      // them as [text](#ref-…) is verified against the original wording.
+      const references = intelligence.references().map(reference => ({
+        id: reference.id, url: `#${reference.id}`, text: `${reference.kind} passage from this conversation: ${reference.anchor.quote}`,
+      }));
+      return { ...teachingDraftEvidence(profile), activeWork, ...(references.length ? { sources: references } : {}) };
     },
     onProgress: snapshot => { publishTeachingDraftStatus(sessionId, snapshot); try { noteTurnDraft(sessionId, snapshot); } catch { /* Diagnostics only. */ } },
     captureDraftContent: () => loadKeatingUiSettings().showDeveloperDetails,

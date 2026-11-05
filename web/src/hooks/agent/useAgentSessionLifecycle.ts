@@ -302,8 +302,17 @@ export function useAgentSessionLifecycle({
       if (subscriptions.panel) subscriptions.panel();
       if (subscriptions.persistence) subscriptions.persistence();
       if (subscriptions.analytics) subscriptions.analytics();
+      // The Flue transport holds this session's Web Lock until disposed. Without
+      // this, leaving the chat in-app (review, share, courses) kept the lock in
+      // this tab, and returning reported "This chat is open in another tab".
+      // Let an in-flight reply finish first rather than cancelling it. A
+      // disposed conversation reconnects lazily if it is ever reused.
+      const agent = refs.agentRef.current;
+      if (agent instanceof FlueConversation) {
+        void Promise.resolve(agent.whenIdle()).then(() => agent.dispose()).catch(() => undefined);
+      }
     };
-  }, []);
+  }, [refs]);
 
   return { prepareAgent, createAgent, subscriptions: subscriptionsRef.current };
 }

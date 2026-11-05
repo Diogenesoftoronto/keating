@@ -20,6 +20,11 @@ export function createNotOrganicInferenceFetch(
 		headers.set("x-notorganic-max-cost-microusd", String(options.maxCostMicrousd));
 		// Firefox permits SDKs to set this header, triggering unnecessary preflights.
 		headers.delete("user-agent");
+		// Pi adds upstream session-affinity headers that the account gateway does
+		// not accept in CORS preflights. Keep prompt_cache_key in the body.
+		for (const name of ["session_id", "x-client-request-id", "x-session-affinity", "x-session-id"]) {
+			headers.delete(name);
+		}
 		return fetcher(request, { headers });
 	}) as typeof globalThis.fetch;
 }

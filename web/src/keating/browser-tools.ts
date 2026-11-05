@@ -21,6 +21,7 @@ import {
   createImprovementTools,
 } from "./browser-tools/improvement";
 import { createMediaTools } from "./browser-tools/media";
+import { createRoomTools } from "./browser-tools/rooms";
 import { createSearchTools } from "./browser-tools/search";
 import { createKnowledgeTools } from "./browser-tools/knowledge";
 import { createTeachingTools } from "./browser-tools/teaching";
@@ -64,6 +65,8 @@ export const TOOL_REGISTRATION_ORDER = [
   "course_inspect",
   "course_create",
   "course_update",
+  "room_list",
+  "room_invite",
   "generate_image",
   "bench",
   "evolve",
@@ -154,6 +157,7 @@ export async function createKeatingTools(
     createKnowledgeTools(),
     createMediaTools(storage),
     createCourseTools(options),
+    createRoomTools(),
     createTeachingTools(storage),
     createAssessmentTools(storage, collectRealOutcomes),
     createImprovementTools(storage, options, collectRealOutcomes),

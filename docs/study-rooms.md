@@ -68,6 +68,16 @@ most every 30 seconds, so a restart cannot expire a live lease. An individual
 unfinished turn has a separate 90-second deadline.
 Members can keep talking while Keating is offline.
 
+Keating reads the last 80 public messages word for word. In longer rooms, after
+a turn, it asks the same model to fold all but the newest 40 into a running
+summary (up to 4,000 characters), and reads that summary instead of the older
+messages. Everyone in the room can read the summary from the Keating panel; it
+is built only from public, unhidden messages. Hiding a summarized message
+discards the summary and Keating rebuilds it, up to 200 messages per turn. A
+failed summary call never affects the reply; Keating retries after its next
+turn. Summary updates name the summary they extend, so a stale one from a
+replaced tab is refused.
+
 When a learner runs Keating and teacher review is off, each reply Keating
 publishes is labelled with that learner's name and "not reviewed", because the
 learner's browser composed it. Turn on teacher review to keep learners from

@@ -96,10 +96,10 @@ function blockForNode(node: UiDocumentNode, prefix: string): OpenUIPreviewBlock 
 		case "simulation":
 			return { type: "artifact", id, kind: "simulation", label: node.title, detail: `${plural(node.parameters.length, "parameter")} · ${plural(node.readouts.length, "readout")}` };
 		case "task": {
-			const badge = node.kind === "practice" ? "Practice" : node.kind === "draft" ? "Draft" : node.kind === "fieldwork" ? "Fieldwork" : "Assignment";
+			const badge = node.kind === "practice" ? "Practice" : node.kind === "draft" ? "Draft" : node.kind === "fieldwork" ? "Fieldwork" : node.kind === "connect" ? "Connect" : node.kind === "person" ? "Person brief" : "Assignment";
 			const parts = [
 				badge,
-				...(node.items?.length ? [plural(node.items.length, node.kind === "practice" ? "exercise" : node.kind === "fieldwork" ? "step" : "step")] : []),
+				...(node.items?.length ? [plural(node.items.length, node.kind === "practice" ? "exercise" : node.kind === "person" ? "question" : node.kind === "connect" ? "way to share" : "step")] : []),
 				...(node.estimatedMinutes !== undefined ? [`~${node.estimatedMinutes} min`] : []),
 			];
 			return { type: "artifact", id, kind: "task", label: node.title, detail: parts.join(" · ") };

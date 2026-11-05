@@ -144,6 +144,9 @@ interface ParsedReply {
   readonly documents: readonly { document: UiDocument; end: number }[];
 }
 
+/** Mirrors the web renderer's opener (segments.ts), which is not anchored to line start. */
+const RENDERED_UI_OPENER = /```(?:openui|openui-lang|keating-ui)(?:[ \t][^\n]*)?\r?\n$/;
+
 /** Parse inert component syntax using the same compiler as web/mobile/TUI. Never eval model text. */
 function parseReply(text: string): ParsedReply {
   const lines = text.split(/(?<=\n)/);
@@ -175,7 +178,12 @@ function parseReply(text: string): ParsedReply {
         // The live renderer accepts lifecycle/id metadata after the language.
         // Attributes never turn a marked UI fence into an inert code example.
         const language = open[2]!.trim().split(/\s+/, 1)[0];
-        fence = { marker: open[1]![0]!, length: open[1]!.length, ui: language === "openui" || language === "keating-ui", canonical: language === "keating-ui", body: "" };
+        fence = { marker: open[1]![0]!, length: open[1]!.length, ui: language === "openui" || language === "openui-lang" || language === "keating-ui", canonical: language === "keating-ui", body: "" };
+      } else if (RENDERED_UI_OPENER.test(line)) {
+        // The live renderer opens UI fences anywhere in a line (indented, quoted,
+        // after prose). Markdown would not, so the fence could never close there
+        // and the learner would see "fence closed" repair errors.
+        valid = false;
       }
     }
   }
