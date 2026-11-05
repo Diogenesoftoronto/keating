@@ -119,6 +119,9 @@ export default defineNitroConfig({
   // Bundle the OG renderer's font + resvg wasm so they are readable at runtime
   // via useStorage("assets:keating-og") (see server/utils/og-render.ts).
   // Nitro reserves "server" for its automatically mounted assets directory.
+  // Storage bases above are compiled in; this remounts them from the runtime
+  // environment so deployments can point them at a persistent volume.
+  plugins: ["server/plugins/persistent-storage.ts"],
   serverAssets: [
     { baseName: "keating-og", dir: "server/assets" },
     // Share pages rewrite the built shell's meta tags. Bundle it so the lookup
