@@ -1,4 +1,4 @@
-import { BookMarked, CircleHelp, ClipboardList, SlidersHorizontal, FileQuestion, Flag, GitFork, Image, Layers, ListChecks, Network, NotebookPen, Paperclip, Play } from "lucide-react";
+import { BookMarked, CircleHelp, ClipboardList, Code2, SlidersHorizontal, FileQuestion, Flag, GitFork, Image, Languages, Layers, ListChecks, Music, Network, NotebookPen, Paperclip, Play } from "lucide-react";
 import { css } from "../../styled-system/css";
 import type { OpenUIPreviewArtifactKind, OpenUIPreviewBlock } from "../keating/openui/preview";
 import { MarkdownBlock, type MarkdownHighlightRange } from "./MarkdownBlock";
@@ -17,6 +17,9 @@ const ARTIFACT_ICON: Record<OpenUIPreviewArtifactKind, typeof ListChecks> = {
 	handoff: GitFork,
 	task: ClipboardList,
 	simulation: SlidersHorizontal,
+	coding: Code2,
+	music: Music,
+	language: Languages,
 	unavailable: BookMarked,
 };
 
