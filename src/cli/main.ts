@@ -39,6 +39,9 @@ import { validateTeachingCases } from "../../shared/evolution/benchmark.js";
 import type { TeachingCase } from "../../shared/evolution/contracts.js";
 import type { LearningCheckAssistance, LearningCheckStage, LearningCheckTopic } from "../../shared/evolution/learning-checks.js";
 import { detectAiRuntime, launchShell } from "../runtime/pi.js";
+import { launchAccountSyncedShell, currentCliAccountSyncLocal, syncCliAccount } from "../core/account-sync.js";
+import { loginAccountSync, logoutAccountSync, loadAccountSyncCredential } from "../core/account-sync-auth.js";
+import { accountSyncSessionPath, withAccountSyncLease } from "../core/account-sync-local.js";
 import { launchOpenTui } from "../tui/opentui-host.js";
 import { shellHandoffArgs } from "../tui/shell-handoff.js";
 import { serveWeb, type ServeWebOptions, type WebAgentRuntimeMode } from "./web.js";
@@ -813,7 +816,7 @@ async function runSelectedCommand(rawArgs: string[]): Promise<void> {
   }
   const topLevelShellArgs = normalizeTopLevelShellArgs(rawArgs);
   if (topLevelShellArgs) {
-    const exitCode = await launchShell(cwd, topLevelShellArgs);
+    const exitCode = await launchAccountSyncedShell(cwd, topLevelShellArgs, launchShell);
     process.exitCode = exitCode;
     return;
   }
@@ -821,6 +824,53 @@ async function runSelectedCommand(rawArgs: string[]): Promise<void> {
   const [command = "shell", ...args] = rawArgs;
 
   switch (command) {
+    case "sync": {
+      const action = args[0] ?? "run";
+      if (args.includes("--help") || args.includes("-h")) {
+        console.log("Usage: keating sync [login [--manual]|logout|status|list|open <id>|add <file>]\nConnect once with sync login. New shell conversations sync before and after each session. Add a local Pi JSONL explicitly to share it with this account.");
+        return;
+      }
+      if (!["run", "login", "logout", "status", "list", "open", "add"].includes(action)) throw new Error("Unknown sync action. Run `keating sync --help`.");
+      if (action === "open") {
+        if (args.length !== 2) throw new Error("Usage: keating sync open <conversation-id>");
+        const local = await currentCliAccountSyncLocal(cwd);
+        const session = (await local.list()).find(item => item.data.id === args[1]);
+        if (!session) throw new Error("Conversation not found. Run `keating sync list` to see exact IDs.");
+        process.exitCode = await launchAccountSyncedShell(cwd, ["--session", accountSyncSessionPath(local.directory, session.data.id)], launchShell);
+        return;
+      }
+      await withAccountSyncLease(cwd, async () => {
+        if (action === "login") {
+          if (args.slice(1).some(arg => !["--manual", "--headless"].includes(arg))) throw new Error("Usage: keating sync login [--manual]");
+          const manual = shouldUseManualLogin(args);
+          const result = await loginAccountSync(cwd, { onAuth: ({ url, instructions }) => { if (instructions) console.log(instructions); console.log(url); if (!manual) openAuthorizationUrl(url); }, ...(manual ? { onManualCodeInput: readManualCallback } : {}) });
+          console.log(`Account sync connected: ${result.did}.`);
+          await syncCliAccount(cwd, console.log);
+          return;
+        }
+        if (action === "add") {
+          if (args.length !== 2) throw new Error("Usage: keating sync add <Pi-session.jsonl>");
+          const local = await currentCliAccountSyncLocal(cwd);
+          const id = await local.adopt(args[1]!);
+          console.log(`Added conversation ${id} to this account.`);
+          await syncCliAccount(cwd, console.log);
+          return;
+        }
+        if (args.length > 1) throw new Error("Unexpected sync arguments. Run `keating sync --help`.");
+        if (action === "logout") { console.log(await logoutAccountSync(cwd) ? "Account sync disconnected." : "Account sync disconnected locally. Remote revocation could not be confirmed."); return; }
+        if (action === "status") {
+          const credential = await loadAccountSyncCredential(cwd);
+          console.log(credential ? `${credential.did} · ${credential.refreshExpiresAt > Date.now() ? "connected" : "reconnect required"} · ${credential.issuer}` : "Account sync is disconnected. Run `keating sync login`.");
+          return;
+        }
+        if (action === "list") {
+          try { await syncCliAccount(cwd, console.log); }
+          catch (error) { console.error(`Showing conversations saved on this device: ${error instanceof Error ? error.message : "sync unavailable"}`); }
+          for (const session of await (await currentCliAccountSyncLocal(cwd)).list()) console.log(`${session.data.id}\t${session.data.title}\t${session.data.lastModified}`);
+        } else await syncCliAccount(cwd, console.log);
+      });
+      return;
+    }
     case "login": {
       await runLoginCommand(cwd, args);
       return;
@@ -871,14 +921,24 @@ async function runSelectedCommand(rawArgs: string[]): Promise<void> {
       return;
     }
     case "shell": {
-      const exitCode = await launchShell(cwd, args);
+      const exitCode = await launchAccountSyncedShell(cwd, args, launchShell);
       process.exitCode = exitCode;
       return;
     }
     case "tui": {
-      const result = await launchOpenTui(cwd, args.join(" ").trim() || undefined);
+      const result = await launchAccountSyncedShell(cwd, [], async (selectedCwd, sessionArgs) => {
+        const directoryIndex = sessionArgs.lastIndexOf("--session-dir");
+        const accountDirectory = directoryIndex >= 0 ? sessionArgs[directoryIndex + 1] : undefined;
+        return launchOpenTui(selectedCwd, args.join(" ").trim() || undefined, {
+          sessionArgs,
+          ...(accountDirectory ? { listSessions: async () => {
+            const { SessionManager } = await import("@earendil-works/pi-coding-agent");
+            return SessionManager.list(selectedCwd, accountDirectory);
+          } } : {}),
+        });
+      });
       if (result.action === "shell") {
-        const exitCode = await launchShell(cwd, shellHandoffArgs(result));
+        const exitCode = await launchAccountSyncedShell(cwd, shellHandoffArgs(result), launchShell);
         process.exitCode = exitCode;
       }
       return;

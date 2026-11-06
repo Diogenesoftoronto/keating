@@ -417,6 +417,22 @@ function KeatingUiPreferencesSync() {
 }
 
 export function App() {
+	useEffect(() => {
+		let disposed = false;
+		let stop: (() => void) | undefined;
+		void import("./courses/account-session").then(({ startBrowserCourseAccountSession }) => {
+			if (!disposed) stop = startBrowserCourseAccountSession();
+		});
+		return () => { disposed = true; stop?.(); };
+	}, []);
+	useEffect(() => {
+		let disposed = false;
+		let stop: (() => void) | undefined;
+		void import("./keating/sync/chat-sync-runtime").then(({ startBrowserChatSync }) => {
+			if (!disposed) stop = startBrowserChatSync();
+		}).catch(() => { /* Local chats remain available if account sync cannot start. */ });
+		return () => { disposed = true; stop?.(); };
+	}, []);
   useEffect(() => {
     if (!window.keatingDesktop) return;
     let disposed = false;

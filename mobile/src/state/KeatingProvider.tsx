@@ -33,6 +33,7 @@ import type { UnprojectedNativeRecords } from "@/lib/learner-repository/portable
 import { interruptedAgentTurn } from "@/lib/durable-agent-events";
 import { useMobileWorkspace } from "@/state/MobileWorkspaceProvider";
 import { useMobileKnowledge } from "@/state/MobileKnowledgeProvider";
+import { useAccountChatSync } from "@/state/use-account-chat-sync";
 import type {
   ArtifactKind,
   ChatAttachment,
@@ -179,6 +180,7 @@ export function KeatingProvider({ children }: PropsWithChildren) {
     workspace: { executeAgentTool: mobileWorkspace.executeAgentTool, hasOverlay: mobileWorkspace.hasOverlay },
     knowledgeExecute: knowledge.execute,
   });
+  useAccountChatSync(store, repo, run.generationBusyRef, setStorageError);
   const sessions = useSessionActions({
     store,
     queueLearnerState: repo.queueLearnerState,

@@ -1,5 +1,6 @@
 import type { AgentMessage, ThinkingLevel } from "@earendil-works/pi-agent-core";
 import type { Model } from "@earendil-works/pi-ai";
+import type { NativeSessionTree } from "../../../shared/account-sync/types";
 
 export interface SessionUsage {
 	input: number;
@@ -46,6 +47,7 @@ export interface SessionMetadata {
 }
 
 export interface SessionData {
+	nativeSession?: NativeSessionTree;
 	id: string;
 	title: string;
 	parentSessionId?: string | null;

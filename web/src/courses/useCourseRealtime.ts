@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { CourseRealtimeMessage, CourseViewerSnapshot } from "./contracts";
+import { COURSE_ACCOUNT_CHANGED_EVENT, ensureCourseAccountSession } from "./account-session";
 
 export interface CourseRealtimeState {
 	status: "connected" | "reconnecting" | "offline";
@@ -25,9 +26,14 @@ export function useCourseRealtime(
 		let stopped = false;
 		let retries = 0;
 
-		const connect = () => {
+		const connect = async () => {
 			if (stopped) return;
 			setStatus(retries === 0 ? "offline" : "reconnecting");
+			try { await ensureCourseAccountSession(); } catch {
+				if (!stopped) retryTimer = window.setTimeout(connect, 5_000);
+				return;
+			}
+			if (stopped) return;
 			const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 			socket = new WebSocket(`${protocol}//${window.location.host}/api/courses/realtime?courseId=${encodeURIComponent(courseId)}`);
 			socket.addEventListener("open", () => {
@@ -55,9 +61,12 @@ export function useCourseRealtime(
 			socket.addEventListener("error", () => socket?.close());
 		};
 
-		connect();
+		const changed = () => socket?.close();
+		window.addEventListener(COURSE_ACCOUNT_CHANGED_EVENT, changed);
+		void connect();
 		return () => {
 			stopped = true;
+			window.removeEventListener(COURSE_ACCOUNT_CHANGED_EVENT, changed);
 			if (retryTimer !== undefined) window.clearTimeout(retryTimer);
 			socket?.close();
 		};

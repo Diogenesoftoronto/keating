@@ -6,6 +6,7 @@ import type {
   CourseRole,
   CourseViewerSnapshot,
 } from "./contracts";
+import { ensureCourseAccountSession } from "./account-session";
 
 export class CourseApiError extends Error {
   constructor(
@@ -19,6 +20,7 @@ export class CourseApiError extends Error {
 }
 
 async function courseJson<T>(path: string, init?: RequestInit): Promise<T> {
+  await ensureCourseAccountSession();
   const response = await fetch(`/api/courses${path}`, {
     ...init,
     headers: {
@@ -61,13 +63,14 @@ export function createCourse(
   return courseJson("", { method: "POST", body: JSON.stringify(input) });
 }
 
-export function applyCourseOperation(operation: CourseOperation): Promise<{
+export function applyCourseOperation(operation: CourseOperation, expectedAccountId?: string): Promise<{
   snapshot: CourseViewerSnapshot;
   applied: boolean;
 }> {
   return courseJson(`/${encodeURIComponent(operation.courseId)}/operations`, {
     method: "POST",
     body: JSON.stringify(operation),
+    ...(expectedAccountId ? { headers: { "x-keating-course-account": expectedAccountId } } : {}),
   });
 }
 
@@ -108,6 +111,7 @@ export async function uploadCourseMaterial(
   file: File,
   input: { title?: string; lessonId?: string } = {},
 ): Promise<CourseViewerSnapshot> {
+  await ensureCourseAccountSession();
   const form = new FormData();
   form.set("file", file);
   if (input.title?.trim()) form.set("title", input.title.trim());

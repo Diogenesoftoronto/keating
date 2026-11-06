@@ -274,7 +274,10 @@ export function publicClientConfig(
 		authorizationUrl,
 		clientId,
 		redirectUri,
-		scope: env.VITE_NOTORGANIC_SCOPE?.trim() || DEFAULT_NOTORGANIC_SCOPE,
+		scope: [...new Set([
+			...(env.VITE_NOTORGANIC_SCOPE?.trim() || DEFAULT_NOTORGANIC_SCOPE).split(/\s+/),
+			"sync:key:read", "sync:read", "sync:write",
+		])].join(" "),
 	};
 }
 

@@ -1,6 +1,7 @@
 import type { Model } from "@earendil-works/pi-ai";
 import type { StorageBackend, StoreConfig } from "../types";
 import type { SessionData, SessionMetadata } from "../types/session";
+import { notifyChatSyncMutation, recordChatSyncMutation } from "./sync/chat-sync-journal";
 
 export type AutoDiscoveryProviderType = "ollama" | "llama.cpp" | "vllm" | "lmstudio";
 export type CustomProviderType = AutoDiscoveryProviderType | "openai-completions" | "openai-responses" | "anthropic-messages";
@@ -54,6 +55,10 @@ export class CustomProvidersStore extends KeyValueStore<CustomProvider> {
 }
 
 export class SessionsStore extends KeyValueStore<SessionData> {
+	private accountSyncTracking = false;
+	private syncAccount: string | undefined;
+	enableAccountSyncTracking(account: string): void { this.accountSyncTracking = true; this.syncAccount = account; }
+	private syncStores(): string[] { return [this.name, "sessions-metadata", ...(this.accountSyncTracking ? ["settings"] : [])]; }
 	constructor() { super("sessions"); }
 	override getConfig(): StoreConfig {
 		return { name: this.name, keyPath: "id", indices: [{ name: "lastModified", keyPath: "lastModified" }] };
@@ -62,10 +67,12 @@ export class SessionsStore extends KeyValueStore<SessionData> {
 		return { name: "sessions-metadata", keyPath: "id", indices: [{ name: "lastModified", keyPath: "lastModified" }] };
 	}
 	save(data: SessionData, metadata: SessionMetadata): Promise<void> {
-		return this.getBackend().transaction([this.name, "sessions-metadata"], "readwrite", async (tx) => {
+		const account = this.syncAccount;
+		return this.getBackend().transaction(this.syncStores(), "readwrite", async (tx) => {
 			await tx.set(this.name, data.id, data);
 			await tx.set("sessions-metadata", metadata.id, metadata);
-		});
+			if (account) await recordChatSyncMutation(tx, data.id, account);
+		}).then(() => { if (account) notifyChatSyncMutation(); });
 	}
 	loadSession(id: string): Promise<SessionData | null> { return this.get(id); }
 	getMetadata(id: string): Promise<SessionMetadata | null> { return this.getBackend().get("sessions-metadata", id); }
@@ -74,19 +81,23 @@ export class SessionsStore extends KeyValueStore<SessionData> {
 	}
 	async getLatestSessionId(): Promise<string | null> { return (await this.getAllMetadata())[0]?.id ?? null; }
 	override delete(id: string): Promise<void> {
-		return this.getBackend().transaction([this.name, "sessions-metadata"], "readwrite", async (tx) => {
+		const account = this.syncAccount;
+		return this.getBackend().transaction(this.syncStores(), "readwrite", async (tx) => {
+			if (account) await recordChatSyncMutation(tx, id, account);
 			await tx.delete(this.name, id);
 			await tx.delete("sessions-metadata", id);
-		});
+		}).then(() => { if (account) notifyChatSyncMutation(); });
 	}
 	deleteSession(id: string): Promise<void> { return this.delete(id); }
 	updateTitle(id: string, title: string): Promise<void> {
-		return this.getBackend().transaction([this.name, "sessions-metadata"], "readwrite", async (tx) => {
+		const account = this.syncAccount;
+		return this.getBackend().transaction(this.syncStores(), "readwrite", async (tx) => {
 			const data = await tx.get<SessionData>(this.name, id);
 			const metadata = await tx.get<SessionMetadata>("sessions-metadata", id);
 			if (data) await tx.set(this.name, id, { ...data, title });
 			if (metadata) await tx.set("sessions-metadata", id, { ...metadata, title });
-		});
+			if (account) await recordChatSyncMutation(tx, id, account);
+		}).then(() => { if (account) notifyChatSyncMutation(); });
 	}
 	getQuotaInfo() { return this.getBackend().getQuotaInfo(); }
 	requestPersistence() { return this.getBackend().requestPersistence(); }
