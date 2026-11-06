@@ -1,5 +1,5 @@
 /** Consent follows enabled model IDs; judgement and tabular access remain explicit opt-ins. */
-import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, NOTORGANIC_IMAGE_MODEL_IDS, TUTOR_CONSULTATION_MODEL_ID } from "./models.js";
+import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, NOTORGANIC_IMAGE_MODEL_IDS } from "./models.js";
 
 export const NOTORGANIC_CAPABILITIES = [
   "wallet:read", "usage:read", "billing:checkout", "web:search", "web:fetch", "realtime:connect",
@@ -33,7 +33,9 @@ export function buildNotOrganicScope({ models, capabilities }: NotOrganicScopeOp
   return [...new Set(ordered)].join(" ");
 }
 
+// Optional tutor consultation is not approved for public-client authorization.
+// Requesting its scope here prevents the entire account sign-in from completing.
 export const DEFAULT_NOTORGANIC_SCOPE = buildNotOrganicScope({
-  models: [...NOTORGANIC_CHAT_MODEL_IDS, ...NOTORGANIC_IMAGE_MODEL_IDS, TUTOR_CONSULTATION_MODEL_ID],
+  models: [...NOTORGANIC_CHAT_MODEL_IDS, ...NOTORGANIC_IMAGE_MODEL_IDS],
   capabilities: NOTORGANIC_CAPABILITIES,
 });

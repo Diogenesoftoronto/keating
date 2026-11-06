@@ -20,7 +20,7 @@ export async function consultTutorFromCli(
   const credential = options.credential ?? storedCredential(cwd);
   const env = credential?.env;
   if (!credential?.key || !env?.[NOTORGANIC_AUTH_ENV.scope]?.split(/\s+/).includes(TUTOR_CONSULTATION_SCOPE)) {
-    throw new Error("The CLI needs infer:ampersand-tutor-v0.1 consent before consulting Ampersand Tutor. Run `keating login --tutor` for fresh consent.");
+    throw new Error(`The CLI needs ${TUTOR_CONSULTATION_SCOPE} consent before consulting Ampersand Tutor. Run \`keating login --tutor\` for fresh consent.`);
   }
   const now = options.now ?? Date.now;
   if (env[NOTORGANIC_AUTH_ENV.tokenType] !== "DPoP" || !env[NOTORGANIC_AUTH_ENV.privateJwk]

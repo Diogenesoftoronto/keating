@@ -8,7 +8,7 @@ import type { Api, Model } from "@earendil-works/pi-ai";
 import { hasNotOrganicProductSession, promptNotOrganicAccess } from "../../components/NotOrganicAccessPromptDialog";
 import { addRecentModel } from "../../keating/model-prefs";
 import { modelKey } from "../../lib/model-catalog";
-import { isNotOrganicProvider, notOrganicModelNeedsConsent } from "../../notorganic-provider";
+import { isNotOrganicProvider, notOrganicModelNeedsConsent, notOrganicModelScopes } from "../../notorganic-provider";
 import { pauseLearnerDelivery } from "../../components/chat/learner-delivery";
 import { loadBrowserModel } from "./browser-model";
 import type { AgentHostRefs } from "./host-refs";
@@ -75,6 +75,6 @@ export async function changeChatModel({
     && isNotOrganicProvider(refs.selectedModelRef.current.provider)) {
     // Keep the chosen model. Account setup should be visible, with sending
     // still gated by onApiKeyRequired if the learner dismisses the popup.
-    void promptNotOrganicAccess({ allowSignIn: true, reconnect: needsModelConsent });
+    void promptNotOrganicAccess({ allowSignIn: true, reconnect: needsModelConsent, requiredScopes: notOrganicModelScopes(model) });
   }
 }

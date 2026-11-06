@@ -54,6 +54,8 @@ export const NOTORGANIC_SOL_MODEL: Model<"openai-responses"> = {
 	provider: NOTORGANIC_PROVIDER_ID,
 	baseUrl: notOrganicOpenAiBaseUrl(),
 	reasoning: true,
+	// Sol requires reasoning; Pi otherwise emits unsupported none/minimal efforts.
+	thinkingLevelMap: { off: null, minimal: null, xhigh: "xhigh", max: "max" },
 	input: ["text", "image"],
 	// The gateway owns credit pricing and settlement, as with Balanced.
 	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
@@ -94,6 +96,10 @@ export async function getAvailableNotOrganicChatModels(
   }
 }
 
+export function notOrganicModelScopes(model: Pick<Model<Api>, "id" | "provider">): string[] {
+	return model.provider === NOTORGANIC_PROVIDER_ID ? [`infer:${model.id}`, "web:search", "web:fetch"] : [];
+}
+
 /** A stored account session does not imply consent to every selectable model. */
 export function notOrganicModelNeedsConsent(
 	model: Pick<Model<Api>, "id" | "provider">,
@@ -101,7 +107,7 @@ export function notOrganicModelNeedsConsent(
 ): boolean {
 	if (model.provider !== NOTORGANIC_PROVIDER_ID || !session) return false;
 	const granted = new Set(session.scope.split(/\s+/));
-	return [`infer:${model.id}`, "web:search", "web:fetch"].some(scope => !granted.has(scope));
+	return notOrganicModelScopes(model).some(scope => !granted.has(scope));
 }
 
 export interface NotOrganicAccount {
@@ -157,10 +163,13 @@ export function notOrganicPublicClient(): NotOrganicPublicClient | null {
 	return config ? new NotOrganicPublicClient(config) : null;
 }
 
-export async function beginNotOrganicAuthorization(returnTo = `${window.location.pathname}${window.location.search}`): Promise<void> {
+export async function beginNotOrganicAuthorization(
+	returnTo = `${window.location.pathname}${window.location.search}`,
+	requiredScopes: readonly string[] = [],
+): Promise<void> {
 	const client = notOrganicPublicClient();
 	if (!client) throw new Error("This Keating deployment has not enabled Not Organic sign-in.");
-	const url = await client.authorizationUrl(returnTo);
+	const url = await client.authorizationUrl(returnTo, requiredScopes);
 	if (isNotOrganicDesktop()) await prepareNotOrganicDesktopAuthorization(url);
 	// Electron externalizes this navigation while preserving this renderer's
 	// session storage and DPoP key. The native receiver returns the callback.

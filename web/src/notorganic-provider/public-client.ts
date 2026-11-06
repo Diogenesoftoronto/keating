@@ -49,6 +49,7 @@ interface AuthorizationTransaction {
 	redirectUri: string;
 	createdAt: number;
 	returnTo?: string;
+	requiredScopes?: string[];
 }
 
 interface AuthorizationReceipt extends Omit<AuthorizationTransaction, "verifier"> {
@@ -273,7 +274,7 @@ export function publicClientConfig(
 		authorizationUrl,
 		clientId,
 		redirectUri,
-		 scope: env.VITE_NOTORGANIC_SCOPE?.trim() || DEFAULT_NOTORGANIC_SCOPE,
+		scope: env.VITE_NOTORGANIC_SCOPE?.trim() || DEFAULT_NOTORGANIC_SCOPE,
 	};
 }
 
@@ -311,21 +312,28 @@ export class NotOrganicPublicClient {
 		this.fetcher = fetcher === globalThis.fetch ? fetcher.bind(globalThis) : fetcher;
 	}
 
-	async authorizationUrl(returnTo = "/pricing"): Promise<string> {
+	async authorizationUrl(returnTo = "/pricing", requiredScopes: readonly string[] = []): Promise<string> {
 		const verifier = randomBase64Url();
 		const state = randomBase64Url();
+		const session = this.getSession();
+		const required = [...new Set(requiredScopes.flatMap(scope => scope.split(/\s+/)).filter(Boolean))];
+		// A model explicitly chosen by the learner must survive legacy deployment
+		// scope overrides. Retain grants already approved when adding its permission.
+		const scope = [...new Set([
+			...this.config.scope.split(/\s+/), ...(session?.scope ?? "").split(/\s+/), ...required,
+		].filter(Boolean))].join(" ");
 		requireBrowserStorage().removeItem(RECEIPT_KEY);
-		writeJson(TRANSACTION_KEY, { state, verifier, issuer: this.config.issuer, clientId: this.config.clientId, redirectUri: this.config.redirectUri, createdAt: Date.now(), returnTo: safeAuthorizationReturnTo(returnTo) } satisfies AuthorizationTransaction);
+		writeJson(TRANSACTION_KEY, { state, verifier, issuer: this.config.issuer, clientId: this.config.clientId, redirectUri: this.config.redirectUri, createdAt: Date.now(), returnTo: safeAuthorizationReturnTo(returnTo), requiredScopes: required } satisfies AuthorizationTransaction);
 		const url = new URL(this.config.authorizationUrl);
 		// A portal cookie can survive Keating sign-out. A fresh app session must
 		// start at the account chooser; adding scopes to a session can reuse it.
-		if (!this.getSession()) url.searchParams.set("prompt", "select_account");
+		if (!session) url.searchParams.set("prompt", "select_account");
 		url.searchParams.set("client_id", this.config.clientId);
 		url.searchParams.set("redirect_uri", this.config.redirectUri);
 		url.searchParams.set("response_type", "code");
 		url.searchParams.set("code_challenge_method", "S256");
 		url.searchParams.set("code_challenge", await sha256Base64Url(verifier));
-		url.searchParams.set("scope", this.config.scope);
+		url.searchParams.set("scope", scope);
 		url.searchParams.set("state", state);
 		url.searchParams.set("return_to", safeAuthorizationReturnTo(returnTo));
 		return url.toString();
@@ -436,6 +444,10 @@ export class NotOrganicPublicClient {
 			? sessionFromToken(token, { id: crypto.randomUUID(), returnTo: safeAuthorizationReturnTo(transaction.returnTo) })
 			: null;
 		if (!session) throw new NotOrganicPublicClientError("Not Organic could not finish sign-in. Try connecting again.");
+		const granted = new Set(session.scope.split(/\s+/));
+		if (transaction.requiredScopes?.some(scope => !granted.has(scope))) {
+			throw new NotOrganicPublicClientError("Not Organic did not approve access to the selected model and web search. Choose another model or try signing in again.");
+		}
 		const codeHash = await sha256Base64Url(code);
 		// Signing out or starting a newer login while the request was in flight
 		// cancels its authority to replace the current session/transaction.
