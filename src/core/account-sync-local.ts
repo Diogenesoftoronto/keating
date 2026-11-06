@@ -3,6 +3,7 @@ import { lstatSync, readFileSync, realpathSync } from "node:fs";
 import { mkdir, readFile, readdir, rm, stat, writeFile, rename } from "node:fs/promises";
 import { basename, dirname, join, resolve, relative, isAbsolute, sep } from "node:path";
 import { FileAuthStorageBackend, SessionManager } from "@earendil-works/pi-coding-agent";
+import { DEFAULT_MODELS } from "@keating/runtime-config";
 import { sessionsDir, configDir } from "./paths.js";
 import { accountSyncAuthPath, readAccountSyncJson, writeAccountSyncJson } from "./account-sync-auth.js";
 import { chatSyncCanonical, emptyChatSyncState, mergeChatSyncStates, parseChatSyncState, updateChatSyncState, type ChatSyncState } from "../../shared/account-sync/chat-sync-state.js";
@@ -76,7 +77,7 @@ export async function captureNativeSession(path: string, previous?: KeatingPorta
     : Array.isArray(firstUser?.content) ? firstUser.content.flatMap(part => part && typeof part === "object" && "text" in part && typeof part.text === "string" ? [part.text] : []).join(" ") : "";
   const title = session.getSessionName() ?? previous?.data.title ?? (firstText.trim().slice(0, 120) || basename(path, ".jsonl"));
   const model = previous?.data.model && (!context.model || (context.model.provider === previous.data.model.provider && context.model.modelId === previous.data.model.id))
-    ? previous.data.model : { id: context.model?.modelId ?? "inkling-2-small", provider: context.model?.provider ?? "notorganic" };
+    ? previous.data.model : { id: context.model?.modelId ?? DEFAULT_MODELS.cli.notorganic, provider: context.model?.provider ?? "notorganic" };
   const thinkingLevel = context.thinkingLevel;
   const data = { ...previous?.data, id, title, model, thinkingLevel, messages: context.messages, createdAt: previous?.data.createdAt ?? header.timestamp, lastModified,
     nativeSession: { header, entries, leafId: session.getLeafId() } };

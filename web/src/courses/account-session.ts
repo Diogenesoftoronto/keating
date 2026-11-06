@@ -59,10 +59,13 @@ export class CourseAccountBridge {
   }
 }
 
-const bridge = new CourseAccountBridge(() => {
+const accountClient = () => {
   const config = publicClientConfig();
   return config ? new NotOrganicPublicClient(config) : null;
-});
+};
+let bridge = new CourseAccountBridge(accountClient);
+/** Isolate the account bridge transport in tests without replacing course requests. */
+export function setCourseAccountBridgeForTests(value: CourseAccountBridge | null): void { bridge = value ?? new CourseAccountBridge(accountClient); }
 export function ensureCourseAccountSession(): Promise<void> { return bridge.ensure(); }
 
 /** App-level renewal also covers protected images and cookie-authenticated WebSockets. */

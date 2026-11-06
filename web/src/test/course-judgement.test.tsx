@@ -1,3 +1,5 @@
+import { beforeEach as setupCourseBridge, afterEach as cleanupCourseBridge } from "bun:test";
+import { CourseAccountBridge, setCourseAccountBridgeForTests } from "../courses/account-session";
 import { afterEach, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { JudgementRequest, JudgementResponse } from "@keating/learner-contracts";
@@ -190,6 +192,7 @@ test("actual course_create saves first, defaults to no inference and queues revi
   let resolve!: (response: Response) => void; let requests = 0;
   globalThis.fetch = (async () => { requests++; return new Promise<Response>(done => { resolve = done; }); }) as unknown as typeof fetch;
   const saving = tool.execute!("create", { title: "Fractions", review_draft: true });
+  await new Promise(resolve => setTimeout(resolve, 0));
   expect(readCourseJudgement(key)).toBeUndefined(); expect(requests).toBe(1);
   resolve(Response.json(view));
   const result = await saving;
@@ -208,3 +211,6 @@ test("review UI is passive, keeps manual review buttons and hides judgement acti
   view.permissions.canReview = false;
   expect(renderToStaticMarkup(<CourseJudgementPanel snapshot={view} target={{ kind: "lesson", submissionId: "submission_one" }} />)).toBe("");
 });
+
+setupCourseBridge(() => { setCourseAccountBridgeForTests(new CourseAccountBridge(() => null, (async () => new Response(null, { status: 204 })) as unknown as typeof fetch)); });
+cleanupCourseBridge(() => { setCourseAccountBridgeForTests(null); });

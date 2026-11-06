@@ -8,11 +8,11 @@ const env = { VITE_NOTORGANIC_PUBLIC_ISSUER: "https://api.notorganic.info", VITE
 test("web model picker IDs match the model list used to derive consent", () => {
   expect(NOTORGANIC_CHAT_MODELS.map(model => model.id)).toEqual([...NOTORGANIC_CHAT_MODEL_IDS]);
 });
-test("empty or absent scope derives consent; explicit restrictive override is retained", () => {
+test("empty or absent scope derives consent; sync scopes are appended to any override", () => {
   for (const scope of [undefined, "", "   "]) {
-    expect(publicClientConfig({ ...env, VITE_NOTORGANIC_SCOPE: scope }, "https://keating.test", false)?.scope).toBe(DEFAULT_NOTORGANIC_SCOPE);
+    expect(publicClientConfig({ ...env, VITE_NOTORGANIC_SCOPE: scope }, "https://keating.test", false)?.scope).toBe(`${DEFAULT_NOTORGANIC_SCOPE} sync:key:read sync:read sync:write`);
   }
-  expect(publicClientConfig({ ...env, VITE_NOTORGANIC_SCOPE: "usage:read" }, "https://keating.test", false)?.scope).toBe("usage:read");
+  expect(publicClientConfig({ ...env, VITE_NOTORGANIC_SCOPE: "usage:read" }, "https://keating.test", false)?.scope).toBe("usage:read sync:key:read sync:read sync:write");
   expect(publicClientConfig({}, "https://keating.test", false)).toBeNull();
 });
 test("browser reservation env overrides the canonical ceiling with existing validation", () => {
