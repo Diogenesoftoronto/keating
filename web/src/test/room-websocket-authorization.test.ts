@@ -11,6 +11,8 @@ beforeAll(async () => {
   directory = await mkdtemp(join(tmpdir(), "keating-room-ws-auth-"));
   const entry = join(directory, "fixture.ts");
   const local = (path: string) => JSON.stringify(fileURLToPath(new URL(path, import.meta.url)));
+  const nitroStorage = join(directory, "nitro-storage.ts");
+  await writeFile(nitroStorage, "export function useStorage() { return globalThis.__courseTestStore; }");
   const dependency = (name: string) => JSON.stringify(fileURLToPath(name === "ws"
     ? new URL("wrapper.mjs", import.meta.resolve("ws/package.json"))
     : import.meta.resolve(name)));
@@ -31,19 +33,28 @@ import roomSocket from ${local("../../server/api/rooms/realtime.ts")};
 import { localCourseAccountIdFromSecret } from ${local("../../server/utils/course-session.ts")};
 import { applyStoredRoomOperation, createRoom, createRoomInvite, joinRoomWithInvite, withRoomRepositoryStorage } from ${local("../../server/utils/room-repository.ts")};
 import { MemoryPublicAbuseStore, reservePublicQuota, setPublicAbuseStoreForTests } from ${local("../../server/utils/public-abuse.ts")};
+import { CourseAccountSessions } from ${local("../../server/utils/course-linked-session.ts")};
+import { broadcastRoomChange, presentAccountIds } from ${local("../../server/utils/room-realtime.ts")};
 import { NOTORGANIC_SESSION_ADAPTER_CONTEXT_KEY } from ${local("../notorganic-provider/server.ts")};
 
 const scenario = process.argv[2];
+if (scenario === "revoked-idle") {
+  const interval = globalThis.setInterval;
+  globalThis.setInterval = (callback, delay, ...args) => interval(callback, delay === 15000 ? 20 : delay, ...args);
+}
 process.env.NODE_ENV = "production";
 process.env.NOTORGANIC_ENABLED = "0";
 delete process.env.KEATING_COURSES_DEV_ACCOUNT_ID;
 setPublicAbuseStoreForTests(new MemoryPublicAbuseStore());
 const store = createStorage({ driver: memoryDriver() });
+globalThis.__courseTestStore = store;
+const sessions = new CourseAccountSessions(store);
 const hostSecret = "1".repeat(32), learnerSecret = "2".repeat(32), outsiderSecret = "3".repeat(32);
 const hostId = await localCourseAccountIdFromSecret(hostSecret);
 const learnerId = await localCourseAccountIdFromSecret(learnerSecret);
 let operationCount = 0;
 let upgradeErrors = [];
+let revoked = false;
 
 function connect(url, headers) {
   const ws = new WebSocket(url, { headers, handshakeTimeout: 2000 });
@@ -74,10 +85,11 @@ await withRoomRepositoryStorage(store, async () => {
   const operation = input => applyStoredRoomOperation(hostId, { id: "op_auth_" + (++operationCount), roomId: room.id, ...input });
   await operation({ type: "whisper.post", messageId: "msg_secret", body: "TEACHER_ONLY_BODY" });
   const app = new H3({ silent: true });
-  if (scenario === "hosted" || scenario === "unavailable" || scenario === "unexpected") process.env.NOTORGANIC_ENABLED = "1";
-  if (scenario === "hosted" || scenario === "unexpected") app.use((event, next) => {
+  if (scenario === "hosted" || scenario === "revoked" || scenario === "revoked-idle" || scenario === "unavailable" || scenario === "unexpected") process.env.NOTORGANIC_ENABLED = "1";
+  if (scenario === "hosted" || scenario === "revoked" || scenario === "revoked-idle" || scenario === "unexpected") app.use((event, next) => {
     event.context[NOTORGANIC_SESSION_ADAPTER_CONTEXT_KEY] = {
       async getProductSession(event) {
+        if (revoked) throw new Error("Session revoked");
         if (scenario === "unexpected") throw new Error("SECRET_AUTH_INTERNAL_DETAIL");
         event.res.headers.append("set-cookie", "validated_session=refreshed; HttpOnly; Path=/");
         return { accountId: learnerId, accessToken: "test-only", async createDpopProof() { throw new Error("No external calls permitted"); } };
@@ -109,7 +121,9 @@ await withRoomRepositoryStorage(store, async () => {
   const origin = "http://127.0.0.1:" + server.address().port;
   let roomId = room.id;
   if (scenario === "malformed") roomId = "!bad-room";
+  const token = scenario === "real-revoked" ? (await sessions.issue(hostId)).token : undefined;
   const headers = { origin, cookie: "keating_course_account=" + (scenario === "outsider" ? outsiderSecret : learnerSecret) };
+  if (token) headers.cookie = "keating_course_session=" + token;
   if (scenario === "origin") headers.origin = "https://foreign.invalid";
   // Query claims and a host cookie cannot replace an adapter-validated identity.
   if (scenario === "hosted") headers.cookie = "keating_course_account=" + hostSecret;
@@ -130,11 +144,28 @@ await withRoomRepositoryStorage(store, async () => {
       await until(state, () => state.frames.some(frame => frame.type === "snapshot"));
       assert.equal(state.status, 101);
       const snapshot = state.frames.find(frame => frame.type === "snapshot").snapshot;
-      assert.equal(snapshot.viewer.accountId, learnerId);
-      assert.equal(snapshot.viewer.role, "learner");
-      assert.ok(!JSON.stringify(state.frames).includes("TEACHER_ONLY_BODY"));
+      assert.equal(snapshot.viewer.accountId, token ? hostId : learnerId);
+      assert.equal(snapshot.viewer.role, token ? "host" : "learner");
+      if (!token) assert.ok(!JSON.stringify(state.frames).includes("TEACHER_ONLY_BODY"));
       if (scenario === "hosted") assert.ok(state.headers["set-cookie"].some(cookie => cookie.includes("validated_session=refreshed")), "authorization refresh cookie must reach the successful handshake");
-      if (scenario === "removed") {
+      if (scenario === "real-revoked") {
+        assert.ok(presentAccountIds(room.id).includes(hostId));
+        await sessions.revoke(token);
+        state.ws.send("ping");
+        await until(state, () => Boolean(state.closed));
+        assert.equal(state.closed.code, 4401);
+        assert.ok(!presentAccountIds(room.id).includes(hostId));
+        const change = await operation({ type: "whisper.post", messageId: "msg_after_revoke", body: "PRIVATE_AFTER_REVOKE" });
+        broadcastRoomChange(change.room, change.touchedMessageIds);
+        await new Promise(resolve => setTimeout(resolve, 30));
+        assert.ok(!JSON.stringify(state.frames).includes("PRIVATE_AFTER_REVOKE"));
+      } else if (scenario === "revoked" || scenario === "revoked-idle") {
+        revoked = true;
+        if (scenario === "revoked") state.ws.send("ping");
+        await until(state, () => Boolean(state.closed));
+        assert.equal(state.closed.code, 4401);
+        assert.ok(!state.frames.includes("pong"));
+      } else if (scenario === "removed") {
         // Deliberately omit broadcast: the message hook must independently recheck
         // current membership rather than trusting its successful upgrade snapshot.
         await operation({ type: "member.remove", accountId: learnerId });
@@ -155,7 +186,7 @@ await withRoomRepositoryStorage(store, async () => {
   }
 });
 `);
-  const build = await Bun.build({ entrypoints: [entry], outdir: directory, target: "node", external: ["nitro/storage"] });
+  const build = await Bun.build({ entrypoints: [entry], outdir: directory, target: "node", plugins: [{ name: "course-storage", setup(build) { build.onResolve({ filter: /^nitro\/storage$/ }, () => ({ path: nitroStorage })); } }] });
   if (!build.success) throw new AggregateError(build.logs, "Could not compile real Node WebSocket regression fixture");
   fixture = join(directory, "fixture.js");
 }, 20_000);
@@ -174,6 +205,9 @@ describe("room WebSocket authorization through the real Node adapter", () => {
     ["limited", "socket quota rejects with HTTP 429 and Retry-After"],
     ["member", "local cookie identity receives only its projected snapshot and ping"],
     ["hosted", "validated hosted identity takes precedence and preserves refresh headers"],
+    ["real-revoked", "revoked real course token disconnects before private broadcasts"],
+    ["revoked", "revoked hosted identity cannot send another frame"],
+    ["revoked-idle", "idle revoked identity is disconnected by periodic authorization"],
     ["removed", "member removed after upgrade is rechecked before a message"],
   ])("%s: %s", async (scenario) => {
     const child = Bun.spawn(["node", fixture, scenario], { stdout: "pipe", stderr: "pipe", env: { ...process.env, NODE_ENV: "production", NOTORGANIC_ENABLED: "0" } });

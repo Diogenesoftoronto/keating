@@ -3,7 +3,7 @@ import { H3 } from "h3";
 import { SHARE_MAX_BYTES } from "../keating/share-contract";
 import { MemoryPublicAbuseStore, setPublicAbuseStoreForTests } from "../../server/utils/public-abuse";
 
-// Run this server-boundary test independently: Nitro storage is a virtual module.
+// Nitro storage is a virtual module; provide the methods used by other server tests too.
 const stored = new Map<string, unknown>();
 let failWrite = false;
 const bytes = new Map<string, number>();
@@ -11,6 +11,8 @@ let quotaLimit = Number.POSITIVE_INFINITY;
 let globalQuotaLimit = Number.POSITIVE_INFINITY;
 mock.module("nitro/storage", () => ({ useStorage: () => ({
 	hasItem: async (id: string) => stored.has(id),
+	getItem: async (id: string) => stored.get(id) ?? null,
+	removeItem: async (id: string) => { stored.delete(id); },
 	setItem: async (id: string, value: unknown) => {
 		if (failWrite) throw new Error("Storage unavailable");
 		stored.set(id, value);

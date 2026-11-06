@@ -10,7 +10,7 @@ export interface NativeChatReconcileOptions {
   current(): boolean;
   state(): PersistedAppState;
   /** Persists before publishing; checks the account and expected state at commit. */
-  apply(next: PersistedAppState, expected: PersistedAppState): Promise<boolean>;
+  apply(next: PersistedAppState, expected: PersistedAppState, newSessionIds: string[]): Promise<boolean>;
 }
 
 export function createNativeChatReconciler(options: NativeChatReconcileOptions) {
@@ -20,11 +20,13 @@ export function createNativeChatReconciler(options: NativeChatReconcileOptions) 
     const local = await options.storage.loadLocal(options.randomUUID);
     const referencedIds = (state: ChatSyncState) => state.entries.flatMap(entry => [entry.id, ...(entry.session?.data.parentSessionId ? [entry.session.data.parentSessionId] : [])]);
     let ids = await nativeChatIdMap([...referencedIds(local.state), ...referencedIds(remote ?? { ...local.state, entries: [] })], options.sha256);
+    // A single first-connection migration adopts only the device's pre-account history.
+    await options.storage.migrateFirstConnection(options.state().sessions.map(session => session.id));
     // Retry if an in-progress generation changed local state while the DB was saving.
     for (let attempt = 0; attempt < 5; attempt++) {
       assertCurrent();
       const current = options.state();
-      const owned = await options.storage.claim(current.sessions.filter(session => session.messages.length > 0 || local.baseline.some(item => (ids.get(item.data.id) ?? item.data.id) === session.id)).map(session => session.id));
+      const owned = await options.storage.claim([]);
       const baseline = new Map(local.baseline.map(session => [ids.get(session.data.id) ?? session.data.id, session]));
       const native = current.sessions.filter(session => owned.has(session.id));
       const wire = native.map(session => nativeSessionToSync(session, current.providerSettings, baseline.get(session.id), ids));
@@ -32,7 +34,8 @@ export function createNativeChatReconciler(options: NativeChatReconcileOptions) 
       if (remote) next = mergeChatSyncStates(next, remote);
       ids = await nativeChatIdMap(referencedIds(next), options.sha256);
       const remoteIds = next.entries.filter(entry => entry.session).map(entry => ids.get(entry.id)!);
-      const allOwned = await options.storage.claim(remoteIds);
+      const currentIds = new Set(current.sessions.map(session => session.id));
+      const allOwned = await options.storage.claim(remoteIds.filter(id => owned.has(id) || !currentIds.has(id)));
       // A local id belonging to another account must never be overwritten.
       const eligible = next.entries.filter(entry => allOwned.has(ids.get(entry.id)!));
       const synced = eligible.flatMap(entry => entry.session ? [entry.session] : []);
@@ -56,9 +59,14 @@ export function createNativeChatReconciler(options: NativeChatReconcileOptions) 
       }
       const sessions = [...byId.values()].sort((a, b) => b.updatedAt - a.updatedAt || a.id.localeCompare(b.id));
       // Keep the UI's empty scratch session if all synced sessions were deleted.
-      if (!sessions.length) sessions.push({ id: `session-${options.randomUUID()}`, title: "New lesson", createdAt: Date.now(), updatedAt: Date.now(), messages: [] });
+      const newSessionIds: string[] = [];
+      if (!sessions.length) {
+        const id = `session-${options.randomUUID()}`;
+        sessions.push({ id, title: "New lesson", createdAt: Date.now(), updatedAt: Date.now(), messages: [] });
+        newSessionIds.push(id);
+      }
       const applied: PersistedAppState = { ...current, sessions, activeSessionId: sessions.some(session => session.id === current.activeSessionId) ? current.activeSessionId : sessions[0]!.id };
-      if (chatSyncCanonical(applied) !== chatSyncCanonical(current) && !await options.apply(applied, current)) continue;
+      if (chatSyncCanonical(applied) !== chatSyncCanonical(current) && !await options.apply(applied, current, newSessionIds)) continue;
       assertCurrent();
       await options.storage.saveLocal({ state: next, baseline: synced, writer: local.writer });
       return next;

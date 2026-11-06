@@ -1,3 +1,5 @@
+import { beforeEach as setupCourseBridge, afterEach as cleanupCourseBridge } from "bun:test";
+import { CourseAccountBridge, setCourseAccountBridgeForTests } from "../courses/account-session";
 import { afterEach, describe, expect, test } from "bun:test";
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import {
@@ -277,3 +279,6 @@ describe("course collaboration tools", () => {
     expect(result).not.toContain("PRIVATE SUBMISSION BODY");
   });
 });
+
+setupCourseBridge(() => { setCourseAccountBridgeForTests(new CourseAccountBridge(() => null, (async () => new Response(null, { status: 204 })) as unknown as typeof fetch)); });
+cleanupCourseBridge(() => { setCourseAccountBridgeForTests(null); });
