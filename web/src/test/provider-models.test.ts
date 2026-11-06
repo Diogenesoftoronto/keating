@@ -81,7 +81,7 @@ describe("gateway model discovery", () => {
 });
 
 describe("chat model fallback selection", () => {
-	it.each([false, true])("discovers both signed-out Not Organic models unless manually hidden (%s)", async hidden => {
+	it.each([false, true])("discovers signed-out Not Organic models unless manually hidden (%s)", async hidden => {
 		const enabled = process.env.VITE_NOTORGANIC_ENABLED;
 		const storageDescriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
 		const values = new Map<string, string>([["keating_model_prefs", JSON.stringify({ hiddenProviders: hidden ? ["notorganic"] : [], customModels: [], recentModels: [] })]]);
@@ -96,8 +96,8 @@ describe("chat model fallback selection", () => {
 			const { hasProviderCredential } = await import("../lib/provider-models");
 			expect(await hasProviderCredential("notorganic")).toBe(false);
 			const models = (await discoverModels({})).filter(entry => entry.model.provider === "notorganic");
-			expect(models.map(entry => entry.model.id).sort()).toEqual(hidden ? [] : ["balanced", "gpt-6.1-sol"]);
-			if (!hidden) expect(models.map(entry => entry.group)).toEqual(["cloud", "cloud"]);
+			expect(models.map(entry => entry.model.id).sort()).toEqual(hidden ? [] : ["balanced", "gpt-6.1-sol", "inkling-2-small"]);
+			if (!hidden) expect(models.map(entry => entry.group)).toEqual(["cloud", "cloud", "cloud"]);
 			expect(displayModelProvider("notorganic")).toBe("Not Organic");
 		} finally {
 			if (enabled === undefined) delete process.env.VITE_NOTORGANIC_ENABLED;
@@ -106,15 +106,16 @@ describe("chat model fallback selection", () => {
 			else delete (globalThis as any).localStorage;
 		}
 	});
-	it("lists Sol alongside Inkling Small under the Not Organic feature gate", async () => {
+	it("lists Inkling 2 and Sol with the legacy model under the Not Organic feature gate", async () => {
 		const enabled = process.env.VITE_NOTORGANIC_ENABLED;
 		try {
 			const { getSelectableModels } = await import("../lib/provider-models");
 			process.env.VITE_NOTORGANIC_ENABLED = "true";
 			const models = await getSelectableModels((provider) => provider === "notorganic");
 			expect(models.map(({ id, api, provider }) => ({ id, api, provider }))).toEqual([
-				{ id: "balanced", api: "openai-completions", provider: "notorganic" },
+				{ id: "inkling-2-small", api: "openai-completions", provider: "notorganic" },
 				{ id: "gpt-6.1-sol", api: "openai-responses", provider: "notorganic" },
+				{ id: "balanced", api: "openai-completions", provider: "notorganic" },
 			]);
 			expect(await getSelectableModels(() => false)).toEqual([]);
 			process.env.VITE_NOTORGANIC_ENABLED = "false";
