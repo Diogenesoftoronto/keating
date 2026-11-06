@@ -30,12 +30,15 @@ export interface CapabilityEnvironment {
  * added alongside this baseline before the model starts responding.
  */
 export const BASELINE_TEACHING_TOOLS = new Set([
+  "consult_tutor",
   // Quiz/deck creation is inline OpenUI. Keep legacy handlers for existing
   // artifacts, but do not advertise competing creation paths to the chat model.
   "course_list",
   "course_inspect",
   "course_create",
   "course_update",
+  "room_list",
+  "room_invite",
   "feedback",
   "grade_quiz",
   "grade_question_checks",
@@ -203,8 +206,10 @@ export function filterAvailableKeatingTools(
 ): AgentTool[] {
   const registered = new Set(tools.map((tool) => tool.name));
   const visible = new Set(BASELINE_TEACHING_TOOLS);
+  // Study rooms authenticate through the same course product session
+  // (requireCourseProductSession), so they share the course availability probe.
   if (environment.coursesAvailable === false) {
-    for (const name of ["course_list", "course_inspect", "course_create", "course_update"]) visible.delete(name);
+    for (const name of ["course_list", "course_inspect", "course_create", "course_update", "room_list", "room_invite"]) visible.delete(name);
   }
   if (environment.clientWebSearch && registered.has("client-web-search")) {
     visible.add("client-web-search");

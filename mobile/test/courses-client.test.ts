@@ -15,6 +15,10 @@ import {
   type CourseCredentialStore,
 } from "../src/lib/courses/credentials";
 import { allCourseLessons, normalizeCourseListItem, normalizeCourseSnapshot } from "../src/lib/courses/types";
+import { clearDeviceSession, saveDeviceSession, setAccountCredentialStoreForTests } from "../src/lib/notorganic-account/credentials";
+import { setAccountCryptoAdapterForTests } from "../src/lib/notorganic-account/crypto";
+import { setDeviceKeyAdapterForTests } from "../src/lib/notorganic-account/dpop";
+import { defaultNotOrganicAccountConfig } from "../src/lib/notorganic-account/contracts";
 
 function createCredentialStore(): CourseCredentialStore & { values: Map<string, string>; calls: string[] } {
   const values = new Map<string, string>();
@@ -42,6 +46,7 @@ let credentials: ReturnType<typeof createCredentialStore>;
 beforeEach(async () => {
   credentials = createCredentialStore();
   setCourseCredentialStoreForTests(credentials);
+  setAccountCredentialStoreForTests(createCredentialStore());
   await clearCourseSession();
   credentials.calls.length = 0;
 });
@@ -49,6 +54,62 @@ beforeEach(async () => {
 afterEach(async () => {
   await clearCourseSession();
   setCourseCredentialStoreForTests(null);
+  setAccountCredentialStoreForTests(null);
+  setAccountCryptoAdapterForTests(null);
+  setDeviceKeyAdapterForTests(null);
+});
+
+async function signedInAccount(accountId = "did:plc:learner") {
+  setAccountCryptoAdapterForTests({ randomBytes: async length => new Uint8Array(length).fill(3),
+    sha256Base64: async value => Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))).toString("base64") });
+  setDeviceKeyAdapterForTests({ getOrCreatePublicJwkAsync: async () => ({ kty: "EC", crv: "P-256", x: "x", y: "y" }),
+    signAsync: async () => "signature", deleteKeyAsync: async () => {} });
+  await saveDeviceSession({ issuer: defaultNotOrganicAccountConfig().issuer, accountId,
+    accessToken: "access", accessExpiresAt: Date.now() + 120_000, refreshToken: "refresh",
+    refreshExpiresAt: Date.now() + 240_000, scope: "sync:read" });
+}
+
+test("signed-in native course requests verify the provider proof and reuse only an account-bound token", async () => {
+  await signedInAccount();
+  const requests: string[] = [];
+  const token = "a".repeat(64);
+  const fetchImpl = (async (url: string, init: RequestInit) => {
+    requests.push(url);
+    const headers = new Headers(init.headers);
+    if (url.endsWith("account-session")) {
+      expect(headers.get("authorization")).toBe("DPoP access");
+      expect(headers.get("x-keating-client")).toBe("native");
+      const proof = JSON.parse(Buffer.from(headers.get("dpop")!.split(".")[1]!, "base64url").toString());
+      expect(proof.htu).toBe(`${defaultNotOrganicAccountConfig().issuer}/v1/account`);
+      return Response.json({ account: { id: "did:plc:learner" }, expiresAt: Date.now() + 60_000, sessionToken: token });
+    }
+    expect(headers.get("x-keating-course-session")).toBe(token);
+    expect(headers.has("authorization")).toBe(false);
+    expect(headers.has("cookie")).toBe(false);
+    return url.endsWith("/session")
+      ? Response.json({ account: { id: "did:plc:learner", displayName: "Learner", mode: "hosted" } })
+      : Response.json({ courses: [] });
+  }) as unknown as typeof fetch;
+  const result = await fetchCoursesForCurrentAccount({ fetchImpl });
+  expect(result.account.id).toBe("did:plc:learner");
+  expect(requests.filter(url => url.endsWith("account-session"))).toHaveLength(1);
+  expect([...credentials.values.values()].some(value => value.includes("access"))).toBe(false);
+});
+
+test("logout while native linking is pending discards the token and never requests courses", async () => {
+  await signedInAccount();
+  let release!: (response: Response) => void;
+  let started!: () => void;
+  const ready = new Promise<void>(resolve => { started = resolve; });
+  let calls = 0;
+  const fetchImpl = (async () => { calls++; started(); return await new Promise<Response>(resolve => { release = resolve; }); }) as typeof fetch;
+  const result = fetchCourseSession({ fetchImpl });
+  await ready;
+  await clearDeviceSession();
+  release(Response.json({ account: { id: "did:plc:learner" }, expiresAt: Date.now() + 60_000, sessionToken: "b".repeat(64) }));
+  await expect(result).rejects.toThrow("changed");
+  expect(calls).toBe(1);
+  expect([...credentials.values.values()].some(value => value.includes("b".repeat(64)))).toBe(false);
 });
 
 test("set-cookie parsing keeps the pair and drops the attributes", () => {
@@ -157,7 +218,7 @@ test("rejects malformed successful responses instead of fabricating a course rec
   } satisfies Partial<CourseApiError>);
 });
 
-test("join requests respect caller cancellation and do not turn it into a retryable network error", async () => {
+test("cancelled joins stop before account verification or network dispatch", async () => {
   const controller = new AbortController();
   let observedAbort = false;
   const fetchImpl: typeof fetch = async (_input, init) => new Promise<Response>((_resolve, reject) => {
@@ -173,7 +234,7 @@ test("join requests respect caller cancellation and do not turn it into a retrya
   controller.abort();
 
   await expect(joining).rejects.toMatchObject({ name: "AbortError" });
-  expect(observedAbort).toBe(true);
+  expect(observedAbort).toBe(false);
 });
 
 test("a timed-out join is recoverable and exposes its timeout code", async () => {

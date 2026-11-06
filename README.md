@@ -75,6 +75,7 @@ It is designed around five influences:
   - `keating web --remote` for a self-hosted server that can proxy remote-only work to a configured microVM or sandbox endpoint.
   - `keating web --cloud` for the canonical Keating Cloud backend at `https://keating.help`.
 - A shared browser agent runtime package under `packages/browser-agent-runtime/` with local memory sandboxes, capability routing, transactional snapshots, Daytona-shaped compatibility, a NodePod adapter seam, and an RPC relay protocol.
+- [Web study rooms](docs/study-rooms.md) for multiple learners, teacher oversight, role-based invitations and QR codes, and course-linked conversations. Learners can continue privately from a room message or lesson passage; Keating can offer a private continuation for a learner to accept, with optional teacher approval.
 - A native Android app under `mobile/`, built with React Native and Expo. It keeps provider keys in Android Keystore, persists lessons on-device, and reuses Keating's portable pedagogy engine for offline plans, maps, and quizzes. Mobile storage is local-only in this release; it does not join the desktop Electron P2P mesh yet.
 
 ## Quick Start
@@ -510,6 +511,7 @@ keating trace derivative
 - Developer handbook: [dev.keating.help](https://dev.keating.help)
 - Standard.site blog: [blog.keating.help](https://blog.keating.help)
 - Architecture overview: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- Study rooms, teacher oversight, and private continuations: [docs/study-rooms.md](docs/study-rooms.md)
 - Development environment and task reference: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
 - Visual system architecture: [docs/VISUAL-ARCHITECTURE.md](docs/VISUAL-ARCHITECTURE.md)
 - Browser/remote self-modifying agent plan: [docs/self-modifying-agent-architecture.md](docs/self-modifying-agent-architecture.md)

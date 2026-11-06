@@ -1,13 +1,18 @@
 import { useState } from "react";
 import { DraftContentInspection } from "./DraftContentInspection";
 import { JudgementStateInspector } from "./JudgementStateInspector";
+import { DraftAttentionList, DraftCheckGrid, DraftStageStepper, DraftTimeBar, DraftTimeline, useDraftElapsed } from "./DraftProgress";
+import { diagnoseDraft } from "../keating/judgement/draft-progress";
+import { describeReviewCause } from "../keating/judgement/draft-failure";
 import type { TeachingDraftPhase, TeachingDraftSnapshot } from "@keating/learner-contracts";
-import { css } from "../../styled-system/css";
+import { css, cx } from "../../styled-system/css";
 import { recordTeachingDraftFeedback, teachingDraftIsActive, type TeachingDraftStatus, type TeachingDraftFeedbackKind } from "../keating/judgement/draft-status";
 
 const muted = css({ color: "var(--muted-foreground)", fontSize: ".75rem", lineHeight: 1.5 });
 const detail = css({ cursor: "pointer", fontSize: ".75rem", paddingBlock: ".5rem", _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" } });
 const button = css({ border: "1px solid var(--border)", borderRadius: ".375rem", padding: ".4rem .65rem", fontSize: ".75rem", cursor: "pointer", "&[aria-pressed=true]": { background: "var(--muted)", borderColor: "var(--foreground)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" }, _disabled: { opacity: .6, cursor: "default" } });
+const heading = css({ fontSize: ".7rem", fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase", color: "var(--muted-foreground)", margin: 0 });
+const chip = css({ fontSize: ".7rem", padding: ".1rem .45rem", borderRadius: "999px", border: "1px solid var(--line-soft, var(--border))", color: "var(--muted-foreground)", whiteSpace: "nowrap" });
 const titles: Record<TeachingDraftPhase, string> = {
   planning: "Preparing your response", drafting: "Generating a response", checking: "Reviewing the completed response", revising: "Generating an improved response",
   selecting: "Choosing a response", released: "Response checked", withheld: "A response could not be approved", cancelled: "Draft cancelled",
@@ -33,6 +38,7 @@ function issues(snapshot: TeachingDraftSnapshot): string[] {
 export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = false }: { sessionId: string; status: TeachingDraftStatus | null; showDeveloperDetails?: boolean }) {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [copyFailed, setCopyFailed] = useState(false);
+  const elapsed = useDraftElapsed(status);
   if (!status) return null;
   const snapshot = status.snapshot;
   const active = teachingDraftIsActive(status);
@@ -51,8 +57,8 @@ export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = fa
         : snapshot.reason === "backend-payment-required" ? "The review provider couldn't fund this review. Check your account credit and request spending limit, then retry."
         : snapshot.reason === "time-budget" ? "The review reached its time limit. Try a more focused request or another model."
         : reviewerUnavailable ? "The reviewer is unavailable. Set up a judgement model, then retry."
-        : snapshot.attempts.length ? "The drafts did not pass all checks. Try a more focused request or another model."
-        : "The reviewer is unavailable. Check the judgement model in Settings → Providers & Models, then retry."
+        : describeReviewCause(snapshot.reason ?? "") ?? (snapshot.attempts.length ? "The drafts did not pass all checks. Try a more focused request or another model."
+        : "The reviewer is unavailable. Check the judgement model in Settings → Providers & Models, then retry.")
       : combining ? "Combining the completed drafts into one coherent response. The merged response still awaits its own review."
       : descriptions[snapshot.phase];
   if (!showDeveloperDetails) return null;
@@ -61,16 +67,25 @@ export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = fa
     try { await navigator.clipboard.writeText(JSON.stringify(status, null, 2)); setCopiedId(status.id); setCopyFailed(false); }
     catch { setCopyFailed(true); }
   };
-  return <section aria-label="Response review" className={css({ width: "100%", maxWidth: "56rem", marginInline: "auto", paddingBlock: ".75rem", minWidth: 0 })}>
-    <div role="status" aria-live="polite" aria-atomic="true">
-      <div className={css({ display: "flex", alignItems: "baseline", gap: ".75rem", flexWrap: "wrap" })}>
-        <span className={css({ fontSize: ".8rem", fontWeight: 600 })}>{bestEffort ? "Best available response" : combining ? "Combining completed drafts" : titles[snapshot.phase]}</span>
-        {active && snapshot.attempt > 0 && <span className={muted}>Attempt {snapshot.attempt} of {snapshot.maxAttempts}</span>}
+  const findings = diagnoseDraft(snapshot, elapsed);
+  return <section aria-label="Response review" className={css({ width: "100%", maxWidth: "56rem", marginInline: "auto", marginBlock: ".75rem", minWidth: 0,
+    display: "grid", gap: ".875rem", padding: "1rem", border: "1px solid var(--line-soft, var(--border))", borderRadius: ".75rem" })}>
+    <div role="status" aria-live="polite" aria-atomic="true" className={css({ display: "grid", gap: ".375rem" })}>
+      <div className={css({ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" })}>
+        <span className={css({ fontSize: ".875rem", fontWeight: 600, marginRight: "auto" })}>{bestEffort ? "Best available response" : combining ? "Combining completed drafts" : titles[snapshot.phase]}</span>
+        {active && snapshot.attempt > 0 && <span className={chip}>Attempt {snapshot.attempt} of {snapshot.maxAttempts}</span>}
+        <span className={chip}>{snapshot.judgeModel ?? "no reviewer"}</span>
+        <span className={chip}>{snapshot.reasoning} reasoning · {snapshot.standard}</span>
       </div>
-      <p className={muted}>{description}</p>
+      <p className={cx(muted, css({ margin: 0 }))}>{description}</p>
       {reviewerUnavailable &&
         <a href="/chat?settings=judgement" target="_blank" rel="noopener noreferrer" className={button}>Set up judgement model</a>}
     </div>
+    <DraftStageStepper snapshot={snapshot} />
+    <DraftTimeBar elapsedMs={elapsed} />
+    <div className={css({ display: "grid", gap: ".5rem" })}><h3 className={heading}>Needs attention</h3><DraftAttentionList findings={findings} /></div>
+    <div className={css({ display: "grid", gap: ".5rem" })}><h3 className={heading}>Where the time went</h3><DraftTimeline snapshot={snapshot} /></div>
+    <div className={css({ display: "grid", gap: ".5rem" })}><h3 className={heading}>Checks by draft</h3><DraftCheckGrid snapshot={snapshot} /></div>
     {!active && snapshot.phase !== "cancelled" && <details>
       <summary className={detail}>About this review</summary>
       {notes.length > 0 && <><p className={muted}>During drafting:</p><ul className={muted}>{notes.map(note => <li key={note}>{note}</li>)}</ul></>}
@@ -86,21 +101,11 @@ export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = fa
     <details>
         <summary className={detail}>Developer diagnostics</summary>
         <JudgementStateInspector snapshot={snapshot} />
-        <p className={muted}>{snapshot.judgeModel ?? "No reviewer dispatched"} · {snapshot.reasoning} reasoning · {snapshot.standard} response · {(snapshot.elapsedMs / 1000).toFixed(1)} s</p>
         <p className={muted}>Uncalibrated probability estimates. Evidence and runtime checks determine eligibility; quality and teaching style guide revision and selection.</p>
         {snapshot.reason && <p className={muted}>Outcome: {snapshot.reason}</p>}
         {snapshot.synthesisSourceAttempts?.length ? <p className={muted}>Source attempts: {snapshot.synthesisSourceAttempts.join(", ")}</p> : null}
-        {snapshot.attempts.map(attempt => <details key={attempt.attempt}>
-          <summary className={detail}>{attempt.status === "generation-error" ? "Attempt" : "Draft"} {attempt.attempt} · {attempt.status} · {attempt.reasoning} reasoning</summary>
-          <p className={muted}>Generation {Math.round(attempt.generationMs)} ms · review {Math.round(attempt.judgementMs)} ms</p>
-          {attempt.synthesisSourceAttempts?.length ? <p className={muted}>Source attempts: {attempt.synthesisSourceAttempts.join(", ")}</p> : null}
-          <div className={css({ overflowX: "auto", maxWidth: "100%" })}>
-            <table className={css({ width: "100%", fontSize: ".7rem", textAlign: "left", borderCollapse: "collapse" })}>
-              <thead><tr><th scope="col">Check</th><th scope="col">Result</th><th scope="col">P(violation)</th></tr></thead>
-              <tbody>{attempt.checks.map(check => <tr key={check.id}><th scope="row" className={css({ fontWeight: 400, overflowWrap: "anywhere", paddingBlock: ".2rem" })}>{check.id}</th><td>{check.status}</td><td>{check.probability === null ? "Unknown" : check.probability.toFixed(3)}</td></tr>)}</tbody>
-            </table>
-          </div>
-        </details>)}
+        {snapshot.attempts.map(attempt => attempt.synthesisSourceAttempts?.length
+          ? <p key={attempt.attempt} className={muted}>Draft {attempt.attempt} merged attempts {attempt.synthesisSourceAttempts.join(", ")}</p> : null)}
         <button className={button} type="button" onClick={() => { void copy(); }}>{copiedId === status.id ? "Review copied" : "Copy review"}</button>
         {copyFailed && <p role="status" className={muted}>Clipboard access was unavailable.</p>}
     </details>

@@ -713,6 +713,8 @@ export function courseCollaborationPrompt(
 ${active}
 
 Treat course creation as a conversation, not a one-shot generation task. Establish the intended learners, current level, observable outcomes, pace or time constraints, and which existing plans or artifacts matter. Offer a compact outline and invite corrections before calling course_create, unless the learner explicitly asks you to create immediately. After creation, use course_inspect and make small, agreed changes with course_update so the learner can steer the structure. You can add modules, lessons, quizzes, other artifacts, assignments, and flashcards. Never claim a course changed unless the tool call succeeded, and always return the course link after a successful change.
+
+When the learner wants to talk a lesson or idea through with a colleague or study partner, you can offer a Keating study room. Only after they agree, use room_list to pick one of their rooms or room_invite to open one from an agreed title and topic; give them the invite link to send themselves, since Keating never contacts anyone.
 ${COURSE_PROMPT_END}`;
 }
 

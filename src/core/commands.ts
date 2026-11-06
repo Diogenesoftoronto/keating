@@ -39,9 +39,10 @@ export const extensionCommandSpecs: CommandSpec[] = [
 ];
 
 export const cliCommandSpecs: CommandSpec[] = [
+	{ name: "sync", args: "[login|logout|status|list|open <id>|add <file>]", section: "Core", description: "Sync encrypted account conversations across devices; keep hosted inference separate." },
 	{ name: "shell",        args: "[prompt]",       section: "Core",          description: "Launch the AI-powered hyperteacher shell." },
 	{ name: "tui",          args: "[prompt]",       section: "Core",          description: "Launch the OpenTUI host over Pi RPC." },
-	{ name: "login",        args: "[notorganic] [--manual] [--judgement] | --status", section: "Core", description: "Connect Not Organic hosted inference, with optional judgement access." },
+	{ name: "login",        args: "[notorganic] [--manual] [--model=inkling-2-small|balanced|flint] [--tutor] [--judgement] | --status", section: "Core", description: "Connect Not Organic hosted inference, with optional tutor consultation and judgement access." },
 	{ name: "logout",       args: "[notorganic]",   section: "Core",          description: "Remove the project-scoped Not Organic capability." },
 	{ name: "auth",         args: "status",         section: "Core",          description: "Show Not Organic capability status without exposing credentials." },
 	{ name: "web",          args: "[port] [runtime options]", section: "Core", description: "Start the browser UI with browser, host, external, or cloud execution." },

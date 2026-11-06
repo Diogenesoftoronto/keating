@@ -41,6 +41,8 @@ export interface TrajectorySessionMessage {
 	status?: "complete" | "running" | "failed";
 	/** Draft-gate outcome for this tutor turn: check verdicts and the active work it was judged against. */
 	draftReview?: import("../../keating/storage").TeachingDraftReceiptRecord;
+	/** Saved judgements for this turn (assistant) or for this message's extraction (learner). */
+	turnJudgement?: import("../../keating/judgement/turn-records").TurnJudgementRecord;
 }
 
 export type NormalizedArtifactMedia =

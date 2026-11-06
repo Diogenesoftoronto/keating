@@ -1,8 +1,14 @@
 import { clearPendingChatTurn } from "../notorganic-provider/pending-chat-turn";
 import { LearningSourcePassage } from "./LearningIntelligenceDiagnostics";
+import { LearningReferenceScope } from "./LearningReferenceLink";
+import { ConstraintPlanChips } from "./ConstraintPlanChips";
+import { PLAN_AROUND_CONSTRAINT_EVENT } from "../keating/learning-intelligence/outlook";
 import { learningRowSourceIds } from "../keating/learning-intelligence/source-navigation";
+import { isPrivateForkContextMessage } from "../keating/private-fork-provenance";
+import { ImportedPrivateForkContext } from "./private-fork/ImportedPrivateForkContext";
 import {
   assistantTextParts,
+  interleaveLocalRows,
   textFromContent,
   mergeConsecutiveAssistantMessages,
   shouldRenderFlueMessage,
@@ -20,6 +26,7 @@ import { chatMascotState } from "./chat-mascot-state";
 import { ChatMascotMenu } from "./ChatMascotMenu";
 import "./chat-mascot.css";
 import { DraftReviewStatus } from "./DraftReviewStatus";
+import { DraftProgressCard } from "./DraftProgress";
 import { clearTeachingDraftContents, getTeachingDraftStatus, subscribeTeachingDraftStatus, teachingDraftIsActive } from "../keating/judgement/draft-status";
 import { prepareAudioAttachment } from "../lib/audio-attachment";
 import type { FlueConversation } from "../keating/flue/conversation";
@@ -162,6 +169,7 @@ import {
 } from "../keating/starter-prompts";
 import { getTailoredOpening } from "../keating/tailored-opening";
 import {
+  openUISegmentIsStreaming,
   parseOpenUIMessageSegments,
   stripOpenUIPrograms,
 } from "../keating/openui/segments";
@@ -1917,9 +1925,7 @@ const MarkdownText = memo(function MarkdownText({
 			  source={seg.rawProgram}
               metadata={seg.metadata}
 			  sourceComplete={seg.complete}
-              isStreaming={Boolean(
-                isRunning && seg.program !== seg.rawProgram.trimEnd(),
-              )}
+              isStreaming={openUISegmentIsStreaming(Boolean(isRunning), seg)}
             />
           );
         }
@@ -2700,6 +2706,10 @@ function toAssistantMessage(
     role: "user",
     createdAt: timestamp,
     content: assistantContentFromAgentContent(msg.content),
+    // Presentation metadata only: preserve the full user-role seed for the model.
+    ...(isPrivateForkContextMessage(message) ? {
+      metadata: { custom: { keatingPrivateFork: msg.keatingPrivateFork } },
+    } : {}),
   };
 }
 
@@ -3431,11 +3441,22 @@ function projectThreadMessages(
   const localError = local.some(message => message.role === "assistant" && ["error", "aborted"].includes(message.stopReason));
   const visibleNative = native.messages.filter(message => shouldRenderFlueMessage(message) && !(localError && message.settlement));
   const totalMessages = legacy.length + visibleNative.length + local.length;
+  const at = (row: ThreadMessageLike) => row.createdAt?.getTime() ?? 0;
+  // Native user rows borrow local timestamps by index, so sorting by them can
+  // lift a learner turn above earlier replies. Place by Flue's capture time.
+  const nativeRows = visibleNative.map(message => {
+    const row = flueThreadMessage(message, isRunning);
+    const captured = message.timestamp ? Date.parse(message.timestamp) : NaN;
+    return { row, time: Number.isFinite(captured) ? captured : at(row) };
+  });
   return decorate([
     ...legacy.map((message, index) => toAssistantMessage(message, index, totalMessages, false, provider)),
-    ...visibleNative.map(message => flueThreadMessage(message, isRunning)),
-    ...local.map((message, index) => toAssistantMessage(message, legacy.length + visibleNative.length + index, totalMessages, false, provider)),
-  ].sort((left, right) => (left.createdAt?.getTime() ?? 0) - (right.createdAt?.getTime() ?? 0)));
+    ...interleaveLocalRows(
+      nativeRows,
+      local.map((message, index) => toAssistantMessage(message, legacy.length + visibleNative.length + index, totalMessages, false, provider)),
+      at,
+    ),
+  ]);
 }
 
 function AssistantThread({
@@ -3500,6 +3521,8 @@ function AssistantThread({
   const messages = useMemo(() => {
     const visibleMessages = visibleAgentMessages(agent, speechEnabled);
     const lastMessage = visibleMessages.at(-1) as any;
+    // A running draft shows its own progress card (learners) or review panel
+    // (developers) below the thread instead of the rotating status line.
     if (agent && isRunning && !draftActive && lastMessage?.role === "user") {
       return [...visibleMessages, makePrefillStatusMessage(agent, loadingStep)];
     }
@@ -3569,6 +3592,16 @@ function AssistantThread({
     onSendStarted: () => setComposerHasUrl(false),
   });
   useQuizConversationEvents({ agent, submitLearnerTurn });
+  // "Plan around this" on a learner message sends their request in this chat.
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ sessionId?: string; text?: string }>).detail;
+      if (!detail?.text || detail.sessionId !== callbacks.sessionId) return;
+      submitLearnerTurn(detail.text);
+    };
+    window.addEventListener(PLAN_AROUND_CONSTRAINT_EVENT, handler);
+    return () => window.removeEventListener(PLAN_AROUND_CONSTRAINT_EVENT, handler);
+  }, [callbacks.sessionId, submitLearnerTurn]);
 
   const storeAdapter = useMemo(
     () => ({
@@ -3635,6 +3668,7 @@ function AssistantThread({
     >
       <QuizGradesContext.Provider value={quizGradesContextValue}>
 		<OpenUISessionScopeContext.Provider value={callbacks.sessionId}>
+		<LearningReferenceScope.Provider value={callbacks.sessionId}>
 			<KeatingOpenUIActionProvider onAction={handleOpenUIAction}>
           <DeveloperChatDetails.Provider value={uiSettings.showDeveloperDetails}>
           <AssistantRuntimeProvider runtime={runtime}>
@@ -3694,6 +3728,7 @@ function AssistantThread({
                     />
                   </AuiIf>
                   <ThreadPrimitive.Messages components={threadComponents} />
+                  {agent && !uiSettings.showDeveloperDetails && <DraftProgressCard status={draftStatus} />}
                   {agent && <DraftReviewStatus sessionId={agent.sessionId} status={draftStatus} showDeveloperDetails={uiSettings.showDeveloperDetails} />}
                 </div>
                 <ThreadPrimitive.ViewportFooter
@@ -3738,6 +3773,7 @@ function AssistantThread({
           </AssistantRuntimeProvider>
           </DeveloperChatDetails.Provider>
 			</KeatingOpenUIActionProvider>
+		</LearningReferenceScope.Provider>
 		</OpenUISessionScopeContext.Provider>
       </QuizGradesContext.Provider>
     </AuthErrorContext.Provider>
@@ -4036,6 +4072,23 @@ function UserMessage({
   const sessionId = useContext(OpenUISessionScopeContext);
   const sourceIds = useAuiState(({ message }) => message.metadata.custom?.keatingLearningSourceIds as string[] | undefined);
   const ownText = useAuiState(({ message }) => message.content.filter(part => part.type === "text").map(part => part.type === "text" ? part.text : "").join("\n\n"));
+  const provenance = useAuiState(({ message }) => message.metadata.custom?.keatingPrivateFork);
+  if (isPrivateForkContextMessage({ keatingPrivateFork: provenance })) {
+    return (
+      <MessagePrimitive.Root
+        data-learning-session-id={sessionId}
+        data-learning-message-ids={JSON.stringify(sourceIds ?? [])}
+        tabIndex={-1}
+        className={css({ marginInline: "auto", marginBottom: "1rem", width: "100%", maxWidth: "56rem" })}
+      >
+        <ImportedPrivateForkContext
+          provenance={provenance}
+          content={ownText}
+          copyAction={ownText ? <CopyButton text={ownText} label="Copy imported context" variant="ghost" /> : null}
+        />
+      </MessagePrimitive.Root>
+    );
+  }
   return (
     <MessagePrimitive.Root
       data-learning-session-id={sessionId}
@@ -4123,6 +4176,7 @@ function UserMessage({
             <MessagePrimitive.Content components={components} />
           </div>
           <LearningSourcePassage sessionId={sessionId} sourceIds={sourceIds ?? []} />
+          <ConstraintPlanChips sessionId={sessionId} messageIds={sourceIds ?? []} messageText={ownText} />
         </div>
       </div>
     </MessagePrimitive.Root>

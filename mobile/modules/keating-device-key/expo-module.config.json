@@ -1,9 +1,9 @@
 {
   "platforms": ["apple", "android"],
   "apple": {
-    "modules": ["KeatingDeviceKeyModule"]
+    "modules": ["KeatingDeviceKeyModule", "KeatingSyncCryptoModule"]
   },
   "android": {
-    "modules": ["com.diogenesoftoronto.keating.devicekey.KeatingDeviceKeyModule"]
+    "modules": ["com.diogenesoftoronto.keating.devicekey.KeatingDeviceKeyModule", "com.diogenesoftoronto.keating.devicekey.KeatingSyncCryptoModule"]
   }
 }

@@ -3,6 +3,7 @@ import { chmod, mkdtemp, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { JudgementRequest } from "../packages/learner-contracts/src/judgement/contracts.js";
+import { TEACHING_POLICY_THRESHOLDS } from "../packages/learner-contracts/src/judgement/teaching-policy-catalog.js";
 import {
   createReferenceProvider, createSystemOneProvider, loadCredential,
   type BenchmarkFetch, type SystemOneProviderConfig,
@@ -47,7 +48,8 @@ describe("System One benchmark adapter", () => {
     expect(result.answers.quality!.value).toBe(1);
     expect(result.usage).toEqual({ inputTokens: 100, outputTokens: 0 });
     expect(result.raw).toEqual(valid());
-    for (const [noul, expected] of [[0.2, false], [0.200001, null], [0.799999, null], [0.8, true]] as const) {
+    const { passAtMost, failAtLeast } = TEACHING_POLICY_THRESHOLDS;
+    for (const [noul, expected] of [[passAtMost, false], [passAtMost + 1e-6, null], [failAtLeast - 1e-6, null], [failAtLeast, true]] as const) {
       const body = valid(); body.answers.supported.noul = noul;
       const outcome = await provider(body).evaluate(request);
       expect(outcome.status === "ok" && outcome.answers.supported!.value).toBe(expected);

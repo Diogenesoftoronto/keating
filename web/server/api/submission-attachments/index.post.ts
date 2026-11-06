@@ -4,7 +4,7 @@ import { attachmentStore, type StoredAttachment } from "../../utils/submission-a
 
 export default defineEventHandler(async (event) => {
   const origin = getHeader(event, "origin");
-  if (origin && origin !== getRequestURL(event).origin) throw createError({ statusCode: 403, statusMessage: "Cross-origin uploads are not allowed." });
+  if (origin && origin !== getRequestURL(event, { xForwardedProto: true, xForwardedHost: false }).origin) throw createError({ statusCode: 403, statusMessage: "Cross-origin uploads are not allowed." });
   const session = await requireCourseProductSession(event);
   const length = Number(getHeader(event, "content-length"));
   if (!Number.isSafeInteger(length) || length <= 0) throw createError({ statusCode: 411, statusMessage: "Upload length is required." });

@@ -3,6 +3,8 @@ import { LearnerSyncError } from "./learner-sync";
 export interface AccountSyncKey {
 	keyId: string;
 	key: CryptoKey;
+	/** Separate non-extractable key for opaque content identifiers. */
+	indexingKey?: CryptoKey;
 	createdAt: string;
 }
 
@@ -57,9 +59,15 @@ async function digestHex(value: Uint8Array): Promise<string> {
 
 async function importRawKey(bytes: Uint8Array): Promise<AccountSyncKey> {
 	const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+	const base = await cryptoApi().subtle.importKey("raw", buffer, "HKDF", false, ["deriveKey"]);
+	const indexingKey = await cryptoApi().subtle.deriveKey({
+		name: "HKDF", hash: "SHA-256", salt: new Uint8Array(32),
+		info: new TextEncoder().encode("keating-chat-content-index-v1"),
+	}, base, { name: "HMAC", hash: "SHA-256", length: 256 }, false, ["sign"]);
 	return {
 		keyId: (await digestHex(bytes)).slice(0, 32),
 		key: await cryptoApi().subtle.importKey("raw", buffer, "AES-GCM", false, ["encrypt", "decrypt"]),
+		indexingKey,
 		createdAt: new Date().toISOString(),
 	};
 }
@@ -104,11 +112,20 @@ function transactionDone(transaction: IDBTransaction): Promise<void> {
 
 export class IndexedDbAccountSyncKeyStore implements AccountSyncKeyStore {
 	private database: Promise<IDBDatabase> | null = null;
+	private readonly databaseName: string;
+
+	/** Legacy unscoped keys are never reused by account-scoped sessions. */
+	constructor(namespace?: string) {
+		if (namespace !== undefined && !/^account-[a-f0-9]{64}$/u.test(namespace)) {
+			throw new LearnerSyncError("The account sync key namespace is invalid.");
+		}
+		this.databaseName = namespace ? `${DB_NAME}:${namespace}` : DB_NAME;
+	}
 
 	private open(): Promise<IDBDatabase> {
 		if (this.database) return this.database;
 		this.database = new Promise((resolve, reject) => {
-			const request = indexedDB.open(DB_NAME, 1);
+			const request = indexedDB.open(this.databaseName, 1);
 			request.onupgradeneeded = () => {
 				if (!request.result.objectStoreNames.contains(STORE_NAME)) {
 					request.result.createObjectStore(STORE_NAME, { keyPath: "keyId" });

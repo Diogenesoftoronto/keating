@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, getRouterParam, getQuery, setResponseHeaders } from "h3";
 import { requireCourseProductSession } from "../../utils/course-session";
-import { attachmentStore, type StoredAttachment } from "../../utils/submission-attachments";
+import { attachmentStore, ownsAttachmentAccount, type StoredAttachment } from "../../utils/submission-attachments";
 import { getCourseForAccount } from "../../utils/course-repository";
 
 export default defineEventHandler(async (event) => {
@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
   if (!/^attachment_[a-f0-9]{32}$/.test(id)) throw createError({ statusCode: 404 });
   const storage = attachmentStore();
   const metadata = await storage.getItem<StoredAttachment>(`${id}:metadata`);
-  let allowed = metadata?.accountId === session.accountId;
+  let allowed = !!metadata && await ownsAttachmentAccount(session.accountId, metadata.accountId);
   const courseId = getQuery(event).courseId;
   if (metadata && !allowed && typeof courseId === "string") {
     // This projection already enforces teacher consent and peer-sharing rules.

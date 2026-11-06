@@ -155,13 +155,16 @@ export interface UiStudyPlanNode {
 /**
  * Work the learner does away from the conversation.
  *
- * One node covers four shapes because they differ in framing and in what the
+ * One node covers six shapes because they differ in framing and in what the
  * learner hands back, not in structure: an `assignment` produces one
  * deliverable, a `practice` set is repeated drills, a `draft` is long-form
- * writing revised over rounds, and `fieldwork` collects evidence from the world
- * against a protocol.
+ * writing revised over rounds, `fieldwork` collects evidence from the world
+ * against a protocol, `connect` takes an idea to other people (a community,
+ * a forum, a friend, a meetup) and reports back what they said, and `person`
+ * prepares the learner to learn from someone — a sourced profile, questions
+ * to ask, and what they took away.
  */
-export type UiTaskKind = "assignment" | "practice" | "draft" | "fieldwork";
+export type UiTaskKind = "assignment" | "practice" | "draft" | "fieldwork" | "connect" | "person";
 
 export interface UiTaskItem {
   id: string;
@@ -503,7 +506,7 @@ const CODING_TEST_KEYS = new Set(["id", "label", "args", "expected"]);
 const MUSIC_LAB_KEYS = new Set(["type", "id", "title", "code", "brief", "controls", "visualization"]);
 const SIMULATION_PARAMETER_KEYS = new Set(["id", "label", "unit", "min", "max", "step", "value"]);
 const SIMULATION_READOUT_KEYS = new Set(["id", "label", "unit", "expr", "precision", "emphasis"]);
-const TASK_KINDS = new Set<UiTaskKind>(["assignment", "practice", "draft", "fieldwork"]);
+const TASK_KINDS = new Set<UiTaskKind>(["assignment", "practice", "draft", "fieldwork", "connect", "person"]);
 const TASK_SUBMISSION_FORMATS = new Set(["text", "link", "none"]);
 const IMAGE_KEYS = new Set(["type", "id", "alt", "resource"]);
 const MEDIA_KEYS = new Set(["type", "id", "kind", "resource"]);

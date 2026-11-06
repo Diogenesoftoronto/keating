@@ -36,6 +36,8 @@ import { createTuiTheme } from "./host/theme.js";
 import { createHostView } from "./host/view.js";
 
 export interface OpenTuiOptions extends Pick<HostControllerOptions, "uiActionDispatcher"> {
+  /** Verified account/profile session selection supplied by the CLI host. */
+  sessionArgs?: string[];
   /** Alias retained for direct host embedding callers. */
   uiActionDispatcher?: UiActionDispatcher;
   /** Test/integration seam; production reads Pi's project-scoped session catalog. */
@@ -77,7 +79,7 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
     tuiProfile: await loadTuiProfile(cwd),
     editorMode: detectTuiEditorMode(process.env),
   });
-  const client = await launchRpcClient(cwd);
+  const client = await launchRpcClient(cwd, options.sessionArgs);
   const rpcUiActionDispatcher = options.uiActionDispatcher ? undefined : new RpcUiActionDispatcher(client);
   const journalStore = rpcUiActionDispatcher
     ? new UiActionJournalStore({ storage: new FileUiActionJournalStorage(cwd), dispatcher: rpcUiActionDispatcher })
@@ -188,5 +190,9 @@ export async function launchOpenTui(cwd: string, initialPrompt?: string, options
   renderer.start();
   if (initialPrompt?.trim()) void submit(context, initialPrompt);
 
-  return result;
+  const outcome = await result;
+  // Account reconciliation may run as soon as the host returns. Wait for the
+  // RPC shutdown path before allowing it to replace materialized session files.
+  await client.stop();
+  return outcome;
 }

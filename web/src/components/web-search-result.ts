@@ -66,6 +66,8 @@ function stringifyResult(result: unknown): string {
 
 function textFromResult(result: unknown): string {
 	if (typeof result === "string") return result.trim();
+	// Pi tool results arrive as the bare content array: [{ type: "text", text }].
+	if (Array.isArray(result)) return textFromContent(result) ?? stringifyResult(result);
 	if (!result || typeof result !== "object") return stringifyResult(result);
 	const record = result as Record<string, unknown>;
 	const details = record.details;
@@ -131,24 +133,28 @@ function normalizeSite(raw: unknown): WebSearchSite | null {
 	return { url, title, snippet: snippet?.slice(0, 240) };
 }
 
-const URL_PATTERN = /\[([^\]]+)\]\(<?(https?:\/\/[^)>\s]+)>?\)/g;
-const BARE_URL_PATTERN = /(https?:\/\/[^\s<>"')]+)/g;
+// URLs may contain balanced parentheses (Wikipedia's Mercury_(planet)); a
+// <…>-wrapped link may contain any parenthesis at all.
+const URL_BODY = String.raw`https?:\/\/(?:[^\s()<>"']|\([^\s()<>"']*\))+`;
+const URL_PATTERN = new RegExp(String.raw`\[((?:[^\[\]]|\[[^\]]*\])+)\]\((?:<(https?:\/\/[^>\s]+)>|(${URL_BODY}))\)`, "g");
+const BARE_URL_PATTERN = new RegExp(`(${URL_BODY})`, "g");
+const SEARCH_PREAMBLE = /^UNTRUSTED WEB SEARCH RESULTS[^\n{]*/;
 
 function sitesFromText(text: string): WebSearchSite[] {
 	const sites: WebSearchSite[] = [];
 	let match: RegExpExecArray | null;
 	URL_PATTERN.lastIndex = 0;
 	while ((match = URL_PATTERN.exec(text)) !== null && sites.length < 8) {
-		const url = match[2].replace(/[.,;:!?]+$/, "");
-		if (url.startsWith("http")) {
+		const url = normalizeHttpUrl((match[2] ?? match[3]).replace(/[.,;:!?]+$/, ""));
+		if (url) {
 			sites.push({ url, title: match[1].trim() || undefined, snippet: undefined });
 		}
 	}
 	if (sites.length === 0) {
 		BARE_URL_PATTERN.lastIndex = 0;
 		while ((match = BARE_URL_PATTERN.exec(text)) !== null && sites.length < 8) {
-			const url = match[1].replace(/[.,;:!?<>]+$/, "");
-			if (url.startsWith("http")) sites.push({ url, title: undefined, snippet: undefined });
+			const url = normalizeHttpUrl(match[1].replace(/[.,;:!?<>]+$/, ""));
+			if (url) sites.push({ url, title: undefined, snippet: undefined });
 		}
 	}
 	return sites;
@@ -173,7 +179,8 @@ export function parseWebSearchResult(result: unknown, args: unknown): ParsedWebS
 	}
 	if (sites.length === 0 && text) {
 		try {
-			const parsedText = JSON.parse(text) as unknown;
+			// Hosted search prefixes its JSON with an untrusted-content warning line.
+			const parsedText = JSON.parse(text.replace(SEARCH_PREAMBLE, "").trim()) as unknown;
 			const jsonArray = findSiteArray(parsedText);
 			if (jsonArray) sites = parseSiteArray(jsonArray);
 		} catch {
@@ -181,7 +188,14 @@ export function parseWebSearchResult(result: unknown, args: unknown): ParsedWebS
 		}
 	}
 	if (sites.length === 0) sites = sitesFromText(text);
-	return { query, sites: [...new Map(sites.map(site => [site.url, site])).values()].slice(0, 8), text };
+	return { query, sites: [...new Map(sites.map(site => [site.url, withoutUrlTitle(site)])).values()].slice(0, 8), text };
+}
+
+/** Providers fall back to the URL as a title; the card already shows the domain. */
+function withoutUrlTitle(site: WebSearchSite): WebSearchSite {
+	const title = site.title?.trim();
+	if (!title || title === site.url || normalizeHttpUrl(title) === site.url) return { ...site, title: undefined };
+	return site;
 }
 
 function parseSiteArray(value: unknown[]): WebSearchSite[] {
@@ -199,10 +213,51 @@ export function formatSites(sites: WebSearchSite[]): string {
 
 export function hostOf(url: string): string {
 	try {
-		return new URL(url).hostname.replace(/^www\./, "");
+		const parsed = new URL(url);
+		const hostname = parsed.hostname
+			.replace(/\.$/, "")
+			.replace(/^www\./, "")
+			.split(".")
+			.map(decodePunycodeLabel)
+			.join(".");
+		return parsed.port ? `${hostname}:${parsed.port}` : hostname;
 	} catch {
 		return url.replace(/^https?:\/\//, "").split("/")[0] ?? url;
 	}
+}
+
+/** Display IDN hosts (xn--mnchen-3ya.de) as people type them (münchen.de). RFC 3492. */
+function decodePunycodeLabel(label: string): string {
+	if (!/^xn--/i.test(label)) return label;
+	const input = label.slice(4).toLowerCase();
+	const base = 36, tMin = 1, tMax = 26, skew = 38, damp = 700;
+	const delimiter = input.lastIndexOf("-");
+	const output = delimiter > 0 ? [...input.slice(0, delimiter)].map(c => c.codePointAt(0) ?? 0) : [];
+	let n = 128, i = 0, bias = 72;
+	for (let index = delimiter > 0 ? delimiter + 1 : 0; index < input.length;) {
+		const oldi = i;
+		for (let w = 1, k = base; ; k += base) {
+			if (index >= input.length) return label;
+			const code = input.charCodeAt(index++);
+			const digit = code >= 48 && code < 58 ? code - 22 : code >= 97 && code < 123 ? code - 97 : base;
+			if (digit >= base) return label;
+			i += digit * w;
+			const t = k <= bias ? tMin : k >= bias + tMax ? tMax : k - bias;
+			if (digit < t) break;
+			w *= base - t;
+		}
+		const length = output.length + 1;
+		let delta = oldi === 0 ? Math.floor((i - oldi) / damp) : (i - oldi) >> 1;
+		delta += Math.floor(delta / length);
+		let k = 0;
+		for (; delta > ((base - tMin) * tMax) >> 1; k += base) delta = Math.floor(delta / (base - tMin));
+		bias = Math.floor(k + ((base - tMin + 1) * delta) / (delta + skew));
+		n += Math.floor(i / length);
+		if (n > 0x10ffff) return label;
+		i %= length;
+		output.splice(i++, 0, n);
+	}
+	return String.fromCodePoint(...output);
 }
 
 

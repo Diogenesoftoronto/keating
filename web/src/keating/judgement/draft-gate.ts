@@ -1,4 +1,5 @@
 import { DEFAULT_MODELS } from "@keating/runtime-config";
+import { isWebSearchToolName, parseWebSearchResult } from "../../components/web-search-result";
 import type { AgentOptions } from "@earendil-works/pi-agent-core";
 import {
   createAssistantMessageEventStream,
@@ -37,7 +38,9 @@ import { JEV_REQUEST_TOKEN_LIMIT, JEV_STATE_QUESTION_TOKEN_LIMIT, loadJudgementM
 import { markDiagnosticOperation, unmarkDiagnosticOperation } from "./diagnostics";
 import { createWebJudgementRuntime, type WebJudgementRuntime } from "./runtime";
 import { describeDraftFailure } from "./draft-failure";
+import { DRAFT_TIME_BUDGET_MS } from "./draft-progress";
 import { withReviewNotice } from "./review-notice";
+import { attachModelRequestPayload, loggingJudge, recordModelRequest } from "../model-request-log";
 import type { BackgroundActivityPolicy } from "../../../../packages/learner-contracts/src/judgement/background-activity-policy";
 
 type StreamFn = NonNullable<AgentOptions["streamFn"]>;
@@ -135,6 +138,25 @@ function messageText(message: Context["messages"][number]): string {
   return message.content.filter((part) => part.type === "text").map((part) => part.text).join("\n");
 }
 
+const MAX_SEARCH_SOURCES = 16;
+
+/**
+ * Search results the tutor received this turn, as checkable sources. Without
+ * them the checker judged "link what you used" and "don't invent facts"
+ * against raw tool text, and grounded replies were released as unverified.
+ */
+function searchSources(messages: Context["messages"]): TeachingPolicyTurn["sources"] {
+  const sources: TeachingPolicyTurn["sources"][number][] = [];
+  for (const message of messages) {
+    if (message.role !== "toolResult" || message.isError || !isWebSearchToolName(message.toolName)) continue;
+    for (const site of parseWebSearchResult(message.content, undefined).sites) {
+      if (sources.length >= MAX_SEARCH_SOURCES || sources.some(source => source.url === site.url)) continue;
+      sources.push({ id: `web-${sources.length + 1}`, url: site.url, text: [site.title, site.snippet].filter(Boolean).join(" — ").slice(0, 2_000) || site.url });
+    }
+  }
+  return sources;
+}
+
 function projectedTurn(context: Context, evidence: Partial<TeachingPolicyTurn>, domain?: TeachingPolicyTurn["domain"]): TeachingPolicyTurn {
   let latestIndex = context.messages.length - 1;
   while (latestIndex >= 0 && context.messages[latestIndex]!.role !== "user") latestIndex--;
@@ -153,7 +175,7 @@ function projectedTurn(context: Context, evidence: Partial<TeachingPolicyTurn>, 
     learnerEvidence: (evidence.learnerEvidence ?? []).map(({ kind, content }) => ({ kind, content })),
     availableTools: (context.tools ?? []).map((tool) => tool.name),
     toolResults: [...(evidence.toolResults ?? []).map(({ name, status, content }) => ({ name, status, content })), ...results],
-    sources: (evidence.sources ?? []).map(({ id, url, text }) => ({ id, url, text })),
+    sources: [...(evidence.sources ?? []), ...searchSources(context.messages)].map(({ id, url, text }) => ({ id, url, text })),
     assessment: evidence.assessment ?? "unknown",
     improvementRuns: evidence.improvementRuns ?? null,
     domain: domain ?? evidence.domain ?? "unknown",
@@ -280,7 +302,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
     if (streamOptions?.signal?.aborted) abort();
     const unsubscribe = subscribeJudgementModelSettings(abort);
     const usage = emptyUsage();
-    const budget = Math.min(180_000, Math.max(1, options.timeoutMs ?? 90_000));
+    const budget = Math.min(180_000, Math.max(1, options.timeoutMs ?? DRAFT_TIME_BUDGET_MS));
     let timedOut = false;
     const timer = setTimeout(() => { timedOut = true; abort(); }, budget);
     const current = () => !controller.signal.aborted && (options.isCurrent?.() ?? true);
@@ -369,7 +391,8 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       loadingEvidence = false;
       if (!current()) { publish(safeMessage("", true)); return; }
       const runtime = options.makeCaller ? undefined : createWebJudgementRuntime();
-      const judge = options.makeCaller?.() ?? createDraftGateJudgementCaller(runtime);
+      const judge = loggingJudge(options.makeCaller?.() ?? createDraftGateJudgementCaller(runtime), options.sessionId,
+        () => judgementModel.id);
       const judgementModel = options.judgementModel ?? runtime?.judgementModel ?? (() => {
         const settings = loadJudgementModelSettings();
         const hosted = settings.backend === "hosted";
@@ -431,7 +454,13 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
             privateContext.systemPrompt += "\n\n" + recovery;
             privateContext.messages.push({ role: "user", timestamp: Date.now(), content: recovery });
           }
-          const generationOptions: SimpleStreamOptions = { ...streamOptions, signal };
+          const logged = recordModelRequest({ sessionId: options.sessionId, kind: "draft", model: `${model.provider}/${model.id}`, context: privateContext });
+          const generationOptions: SimpleStreamOptions = { ...streamOptions, signal,
+            onPayload: async (payload, payloadModel) => {
+              const next = await streamOptions?.onPayload?.(payload, payloadModel);
+              attachModelRequestPayload(logged, next ?? payload);
+              return next;
+            } };
           if (reasoning === "off") delete generationOptions.reasoning;
           else generationOptions.reasoning = reasoning;
           const privateStream = await stream(model, privateContext, generationOptions);

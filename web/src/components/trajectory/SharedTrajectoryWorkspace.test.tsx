@@ -51,6 +51,26 @@ function annotation(
 }
 
 describe("shared trajectory workspace", () => {
+	test("inside the share page it leaves the title, counts and frame to the page", () => {
+		const data = {
+			session: { id: "shared-session", title: "Fractions session", subtitle: "Published teaching review" },
+			messages: [{ id: "assistant-1", role: "assistant" as const, ordinal: 0, text: "Invert the divisor, then multiply.", contentFingerprint: "sha256:m", label: "Tutor response" }],
+			artifacts: [],
+			annotations: [],
+		};
+		const card = renderToStaticMarkup(<SharedTrajectoryWorkspace data={data} />);
+		const page = renderToStaticMarkup(<SharedTrajectoryWorkspace data={data} chrome="page" />);
+		expect(card).toContain("Fractions session");
+		expect(card).toContain("Read only");
+		expect(page).not.toContain("Fractions session");
+		expect(page).not.toContain("Read only");
+		expect(page).not.toContain("<h1");
+		const outer = (html: string) => html.slice(0, html.indexOf(">") + 1);
+		expect(outer(card)).toContain("bd_1px_solid_var(--border)");
+		expect(outer(page)).not.toContain("bd_1px_solid_var(--border)");
+		expect(page).toContain("Invert the divisor, then multiply.");
+	});
+
 	test("renders the complete session with inline final notes and no assessment chrome", () => {
 		const messageText = "Invert the divisor, then multiply.";
 		const finalNote = annotation("final-note", {

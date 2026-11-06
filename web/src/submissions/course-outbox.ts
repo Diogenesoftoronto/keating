@@ -2,6 +2,8 @@ import type { UiSubmissionAttachment } from "@keating/learner-contracts";
 import type { CourseOperation } from "../courses/contracts";
 import { applyCourseOperation, getCourse } from "../courses/client";
 import { localList, localRead, localWrite, type LocalFile } from "./local-store";
+import { adoptedCourseAccount } from "./account-adoption";
+import { ensureCourseAccountSession } from "../courses/account-session";
 
 type SubmissionOperation = Extract<CourseOperation, { type: "assignment.submission.save" }>;
 export interface QueuedSubmission {
@@ -15,6 +17,7 @@ export interface QueuedSubmission {
   error?: string;
   remoteOperation?: SubmissionOperation;
   deliveredVersion?: number;
+  adoptedFrom?: string;
 }
 export const submissionKey = (accountId: string, courseId: string, assignmentId: string) => JSON.stringify([accountId, courseId, assignmentId]);
 const changed = () => window.dispatchEvent(new Event("keating:submission-saved"));
@@ -25,14 +28,20 @@ function exclusive<T>(work: () => Promise<T>): Promise<T> {
   return result;
 }
 export async function latestCourseSubmission(groupKey: string) {
-  const entries = (await localList<QueuedSubmission>("outbox")).filter((entry) => entry.groupKey === groupKey);
+  const entries = (await Promise.all((await localList<QueuedSubmission>("outbox")).map(adoptQueuedSubmission))).filter((entry) => entry.groupKey === groupKey);
   // A predecessor chain also orders revisions saved in the same millisecond.
   const parents = new Set(entries.map((entry) => entry.predecessor));
   return entries.find((entry) => !parents.has(entry.key));
 }
+export async function adoptQueuedSubmission(entry: QueuedSubmission): Promise<QueuedSubmission> {
+  const accountId = await adoptedCourseAccount(entry.accountId);
+  return accountId === entry.accountId ? entry : { ...entry, accountId, adoptedFrom: entry.accountId,
+    groupKey: submissionKey(accountId, entry.operation.courseId, entry.operation.assignmentId) };
+}
 let queueSerial = Promise.resolve();
 export async function queueCourseSubmission(accountId: string, operation: SubmissionOperation) {
   const save = async () => {
+    accountId = await adoptedCourseAccount(accountId);
     const groupKey = submissionKey(accountId, operation.courseId, operation.assignmentId);
     const previous = await latestCourseSubmission(groupKey);
     const entry: QueuedSubmission = {
@@ -52,15 +61,17 @@ export async function queueCourseSubmission(accountId: string, operation: Submis
   queueSerial = result.then(() => {}, () => {});
   return result;
 }
-async function remoteAttachment(accountId: string, metadata: UiSubmissionAttachment) {
+async function remoteAttachment(accountId: string, metadata: UiSubmissionAttachment, adoptedFrom?: string) {
   const key = JSON.stringify([accountId, metadata.id]);
-  const uploaded = await localRead<UiSubmissionAttachment>("uploads", key);
+  const uploaded = await localRead<UiSubmissionAttachment>("uploads", key)
+    ?? (adoptedFrom ? await localRead<UiSubmissionAttachment>("uploads", JSON.stringify([adoptedFrom, metadata.id])) : undefined);
   if (uploaded) return uploaded;
   const file = await localRead<LocalFile>("files", metadata.id);
   if (!file) return metadata; // Existing server attachment loaded from a course.
   const body = new FormData();
   body.set("file", file.blob, metadata.name);
-  const response = await fetch("/api/submission-attachments", { method: "POST", body });
+  await ensureCourseAccountSession();
+  const response = await fetch("/api/submission-attachments", { method: "POST", body, headers: { "x-keating-course-account": accountId } });
   const result = await response.json();
   if (!response.ok) throw new Error(result.statusMessage ?? "Attachment upload failed.");
   const remote = result as UiSubmissionAttachment;
@@ -73,7 +84,7 @@ export async function syncCourseSubmissions() {
   if (!navigator.onLine) return;
   await exclusive(async () => {
     const entries = (await localList<QueuedSubmission>("outbox")).sort((a, b) => a.queuedAt - b.queuedAt);
-    for (const entry of entries) {
+    for (let entry of entries) {
       if (entry.state === "delivered") continue;
       try {
         if (entry.predecessor) {
@@ -87,17 +98,18 @@ export async function syncCourseSubmissions() {
           entry.operation.baseVersion = Math.max(prior.deliveredVersion ?? 0, entry.operation.baseVersion);
         }
         const snapshot = await getCourse(entry.operation.courseId);
+        entry = await adoptQueuedSubmission(entry);
         // Never upload queued private work into a different signed-in account.
         if (snapshot.viewer.accountId !== entry.accountId) continue;
         if (!entry.remoteOperation) {
           const current = snapshot.course.assignmentSubmissions.find((submission) => submission.assignmentId === entry.operation.assignmentId && submission.accountId === entry.accountId);
           if ((current?.version ?? 0) !== entry.operation.baseVersion) throw new Error("The course copy changed on another device. Your work remains saved here; review the course copy before retrying.");
           const attachments: UiSubmissionAttachment[] = [];
-          for (const attachment of entry.operation.attachments ?? []) attachments.push(await remoteAttachment(entry.accountId, attachment));
+          for (const attachment of entry.operation.attachments ?? []) attachments.push(await remoteAttachment(entry.accountId, attachment, entry.adoptedFrom));
           entry.remoteOperation = { ...entry.operation, attachments, baseRevision: snapshot.course.revision };
           await localWrite("outbox", entry.key, entry);
         }
-        const result = await applyCourseOperation(entry.remoteOperation);
+        const result = await applyCourseOperation(entry.remoteOperation, entry.accountId);
         entry.state = "delivered";
         entry.error = undefined;
         entry.deliveredVersion = result.snapshot.course.assignmentSubmissions.find((submission) => submission.id === entry.operation.submissionId)?.version;

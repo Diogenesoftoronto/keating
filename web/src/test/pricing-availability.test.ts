@@ -54,6 +54,19 @@ describe("pricing availability", () => {
 		expect(pricingAvailability(true, true)).toBe("checkout");
 	});
 
+	test("accepts current and retained legacy model grants without requiring the default model", () => {
+		for (const model of ["inkling-2-small", "gpt-6.1-sol", "balanced"]) {
+			expect(isPublicCheckoutConfigured({
+				...completePublicConfig,
+				VITE_NOTORGANIC_SCOPE: `wallet:read usage:read billing:checkout infer:${model}`,
+			})).toBe(true);
+		}
+		expect(isPublicCheckoutConfigured({
+			...completePublicConfig,
+			VITE_NOTORGANIC_SCOPE: "wallet:read usage:read billing:checkout infer:unknown-model",
+		})).toBe(false);
+	});
+
 	test("does not turn wallet loading or a failed balance request into waitlist signup", () => {
 		expect(pricingPackAction(true, true, undefined, true, "keating_pack_10")).toBe("loading");
 		expect(pricingPackAction(true, true, undefined, false, "keating_pack_10")).toBe("unavailable");

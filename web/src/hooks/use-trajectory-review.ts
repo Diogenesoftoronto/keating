@@ -358,10 +358,16 @@ export function useTrajectoryReview(sessionId: string): UseTrajectoryReviewResul
 		setBusy((current) => ({ ...current, exporting: true }));
 		setError(null);
 		try {
-			const snapshot = await store.exportSnapshot(review.id);
+			const [snapshot, turns, receipts, labels] = await Promise.all([
+				store.exportSnapshot(review.id),
+				keatingStorage.getTurnJudgements(session.id).catch(() => []),
+				keatingStorage.getTeachingDraftReceipts(session.id).catch(() => []),
+				keatingStorage.getJudgementLabels(session.id).catch(() => []),
+			]);
 			const archive = buildTrajectoryReviewArchive({
 				snapshot,
 				session: { id: session.id, title: session.title, messages: session.messages },
+				...(turns.length || receipts.length || labels.length ? { judgements: { turns, receipts, labels } } : {}),
 			});
 			if (isCurrentSessionLoad(requestSequence, requestSessionId)) downloadTrajectoryReviewArchive(archive);
 		} catch (cause) {

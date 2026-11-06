@@ -31,7 +31,7 @@ import { loadKeatingUiSettings } from "../../keating/ui-settings";
 import { registerKeatingWebMcp } from "../../keating/webmcp";
 import { getProviderApiKey } from "../../lib/provider-models";
 import { isNotOrganicProvider } from "../../notorganic-provider";
-import { claimPendingChatTurn, pendingChatTurn } from "../../notorganic-provider/pending-chat-turn";
+import { claimPendingChatTurn } from "../../notorganic-provider/pending-chat-turn";
 import type { ChatPanelHandle } from "../../types/chat-panel";
 import type { SessionData, SessionMetadata } from "../../types/session";
 import { subscribeAgentEvents } from "../agent-subscriptions";
@@ -44,7 +44,9 @@ import {
   bootstrapMayProceed,
   latestRestorableSessionId,
   locationWithoutSessionParam,
+  rememberTabSession,
   requestedSessionId,
+  tabSessionId,
   withSessionRestoreTimeout,
 } from "./session-restore";
 import {
@@ -280,6 +282,7 @@ export function useAgentSessionLifecycle({
           return saveSessionSnapshot(agent, agentSessionId, agentCreatedAt);
         },
       }));
+      rememberTabSession(agentSessionId);
       await resumeClaimedChatTurn(refs, agent, agentSessionId, ensureSessionStartContext, persistSnapshot);
     },
     [
@@ -299,8 +302,17 @@ export function useAgentSessionLifecycle({
       if (subscriptions.panel) subscriptions.panel();
       if (subscriptions.persistence) subscriptions.persistence();
       if (subscriptions.analytics) subscriptions.analytics();
+      // The Flue transport holds this session's Web Lock until disposed. Without
+      // this, leaving the chat in-app (review, share, courses) kept the lock in
+      // this tab, and returning reported "This chat is open in another tab".
+      // Let an in-flight reply finish first rather than cancelling it. A
+      // disposed conversation reconnects lazily if it is ever reused.
+      const agent = refs.agentRef.current;
+      if (agent instanceof FlueConversation) {
+        void Promise.resolve(agent.whenIdle()).then(() => agent.dispose()).catch(() => undefined);
+      }
     };
-  }, []);
+  }, [refs]);
 
   return { prepareAgent, createAgent, subscriptions: subscriptionsRef.current };
 }
@@ -389,7 +401,7 @@ export function useChatPanelAttachment({
 
         void (async () => {
           try {
-            const requestedId = requestedSessionId(window.location.search, pendingChatTurn);
+            const requestedId = requestedSessionId(window.location.search, tabSessionId);
             const latestSessionId = await withSessionRestoreTimeout(
               requestedId
                 ? Promise.resolve(requestedId)

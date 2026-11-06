@@ -1,4 +1,5 @@
 import { KEATING_WEB_ORIGIN } from "../product-links";
+import { forgetNativeCourseAccount, nativeCourseAccountHeaders } from "./account-session";
 import { parseSetCookie } from "./cookie-jar";
 import {
   COURSE_ACCOUNT_COOKIE_NAME,
@@ -60,6 +61,7 @@ async function rememberCookies(header: string | null): Promise<void> {
 
 /** Drops the stored session; the next request starts a fresh course account. */
 export async function clearCourseSession(): Promise<void> {
+  await forgetNativeCourseAccount();
   courseCredential = null;
   await getCourseCredentialStore().deleteItem(courseAccountCredentialKey()).catch(() => undefined);
 }
@@ -78,6 +80,12 @@ async function request<T>(
 ): Promise<T> {
   const { signal: upstreamSignal, fetchImpl = fetch, timeoutMs = DEFAULT_REQUEST_TIMEOUT_MS } = options;
   const credential = await loadCourseCredential();
+  const account = await nativeCourseAccountHeaders(fetchImpl, credential ? `${COURSE_ACCOUNT_COOKIE_NAME}=${credential}` : undefined, upstreamSignal);
+  if (!account.current()) throw new Error("The course account changed.");
+  if (account.linked && credential) {
+    courseCredential = null;
+    await getCourseCredentialStore().deleteItem(courseAccountCredentialKey());
+  }
   const controller = new AbortController();
   let timedOut = false;
   const abortForUpstream = () => controller.abort();
@@ -90,7 +98,8 @@ async function request<T>(
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...(init.body ? { "Content-Type": "application/json" } : {}),
-    ...(credential ? { Cookie: `${COURSE_ACCOUNT_COOKIE_NAME}=${credential}` } : {}),
+    ...(!account.linked && credential ? { Cookie: `${COURSE_ACCOUNT_COOKIE_NAME}=${credential}` } : {}),
+    ...account.headers,
   };
 
   try {
@@ -99,9 +108,11 @@ async function request<T>(
       headers,
       signal: controller.signal,
     });
+    if (!account.current()) throw new Error("The course account changed.");
     await rememberCookies(response.headers.get("set-cookie"));
 
     const text = await response.text();
+    if (!account.current()) throw new Error("The course account changed.");
     let payload: unknown = null;
     try {
       payload = text ? JSON.parse(text) : null;
@@ -205,12 +216,14 @@ export async function courseMaterialDownloadRequest(
   materialId: string,
 ): Promise<{ url: string; headers: Record<string, string> }> {
   const credential = await loadCourseCredential();
-  if (!credential) {
+  const account = await nativeCourseAccountHeaders(fetch, credential ? `${COURSE_ACCOUNT_COOKIE_NAME}=${credential}` : undefined);
+  if (!account.current()) throw new Error("The course account changed.");
+  if (!credential && !account.linked) {
     throw new CourseApiError(401, "Reconnect Courses before opening this material.", "course_session_missing");
   }
   return {
     url: `${KEATING_WEB_ORIGIN}/api/courses/${encodeURIComponent(courseId)}/materials/${encodeURIComponent(materialId)}`,
-    headers: { Cookie: `${COURSE_ACCOUNT_COOKIE_NAME}=${credential}` },
+    headers: account.linked ? account.headers : { Cookie: `${COURSE_ACCOUNT_COOKIE_NAME}=${credential}` },
   };
 }
 

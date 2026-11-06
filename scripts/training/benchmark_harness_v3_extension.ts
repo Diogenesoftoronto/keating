@@ -9,6 +9,7 @@ import { HARNESS_V3_BOUNDED_APIS, limitHarnessPayload } from "./benchmark_harnes
 import { nativeSurfaceInstruction, nativeSurfaceSystemPrompt } from './native_surface.js';
 import { applyExperimentInstruction, validateExperimentInstruction } from './native_experiment.js';
 import { NATIVE_SOURCE_COMMAND, NATIVE_SOURCE_MESSAGE, decodeNativeSourceDelivery, nativeSourceMessage } from './native_source_document.js';
+import { assertResearchMaxThinking, assertResearchThinkingPayload, loadResearchServices, withNativeDraftReview } from './native_draft_review.js';
 
 const installed = new Map<string, { original: ApiProviderInternal; wrapped: ApiProviderInternal }>();
 type ApiProviderInternal = NonNullable<ReturnType<typeof getApiProvider>>;
@@ -67,6 +68,7 @@ export default function benchmarkHarnessExtension(pi: ExtensionAPI): void {
       baseUrl: request.transport.endpoint, apiKey: `$${request.transport.apiKeyEnv}`, api: "openai-completions",
       models: [{ id: request.transport.model, name: metadata.name ?? request.transport.model, input: ["text"],
         reasoning: metadata.reasoning ?? false, contextWindow: metadata.contextWindow, maxTokens: metadata.maxTokens,
+        ...(metadata.thinkingLevelMap ? { thinkingLevelMap: metadata.thinkingLevelMap } : {}),
         compat: { maxTokensField: "max_tokens" },
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } }],
     });
@@ -107,10 +109,10 @@ export default function benchmarkHarnessExtension(pi: ExtensionAPI): void {
     // Persist the actual session entry as delivery evidence even before Pi flushes its first assistant turn.
     log('source_document_delivered', { session_id: ctx.sessionManager.getSessionId(), entry });
   } });
-  pi.on("session_start", (_event, ctx) => {
-    if (request.transport.kind === "provider") {
+  pi.on("session_start", async (_event, ctx) => {
+    if (request.transport.kind === "provider" || request.research_capture) {
       const api = ctx.model?.api;
-      if (!api || !(HARNESS_V3_BOUNDED_APIS as readonly string[]).includes(api)) {
+      if (!api || request.transport.kind === "provider" && !(HARNESS_V3_BOUNDED_APIS as readonly string[]).includes(api)) {
         log("fatal", { code: "harness_unsupported_provider_api" });
         return;
       }
@@ -119,6 +121,7 @@ export default function benchmarkHarnessExtension(pi: ExtensionAPI): void {
       const prior = installed.get(api);
       const original = active === prior?.wrapped ? prior.original : active;
       const wrap = (method: "stream" | "streamSimple"): ApiProviderInternal["streamSimple"] => (model, context, options) => {
+        if (request.transport.kind === "tape") return original[method](model, context, options);
         if (model.provider !== request.transport.provider || model.id !== request.transport.model) throw new Error("harness_model_changed");
         const index = reserveProviderCall();
         const cap = Math.min(request.limits.max_output_tokens, model.maxTokens);
@@ -131,8 +134,10 @@ export default function benchmarkHarnessExtension(pi: ExtensionAPI): void {
             // Preserve the app hook, then enforce the final payload outside its error-swallowing event bus.
             const transformed = await options?.onPayload?.(payload, payloadModel);
             const bounded = limitHarnessPayload(model.api, transformed ?? payload, cap);
+            const thinkingEvidence = request.research_capture ? assertResearchThinkingPayload(model.api, bounded.payload) : undefined;
             log("provider_request", { index, model: { provider: model.provider, id: model.id, api: model.api }, context,
-              payload: bounded.payload, output_limit: { field: bounded.field, maximum: bounded.maximum }, max_retries: 0 });
+              payload: bounded.payload, output_limit: { field: bounded.field, maximum: bounded.maximum }, max_retries: 0,
+              ...(thinkingEvidence ? { thinking_evidence: thinkingEvidence } : {}) });
             return bounded.payload;
           },
         });
@@ -145,7 +150,23 @@ export default function benchmarkHarnessExtension(pi: ExtensionAPI): void {
         }).catch(() => log("provider_response_failed", { index }));
         return stream;
       };
-      registerApiProvider({ api, stream: wrap("stream"), streamSimple: wrap("streamSimple") }, "keating-benchmark-v3-limits");
+      let reviewed: ApiProviderInternal["streamSimple"] | undefined;
+      if (request.research_capture) {
+        try {
+          assertResearchMaxThinking(ctx.model!);
+          const input = { cwd, request, log };
+          const services = await loadResearchServices(input);
+          // Both public entrypoints use the provider's simple mapper for literal max.
+          // Every private generation still crosses wrap() and its accounting fence.
+          reviewed = withNativeDraftReview(wrap("streamSimple"), { ...input, services });
+          log("research_installed", { module: request.research_capture.services_module, thinking: "max",
+            measurement: request.transport.kind === "tape" ? "offline_simulated_thinking" : "payload_verification_required" });
+        } catch (error) {
+          const code = error instanceof Error && /^harness_[a-z_]+$/.test(error.message) ? error.message : "harness_research_initialization_failed";
+          log("fatal", { code }); return;
+        }
+      }
+      registerApiProvider({ api, stream: reviewed ?? wrap("stream"), streamSimple: reviewed ?? wrap("streamSimple") }, "keating-benchmark-v3-limits");
       installed.set(api, { original, wrapped: getApiProvider(api)! });
       log("limits_installed", { api, max_provider_calls: request.limits.max_provider_calls, max_output_tokens: request.limits.max_output_tokens, max_retries: 0 });
     }
@@ -184,7 +205,8 @@ export default function benchmarkHarnessExtension(pi: ExtensionAPI): void {
   if (request.transport.kind === "tape") {
     pi.registerProvider("keating-benchmark-tape", {
       baseUrl: "https://offline.invalid", apiKey: "offline-fixture-no-credential", api: "keating-benchmark-tape",
-      models: [{ id: "scripted", name: "Offline integration tape", reasoning: false, input: ["text"],
+      models: [{ id: "scripted", name: "Offline integration tape", reasoning: request.transport.modelMetadata?.reasoning ?? false,
+        ...(request.transport.modelMetadata?.thinkingLevelMap ? { thinkingLevelMap: request.transport.modelMetadata.thinkingLevelMap } : {}), input: ["text"],
         contextWindow: 200_000, maxTokens: request.limits.max_output_tokens,
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 } }],
       streamSimple(model, context) {

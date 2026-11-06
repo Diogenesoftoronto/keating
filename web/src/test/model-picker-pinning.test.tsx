@@ -4,7 +4,7 @@ import { ModelPicker, orderedPickerItems, type PickerItem } from "../components/
 import { NOTORGANIC_DEFAULT_MODEL } from "../notorganic-provider";
 
 const cloud: PickerItem = {
- id: "notorganic::openai-completions::balanced", name: NOTORGANIC_DEFAULT_MODEL.name,
+ id: `notorganic::openai-completions::${NOTORGANIC_DEFAULT_MODEL.id}`, name: NOTORGANIC_DEFAULT_MODEL.name,
  group: "notorganic", pinnedLabel: "Provider default",
 };
 const other: PickerItem = { id: "other-model", name: "Other model", group: "Other provider" };
@@ -39,7 +39,7 @@ describe("provider default pinning", () => {
    selected={other.id} onSelect={() => { throw new Error("Rendering must not select a model"); }} onClose={() => {}} />);
   expect(html.indexOf("Provider default")).toBeLessThan(html.indexOf("Selected model"));
   expect(html.indexOf(cloud.name)).toBeLessThan(html.indexOf(other.name));
-  expect(html).toMatch(/aria-pressed="false"[^>]*>[\s\S]*?Inkling Small/);
+  expect(html).toMatch(/aria-pressed="false"[^>]*>[\s\S]*?Inkling 2 Small/);
   expect(html).toMatch(/aria-pressed="true"[^>]*>[\s\S]*?Other model/);
   expect(html.match(/Provider default/g)).toHaveLength(1);
  });

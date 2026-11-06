@@ -5,7 +5,7 @@ import { proxiedProviderRequestUrl } from "./provider-proxy";
 import {
 	isNotOrganicFeatureEnabled,
 	NOTORGANIC_DEFAULT_MODEL,
-	NOTORGANIC_CHAT_MODELS,
+	getAvailableNotOrganicChatModels,
 	NOTORGANIC_PROVIDER_ID,
 	notOrganicPublicClient,
 } from "../notorganic-provider";
@@ -514,7 +514,7 @@ export async function getSelectableModels(
 	}
 
 	if (isNotOrganicFeatureEnabled() && (!filter || filter(NOTORGANIC_PROVIDER_ID))) {
-		models.push(...NOTORGANIC_CHAT_MODELS);
+		models.push(...await getAvailableNotOrganicChatModels());
 	}
 
 	for (const provider of getProviders()) {

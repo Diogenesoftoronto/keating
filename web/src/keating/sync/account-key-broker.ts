@@ -1,5 +1,8 @@
 import { importAccountSyncKeyBytes, type AccountSyncKey } from "./device-identity";
 import { LearnerSyncError } from "./learner-sync";
+import { NotOrganicPublicClient, publicClientConfig } from "../../notorganic-provider/public-client";
+
+export type AccountSyncKeyRequester = Pick<NotOrganicPublicClient, "getSession" | "request">;
 
 interface AccountSyncKeyEnvelope {
 	version: 1;
@@ -60,24 +63,47 @@ function parseEnvelope(value: unknown): AccountSyncKeyEnvelope {
 
 export async function unlockAccountSyncKeyWithLogin(input: {
 	did: string;
+	requester?: AccountSyncKeyRequester;
+	/** Explicit legacy server adapter/test injection; normal browsers use DPoP. */
 	fetch?: typeof globalThis.fetch;
 }): Promise<AccountSyncKey> {
+	const config = input.requester || input.fetch ? null : publicClientConfig();
+	const requester = input.requester ?? (config ? new NotOrganicPublicClient(config) : null);
+	const session = requester?.getSession();
+	const assertAccountCurrent = () => {
+		if (!requester) return;
+		const current = requester.getSession();
+		if (!current || (current.id ?? current.accessToken) !== (session?.id ?? session?.accessToken)) {
+			throw new LearnerSyncError("Your Not Organic account changed while unlocking chat sync.");
+		}
+	};
+	if (!input.fetch || requester) {
+		if (!session) throw new LearnerSyncError("Sign in with Not Organic to unlock chat sync.");
+		if (!session.scope.split(/\s+/u).includes("sync:key:read")) {
+			throw new LearnerSyncError("Reconnect Not Organic to allow chat sync on your devices.");
+		}
+	}
 	const crypto = cryptoApi();
 	const clientKeys = await crypto.subtle.generateKey(
 		{ name: "ECDH", namedCurve: "P-256" },
 		false,
 		["deriveBits"],
 	);
-	const response = await (input.fetch ?? globalThis.fetch)("/api/notorganic/sync/account-key", {
+	const request: RequestInit = {
 		method: "POST",
 		headers: { "content-type": "application/json" },
 		body: JSON.stringify({ client_public_jwk: await crypto.subtle.exportKey("jwk", clientKeys.publicKey) }),
 		cache: "no-store",
-		credentials: "same-origin",
-	});
+		credentials: requester ? "omit" : "same-origin",
+		signal: AbortSignal.timeout(15_000),
+	};
+	const response = requester
+		? await requester.request("/v1/sync/account-key", request)
+		: await input.fetch!("/api/notorganic/sync/account-key", request);
+	assertAccountCurrent();
 	if (!response.ok) {
 		throw new LearnerSyncError(response.status === 401 || response.status === 403
-			? "Sign in with ATProto to unlock account sync."
+			? "Reconnect Not Organic to unlock chat sync."
 			: "Account sync could not be unlocked.");
 	}
 	let value: unknown;
@@ -134,6 +160,7 @@ export async function unlockAccountSyncKeyWithLogin(input: {
 		if (imported.keyId !== envelope.key_id) {
 			throw new LearnerSyncError("The account sync key ID does not match its envelope.");
 		}
+		assertAccountCurrent();
 		return imported;
 	} finally {
 		raw.fill(0);

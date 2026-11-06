@@ -4,3 +4,15 @@ body {
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
 }
+
+/* Clairic reference navigation: the cited words in their original message. */
+::highlight(keating-reference) {
+	background-color: color-mix(in srgb, var(--primary) 28%, transparent);
+	color: inherit;
+}
+[data-reference-flash="true"] {
+	outline: 2px solid var(--primary);
+	outline-offset: 4px;
+	border-radius: 0.375rem;
+	transition: outline-color 1.5s ease-out;
+}

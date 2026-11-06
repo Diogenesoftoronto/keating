@@ -627,6 +627,8 @@ const TASK_KICKER: Record<UiTaskNode["kind"], { kicker: string; items: string; v
   practice: { kicker: "PRACTICE", items: "Exercises", verb: "Log this session" },
   draft: { kicker: "DRAFT", items: "Steps", verb: "Submit draft" },
   fieldwork: { kicker: "FIELDWORK", items: "Collection protocol", verb: "Record findings" },
+  connect: { kicker: "CONNECT", items: "Ways to share it", verb: "Share what happened" },
+  person: { kicker: "PERSON BRIEF", items: "Questions to ask", verb: "Save what you learned" },
 };
 
 /** Work the learner does away from the app; items persist so it can be resumed. */
@@ -644,7 +646,7 @@ function TaskNode({ node, document, disabled, busy, durableActions, run }: NodeA
     <Text style={styles.nodeTitle}>{node.title}</Text>
     <MarkdownText content={node.brief} />
     {node.criteria?.length ? <View>
-      <Text style={styles.nodeKicker}>JUDGED ON</Text>
+      <Text style={styles.nodeKicker}>{node.kind === "person" ? "SOURCES" : node.kind === "connect" ? "KEEP IN MIND" : "JUDGED ON"}</Text>
       {node.criteria.map((criterion) => <Text key={criterion}>{`\u2022 ${criterion}`}</Text>)}
     </View> : null}
     {node.items?.length ? <View>

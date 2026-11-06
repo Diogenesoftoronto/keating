@@ -9,6 +9,7 @@ import { homedir } from "node:os";
 import { DEFAULT_PI_PROVIDER, FALLBACK_PI_MODELS, type KeatingConfig, loadKeatingConfig, mergePiDefaultsWithOverrides } from "../core/config.js";
 import { ensureProjectScaffold } from "../core/project.js";
 import { sessionsDir, configDir } from "../core/paths.js";
+import { isCurrentAccountSyncDirectory } from "../core/account-sync-local.js";
 import { assertDefaultProfileSessionPath, assertProfileSessionPath, learnerProfileEnvironment, selectedLearnerProfile, withLearnerProfileArgs } from "../core/learner-profile-selection.js";
 import {
   PROVIDER_ENV_KEYS,
@@ -365,6 +366,7 @@ function validateProfileSessionArgs(cwd: string, args: string[]): void {
       const value = arg === flag ? args[index + 1] : arg.startsWith(`${flag}=`) ? arg.slice(flag.length + 1) : undefined;
       if (value === undefined) continue;
       if (flag === "--session-dir") {
+        if (isCurrentAccountSyncDirectory(cwd, resolve(cwd, value))) continue;
         if (name && resolve(cwd, value) !== resolve(sessionsDir(cwd))) throw new Error("--session-dir cannot override the selected learner profile.");
         if (!name) assertDefaultProfileSessionPath(join(cwd, ".keating", "profiles"), resolve(cwd, value));
       } else if (!/^[0-9a-f-]+$/i.test(value)) {
@@ -476,6 +478,10 @@ export async function launchRpcClient(cwd: string, args: string[] = []): Promise
 
 async function launchSelectedRpcClient(cwd: string, args: string[]): Promise<KeatingRpcClient> {
   validateProfileSessionArgs(cwd, args);
+  const accountSessionDirectory = args.flatMap((arg, index) => {
+    const value = arg === "--session-dir" ? args[index + 1] : arg.startsWith("--session-dir=") ? arg.slice("--session-dir=".length) : undefined;
+    return value && isCurrentAccountSyncDirectory(cwd, resolve(cwd, value)) ? [resolve(cwd, value)] : [];
+  }).at(-1);
   await ensureProjectScaffold(cwd);
   const config = await loadKeatingConfig(cwd);
   await syncPiSettings(cwd, config);
@@ -534,7 +540,7 @@ async function launchSelectedRpcClient(cwd: string, args: string[]): Promise<Kea
     relayPath,
     cwd,
     args: sharedArgs,
-    sessionDirectory: selectedLearnerProfile(cwd) ? sessionsDir(cwd) : undefined,
+    sessionDirectory: accountSessionDirectory ?? (selectedLearnerProfile(cwd) ? sessionsDir(cwd) : undefined),
     profilesDirectory: join(cwd, ".keating", "profiles"),
     env: {
       ...learnerProfileEnvironment(cwd, authSelection.env),

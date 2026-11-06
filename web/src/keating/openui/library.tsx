@@ -583,6 +583,45 @@ export const Fieldwork = defineComponent({
 	),
 });
 
+const connectPropsSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	idea: z.string(),
+	actions: z.array(taskItemSchema).min(1).max(5),
+	lifecycle: lifecycleSchema.default("workspace"),
+	estimatedMinutes: z.number().optional(),
+	dueAt: z.string().optional(),
+	availableFrom: z.string().optional(),
+});
+
+export const Connect = defineComponent({
+	name: "Connect",
+	description: "Takes one idea from the lesson out to other people — an online community, a forum, a colleague, a meetup, a study room — with a few concrete ways to share it and a debrief of what people said. Use when the learner would learn more by discussing, teaching, or testing the idea with others than by studying alone.",
+	props: connectPropsSchema,
+	component: ({ props }: { props: z.infer<typeof connectPropsSchema> }) => (
+		<TaskCard badge="Connect" title={props.title} brief={props.idea} items={props.actions} itemsLabel="Ways to share it" footer={props.estimatedMinutes ? `~${props.estimatedMinutes} min` : undefined} />
+	),
+});
+
+const personBriefPropsSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	profile: z.string(),
+	questions: z.array(taskItemSchema).min(1).max(6),
+	sources: z.array(z.string()).min(1),
+	lifecycle: lifecycleSchema.default("workspace"),
+	meetingAt: z.string().optional(),
+});
+
+export const PersonBrief = defineComponent({
+	name: "PersonBrief",
+	description: "Prepares the learner to learn from a specific person they will meet, interview, or study: a sourced profile, the learner's questions for them, and a debrief afterwards. Every claim in profile must come from a cited source.",
+	props: personBriefPropsSchema,
+	component: ({ props }: { props: z.infer<typeof personBriefPropsSchema> }) => (
+		<TaskCard badge="Person brief" title={props.name} brief={props.profile} criteria={props.sources} items={props.questions} itemsLabel="Questions to ask" />
+	),
+});
+
 const simulationPropsSchema = z.object({
 	id: z.string(),
 	title: z.string(),
@@ -747,6 +786,8 @@ const learningBlock = z.union([
 	Practice.ref,
 	Draft.ref,
 	Fieldwork.ref,
+	Connect.ref,
+	PersonBrief.ref,
 	Simulation.ref,
 	CodingChallenge.ref,
 	MusicLab.ref,
@@ -798,6 +839,8 @@ export const keatingOpenUILibrary = createLibrary({
 		Practice,
 		Draft,
 		Fieldwork,
+		Connect,
+		PersonBrief,
 		Simulation,
 		CodingChallenge,
 		MusicLab,
@@ -807,6 +850,7 @@ export const keatingOpenUILibrary = createLibrary({
 		{ name: "Teaching", components: ["Explanation", "Callout", "Question", "Quiz", "Exam", "Flashcards", "LanguagePractice"] },
 		{ name: "Workspace", components: ["StudyPlan", "ConceptMap", "LearningImage", "SharedNotes"] },
 		{ name: "Work away from the chat", components: ["Assignment", "Practice", "Draft", "Fieldwork"] },
+		{ name: "People and community", components: ["PersonBrief", "Connect"] },
 		{ name: "Manipulable", components: ["Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab"] },
 	],
 });
@@ -921,6 +965,11 @@ export const keatingOpenUIPrompt = [
 	"- `Practice`: several discrete exercises for fluency through repetition. Each exercise is checked off on its own, so make them individually completable and genuinely distinct — five variations that drill the same operation from different angles, not one task split into five steps.",
 	"- `Draft`: long-form writing revised across rounds. Set `targetWords` to shape the scope and `round` to 1 for a first pass. When you ask for a revision, emit a new Draft with the round incremented and a rubric that reflects what their last draft actually got wrong.",
 	"- `Fieldwork`: sends them to gather evidence from the world. Use it when the material only becomes convincing from real data — real base rates, real measurements, real observations. The protocol items are the collection steps; keep them small enough to actually do.",
+	"## People and community",
+	"Learning rarely finishes inside one conversation. Two components help the learner relate what they learned to other people.",
+	"- `PersonBrief(id, name, profile, questions, sources, lifecycle, meetingAt)`: when the learner is preparing to meet, interview, work with, or study a specific person. Search first. `profile` is a short markdown summary in which every claim links to the source it came from; `sources` lists those URLs. Never infer a person's background, beliefs, or role beyond what a source says — write \"the sources don't say\" instead. `questions` are the learner's own questions, refined with them; mark at least one question that asks what the other person wants from the conversation. Set `meetingAt` (ISO instant) when the learner gives a time. After the meeting, respond to their debrief: what they learned, and one follow-up.",
+	"- `Connect(id, title, idea, actions, lifecycle, estimatedMinutes, dueAt)`: when an idea would grow by being discussed, taught, or tested with others — a lone learner, a project that needs feedback, a lesson worth passing on. `idea` states the one idea in the learner's words. `actions` are two to four concrete, low-stakes ways to share it, mixing online (a named kind of community or forum, a post they could write) and offline (a friend, a colleague, a meetup, a class). Prefer asking people a question over broadcasting an answer. Never post, message, or contact anyone on the learner's behalf, and never invent specific groups, events, or people — name a kind of place, or search for real ones and cite them.",
+	"When a Keating study room fits — the learner wants to talk the idea through with a particular person — offer to create an invite with `room_invite`; the learner sends the link themselves.",
 	"## Manipulable models",
 	"When a relationship is more convincing moved than described, stream a `Simulation` instead of explaining it. The learner drags a parameter and the readouts recompute instantly with no turn spent, so they can try twenty variations while their attention is still on the question.",
 	"`expr` is arithmetic only: `+ - * / % ^`, parentheses, numeric literals, and the parameter ids you declared on the same node. There are no function calls, no `Math.`, no conditionals, and no identifiers you did not declare — a readout that reaches for anything else is dropped. Build percentages and ratios from the arithmetic you have.",

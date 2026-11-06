@@ -33,3 +33,23 @@ test("other APIs preserve temperature and options unchanged", () => {
 		expect(normalizeProviderStreamOptions({ api }, options)).toBe(options);
 	}
 });
+
+test("Sol omits unsupported sampling while keeping other request settings", () => {
+	const options: SimpleStreamOptions = { temperature: 0.2, maxTokens: 800, samplingParams: {
+		temperature: 0.5, top_p: 0.9, top_logprobs: 3, include: ["reasoning.encrypted_content", "message.output_text.logprobs"],
+		metadata: { task: "session-title" },
+	} };
+	const result = normalizeProviderStreamOptions({ api: "openai-responses", id: "gpt-6.1-sol", provider: "notorganic" }, options);
+	expect(result).toEqual({ reasoning: "low", maxTokens: 800, samplingParams: { include: ["reasoning.encrypted_content"], metadata: { task: "session-title" } } });
+	expect(options.temperature).toBe(0.2);
+	expect(options.samplingParams?.top_p).toBe(0.9);
+});
+
+test("only the native Not Organic Flint preview uses fixed greedy decoding", () => {
+	const options: SimpleStreamOptions = { temperature: 0.85, maxTokens: 4096 };
+	expect(normalizeProviderStreamOptions({ api: "openai-completions", provider: "notorganic", id: "flint" }, options))
+		.toEqual({ temperature: 0, maxTokens: 4096 });
+	expect(normalizeProviderStreamOptions({ api: "openai-completions", provider: "notorganic", id: "balanced" }, options)).toBe(options);
+	expect(normalizeProviderStreamOptions({ api: "openai-completions", provider: "custom", id: "flint" }, options)).toBe(options);
+	expect(options.temperature).toBe(0.85);
+});

@@ -245,7 +245,7 @@ for (const change of ["logout", "new login"] as const) {
 
   test("requests the account evolution capabilities used for cross-device learning", () => {
     expect(new Set(NOTORGANIC_MOBILE_SCOPE.split(" "))).toEqual(new Set([
-      "infer:balanced",
+      "infer:inkling-2-small",
       "realtime:connect",
       "sync:key:read",
       "usage:read",

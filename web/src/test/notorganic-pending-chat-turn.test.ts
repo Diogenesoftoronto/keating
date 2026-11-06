@@ -46,4 +46,13 @@ describe("chat send across Not Organic sign-in", () => {
     authorizePendingChatTurn();
     expect(claimPendingChatTurn("chat", [user()])).toBeNull();
   });
+  it("resumes only in the chat the turn came from, after any later sign-in", () => {
+    rememberChatTurn("old-chat", [user()]);
+    // The learner declined the first sign-in, opened a new chat, and signed in there.
+    authorizePendingChatTurn();
+    expect(claimPendingChatTurn("new-chat", [])).toBeNull();
+    expect(pendingChatTurn()?.sessionId).toBe("old-chat");
+    expect(claimPendingChatTurn("old-chat", [user()])?.messages).toEqual([user()]);
+    expect(pendingChatTurn()).toBeNull();
+  });
 });

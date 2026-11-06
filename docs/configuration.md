@@ -55,6 +55,20 @@ explicit project override and is not silently upgraded to the CLI default.
 
 ## Adding a Not Organic model
 
+Flint is a dormant preview registered as `notorganic/flint`. Its provisional
+`contextWindow: 12288` and `maxTokens: 4096` describe the prepared serving profile;
+they have not been GPU-verified. It uses Chat Completions, fixed greedy decoding,
+and `max_completion_tokens`. The browser offers it for selection only after a
+consented gateway lists `flint` in `/v1/models`. Existing sessions gain no scopes.
+
+After the provider operator validates the worker, provisions the private route
+from public `flint` to upstream `flint-multichannel`, establishes pricing and
+explicitly enables the gateway alias, CLI users can request fresh consent with
+`rtk bun src/cli/main.ts login notorganic --model=flint`, then run
+`rtk bun src/cli/main.ts shell --provider notorganic --model flint`.
+No Runpod URL or credential belongs in Keating's browser configuration.
+Registration alone does not activate or verify inference.
+
 1. Define the ID in the private model registry and add it to `NOTORGANIC_CHAT_MODEL_IDS` or
    `NOTORGANIC_IMAGE_MODEL_IDS`.
 2. Add the corresponding metadata entry to the Not Organic adapter's picker.
@@ -71,8 +85,11 @@ they do not inherit the browser's broader consent list.
 
 `VITE_NOTORGANIC_SCOPE` is optional. Absent, blank or whitespace-only values use
 the derived scope. A non-empty value remains a restrictive explicit override
-(after trimming); it is not unioned with defaults. Existing connections need to
-reconnect to approve a missing model permission.
+(after trimming); it is not unioned with defaults. Selecting a hosted model adds
+that model's inference and web permissions to the authorization request, retaining
+previously approved grants. Existing connections need to reconnect once to approve
+a missing model permission; a token omitting the requested permissions is reported
+as an incomplete connection.
 
 The former code fallback included `infer:image`, but Devenv and `.env.example`
 overrode it with a handwritten scope that omitted image consent. This migration
@@ -109,3 +126,24 @@ their existing authorities. The guardrail scans application/package source and
 rejects value-named model references there, while documenting exact frozen data
 and non-model UI/protocol strings as exceptions. Linking this guide from
 `docs/agent-reference.md` and regenerating the NodePod bootstrap remain OPS work.
+
+### Hosted tutor consultation
+
+Keating's hosted main-model default is `inkling-2-small` (Inkling 2 Small),
+using Not Organic Chat Completions. The previous `balanced` / Inkling Small
+choice remains available for saved sessions and explicit selection.
+
+`consult_tutor` lets the main model ask Humans& Ampersand Tutor for text advice
+through `POST /v1/tutor/consult` on Not Organic. Advice is returned to the main
+model; it does not execute actions or update learner state. It sends only the
+explicit question and optional context, with a 6,000 UTF-8 byte combined limit.
+The provider retains the isolated consultation session; no deletion lifecycle
+is currently implemented. It uses a separate, metered capability
+`infer:ampersand-tutor-v0.1`; existing account grants are never expanded locally.
+Browser users need fresh consent. CLI users opt in with `keating login --tutor`
+(optionally combined with `--model=balanced` or `--judgement`).
+
+The gateway must be deployed with server-only `AMPERSAND_API_KEY` and the tutor
+alias enabled before the tool can succeed. Inkling 2 Small separately requires
+the named route to be published and enabled upstream. Source defaults and
+model discovery do not establish successful live inference.

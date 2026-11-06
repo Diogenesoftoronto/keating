@@ -44,7 +44,7 @@ export type OpenUISourceCompileResult =
 export const SHARED_OPENUI_COMPONENT_MAPPERS = [
   "LearningSurface", "Explanation", "Callout", "Question", "Quiz", "Exam", "Flashcards",
   "StudyPlan", "ConceptMap", "LearningImage", "SharedNotes",
-  "Assignment", "Practice", "Draft", "Fieldwork", "AudioResponse", "VideoResponse", "Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab", "LanguagePractice",
+  "Assignment", "Practice", "Draft", "Fieldwork", "Connect", "PersonBrief", "AudioResponse", "VideoResponse", "Simulation", "Diagram", "SystemDesign", "CodingChallenge", "MusicLab", "LanguagePractice",
 ] as const satisfies typeof WEB_OPENUI_COMPONENTS;
 
 // Persisted sessions may still contain the retired streamed animation component.
@@ -289,6 +289,8 @@ const POSITIONAL_FIELDS: Readonly<Record<string, readonly string[]>> = {
   Practice: ["id", "title", "brief", "exercises", "lifecycle", "estimatedMinutes", "dueAt", "availableFrom"],
   Draft: ["id", "title", "prompt", "rubric", "lifecycle", "targetWords", "round", "dueAt", "availableFrom"],
   Fieldwork: ["id", "title", "objective", "protocol", "lifecycle", "estimatedMinutes", "dueAt", "availableFrom"],
+  Connect: ["id", "title", "idea", "actions", "lifecycle", "estimatedMinutes", "dueAt", "availableFrom"],
+  PersonBrief: ["id", "name", "profile", "questions", "sources", "lifecycle", "meetingAt"],
   Simulation: ["id", "title", "parameters", "readouts", "lifecycle", "brief"],
   CodingChallenge: ["id", "title", "prompt", "language", "starterCode", "entrypoint", "tests", "lifecycle", "hint"],
   MusicLab: ["id", "title", "code", "lifecycle", "brief", "controls", "visualization"],
@@ -444,6 +446,8 @@ function defaultTaskTitle(kind: UiTaskKind): string {
   if (kind === "practice") return "Practice set";
   if (kind === "draft") return "Draft";
   if (kind === "fieldwork") return "Fieldwork";
+  if (kind === "connect") return "Share with others";
+  if (kind === "person") return "Person brief";
   return "Assignment";
 }
 
@@ -657,6 +661,9 @@ function mapElement(element: SourceElement, index: number): UiDocumentNode[] {
       ...(positiveNumber(props.targetWords) !== undefined ? { targetWords: positiveNumber(props.targetWords)! } : {}),
     })];
     case "Fieldwork": return [taskNode("fieldwork", id, props, props.objective, undefined, props.protocol, { format: "text", label: "Your findings", placeholder: "Record what you observed, and anything that surprised you." })];
+    case "Connect": return [taskNode("connect", id, props, props.idea, undefined, props.actions, { format: "text", label: "What happened when you shared it?", placeholder: "Where did you take it, what did people say, and what changed in your own understanding?" })];
+    // A meeting time is the natural "due" moment; the debrief stays open after it.
+    case "PersonBrief": return [taskNode("person", id, { ...props, title: props.name, dueAt: props.meetingAt }, props.profile, props.sources, props.questions, { format: "text", label: "After you talk: what did you learn?", placeholder: "What surprised you, what did they care about, and what will you follow up on?" })];
     case "SharedNotes": return [{ type: "notes", id: contractId(text(props.id, id), id), title: text(props.title, "Learner notes"), value: text(props.initialValue), ...(optionalText(props.placeholder) ? { placeholder: text(props.placeholder) } : {}) }];
     default: throw new OpenUISourceError("unsupported", `OpenUI component ${element.typeName} has no shared semantic mapping.`);
   }

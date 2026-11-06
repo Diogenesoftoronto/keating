@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { promptKeatingApiKey } from "../components/KeatingApiKeyPromptDialog";
+import { changeChatModel } from "../hooks/agent/chat-model";
+import { NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, notOrganicModelScopes } from "../notorganic-provider";
 import {
 	closeNotOrganicPrompt,
 	connectNotOrganicPrompt,
@@ -15,6 +17,7 @@ const settings = {
 	VITE_NOTORGANIC_AUTHORIZATION_URL: "https://portal.test/authorize",
 	VITE_NOTORGANIC_CLIENT_ID: "https://keating.help",
 	VITE_NOTORGANIC_REDIRECT_URI: "https://keating.help/notorganic/callback",
+	VITE_NOTORGANIC_SCOPE: "wallet:read infer:balanced infer:gpt-6.1-sol web:search web:fetch",
 };
 const originalSettings = Object.fromEntries(Object.keys(settings).map(key => [key, process.env[key]]));
 const globalKeys = ["window", "location", "localStorage", "sessionStorage"] as const;
@@ -57,6 +60,39 @@ afterEach(() => {
 });
 
 describe("Not Organic auth recovery", () => {
+	for (const model of [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL]) {
+		it(`carries ${model.id} permission from model selection through sign-in, then stops prompting`, async () => {
+			localStorage.setItem("keating.notorganic.session", JSON.stringify({ accessToken: "old-access", expiresAt: Date.now() + 300_000, scope: "infer:balanced web:search web:fetch" }));
+			const refs = {
+				selectedModelRef: { current: NOTORGANIC_DEFAULT_MODEL }, agentRef: { current: null }, panelRef: { current: null },
+				sessionSwitchRequestsRef: { current: { current: 1, isCurrent: () => true } },
+				explicitModelSelectionRef: { current: false }, sessionIdRef: { current: "learner-session" },
+			} as unknown as Parameters<typeof changeChatModel>[0]["refs"];
+			const change = () => changeChatModel({ refs, model, posthog: { capture: () => undefined },
+				selectModel: selected => { refs.selectedModelRef.current = selected; }, createAgent: async () => { throw new Error("No active conversation"); } });
+			await change();
+			const prompt = getActiveNotOrganicPrompt()!;
+			expect(prompt.requiredScopes).toEqual(notOrganicModelScopes(model));
+			await connectNotOrganicPrompt(prompt);
+			const scope = new URL(authorizedUrl!).searchParams.get("scope")!;
+			expect(scope.split(" ")).toContain(`infer:${model.id}`);
+			closeNotOrganicPrompt(false);
+			localStorage.setItem("keating.notorganic.session", JSON.stringify({ accessToken: "approved-access", expiresAt: Date.now() + 300_000, scope }));
+			authorizedUrl = undefined;
+			await change();
+			expect(getActiveNotOrganicPrompt()).toBeNull();
+			expect(authorizedUrl).toBeUndefined();
+		});
+	}
+
+	it("carries selected model consent through the send-time credential prompt", async () => {
+		const result = promptKeatingApiKey("notorganic", { force: true, requiredScopes: notOrganicModelScopes(NOTORGANIC_DEFAULT_MODEL) });
+		await connectNotOrganicPrompt(getActiveNotOrganicPrompt()!);
+		expect(new URL(authorizedUrl!).searchParams.get("scope")!.split(" ")).toContain("infer:inkling-2-small");
+		closeNotOrganicPrompt(false);
+		expect(await result).toBe(false);
+	});
+
 	it("starts fresh same-origin authorization instead of accepting a rejected stored session", async () => {
 		const result = promptKeatingApiKey("notorganic", { force: true });
 		const request = getActiveNotOrganicPrompt();

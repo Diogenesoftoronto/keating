@@ -53,11 +53,11 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
   const appNavigation = appOnly || hostname === "chat.keating.help" || isDesktopShell();
   const chatHref = applicationRootHref(hostname, appOnly);
   const primaryLinks = appNavigation
-    ? [[chatHref, "Chat"], ["/courses", "Courses"], ["/usage", "Usage"], ["/bench", "Bench"], ["/coming-up", "Coming up"], ["/live", "Live"]]
+    ? [[chatHref, "Chat"], ["/courses", "Courses"], ["/rooms", "Rooms"], ["/usage", "Usage"], ["/bench", "Bench"], ["/coming-up", "Coming up"], ["/live", "Live"]]
     : [["/download", "Download"], ["/pricing", "Pricing"], [DOCUMENTATION_URL, "Documentation"], [BLOG_URL, "Blog"], ["/paper", "Paper"]].filter(([to]) => primaryAction !== "download" || to !== "/download");
   const secondaryLinks = appNavigation
     ? [["https://keating.help/", "Keating website"], ["/download", "Download"], ["/pricing", "Pricing"], [DOCUMENTATION_URL, "Documentation"], [BLOG_URL, "Blog"], ["/paper", "Paper"], ["/training-data", "Training data"]]
-    : [["/courses", "Courses"], ["/coming-up", "Coming up"], ["/live", "Live"], ["/usage", "Usage"], ["/bench", "Bench"], ["/training-data", "Training data"]];
+    : [["/courses", "Courses"], ["/rooms", "Rooms"], ["/coming-up", "Coming up"], ["/live", "Live"], ["/usage", "Usage"], ["/bench", "Bench"], ["/training-data", "Training data"]];
   const openPrimaryAction = () => {
     closeMenus();
     const path = primaryAction === "download" ? "/download" : chatHref;

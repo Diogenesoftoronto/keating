@@ -43,6 +43,9 @@ export type OpenUIPreviewArtifactKind =
 	| "handoff"
 	| "task"
 	| "simulation"
+	| "coding"
+	| "music"
+	| "language"
 	| "unavailable";
 
 function countPlanItems(items: readonly UiStudyPlanItem[] | undefined): number {
@@ -50,8 +53,24 @@ function countPlanItems(items: readonly UiStudyPlanItem[] | undefined): number {
 	return items.reduce((total, item) => total + 1 + countPlanItems(item.children), 0);
 }
 
-function plural(count: number, noun: string): string {
-	return `${count} ${noun}${count === 1 ? "" : "s"}`;
+function plural(count: number, noun: string, many = `${noun}s`): string {
+	return `${count} ${count === 1 ? noun : many}`;
+}
+
+const TASK_PREVIEW: Record<Extract<UiDocumentNode, { type: "task" }>["kind"], { badge: string; item: string; items?: string }> = {
+	assignment: { badge: "Assignment", item: "step" },
+	practice: { badge: "Practice", item: "exercise" },
+	draft: { badge: "Draft", item: "step" },
+	fieldwork: { badge: "Fieldwork", item: "step" },
+	connect: { badge: "Connect", item: "way to share it", items: "ways to share it" },
+	person: { badge: "Person brief", item: "question" },
+};
+
+/** Tasks with a diagram or recording are distinct activities, not their storage kind. */
+function taskBadge(node: Extract<UiDocumentNode, { type: "task" }>): string {
+	if (node.diagram) return "Diagram";
+	if (node.submission?.capture) return node.submission.capture.kind === "video" ? "Video response" : "Audio response";
+	return TASK_PREVIEW[node.kind].badge;
 }
 
 function truncate(value: string, limit = 80): string {
@@ -96,14 +115,21 @@ function blockForNode(node: UiDocumentNode, prefix: string): OpenUIPreviewBlock 
 		case "simulation":
 			return { type: "artifact", id, kind: "simulation", label: node.title, detail: `${plural(node.parameters.length, "parameter")} · ${plural(node.readouts.length, "readout")}` };
 		case "task": {
-			const badge = node.kind === "practice" ? "Practice" : node.kind === "draft" ? "Draft" : node.kind === "fieldwork" ? "Fieldwork" : "Assignment";
+			const labels = TASK_PREVIEW[node.kind];
 			const parts = [
-				badge,
-				...(node.items?.length ? [plural(node.items.length, node.kind === "practice" ? "exercise" : node.kind === "fieldwork" ? "step" : "step")] : []),
+				taskBadge(node),
+				...(node.items?.length && !node.diagram ? [plural(node.items.length, labels.item, labels.items)] : []),
+				...(node.diagram?.checks.length ? [plural(node.diagram.checks.length, "check")] : []),
 				...(node.estimatedMinutes !== undefined ? [`~${node.estimatedMinutes} min`] : []),
 			];
 			return { type: "artifact", id, kind: "task", label: node.title, detail: parts.join(" · ") };
 		}
+		case "coding-challenge":
+			return { type: "artifact", id, kind: "coding", label: node.title, detail: `Coding challenge · ${node.language === "typescript" ? "TypeScript" : "JavaScript"} · ${plural(node.tests.length, "test")}` };
+		case "music-lab":
+			return { type: "artifact", id, kind: "music", label: node.title, detail: `Music lab${node.controls?.length ? ` · ${plural(node.controls.length, "control")}` : ""}` };
+		case "language-practice":
+			return { type: "artifact", id, kind: "language", label: node.title, detail: `Language practice · ${node.language} · ${plural(node.rounds.length, "round")}` };
 		default:
 			return null;
 	}
@@ -120,14 +146,18 @@ function documentForSegment(segment: Extract<OpenUIMessageSegment, { type: "open
 	return compiled.ok ? compiled.document : undefined;
 }
 
+const REVIEW_MARKER = /^<!--keating:review=(?:unverified|withheld)-->\n?/;
+
 /**
  * Split an assistant turn into readable prose and inert artifact chips,
  * preserving document order so the preview reads the way the thread did.
  */
 export function buildOpenUIPreview(text: string, scope: string | OpenUIDocumentScope = ""): OpenUIPreviewBlock[] {
 	const blocks: OpenUIPreviewBlock[] = [];
-	let cursor = 0;
-	parseOpenUIMessageSegments(text, scope).forEach((segment, index) => {
+	// The review marker is chat metadata, not prose. Skip it without moving the
+	// offsets that review annotations anchor to.
+	let cursor = REVIEW_MARKER.exec(text)?.[0].length ?? 0;
+	parseOpenUIMessageSegments(text.slice(cursor), scope).forEach((segment, index) => {
 		if (segment.type === "text") {
 			// Text segments are verbatim slices of `text` in order, so searching
 			// forward from the cursor lands on this segment and not an earlier

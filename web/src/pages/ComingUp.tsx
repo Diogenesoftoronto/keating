@@ -17,6 +17,7 @@ import {
 import { css, cx } from "../../styled-system/css";
 import { FlashcardRenderer } from "../components/FlashcardRenderer";
 import { ComingUpReadiness } from "../components/ComingUpReadiness";
+import { LearningOutlook } from "../components/LearningOutlook";
 import { LearningInsightsHeader, LearningMetric } from "../components/LearningInsightsHeader";
 import { Nav } from "../components/Nav";
 import { Select } from "../components/Select";
@@ -434,6 +435,7 @@ export function ComingUp() {
 		try { return learnerState ? webOnlineEvidence({ ...decisionEvidence, decks }, now) : null; }
 		catch { return null; }
 	}, [decks, decisionEvidence, learnerState, now]);
+	const outlookHistory = useMemo(() => ({ ...decisionEvidence, decks }), [decisionEvidence, decks]);
 	const onlineLearning = useOnlineLearning(onlineEvidence, now);
 	const queue = useMemo(() => learnerState ? projectOnlineLearningQueue(buildComingUpQueue({ decks, verifications, learnerState, now }), onlineLearning.state.results) : emptyQueue(), [decks, learnerState, now, verifications, onlineLearning.state.results]);
 	// A running review owns its starting cards. Background prediction/storage refreshes must not restart it.
@@ -567,6 +569,9 @@ export function ComingUp() {
 					</div>
 					<button type="button" className={cx(styles.button, styles.accentButton)} disabled={queue.dueCardCount === 0} onClick={() => startReview()}><Play size={15} />Start due review</button>
 				</section>
+
+				<LearningOutlook history={outlookHistory}
+					onPractice={(question) => navigate({ to: "/chat", search: { ask: `Can we practice this question again? I keep missing it: “${question}”` } })} />
 
 				<ComingUpReadiness source={keatingStorage} contextVersion={JSON.stringify({ queue, decks, verifications, learnerState, reviewDeckIds })}
 					hasDueDecks={queue.dueDeckIds.length > 0} onStart={(deckId) => startReview([deckId])} />

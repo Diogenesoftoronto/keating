@@ -15,7 +15,7 @@ import type { ConversationRuntime } from "../../keating/integration";
 import { keatingLifecycle } from "../../keating/lifecycle";
 import { promptKeatingApiKey } from "../../components/KeatingApiKeyPromptDialog";
 import { getProviderApiKey } from "../../lib/provider-models";
-import { isNotOrganicProvider, notOrganicModelNeedsConsent } from "../../notorganic-provider";
+import { isNotOrganicProvider, notOrganicModelNeedsConsent, notOrganicModelScopes } from "../../notorganic-provider";
 import { clearPendingChatTurn, rememberChatTurn } from "../../notorganic-provider/pending-chat-turn";
 import type { ChatPanelSetupCallbacks } from "../../types/chat-panel";
 import { prepareMessagesForRetry } from "../session-recovery";
@@ -119,8 +119,10 @@ function credentialCallbacks({
         await persistTurn(sourceSessionId);
         rememberChatTurn(sourceSessionId, agent.context.messages);
       }
-      const allowed = await promptKeatingApiKey(provider, { force: needsModelConsent });
-      if (isNotOrganicProvider(provider)) clearPendingChatTurn(sourceSessionId);
+      const allowed = await promptKeatingApiKey(provider, { force: needsModelConsent, requiredScopes: notOrganicModelScopes(agent.context.model) });
+      // Connected in place: this call continues the turn. Declined: the turn
+      // stays with its chat and resumes there after a later sign-in.
+      if (allowed && isNotOrganicProvider(provider)) clearPendingChatTurn(sourceSessionId);
       return allowed;
     },
     onAuthError: async (provider: string) => {
@@ -139,8 +141,8 @@ function credentialCallbacks({
         await persistTurn(sourceSessionId);
         rememberChatTurn(sourceSessionId, agent.context.messages);
       }
-      const ok = await promptKeatingApiKey(provider, { force: true });
-      if (isNotOrganicProvider(provider)) clearPendingChatTurn(sourceSessionId);
+      const ok = await promptKeatingApiKey(provider, { force: true, requiredScopes: notOrganicModelScopes(agent.context.model) });
+      if (ok && isNotOrganicProvider(provider)) clearPendingChatTurn(sourceSessionId);
       posthog.capture("auth_recovery_action", {
         provider,
         session_id: sessionId(),

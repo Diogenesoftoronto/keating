@@ -168,7 +168,9 @@ export const TEACHING_POLICY_RULES: readonly TeachingPolicyRule[] = [
   rule("art_effect_missing", cli, "When the learner asks how an artistic technique changes the effect of a specific work, does `reply.text` name the technique without connecting it to that effect?", "major", false, "art"),
 ];
 
-export const TEACHING_POLICY_THRESHOLDS = { passAtMost: 0.2, failAtLeast: 0.8, calibration: "uncalibrated" } as const;
+export const TEACHING_POLICY_THRESHOLDS = { passAtMost: 0.4, failAtLeast: 0.6, calibration: "uncalibrated" } as const;
+/** Tool permissions keep the stricter cut: a lean is enough to teach differently, not to act. */
+export const TEACHING_POLICY_PERMISSION_THRESHOLD = 0.8;
 
 /** These are checked by parsers/runtime observations, never delegated to semantic inference. */
 export const TEACHING_POLICY_DETERMINISTIC_RULES = [
