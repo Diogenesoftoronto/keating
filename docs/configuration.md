@@ -85,8 +85,11 @@ they do not inherit the browser's broader consent list.
 
 `VITE_NOTORGANIC_SCOPE` is optional. Absent, blank or whitespace-only values use
 the derived scope. A non-empty value remains a restrictive explicit override
-(after trimming); it is not unioned with defaults. Existing connections need to
-reconnect to approve a missing model permission.
+(after trimming); it is not unioned with defaults. Selecting a hosted model adds
+that model's inference and web permissions to the authorization request, retaining
+previously approved grants. Existing connections need to reconnect once to approve
+a missing model permission; a token omitting the requested permissions is reported
+as an incomplete connection.
 
 The former code fallback included `infer:image`, but Devenv and `.env.example`
 overrode it with a handwritten scope that omitted image consent. This migration

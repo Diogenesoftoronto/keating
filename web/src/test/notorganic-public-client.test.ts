@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { IDBFactory } from "fake-indexeddb";
 import { NotOrganicPublicClient, publicClientConfig, publicClientMaxCostMicrousd, safeAuthorizationReturnTo } from "../notorganic-provider/public-client";
+import { NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, notOrganicModelNeedsConsent, notOrganicModelScopes } from "../notorganic-provider";
 
 class MemoryStorage implements Storage {
 	private readonly values = new Map<string, string>();
@@ -44,7 +45,7 @@ describe("Not Organic public client", () => {
 		expect(publicClientConfig({})).toBeNull();
 		expect(publicClientConfig({ VITE_NOTORGANIC_PUBLIC_ISSUER: "https://provider.test/", VITE_NOTORGANIC_AUTHORIZATION_URL: "https://portal.test/authorize", VITE_NOTORGANIC_CLIENT_ID: "https://keating.test/client", VITE_NOTORGANIC_REDIRECT_URI: "https://keating.test/notorganic/callback" })).toMatchObject({
 			issuer: "https://provider.test",
-			scope: "wallet:read usage:read billing:checkout infer:balanced infer:flint infer:gpt-6.1-sol web:search web:fetch infer:image realtime:connect",
+			scope: "wallet:read usage:read billing:checkout infer:balanced infer:flint infer:gpt-6.1-sol web:search web:fetch infer:image infer:inkling-2-small realtime:connect",
 		});
 		expect(publicClientMaxCostMicrousd({})).toBe(100_000);
 		expect(() => publicClientMaxCostMicrousd({ VITE_NOTORGANIC_MAX_COST_MICROUSD: "0" })).toThrow("positive integer");
@@ -69,6 +70,41 @@ describe("Not Organic public client", () => {
 			redirectUri: "http://localhost:3000/notorganic/callback",
 		});
 		expect(publicClientConfig({}, "http://localhost:3000")).toBeNull();
+	});
+
+	it("approves selected models once despite a legacy deployment scope and retains earlier model grants", async () => {
+		installBrowser();
+		const appConfig = publicClientConfig({
+			VITE_NOTORGANIC_PUBLIC_ISSUER: config.issuer,
+			VITE_NOTORGANIC_AUTHORIZATION_URL: config.authorizationUrl,
+			VITE_NOTORGANIC_SCOPE: "wallet:read infer:balanced infer:gpt-6.1-sol web:search web:fetch",
+		}, "https://chat.keating.help", false)!;
+		let approvedScope = "wallet:read infer:balanced web:search web:fetch";
+		const client = new NotOrganicPublicClient(appConfig, stubFetch(async () => Response.json({
+			access_token: "model-access", token_type: "DPoP", expires_in: 300, scope: approvedScope,
+		})));
+		localStorage.setItem("keating.notorganic.session", JSON.stringify({ accessToken: "previous-access", expiresAt: Date.now() + 300_000, scope: approvedScope }));
+		for (const model of [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL]) {
+			const authorize = new URL(await client.authorizationUrl("/chat", notOrganicModelScopes(model)));
+			approvedScope = authorize.searchParams.get("scope")!;
+			expect(approvedScope.split(" ")).toContain(`infer:${model.id}`);
+			expect(approvedScope.split(" ")).not.toContain("infer:flint");
+			expect(authorize.searchParams.has("prompt")).toBe(false);
+			await client.completeAuthorization(callback(authorize.toString(), `code-${model.id}`));
+			expect(notOrganicModelNeedsConsent(model, client.getSession())).toBe(false);
+		}
+		expect(notOrganicModelNeedsConsent(NOTORGANIC_DEFAULT_MODEL, client.getSession())).toBe(false);
+		expect(appConfig.scope).not.toContain("infer:inkling-2-small");
+	});
+
+	it("reports omitted selected-model consent instead of completing another unusable connection", async () => {
+		installBrowser();
+		const previous = { accessToken: "previous-access", expiresAt: Date.now() + 300_000, scope: "wallet:read" };
+		localStorage.setItem("keating.notorganic.session", JSON.stringify(previous));
+		const client = new NotOrganicPublicClient(config, stubFetch(async () => successToken()));
+		const search = callback(await client.authorizationUrl("/chat", notOrganicModelScopes(NOTORGANIC_DEFAULT_MODEL)));
+		await expect(client.completeAuthorization(search)).rejects.toThrow("did not approve access to the selected model");
+		expect(client.getSession()).toEqual(previous);
 	});
 
 	it("keeps first-party browser authorization on its origin despite legacy deployment pins", () => {

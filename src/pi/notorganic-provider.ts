@@ -10,6 +10,7 @@ import {
 } from "@earendil-works/pi-ai/compat";
 import type { ProviderConfig } from "@earendil-works/pi-coding-agent";
 import { FLINT_PREVIEW_PROFILE, INKLING_2_SMALL_PROFILE } from "../../packages/runtime-config/src/index.js";
+import { TUTOR_CONSULTATION_SCOPE } from "../../shared/tutor-consultation.js";
 
 import {
   createNotOrganicDpopProof,
@@ -99,7 +100,7 @@ function assertCapability(env: Record<string, string> | undefined, now: () => nu
   }
   const expiresAt = Number(env[NOTORGANIC_AUTH_ENV.expiresAt]);
   if (!Number.isFinite(expiresAt) || expiresAt <= now()) {
-    const login = `keating login${scopes.has(`infer:${FLINT_PREVIEW_PROFILE.id}`) ? ` --model=${FLINT_PREVIEW_PROFILE.id}` : ""}${scopes.has("infer:balanced") && !scopes.has(`infer:${NOTORGANIC_MODEL_ID}`) ? " --model=balanced" : ""}${scopes.has("infer:ampersand-tutor-v0.1") ? " --tutor" : ""}${scopes.has("judgement:evaluate") ? " --judgement" : ""}`;
+    const login = `keating login${scopes.has(`infer:${FLINT_PREVIEW_PROFILE.id}`) ? ` --model=${FLINT_PREVIEW_PROFILE.id}` : ""}${scopes.has("infer:balanced") && !scopes.has(`infer:${NOTORGANIC_MODEL_ID}`) ? " --model=balanced" : ""}${scopes.has(TUTOR_CONSULTATION_SCOPE) ? " --tutor" : ""}${scopes.has("judgement:evaluate") ? " --judgement" : ""}`;
     throw new Error(
       `Your five-minute Not Organic capability expired. Run \`${login}\` again; this CLI does not invent a refresh token.`
     );

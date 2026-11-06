@@ -74,6 +74,9 @@ function sourceFiles(directory: string): string[] {
 
 // file + literal + reason, never a path glob or a blanket model-prefix exemption.
 const ALLOWLIST: readonly [file: string, literal: string, reason: string][] = [
+  ["src/core/notorganic-auth.ts", "balanced", "Frozen legacy account grant accepted alongside the current default; never expands existing authority."],
+  ["web/src/notorganic-provider/index.ts", "balanced", "Frozen explicit model ID retained for persisted sessions and the legacy picker choice."],
+  ["src/pi/notorganic-provider.ts", "image", "Input modality discriminator; not an upstream inference model choice."],
   ["web/src/components/chat/user-message.ts", "GPT-4o", "Display-only vision-capability example; actual model selection is supplied by the caller."],
   ["web/src/components/chat/user-message.ts", "image", "Attachment content discriminator; not an upstream inference model identity."],
   ["src/cli/main.ts", "balanced", "Help/error copy describing the narrow CLI grant; not a model selector."],

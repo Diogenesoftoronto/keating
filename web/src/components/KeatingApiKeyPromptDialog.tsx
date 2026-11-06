@@ -26,12 +26,12 @@ function emitPromptChange() {
 
 export async function promptKeatingApiKey(
 	provider: string,
-	options: { force?: boolean } = {},
+	options: { force?: boolean; requiredScopes?: readonly string[] } = {},
 ): Promise<boolean> {
 	if (typeof window === "undefined") return false;
 	if (isNotOrganicProvider(provider)) {
 		// Keating uses an account session, never a stored provider API key.
-		const connected = await promptNotOrganicAccess({ force: options.force, reconnect: options.force, allowSignIn: true });
+		const connected = await promptNotOrganicAccess({ force: options.force, reconnect: options.force, requiredScopes: options.requiredScopes, allowSignIn: true });
 		if (connected) notifyProviderCredentialsChanged(provider);
 		return connected;
 	}

@@ -26,6 +26,7 @@ type NotOrganicPromptRequest = {
 	packId?: NotOrganicPackId;
 	allowSignIn?: boolean;
 	reconnect?: boolean;
+	requiredScopes?: readonly string[];
 	checkoutReturned?: boolean;
 	resolve: (success: boolean) => void;
 };
@@ -53,7 +54,7 @@ export async function hasNotOrganicProductSession(): Promise<boolean> {
 }
 
 export async function promptNotOrganicAccess(
-	options: { packId?: NotOrganicPackId; force?: boolean; allowSignIn?: boolean; reconnect?: boolean; checkoutReturned?: boolean } = {},
+	options: { packId?: NotOrganicPackId; force?: boolean; allowSignIn?: boolean; reconnect?: boolean; requiredScopes?: readonly string[]; checkoutReturned?: boolean } = {},
 ): Promise<boolean> {
 	if (typeof window === "undefined") return false;
 	if (!isNotOrganicFeatureEnabled() && !(options.allowSignIn && !options.packId)) return false;
@@ -66,6 +67,7 @@ export async function promptNotOrganicAccess(
 			packId: options.packId,
 			allowSignIn: options.allowSignIn,
 			reconnect: options.reconnect,
+			requiredScopes: options.requiredScopes,
 			checkoutReturned: options.checkoutReturned,
 			resolve,
 		};
@@ -85,7 +87,7 @@ export function closeNotOrganicPrompt(success: boolean) {
 export async function connectNotOrganicPrompt(request: NotOrganicPromptRequest): Promise<string | undefined> {
 	const client = notOrganicPublicClient();
 	if (request.reconnect || (client && !client.getSession()) || (!client && request.allowSignIn)) {
-		await beginNotOrganicAuthorization(`${window.location.pathname}${window.location.search}`);
+		await beginNotOrganicAuthorization(`${window.location.pathname}${window.location.search}`, request.requiredScopes);
 		return;
 	}
 	if (client && !request.packId && !request.checkoutReturned) {

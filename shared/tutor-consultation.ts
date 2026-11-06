@@ -1,5 +1,7 @@
 /** Ampersand advises the tool-calling tutor; it never receives authority to act. */
-export const TUTOR_CONSULTATION_MODEL = "ampersand-tutor-v0.1";
+import { TUTOR_CONSULTATION_MODEL_ID } from "../packages/runtime-config/src/index.js";
+
+export const TUTOR_CONSULTATION_MODEL = TUTOR_CONSULTATION_MODEL_ID;
 export const TUTOR_CONSULTATION_SCOPE = `infer:${TUTOR_CONSULTATION_MODEL}`;
 export const TUTOR_QUESTION_LIMIT = 4_000;
 export const TUTOR_CONTEXT_LIMIT = 12_000;

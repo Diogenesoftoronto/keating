@@ -2,6 +2,8 @@ import { expect, test } from "bun:test";
 import type { Api, Context, Model } from "@earendil-works/pi-ai";
 import { Type } from "typebox";
 import { streamSimple } from "@earendil-works/pi-ai/compat";
+import { getSupportedThinkingLevels } from "@earendil-works/pi-ai";
+import { normalizeProviderStreamOptions } from "../src/hooks/keating-stream";
 import { createNotOrganicInferenceFetch } from "../src/notorganic-provider/inference-fetch";
 import { NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL } from "../src/notorganic-provider";
 import { streamWithApiRetry, WEB_API_RETRY_POLICY } from "../src/keating/api-retry";
@@ -11,6 +13,31 @@ const model: Model<Api> = {
 	baseUrl: "https://api.notorganic.test/v1", reasoning: false, input: ["text"],
 	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 8192, maxTokens: 1024,
 };
+
+test("Sol's actual SDK payload uses supported reasoning and omits unsupported sampling for chat and helpers", async () => {
+	const selected = { ...NOTORGANIC_SOL_MODEL, baseUrl: "https://api.notorganic.test/v1" };
+	expect(getSupportedThinkingLevels(selected)).toEqual(["low", "medium", "high", "xhigh", "max"]);
+	for (const [reasoning, expected] of [[undefined, "low"], ["minimal", "low"], ["medium", "medium"], ["xhigh", "xhigh"], ["max", "max"]] as const) {
+		let body: Record<string, any> | undefined;
+		const options = normalizeProviderStreamOptions(selected, {
+			reasoning, temperature: 0.2, sessionId: "learner-session", maxRetries: 0,
+			samplingParams: { top_p: 0.9, top_logprobs: 2 },
+			fetch: (async (input, init) => {
+				body = await new Request(input, init).json();
+				if (!["low", "medium", "high", "xhigh", "max"].includes(body!.reasoning?.effort)
+					|| ["temperature", "top_p", "top_logprobs"].some(key => key in body!)) {
+					return Response.json({ error: { message: "Unsupported Sol parameter" } }, { status: 400 });
+				}
+				return new Response('event: response.completed\ndata: {"type":"response.completed","response":{"id":"resp_sol","status":"completed","output":[],"usage":{"input_tokens":1,"output_tokens":0,"total_tokens":1}}}\n\n', { headers: { "content-type": "text/event-stream" } });
+			}) as typeof fetch,
+		});
+		const result = await streamSimple(selected, { messages: [{ role: "user", content: "Suggest a title", timestamp: 1 }] }, { ...options, apiKey: "test-key" }).result();
+		expect(result.stopReason).toBe("stop");
+		expect(body?.reasoning.effort).toBe(expected);
+		expect(body?.prompt_cache_key).toBe("learner-session");
+		expect(body?.model).toBe("gpt-6.1-sol");
+	}
+});
 
 test("Flint uses account-only Chat Completions parameters and consumes buffered text plus tool-call SSE", async () => {
 	const selected = { ...NOTORGANIC_FLINT_MODEL, baseUrl: "https://api.notorganic.test/v1" };

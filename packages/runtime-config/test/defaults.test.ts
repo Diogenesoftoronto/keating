@@ -33,10 +33,11 @@ describe("public runtime configuration", () => {
     expect(SPENDING_LIMITS).toEqual({ notorganicRequestMicrousd: 100000, notorganicServerRequestMicrousd: 50000 });
   });
   test("derived browser consent includes the preview only in a fresh authorization request", () => {
-    expect(DEFAULT_NOTORGANIC_SCOPE).toBe("wallet:read usage:read billing:checkout infer:ampersand-tutor-v0.1 infer:balanced infer:flint infer:gpt-6.1-sol web:search web:fetch infer:image infer:inkling-2-small realtime:connect");
+    expect(DEFAULT_NOTORGANIC_SCOPE).toBe("wallet:read usage:read billing:checkout infer:balanced infer:flint infer:gpt-6.1-sol web:search web:fetch infer:image infer:inkling-2-small realtime:connect");
     for (const model of [...NOTORGANIC_CHAT_MODEL_IDS, ...NOTORGANIC_IMAGE_MODEL_IDS]) {
       expect(DEFAULT_NOTORGANIC_SCOPE.split(" ")).toContain(`infer:${model}`);
     }
+    expect(DEFAULT_NOTORGANIC_SCOPE).not.toContain("infer:ampersand-tutor-v0.1");
     expect(DEFAULT_NOTORGANIC_SCOPE).not.toContain("judgement:evaluate");
     expect(DEFAULT_NOTORGANIC_SCOPE).not.toContain("tabular:predict");
   });

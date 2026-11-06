@@ -6,8 +6,8 @@ const shipped = {
   "cliSetup": {
     "notorganic": [
       {
-        "label": "Balanced",
-        "value": "balanced",
+        "label": "Inkling 2 Small",
+        "value": "inkling-2-small",
         "hint": "Five-minute device-bound capability"
       }
     ],
