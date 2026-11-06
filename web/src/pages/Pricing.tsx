@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS } from "@keating/runtime-config";
+import { NOTORGANIC_CHAT_MODEL_IDS } from "@keating/runtime-config";
 import { useEffect, useRef, useState } from "react";
 import { AppLink as Link } from "../components/AppLink";
 import { ArrowRight, Check, RefreshCw } from "lucide-react";
@@ -46,7 +46,6 @@ const REQUIRED_PUBLIC_SCOPES = [
 	"wallet:read",
 	"usage:read",
 	"billing:checkout",
-	`infer:${DEFAULT_MODELS.web.notorganic}`,
 ] as const;
 
 export function isPublicCheckoutConfigured(
@@ -58,7 +57,8 @@ export function isPublicCheckoutConfigured(
 	return env.VITE_NOTORGANIC_ENABLED === "true"
 		&& env.VITE_NOTORGANIC_CHECKOUT_ENABLED === "true"
 		&& !!config
-		&& REQUIRED_PUBLIC_SCOPES.every((scope) => scopes.has(scope));
+		&& REQUIRED_PUBLIC_SCOPES.every((scope) => scopes.has(scope))
+		&& NOTORGANIC_CHAT_MODEL_IDS.some((model) => scopes.has(`infer:${model}`));
 }
 
 export function pricingAvailability(
