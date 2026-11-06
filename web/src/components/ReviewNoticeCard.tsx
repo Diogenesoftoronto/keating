@@ -13,7 +13,39 @@ const cardClass = css({
 	paddingBlock: "0.75rem",
 });
 const headerClass = css({ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 600, fontSize: "0.8125rem" });
-const noteClass = css({ fontSize: "0.75rem", color: "var(--muted-foreground)" });
+const UNVERIFIED_TIP =
+	"Not fully verified: none of Keating's drafts passed every review check. Double-check facts and steps that matter.";
+const unverifiedBadgeClass = css({
+	position: "relative",
+	display: "inline-flex",
+	marginTop: "0.25rem",
+	color: "var(--muted-foreground)",
+	opacity: 0.7,
+	cursor: "help",
+	_hover: { opacity: 1 },
+	_focusVisible: { opacity: 1 },
+	"&:hover > [data-tip], &:focus-visible > [data-tip]": { display: "block" },
+});
+const tipClass = css({
+	display: "none",
+	position: "absolute",
+	bottom: "calc(100% + 0.25rem)",
+	left: 0,
+	zIndex: 20,
+	width: "max-content",
+	maxWidth: "16rem",
+	borderRadius: "0.375rem",
+	borderWidth: "1px",
+	borderStyle: "solid",
+	borderColor: "var(--border)",
+	bg: "var(--popover)",
+	color: "var(--popover-foreground)",
+	paddingInline: "0.5rem",
+	paddingBlock: "0.375rem",
+	fontSize: "0.75rem",
+	lineHeight: "1rem",
+	pointerEvents: "none",
+});
 
 /**
  * A tutor turn that did not pass the full draft review. `unverified` wraps the
@@ -21,22 +53,20 @@ const noteClass = css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })
  */
 export function ReviewNoticeCard({ kind, children }: { kind: ReviewNoticeKind; children: ReactNode }) {
 	if (kind === "unverified") {
+		// Subtle on purpose: the reply renders as it normally would (a box around it
+		// broke OpenUI layout) and the caveat lives in a tooltip.
 		return (
-			<div
-				role="note"
-				aria-label="Unverified reply"
-				className={cardClass}
-				style={{ borderColor: "color-mix(in srgb, var(--warning, #d97706) 45%, transparent)" }}
-			>
-				<div className={headerClass}>
-					<ShieldQuestion size={14} aria-hidden />
-					<span>Not fully verified</span>
-				</div>
-				<p className={noteClass}>
-					None of the drafts passed every review check, so Keating is showing the best one it wrote. Double-check
-					facts and steps that matter.
-				</p>
-				<div>{children}</div>
+			<div>
+				{children}
+				<span
+					role="note"
+					aria-label={UNVERIFIED_TIP}
+					tabIndex={0}
+					className={unverifiedBadgeClass}
+				>
+					<ShieldQuestion size={13} aria-hidden />
+					<span data-tip aria-hidden className={tipClass}>{UNVERIFIED_TIP}</span>
+				</span>
 			</div>
 		);
 	}
