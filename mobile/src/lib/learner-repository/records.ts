@@ -381,9 +381,15 @@ export class LearnerRecordStore {
   replaceWithLocalAttachments(
     data: PortableLearnerData,
     locations: readonly LocalAttachmentLocation[],
+    ownership?: { namespace: string; sessionIds: readonly string[] },
   ): Promise<void> {
     validateLocalAttachments(data, locations);
     return withExclusiveTransaction(this.database, async (transaction) => {
+      if (ownership) {
+        if (!/^account-[a-f0-9]{64}$/u.test(ownership.namespace)) throw new Error("Invalid account sync namespace.");
+        await transaction.execAsync("CREATE TABLE IF NOT EXISTS account_chat_owners (session_id TEXT PRIMARY KEY NOT NULL, namespace TEXT NOT NULL);");
+        for (const id of ownership.sessionIds) await transaction.runAsync("INSERT OR IGNORE INTO account_chat_owners(session_id, namespace) VALUES (?, ?)", id, ownership.namespace);
+      }
       await replaceData(transaction, data);
       await transaction.runAsync("DELETE FROM local_message_attachments;");
       for (const location of locations) {

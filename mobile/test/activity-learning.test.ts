@@ -33,7 +33,7 @@ const judge = (noMatch = false): JudgementCaller => async request => ({ ok: true
 } });
 const noPrediction = (input: Parameters<typeof selectActivityCandidate>[0]) => selectActivityCandidate(input, { exposures: [], transport: async () => { throw Error("must not call"); } });
 
-test("ordinary native replies do not revise uncertain presentation", async () => {
+test("ordinary native replies repair an uncertain checkpoint before best-effort release", async () => {
   let generated = 0;
   const baseJudge = judge();
   const request = createMobileTeachingDraftRound({ current: () => true, evidence: async () => empty(), onReleased: () => {},
@@ -48,7 +48,7 @@ test("ordinary native replies do not revise uncertain presentation", async () =>
     request: async () => { generated++; return { text: "Division splits a quantity into equal groups.", calls: [], assistantTurn: null, usage: null }; },
   });
   const result = await request({ provider: "openai", model: "fixture", customBaseUrl: "" }, "key", [{ id: "user", role: "user", content: "Explain division", createdAt: time }]);
-  expect(generated).toBe(1);
+  expect(generated).toBe(2);
   expect(result.text).toBe("Division splits a quantity into equal groups.");
 });
 

@@ -33,6 +33,22 @@ export class NativeChatSyncStorage {
     return { state: parseChatSyncState(stored.state), baseline: parseChatSyncState({ schemaVersion: 1, kind: "keating-chat-sync", entries: stored.baseline.map(session => ({ id: session.data.id, version: 1, writer: stored.writer, session })) }).entries.map(entry => entry.session!), writer: stored.writer };
   }
   saveLocal(state: NativeChatSyncState): Promise<void> { return this.write("local", state); }
+  /** Adopt pre-account history only on the first connection on this device. */
+  async migrateFirstConnection(ids: string[]): Promise<void> {
+    this.assertCurrent();
+    await this.database.withExclusiveTransactionAsync(async transaction => {
+      await transaction.execAsync("CREATE TABLE IF NOT EXISTS account_chat_migration (id INTEGER PRIMARY KEY NOT NULL, namespace TEXT NOT NULL);");
+      const prior = await transaction.getFirstAsync<{ namespace: string }>("SELECT namespace FROM account_chat_migration WHERE id = 1");
+      if (prior) return;
+      const persisted = new Set((await transaction.getAllAsync<{ id: string }>("SELECT id FROM learner_records WHERE kind = ?", "session")).map(row => row.id));
+      for (const id of ids) {
+        this.assertCurrent();
+        if (persisted.has(id)) await transaction.runAsync("INSERT OR IGNORE INTO account_chat_owners(session_id, namespace) VALUES (?, ?)", id, this.namespace);
+      }
+      this.assertCurrent();
+      await transaction.runAsync("INSERT INTO account_chat_migration(id, namespace) VALUES (1, ?)", this.namespace);
+    });
+  }
   async claim(ids: string[]): Promise<Set<string>> {
     this.assertCurrent();
     await this.database.withExclusiveTransactionAsync(async transaction => {

@@ -6,6 +6,7 @@ import { webSyncCrypto } from "../../shared/account-sync/crypto";
 import { nativeSessionToSync, projectSyncedSession } from "../src/lib/account-sync/chat-projection";
 import { createNativeChatReconciler } from "../src/lib/account-sync/reconcile";
 import { NativeChatSyncStorage } from "../src/lib/account-sync/storage";
+import { saveNativeState } from "../src/lib/account-sync/local-save";
 import { emptyChatSyncState } from "../../shared/account-sync/chat-sync-state";
 import { SqliteTestDatabase } from "./helpers/sqlite";
 import { initializeRepositorySchema, LearnerRecordStore, convertLegacyPersistedState } from "../src/lib/learner-repository";
@@ -53,6 +54,7 @@ test("native attachment device paths and transient bytes never enter the wire fo
 
 test("SQLite reconciliation downloads to an empty device, resumes unchanged, appends and deletes", async () => {
   const database = new SqliteTestDatabase();
+  await initializeRepositorySchema(database);
   const storage = new NativeChatSyncStorage(database, namespace, () => true);
   await storage.initialize();
   let current = state([]);
@@ -75,7 +77,10 @@ test("SQLite reconciliation downloads to an empty device, resumes unchanged, app
 
 test("switching accounts cannot adopt owned local chats or their checkpoint", async () => {
   const database = new SqliteTestDatabase();
+  await initializeRepositorySchema(database);
   let current = state([chat()]);
+  const initial = convertLegacyPersistedState(current);
+  await new LearnerRecordStore(database).replaceWithLocalAttachments(initial.data, initial.localAttachments);
   const a = new NativeChatSyncStorage(database, namespace, () => true);
   await a.initialize();
   const make = (storage: NativeChatSyncStorage) => createNativeChatReconciler({ storage, randomUUID: () => "device", sha256: webSyncCrypto.sha256, current: () => true, state: () => current, apply: async next => { current = next; return true; } });
@@ -85,6 +90,66 @@ test("switching accounts cannot adopt owned local chats or their checkpoint", as
   expect((await make(b)(null)).entries).toHaveLength(0);
   expect(await b.loadCheckpoint()).toBeNull();
   expect((await a.loadCheckpoint())?.cursor).toBe("42");
+  await database.closeAsync();
+});
+
+test("a newly saved chat stays with the account active when saved", async () => {
+  const database = new SqliteTestDatabase();
+  await initializeRepositorySchema(database);
+  const records = new LearnerRecordStore(database);
+  let current = state([chat()]);
+  const a = new NativeChatSyncStorage(database, namespace, () => true);
+  await a.initialize();
+  const make = (storage: NativeChatSyncStorage) => createNativeChatReconciler({ storage, randomUUID: () => "device", sha256: webSyncCrypto.sha256, current: () => true, state: () => current, apply: async next => { current = next; return true; } });
+  const initial = convertLegacyPersistedState(current);
+  await records.replaceWithLocalAttachments(initial.data, initial.localAttachments);
+  await make(a)(null);
+  const privateChat = chat();
+  privateChat.id = "a-private";
+  privateChat.messages[0]!.content = "A PRIVATE NEW CHAT";
+  current = state([...current.sessions, privateChat]);
+  let active = "did:plc:alice";
+  let release!: () => void;
+  const blocked = new Promise<void>(resolve => { release = resolve; });
+  const saving = saveNativeState({ records, state: current, account: () => active,
+    crypto: { ...webSyncCrypto, sha256: async () => new Uint8Array(32).fill(0xaa) },
+    enqueue: async task => { await blocked; await task(); }, beforeWrite: () => true, saved: () => {} });
+  active = "did:plc:bob";
+  release();
+  await saving;
+  const b = new NativeChatSyncStorage(database, `account-${"b".repeat(64)}`, () => true);
+  expect(JSON.stringify(await make(b)(null))).not.toContain("A PRIVATE NEW CHAT");
+  expect(JSON.stringify(await make(a)(null))).toContain("A PRIVATE NEW CHAT");
+  await database.closeAsync();
+});
+
+test("a failed local session write rolls back its ownership", async () => {
+  const database = new SqliteTestDatabase();
+  await initializeRepositorySchema(database);
+  const storage = new NativeChatSyncStorage(database, namespace, () => true);
+  await storage.initialize();
+  const records = new LearnerRecordStore(database);
+  const converted = convertLegacyPersistedState(state([chat()]));
+  database.beforeRun = sql => { if (sql.startsWith("DELETE FROM learner_records")) throw new Error("write failed"); };
+  await expect(records.replaceWithLocalAttachments(converted.data, converted.localAttachments, { namespace, sessionIds: ["chat-one"] })).rejects.toThrow("write failed");
+  database.beforeRun = undefined;
+  expect(await database.getFirstAsync("SELECT session_id FROM account_chat_owners WHERE session_id = ?", "chat-one")).toBeNull();
+  expect((await records.snapshot()).sessions).toHaveLength(0);
+  await database.closeAsync();
+});
+
+test("unowned history appearing after the first connection is not adopted by another account", async () => {
+  const database = new SqliteTestDatabase();
+  await initializeRepositorySchema(database);
+  const a = new NativeChatSyncStorage(database, namespace, () => true);
+  await a.initialize();
+  let current = state([chat()]);
+  const make = (storage: NativeChatSyncStorage) => createNativeChatReconciler({ storage, randomUUID: () => "device", sha256: webSyncCrypto.sha256, current: () => true, state: () => current, apply: async next => { current = next; return true; } });
+  await make(a)(null);
+  const anonymous = chat(); anonymous.id = "anonymous-later"; anonymous.messages[0]!.content = "ANONYMOUS LATER";
+  current = state([...current.sessions, anonymous]);
+  const b = new NativeChatSyncStorage(database, `account-${"b".repeat(64)}`, () => true);
+  expect(JSON.stringify(await make(b)(null))).not.toContain("ANONYMOUS LATER");
   await database.closeAsync();
 });
 

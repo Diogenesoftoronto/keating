@@ -23,9 +23,14 @@ export function useTurnJudgementReview(sessionId: string | undefined, receipts: 
 		void Promise.all([keatingStorage.getTurnJudgements(sessionId), keatingStorage.getJudgementLabels(sessionId)])
 			.then(async ([saved, savedLabels]) => {
 				if (cancelled) return;
-				setRecords(saved); setLabels(savedLabels);
 				const retried = await retryPendingMemoryLabels(deps, savedLabels);
-				if (!cancelled && retried.length) setLabels((rows) => rows.map((row) => retried.find((next) => next.id === row.id) ?? row));
+				if (cancelled) return;
+				setRecords(saved);
+				setLabels(savedLabels.flatMap((row) => {
+					const next = retried.find((next) => next.id === row.id);
+					return next?.cleared ? [] : [next ?? row];
+				}));
+				if (retried.some((row) => row.effect === "failed")) setError("Your memory correction could not be applied. Try again.");
 			})
 			.catch(() => { if (!cancelled) setError("Saved judgements could not be loaded."); });
 		return () => { cancelled = true; };
@@ -56,7 +61,14 @@ export function useTurnJudgementReview(sessionId: string | undefined, receipts: 
 				const existing = labels.find((row) => row.assistantTimestamp === assistantTimestamp && row.target.kind === "memory-admission"
 					&& row.target.candidateId === input.decision.candidate.id);
 				guard(saveMemoryLabel(deps, { sessionId, assistantTimestamp }, { ...input, existing }),
-					(next) => { const id = existing?.id ?? next?.id; if (id) replace(id, next); });
+					(next) => {
+						const id = existing?.id ?? next?.id;
+						if (id) replace(id, next);
+						if (next?.pendingClear) setError(next.effect === "failed"
+							? "Undo could not clear the memory correction. Try again."
+							: "Undo is pending until the original memory account returns.");
+						else if (next?.effect === "failed") setError("Your memory correction could not be applied. Try again.");
+					});
 			},
 		};
 	}, [error, labels, receipts, replace, sessionId]);
