@@ -5,6 +5,7 @@ import type { PortableLearnerData } from "@keating/learner-contracts";
 /** A logout or local edit during an async native transaction must roll it back. */
 export async function replaceSyncedLearnerData(
   database: AsyncSqlDatabase, data: PortableLearnerData, locations: readonly LocalAttachmentLocation[], current: () => boolean,
+  ownership?: { namespace: string; sessionIds: readonly string[] },
 ): Promise<boolean> {
   const cancelled = new Error("The sync account or local conversation changed.");
   const check = () => { if (!current()) throw cancelled; };
@@ -19,7 +20,7 @@ export async function replaceSyncedLearnerData(
     }),
   };
   try {
-    await new LearnerRecordStore(guarded).replaceWithLocalAttachments(data, locations);
+    await new LearnerRecordStore(guarded).replaceWithLocalAttachments(data, locations, ownership);
     return true;
   } catch (error) { if (error === cancelled) return false; throw error; }
 }

@@ -70,14 +70,15 @@ export function useAccountChatSync(
         const reconcile = createNativeChatReconciler({
           storage, randomUUID: crypto.randomUUID, sha256: crypto.sha256, current,
           state: () => latest.current.store.stateRef.current,
-          apply: (next, expected) => enqueueRepositoryWrite(latest.current.repo.refs.writeTail, async () => {
+          apply: (next, expected, newSessionIds) => enqueueRepositoryWrite(latest.current.repo.refs.writeTail, async () => {
             if (!current() || latest.current.busy.current || latest.current.store.stateRef.current !== expected) return false;
             const snapshot = await repository.records.snapshot();
             const locations = await repository.records.getLocalAttachments();
             if (!current() || latest.current.busy.current || latest.current.store.stateRef.current !== expected) return false;
             const reconciled = reconcileNativeStateIntoPortable(snapshot, next, locations);
             if (!await replaceSyncedLearnerData(repository.database, reconciled.data, reconciled.localAttachments,
-              () => current() && !latest.current.busy.current && latest.current.store.stateRef.current === expected)) return false;
+              () => current() && !latest.current.busy.current && latest.current.store.stateRef.current === expected,
+              { namespace, sessionIds: newSessionIds })) return false;
             if (!current() || latest.current.store.stateRef.current !== expected) return false;
             latest.current.store.commitState(next);
             latest.current.repo.setLearnerData(reconciled.data);

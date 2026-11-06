@@ -4,10 +4,14 @@
  * both the repository and the compatibility cache.
  */
 import { type Dispatch, type MutableRefObject, type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as Crypto from "expo-crypto";
+import { webSyncCrypto } from "../../../shared/account-sync/crypto";
+import { defaultNotOrganicAccountConfig } from "@/lib/notorganic-account/contracts";
+import { useNotOrganicAccount } from "@/state/NotOrganicAccountProvider";
 import type { PortableLearnerData } from "@keating/learner-contracts";
 import type { LearnerRepository } from "@/lib/learner-repository";
 import { MobileJudgementReviewStore, type MobileJudgementReviewRecord } from "@/lib/learner-repository/judgement-reviews";
-import { reconcileNativeStateIntoPortable } from "@/lib/learner-repository/portable-native-state";
+import { saveNativeState } from "@/lib/account-sync/local-save";
 import { reviewMobileQuestionChecks, type MobileQuestionReviewInput } from "@/lib/judgement/grading";
 import { savePersistedState } from "@/lib/storage";
 import type { PersistedAppState } from "@/lib/types";
@@ -48,6 +52,10 @@ export interface LearnerRepositoryState {
 const errorText = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
 
 export function useLearnerRepository(setStorageError: (message: string) => void): LearnerRepositoryState {
+  const account = useNotOrganicAccount();
+  const activeDid = account.status === "signed-in" && account.session?.issuer === defaultNotOrganicAccountConfig().issuer ? account.session.accountId : undefined;
+  const accountRef = useRef(activeDid);
+  accountRef.current = activeDid;
   const [hydrated, setHydrated] = useState(false);
   const [persistenceReady, setPersistenceReady] = useState(false);
   const [repositoryReady, setRepositoryReady] = useState(false);
@@ -69,16 +77,16 @@ export function useLearnerRepository(setStorageError: (message: string) => void)
       if (required) throw new Error("The local learner repository is unavailable, so Keating did not apply the tool effect.");
       return;
     }
-    await enqueueRepositoryWrite(refs.writeTail, async () => {
-      if (refs.clearing.current) {
+    await saveNativeState({
+      records: repository.records, state: next, account: () => accountRef.current,
+      crypto: { ...webSyncCrypto, sha256: async bytes => new Uint8Array(await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, new Uint8Array(bytes))) },
+      enqueue: task => enqueueRepositoryWrite(refs.writeTail, task),
+      beforeWrite: () => {
+        if (!refs.clearing.current) return true;
         if (required) throw new Error("Learning data is being cleared, so Keating did not apply the tool effect.");
-        return;
-      }
-      const current = await repository.records.snapshot();
-      const currentLocations = await repository.records.getLocalAttachments();
-      const reconciled = reconcileNativeStateIntoPortable(current, next, currentLocations);
-      await repository.records.replaceWithLocalAttachments(reconciled.data, reconciled.localAttachments);
-      setLearnerData(reconciled.data);
+        return false;
+      },
+      saved: setLearnerData,
     });
   }, [refs]);
 

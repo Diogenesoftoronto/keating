@@ -51,6 +51,23 @@ function parseClientMessage(text: string): RoomClientSocketMessage | null {
 
 export default defineWebSocketHandler((event) => {
   let authorized: { roomId: string; accountId: string } | undefined;
+  let recheck: ReturnType<typeof setInterval> | undefined;
+  let closed = false;
+  const reauthorize = async (peer: { close(code: number, reason: string): unknown }) => {
+    if (!authorized || closed) return false;
+    try {
+      const session = await requireCourseProductSession(event);
+      if (closed) return false;
+      if (session.accountId === authorized.accountId) return true;
+    } catch {
+      // A revoked or unavailable account must no longer receive room traffic.
+    }
+    closed = true;
+    if (recheck) clearInterval(recheck);
+    disconnectRoomPeer(authorized.roomId, peer as Parameters<typeof disconnectRoomPeer>[1]);
+    peer.close(4401, "Room account expired");
+    return false;
+  };
   let tokens = FRAME_BURST;
   let refilledAt = Date.now();
   const takeFrame = () => {
@@ -92,9 +109,11 @@ export default defineWebSocketHandler((event) => {
         peer.close(4403, "Room authorization required");
         return;
       }
+      if (!await reauthorize(peer)) return;
       const { roomId: id, accountId } = authorized;
       // A member can be removed or demoted between upgrade authorization and open.
       const room = await currentRoom(id);
+      if (closed) return;
       if (!room || !findRoomMember(room, accountId)) {
         send(peer, { type: "removed", roomId: id });
         peer.close(4403, "Not a room member");
@@ -103,16 +122,19 @@ export default defineWebSocketHandler((event) => {
       const latest = projectRoomForViewer(room, accountId);
       connectRoomPeer(id, accountId, peer, room);
       send(peer, { type: "snapshot", snapshot: latest });
+      recheck = setInterval(() => { void reauthorize(peer); }, 15_000);
     },
     async message(peer, message) {
       if (!authorized) {
         peer.close(4403, "Room authorization required");
         return;
       }
+      if (!await reauthorize(peer)) return;
       const { roomId: id, accountId } = authorized;
       if (!takeFrame()) return;
       const text = message.text();
       const room = await currentRoom(id);
+      if (closed) return;
       if (!room || !findRoomMember(room, accountId)) {
         send(peer, { type: "removed", roomId: id });
         peer.close(4403, "Not a room member");
@@ -135,6 +157,8 @@ export default defineWebSocketHandler((event) => {
       else relayKeatingPreview(room, peer, parsed.facilitatorId, parsed.turnId, parsed.text);
     },
     close(peer) {
+      closed = true;
+      if (recheck) clearInterval(recheck);
       if (authorized) disconnectRoomPeer(authorized.roomId, peer);
     },
   };
