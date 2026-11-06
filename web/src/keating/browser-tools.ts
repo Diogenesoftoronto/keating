@@ -25,6 +25,7 @@ import { createRoomTools } from "./browser-tools/rooms";
 import { createSearchTools } from "./browser-tools/search";
 import { createKnowledgeTools } from "./browser-tools/knowledge";
 import { createTeachingTools } from "./browser-tools/teaching";
+import { createTutorConsultationTools } from "./browser-tools/tutor";
 import {
   createToolRegistry,
   type KeatingToolsOptions,
@@ -59,6 +60,7 @@ export const TOOL_REGISTRATION_ORDER = [
   "agent_runtime",
   "remote_execute",
   "client-web-search",
+  "consult_tutor",
   "animate",
   "deck",
   "course_list",
@@ -154,6 +156,7 @@ export async function createKeatingTools(
   const tools = preserveRegistrationOrder([
     createWorkspaceTools(options),
     createSearchTools(options),
+    createTutorConsultationTools(),
     createKnowledgeTools(),
     createMediaTools(storage),
     createCourseTools(options),

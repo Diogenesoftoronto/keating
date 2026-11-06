@@ -1,5 +1,5 @@
 /** Consent follows enabled model IDs; judgement and tabular access remain explicit opt-ins. */
-import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, NOTORGANIC_IMAGE_MODEL_IDS } from "./models.js";
+import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, NOTORGANIC_IMAGE_MODEL_IDS, TUTOR_CONSULTATION_MODEL_ID } from "./models.js";
 
 export const NOTORGANIC_CAPABILITIES = [
   "wallet:read", "usage:read", "billing:checkout", "web:search", "web:fetch", "realtime:connect",
@@ -34,6 +34,6 @@ export function buildNotOrganicScope({ models, capabilities }: NotOrganicScopeOp
 }
 
 export const DEFAULT_NOTORGANIC_SCOPE = buildNotOrganicScope({
-  models: [...NOTORGANIC_CHAT_MODEL_IDS, ...NOTORGANIC_IMAGE_MODEL_IDS],
+  models: [...NOTORGANIC_CHAT_MODEL_IDS, ...NOTORGANIC_IMAGE_MODEL_IDS, TUTOR_CONSULTATION_MODEL_ID],
   capabilities: NOTORGANIC_CAPABILITIES,
 });

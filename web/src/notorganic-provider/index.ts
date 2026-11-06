@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, MODEL_CHOICES, FLINT_PREVIEW_PROFILE } from "@keating/runtime-config";
+import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, MODEL_CHOICES, FLINT_PREVIEW_PROFILE, INKLING_2_SMALL_PROFILE } from "@keating/runtime-config";
 import { checkoutSelection, subscriptionAvailable, subscriptionCheckoutEnabled } from "./plans";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { availableCreditPacks, normalizeCreditWallet } from "./credit-wallet";
@@ -36,14 +36,14 @@ export const NOTORGANIC_DEFAULT_MODEL: Model<"openai-completions"> = {
 	reasoning: true,
   // The account gateway accepts system/user/assistant/tool, not developer.
   compat: { supportsDeveloperRole: false },
-  input: ["text"],
+  input: ["text", "image"],
 	cost: {
 		input: 0,
 		output: 0,
 		cacheRead: 0,
 		cacheWrite: 0,
 	},
-	contextWindow: 256_000,
+	contextWindow: INKLING_2_SMALL_PROFILE.contextWindow,
 	maxTokens: 16_384,
 };
 
@@ -71,7 +71,11 @@ export const NOTORGANIC_FLINT_MODEL: Model<"openai-completions"> = {
     supportsUsageInStreaming: true, supportsStore: false, maxTokensField: "max_completion_tokens" },
 };
 
-export const NOTORGANIC_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL];
+/** Retain the previous explicit choice and persisted balanced sessions. */
+export const NOTORGANIC_BALANCED_MODEL: Model<"openai-completions"> = {
+  ...NOTORGANIC_DEFAULT_MODEL, id: "balanced", name: "Inkling Small", input: ["text"], contextWindow: 256_000,
+};
+export const NOTORGANIC_CHAT_MODELS = [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL, NOTORGANIC_FLINT_MODEL, NOTORGANIC_BALANCED_MODEL];
 
 /** Keep existing choices; a preview becomes selectable only after consent and gateway discovery. */
 export async function getAvailableNotOrganicChatModels(

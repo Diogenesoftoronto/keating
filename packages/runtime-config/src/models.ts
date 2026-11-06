@@ -5,7 +5,7 @@ export type { RuntimeModelId } from "./model-identities.js";
 /** Intentional platform differences are independent defaults, not accidental drift. */
 export const DEFAULT_MODELS = {
   cli: {
-    notorganic: MODEL_IDS.balanced,
+    notorganic: MODEL_IDS.inkling_2_small,
     openai: MODEL_IDS.gpt_5_5,
     google: MODEL_IDS.gemini_3_5_flash,
     anthropic: MODEL_IDS.claude_sonnet_4_6,
@@ -20,9 +20,9 @@ export const DEFAULT_MODELS = {
     openrouter: MODEL_IDS.anthropic_claude_sonnet_4_6,
     custom: MODEL_IDS.default,
   },
-  web: { notorganic: MODEL_IDS.balanced },
+  web: { notorganic: MODEL_IDS.inkling_2_small },
   setup: { google: MODEL_IDS.gemini_3_1_pro_preview, cliAnthropic: MODEL_IDS.claude_sonnet_5 },
-  account: { mobileChat: MODEL_IDS.balanced },
+  account: { mobileChat: MODEL_IDS.inkling_2_small },
   speech: {
     sttOpenai: MODEL_IDS.gpt_4o_transcribe,
     sttGoogle: MODEL_IDS.gemini_2_5_flash,
@@ -36,7 +36,12 @@ export const DEFAULT_MODELS = {
   judgement: { systemOne: MODEL_IDS.jev_latest, tabular: MODEL_IDS.tabular },
 } as const;
 
-export const NOTORGANIC_CHAT_MODEL_IDS = [DEFAULT_MODELS.web.notorganic, MODEL_IDS.gpt_6_1_sol, MODEL_IDS.flint] as const;
+export const NOTORGANIC_CHAT_MODEL_IDS = [DEFAULT_MODELS.web.notorganic, MODEL_IDS.gpt_6_1_sol, MODEL_IDS.flint, MODEL_IDS.balanced] as const;
+/** The main tutor stays tool-capable; Ampersand Tutor is consulted separately. */
+export const TUTOR_CONSULTATION_MODEL_ID = MODEL_IDS.ampersand_tutor;
+export const INKLING_2_SMALL_PROFILE = {
+  id: MODEL_IDS.inkling_2_small, name: "Inkling 2 Small", contextWindow: 262_144, maxTokens: 16_384,
+} as const;
 /** Provisional native serving profile; not GPU-verified. Gateway enablement and fresh consent are required. */
 export const FLINT_PREVIEW_PROFILE = {
   id: MODEL_IDS.flint, name: "Flint (preview)", contextWindow: 12_288, maxTokens: 4_096,
@@ -78,6 +83,7 @@ export const IMAGE_MODEL_IDS = {
 /** Labels follow the selected role ID; changing a default cannot leave a stale consumer label. */
 const SETUP_MODEL_LABELS: Record<string, string> = {
   [MODEL_IDS.balanced]: "Balanced",
+  [MODEL_IDS.inkling_2_small]: "Inkling 2 Small",
   [MODEL_IDS.zyphra_zaya1_8b]: "ZAYA1-8B",
   ["custom"]: "Custom",
   [MODEL_IDS.poolside_laguna_m_1_free]: "Poolside Laguna M.1 (free)",
@@ -129,7 +135,7 @@ const TTS_MODEL_LABELS: Record<string, string> = {
   [MODEL_IDS.tts_quality]: "tts-1 HD (higher quality)",
 };
 const NOTORGANIC_MODEL_LABELS: Record<string, string> = {
-  [MODEL_IDS.balanced]: "Inkling Small", [MODEL_IDS.gpt_6_1_sol]: "GPT-6.1 Sol",
+  [MODEL_IDS.balanced]: "Inkling Small", [MODEL_IDS.inkling_2_small]: "Inkling 2 Small", [MODEL_IDS.gpt_6_1_sol]: "GPT-6.1 Sol",
   [MODEL_IDS.flint]: FLINT_PREVIEW_PROFILE.name,
 };
 const TABULAR_MODEL_LABELS: Record<string, string> = { [MODEL_IDS.tabular]: "TabPFN 3.5" };
