@@ -1,4 +1,6 @@
 import { useStorage } from "nitro/storage";
+import type { Storage } from "unstorage";
+import { attachmentStore, type StoredAttachment } from "./submission-attachments";
 import { z } from "zod";
 import {
   allCourseLessons,
@@ -22,6 +24,86 @@ import {
 
 const COURSE_STORAGE = "keating:courses";
 const MAX_APPLIED_OPERATIONS = 20_000;
+
+/** Only identity fields are rewritten; authored text and content IDs remain byte-for-byte intact. */
+export function adoptCourseIdentity(course: Course, from: string, to: string): Course {
+  const source = course.members.find((member) => member.accountId === from);
+  if (!source) return course;
+  const target = course.members.find((member) => member.accountId === to);
+  const identity = (id: string) => id === from ? to : id;
+  const authored = <T extends { updatedBy: string }>(value: T): T => ({ ...value, updatedBy: identity(value.updatedBy) });
+  const attributed = <T extends { accountId: string }>(value: T): T => ({ ...value, accountId: identity(value.accountId) });
+  const reviewed = <T extends { accountId: string; review?: { reviewerAccountId: string } }>(value: T): T => ({
+    ...attributed(value), ...(value.review ? { review: { ...value.review, reviewerAccountId: identity(value.review.reviewerAccountId) } } : {}),
+  });
+  const member = target ? {
+    ...target,
+    // Existing verified membership governs permissions; owning the source course remains ownership.
+    ...(course.ownerAccountId === from ? { role: "owner" as const, teacherAccess: "full" as const } : {}),
+    progress: {
+      ...(source.progress.lastActiveAt > target.progress.lastActiveAt ? source.progress : target.progress),
+      completedLessonIds: [...new Set([...target.progress.completedLessonIds, ...source.progress.completedLessonIds])],
+    },
+  } : { ...source, accountId: to };
+  return courseSchema.parse({
+    ...course, ownerAccountId: identity(course.ownerAccountId), revision: course.revision + 1,
+    updatedAt: new Date().toISOString(),
+    members: [...course.members.filter((value) => value.accountId !== from && value.accountId !== to), member],
+    materials: course.materials.map((value) => ({ ...value, createdBy: identity(value.createdBy) })),
+    cards: course.cards.map(authored), artifacts: course.artifacts.map(authored), assignments: course.assignments.map(authored),
+    sharedNotes: course.sharedNotes.map(authored), submissions: course.submissions.map(reviewed),
+    assignmentSubmissions: course.assignmentSubmissions.map(reviewed), comments: course.comments.map(attributed),
+    reactions: course.reactions.map(attributed), activity: course.activity.map(attributed),
+  });
+}
+
+/** Called only after proof of both the HttpOnly local secret and provider identity. Resumable after partial writes. */
+export async function adoptLocalCourses(from: string, to: string, store: Storage = storage()): Promise<void> {
+  if (!/^local_[0-9a-f]{64}$/.test(from) || !to.startsWith("did:")) throw new Error("Invalid course identity adoption.");
+  await withCourseLock(`identity:${from}`, async () => {
+    const receiptKey = `identity:adopted:${from}`;
+    const receipt = await store.getItem<string>(receiptKey);
+    if (receipt && receipt !== to) throw new Error("This local course account is already linked to another account.");
+    // Reserve before modifying any course so partial retries cannot switch target accounts.
+    await store.setItem(receiptKey, to);
+    const adoptedKey = `identity:adoptions:${await sha256(to)}`;
+    await withCourseLock(adoptedKey, async () => {
+      const adopted = await store.getItem<string[]>(adoptedKey);
+      await store.setItem(adoptedKey, [...new Set([...(Array.isArray(adopted) ? adopted : []), from])]);
+    });
+    const ids = await store.getItem<string[]>(await accountKey(from));
+    for (const id of Array.isArray(ids) ? ids : []) {
+      await withCourseLock(id, async () => {
+        const raw = await store.getItem(courseKey(id));
+        if (!raw) return;
+        const record = storedCourseRecordSchema.parse(raw);
+        if (!record.course.members.some((member) => member.accountId === from || member.accountId === to)) return;
+        for (const submission of record.course.assignmentSubmissions) {
+          if (submission.accountId !== from && submission.accountId !== to) continue;
+          for (const attachment of submission.attachments ?? []) {
+            const key = `${attachment.id}:metadata`;
+            const stored = await attachmentStore().getItem<StoredAttachment>(key);
+            if (stored?.accountId === from) await attachmentStore().setItem(key, { ...stored, accountId: to });
+          }
+        }
+        const course = adoptCourseIdentity(record.course, from, to);
+        await store.setItem(courseKey(id), { ...record, course });
+        const key = await accountKey(to);
+        await withCourseLock(`index:${key}`, async () => {
+          const current = await store.getItem<string[]>(key);
+          await store.setItem(key, [...new Set([...(Array.isArray(current) ? current : []), id])]);
+        });
+      });
+    }
+    await store.removeItem(await accountKey(from));
+  });
+}
+
+/** Durable recovery list also covers a browser that lost the successful link response. */
+export async function adoptedLocalCourseAccounts(accountId: string): Promise<string[]> {
+  const ids = await storage().getItem<string[]>(`identity:adoptions:${await sha256(accountId)}`);
+  return Array.isArray(ids) ? ids.filter(id => /^local_[0-9a-f]{64}$/.test(id)) : [];
+}
 
 const storedCourseRecordSchema = z.object({
   course: courseSchema,
@@ -113,10 +195,12 @@ async function addCourseToAccount(
   courseId: string,
 ): Promise<void> {
   const key = await accountKey(accountId);
-  const current = await storage().getItem<string[]>(key);
-  const ids = new Set(Array.isArray(current) ? current : []);
-  ids.add(courseId);
-  await storage().setItem(key, [...ids]);
+  await withCourseLock(`index:${key}`, async () => {
+    const current = await storage().getItem<string[]>(key);
+    const ids = new Set(Array.isArray(current) ? current : []);
+    ids.add(courseId);
+    await storage().setItem(key, [...ids]);
+  });
 }
 
 function listItem(course: Course, accountId: string): CourseListItem {

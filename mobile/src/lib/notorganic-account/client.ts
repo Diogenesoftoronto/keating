@@ -115,6 +115,39 @@ export async function notOrganicAccountRequest<T>(path: string, init: RequestIni
   return parseResponse<T>(response);
 }
 
+/** Raw, account-bound responses preserve revision conflicts for incremental sync. */
+export async function notOrganicSyncRequest(
+  path: string, init: RequestInit, expectedAccountId: string,
+  current: () => boolean = () => true, config = defaultNotOrganicAccountConfig(),
+): Promise<Response> {
+  const url = new URL(path, `${config.issuer}/`);
+  const issuer = new URL(config.issuer);
+  if (issuer.protocol !== "https:" || issuer.username || issuer.password || issuer.search || issuer.hash || issuer.pathname !== "/"
+    || url.origin !== issuer.origin || !/^\/v1\/(account|sync\/account-key|sync\/records(?:\/[A-Za-z0-9_-]{1,128})?)$/u.test(url.pathname)) {
+    throw new Error("Invalid account sync endpoint.");
+  }
+  const stored = await loadDeviceSession();
+  if (!current() || init.signal?.aborted || stored?.issuer !== config.issuer || stored.accountId !== expectedAccountId
+    || !stored.scope.split(/\s+/u).includes("sync:key:read")) throw new Error("Reconnect Not Organic to enable account sync.");
+  const session = await activeDeviceSession(config);
+  const generation = deviceSessionGeneration();
+  const valid = () => current() && !init.signal?.aborted && deviceSessionGeneration() === generation;
+  if (!valid() || session.issuer !== config.issuer || session.accountId !== expectedAccountId
+    || !session.scope.split(/\s+/u).includes("sync:key:read")) throw new Error("The sync account changed.");
+  const method = (init.method ?? "GET").toUpperCase();
+  const proofUrl = new URL(url);
+  proofUrl.search = "";
+  proofUrl.hash = "";
+  const proof = await createDpopProof({ url: proofUrl.toString(), method, boundToken: session.accessToken });
+  if (!valid()) throw new Error("The sync account changed.");
+  const headers = new Headers(init.headers);
+  headers.set("authorization", `DPoP ${session.accessToken}`);
+  headers.set("dpop", proof);
+  const response = await accountFetch(url.toString(), { ...init, method, headers, redirect: "error" });
+  if (!valid()) throw new Error("The sync account changed. Returned data was discarded.");
+  return response;
+}
+
 /** Headers proving the current mobile account to another Keating service. */
 export async function notOrganicAccountCapabilityHeaders(
   providerPath = "/v1/account",

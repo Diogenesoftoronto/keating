@@ -11,6 +11,7 @@ import fsDriver from "unstorage/drivers/fs";
 export const PERSISTENT_STORES = [
   ["keating:share", "KEATING_SHARE_STORAGE_DIR"],
   ["keating:courses", "KEATING_COURSES_STORAGE_DIR"],
+  ["keating:course-materials", "KEATING_COURSE_MATERIALS_STORAGE_DIR"],
   ["keating:submission-attachments", "KEATING_SUBMISSION_STORAGE_DIR"],
 ] as const;
 

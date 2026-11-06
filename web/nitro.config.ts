@@ -31,6 +31,10 @@ export default defineNitroConfig({
   // Courses are account state, not ephemeral share payloads. Deployments should
   // point this at a persistent volume (for example /data/keating-courses).
   storage: {
+    "keating:course-materials": {
+      driver: "fs",
+      base: process.env.KEATING_COURSE_MATERIALS_STORAGE_DIR ?? ".data/keating-course-materials",
+    },
     "keating:submission-attachments": {
       driver: "fs",
       base: process.env.KEATING_SUBMISSION_STORAGE_DIR ?? ".data/keating-submissions",
@@ -236,6 +240,16 @@ export default defineNitroConfig({
     {
       route: "/api/share/**",
       handler: "server/api/share/[id].ts",
+    },
+    {
+      route: "/api/submission-attachments",
+      method: "POST" as const,
+      handler: "server/api/submission-attachments/index.post.ts",
+    },
+    {
+      route: "/api/submission-attachments/:id",
+      method: "GET" as const,
+      handler: "server/api/submission-attachments/[id].get.ts",
     },
     {
       route: "/api/courses",

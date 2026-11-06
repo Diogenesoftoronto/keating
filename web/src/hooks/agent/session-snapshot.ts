@@ -95,6 +95,7 @@ export function buildSessionSnapshotRecord({
     responsePreference: existing?.responsePreference,
   };
   const data: SessionData = {
+    nativeSession: existing?.nativeSession,
     id: sessionId,
     title,
     parentSessionId: ancestry ? ancestry.parentSessionId : existing?.parentSessionId ?? null,

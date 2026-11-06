@@ -45,7 +45,55 @@ async function brokerResponse(request: Request, raw = new Uint8Array(32).fill(9)
 	});
 }
 
-describe("ATProto login account sync unlock", () => {
+describe("Not Organic login account sync unlock", () => {
+	it("uses the authenticated public client for direct sync-key access", async () => {
+		let requestedPath = "";
+		let requestedBody = "";
+		const key = await unlockAccountSyncKeyWithLogin({
+			did: "did:plc:alice",
+			requester: {
+				getSession: () => ({ id: "alice-login", accessToken: "device-token", expiresAt: Date.now() + 60_000, scope: "account:read sync:key:read" }),
+				request: async (path, init) => {
+					requestedPath = path;
+					requestedBody = String(init?.body);
+					expect(init?.credentials).toBe("omit");
+					return brokerResponse(new Request(`https://notorganic.test${path}`, init));
+				},
+			},
+		});
+		expect(requestedPath).toBe("/v1/sync/account-key");
+		expect(requestedBody).not.toContain("did:plc:alice");
+		expect(key.key.extractable).toBe(false);
+	});
+
+	it("does not request a key without a signed-in session and sync consent", async () => {
+		let requests = 0;
+		for (const session of [null, { id: "old-login", accessToken: "old-token", expiresAt: Date.now() + 60_000, scope: "account:read" }]) {
+			await expect(unlockAccountSyncKeyWithLogin({
+				did: "did:plc:alice",
+				requester: { getSession: () => session, request: async () => { requests += 1; return Response.json({}); } },
+			})).rejects.toThrow(session ? "Reconnect Not Organic" : "Sign in with Not Organic");
+		}
+		expect(requests).toBe(0);
+	});
+
+	it("rejects an in-flight key response after logout or account replacement", async () => {
+		for (const replacement of [null, { id: "bob-login", accessToken: "bob-token", expiresAt: Date.now() + 60_000, scope: "sync:key:read" }]) {
+			let session: typeof replacement = { id: "alice-login", accessToken: "alice-token", expiresAt: Date.now() + 60_000, scope: "sync:key:read" };
+			await expect(unlockAccountSyncKeyWithLogin({
+				did: "did:plc:alice",
+				requester: {
+					getSession: () => session,
+					request: async (path, init) => {
+						const response = await brokerResponse(new Request(`https://notorganic.test${path}`, init));
+						session = replacement;
+						return response;
+					},
+				},
+			})).rejects.toThrow("account changed");
+		}
+	});
+
 	it("unwraps the brokered key into a non-extractable browser key", async () => {
 		let requestBody = "";
 		const key = await unlockAccountSyncKeyWithLogin({
