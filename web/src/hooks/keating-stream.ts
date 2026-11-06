@@ -1,4 +1,4 @@
-import { MODEL_PREFERENCES } from "@keating/runtime-config";
+import { MODEL_PREFERENCES, FLINT_PREVIEW_PROFILE } from "@keating/runtime-config";
 import { browserInputMessages } from "../lib/browser-model-input";
 import {
 	createAssistantMessageEventStream,
@@ -16,6 +16,7 @@ import {
 	isNotOrganicProvider,
 	isNotOrganicFeatureEnabled,
 	NOTORGANIC_DEFAULT_MODEL,
+	NOTORGANIC_SOL_MODEL,
 	notOrganicPublicClient,
 } from "../notorganic-provider";
 import { createNotOrganicInferenceFetch } from "../notorganic-provider/inference-fetch";
@@ -349,9 +350,20 @@ function createBrowserStreamFn() {
 }
 
 export function normalizeProviderStreamOptions(
-	model: Pick<Model<Api>, "api">,
+	model: Pick<Model<Api>, "api"> & Partial<Pick<Model<Api>, "id" | "provider">>,
 	options: SimpleStreamOptions,
 ): SimpleStreamOptions {
+	// The preview's native runtime currently accepts fixed greedy decoding only.
+	if (model.provider === "notorganic" && model.id === FLINT_PREVIEW_PROFILE.id) return { ...options, temperature: 0 };
+	if (model.api === "openai-responses" && model.id === NOTORGANIC_SOL_MODEL.id) {
+		const { temperature: _temperature, samplingParams, ...solOptions } = options;
+		const supportedSampling = { ...samplingParams };
+		for (const key of ["temperature", "top_p", "top_logprobs"]) delete supportedSampling[key];
+		if (Array.isArray(supportedSampling.include)) {
+			supportedSampling.include = supportedSampling.include.filter(value => value !== "message.output_text.logprobs");
+		}
+		return { ...solOptions, reasoning: options.reasoning ?? "low", ...(samplingParams ? { samplingParams: supportedSampling } : {}) };
+	}
 	if (model.api !== "openai-codex-responses") return options;
 	// The subscription Codex request schema omits temperature. Shared teaching
 	// generators also serve APIs that support it, so omit it only at this boundary.

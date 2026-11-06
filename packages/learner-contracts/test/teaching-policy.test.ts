@@ -32,6 +32,27 @@ describe("teaching policy composition", () => {
     expect(plan.allowedTools).toEqual(["client-web-search"]);
   });
 
+  test("a clear lean decides; only a coin-flip stays uncertain", () => {
+    const request = teachingPolicyDecisionRequest(turn);
+    const plan = projectTeachingPolicyDecision(turn, outcome(request, { learning_task: 0.65, category_distinction: 0.7,
+      explanation_requested: 0.39, learner_stuck: 0.5 }));
+    expect(plan.decisions).toMatchObject({ learning_task: true, explanation_requested: false, learner_stuck: null });
+    expect(plan.interaction.families.map(({ components }) => components)).toEqual([["Question"]]);
+    const review = assessTeachingPolicyAdherence(turn, reply, outcome(teachingPolicyAdherenceRequest(turn, reply)!,
+      { gap_ignored: 0.27, checkpoint_continued: 0.47, research_skipped: 0.7 }));
+    expect(Object.fromEntries(review.checks.filter((check) => ["gap_ignored", "checkpoint_continued", "research_skipped"].includes(check.id))
+      .map((check) => [check.id, check.status]))).toEqual({ gap_ignored: "pass", checkpoint_continued: "unknown", research_skipped: "fail" });
+  });
+
+  test("a lean is enough to teach differently but not to unlock a tool", () => {
+    const request = teachingPolicyDecisionRequest(turn);
+    const leaning = projectTeachingPolicyDecision(turn, outcome(request, { explicit_profile_preference: 0.7, motion_requested: 0.7, explicit_feedback: 0.7 }));
+    expect(leaning.decisions).toMatchObject({ explicit_profile_preference: true, motion_requested: true, explicit_feedback: true });
+    expect(leaning.allowedTools).toEqual(["client-web-search"]);
+    const certain = projectTeachingPolicyDecision(turn, outcome(request, { explicit_profile_preference: 0.85, motion_requested: 0.85, explicit_feedback: 0.85 }));
+    expect(certain.allowedTools).toEqual(["animate", "feedback", "remember_learner_profile", "client-web-search"]);
+  });
+
   test("unused uncertain input branches do not suppress useful help", () => {
     const request = teachingPolicyDecisionRequest(turn);
     const plan = projectTeachingPolicyDecision(turn, outcome(request, { explanation_requested: 0.99, motion_requested: 0.5 }));
@@ -144,6 +165,16 @@ describe("deterministic adherence", () => {
     expect(failed("```openui lifecycle=ephemeral id=q\ninvalid source\n```")).toContain("openui_valid");
     expect(failed(document([question]).replace("```keating-ui", "```keating-ui lifecycle=ephemeral id=q") + "\nContinue the lesson.")).toContain("stop_after_checkpoint");
     expect(failed("````text\n```openui\ninvalid example\n```\n````")).toEqual([]);
+  });
+
+  test("UI fences the renderer would open but markdown never closes are failed", () => {
+    // The live renderer opens an OpenUI fence anywhere in a line; an indented or
+    // quoted one can never close, so the learner saw "fence closed" repairs.
+    const source = 'root = LearningSurface([q], "Prep", "", "ephemeral")\n';
+    expect(failed(`1. Try this:\n    \`\`\`openui lifecycle=ephemeral id=q\n    ${source}    \`\`\`\n`)).toContain("openui_valid");
+    expect(failed(`> \`\`\`openui\n> ${source}> \`\`\`\n`)).toContain("openui_valid");
+    expect(failed("Here it is: ```openui-lang\nroot = LearningSurface(\n")).toContain("openui_valid");
+    expect(failed("Mention ```openui``` fences inline.")).not.toContain("openui_valid");
   });
 
   test("unknown tools and grading without submitted evidence fail even with a passing judge", () => {

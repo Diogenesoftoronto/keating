@@ -1,5 +1,6 @@
-import { getCookie, getRequestURL, setCookie, type H3Event } from "h3";
+import { createError, getCookie, getHeader, getRequestURL, setCookie, type H3Event } from "h3";
 import type { NotOrganicProductSession } from "../../src/notorganic-provider/fetch-adapter";
+import { CourseAccountSessions, courseAccountToken } from "./course-linked-session";
 import {
 	isNotOrganicHostedEnabled,
 	requireNotOrganicProductSession,
@@ -42,7 +43,7 @@ async function localCourseAccountId(event: H3Event): Promise<string> {
 			maxAge: LOCAL_COURSE_ACCOUNT_MAX_AGE,
 			path: "/",
 			sameSite: "lax",
-			secure: getRequestURL(event).protocol === "https:",
+			secure: getRequestURL(event, { xForwardedProto: true, xForwardedHost: false }).protocol === "https:",
 		});
 	}
 	return localCourseAccountIdFromSecret(localSecret);
@@ -50,6 +51,23 @@ async function localCourseAccountId(event: H3Event): Promise<string> {
 
 /** Hosted auth stays deployment-owned. Without the hosted provider, Courses use a stable browser-local identity. */
 export async function requireCourseProductSession(event: H3Event): Promise<CourseProductSession> {
+	const session = await resolveCourseProductSession(event);
+	const expected = getHeader(event, "x-keating-course-account");
+	if (expected !== undefined && expected !== session.accountId) {
+		throw createError({ statusCode: 401, statusMessage: "The course account changed. Your work is still saved on this device." });
+	}
+	return session;
+}
+
+async function resolveCourseProductSession(event: H3Event): Promise<CourseProductSession> {
+	const accountToken = courseAccountToken(event);
+	if (accountToken !== undefined) {
+		const account = await new CourseAccountSessions().read(accountToken);
+		return {
+			accountId: account.accountId, accessToken: "account-identity-only", mode: "hosted",
+			async createDpopProof() { throw new Error("Course identity sessions cannot call hosted provider APIs."); },
+		};
+	}
 	const devAccountId = courseDevAccountId();
 	if (devAccountId) {
 		return {

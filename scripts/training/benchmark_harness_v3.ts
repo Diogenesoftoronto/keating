@@ -1,6 +1,6 @@
 /** Actual Keating headless TUI/Pi RPC sessions. No replacement model or tool loop. */
 import { createHash } from "node:crypto";
-import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,6 +16,7 @@ import { captureHarnessSources, changedHarnessSources, type HarnessSourceInvento
 import { nativeSurfaceInstruction, type NativeSurface } from './native_surface.js';
 import { validateExperimentInstruction, type HarnessExperimentInstruction } from './native_experiment.js';
 import { NATIVE_SOURCE_COMMAND, deliveredNativeSource, encodeNativeSourceDelivery, nativeSourceMessage, validateNativeSourceDelivery } from './native_source_document.js';
+import { RESEARCH_CAPTURE_MAX_DEADLINE_MS, RESEARCH_SHADOW_CLEANUP_GRACE_MS, validateResearchCapture, type NativeResearchCapture } from './native_draft_review.js';
 export { HARNESS_EXPERIMENT_INSTRUCTION_VERSION } from './native_experiment.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -34,9 +35,11 @@ export type HarnessV3Step = { kind: "message"; text: string } | { kind: "reopen"
   | { kind: "ui_action"; action: UiAction; sourceDocument: UiDocument };
 export interface HarnessV3Request {
   id: string;
-  transport: { kind: "tape"; responses: HarnessTapeResponse[] }
-    | { kind: "provider"; provider: string; model: string; thinking?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh";
-      endpoint?: string; apiKeyEnv?: string; modelMetadata?: { contextWindow: number; maxTokens: number; reasoning?: boolean; name?: string } };
+  transport: { kind: "tape"; responses: HarnessTapeResponse[];
+      modelMetadata?: { reasoning?: boolean; thinkingLevelMap?: Record<string, string | null> } }
+    | { kind: "provider"; provider: string; model: string; thinking?: "off" | "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
+      endpoint?: string; apiKeyEnv?: string; modelMetadata?: { contextWindow: number; maxTokens: number; reasoning?: boolean; name?: string;
+        thinkingLevelMap?: Record<string, string | null> } };
   steps: HarnessV3Step[];
   seed_files?: Record<string, string>;
   profile_name?: string;
@@ -44,6 +47,7 @@ export interface HarnessV3Request {
   allowed_tools?: string[];
   surface?: NativeSurface;
   experiment_instruction?: HarnessExperimentInstruction;
+  research_capture?: NativeResearchCapture;
   limits?: Partial<{ max_provider_calls: number; max_tool_calls: number; max_output_tokens: number; turn_timeout_ms: number }>;
 }
 interface FileReceipt { path: string; sha256: string; content: string }
@@ -55,7 +59,10 @@ export interface HarnessV3Result {
   measurement: "offline_integration" | "model_episode";
   fidelity: { entrypoint: string; model_loop: string; tool_handlers: string; persistence: string; limitations: string[] };
   configuration: { allowed_tools: string[]; limits: Required<HarnessV3Request>["limits"]; transport_kind: string; profile_name: string | null;
-    surface?: NativeSurface; surface_instruction_sha256?: string; experiment_instruction?: HarnessExperimentInstruction };
+    surface?: NativeSurface; surface_instruction_sha256?: string; experiment_instruction?: HarnessExperimentInstruction;
+    research_capture?: NativeResearchCapture };
+  /** Private evaluator evidence. Never deliver this field to a learner or actor. */
+  private_capture?: { path: string; sha256: string; content: string };
   source_hashes: Record<string, string>;
   source_provenance: Omit<HarnessSourceInventory, "hashes" | "readonly_resources"> & { unchanged_at_end: boolean | null; changed_paths: string[] };
   steps: Array<{ index: number; kind: HarnessV3Step["kind"]; status: "completed" | "failed"; error_code?: string;
@@ -79,6 +86,7 @@ export function validateHarnessRequest(request: HarnessV3Request): void {
   if (!request || typeof request.id !== "string" || !request.id || request.id.length > 160
     || !Array.isArray(request.steps) || !request.steps.length || request.steps.length > 40) throw new Error("harness_invalid_request");
   if (!["tape", "provider"].includes(request.transport?.kind)) throw new Error("harness_invalid_transport");
+  if (request.research_capture !== undefined) validateResearchCapture(request.research_capture);
   if (request.surface !== undefined) nativeSurfaceInstruction(request.surface);
   if (request.experiment_instruction !== undefined) {
     if (request.surface === undefined) throw new Error('harness_experiment_requires_surface');
@@ -153,6 +161,35 @@ export interface HarnessStepController {
   afterStep(receipt: HarnessV3Result["steps"][number]): Promise<HarnessV3Step | null>;
 }
 
+/** Request normalization only; the default and ordinary harness ceiling stay unchanged. */
+export function harnessTurnTimeout(request: Pick<HarnessV3Request, "limits" | "research_capture">): number {
+  return positive(request.limits?.turn_timeout_ms, 60_000,
+    request.research_capture ? RESEARCH_CAPTURE_MAX_DEADLINE_MS : 600_000);
+}
+
+export const RESEARCH_RPC_STARTUP_MARGIN_MS = 10_000;
+/** Abort the whole active Pi turn, including a later provider invocation, then await actual idle. */
+export async function cancelResearchRpcTurn(client: Pick<KeatingRpcClient, "abort" | "onEvent">) {
+  const waitMs = RESEARCH_SHADOW_CLEANUP_GRACE_MS + RESEARCH_RPC_STARTUP_MARGIN_MS;
+  let finish!: (status: "settled" | "timeout") => void;
+  let evidence: "abort_ack" | "agent_settled" | null = null, abortFailed = false;
+  const done = new Promise<"settled" | "timeout">(resolve => { finish = resolve; });
+  const timer = setTimeout(() => finish("timeout"), waitMs);
+  // Installed Pi's abort response awaits session.waitForIdle(). agent_end alone
+  // is insufficient: the turn may still have queued work or another invocation.
+  const unsubscribe = client.onEvent((event: any) => {
+    if (event?.type === "agent_settled") { evidence = "agent_settled"; finish("settled"); }
+  });
+  void Promise.resolve().then(() => client.abort()).then(() => {
+    evidence = "abort_ack"; finish("settled");
+  }, () => { abortFailed = true; }); // Keep waiting for idle through a 30s RPC response timeout.
+  try {
+    const status = await done;
+    return { status, abort_requested: true, settlement_evidence: evidence, abort_request_failed: abortFailed,
+      wait_ms: waitMs, requires_reconciliation: status === "timeout" };
+  } finally { clearTimeout(timer); unsubscribe(); }
+}
+
 export async function runHarnessEpisode(request: HarnessV3Request, diagnostics?: (error: unknown) => void,
   controller?: HarnessStepController): Promise<HarnessV3Result> {
   validateHarnessRequest(request);
@@ -167,10 +204,10 @@ export async function runHarnessEpisode(request: HarnessV3Request, diagnostics?:
     max_provider_calls: positive(request.limits?.max_provider_calls, 24, 100),
     max_tool_calls: positive(request.limits?.max_tool_calls, 32, 128),
     max_output_tokens: positive(request.limits?.max_output_tokens, 3000, 16000),
-    turn_timeout_ms: positive(request.limits?.turn_timeout_ms, 60_000, 600_000),
+    turn_timeout_ms: harnessTurnTimeout(request),
   };
   const allowed_tools = [...new Set(request.allowed_tools ?? HARNESS_V3_DEFAULT_TOOLS)];
-  const inventory = await captureHarnessSources(ROOT);
+  const inventory = await captureHarnessSources(ROOT, request.research_capture ? [request.research_capture.services_module] : []);
   const source_hashes = inventory.hashes;
   const builtSubmissionFollowup = (await readFile(join(ROOT, "dist/src/tui/ui/rpc-action-transport.js"), "utf8")).includes("triggerTurn: true");
   const cwd = await mkdtemp(join(tmpdir(), "keating-harness-v3-"));
@@ -196,8 +233,14 @@ export async function runHarnessEpisode(request: HarnessV3Request, diagnostics?:
     configuration: { allowed_tools, limits, transport_kind: request.transport.kind, profile_name: request.profile_name ?? null,
       ...(request.surface === undefined ? {} : { surface: request.surface,
         surface_instruction_sha256: hash(nativeSurfaceInstruction(request.surface)) }),
-      ...(experiment === undefined ? {} : { experiment_instruction: experiment }) }, source_hashes,
-    source_provenance: { scope: inventory.scope, unresolved_optional_imports: inventory.unresolved_optional_imports, unchanged_at_end: null, changed_paths: [] },
+      ...(experiment === undefined ? {} : { experiment_instruction: experiment }),
+      ...(request.research_capture ? { research_capture: structuredClone(request.research_capture),
+        research_rpc_wait_ms: limits.turn_timeout_ms,
+        research_rpc_cleanup_wait_ms: RESEARCH_SHADOW_CLEANUP_GRACE_MS + RESEARCH_RPC_STARTUP_MARGIN_MS,
+        research_shadow_cleanup_grace_ms: RESEARCH_SHADOW_CLEANUP_GRACE_MS,
+        research_rpc_startup_margin_ms: RESEARCH_RPC_STARTUP_MARGIN_MS } : {}) }, source_hashes,
+    source_provenance: { scope: inventory.scope, external_sources: inventory.external_sources,
+      unresolved_optional_imports: inventory.unresolved_optional_imports, unchanged_at_end: null, changed_paths: [] },
     steps: [], requests: [], receipts: [], initial_files: [], files: [], session_files: [],
   };
   try {
@@ -208,7 +251,7 @@ export async function runHarnessEpisode(request: HarnessV3Request, diagnostics?:
       readonly_resources: inventory.readonly_resources, system_prompt_sha256: source_hashes["SYSTEM.md"] }), { mode: 0o600 });
     const provider = request.transport.kind === "tape" ? "keating-benchmark-tape" : request.transport.provider;
     const model = request.transport.kind === "tape" ? "scripted" : request.transport.model;
-    const thinking = request.transport.kind === "tape" ? "off" : request.transport.thinking ?? "off";
+    const thinking = request.research_capture?.thinking ?? (request.transport.kind === "tape" ? "off" : request.transport.thinking ?? "off");
     await writeFile(join(cwd, "keating.config.json"), JSON.stringify({ ...DEFAULT_KEATING_CONFIG,
       pi: { runtimePreference: "embedded-only", defaultProvider: provider, defaultModel: model, defaultThinking: thinking, packages: [] },
       speech: { ...DEFAULT_KEATING_CONFIG.speech, enabled: false } }), { mode: 0o600 });
@@ -305,8 +348,16 @@ export async function runHarnessEpisode(request: HarnessV3Request, diagnostics?:
         const message = error instanceof Error ? error.message : "";
         receipt.status = "failed";
         receipt.error_code = /^harness_[a-z_]+$/.test(message) ? message : /Timeout/.test(message) ? "harness_timeout" : "harness_rpc_failure";
-        receipt.messages = await client.getMessages().catch(() => []);
-        receipt.state = await client.getState().catch(() => ({}));
+        let cleanupTimedOut = false;
+        if (request.research_capture && (message === "harness_timeout" || /Timeout/.test(message))) {
+          const cleanup = await cancelResearchRpcTurn(client);
+          receipt.events.push({ type: "research_rpc_cleanup", ...cleanup });
+          await appendFile(join(directory, "events.jsonl"), `${JSON.stringify({ kind: "research_rpc_cleanup", data: { step: index, ...cleanup } })}\n`);
+          cleanupTimedOut = cleanup.status === "timeout";
+          if (cleanupTimedOut) receipt.error_code = "harness_research_rpc_cleanup_timeout";
+        }
+        receipt.messages = cleanupTimedOut ? [] : await client.getMessages().catch(() => []);
+        receipt.state = cleanupTimedOut ? {} : await client.getState().catch(() => ({}));
         result.status = "failed";
         result.error_code = receipt.error_code;
       }
@@ -331,9 +382,10 @@ export async function runHarnessEpisode(request: HarnessV3Request, diagnostics?:
     const source = await readFile(join(directory, "events.jsonl"), "utf8").catch(() => "");
     result.receipts = source.trim().split("\n").filter(Boolean).map((line) => JSON.parse(line));
     result.requests = result.receipts.filter((receipt: any) => receipt.kind === "provider_request");
+    if (request.research_capture) result.private_capture = { path: ".keating/benchmark-harness/events.jsonl", sha256: hash(source), content: source };
     result.files = await domainFiles(cwd);
     result.session_files = await filesUnder(cwd, relative(cwd, sessionsDir(cwd)));
-    result.source_provenance.changed_paths = await changedHarnessSources(ROOT, source_hashes);
+    result.source_provenance.changed_paths = await changedHarnessSources(ROOT, source_hashes, inventory.external_sources);
     result.source_provenance.unchanged_at_end = result.source_provenance.changed_paths.length === 0;
     if (!result.source_provenance.unchanged_at_end) { result.status = "failed"; result.error_code = "harness_source_changed"; }
     await rm(cwd, { recursive: true, force: true });

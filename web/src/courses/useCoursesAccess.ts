@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { COURSE_ACCOUNT_CHANGED_EVENT, ensureCourseAccountSession } from "./account-session";
 
 export interface CoursesAccount {
 	id: string;
@@ -42,9 +43,14 @@ export function useCoursesAccess(): [CoursesAccessState, () => void] {
 	const [nonce, setNonce] = useState(0);
 	const [state, setState] = useState<CoursesAccessState>({ status: "loading" });
 	useEffect(() => {
+		const changed = () => { setState({ status: "loading" }); setNonce((value) => value + 1); };
+		window.addEventListener(COURSE_ACCOUNT_CHANGED_EVENT, changed);
+		return () => window.removeEventListener(COURSE_ACCOUNT_CHANGED_EVENT, changed);
+	}, []);
+	useEffect(() => {
 		let cancelled = false;
 		setState({ status: "loading" });
-		fetch("/api/courses/session")
+		ensureCourseAccountSession().then(() => fetch("/api/courses/session"))
 			.then(async (response) => {
 				const body = await response.json().catch(() => ({}));
 				if (!response.ok) {

@@ -16,7 +16,8 @@ import {
 	type TrajectoryReviewTarget,
 } from "../../keating/trajectory-review";
 import { css, cx } from "../../../styled-system/css";
-import { DraftReviewReceipt } from "./DraftReviewReceipt";
+import { TurnJudgementSummary } from "../TurnJudgementSummary";
+import { useJudgementReview } from "./judgement-review-context";
 import { KeatingIcon } from "../KeatingIcon";
 import { MarkdownBlock, type MarkdownHighlightRange } from "../MarkdownBlock";
 import { buildOpenUIPreview } from "../../keating/openui/preview";
@@ -119,6 +120,27 @@ function readSelection(container: HTMLElement): TextRange | null {
 	const text = range.toString();
 	if (!text.trim()) return null;
 	return { start, end: mappedEnd ?? start + text.length, text };
+}
+
+/** What was judged for this message; label controls exist only on the review page. */
+function MessageJudgements({ message }: { message: TrajectorySessionMessage }) {
+	const review = useJudgementReview();
+	const tutor = message.role === "assistant";
+	const timestamp = message.timestamp;
+	const labels = review && timestamp !== undefined ? review.labels.filter((label) => label.assistantTimestamp === timestamp) : [];
+	const controls = review && tutor && timestamp !== undefined;
+	return (
+		<div data-message-judgements={message.id}>
+			<TurnJudgementSummary
+				role={tutor ? "tutor" : "learner"}
+				draft={tutor ? message.draftReview : undefined}
+				record={message.turnJudgement}
+				checkControls={controls ? { labels, onLabel: (input) => review.labelCheck(timestamp, input) } : undefined}
+				memoryControls={controls ? { labels, onLabel: (input) => review.labelMemory(timestamp, input) } : undefined}
+			/>
+			{controls && review.error ? <p role="alert" className={css({ fontSize: "0.75rem", color: "var(--destructive)" })}>{review.error}</p> : null}
+		</div>
+	);
 }
 
 function annotationsForMessage(annotations: TrajectoryAnnotation[], messageId: string): TrajectoryAnnotation[] {
@@ -485,7 +507,7 @@ function TranscriptTurn({
 						{rawSourceDiffers ? rawSource : annotatedText(message.text, annotations, activeAnnotationId, handlers)}
 					</div>
 				)}
-				{message.draftReview ? <DraftReviewReceipt receipt={message.draftReview} /> : null}
+				{message.draftReview || message.turnJudgement ? <MessageJudgements message={message} /> : null}
 				{tools.length > 0 ? (
 					<div className={css({ display: "grid", gap: "0.5rem", marginTop: "1rem" })}>
 						{tools.map((tool, index) => (

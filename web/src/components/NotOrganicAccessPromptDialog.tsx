@@ -26,6 +26,7 @@ type NotOrganicPromptRequest = {
 	packId?: NotOrganicPackId;
 	allowSignIn?: boolean;
 	reconnect?: boolean;
+	requiredScopes?: readonly string[];
 	checkoutReturned?: boolean;
 	resolve: (success: boolean) => void;
 };
@@ -53,7 +54,7 @@ export async function hasNotOrganicProductSession(): Promise<boolean> {
 }
 
 export async function promptNotOrganicAccess(
-	options: { packId?: NotOrganicPackId; force?: boolean; allowSignIn?: boolean; reconnect?: boolean; checkoutReturned?: boolean } = {},
+	options: { packId?: NotOrganicPackId; force?: boolean; allowSignIn?: boolean; reconnect?: boolean; requiredScopes?: readonly string[]; checkoutReturned?: boolean } = {},
 ): Promise<boolean> {
 	if (typeof window === "undefined") return false;
 	if (!isNotOrganicFeatureEnabled() && !(options.allowSignIn && !options.packId)) return false;
@@ -66,6 +67,7 @@ export async function promptNotOrganicAccess(
 			packId: options.packId,
 			allowSignIn: options.allowSignIn,
 			reconnect: options.reconnect,
+			requiredScopes: options.requiredScopes,
 			checkoutReturned: options.checkoutReturned,
 			resolve,
 		};
@@ -85,7 +87,7 @@ export function closeNotOrganicPrompt(success: boolean) {
 export async function connectNotOrganicPrompt(request: NotOrganicPromptRequest): Promise<string | undefined> {
 	const client = notOrganicPublicClient();
 	if (request.reconnect || (client && !client.getSession()) || (!client && request.allowSignIn)) {
-		await beginNotOrganicAuthorization(`${window.location.pathname}${window.location.search}`);
+		await beginNotOrganicAuthorization(`${window.location.pathname}${window.location.search}`, request.requiredScopes);
 		return;
 	}
 	if (client && !request.packId && !request.checkoutReturned) {
@@ -154,7 +156,7 @@ export function NotOrganicAccessPanel({ loading = false, error, summary, connect
 			<p id={descriptionId} className={css({ fontSize: "0.9375rem", lineHeight: 1.6 })}>{pack
 				? <>Add <strong>${pack.priceUsd}</strong> in Keating credits with your Not Organic account.</>
 				: reconnect ? <>Sign in with <strong>Not Organic</strong> to approve access to your selected model and web search.</>
-				: <>Sign up or sign in with <strong>Not Organic</strong> to use Keating’s hosted models and web search. You can choose Inkling Small or GPT-6.1 Sol.</>}</p>
+				: <>Sign up or sign in with <strong>Not Organic</strong> to use Keating’s hosted models and web search. You can choose a hosted model.</>}</p>
 			</div>
 			{summary && <p role="status" className={css({ fontSize: "0.875rem", overflowWrap: "anywhere" })}>{summary}</p>}
 			{error && <p role="alert" className={css({ fontSize: "0.875rem", color: "var(--destructive)", overflowWrap: "anywhere" })}>{error}</p>}

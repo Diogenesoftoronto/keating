@@ -206,7 +206,8 @@ export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, pas
 				css({
 					display: "flex",
 					width: "100%",
-					height: { base: "auto", md: "min(88dvh, 58rem)" },
+					// Fill the viewport at any zoom level; a fixed cap left a blank band below.
+					height: { base: "auto", md: "100dvh" },
 					minHeight: { base: "36rem", md: "40rem" },
 					flexDirection: "column",
 					overflow: "hidden",

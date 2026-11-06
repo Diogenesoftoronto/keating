@@ -12,6 +12,9 @@ import {
 	type StoredModelReference,
 } from "./trajectory-review";
 import type { TrajectoryReviewSnapshot } from "./trajectory-store";
+import type { TeachingDraftReceiptRecord } from "./storage";
+import { describeTeachingCheck } from "./judgement/check-descriptions";
+import type { JudgementLabelRecord, TurnJudgementRecord } from "./judgement/turn-records";
 
 export const TRAJECTORY_REVIEW_ARCHIVE_SCHEMA_VERSION = 1 as const;
 
@@ -26,6 +29,12 @@ export interface TrajectoryReviewExportSession {
 export interface TrajectoryReviewArchiveInput {
 	snapshot: TrajectoryReviewSnapshot;
 	session?: TrajectoryReviewExportSession;
+	/** Saved per-turn judgements, draft receipts and reviewer labels for this session. */
+	judgements?: {
+		turns: readonly TurnJudgementRecord[];
+		receipts: readonly TeachingDraftReceiptRecord[];
+		labels: readonly JudgementLabelRecord[];
+	};
 }
 
 export interface TrajectoryReviewArchiveOptions {
@@ -63,6 +72,8 @@ export interface TrajectoryReviewArchiveManifest {
 		ktoLines: number;
 		redactions: number;
 		skippedApprovedCandidates: number;
+		judgedTurns?: number;
+		judgementLabels?: number;
 	};
 	warnings: string[];
 	files: TrajectoryReviewArchiveFile[];
@@ -122,7 +133,79 @@ const DATA_PATHS = {
 	dpoText: "data/preferences/review.dpo.text.jsonl",
 	kto: "data/preferences/review.kto.jsonl",
 	artifactRevisions: "data/artifacts/review-revisions.jsonl",
+	turnJudgements: "data/judgement/turn-judgements.jsonl",
+	humanLabels: "data/judgement/human-labels.jsonl",
+	hindsightTurns: "data/hindsight/turns.jsonl",
 } as const;
+
+const messageAt = (session: TrajectoryReviewExportSession | undefined, role: "assistant" | "learner", timestamp: number | undefined) => {
+	if (!session || timestamp === undefined) return undefined;
+	const message = session.messages.find((row) => {
+		const entry = row as { role?: unknown; timestamp?: unknown };
+		return entry.timestamp === timestamp && (role === "assistant" ? entry.role === "assistant" : entry.role === "user" || entry.role === "user-with-attachments");
+	});
+	return message ? reviewArtifactDisplayText(reviewMessageText(message)) || undefined : undefined;
+};
+
+/** One JSON line per labelled judgement: model output beside the reviewer verdict. */
+function humanLabelRows(judgements: NonNullable<TrajectoryReviewArchiveInput["judgements"]>, session: TrajectoryReviewExportSession | undefined) {
+	return [...judgements.labels].sort(compareRecords).map((label) => {
+		const turn = judgements.turns.find((row) => row.assistantTimestamp === label.assistantTimestamp);
+		const receipt = judgements.receipts.find((row) => row.messageTimestamp === label.assistantTimestamp);
+		const base = {
+			id: label.id, sessionId: label.sessionId, assistantTimestamp: label.assistantTimestamp,
+			reviewer: { verdict: label.verdict, ...(label.category ? { category: label.category } : {}), ...(label.note ? { note: label.note } : {}), effect: label.effect },
+			model: label.model, labelledAt: new Date(label.updatedAt).toISOString(),
+		};
+		if (label.target.kind === "draft-check") {
+			const target = label.target;
+			const description = describeTeachingCheck(target.checkId);
+			// Only the released draft's text exists; rejected drafts are never stored.
+			const released = receipt?.snapshot.selectedAttempt === target.attempt;
+			return { ...base, kind: "draft-check", checkId: target.checkId, attempt: target.attempt, title: description.title,
+				checkKind: description.kind, ...(description.question ? { question: description.question } : {}),
+				judge: receipt?.snapshot.judgeModel ?? label.model.judge ?? null,
+				released,
+				...(released ? { learner: messageAt(session, "learner", turn?.learnerTimestamp), reply: messageAt(session, "assistant", label.assistantTimestamp) } : {}) };
+		}
+		const decision = turn?.memory.find((row) => row.candidate.id === (label.target as { candidateId: string }).candidateId);
+		return { ...base, kind: "memory-admission", candidateId: label.target.candidateId,
+			...(decision?.candidate.evidence ? { evidence: decision.candidate.evidence } : label.candidate ? { evidence: label.candidate.evidence } : {}),
+			...(decision ? { modelReason: decision.reason, threshold: decision.threshold } : {}) };
+	});
+}
+
+/**
+ * One row per judged tutor turn for hindsight training (SDPO-style self-distillation): the context the tutor
+ * saw, the reply it released, the learner's actual next message, and the judgements made about that reply.
+ * The next learner message and judgements are teacher-only feedback; they must never enter the student
+ * context. Turns without a later learner message are kept with `nextLearner: null`.
+ */
+function hindsightTurnRows(judgements: NonNullable<TrajectoryReviewArchiveInput["judgements"]>, session: TrajectoryReviewExportSession | undefined) {
+	if (!session) return [];
+	const messages = session.messages.map((message, index) => ({
+		index,
+		role: (message as { role?: unknown }).role,
+		timestamp: (message as { timestamp?: unknown }).timestamp,
+		text: reviewArtifactDisplayText(reviewMessageText(message)),
+	}));
+	return [...judgements.turns].sort(compareRecords).flatMap((turn) => {
+		const at = messages.findIndex((row) => row.role === "assistant" && row.timestamp === turn.assistantTimestamp);
+		if (at === -1 || !messages[at].text) return [];
+		const prompt: ExportMessage[] = session.systemPrompt?.trim() ? [{ role: "system", content: session.systemPrompt.trim() }] : [];
+		for (const row of messages.slice(0, at)) if (row.text) prompt.push({ role: exportRole(row.role), content: row.text });
+		const next = messages.slice(at + 1).find((row) => row.role === "user" || row.role === "user-with-attachments");
+		const draft = judgements.receipts.find((receipt) => receipt.messageTimestamp === turn.assistantTimestamp)?.snapshot ?? null;
+		return [{
+			id: turn.id, sessionId: turn.sessionId, assistantTimestamp: turn.assistantTimestamp,
+			prompt, reply: messages[at].text,
+			nextLearner: next?.text ? { text: next.text, timestamp: next.timestamp ?? null } : null,
+			judgements: { replyReview: turn.replyReview ?? null, draft, extraction: turn.extraction },
+			labels: judgements.labels.filter((label) => label.assistantTimestamp === turn.assistantTimestamp)
+				.map((label) => ({ target: label.target, verdict: label.verdict, model: label.model, ...(label.note ? { note: label.note } : {}) })),
+		}];
+	});
+}
 
 function redactValue<T>(value: T, counter: RedactionCounter): T {
 	if (typeof value === "string") {
@@ -492,6 +575,20 @@ export function buildTrajectoryReviewArchive(
 	const dpoTextContent = jsonLines(dpoText, redactions);
 	const ktoContent = jsonLines(kto, redactions);
 	const artifactContent = jsonLines(artifactRevisions, redactions);
+	const judgements = input.judgements;
+	// Receipts are recorded for every reply; turn records only while saving is on.
+	const receiptOnly = judgements?.receipts.filter((receipt) => !judgements.turns.some((turn) => turn.assistantTimestamp === receipt.messageTimestamp)) ?? [];
+	const turnContent = judgements ? jsonLines([
+		...judgements.turns.map((turn) => ({
+			...turn, draft: judgements.receipts.find((receipt) => receipt.messageTimestamp === turn.assistantTimestamp)?.snapshot ?? null,
+		})),
+		...receiptOnly.map((receipt) => ({ id: receipt.id, sessionId: receipt.sessionId, assistantTimestamp: receipt.messageTimestamp, draft: receipt.snapshot })),
+	], redactions) : "";
+	const labelContent = judgements ? jsonLines(humanLabelRows(judgements, session), redactions) : "";
+	const hindsightContent = judgements ? jsonLines(hindsightTurnRows(judgements, session), redactions) : "";
+	if (judgements?.labels.some((label) => label.target.kind === "draft-check")) {
+		warnings.push("Draft-check labels on rejected drafts carry no reply text; only the released draft is stored.");
+	}
 	const dataFiles: ArchiveFile[] = [
 		{ path: DATA_PATHS.raw, purpose: "Complete redacted review snapshot, including drafts and all generation candidates.", content: rawContent, records: lineCount(rawContent) },
 		{ path: DATA_PATHS.chatml, purpose: "Human-approved response corrections for ChatML SFT.", content: chatmlContent, records: lineCount(chatmlContent) },
@@ -500,6 +597,11 @@ export function buildTrajectoryReviewArchive(
 		{ path: DATA_PATHS.dpoText, purpose: "Human-approved chosen correction versus rejected original, with rendered text prompts.", content: dpoTextContent, records: lineCount(dpoTextContent) },
 		{ path: DATA_PATHS.kto, purpose: "Desirable correction and undesirable original records for KTO.", content: ktoContent, records: lineCount(ktoContent) },
 		{ path: DATA_PATHS.artifactRevisions, purpose: "Human-approved artifact revisions with immutable source and generation provenance.", content: artifactContent, records: lineCount(artifactContent) },
+		...(judgements ? [
+			{ path: DATA_PATHS.turnJudgements, purpose: "Per-turn judgements: draft checks, reply review, extracted passages and memory decisions.", content: turnContent, records: lineCount(turnContent) },
+			{ path: DATA_PATHS.humanLabels, purpose: "Reviewer verdicts beside the judgement model's output, for calibration and evaluation.", content: labelContent, records: lineCount(labelContent) },
+			{ path: DATA_PATHS.hindsightTurns, purpose: "Per-turn hindsight rows: context, released reply, the learner's actual next message and the judgements of that reply. Teacher-only feedback for self-distillation; never student input.", content: hindsightContent, records: lineCount(hindsightContent) },
+		] : []),
 	];
 	const fileCatalog: TrajectoryReviewArchiveFile[] = [
 		{ path: "manifest.json", purpose: "Machine-readable archive contract, counts, warnings, and file catalog." },
@@ -529,6 +631,7 @@ export function buildTrajectoryReviewArchive(
 			ktoLines: kto.length,
 			redactions: redactions.count,
 			skippedApprovedCandidates: Math.max(0, selectedCount - responseRecords.length - artifactRevisions.length),
+			...(judgements ? { judgedTurns: judgements.turns.length, judgementLabels: judgements.labels.length } : {}),
 		},
 		warnings,
 		files: fileCatalog,

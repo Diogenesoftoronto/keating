@@ -38,6 +38,7 @@ import {
 import { broadcastCourseUpdated } from "../../utils/course-realtime";
 import { mirrorCourseOnPear } from "../../utils/course-pear-gateway";
 import { requireCourseProductSession } from "../../utils/course-session";
+import { handleCourseAccountSession } from "../../utils/course-account-session";
 
 import { ownedAttachments } from "../../utils/submission-attachments";
 
@@ -140,8 +141,9 @@ function mapCourseError(error: unknown): never {
 
 export default defineEventHandler(async (event) => {
   try {
-    const session = await requireCourseProductSession(event);
     const path = segments(event);
+    if (path.length === 1 && path[0] === "account-session") return await handleCourseAccountSession(event);
+    const session = await requireCourseProductSession(event);
     if (path[0] === "session" && path.length === 1) {
       if (event.method !== "GET")
         return fail(405, "Method not allowed.", "method_not_allowed");

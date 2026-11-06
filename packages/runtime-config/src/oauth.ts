@@ -33,6 +33,8 @@ export function buildNotOrganicScope({ models, capabilities }: NotOrganicScopeOp
   return [...new Set(ordered)].join(" ");
 }
 
+// Optional tutor consultation is not approved for public-client authorization.
+// Requesting its scope here prevents the entire account sign-in from completing.
 export const DEFAULT_NOTORGANIC_SCOPE = buildNotOrganicScope({
   models: [...NOTORGANIC_CHAT_MODEL_IDS, ...NOTORGANIC_IMAGE_MODEL_IDS],
   capabilities: NOTORGANIC_CAPABILITIES,

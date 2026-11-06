@@ -102,6 +102,7 @@ Short entry points into the repository documentation.
 - [Funding Brief](research-story/funding-brief.md)
 - [Manuscript](research-story/manuscript.md)
 - [Sacred Tui](sacred-tui.md)
+- [Study Rooms and Private Continuations](study-rooms.md)
 - [Teaching Evolution](teaching-evolution.md)
 - [Training Dataset Sharing](training-dataset-sharing.md)
 - [Tutormoments Supervision](tutormoments-supervision.md)

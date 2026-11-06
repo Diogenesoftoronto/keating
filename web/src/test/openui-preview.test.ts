@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { OPENUI_SOURCE_PARITY_FIXTURE, tryCompileOpenUISourceToSharedDocument } from "@keating/learner-contracts";
 import { buildOpenUIPreview } from "../keating/openui/preview";
 
 const sourceTurn = [
@@ -71,5 +72,28 @@ describe("openui preview", () => {
 		const blocks = buildOpenUIPreview(["```openui-json id=doc", document, "```"].join("\n"));
 		expect(blocks[0]).toMatchObject({ type: "prose", markdown: "Read this first." });
 		expect(blocks[1]).toMatchObject({ type: "artifact", kind: "quiz", label: "Cache check" });
+	});
+	it("summarizes every component kind, so no component silently vanishes", () => {
+		const source = OPENUI_SOURCE_PARITY_FIXTURE;
+		const compiled = tryCompileOpenUISourceToSharedDocument(source, { documentId: "parity" });
+		if (!compiled.ok) throw new Error(compiled.message);
+		const blocks = buildOpenUIPreview(`\`\`\`openui lifecycle=workspace id=parity\n${source}\n\`\`\`\n`);
+		// One readable block per node: nothing dropped, nothing raw.
+		expect(blocks).toHaveLength(compiled.document.nodes.length);
+		const details = blocks.flatMap((block) => block.type === "artifact" ? [`${block.label} | ${block.detail ?? ""}`] : []);
+		expect(details).toContain("A little Spanish | Language practice · Spanish · 4 rounds");
+		expect(details).toContain("Double a number | Coding challenge · JavaScript · 2 tests");
+		expect(details).toContain("Hear a major triad | Music lab");
+		expect(details).toContain("Take the update outside | Connect · 2 ways to share it · ~30 min");
+		expect(details).toContain("Ada Lovelace | Person brief · 1 question");
+		expect(details).toContain("Design a URL shortener | Diagram · 1 check");
+		expect(details).toContain("Animal recall | Audio response");
+		expect(details).toContain("Sign recall | Video response");
+		expect(JSON.stringify(blocks)).not.toContain("LearningSurface(");
+	});
+	it("hides the review marker on best-effort replies and keeps offsets into the original text", () => {
+		const text = "<!--keating:review=unverified-->\nCompare the two rates.";
+		const blocks = buildOpenUIPreview(text);
+		expect(blocks).toEqual([{ type: "prose", id: "text:0", markdown: "Compare the two rates.", sourceStart: text.indexOf("Compare") }]);
 	});
 });

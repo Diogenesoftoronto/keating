@@ -1,11 +1,12 @@
 /**
  * Right rail of the course workspace: who is in the live room, the viewer's
- * progress, the Keating helper, recent activity, and (for Pear-backed courses)
+ * progress, the private Keating helper, shared study rooms, recent activity, and (for Pear-backed courses)
  * the read-only feed key.
  */
 import { css } from "../../../styled-system/css";
 import { CourseKeatingPanel } from "../../components/courses/CourseKeatingPanel";
 import { formatCourseRelative } from "../../components/courses/course-ui";
+import { CourseRooms } from "../../components/rooms/CourseRooms";
 import {
   courseCompletionPercent,
   type CourseLesson,
@@ -134,6 +135,12 @@ export function LiveRoomRail({
             courseTitle={course.title}
             {...(activeLesson ? { activeLesson } : {})}
             view={view}
+          />
+          <CourseRooms
+            courseId={course.id}
+            courseRole={viewer.role}
+            activeLesson={activeLesson}
+            displayName={viewer.displayName}
           />
           <section
             className={css({

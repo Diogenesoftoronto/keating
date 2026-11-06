@@ -877,6 +877,10 @@ export default defineConfig({
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(-50%)" }
         },
+        draftStagePulse: {
+          "0%, 100%": { boxShadow: "0 0 0 0 color-mix(in srgb, var(--primary) 45%, transparent)" },
+          "60%": { boxShadow: "0 0 0 5px color-mix(in srgb, var(--primary) 0%, transparent)" }
+        },
         "chat-pulse-ring": {
           "0%, 100%": {
             boxShadow: "0 0 0 0 rgba(30, 155, 80, 0.5)"

@@ -31,6 +31,10 @@ export default defineNitroConfig({
   // Courses are account state, not ephemeral share payloads. Deployments should
   // point this at a persistent volume (for example /data/keating-courses).
   storage: {
+    "keating:course-materials": {
+      driver: "fs",
+      base: process.env.KEATING_COURSE_MATERIALS_STORAGE_DIR ?? ".data/keating-course-materials",
+    },
     "keating:submission-attachments": {
       driver: "fs",
       base: process.env.KEATING_SUBMISSION_STORAGE_DIR ?? ".data/keating-submissions",
@@ -119,7 +123,16 @@ export default defineNitroConfig({
   // Bundle the OG renderer's font + resvg wasm so they are readable at runtime
   // via useStorage("assets:keating-og") (see server/utils/og-render.ts).
   // Nitro reserves "server" for its automatically mounted assets directory.
-  serverAssets: [{ baseName: "keating-og", dir: "server/assets" }],
+  // Storage bases above are compiled in; this remounts them from the runtime
+  // environment so deployments can point them at a persistent volume.
+  plugins: ["server/plugins/persistent-storage.ts"],
+  serverAssets: [
+    { baseName: "keating-og", dir: "server/assets" },
+    // Share pages rewrite the built shell's meta tags. Bundle it so the lookup
+    // does not depend on the process cwd (production runs from /app, where
+    // .output-app/public/index.html is invisible to cwd-relative paths).
+    { baseName: "keating-shell", dir: "dist", pattern: "index.html" },
+  ],
   handlers: [
     // Register admission explicitly: this Nitro build relies on hand-declared
     // server handlers rather than automatic server/middleware discovery.
@@ -229,12 +242,34 @@ export default defineNitroConfig({
       handler: "server/api/share/[id].ts",
     },
     {
+      route: "/api/submission-attachments",
+      method: "POST" as const,
+      handler: "server/api/submission-attachments/index.post.ts",
+    },
+    {
+      route: "/api/submission-attachments/:id",
+      method: "GET" as const,
+      handler: "server/api/submission-attachments/[id].get.ts",
+    },
+    {
       route: "/api/courses",
       handler: "server/api/courses/[...path].ts",
     },
     {
       route: "/api/courses/**",
       handler: "server/api/courses/[...path].ts",
+    },
+    {
+      route: "/api/rooms",
+      handler: "server/api/rooms/[...path].ts",
+    },
+    {
+      route: "/api/rooms/**",
+      handler: "server/api/rooms/[...path].ts",
+    },
+    {
+      route: "/api/rooms/realtime",
+      handler: "server/api/rooms/realtime.ts",
     },
     {
       route: "/api/oauth/token",

@@ -1,4 +1,4 @@
-import { SERVICE_ENDPOINTS, SPENDING_LIMITS, DEFAULT_MODELS } from "../../packages/runtime-config/src/index.js";
+import { SERVICE_ENDPOINTS, SPENDING_LIMITS, DEFAULT_MODELS, FLINT_PREVIEW_PROFILE } from "../../packages/runtime-config/src/index.js";
 import { randomBytes, randomUUID, webcrypto } from "node:crypto";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
@@ -8,12 +8,16 @@ import { join } from "node:path";
 import { AuthStorage, type ApiKeyCredential } from "@earendil-works/pi-coding-agent";
 
 import { configDir } from "./paths.js";
+import { TUTOR_CONSULTATION_SCOPE } from "../../shared/tutor-consultation.js";
 
 export const NOTORGANIC_PROVIDER_ID = "notorganic";
 export const NOTORGANIC_MODEL_ID = DEFAULT_MODELS.cli.notorganic;
 export const NOTORGANIC_SCOPE = `infer:${DEFAULT_MODELS.cli.notorganic}` as const;
 export const NOTORGANIC_JUDGEMENT_LOGIN_SCOPE = `${NOTORGANIC_SCOPE} judgement:evaluate` as const;
-export type NotOrganicLoginScope = typeof NOTORGANIC_SCOPE | typeof NOTORGANIC_JUDGEMENT_LOGIN_SCOPE;
+export const NOTORGANIC_FLINT_SCOPE = `infer:${FLINT_PREVIEW_PROFILE.id}` as const;
+export const NOTORGANIC_FLINT_JUDGEMENT_SCOPE = `${NOTORGANIC_FLINT_SCOPE} judgement:evaluate` as const;
+export type NotOrganicLoginModel = typeof NOTORGANIC_MODEL_ID | typeof FLINT_PREVIEW_PROFILE.id | "balanced";
+export type NotOrganicLoginScope = `infer:${NotOrganicLoginModel}${"" | " judgement:evaluate" | ` ${typeof TUTOR_CONSULTATION_SCOPE}` | ` ${typeof TUTOR_CONSULTATION_SCOPE} judgement:evaluate`}`;
 export const NOTORGANIC_DEFAULT_ISSUER: string = SERVICE_ENDPOINTS.notorganic.api;
 export const NOTORGANIC_DEFAULT_AUTHORIZATION_URL: string = SERVICE_ENDPOINTS.notorganic.authorization;
 export const NOTORGANIC_CAPABILITY_SECONDS = 300;
@@ -58,7 +62,9 @@ export type NotOrganicCallbackListenerFactory = (
 ) => Promise<NotOrganicCallbackListener>;
 
 export interface NotOrganicLoginOptions {
+  model?: NotOrganicLoginModel;
   judgement?: boolean;
+  tutor?: boolean;
   issuer?: string;
   authorizationUrl?: string;
   fetch?: typeof globalThis.fetch;
@@ -70,7 +76,7 @@ export interface NotOrganicLoginOptions {
 
 export interface NotOrganicLoginResult {
   provider: typeof NOTORGANIC_PROVIDER_ID;
-  model: typeof NOTORGANIC_MODEL_ID;
+  model: NotOrganicLoginModel;
   scope: NotOrganicLoginScope;
   expiresAt: number;
   expiresInSeconds: typeof NOTORGANIC_CAPABILITY_SECONDS;
@@ -422,13 +428,18 @@ async function safeTokenError(response: Response): Promise<Error> {
   return new Error(message);
 }
 
-/** Recognize only the two supported CLI grants, without expanding authority. */
+/** Recognize explicit grants; legacy Balanced credentials gain no new model authority. */
 export function parseNotOrganicLoginScope(value: unknown): NotOrganicLoginScope | undefined {
-  if (value === NOTORGANIC_SCOPE) return NOTORGANIC_SCOPE;
-  if (value === NOTORGANIC_JUDGEMENT_LOGIN_SCOPE || value === `judgement:evaluate ${NOTORGANIC_SCOPE}`) {
-    return NOTORGANIC_JUDGEMENT_LOGIN_SCOPE;
-  }
-  return undefined;
+  if (typeof value !== "string") return undefined;
+  const scopes = value.split(" ");
+  if (scopes.some(scope => !scope) || new Set(scopes).size !== scopes.length) return undefined;
+  const models = [NOTORGANIC_MODEL_ID, "balanced", FLINT_PREVIEW_PROFILE.id] as const;
+  const selected = models.filter(model => scopes.includes(`infer:${model}`));
+  if (selected.length !== 1) return undefined;
+  const model = selected[0]!;
+  const allowed = new Set([`infer:${model}`, TUTOR_CONSULTATION_SCOPE, "judgement:evaluate"]);
+  if (scopes.some(scope => !allowed.has(scope))) return undefined;
+  return [`infer:${model}`, ...(scopes.includes(TUTOR_CONSULTATION_SCOPE) ? [TUTOR_CONSULTATION_SCOPE] : []), ...(scopes.includes("judgement:evaluate") ? ["judgement:evaluate"] : [])].join(" ") as NotOrganicLoginScope;
 }
 
 function parseTokenResponse(value: unknown, requestedScope: NotOrganicLoginScope): NotOrganicTokenResponse {
@@ -482,7 +493,9 @@ export async function loginNotOrganic(
   const authorizationUrl = resolveNotOrganicAuthorizationUrl(options.authorizationUrl);
   const fetcher = options.fetch ?? globalThis.fetch;
   const now = options.now ?? Date.now;
-  const requestedScope = options.judgement ? NOTORGANIC_JUDGEMENT_LOGIN_SCOPE : NOTORGANIC_SCOPE;
+  const model = options.model ?? NOTORGANIC_MODEL_ID;
+  if (model !== NOTORGANIC_MODEL_ID && model !== "balanced" && model !== FLINT_PREVIEW_PROFILE.id) throw new Error("Unsupported Not Organic CLI model.");
+  const requestedScope = parseNotOrganicLoginScope([`infer:${model}`, ...(options.tutor ? [TUTOR_CONSULTATION_SCOPE] : []), ...(options.judgement ? ["judgement:evaluate"] : [])].join(" "))!;
   const maxCostMicrousd = validateMaxCost(
     options.maxCostMicrousd ?? NOTORGANIC_DEFAULT_MAX_COST_MICROUSD
   );
@@ -577,12 +590,12 @@ export async function loginNotOrganic(
 
     return {
       provider: NOTORGANIC_PROVIDER_ID,
-      model: NOTORGANIC_MODEL_ID,
+      model,
       scope: requestedScope,
       expiresAt,
       expiresInSeconds: NOTORGANIC_CAPABILITY_SECONDS,
       authPath: notOrganicAuthPath(cwd),
-      message: `Not Organic ${options.judgement ? "inference and judgement are" : "inference is"} ready for this session. The DPoP-bound capability expires in 300 seconds; run \`keating login${options.judgement ? " --judgement" : ""}\` again after it expires.`
+      message: `Not Organic ${options.judgement ? "inference and judgement are" : "inference is"} authorized for this session.${model === FLINT_PREVIEW_PROFILE.id ? " Flint is a preview and remains unavailable until the gateway enables it." : ""} The DPoP-bound capability expires in 300 seconds; run \`keating login${model !== NOTORGANIC_MODEL_ID ? ` --model=${model}` : ""}${options.tutor ? " --tutor" : ""}${options.judgement ? " --judgement" : ""}\` again after it expires.`
     };
   } finally {
     callbacks.signal?.removeEventListener("abort", abortManualInput);

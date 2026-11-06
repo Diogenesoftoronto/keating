@@ -5,7 +5,7 @@ import { Footer } from "../components/Footer";
 import { Nav } from "../components/Nav";
 import { NotOrganicPublicClient, publicClientConfig, safeAuthorizationReturnTo } from "../notorganic-provider/public-client";
 import { beginNotOrganicAuthorization } from "../notorganic-provider";
-import { authorizePendingChatTurn, pendingChatTurn } from "../notorganic-provider/pending-chat-turn";
+import { authorizePendingChatTurn } from "../notorganic-provider/pending-chat-turn";
 import "./notorganic-callback.css";
 
 /** Completes the provider-owned redirect; it never accepts an account id from the URL. */
@@ -25,11 +25,10 @@ export function NotOrganicCallback() {
 		}
 		void new NotOrganicPublicClient(config).completeAuthorization(new URLSearchParams(window.location.search))
 			.then(session => {
+				// Return where sign-in began. A pending turn resumes only when its
+				// own chat is open, never by pulling the learner into it.
 				authorizePendingChatTurn();
-				const pending = pendingChatTurn();
-				window.location.replace(pending
-					? `/chat?session=${encodeURIComponent(pending.sessionId)}`
-					: safeAuthorizationReturnTo(session.returnTo));
+				window.location.replace(safeAuthorizationReturnTo(session.returnTo));
 			})
 			.catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Not Organic sign-in could not be completed."));
 	}, [navigate]);

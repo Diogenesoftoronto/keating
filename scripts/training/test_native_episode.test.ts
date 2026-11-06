@@ -93,7 +93,9 @@ test('real chat runtime pins the surface prompt and cannot expose canonical subm
 
 test('chat policy projection rejects drift and preserves unrelated teaching and learner context', () => {
   const source = 'Teach for mastery. Author learner-facing interactions and artifacts as OpenUI.\n\n'
-    + '## OpenUI interaction contract\nEmit canonical documents here.\nCurrent date: 2026-09-13\nSaved evidence.';
+    + '## OpenUI interaction contract\nEmit canonical documents here.\n'
+    + 'Supported nodes are `markdown`, `callout`, `question`, `question-group`, `quiz`, `goal`, `deck`, `study-plan`, `artifact`, `concept-map`, `notes`, `image`, `media`, and `handoff`. Use ordinary Markdown only for prose that does not benefit from a component.\n'
+    + 'Current date: 2026-09-13\nSaved evidence.';
   const chat = nativeSurfaceSystemPrompt(source, 'chat');
   expect(chat).toContain('Teach for mastery.');
   expect(chat).toContain('Saved evidence.');

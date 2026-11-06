@@ -9,7 +9,7 @@
  * is built, and records the end of the session left behind. Learner
  * submission delivery into the outgoing session is held for the whole switch.
  */
-import { useCallback, type TransitionStartFunction } from "react";
+import { useCallback, useEffect, type TransitionStartFunction } from "react";
 import type { PostHog } from "posthog-js";
 import type { AgentState } from "@earendil-works/pi-agent-core";
 import type { FlueConversation } from "../../keating/flue/conversation";
@@ -28,6 +28,8 @@ import { initialForkInfo, recordResponsePreference } from "./session-records";
 import type { CreateAgent, PrepareAgent } from "./useAgentSessionLifecycle";
 import { pauseLearnerDelivery } from "../../components/chat/learner-delivery";
 import type { SessionPersistence } from "./useSessionPersistence";
+import { CHAT_SYNC_IMPORTED_EVENT } from "../../keating/sync/chat-sync-local";
+import { createSyncedSessionRefresher } from "./synced-session-refresh";
 
 type Capture = Pick<PostHog, "capture">;
 
@@ -213,6 +215,55 @@ export function useSessionNavigation({
     if (!session) throw new Error("Session not found");
     await loadSession(session as SessionData, request);
   }, [loadSession]);
+
+  useEffect(() => {
+    const refresher = createSyncedSessionRefresher<SessionData>({
+      current: () => {
+        const agent = refs.agentRef.current;
+        return agent ? {
+          id: refs.sessionIdRef.current, token: agent,
+          navigation: refs.sessionSwitchRequestsRef.current.current,
+          ready: !agent.context.isStreaming && !sessionSnapshots.needsSave(agent, agent.context),
+        } : null;
+      },
+      read: id => sessions.loadSession(id),
+      apply: async (session, isCurrent) => {
+        const panel = refs.panelRef.current;
+        if (!panel || !isCurrent()) return false;
+        const initialState = { model: session.model, thinkingLevel: session.thinkingLevel, messages: session.messages };
+        const prepared = await prepareAgent(initialState, true);
+        if (!isCurrent() || refs.panelRef.current !== panel) return false;
+        let committed = false;
+        await createAgent(panel, initialState, {
+          prepared, alreadySaved: true,
+          isCurrent: () => isCurrent() && refs.panelRef.current === panel,
+          onCommit: () => {
+            committed = true;
+            refs.sessionCreatedAtRef.current = session.createdAt;
+            refs.sessionParentIdRef.current = session.parentSessionId ?? null;
+            refs.sessionForkedAtRef.current = session.forkedAt;
+            setForkInfo(initialForkInfo(session));
+            setResponseComparison(null);
+          },
+        });
+        return committed;
+      },
+      deleted: isCurrent => { if (isCurrent()) newSession(); },
+      onError: error => console.warn("Could not refresh the synced conversation:", error),
+    });
+    const imported = (event: Event) => {
+      const ids: unknown = (event as CustomEvent).detail?.ids;
+      if (Array.isArray(ids) && ids.every(id => typeof id === "string")) void refresher.imported(ids);
+    };
+    const saved = () => { void refresher.flush(); };
+    window.addEventListener(CHAT_SYNC_IMPORTED_EVENT, imported);
+    window.addEventListener("keating:sessions-changed", saved);
+    return () => {
+      refresher.dispose();
+      window.removeEventListener(CHAT_SYNC_IMPORTED_EVENT, imported);
+      window.removeEventListener("keating:sessions-changed", saved);
+    };
+  }, [createAgent, newSession, prepareAgent, refs, sessionSnapshots]);
 
   const chooseResponse = useCallback(
     async (preference: ResponseComparisonDecision) => {

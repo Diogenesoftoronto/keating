@@ -35,7 +35,7 @@ export function validateNativeScenario(value: NativeScenario): void {
 /** Offline actor tokenization and weights are deliberately not inferred from rendered strings. */
 export async function runNativeEpisode(scenario: NativeScenario, transport: HarnessV3Request['transport'], learner: AdaptiveLearner,
   options: { branch_id?: string; max_decisions?: number; max_sessions?: number; learner_timeout_ms?: number;
-    allowed_tools?: string[]; surface?: NativeSurface; limits?: HarnessV3Request['limits'] } = {},
+    allowed_tools?: string[]; surface?: NativeSurface; limits?: HarnessV3Request['limits']; research_capture?: HarnessV3Request['research_capture'] } = {},
   runner: typeof runHarnessEpisode = runHarnessEpisode) {
   validateNativeScenario(scenario);
   if (options.surface !== undefined) nativeSurfaceInstruction(options.surface);
@@ -66,6 +66,7 @@ export async function runNativeEpisode(scenario: NativeScenario, transport: Harn
   let outcome: NativeOutcome = 'complete';
   let lastIntent: LearnerIntent | null = null;
   const request: HarnessV3Request = { id: scenario.id, transport,
+    ...(options.research_capture === undefined ? {} : { research_capture: options.research_capture }),
     ...(options.surface === undefined ? {} : { surface: options.surface }),
     steps: [scenario.initial_document === undefined ? { kind: 'message', text: scenario.actor.opening_message }
       : { kind: 'source_document', document: structuredClone(scenario.initial_document), opening_message: scenario.actor.opening_message }],

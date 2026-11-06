@@ -56,6 +56,8 @@ export function clearSessionConversationEvents(id: string): void {
 export async function deleteSavedSession(id: string): Promise<void> {
 	await sessions.deleteSession(id);
 	await deleteCheckpoint(id).catch(() => {});
+	// Auxiliary review data; its cleanup never turns a successful deletion into a failure.
+	await Promise.resolve().then(() => keatingStorage.deleteSessionJudgements(id)).catch(() => {});
 	clearSessionConversationEvents(id);
 	notifySessionsChanged();
 }

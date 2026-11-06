@@ -12,6 +12,8 @@ import { applyReview, initialSrsState } from "./srs";
 import { browserQuestionGradeInput, isSemanticAssessmentQuestion, reviewBrowserQuestionChecks,
 	type BrowserQuestionJudgement } from "./judgement/browser-grading";
 import { createWebJudgementRuntime, type WebJudgementRuntime } from "./judgement/runtime";
+import type { JudgementLabelRecord, TurnJudgementRecord } from "./judgement/turn-records";
+export type { JudgementLabelRecord, TurnJudgementRecord } from "./judgement/turn-records";
 import {
 	UI_ACTION_JOURNAL_KIND,
 	UI_CONTRACT_VERSION,
@@ -38,7 +40,7 @@ import {
 export type { Flashcard, FlashcardDeck, FlashcardSrsState } from "./flashcard-types";
 
 const DB_NAME = "keating-db";
-const DB_VERSION = 9;
+const DB_VERSION = 10;
 const LEARNER_STATE_SCHEMA_VERSION = 3;
 const META_STORE = "_meta";
 const OPENUI_ACTION_JOURNAL_PREFIX = "openui-action-journal:v1:";
@@ -66,6 +68,8 @@ const STORES = {
 	QUESTION_CHECKS: "question-checks",
 	OPENUI_PRESENTATIONS: "openui-presentations",
 	TEACHING_DRAFT_RECEIPTS: "teaching-draft-receipts",
+	TURN_JUDGEMENTS: "turn-judgements",
+	JUDGEMENT_LABELS: "judgement-labels",
 } as const;
 
 export interface KeatingStoragePortableData {
@@ -2235,6 +2239,38 @@ export class KeatingStorage {
 	async getTeachingDraftReceipts(sessionId: string): Promise<TeachingDraftReceiptRecord[]> {
 		const records = await this.getAll<TeachingDraftReceiptRecord>(STORES.TEACHING_DRAFT_RECEIPTS);
 		return records.filter((record) => record.sessionId === sessionId).sort((a, b) => a.messageTimestamp - b.messageTimestamp);
+	}
+
+	/** Saved only while "Save judgements for review" is on; drafts stay in their receipts. */
+	async putTurnJudgement(record: TurnJudgementRecord): Promise<void> {
+		await this.put(STORES.TURN_JUDGEMENTS, record);
+	}
+
+	async getTurnJudgements(sessionId: string): Promise<TurnJudgementRecord[]> {
+		const records = await this.getAll<TurnJudgementRecord>(STORES.TURN_JUDGEMENTS);
+		return records.filter((record) => record.sessionId === sessionId).sort((a, b) => a.assistantTimestamp - b.assistantTimestamp);
+	}
+
+	async putJudgementLabel(record: JudgementLabelRecord): Promise<void> {
+		await this.put(STORES.JUDGEMENT_LABELS, record);
+	}
+
+	async deleteJudgementLabel(id: string): Promise<void> {
+		await this.deleteById(STORES.JUDGEMENT_LABELS, id);
+	}
+
+	async getJudgementLabels(sessionId: string): Promise<JudgementLabelRecord[]> {
+		const records = await this.getAll<JudgementLabelRecord>(STORES.JUDGEMENT_LABELS);
+		return records.filter((record) => record.sessionId === sessionId).sort((a, b) => a.createdAt - b.createdAt);
+	}
+
+	/** Saved turn judgements and reviewer labels go with their conversation. Pass no session to delete all of them. */
+	async deleteSessionJudgements(sessionId?: string): Promise<void> {
+		for (const storeName of [STORES.TURN_JUDGEMENTS, STORES.JUDGEMENT_LABELS, STORES.TEACHING_DRAFT_RECEIPTS]) {
+			if (sessionId === undefined && storeName === STORES.TEACHING_DRAFT_RECEIPTS) continue;
+			const records = await this.getAll<{ id: string; sessionId: string }>(storeName);
+			for (const record of records) if (sessionId === undefined || record.sessionId === sessionId) await this.deleteById(storeName, record.id);
+		}
 	}
 
 	async gradeQuestionCheck(id: string, grade: { score: number; misconception?: string }): Promise<QuestionCheckRecord | null> {

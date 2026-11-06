@@ -13,6 +13,9 @@ import type {
 	TrajectorySelectionIntent,
 } from "../components/trajectory/types";
 import { useTrajectoryReview } from "../hooks/use-trajectory-review";
+import { useTurnJudgementReview } from "../hooks/use-turn-judgement-review";
+import { JudgementReviewContext } from "../components/trajectory/judgement-review-context";
+import type { TurnJudgementRecord } from "../keating/judgement/turn-records";
 import { keatingStorage } from "../hooks/keating-storage";
 import type { TeachingDraftReceiptRecord } from "../keating/storage";
 import { critiqueProposalTarget, useReviewPasses } from "../hooks/use-review-passes";
@@ -54,9 +57,11 @@ function labelForRole(role: string): string {
 	return role.replaceAll(/([a-z])([A-Z])/g, "$1 $2");
 }
 
-function normalizedMessages(sessionId: string, messages: readonly AgentMessage[], receipts: readonly TeachingDraftReceiptRecord[] = []): TrajectorySessionMessage[] {
+function normalizedMessages(sessionId: string, messages: readonly AgentMessage[], receipts: readonly TeachingDraftReceiptRecord[] = [], turns: readonly TurnJudgementRecord[] = []): TrajectorySessionMessage[] {
 	const toolOutcomes = collectReviewToolOutcomes(messages);
 	const receiptByTimestamp = new Map(receipts.map((receipt) => [receipt.messageTimestamp, receipt]));
+	const turnByAssistant = new Map(turns.map((turn) => [turn.assistantTimestamp, turn]));
+	const turnByLearner = new Map(turns.flatMap((turn) => turn.learnerTimestamp === undefined ? [] : [[turn.learnerTimestamp, turn] as const]));
 	return messages.map((message, ordinal) => {
 		const anchor = messageReviewAnchor(sessionId, message, ordinal);
 		const entry = message as { role?: string; model?: string; stopReason?: string; errorMessage?: string };
@@ -77,6 +82,11 @@ function normalizedMessages(sessionId: string, messages: readonly AgentMessage[]
 			...(entry.role === "assistant" && anchor.timestamp !== undefined && receiptByTimestamp.has(anchor.timestamp)
 				? { draftReview: receiptByTimestamp.get(anchor.timestamp) }
 				: {}),
+			...(() => {
+				const turns = entry.role === "assistant" ? turnByAssistant : entry.role === "user" || entry.role === "user-with-attachments" ? turnByLearner : null;
+				const turn = anchor.timestamp === undefined ? undefined : turns?.get(anchor.timestamp);
+				return turn ? { turnJudgement: turn } : {};
+			})(),
 		};
 	});
 }
@@ -213,9 +223,10 @@ export function TrajectoryReview() {
 			.catch(() => { if (!cancelled) setDraftReceipts([]); });
 		return () => { cancelled = true; };
 	}, [reviewState.session]);
+	const judgementReview = useTurnJudgementReview(reviewState.session?.id, draftReceipts);
 	const messages = useMemo(
-		() => reviewState.session ? normalizedMessages(reviewState.session.id, reviewState.session.messages, draftReceipts) : [],
-		[draftReceipts, reviewState.session],
+		() => reviewState.session ? normalizedMessages(reviewState.session.id, reviewState.session.messages, draftReceipts, judgementReview.records) : [],
+		[draftReceipts, judgementReview.records, reviewState.session],
 	);
 	const artifacts = useMemo<NormalizedTrajectoryArtifact[]>(
 		() => reviewState.artifacts.map((snapshot) => ({
@@ -543,35 +554,37 @@ export function TrajectoryReview() {
 	};
 
 	return (
-		<TrajectoryReviewWorkspace
-			data={{
-				session: {
-					id: reviewState.session.id,
-					title: reviewState.session.title || "Untitled session",
-					subtitle: `${messages.length} recorded turns · ${artifacts.length} frozen artifacts`,
-					startedAt: Date.parse(reviewState.session.createdAt),
-				},
-				messages,
-				artifacts,
-				review: ui.reviewDraft ?? reviewState.review,
-				annotations: reviewState.annotations,
-				annotationDraft: ui.annotationDraft,
-				modelPools: reviewState.modelPools,
-				availableModels: ui.availableModels,
-				candidates: reviewState.candidates,
-				activeTurnId: ui.activeTurnId,
-				activeArtifactId: ui.activeArtifactId,
-				activeAnnotationId: ui.activeAnnotationId,
-				activeCandidateId: ui.activeCandidateId,
-				activeModelPoolId: ui.activeModelPoolId,
-				activeTargetKey: ui.activeTargetKey,
-				reviewDirty: ui.reviewDirty,
-				busy: reviewState.busy,
-				error: ui.localError ?? reviewState.error ?? undefined,
-			}}
-			callbacks={callbacks}
-			passes={passState}
-			passCallbacks={passCallbacks}
-		/>
+		<JudgementReviewContext.Provider value={judgementReview.context}>
+			<TrajectoryReviewWorkspace
+				data={{
+					session: {
+						id: reviewState.session.id,
+						title: reviewState.session.title || "Untitled session",
+						subtitle: `${messages.length} recorded turns · ${artifacts.length} frozen artifacts`,
+						startedAt: Date.parse(reviewState.session.createdAt),
+					},
+					messages,
+					artifacts,
+					review: ui.reviewDraft ?? reviewState.review,
+					annotations: reviewState.annotations,
+					annotationDraft: ui.annotationDraft,
+					modelPools: reviewState.modelPools,
+					availableModels: ui.availableModels,
+					candidates: reviewState.candidates,
+					activeTurnId: ui.activeTurnId,
+					activeArtifactId: ui.activeArtifactId,
+					activeAnnotationId: ui.activeAnnotationId,
+					activeCandidateId: ui.activeCandidateId,
+					activeModelPoolId: ui.activeModelPoolId,
+					activeTargetKey: ui.activeTargetKey,
+					reviewDirty: ui.reviewDirty,
+					busy: reviewState.busy,
+					error: ui.localError ?? reviewState.error ?? undefined,
+				}}
+				callbacks={callbacks}
+				passes={passState}
+				passCallbacks={passCallbacks}
+			/>
+		</JudgementReviewContext.Provider>
 	);
 }

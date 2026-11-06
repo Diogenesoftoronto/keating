@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ExternalLink } from "lucide-react";
+import { ChatSyncStatus } from "./ChatSyncStatus";
 import { css, cx } from "../../../styled-system/css";
 import { loadDeclaredProfile, saveDeclaredProfile } from "../../keating/learner-profile-store";
 import { loadKeatingUiSettings, saveKeatingUiSettings } from "../../keating/ui-settings";
@@ -99,6 +100,7 @@ export function NotOrganicAccountCard() {
 				</button>
 			</div>
 			{note && <p role="status" className={mutedClass}>{note}</p>}
+			<ChatSyncStatus className={mutedClass} buttonClassName={buttonClass} />
 		</div>
 	);
 }

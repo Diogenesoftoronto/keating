@@ -40,6 +40,11 @@ export interface TeachingDraftAttempt {
   readonly status: "pass" | "fail" | "unknown" | "generation-error";
   readonly checks: readonly TeachingPolicyCheck[];
   readonly variant: TeachingDraftVariant;
+  /**
+   * Tool names this draft tried to call that the session does not offer. Names
+   * only, never arguments: without them a failed tool check cannot be traced.
+   */
+  readonly unavailableTools?: readonly string[];
 }
 /** Content-free record of what the planning judgment recommended. */
 export interface TeachingDraftInteraction {
@@ -140,6 +145,9 @@ export interface TeachingDraftOptions<T> {
   readonly judgementModel?: { readonly id: string; readonly requestTokens: number | null; readonly stateQuestionTokens: number | null };
   readonly generate: (input: TeachingDraftGenerationInput) => Promise<{ readonly reply: TeachingPolicyReply; readonly value: T }>;
   readonly maxAttempts?: number;
+  /** Explicit research capture: collect the full bounded attempt budget before selection.
+   * Generation failures remain attempts, never fabricated completed candidates. */
+  readonly collectAllAttempts?: boolean;
   /** Longer comparison/synthesis is opt-in; response depth alone does not expand retries. */
   readonly refinement?: TeachingDraftRefinement;
   readonly maxReasoning?: TeachingDraftReasoning;

@@ -34,7 +34,7 @@ export function WebSearchPart({ args, result, isError, status }: WebSearchPartPr
         {sites.length ? <ol className="search-result__sources">{sites.map((site, index) => <li key={site.url}>
           <a href={site.url} target="_blank" rel="noopener noreferrer" className="search-result__source">
             <span className="search-result__number" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-            <span className="search-result__source-body"><span className="search-result__domain">{hostOf(site.url)}</span><strong>{site.title || hostOf(site.url)}</strong>{site.snippet && <span className="search-result__snippet">{site.snippet}</span>}</span>
+            <span className="search-result__source-body"><span className="search-result__domain">{hostOf(site.url)}</span>{site.title && <strong>{site.title}</strong>}{site.snippet && <span className="search-result__snippet">{site.snippet}</span>}</span>
             <ExternalLink size={14} aria-hidden="true" />
           </a>
         </li>)}</ol> : <p className="search-result__empty">The search finished without source links.</p>}

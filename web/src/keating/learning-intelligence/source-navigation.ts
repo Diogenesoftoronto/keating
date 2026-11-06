@@ -1,5 +1,6 @@
 import { learningSourceHash, verifyLearningEvidence, type LearningEvidenceAnchor } from "@keating/learner-contracts";
 import { getJudgementDiagnostics, subscribeJudgementDiagnostics } from "../judgement/diagnostics";
+import { isPrivateForkContextMessage } from "../private-fork-provenance";
 
 export interface LearningMessageSource { sessionId: string; messageId: string; text: string; sourceHash: string }
 type SourceMessage = { id?: unknown; role?: unknown; timestamp?: unknown; content?: unknown; parts?: unknown };
@@ -15,6 +16,8 @@ export function learningMessageText(message: unknown): string {
     ? content.flatMap(part => part && typeof part === "object" && part.type === "text" && typeof part.text === "string" ? [part.text] : []).join("\n\n") : "";
 }
 export function learningMessageSource(sessionId: string, message: unknown, index: number): LearningMessageSource | null {
+  // Shared source material is quoted context, never this learner's evidence.
+  if (isPrivateForkContextMessage(message)) return null;
   const entry = message as SourceMessage;
   if (!["user", "user-with-attachments", "assistant"].includes(String(entry?.role))) return null;
   const text = learningMessageText(message);

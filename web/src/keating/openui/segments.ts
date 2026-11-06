@@ -100,7 +100,8 @@ function findClosingFence(text: string, bodyStart: number): { index: number; end
 		if (atLineStart) {
 			// Markdown permits up to three leading spaces and trailing whitespace.
 			// Preserve quote-aware scanning: fences inside source strings stay inert.
-			const fence = /^ {0,3}```[ \t]*(?:\r?\n|$)/.exec(text.slice(index));
+			// The draft gate accepts any run of three or more backticks as a close.
+			const fence = /^ {0,3}`{3,}[ \t]*(?:\r?\n|$)/.exec(text.slice(index));
 			if (fence) return {
 				index: index === bodyStart ? index : index - 1,
 				end: index + fence[0].length,
@@ -160,6 +161,15 @@ export function committedOpenUIProgram(program: string, fenceComplete = false): 
  * statements are committed to the renderer. Existing Markdown and legacy
  * `<keating-*>` tags remain untouched in text segments.
  */
+/**
+ * Whether an OpenUI segment is still arriving. While the reply runs, an unclosed
+ * fence is unfinished — even when the visible text happens to end exactly on a
+ * statement boundary — so it must not be compiled as final or sent for repair.
+ */
+export function openUISegmentIsStreaming(isRunning: boolean, segment: { complete: boolean; program: string; rawProgram: string }): boolean {
+	return isRunning && (!segment.complete || segment.program !== segment.rawProgram.trimEnd());
+}
+
 export function parseOpenUIMessageSegments(text: string, documentScope: string | OpenUIDocumentScope = ""): OpenUIMessageSegment[] {
 	const segments: OpenUIMessageSegment[] = [];
 	let cursor = 0;
