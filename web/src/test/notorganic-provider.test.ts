@@ -37,7 +37,7 @@ describe("Not Organic provider definition", () => {
 		expect(notOrganicModelNeedsConsent(NOTORGANIC_FLINT_MODEL, { scope: "infer:flint web:search web:fetch" })).toBe(false);
 	});
 	it("makes Flint selectable only when the consented gateway advertises it", async () => {
-		const baseline = [NOTORGANIC_DEFAULT_MODEL.id, NOTORGANIC_SOL_MODEL.id];
+		const baseline = [NOTORGANIC_DEFAULT_MODEL.id, NOTORGANIC_SOL_MODEL.id, "balanced"];
 		let calls = 0;
 		const client = (scope: string, response: () => Response | Promise<Response>) => ({
 			getSession: () => ({ scope }), request: async (path: string) => { calls++; expect(path).toBe("/v1/models"); return response(); },
@@ -74,9 +74,9 @@ describe("Not Organic provider definition", () => {
 			expect(notOrganicModelNeedsConsent(model, { scope: `infer:${model.id} web:search web:fetch` })).toBe(false);
 		}
 	});
-	it("uses the stable balanced alias and retains a same-origin fallback", () => {
+	it("uses Inkling 2 Small by default and retains a same-origin fallback", () => {
 		expect(NOTORGANIC_DEFAULT_MODEL.id).toBe(NOTORGANIC_MODEL_ALIAS);
-		expect(NOTORGANIC_DEFAULT_MODEL.name).toBe("Inkling Small");
+		expect(NOTORGANIC_DEFAULT_MODEL.name).toBe("Inkling 2 Small");
 		expect(NOTORGANIC_DEFAULT_MODEL.provider).toBe(NOTORGANIC_PROVIDER_ID);
 		expect(notOrganicOpenAiBaseUrl("https://keating.test/")).toBe(
 			"https://keating.test/api/notorganic/openai/v1",

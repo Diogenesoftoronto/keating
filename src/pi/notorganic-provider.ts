@@ -9,7 +9,7 @@ import {
   type SimpleStreamOptions
 } from "@earendil-works/pi-ai/compat";
 import type { ProviderConfig } from "@earendil-works/pi-coding-agent";
-import { FLINT_PREVIEW_PROFILE } from "../../packages/runtime-config/src/index.js";
+import { FLINT_PREVIEW_PROFILE, INKLING_2_SMALL_PROFILE } from "../../packages/runtime-config/src/index.js";
 
 import {
   createNotOrganicDpopProof,
@@ -26,7 +26,7 @@ import {
 export const NOTORGANIC_PI_API = "notorganic-openai-completions";
 
 export const NOTORGANIC_BALANCED_MODEL = {
-  id: NOTORGANIC_MODEL_ID,
+  id: "balanced",
   name: "Not Organic Balanced",
   reasoning: true,
   input: ["text"] as const,
@@ -40,6 +40,14 @@ export const NOTORGANIC_BALANCED_MODEL = {
     supportsUsageInStreaming: true,
     supportsStore: false
   }
+} as const;
+
+export const NOTORGANIC_INKLING_2_SMALL_MODEL = {
+  ...NOTORGANIC_BALANCED_MODEL,
+  id: NOTORGANIC_MODEL_ID,
+  name: INKLING_2_SMALL_PROFILE.name,
+  input: ["text", "image"] as const,
+  contextWindow: INKLING_2_SMALL_PROFILE.contextWindow,
 } as const;
 
 /** Dormant preview: the account gateway, not registration, authorizes and enables this route. */
@@ -91,7 +99,7 @@ function assertCapability(env: Record<string, string> | undefined, now: () => nu
   }
   const expiresAt = Number(env[NOTORGANIC_AUTH_ENV.expiresAt]);
   if (!Number.isFinite(expiresAt) || expiresAt <= now()) {
-    const login = `keating login${scopes.has(`infer:${FLINT_PREVIEW_PROFILE.id}`) ? ` --model=${FLINT_PREVIEW_PROFILE.id}` : ""}${scopes.has("judgement:evaluate") ? " --judgement" : ""}`;
+    const login = `keating login${scopes.has(`infer:${FLINT_PREVIEW_PROFILE.id}`) ? ` --model=${FLINT_PREVIEW_PROFILE.id}` : ""}${scopes.has("infer:balanced") && !scopes.has(`infer:${NOTORGANIC_MODEL_ID}`) ? " --model=balanced" : ""}${scopes.has("infer:ampersand-tutor-v0.1") ? " --tutor" : ""}${scopes.has("judgement:evaluate") ? " --judgement" : ""}`;
     throw new Error(
       `Your five-minute Not Organic capability expired. Run \`${login}\` again; this CLI does not invent a refresh token.`
     );
@@ -255,9 +263,13 @@ export function createNotOrganicProviderConfig(
     api: NOTORGANIC_PI_API,
     models: [
       {
-        ...NOTORGANIC_BALANCED_MODEL,
-        input: [...NOTORGANIC_BALANCED_MODEL.input],
+        ...NOTORGANIC_INKLING_2_SMALL_MODEL,
+        input: [...NOTORGANIC_INKLING_2_SMALL_MODEL.input],
         api: NOTORGANIC_PI_API
+      },
+      {
+        ...NOTORGANIC_BALANCED_MODEL,
+        input: [...NOTORGANIC_BALANCED_MODEL.input], api: NOTORGANIC_PI_API,
       },
       {
         ...NOTORGANIC_FLINT_MODEL,

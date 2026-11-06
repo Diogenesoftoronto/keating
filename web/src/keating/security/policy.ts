@@ -17,6 +17,7 @@ export const KEATING_TOOL_RISKS: Readonly<Record<string, ToolRiskClass>> = {
   knowledge_sources: "sensitive-read",
   knowledge_read_resource: "sensitive-read",
   knowledge_call_tool: "external-side-effect",
+  consult_tutor: "external-side-effect",
   bash: "code-execution",
   remote_execute: "code-execution",
   run_script: "code-execution",

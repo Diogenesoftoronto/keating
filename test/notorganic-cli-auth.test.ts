@@ -28,6 +28,7 @@ import {
   notOrganicAuthStatus,
   notOrganicCallbackHtml,
   parseNotOrganicCallback,
+  parseNotOrganicLoginScope,
   resolveNotOrganicAuthorizationUrl,
   resolveNotOrganicIssuer,
   type NotOrganicCallbackListenerFactory
@@ -101,6 +102,41 @@ async function privateJwk(): Promise<Record<string, unknown>> {
 }
 
 describe("Not Organic CLI public-client login", () => {
+  test("tutor consent is an explicit fresh grant and preserves narrow model authority", async () => {
+    const cwd = await temporaryProject();
+    let authorization = "";
+    const scope = `${NOTORGANIC_SCOPE} infer:ampersand-tutor-v0.1 judgement:evaluate`;
+    const result = await loginNotOrganic(cwd, { onAuth: ({ url }) => { authorization = url; } }, {
+      tutor: true, judgement: true, callbackListenerFactory: listenerFactory(),
+      fetch: (async () => Response.json({ access_token: "tutor-account-capability", token_type: "DPoP", expires_in: 300,
+        scope: `judgement:evaluate infer:ampersand-tutor-v0.1 ${NOTORGANIC_SCOPE}` })) as typeof fetch,
+    });
+    expect(new URL(authorization).searchParams.get("scope")).toBe(scope);
+    expect(result.scope).toBe(scope);
+    expect(result.message).toContain("--tutor");
+    expect(parseNotOrganicLoginScope("infer:balanced")).toBe("infer:balanced");
+    expect(parseNotOrganicLoginScope(`${NOTORGANIC_SCOPE} infer:balanced`)).toBeUndefined();
+    expect(parseNotOrganicLoginScope(`${scope} infer:ampersand-tutor-v0.1`)).toBeUndefined();
+  });
+
+  test("a tutor grant cannot replace an ordinary login without explicit tutor consent", async () => {
+    const cwd = await temporaryProject();
+    await expect(loginNotOrganic(cwd, { onAuth: () => undefined }, {
+      callbackListenerFactory: listenerFactory(),
+      fetch: (async () => Response.json({ access_token: "tutor-account-capability", token_type: "DPoP", expires_in: 300,
+        scope: `${NOTORGANIC_SCOPE} infer:ampersand-tutor-v0.1` })) as typeof fetch,
+    })).rejects.toThrow("over-broad capability");
+    expect(existsSync(notOrganicAuthPath(cwd))).toBe(false);
+  });
+
+  test("legacy Balanced can still be selected without new model consent", async () => {
+    const cwd = await temporaryProject();
+    const result = await loginNotOrganic(cwd, { onAuth: () => undefined }, {
+      model: "balanced", callbackListenerFactory: listenerFactory(),
+      fetch: (async () => Response.json({ access_token: "balanced-account-capability", token_type: "DPoP", expires_in: 300, scope: "infer:balanced" })) as typeof fetch,
+    });
+    expect(result.model).toBe("balanced"); expect(result.scope).toBe("infer:balanced");
+  });
   test.each([false, true])("fresh Flint login requests only the selected model (judgement %s)", async (judgement) => {
     const cwd = await temporaryProject();
     let authorizationUrl = "";
@@ -127,7 +163,7 @@ describe("Not Organic CLI public-client login", () => {
     expect(AuthStorage.create(notOrganicAuthPath(cwd)).get("notorganic")).toEqual({ type: "api_key", key: "existing-balanced-capability" });
   });
 
-  test.each([NOTORGANIC_JUDGEMENT_LOGIN_SCOPE, "judgement:evaluate infer:balanced"])(
+  test.each([NOTORGANIC_JUDGEMENT_LOGIN_SCOPE, `judgement:evaluate ${NOTORGANIC_SCOPE}`])(
     "explicit judgement login preserves inference and normalizes returned scope %s", async (scope) => {
       const cwd = await temporaryProject();
       let authorizationUrl = "";
@@ -232,7 +268,7 @@ describe("Not Organic CLI public-client login", () => {
     expect(authorization.searchParams.get("prompt")).toBe("select_account");
     expect(authorization.searchParams.get("code_challenge_method")).toBe("S256");
     expect(authorization.searchParams.get("code_challenge")).toMatch(/^[A-Za-z0-9_-]{43}$/);
-    expect(authorization.searchParams.get("scope")).toBe("infer:balanced");
+    expect(authorization.searchParams.get("scope")).toBe(NOTORGANIC_SCOPE);
     expect(authorization.searchParams.get("client_id")).toBe("http://127.0.0.1:43119");
     expect(authorization.searchParams.get("redirect_uri")).toBe("http://127.0.0.1:43119/callback");
     expect(exchangeUrl).toBe("https://gateway.test/v1/public/token");
@@ -246,8 +282,8 @@ describe("Not Organic CLI public-client login", () => {
     expect((exchangeBody.dpop_jwk as Record<string, unknown>).d).toBeUndefined();
     expect(result).toMatchObject({
       provider: "notorganic",
-      model: "balanced",
-      scope: "infer:balanced",
+      model: NOTORGANIC_MODEL_ID,
+      scope: NOTORGANIC_SCOPE,
       expiresAt: now + 300_000,
       expiresInSeconds: 300
     });
@@ -275,7 +311,7 @@ describe("Not Organic CLI public-client login", () => {
     expect(credential.key).toBe("capability-token-long-enough");
     expect(credential.refresh).toBeUndefined();
     const env = credential.env as Record<string, string>;
-    expect(env[NOTORGANIC_AUTH_ENV.scope]).toBe("infer:balanced");
+    expect(env[NOTORGANIC_AUTH_ENV.scope]).toBe(NOTORGANIC_SCOPE);
     expect(env[NOTORGANIC_AUTH_ENV.tokenType]).toBe("DPoP");
     const storedPrivateJwk = JSON.parse(env[NOTORGANIC_AUTH_ENV.privateJwk]!) as Record<string, unknown>;
     expect(storedPrivateJwk).toMatchObject({ kty: "EC", crv: "P-256" });
@@ -396,7 +432,8 @@ describe("Not Organic CLI public-client login", () => {
         defaultModel: "unconfigured-model"
       }
     }, []);
-    expect(selection).toMatchObject({ provider: "notorganic", model: "balanced" });
+    expect(selection.provider).toBe("notorganic");
+    expect(selection.model).toBe(NOTORGANIC_MODEL_ID);
   });
 });
 
@@ -478,7 +515,7 @@ describe("Not Organic DPoP and provider contract", () => {
     })).rejects.toThrow("five-minute Not Organic capability expired");
   });
 
-  test.each([{ index: 0, id: NOTORGANIC_MODEL_ID, scope: NOTORGANIC_SCOPE }, { index: 1, id: "flint", scope: NOTORGANIC_FLINT_SCOPE }])(
+  test.each([{ index: 0, id: NOTORGANIC_MODEL_ID, scope: NOTORGANIC_SCOPE }, { index: 1, id: "balanced", scope: "infer:balanced" }, { index: 2, id: "flint", scope: NOTORGANIC_FLINT_SCOPE }])(
     "serializes system and tool roles with protected account headers for $id", async ({ index, id, scope }) => {
     const originalFetch = globalThis.fetch;
     let requestHeaders: Headers | undefined;
@@ -588,15 +625,16 @@ describe("Not Organic DPoP and provider contract", () => {
       apiKey: "$NOTORGANIC_ACCESS_TOKEN",
       api: NOTORGANIC_PI_API
     });
-    expect(config.models).toHaveLength(2);
-    expect(config.models?.[1]).toMatchObject({ id: "flint", name: "Flint (preview)", contextWindow: 12288,
+    expect(config.models).toHaveLength(3);
+    expect(config.models?.[1]).toMatchObject({ id: "balanced", name: "Not Organic Balanced" });
+    expect(config.models?.[2]).toMatchObject({ id: "flint", name: "Flint (preview)", contextWindow: 12288,
       maxTokens: 4096, reasoning: false, api: NOTORGANIC_PI_API, compat: { maxTokensField: "max_completion_tokens" } });
     expect(NOTORGANIC_FLINT_MODEL.input).toEqual(["text"]);
     expect(config.models?.[0]).toMatchObject({
       id: NOTORGANIC_MODEL_ID,
-      name: "Not Organic Balanced",
+      name: "Inkling 2 Small",
       reasoning: true,
-      contextWindow: 256_000,
+      contextWindow: 262_144,
       maxTokens: 16_384
     });
     expect(NOTORGANIC_BALANCED_MODEL.input).toEqual(["text"]);
@@ -667,6 +705,7 @@ describe("Not Organic CLI argument safety", () => {
     expect(loginHelp.status).toBe(0);
     expect(loginHelp.stdout).toContain("Usage: keating login");
     expect(loginHelp.stdout).toContain("--judgement");
+    expect(loginHelp.stdout).toContain("--tutor");
     expect(logoutHelp.status).toBe(0);
     expect(logoutHelp.stdout).toContain("Usage: keating logout");
     expect(existsSync(notOrganicAuthPath(cwd))).toBe(false);
@@ -674,9 +713,11 @@ describe("Not Organic CLI argument safety", () => {
 
   test("status cannot silently ignore a judgement authorization request", async () => {
     const cwd = await temporaryProject();
-    const result = runCli(cwd, "login", "--status", "--judgement");
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain("status cannot be combined");
+    for (const option of ["--judgement", "--tutor"]) {
+      const result = runCli(cwd, "login", "--status", option);
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("status cannot be combined");
+    }
     expect(existsSync(notOrganicAuthPath(cwd))).toBe(false);
   }, CLI_TEST_TIMEOUT_MS);
 

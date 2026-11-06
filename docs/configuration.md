@@ -123,3 +123,24 @@ their existing authorities. The guardrail scans application/package source and
 rejects value-named model references there, while documenting exact frozen data
 and non-model UI/protocol strings as exceptions. Linking this guide from
 `docs/agent-reference.md` and regenerating the NodePod bootstrap remain OPS work.
+
+### Hosted tutor consultation
+
+Keating's hosted main-model default is `inkling-2-small` (Inkling 2 Small),
+using Not Organic Chat Completions. The previous `balanced` / Inkling Small
+choice remains available for saved sessions and explicit selection.
+
+`consult_tutor` lets the main model ask Humans& Ampersand Tutor for text advice
+through `POST /v1/tutor/consult` on Not Organic. Advice is returned to the main
+model; it does not execute actions or update learner state. It sends only the
+explicit question and optional context, with a 6,000 UTF-8 byte combined limit.
+The provider retains the isolated consultation session; no deletion lifecycle
+is currently implemented. It uses a separate, metered capability
+`infer:ampersand-tutor-v0.1`; existing account grants are never expanded locally.
+Browser users need fresh consent. CLI users opt in with `keating login --tutor`
+(optionally combined with `--model=balanced` or `--judgement`).
+
+The gateway must be deployed with server-only `AMPERSAND_API_KEY` and the tutor
+alias enabled before the tool can succeed. Inkling 2 Small separately requires
+the named route to be published and enabled upstream. Source defaults and
+model discovery do not establish successful live inference.

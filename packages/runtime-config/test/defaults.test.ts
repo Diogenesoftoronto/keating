@@ -8,13 +8,13 @@ import {
 
 describe("public runtime configuration", () => {
   test("preserves intentional CLI, mobile, speech and judgement defaults", () => {
-    expect(DEFAULT_MODELS.cli).toEqual({ notorganic: "balanced", openai: "gpt-5.5", google: "gemini-3.5-flash",
+    expect(DEFAULT_MODELS.cli).toEqual({ notorganic: "inkling-2-small", openai: "gpt-5.5", google: "gemini-3.5-flash",
       anthropic: "claude-sonnet-4-6", openrouter: "poolside/laguna-m.1:free", zyphra: "zyphra/ZAYA1-8B", minimax: "MiniMax-M2.7-highspeed" });
     expect(DEFAULT_MODELS.mobile).toEqual({ openai: "gpt-5.4", anthropic: "claude-sonnet-4-6", google: "gemini-3.5-flash",
       openrouter: "anthropic/claude-sonnet-4.6", custom: "default" });
     expect(DEFAULT_MODELS.speech).toEqual({ sttOpenai: "gpt-4o-transcribe", sttGoogle: "gemini-2.5-flash",
       ttsOpenai: "gpt-4o-mini-tts", realtimeOpenai: "gpt-realtime-2.1", liveGoogle: "gemini-3.1-flash-live-preview", liveNotOrganic: "gpt-live-1", steering: "default" });
-    expect(DEFAULT_MODELS.web.notorganic).toBe("balanced");
+    expect(DEFAULT_MODELS.web.notorganic).toBe("inkling-2-small");
     expect(DEFAULT_SYSTEM_ONE_MODEL).toBe("jev-latest");
     expect(DEFAULT_MODELS.judgement.tabular).toBe("v3.5_default");
   });
@@ -33,7 +33,7 @@ describe("public runtime configuration", () => {
     expect(SPENDING_LIMITS).toEqual({ notorganicRequestMicrousd: 100000, notorganicServerRequestMicrousd: 50000 });
   });
   test("derived browser consent includes the preview only in a fresh authorization request", () => {
-    expect(DEFAULT_NOTORGANIC_SCOPE).toBe("wallet:read usage:read billing:checkout infer:balanced infer:flint infer:gpt-6.1-sol web:search web:fetch infer:image realtime:connect");
+    expect(DEFAULT_NOTORGANIC_SCOPE).toBe("wallet:read usage:read billing:checkout infer:ampersand-tutor-v0.1 infer:balanced infer:flint infer:gpt-6.1-sol web:search web:fetch infer:image infer:inkling-2-small realtime:connect");
     for (const model of [...NOTORGANIC_CHAT_MODEL_IDS, ...NOTORGANIC_IMAGE_MODEL_IDS]) {
       expect(DEFAULT_NOTORGANIC_SCOPE.split(" ")).toContain(`infer:${model}`);
     }

@@ -210,11 +210,12 @@ function validateNotOrganicProvider(provider: string, command: "login" | "logout
 
 function printNotOrganicLoginUsage(): void {
   console.log([
-    "Usage: keating login [notorganic] [--manual|--headless] [--model=balanced|flint] [--judgement] | --status",
+    "Usage: keating login [notorganic] [--manual|--headless] [--model=inkling-2-small|balanced|flint] [--tutor] [--judgement] | --status",
     "",
-    "Connect a five-minute Not Organic infer:balanced capability.",
+    `Connect a five-minute Not Organic infer:${NOTORGANIC_MODEL_ID} capability.`,
     "  --manual, --headless  Print the URL and read the callback from stdin",
     "  --judgement           Also request judgement:evaluate access",
+    "  --tutor               Also request fresh Ampersand Tutor consultation consent",
     "  --model=flint         Request fresh Flint preview consent (gateway activation required)",
     "  --status              Show the current capability status",
     "  --help, -h            Show this help without starting login"
@@ -329,7 +330,7 @@ async function runLoginCommand(cwd: string, args: string[]): Promise<void> {
   args = args.filter((arg, index, all) => {
     if (arg === "--model") {
       const value = all[index + 1];
-      if (!value || value.startsWith("-")) throw new Error("--model requires balanced or flint.");
+      if (!value || value.startsWith("-")) throw new Error("--model requires inkling-2-small, balanced, or flint.");
       modelSelections.push(value);
       return false;
     }
@@ -339,8 +340,8 @@ async function runLoginCommand(cwd: string, args: string[]): Promise<void> {
   });
   if (modelSelections.length > 1) throw new Error("Specify --model only once.");
   const model = modelSelections[0] ?? NOTORGANIC_MODEL_ID;
-  if (model !== NOTORGANIC_MODEL_ID && model !== FLINT_PREVIEW_PROFILE.id) throw new Error("--model requires balanced or flint.");
-  const knownFlags = new Set(["--manual", "--headless", "--status", "--judgement"]);
+  if (model !== NOTORGANIC_MODEL_ID && model !== "balanced" && model !== FLINT_PREVIEW_PROFILE.id) throw new Error("--model requires inkling-2-small, balanced, or flint.");
+  const knownFlags = new Set(["--manual", "--headless", "--status", "--judgement", "--tutor"]);
   const unknownFlag = args.find((arg) => arg.startsWith("-") && !knownFlags.has(arg));
   if (unknownFlag) throw unknownNotOrganicOption("login", unknownFlag);
   const positionals = args.filter((arg) => !arg.startsWith("-"));
@@ -354,8 +355,8 @@ async function runLoginCommand(cwd: string, args: string[]): Promise<void> {
     ? NOTORGANIC_PROVIDER_ID
     : positionals[0] ?? NOTORGANIC_PROVIDER_ID;
   validateNotOrganicProvider(provider, "login");
-  if (status && (args.includes("--manual") || args.includes("--headless") || args.includes("--judgement") || modelSelections.length)) {
-    throw new Error("Not Organic login status cannot be combined with --manual, --headless, --model, or --judgement.");
+  if (status && (args.includes("--manual") || args.includes("--headless") || args.includes("--judgement") || args.includes("--tutor") || modelSelections.length)) {
+    throw new Error("Not Organic login status cannot be combined with --manual, --headless, --model, --tutor, or --judgement.");
   }
   if (status) {
     printNotOrganicStatus(cwd);
@@ -370,7 +371,7 @@ async function runLoginCommand(cwd: string, args: string[]): Promise<void> {
     },
     onProgress: (message) => console.error(`${color.sepia}${message}${color.reset}`),
     ...(manual ? { onManualCodeInput: readManualCallback } : {})
-  }, { model, judgement: args.includes("--judgement") });
+  }, { model, judgement: args.includes("--judgement"), tutor: args.includes("--tutor") });
 
   const config = await loadKeatingConfig(cwd);
   await writeKeatingConfig(cwd, {
