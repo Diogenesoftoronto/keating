@@ -21,9 +21,9 @@
     "sha256": "20888df9d7d1f88a9b9e2c9ed4e6782bf29777c993723c014e0ab5c2e20031ed"
   },
   "contract_sources": {
-    "bun.lock": "ab9f1b0641c492ce060fd72af3fd60321f74d88c3097abfe9f1c86892d500c20",
+    "bun.lock": "c937aed2b3480d2f07ffe2c5b85dae80edc8111e35126a991edb2c11a7749e5f",
     "bunfig.toml": "d09eb18ffee6896a4b74523d80b1bcd642a6966974e20c30bac94027a31fc202",
-    "package.json": "c0bffe259fddeee6a8e714c79f2cf2ef4ab25cbaad77c654b1b2c4905328898f",
+    "package.json": "70862fc99a2909f3824c05709ad20edd6e65b3a070a8ec566f600751fb239c59",
     "packages/learner-contracts/package.json": "68301321d7164ffe1c5432fac26932e6381c48a95ddf2d2d69ca55941a8931d6",
     "packages/learner-contracts/src/account-evolution.ts": "2e1465b90daca728b699661d69cf0cbf14c8ea0ec42eb946c9f20c69460fc23f",
     "packages/learner-contracts/src/capabilities.ts": "54fcf64eb1b7fd54c8516bb4fec607dfadb6434991f475a83246b349d820650e",
@@ -116,7 +116,7 @@
     "tsconfig.json": "fb29e7ba17b37309a06fd54853d180845c5799a5383a3b0d2ce911d7d73d4bbc",
     "web/bun.lock": "d3e9d5fc876e131b2eb5b42bab0349b294153f096c562977af339a7f90098501",
     "web/bunfig.toml": "4ca4040bb16ea08577a3a80a75769af868a2e64af131b0c9cf7767350e90a66b",
-    "web/package.json": "8e6e4db604b542c12d7517fb2a39430fc570d19e407bee8f88a85dd1d58f0a80",
+    "web/package.json": "e122743e4c7a904087dacc551ce3f5d03b62e648c4b68b504516382faa7339ef",
     "web/src/courses/account-session.ts": "9c9b71ea9e37d7e685725330e70f2756f00db86ed496f3cc174cdf92bc6411be",
     "web/src/courses/client.ts": "343b23b58a482046ee89e41b007503de3f14a9d1a54e2eb26f3366701d42847e",
     "web/src/keating/app-storage.ts": "bd6e732744f6c168729e9e8bab8e9ce6f873cdf6d2947a6755cd965a691e9433",
@@ -195,7 +195,7 @@
   },
   "contract_inventory": {
     "path": "scripts/training/benchmark_dependencies.ts",
-    "sha256": "bd6ea650bcd78f8b8ecbe6c956977a0e95b6b824cb0a0abd6bcf3028024fd50e"
+    "sha256": "d4ba94f2d4a7b6f3ee5ffb99bd5f05a5a404fbd34ce3b22ec9f45fc22e85d88a"
   },
   "contract_packages": {
     "@huggingface/tokenizers": "0.2.0",

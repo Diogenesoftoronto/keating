@@ -5,6 +5,44 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.0
+
+### Interactive tutoring pages
+- The tutor can write an interactive page that appears in the chat. It runs in a locked-down frame with no network access. Learners can view its code, and anything they share from it comes back to the tutor as their next message.
+- Full-screen pages keep keyboard focus inside while open and return it when closed.
+
+### Public profiles
+- Learners can write and preview a public profile: what they are learning, shared work, tutor feedback (labelled as AI), next steps and links, with a choice of accent colour, layout and section order.
+- Profiles publish to the learner's own AT Protocol account and are shown at `/u/<identity>`. Visitors can report a profile, and operators can hide one from the site.
+
+### Self-paced courses
+- At `/learn`, Keating drafts a short course plan from a paper you name. After you approve it, each step is prepared in the background up to a spending limit, while a Keating tab is open.
+- Reading, answering with help, answering alone, recalling later and applying to a new case are counted separately.
+- Progress bar, numbered steps, a "Next" button after each activity, saved half-written answers, and Ctrl+Enter to submit.
+
+### Review, usage and benchmark
+- The review page shows overall progress and a "review next" button, with filters and sorting.
+- Usage has a period control with change against the previous period, spend by model, and Keating credit balance with recent charges.
+- The benchmark ranks a model only once it has enough evidence, shows a likely range for each score and marks ties.
+
+### Chat and accounts
+- Chat records sync across devices for signed-in accounts. Sign-in now also requests the sync permissions.
+- Study room fixes: removed members lose their live connection immediately, mobile chats keep their owner, and undoing a turn judgement no longer races with new replies.
+- Replies the tutor could not verify show a subtle icon with a tooltip instead of a boxed card.
+
+### Accessibility and design
+- Dark mode on profile pages now has its themed background; pale text previously sat on white.
+- The shared focus outline is now clearly visible.
+- Keating's own "Reduce motion" setting is honoured by scrolling, confetti and other animations.
+- Courses and profiles use the app's shared colours, corners, buttons and page header.
+
+### Teaching benchmark
+- Keating Teaching Check is re-sealed as version 1.1.0 against the current tutor prompt (now 18 tools), the current lockfile and Bun 1.4.4. The original 1.0 freeze is kept unchanged in `versions/1.0.0`, and published results remain tied to it.
+- Fixed the system-prompt export and the boot-file bundle, which had fallen out of date with the source.
+
+### Verification
+- Local verification: web, root and contracts suites and the typechecks pass. Mobile keeps its known native-core baseline failure, which is caused by the local linker setup.
+
 ## 4.0.20
 
 ### Reliability
