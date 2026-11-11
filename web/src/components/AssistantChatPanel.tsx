@@ -133,7 +133,7 @@ import type { PlanRevisionProposal } from "../keating/plan-revisions";
 import { PlanRevisionCard } from "./PlanRevisionCard";
 import { recordAssistantPresentations } from "../keating/judgement/active-work-host";
 import { recordWebActivityPresentation } from "../keating/judgement/activity-learning";
-import { parseReviewNotice, stripReviewNotice } from "../keating/judgement/review-notice";
+import { parseReviewNotice, stripReviewNotice, withheldSummary } from "../keating/judgement/review-notice";
 import { ReviewNoticeCard } from "./ReviewNoticeCard";
 import {
   QuizGradesContext,
@@ -633,11 +633,7 @@ function StreamingTextPart({
   const notice = parseReviewNotice(visibleText);
   if (notice?.kind === "withheld") {
     return (
-      <ReviewNoticeCard kind="withheld">
-        {notice.text.split(/\n{2,}/).filter(Boolean).map((paragraph, index) => (
-          <p key={index} className={index ? mutedTextClass : undefined}>{paragraph}</p>
-        ))}
-      </ReviewNoticeCard>
+      <ReviewNoticeCard kind="withheld" reason={withheldSummary(notice.text)} />
     );
   }
   const searchContent = splitSearchSources(notice ? notice.text : visibleText);
