@@ -84,6 +84,9 @@ Registration alone does not activate or verify inference.
 inference scopes plus explicitly requested capabilities. Ordinary text models
 map to `infer:text`; image, realtime, judgement, tabular, tutor and preview
 permissions remain separate. The browser default no longer requests Flint.
+The default capabilities include web search (`web:search`, `web:fetch`) and
+Clairic learning extraction (`extraction:run`); both are on after sign-in and
+can be turned off in Settings (see `docs/learning-extraction.md`).
 Exact legacy model grants remain valid for their own models. Text model selection
 no longer requires optional web search/fetch permissions; those tools continue to
 require their own scopes. CLI and mobile retain their existing narrow login

@@ -40,6 +40,10 @@ import type { AgentHostRefs, SessionStartRecord } from "./host-refs";
 import { runPortableBrowserDelegate } from "./portable-delegate";
 import { sessionHasSettledReply } from "./session-records";
 import { buildAgentSystemPrompt } from "./system-prompt";
+import { checkReplyClaims } from "../../keating/judgement/claim-citations";
+import { claimCheckDependencies } from "../../keating/judgement/claim-citation-runtime";
+import { saveClaimCheck } from "../../keating/judgement/claim-citation-store";
+import { learningMessageId } from "../../keating/learning-intelligence/source-navigation";
 import { noteTurnDraft, noteTurnExtraction, noteTurnMemoryDecisions, noteTurnReceipt, setTurnJudgementSink } from "../../keating/judgement/turn-ledger";
 
 export type PortableHosts = Parameters<typeof authorKeatingBrowserAgent>[0]["hosts"];
@@ -148,6 +152,22 @@ export function createTeachingConversation({
     onProgress: snapshot => { publishTeachingDraftStatus(sessionId, snapshot); try { noteTurnDraft(sessionId, snapshot); } catch { /* Diagnostics only. */ } },
     captureDraftContent: () => loadKeatingUiSettings().showDeveloperDetails,
     onDraftContent: candidate => publishTeachingDraftContent(sessionId, candidate),
+    onReleasedReply: release => {
+      // An already-unverified reply shows its caveat; the check only adds work there.
+      if (release.unverified) return;
+      void agent.whenIdle().then(async () => {
+        if (!isLive()) return;
+        const index = agent.context.messages.findIndex(message => message.role === "assistant" && message.timestamp === release.messageTimestamp);
+        if (index < 0) return;
+        const messageId = learningMessageId(agent.context.messages[index], index);
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 60_000);
+        try {
+          const result = await checkReplyClaims(release.text, release.sources, claimCheckDependencies(), controller.signal);
+          if (isLive() && (result.status !== "unchecked" || result.sources.length > 0)) saveClaimCheck(sessionId, messageId, result);
+        } finally { clearTimeout(timer); }
+      }).catch(() => { /* A failed follow-up check leaves the reply as published. */ });
+    },
     onReceipt: receipt => {
       try { noteTurnReceipt(sessionId, receipt.messageTimestamp, receipt.snapshot); } catch { /* Diagnostics only. */ }
       void keatingStorage.recordTeachingDraftReceipt({

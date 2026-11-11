@@ -164,7 +164,36 @@ export function KeatingOpenUIRenderer({
  * the same failed document from dispatching twice.
  */
 const MAX_COMPILE_RECOVERY_ATTEMPTS = 3;
-const compileRecovery = { consecutiveFailures: 0, attempted: new Set<string>() };
+const compileRecovery = { consecutiveFailures: 0, attempted: new Set<string>(), loaded: false };
+
+/**
+ * Document ids are stable across reloads, so the record of which broken
+ * components already asked for a repair must be too. In memory only, every
+ * reload re-sent a regeneration request for each broken component still in
+ * the chat; when that turn was withheld the component was never replaced and
+ * the request repeated on every visit.
+ */
+const ATTEMPTED_KEY = "keating:openui-compile-recovery:v1";
+const MAX_REMEMBERED_ATTEMPTS = 500;
+function attemptedStorage(): Pick<Storage, "getItem" | "setItem"> | null {
+	try { return typeof localStorage === "undefined" ? null : localStorage; } catch { return null; }
+}
+function loadAttempted(): Set<string> {
+	if (!compileRecovery.loaded) {
+		compileRecovery.loaded = true;
+		try {
+			const saved: unknown = JSON.parse(attemptedStorage()?.getItem(ATTEMPTED_KEY) ?? "[]");
+			if (Array.isArray(saved)) for (const id of saved) if (typeof id === "string") compileRecovery.attempted.add(id);
+		} catch { /* A corrupt record only allows one more automatic repair. */ }
+	}
+	return compileRecovery.attempted;
+}
+function rememberAttempted(documentId: string): void {
+	const attempted = loadAttempted();
+	attempted.add(documentId);
+	try { attemptedStorage()?.setItem(ATTEMPTED_KEY, JSON.stringify([...attempted].slice(-MAX_REMEMBERED_ATTEMPTS))); }
+	catch { /* This page still remembers it. */ }
+}
 
 /** Safety rejections are never retried: re-asking is pressure to bypass them. */
 function recoverableFailure(kind: OpenUISourceFailureKind): boolean {
@@ -173,16 +202,19 @@ function recoverableFailure(kind: OpenUISourceFailureKind): boolean {
 
 /** Claim one automatic repair without allowing remounts to repeat it. */
 export function __claimOpenUICompileRecovery(documentId: string, kind: OpenUISourceFailureKind): number | null {
-	if (!recoverableFailure(kind) || compileRecovery.attempted.has(documentId)) return null;
+	if (!recoverableFailure(kind) || loadAttempted().has(documentId)) return null;
 	if (compileRecovery.consecutiveFailures >= MAX_COMPILE_RECOVERY_ATTEMPTS) return null;
-	compileRecovery.attempted.add(documentId);
+	rememberAttempted(documentId);
 	compileRecovery.consecutiveFailures += 1;
 	return compileRecovery.consecutiveFailures;
 }
 
-export function __resetOpenUICompileRecovery(): void {
+/** Test seam. `reload` simulates a fresh page that keeps the persisted record; the default also forgets it. */
+export function __resetOpenUICompileRecovery(options: { reload?: boolean } = {}): void {
 	compileRecovery.consecutiveFailures = 0;
 	compileRecovery.attempted.clear();
+	compileRecovery.loaded = false;
+	if (!options.reload) { try { attemptedStorage()?.setItem(ATTEMPTED_KEY, "[]"); } catch { /* Nothing persisted. */ } }
 }
 
 function CompletedOpenUISource({
@@ -252,15 +284,17 @@ function CompletedOpenUISource({
 				failureKind: kind,
 				attempt: next,
 				maxAttempts: MAX_COMPILE_RECOVERY_ATTEMPTS,
-				source: program,
+				// The broken source stays in the tutor's own earlier message. Copying
+				// it into the learner turn could push the review request past its
+				// size limit, so the repair turn itself was withheld.
 			},
 			document: metadata,
 		})).then((accepted) => { if (accepted === false) setExhausted(true); }).catch(() => setExhausted(true));
 		return true;
-	}, [failure, hostAction, kind, metadata, program]);
+	}, [failure, hostAction, kind, metadata]);
 
 	useEffect(() => {
-		if (!failure || !kind || compileRecovery.attempted.has(metadata.id)) return;
+		if (!failure || !kind || loadAttempted().has(metadata.id)) return;
 		if (!requestRegeneration(false)) setExhausted(true);
 	}, [failure, kind, metadata.id, requestRegeneration]);
 

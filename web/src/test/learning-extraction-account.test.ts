@@ -60,11 +60,19 @@ afterEach(() => {
   }
 });
 describe("account-bound learning extraction", () => {
-  it("defaults to off and durably saves explicit opt-in and opt-out", () => {
+  it("defaults to on and durably saves explicit opt-out and opt-in", () => {
+    expect(learningIntelligenceEnabled()).toBe(true);
+    setLearningIntelligenceEnabled(false);
     expect(learningIntelligenceEnabled()).toBe(false);
     setLearningIntelligenceEnabled(true);
     expect(learningIntelligenceEnabled()).toBe(true);
     setLearningIntelligenceEnabled(false);
+    expect(learningIntelligenceEnabled()).toBe(false);
+  });
+  it("keeps an existing explicit opt-out and stays off when storage is unavailable", () => {
+    localStorage.setItem("keating.learning-intelligence.enabled.v1", "false");
+    expect(learningIntelligenceEnabled()).toBe(false);
+    Object.defineProperty(globalThis, "localStorage", { configurable: true, get() { throw new Error("blocked"); } });
     expect(learningIntelligenceEnabled()).toBe(false);
   });
   it("notifies subscribers for preferences and cross-tab authority changes", () => {
@@ -99,7 +107,8 @@ describe("account-bound learning extraction", () => {
     for (const scope of ["extraction:run", "judgement:evaluate", "tabular:predict", "wallet:read"]) expect(scopes.has(scope)).toBe(true);
     expect(url.searchParams.get("return_to")).toBe("/chat?settings=learning");
   });
-  it("blocks dispatch when local opt-in has not been granted", async () => {
+  it("blocks dispatch when the learner turned extraction off", async () => {
+    setLearningIntelligenceEnabled(false);
     let calls = 0;
     setFetch(async () => { calls++; return Response.json({}); });
     await expect(requestAccountLearningExtraction(request, learningIntelligenceAccount().scope!)).rejects.toThrow("authorization changed");

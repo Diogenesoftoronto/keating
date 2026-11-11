@@ -134,7 +134,9 @@ import { PlanRevisionCard } from "./PlanRevisionCard";
 import { recordAssistantPresentations } from "../keating/judgement/active-work-host";
 import { recordWebActivityPresentation } from "../keating/judgement/activity-learning";
 import { parseReviewNotice, stripReviewNotice, withheldSummary } from "../keating/judgement/review-notice";
-import { ReviewNoticeCard } from "./ReviewNoticeCard";
+import { WithheldReplyRecovery } from "./WithheldReplyRecovery";
+import { ReviewNoticeCard, UnverifiedBadge, unsourcedClaimTip } from "./ReviewNoticeCard";
+import { getClaimCheck, subscribeClaimChecks } from "../keating/judgement/claim-citation-store";
 import {
   QuizGradesContext,
   type QuizGradesContextValue,
@@ -633,7 +635,10 @@ function StreamingTextPart({
   const notice = parseReviewNotice(visibleText);
   if (notice?.kind === "withheld") {
     return (
-      <ReviewNoticeCard kind="withheld" reason={withheldSummary(notice.text)} />
+      <>
+        <ReviewNoticeCard kind="withheld" reason={withheldSummary(notice.text)} />
+        {messageRole === "assistant" && <WithheldReplyRecovery />}
+      </>
     );
   }
   const searchContent = splitSearchSources(notice ? notice.text : visibleText);
@@ -4343,6 +4348,18 @@ function FeedbackModal({
   );
 }
 
+/** Result of the post-release claim check: found sources, and a quiet badge when a claim had none. */
+function ClaimCheckNote({ sessionId, sourceIds, alreadyUnverified }: { sessionId?: string; sourceIds?: string[]; alreadyUnverified: boolean }) {
+  const check = useSyncExternalStore(subscribeClaimChecks, () => getClaimCheck(sessionId, sourceIds), () => null);
+  if (!check) return null;
+  return (
+    <>
+      {check.sources.length > 0 && <WebSearchPart toolName="web_search" result={{ citations: check.sources.map(source => ({ url: source.url, title: source.title })) }} status={{ type: "complete" }} />}
+      {check.status === "unsupported" && !alreadyUnverified && <UnverifiedBadge tip={unsourcedClaimTip(check.unsupported)} />}
+    </>
+  );
+}
+
 function AssistantMessage({
   components,
   selectedProvider,
@@ -4492,6 +4509,7 @@ function AssistantMessage({
               />}
             </div>
             <LearningSourcePassage sessionId={learningSessionId} sourceIds={learningSourceIds ?? []} />
+            <ClaimCheckNote sessionId={learningSessionId} sourceIds={learningSourceIds} alreadyUnverified={parseReviewNotice(messageText)?.kind === "unverified"} />
             {llmFailure && canRetry && onRetry && (
               <FailedResponseRecovery
                 recovery={developerMode ? llmFailure.recovery : undefined}
