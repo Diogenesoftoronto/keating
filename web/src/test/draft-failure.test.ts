@@ -25,3 +25,14 @@ test("missing review scores remain blockers rather than being misreported as poo
   expect(text).toContain("Blocking checks: quality_scope.");
   expect(text).not.toContain("did not meet");
 });
+
+test("the withheld label's tooltip keeps only the plain-language reason", async () => {
+  const { withheldSummary } = await import("../keating/judgement/review-notice");
+  expect(withheldSummary("Keating couldn't prepare a valid review request within the judgement model's limits. Try a new conversation.\n\nFailure: request-invalid. Draft attempts: 0; completed drafts: 0."))
+    .toBe("Keating couldn't prepare a valid review request within the judgement model's limits. Try a new conversation.");
+  const text = describeDraftFailure(snapshot([{ id: "identity_invented", source: "jev", severity: "critical", status: "unknown", probability: .25 }]));
+  const summary = withheldSummary(text);
+  expect(summary).not.toContain("identity_invented");
+  expect(summary).not.toContain("Failure:");
+  expect(summary).toContain("Retry or choose a different reply model in Settings.");
+});

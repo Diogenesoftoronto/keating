@@ -19,3 +19,14 @@ export function parseReviewNotice(text: string): { kind: ReviewNoticeKind; text:
 export function stripReviewNotice(text: string): string {
   return text.replace(MARKER, "");
 }
+
+/**
+ * The learner-facing reason a reply was withheld: the first paragraph of the
+ * stored explanation, without check identifiers or the diagnostic counts line
+ * (those remain in the transcript for developer details). Works on messages
+ * stored by earlier versions too.
+ */
+export function withheldSummary(text: string): string {
+  const first = text.split(/\n{2,}/).map(part => part.trim()).find(part => part && !/^Failure:/.test(part)) ?? "";
+  return first.replace(/\s*Blocking checks:[^.]*\.?/, "").trim();
+}
