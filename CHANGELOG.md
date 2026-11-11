@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.1.1
+
+### Chat
+- When Keating can't produce a reply, the chat now shows a short "Couldn't produce a reply" label instead of a red box with failure codes and draft counts. Hover over or focus the label to see the reason in plain language. Messages saved earlier display the same way.
+
+### Verification
+- The web typecheck and the review-notice, draft-status, draft-gate and shared-session tests pass. Checked in the browser that the label shows its reason on hover.
+
 ## 4.1.0
 
 ### Interactive tutoring pages
