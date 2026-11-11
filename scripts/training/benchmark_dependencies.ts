@@ -1,6 +1,7 @@
 /** Read-only dependency inventory for sealing a new benchmark release. */
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { realpathSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
@@ -21,7 +22,7 @@ if (!result.success || !metadata) throw Error('Could not resolve the complete ch
 for (const output of Object.values(metadata.outputs)) {
   if (output.imports.length) throw Error('The dependency inventory has unresolved external imports');
 }
-const files = new Set([...Object.keys(metadata.inputs).filter(path => !path.startsWith('vite-asset-url:')).map(path => relative(root, resolve(path))),
+const files = new Set([...Object.keys(metadata.inputs).filter(path => !path.startsWith('vite-asset-url:')).map(path => relative(root, realpathSync(resolve(path)))),
   'package.json', 'web/package.json', 'packages/learner-contracts/package.json',
   'tsconfig.json', 'web/tsconfig.json', 'bun.lock', 'web/bun.lock', 'bunfig.toml', 'web/bunfig.toml']);
 const contract_sources: Record<string, string> = {};
@@ -31,6 +32,14 @@ const contract_packages: Record<string, string> = {};
 for (const name of [...files].sort()) {
   if (name.startsWith('../')) throw Error('Unversioned checker dependency: ' + name);
   const packagePath = /^(?:.*\/)?node_modules\/((?:@[^/]+\/)?[^/]+)\//.exec(name);
+  if (packagePath?.[1].startsWith('@keating/')) {
+    // Workspace packages may be installed as copies (web's file: dependencies); hash their in-repo source.
+    const source = `packages/${packagePath[1].slice('@keating/'.length)}/${name.slice(packagePath.index + packagePath[0].length)}`;
+    const [copy, original] = await Promise.all([Bun.file(resolve(root, name)).bytes(), Bun.file(resolve(root, source)).bytes()]);
+    if (Buffer.compare(Buffer.from(copy), Buffer.from(original)) !== 0) throw Error('Installed workspace copy differs from source: ' + name);
+    contract_sources[source] = createHash('sha256').update(original).digest('hex');
+    continue;
+  }
   if (packagePath) {
     const manifest = await Bun.file(resolve(root, name.slice(0, packagePath.index + packagePath[0].length), 'package.json')).json();
     if (manifest.name !== packagePath[1] || typeof manifest.version !== 'string') throw Error('Unidentified checker package: ' + name);
