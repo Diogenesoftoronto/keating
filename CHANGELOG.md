@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.0
+
+### Sources for factual claims
+- After a reply is shown, Keating checks up to three of its factual claims. Common knowledge such as "Paris is the capital of France" and claims the reply's own sources already support are skipped. Each remaining claim gets a web search.
+- Pages that support a claim appear under the reply as sources. If a claim can't be sourced, the reply gets the small unverified icon, and its tooltip names the claim.
+- If extraction, web search or the judgement model is unavailable, the reply shows normally with no warning.
+
+### Replies that kept regenerating
+- An interactive component that failed to build asked for a rebuild again on every page load. Each request copied the whole broken component into the conversation, which could make the rebuild itself fail, so it repeated. Keating now asks once per component and sends only the error.
+
+### When Keating can't reply
+- A reply that couldn't be produced now offers "Try again" and "Reload Keating". Neither runs unless you click it.
+
+### Sign-in
+- Signing in with Not Organic now also turns on learning extraction along with web search. Both can be turned off in Settings, and anyone who already turned extraction off keeps it off.
+
+### Verification
+- The root (1,148 tests) and web (3,795) suites and the typechecks pass. The new screens were checked in Storybook in light and dark mode.
+
 ## 4.1.1
 
 ### Chat
