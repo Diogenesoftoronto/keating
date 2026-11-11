@@ -36,7 +36,7 @@ const ghostButton = css({
 	transitionProperty: "background-color, color",
 	transitionDuration: "{durations.base}",
 	_hover: { background: "color-mix(in srgb, var(--ink) 8%, transparent)", color: "var(--ink)" },
-	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 });
 
 const textButton = css({
@@ -48,7 +48,7 @@ const textButton = css({
 	color: "var(--ink-soft)",
 	cursor: "pointer",
 	_hover: { color: "var(--ink)", textDecoration: "underline" },
-	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" },
+	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
 });
 
 /** A quote the pass cited, or an honest admission that it could not cite one. */

@@ -1,0 +1,172 @@
+/*
+ * Shared look, feel and motion for Keating's plain-CSS surfaces (self-paced
+ * courses, public profiles). One definition of buttons, fields, cards, labels
+ * and movement, written against the same tokens the Panda surfaces use.
+ *
+ * Motion rules: transform and opacity only; fast (120ms) for feedback, base
+ * (180ms) for reveals, slow (300ms) for one-off receipts; one easing. Nothing
+ * moves on its own, and nothing depends on motion to be understood.
+ */
+:where(.self-paced, .profile-editor, .profile-page, .profile-report) {
+	--k-radius: var(--radii-keating, 0.25rem);
+	--k-border: 1.5px solid var(--line);
+	--k-fast: var(--durations-fast, 120ms);
+	--k-base: var(--durations-base, 180ms);
+	--k-slow: var(--durations-slow, 300ms);
+	--k-ease: var(--easings-standard, cubic-bezier(0.4, 0, 0.2, 1));
+	color: var(--ink);
+}
+
+/* Focus: --accent is a pale surface tint (about 1:1 on paper), so the ring uses --accent-dim. */
+:where(.self-paced, .profile-editor, .profile-page, .profile-report) :focus-visible {
+	outline: 3px solid var(--accent-dim);
+	outline-offset: 2px;
+}
+
+/* Page titles in the display face, as on /review. */
+.self-paced__header h1, .profile-editor__top h1, .profile-page__status h1 {
+	font-family: var(--mono-display);
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+
+/* Small labels: the eyebrow recipe's values. */
+.self-paced__kind, .public-profile__kind, .profile-editor__preview-label {
+	color: var(--accent-dim);
+	font-family: var(--mono-body);
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+}
+.dark .self-paced__kind, .dark .public-profile__kind, .dark .profile-editor__preview-label { color: var(--phosphor); }
+
+/* Buttons: line-bordered secondary, filled-ink primary, underlined quiet. */
+.self-paced__button, .profile-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	/* Never smaller than a fingertip, whatever the root font size. */
+	min-height: max(2.5rem, 44px);
+	padding: 0.4rem 0.85rem;
+	border: 1.5px solid var(--line);
+	border-radius: var(--k-radius);
+	background: var(--card);
+	color: var(--ink);
+	font: inherit;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	line-height: 1.3;
+	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
+	user-select: none;
+	text-align: left;
+	text-decoration: none;
+	cursor: pointer;
+	transition: background-color var(--k-fast) var(--k-ease), border-color var(--k-fast) var(--k-ease), color var(--k-fast) var(--k-ease), transform var(--k-fast) var(--k-ease);
+}
+.self-paced__button:disabled, .profile-button:disabled { opacity: 0.55; cursor: default; }
+.self-paced__button--primary, .profile-button--primary { background: var(--ink); color: var(--paper); border-color: var(--ink); font-weight: 650; }
+.self-paced__button--quiet, .profile-button--quiet { border-color: transparent; background: transparent; text-decoration: underline; text-underline-offset: 0.2em; padding-inline: 0.25rem; }
+/* The pressed state is a colour change first; the 1px drop is a bonus where motion is welcome. */
+.self-paced__button:active:enabled, .profile-button:active:enabled, a.self-paced__button:active, a.profile-button:active { border-color: var(--ink); background: var(--accent); color: var(--ink); }
+.self-paced__button--primary:active:enabled, .profile-button--primary:active:enabled { background: var(--ink-soft); border-color: var(--ink-soft); color: var(--paper); }
+
+/* Hover only where a pointer can hover: on touch it would stick after a tap. */
+@media (hover: hover) and (pointer: fine) {
+	.self-paced__button:hover:enabled, .profile-button:hover:enabled, a.self-paced__button:hover, a.profile-button:hover { border-color: var(--ink); background: var(--accent); }
+	.self-paced__button--primary:hover:enabled, .profile-button--primary:hover:enabled { background: var(--ink-soft); border-color: var(--ink-soft); }
+	.self-paced__button--quiet:hover:enabled, .profile-button--quiet:hover:enabled { border-color: transparent; text-decoration-thickness: 2px; }
+	.self-paced__course-link:hover { border-color: var(--ink); box-shadow: 4px 4px 0 var(--ink); transform: translate(-2px, -2px); }
+}
+
+.self-paced__button svg, .profile-button svg { flex-shrink: 0; }
+
+/* Section headings and legends: the eyebrow, as on /review. */
+.self-paced__card h2, .self-paced__section-title, .profile-editor legend, .profile-editor__publish h2 {
+	color: var(--accent-dim);
+	font-family: var(--mono-body);
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.18em;
+	line-height: 1.4;
+	text-transform: uppercase;
+}
+.dark :is(.self-paced__card h2, .self-paced__section-title, .profile-editor legend, .profile-editor__publish h2) { color: var(--phosphor); }
+
+/* Type: headings break evenly, paragraphs avoid orphans, counts line up. */
+:where(.self-paced, .profile-editor, .profile-page, .public-profile) :is(h1, h2, h3) { text-wrap: balance; }
+:where(.self-paced, .profile-editor, .profile-page, .public-profile) p { text-wrap: pretty; }
+:where(.self-paced, .profile-editor, .profile-page) { accent-color: var(--ink); caret-color: var(--accent-dim); }
+
+/* Disclosures: a chevron that turns, in place of the browser's triangle. */
+.self-paced__details > summary { display: flex; align-items: center; gap: 0.625rem; min-height: 44px; list-style: none; cursor: pointer; font-size: 0.875rem; font-weight: 600; }
+.self-paced__details > summary::-webkit-details-marker { display: none; }
+.self-paced__details > summary::before {
+	content: "";
+	flex-shrink: 0;
+	width: 0.45rem;
+	height: 0.45rem;
+	margin-inline: 0.15rem 0.1rem;
+	border-right: 2px solid currentColor;
+	border-bottom: 2px solid currentColor;
+	transform: rotate(-45deg);
+	transition: transform var(--k-base) var(--k-ease);
+}
+.self-paced__details[open] > summary::before { transform: rotate(45deg); }
+
+/* The one card on a page that needs a decision gets the house offset shadow. */
+.self-paced__card--action { border-color: var(--ink); box-shadow: 4px 4px 0 var(--ink); }
+
+/* Fields. */
+.self-paced input[type="text"], .self-paced input[type="url"], .self-paced textarea,
+.profile-editor input[type="text"], .profile-editor input[type="url"], .profile-editor textarea, .profile-editor select,
+.profile-report textarea {
+	width: 100%;
+	box-sizing: border-box;
+	min-height: 2.75rem;
+	padding: 0.55rem 0.7rem;
+	border: 1.5px solid var(--line);
+	border-radius: var(--k-radius);
+	background: var(--paper);
+	color: var(--ink);
+	font: inherit;
+	font-size: 0.875rem;
+	transition: border-color var(--k-fast) var(--k-ease);
+}
+:where(.self-paced, .profile-editor, .profile-report) :is(input, textarea, select):focus { border-color: var(--ink); }
+:where(.self-paced, .profile-editor, .profile-report) ::placeholder { color: var(--ink-soft); opacity: 0.8; }
+
+/* A row that leads somewhere (course list). */
+.self-paced__course-link { transition: transform var(--k-base) var(--k-ease), box-shadow var(--k-base) var(--k-ease), border-color var(--k-base) var(--k-ease); }
+.self-paced__course-link:active { border-color: var(--ink); background: var(--accent); }
+
+/* Progress: the fill scales from the left, so a real change in value is seen to happen. */
+.self-paced__meter { height: 0.5rem; margin: 0.625rem 0 0.75rem; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--paper); }
+.self-paced__meter span { display: block; width: 100%; height: 100%; background: var(--ink); transform-origin: left center; transition: transform var(--k-base) var(--k-ease); }
+
+/* Disclosure chevron and revealed content. */
+.k-chevron { transition: transform var(--k-base) var(--k-ease); }
+[aria-expanded="true"] > .k-chevron { transform: rotate(180deg); }
+@keyframes k-reveal { from { opacity: 0; } to { opacity: 1; } }
+.k-reveal { animation: k-reveal var(--k-base) var(--k-ease) both; }
+
+/* A receipt: plays once, when something the learner did is confirmed. */
+@keyframes k-receipt { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+/* inline-flex: a transform does nothing on a plain inline element. */
+.k-receipt { display: inline-flex; align-items: center; gap: 0.3rem; animation: k-receipt var(--k-slow) var(--k-ease) both; transform-origin: left center; }
+
+@media (prefers-reduced-motion: no-preference) {
+	html:not([data-reduce-motion="true"]) .self-paced__button:active:enabled,
+	html:not([data-reduce-motion="true"]) .profile-button:active:enabled { transform: translateY(1px); }
+}
+/* Both ways of asking for less motion: no movement at all, state shown by colour and text. */
+@media (prefers-reduced-motion: reduce) {
+	.self-paced__course-link:hover { transform: none; box-shadow: none; }
+	.k-reveal, .k-receipt { animation: none; }
+	.k-chevron { transition: none; }
+}
+html[data-reduce-motion="true"] .self-paced__course-link:hover { transform: none; box-shadow: none; }
+html[data-reduce-motion="true"] :is(.k-reveal, .k-receipt) { animation: none; }
+html[data-reduce-motion="true"] .k-chevron { transition: none; }
+html[data-reduce-motion="true"] .self-paced__details > summary::before { transition: none; }

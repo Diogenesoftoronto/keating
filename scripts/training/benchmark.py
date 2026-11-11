@@ -307,6 +307,9 @@ def check_contracts(suite, run):
             raise ValueError("Frozen contract inventory unavailable") from error
         require(resolved.get("contract_sources") == sources and resolved.get("contract_runtime") == runtime,
                 "Frozen contract resolved dependency inventory mismatch")
+        # Releases sealed before npm code entered the checker closure carry no package map.
+        require(resolved.get("contract_packages", {}) == suite["manifest"].get("contract_packages", {}),
+                "Frozen contract package versions mismatch")
     cases = {case["id"]: case for case in suite["cases"]}
     with tempfile.TemporaryDirectory(prefix="keating-benchmark-") as temporary:
         source, destination = Path(temporary) / "input.json", Path(temporary) / "output.json"

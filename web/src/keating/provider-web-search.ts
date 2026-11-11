@@ -1,3 +1,4 @@
+import { GPT_6_LUNA_PROFILE } from "@keating/runtime-config";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { negotiateProviderCapabilities } from "./providers";
 import type { SearchRoute } from "./search";
@@ -38,11 +39,11 @@ function isOpenAiModel(model: Model<Api>): boolean {
 	return model.provider === "openai"
 		&& model.api === "openai-responses"
 		&& !/codex/.test(model.id)
-		&& /^(gpt-4o|gpt-4\.1|gpt-5|o[1345])/.test(model.id);
+		&& (model.id === GPT_6_LUNA_PROFILE.id || /^(gpt-4o|gpt-4\.1|gpt-5|o[1345])/.test(model.id));
 }
 
 function openAiToolType(model: Model<Api>): "web_search" | "web_search_preview" {
-	return /^(gpt-5|o3|o4|o5)/.test(model.id) ? "web_search" : "web_search_preview";
+	return model.id === GPT_6_LUNA_PROFILE.id || /^(gpt-5|o3|o4|o5)/.test(model.id) ? "web_search" : "web_search_preview";
 }
 
 function hasHostedSearch(params: any): boolean {

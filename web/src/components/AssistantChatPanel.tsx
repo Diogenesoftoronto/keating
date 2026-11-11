@@ -118,6 +118,7 @@ import { Spinner } from "./Spinner";
 import { ImageGenerationRetryButton } from "./ImageGenerationRetryButton";
 import { SceneRenderer } from "./SceneRenderer";
 import { AnimatedScene, parseAnimationPayload } from "./AnimatedScene";
+import { TutorInteractivePage } from "./interactive/TutorInteractivePage";
 import { QuestionRenderer, normalizeQuestionForm } from "./QuestionRenderer";
 import type { QuestionFormData } from "./QuestionRenderer";
 import { GoalRenderer } from "./GoalRenderer";
@@ -184,6 +185,8 @@ import { useQuizConversationEvents } from "./chat/useQuizConversationEvents";
 import { useGoogleKeyForUrls, useLoadingStep } from "./chat/thread-status";
 import { quizSubmittedDetail } from "./chat/quiz-conversation";
 import { LearnerResponseReview } from "./LearnerResponseReview";
+import { LearnerQuotedText, QuoteComposerPreview, QuoteMessageButton, QuoteSelectionControl, sendWithDraftQuotes } from "./chat/QuoteParts";
+import { passageQuoteDisplayText } from "../keating/passage-quote";
 import { classifyLlmError, type LlmErrorDetails } from "../core/api-retry";
 import { composerIconButtonClass, srInteractiveClass } from "./chat/composer-styles";
 import { SpeechComposerControl } from "./chat/SpeechComposerControl";
@@ -513,6 +516,7 @@ function StreamingTextPart({
 }) {
   const posthog = usePostHog();
   const messageId = useAuiState(({ message }) => message.id);
+  const messageRole = useAuiState(({ message }) => message.role);
   const messageCreatedAt = useAuiState(({ message }) => message.createdAt);
 	const sessionId = useContext(OpenUISessionScopeContext);
   const developerMode = useContext(DeveloperChatDetails);
@@ -615,6 +619,10 @@ function StreamingTextPart({
         showRaw={!!showRawErrors}
       />
     );
+  }
+
+  if (messageRole === "user" && visibleText.includes("<!-- keating-quotes")) {
+    return <LearnerQuotedText text={visibleText} />;
   }
 
   const learnerResponse = parseLearnerResponse(visibleText);
@@ -1215,6 +1223,13 @@ function renderInteractiveSegment(
       const parsed = parseAnimationPayload(payloadStr);
       if (!parsed) return null;
       return <AnimatedScene key={key} payload={parsed} />;
+    } catch {
+      return null;
+    }
+  }
+  if (seg.type === "interactive") {
+    try {
+      return <TutorInteractivePage key={key} payloadText={JSON.parse(seg.json) as string} />;
     } catch {
       return null;
     }
@@ -2291,14 +2306,14 @@ function messagePartComponents(
     Image: ImagePart,
     File: FilePart,
     Reasoning: (props: Parameters<typeof ReasoningPart>[0]) => (
-      <ReasoningPart
+      <div data-quote-exclude="" style={{ display: "contents" }}><ReasoningPart
         {...props}
         show={showReasoning}
         defaultOpen={autoExpandReasoning}
-      />
+      /></div>
     ),
     tools: {
-      Fallback: (props: Parameters<typeof ToolPart>[0]) =>
+      Fallback: (props: Parameters<typeof ToolPart>[0]) => <div data-quote-exclude="" style={{ display: "contents" }}>{
         isWebSearchToolName(props.toolName) ? (
           <WebSearchPart {...props} />
         ) : (
@@ -2308,7 +2323,7 @@ function messagePartComponents(
             showRawErrors={showRawErrors}
             onImageGenerationModelSelect={onImageGenerationModelSelect}
           />
-        ),
+        )}</div>,
     },
   };
 }
@@ -3609,14 +3624,14 @@ function AssistantThread({
       isRunning,
       convertMessage,
 	  onNew: async (message: AppendMessage) => {
-		await onNew(message);
+		await sendWithDraftQuotes(callbacks.sessionId, message, onNew);
 	  },
       onCancel,
       adapters: {
         attachments: keatingAttachmentAdapter,
       },
     }),
-    [threadMessages, isRunning, convertMessage, onNew, onCancel],
+    [threadMessages, isRunning, convertMessage, onNew, onCancel, callbacks.sessionId],
   );
 
   const runtime = useExternalStoreRuntime<ThreadMessageLike>(storeAdapter);
@@ -3913,6 +3928,8 @@ function ThreadComposer({
         )}
       >
         <ComposerPrefill text={pendingPrompt} />
+        <QuoteSelectionControl sessionId={callbacks.sessionId} />
+        <QuoteComposerPreview sessionId={callbacks.sessionId} />
         <WebGroundingHint
           hasUrl={composerHasUrl}
           hasGoogleKey={hasGoogleKey}
@@ -4159,7 +4176,7 @@ function UserMessage({
         >
           <div className="msg-meta">
             <b>YOU</b>
-            {ownText && <CopyButton text={ownText} label="Copy your message" variant="ghost" />}
+            {ownText && <CopyButton text={passageQuoteDisplayText(ownText)} label="Copy your message" variant="ghost" />}
           </div>
           <div
             className={cx(
@@ -4458,7 +4475,14 @@ function AssistantMessage({
             <div className="msg-meta">
               <b>KEATING</b>
             </div>
-            <div className={cx("keating-bubble", foregroundTextClass)}>
+            <div
+              className={cx("keating-bubble", foregroundTextClass)}
+              {...(!isPrefillStatus && !llmFailure ? {
+                "data-quote-source-kind": "message",
+                "data-quote-source-id": learningSourceIds?.[0] ?? messageId,
+                "data-quote-source-label": "Keating's reply",
+              } : {})}
+            >
               {creditFailure ? failedLastTurn ? <NotOrganicCreditRecovery
                 onRetry={onRetry}
                 onModelSelect={onModelSelect}
@@ -4512,6 +4536,7 @@ function AssistantMessage({
                   label="Copy message"
                 />
               )}
+              {copyText && !llmFailure && <QuoteMessageButton sessionId={learningSessionId} />}
               {llmFailure &&
                 llmFailure.category !== "aborted" &&
                 onModelSelect && (

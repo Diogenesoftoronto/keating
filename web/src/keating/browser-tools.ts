@@ -62,6 +62,7 @@ export const TOOL_REGISTRATION_ORDER = [
   "client-web-search",
   "consult_tutor",
   "animate",
+  "interactive_page",
   "deck",
   "course_list",
   "course_inspect",

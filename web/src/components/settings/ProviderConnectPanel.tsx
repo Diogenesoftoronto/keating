@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getModels } from "@earendil-works/pi-ai/compat";
+import { getCloudProviderModels, refreshCloudModelCatalog } from "../../lib/models-dev-catalog";
 import { Check, Search } from "lucide-react";
 import { css, cx } from "../../../styled-system/css";
 import { getAppStorage } from "../../keating/app-storage";
@@ -94,7 +94,7 @@ export function modelsFor(provider: string): ModelInfo[] {
 		return isNotOrganicFeatureEnabled() ? NOTORGANIC_CHAT_MODELS.map(({ id, name }) => ({ id, name })) : [];
 	}
 	try {
-		return (getModels(provider as never) as unknown as ModelInfo[]).map((m) => ({ id: m.id, name: m.name }));
+		return getCloudProviderModels(provider).map((m) => ({ id: m.id, name: m.name }));
 	} catch {
 		return [];
 	}
@@ -145,7 +145,15 @@ export function ProviderConnectPanel({ providers, modelPrefs, onToggleVisibility
 	const [query, setQuery] = useState("");
 	const [selected, setSelected] = useState(providers[0] ?? "");
 	const connected = useConnectedProviders(providers);
-	const catalog = useMemo(() => new Map(providers.map((p) => [p, modelsFor(p)])), [providers.join(",")]);
+	const [catalogRevision, setCatalogRevision] = useState(0);
+	useEffect(() => {
+		let active = true;
+		const refresh = () => { void refreshCloudModelCatalog().then(() => { if (active) setCatalogRevision(value => value + 1); }); };
+		refresh();
+		window.addEventListener("focus", refresh);
+		return () => { active = false; window.removeEventListener("focus", refresh); };
+	}, []);
+	const catalog = useMemo(() => new Map(providers.map((p) => [p, modelsFor(p)])), [providers.join(","), catalogRevision]);
 
 	const q = query.trim().toLowerCase();
 	const visible = useMemo(() => {

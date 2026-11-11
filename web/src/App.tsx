@@ -84,6 +84,18 @@ const LearningProfile = lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/LearningProfile")),
   "LearningProfile",
 );
+const PublicProfile = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/PublicProfile")),
+  "PublicProfile",
+);
+const SelfPacedIndex = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/SelfPaced")),
+  "SelfPacedIndex",
+);
+const SelfPacedCourse = lazyRouteComponent(
+  () => loadRouteChunk(() => import("./pages/SelfPaced")),
+  "SelfPacedCourse",
+);
 const LatestCommitReview = APP_ONLY ? () => null : lazyRouteComponent(
   () => loadRouteChunk(() => import("./pages/LatestCommitReview")),
   "LatestCommitReview",
@@ -293,6 +305,24 @@ const learningProfileRoute = createRoute({
   component: LearningProfile,
 });
 
+const publicProfileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/u/$did",
+  component: PublicProfile,
+});
+
+const selfPacedIndexRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/learn",
+  component: SelfPacedIndex,
+});
+
+const selfPacedCourseRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/learn/$courseId",
+  component: SelfPacedCourse,
+});
+
 const latestCommitReviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/review/latest-commit",
@@ -363,6 +393,9 @@ const routeTree = rootRoute.addChildren([
   oauthCallbackRoute,
   notOrganicCallbackRoute,
   learningProfileRoute,
+  publicProfileRoute,
+  selfPacedIndexRoute,
+  selfPacedCourseRoute,
   coursesRoute,
   courseJoinRoute,
   courseWorkspaceRoute,

@@ -12,7 +12,7 @@ const styles = {
   title: css({ fontFamily: "var(--mono-display)", fontSize: "0.875rem", fontWeight: 700 }),
   copy: css({ mt: "0.375rem", maxW: "70ch", fontSize: "0.75rem", lineHeight: "1.3rem", color: "var(--ink-soft)", overflowWrap: "anywhere" }),
   button: css({ minH: "2.75rem", border: "1px solid var(--ink)", borderRadius: "0.25rem", bg: "var(--card)", color: "var(--ink)", px: "0.875rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer",
-    _hover: { bg: "var(--ink)", color: "var(--paper)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" }, _disabled: { cursor: "not-allowed", opacity: 0.6 } }),
+    _hover: { bg: "var(--ink)", color: "var(--paper)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" }, _disabled: { cursor: "not-allowed", opacity: 0.6 } }),
 };
 const blockedLabels = {
   "not-due": "Not due yet.", "not-covered": "No recorded exposure to this topic.",

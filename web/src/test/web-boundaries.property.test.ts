@@ -29,7 +29,7 @@ describe("learner response serialization properties", () => {
 });
 
 describe("Not Organic consent scope properties", () => {
-	test("only the exact model and web permission tokens grant hosted model access", () => {
+	test("only exact inference tokens grant an unclassified model, independently of optional web tools", () => {
 		fc.assert(fc.property(
 			fc.record({ inference: fc.boolean(), search: fc.boolean(), fetch: fc.boolean(), noise: fc.array(fc.string({ maxLength: 16 }), { maxLength: 8 }) }),
 			({ inference, search, fetch, noise }) => {
@@ -41,9 +41,9 @@ describe("Not Organic consent scope properties", () => {
 				];
 				const irrelevant = noise.map(token => `noise:${token}`);
 				const granted = [...irrelevant, ...exact, ...exact].reverse().join("  ");
-				expect(notOrganicModelNeedsConsent(model, { scope: granted })).toBe(!(inference && search && fetch));
+				expect(notOrganicModelNeedsConsent(model, { scope: granted })).toBe(!inference);
 				const nearMatches = ["infer:fixture-model-extra", "web:search-extra", "web:fetch-extra"].join(" ");
-				if (!(inference && search && fetch)) {
+				if (!inference) {
 					expect(notOrganicModelNeedsConsent(model, { scope: `${nearMatches} ${irrelevant.join(" ")}` })).toBe(true);
 				}
 			},

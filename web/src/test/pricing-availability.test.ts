@@ -55,7 +55,7 @@ describe("pricing availability", () => {
 	});
 
 	test("accepts current and retained legacy model grants without requiring the default model", () => {
-		for (const model of ["inkling-2-small", "gpt-6.1-sol", "balanced"]) {
+		for (const model of ["text", "inkling-2-small", "gpt-6.1-sol", "balanced"]) {
 			expect(isPublicCheckoutConfigured({
 				...completePublicConfig,
 				VITE_NOTORGANIC_SCOPE: `wallet:read usage:read billing:checkout infer:${model}`,

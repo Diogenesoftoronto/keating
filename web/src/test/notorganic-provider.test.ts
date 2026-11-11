@@ -52,7 +52,7 @@ describe("Not Organic provider definition", () => {
 		expect((await getAvailableNotOrganicChatModels(client("infer:flint", () => Response.json({ data: [{ id: "flint" }] })))).map(model => model.id))
 			.toEqual([...baseline, "flint"]);
 	});
-	it("offers Sol through Responses and requires its own model consent", () => {
+	it("offers Sol through Responses and preserves narrow legacy grants", () => {
 		expect(NOTORGANIC_SOL_MODEL).toMatchObject({
 			id: "gpt-6.1-sol", name: "GPT-6.1 Sol", provider: "notorganic",
 			api: "openai-responses", baseUrl: NOTORGANIC_DEFAULT_MODEL.baseUrl,
@@ -66,14 +66,20 @@ describe("Not Organic provider definition", () => {
 		expect(notOrganicModelNeedsConsent(NOTORGANIC_SOL_MODEL, null)).toBe(false);
 		expect(notOrganicModelNeedsConsent({ id: "gpt-6.1-sol", provider: "openai" }, existing)).toBe(false);
 	});
-	it("reconnects legacy model grants until both hosted web permissions are present", () => {
+	it("does not demand optional web permissions just to select an authorized model", () => {
 		for (const model of [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL]) {
 			for (const webScopes of ["", "web:search", "web:fetch", "web:search-other web:fetch"]) {
-				expect(notOrganicModelNeedsConsent(model, { scope: `infer:${model.id} ${webScopes}` })).toBe(true);
+				expect(notOrganicModelNeedsConsent(model, { scope: `infer:${model.id} ${webScopes}` })).toBe(false);
 			}
 			expect(notOrganicModelNeedsConsent(model, { scope: `infer:${model.id} web:search web:fetch` })).toBe(false);
 		}
 	});
+	it("switches ordinary models with stable text access but keeps preview and unknown profiles separate", () => {
+    const scope = "infer:text";
+    for (const model of [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL]) expect(notOrganicModelNeedsConsent(model, { scope })).toBe(false);
+    expect(notOrganicModelNeedsConsent(NOTORGANIC_FLINT_MODEL, { scope })).toBe(true);
+    expect(notOrganicModelNeedsConsent({ provider: "notorganic", id: "new-private-model" }, { scope })).toBe(true);
+  });
 	it("uses Inkling 2 Small by default and retains a same-origin fallback", () => {
 		expect(NOTORGANIC_DEFAULT_MODEL.id).toBe(NOTORGANIC_MODEL_ALIAS);
 		expect(NOTORGANIC_DEFAULT_MODEL.name).toBe("Inkling 2 Small");

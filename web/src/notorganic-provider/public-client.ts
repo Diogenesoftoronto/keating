@@ -1,4 +1,4 @@
-import { DEFAULT_NOTORGANIC_SCOPE, SPENDING_LIMITS } from "@keating/runtime-config";
+import { DEFAULT_NOTORGANIC_SCOPE, SPENDING_LIMITS, notOrganicInferenceScope } from "@keating/runtime-config";
 import { isNotOrganicDesktop, NOTORGANIC_DESKTOP_ORIGIN, NOTORGANIC_DESKTOP_CALLBACK } from "../keating/notorganic-desktop";
 import { APP_ORIGIN, WEBSITE_ORIGIN, isApplicationPath } from "../lib/hosted-navigation";
 
@@ -323,7 +323,10 @@ export class NotOrganicPublicClient {
 		// A model explicitly chosen by the learner must survive legacy deployment
 		// scope overrides. Retain grants already approved when adding its permission.
 		const scope = [...new Set([
-			...this.config.scope.split(/\s+/), ...(session?.scope ?? "").split(/\s+/), ...required,
+			...this.config.scope.split(/\s+/).map(scope =>
+				(this.config.clientId === APP_ORIGIN || this.config.clientId === WEBSITE_ORIGIN) && scope.startsWith("infer:")
+					? notOrganicInferenceScope(scope.slice(6)) : scope),
+			...(session?.scope ?? "").split(/\s+/), ...required,
 		].filter(Boolean))].join(" ");
 		requireBrowserStorage().removeItem(RECEIPT_KEY);
 		writeJson(TRANSACTION_KEY, { state, verifier, issuer: this.config.issuer, clientId: this.config.clientId, redirectUri: this.config.redirectUri, createdAt: Date.now(), returnTo: safeAuthorizationReturnTo(returnTo), requiredScopes: required } satisfies AuthorizationTransaction);
@@ -358,23 +361,23 @@ export class NotOrganicPublicClient {
 	}
 
 	/** The session with a current access token, renewing it through the device session when needed. */
-	async activeSession(): Promise<NotOrganicProviderSession | null> {
+	async activeSession(options: { refresh?: boolean } = {}): Promise<NotOrganicProviderSession | null> {
 		const session = this.getSession();
 		if (!session) return null;
-		if (accessValid(session, Date.now())) return session;
+		if (accessValid(session, Date.now()) && (!options.refresh || !refreshValid(session, Date.now()))) return session;
 		const key = this.config.issuer;
 		const pending = refreshes.get(key);
 		if (pending) return await pending;
-		const refresh = withRefreshLock(`keating-notorganic-refresh:${key}`, () => this.refreshSession())
+		const refresh = withRefreshLock(`keating-notorganic-refresh:${key}`, () => this.refreshSession(options.refresh ? session.refreshToken : undefined))
 			.finally(() => refreshes.delete(key));
 		refreshes.set(key, refresh);
 		return await refresh;
 	}
 
-	private async refreshSession(): Promise<NotOrganicProviderSession | null> {
+	private async refreshSession(expectedRefreshToken?: string): Promise<NotOrganicProviderSession | null> {
 		// Another tab may have rotated the token while this one waited for the lock.
 		const current = this.getSession();
-		if (!current || accessValid(current, Date.now())) return current;
+		if (!current || (expectedRefreshToken ? current.refreshToken !== expectedRefreshToken : accessValid(current, Date.now()))) return current;
 		const refreshToken = current.refreshToken!;
 		const url = `${this.config.issuer}/v1/public/device/token`;
 		const response = await this.fetcher(url, {
@@ -449,7 +452,7 @@ export class NotOrganicPublicClient {
 		if (!session) throw new NotOrganicPublicClientError("Not Organic could not finish sign-in. Try connecting again.");
 		const granted = new Set(session.scope.split(/\s+/));
 		if (transaction.requiredScopes?.some(scope => !granted.has(scope))) {
-			throw new NotOrganicPublicClientError("Not Organic did not approve access to the selected model and web search. Choose another model or try signing in again.");
+			throw new NotOrganicPublicClientError("Not Organic did not approve access to the selected model. Choose another model or try signing in again.");
 		}
 		const codeHash = await sha256Base64Url(code);
 		// Signing out or starting a newer login while the request was in flight

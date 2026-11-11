@@ -11,12 +11,12 @@ const chip = css({
 	display: "inline-flex", alignItems: "center", gap: "0.375rem", maxWidth: "100%", minHeight: "2rem",
 	border: "1px solid var(--border)", borderRadius: "999px", background: "var(--background)", color: "var(--foreground)",
 	paddingInline: "0.625rem", fontSize: "0.75rem", lineHeight: 1.3, cursor: "pointer", textAlign: "left",
-	_hover: { borderColor: "var(--primary)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" },
+	_hover: { borderColor: "var(--primary)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
 });
 const dismiss = css({
 	display: "inline-grid", placeItems: "center", width: "2rem", height: "2rem", border: 0, borderRadius: "999px",
 	background: "transparent", color: "var(--muted-foreground)", cursor: "pointer",
-	_hover: { background: "var(--muted)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" },
+	_hover: { background: "var(--muted)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
 });
 const quoteClass = css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "22rem" });
 

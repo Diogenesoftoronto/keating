@@ -38,6 +38,8 @@ export const KEATING_TOOL_RISKS: Readonly<Record<string, ToolRiskClass>> = {
   revise_study_plan: "state-change",
   generate_image: "external-side-effect",
   animate: "external-side-effect",
+  // Model-authored page in an opaque-origin frame; may load pinned libraries from a CDN.
+  interactive_page: "external-side-effect",
   evolve: "state-change",
   auto_improve: "state-change",
   improve: "state-change",

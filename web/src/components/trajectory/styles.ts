@@ -2,7 +2,7 @@ import { css } from "../../../styled-system/css";
 
 export const focusableClass = css({
 	_focusVisible: {
-		outline: "3px solid var(--accent)",
+		outline: "3px solid var(--accent-dim)",
 		outlineOffset: "2px",
 	},
 });
@@ -24,7 +24,7 @@ export const compactButtonClass = css({
 	transitionDuration: "150ms",
 	_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
 	_disabled: { cursor: "not-allowed", opacity: 0.45 },
-	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" },
+	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
 });
 
 export const primaryButtonClass = css({
@@ -44,7 +44,7 @@ export const primaryButtonClass = css({
 	transitionDuration: "150ms",
 	_hover: { opacity: 0.86 },
 	_disabled: { cursor: "not-allowed", opacity: 0.45 },
-	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" },
+	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
 });
 
 export const iconButtonClass = css({
@@ -58,7 +58,7 @@ export const iconButtonClass = css({
 	color: "var(--muted-foreground)",
 	_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
 	_disabled: { cursor: "not-allowed", opacity: 0.45 },
-	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" },
+	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
 });
 
 export const inputClass = css({
@@ -71,7 +71,7 @@ export const inputClass = css({
 	fontSize: "0.8125rem",
 	color: "var(--foreground)",
 	_placeholder: { color: "var(--muted-foreground)" },
-	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 });
 
 export const textareaClass = css({
@@ -86,7 +86,7 @@ export const textareaClass = css({
 	lineHeight: 1.5,
 	color: "var(--foreground)",
 	_placeholder: { color: "var(--muted-foreground)" },
-	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 });
 
 export const sectionHeadingClass = css({

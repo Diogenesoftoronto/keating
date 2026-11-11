@@ -346,7 +346,7 @@ const reviewMarkClass = css({
 	transitionProperty: "background-color",
 	transitionDuration: "120ms",
 	_motionReduce: { transitionDuration: "0ms" },
-	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 });
 const reviewMarkSolidClass = css({ borderBottomStyle: "solid" });
 const reviewMarkDashedClass = css({ borderBottomStyle: "dashed" });

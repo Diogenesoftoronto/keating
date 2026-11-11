@@ -96,7 +96,7 @@ export function TurnRail({ messages, annotations, activeMessageId, onSelect, sel
 										background: "var(--card)",
 										borderLeftColor: active ? "var(--accent-dim)" : "var(--line)",
 									},
-									_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-3px" },
+									_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "-3px" },
 								})}
 								onClick={() => onSelect(message.id)}
 							>
@@ -181,7 +181,7 @@ export function TurnPicker({ messages, activeMessageId, onSelect, className }: T
 					paddingInline: "0.5rem",
 					fontSize: "0.75rem",
 					color: "var(--foreground)",
-					_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+					_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 				})}
 				onValueChange={(value) => onSelect(value)}
 			>

@@ -216,7 +216,7 @@ function annotatedText(
 					transitionProperty: "background-color",
 					transitionDuration: "120ms",
 					_motionReduce: { transitionDuration: "0ms" },
-					_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+					_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 				})}
 				style={{ borderBottomColor: tone }}
 				onMouseEnter={(event) => handlers.onReveal?.(ids, event.currentTarget.getBoundingClientRect())}
@@ -333,7 +333,7 @@ function MarginGutter({
 							border: "1.5px solid var(--border)",
 							background: "var(--background)",
 							_hover: { borderColor: "var(--ink)" },
-							_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+							_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 						})}
 						style={{ top: `${dot.top + 3}px` }}
 						onMouseEnter={(event) => onReveal?.([dot.id], event.currentTarget.getBoundingClientRect())}
@@ -446,7 +446,7 @@ function TranscriptTurn({
 				</div>
 				<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "flex-end", gap: "0.375rem" })}>
 					{onFocus ? (
-						<button type="button" title="Open this turn in focused review" className={css({ display: "inline-flex", alignItems: "center", gap: "0.3rem", borderRadius: "0.375rem", padding: "0.375rem 0.5rem", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)", _hover: { background: "var(--muted)", color: "var(--foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })} onClick={() => onFocus(message.id)}>
+						<button type="button" title="Open this turn in focused review" className={css({ display: "inline-flex", alignItems: "center", gap: "0.3rem", borderRadius: "0.375rem", padding: "0.375rem 0.5rem", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)", _hover: { background: "var(--muted)", color: "var(--foreground)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } })} onClick={() => onFocus(message.id)}>
 							<KeatingIcon icon={reviewIcon.inspect} size={12} /> Focus turn
 						</button>
 					) : null}
@@ -456,7 +456,7 @@ function TranscriptTurn({
 								key={view}
 								type="button"
 								aria-pressed={contentView === view}
-								className={css({ borderRadius: "0.25rem", background: contentView === view ? "var(--ink)" : "transparent", padding: "0.25rem 0.45rem", fontSize: "0.625rem", fontWeight: 700, color: contentView === view ? "var(--paper, var(--background))" : "var(--muted-foreground)", textTransform: "capitalize", _hover: { color: contentView === view ? "var(--paper, var(--background))" : "var(--foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })}
+								className={css({ borderRadius: "0.25rem", background: contentView === view ? "var(--ink)" : "transparent", padding: "0.25rem 0.45rem", fontSize: "0.625rem", fontWeight: 700, color: contentView === view ? "var(--paper, var(--background))" : "var(--muted-foreground)", textTransform: "capitalize", _hover: { color: contentView === view ? "var(--paper, var(--background))" : "var(--foreground)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } })}
 								onClick={() => setContentView(view)}
 							>
 								{view}
@@ -467,7 +467,7 @@ function TranscriptTurn({
 						<button
 							type="button"
 							title="Open a note about this whole turn"
-							className={css({ borderRadius: "0.375rem", padding: "0.375rem 0.5rem", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })}
+							className={css({ borderRadius: "0.375rem", padding: "0.375rem 0.5rem", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } })}
 							onClick={() => onStartAnnotation({ kind: "message", messageId: message.id, role: message.role, messageTimestamp: message.timestamp, contentFingerprint: message.contentFingerprint })}
 						>
 							Note on this turn
@@ -512,7 +512,7 @@ function TranscriptTurn({
 					<div className={css({ display: "grid", gap: "0.5rem", marginTop: "1rem" })}>
 						{tools.map((tool, index) => (
 							<details key={`${tool.kind}:${tool.callId ?? tool.name}:${index}`} open={tool.status === "failed" || tool.kind === "result"} className={css({ border: "1px solid var(--border)", borderRadius: "0.5rem", background: "var(--card, var(--background))" })}>
-								<summary className={css({ display: "flex", cursor: "pointer", listStyle: "none", alignItems: "center", gap: "0.5rem", padding: "0.625rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, color: tool.isError ? "var(--destructive)" : "var(--foreground)", _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-3px" }, "&::-webkit-details-marker": { display: "none" } })}>
+								<summary className={css({ display: "flex", cursor: "pointer", listStyle: "none", alignItems: "center", gap: "0.5rem", padding: "0.625rem 0.75rem", fontSize: "0.75rem", fontWeight: 700, color: tool.isError ? "var(--destructive)" : "var(--foreground)", _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "-3px" }, "&::-webkit-details-marker": { display: "none" } })}>
 									<KeatingIcon icon={reviewIcon.tool} size={14} />
 									<span>{tool.kind === "call" ? "Tool call" : tool.isError ? "Tool error" : "Tool result"}: {tool.name}</span>
 									<span className={css({ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", background: tool.status === "succeeded" ? "color-mix(in srgb, var(--accent-green) 22%, transparent)" : tool.status === "failed" ? "color-mix(in srgb, var(--destructive) 10%, transparent)" : "var(--muted)", padding: "0.15rem 0.4rem", fontSize: "0.625rem", fontWeight: 700, color: tool.status === "failed" ? "var(--destructive)" : "var(--foreground)" })}>
@@ -576,7 +576,7 @@ function AnnotationStrip({
 							padding: "0.375rem",
 							textAlign: "left",
 							_hover: { background: "var(--muted)" },
-							_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+							_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 						})}
 						onClick={() => onSelect?.(annotation.id)}
 					>
@@ -769,7 +769,7 @@ function ImageRegionPreview({
 			</div>
 			{readOnly ? null : <div className={cx(metaTextClass, css({ marginTop: "0.375rem" }))}>Drag over the image to anchor feedback to an intrinsic, normalized region.</div>}
 			{readOnly ? null : <details className={css({ marginTop: "0.5rem", borderTop: "1px solid var(--border)", paddingTop: "0.5rem" })}>
-				<summary className={css({ cursor: "pointer", fontSize: "0.6875rem", fontWeight: 650, color: "var(--foreground)", _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" } })}>Enter region coordinates</summary>
+				<summary className={css({ cursor: "pointer", fontSize: "0.6875rem", fontWeight: 650, color: "var(--foreground)", _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } })}>Enter region coordinates</summary>
 				<div className={css({ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "0.375rem", paddingTop: "0.5rem" })}>
 					{(["x", "y", "width", "height"] as const).map((field) => (
 						<label key={field} className={css({ fontSize: "0.625rem", color: "var(--muted-foreground)" })}>
@@ -1071,7 +1071,7 @@ export function TrajectoryCanvas({
 									fontWeight: selected ? 700 : 550,
 									color: selected ? "var(--foreground)" : "var(--muted-foreground)",
 									_hover: { color: "var(--foreground)" },
-									_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-3px" },
+									_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "-3px" },
 								})}
 								onClick={() => onModeChange(item)}
 								onKeyDown={(event) => viewTabKeyDown(event, item, onModeChange)}
@@ -1086,7 +1086,7 @@ export function TrajectoryCanvas({
 					{mode === "transcript" && onTranscriptChange ? (
 						<div role="group" aria-label="Transcript layout" className={css({ display: "inline-flex", border: "1px solid var(--border)", borderRadius: "0.375rem", padding: "0.125rem" })}>
 							{(["continuous", "single"] as const).map((layout) => (
-								<button key={layout} type="button" aria-pressed={transcript === layout} className={css({ borderRadius: "0.25rem", background: transcript === layout ? "var(--ink)" : "transparent", padding: "0.25rem 0.45rem", fontSize: "0.625rem", fontWeight: 700, color: transcript === layout ? "var(--paper, var(--background))" : "var(--muted-foreground)", _hover: { color: transcript === layout ? "var(--paper, var(--background))" : "var(--foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })} onClick={() => onTranscriptChange(layout)}>
+								<button key={layout} type="button" aria-pressed={transcript === layout} className={css({ borderRadius: "0.25rem", background: transcript === layout ? "var(--ink)" : "transparent", padding: "0.25rem 0.45rem", fontSize: "0.625rem", fontWeight: 700, color: transcript === layout ? "var(--paper, var(--background))" : "var(--muted-foreground)", _hover: { color: transcript === layout ? "var(--paper, var(--background))" : "var(--foreground)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } })} onClick={() => onTranscriptChange(layout)}>
 									{layout === "continuous" ? "Session" : "Focused turn"}
 								</button>
 							))}
@@ -1154,7 +1154,7 @@ export function TrajectoryCanvas({
 										key={artifact.id}
 										type="button"
 										aria-pressed={selected}
-										className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", border: "1px solid", borderColor: selected ? "var(--ink)" : "var(--border)", background: selected ? "var(--ink)" : "var(--background)", padding: "0.25rem 0.5rem", fontSize: "0.6875rem", fontWeight: 650, color: selected ? "var(--paper)" : "var(--foreground)", _hover: { borderColor: "var(--ink)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" } })}
+										className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", border: "1px solid", borderColor: selected ? "var(--ink)" : "var(--border)", background: selected ? "var(--ink)" : "var(--background)", padding: "0.25rem 0.5rem", fontSize: "0.6875rem", fontWeight: 650, color: selected ? "var(--paper)" : "var(--foreground)", _hover: { borderColor: "var(--ink)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } })}
 										onClick={() => onSelectArtifact(artifact.id)}
 									>
 										<KeatingIcon icon={reviewIcon.page} size={12} />
@@ -1174,11 +1174,11 @@ export function TrajectoryCanvas({
 									</div>
 									<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.375rem" })}>
 										{activeArtifact.plainText && artifactIsMarkdown && !renderArtifact && !activeArtifact.renderContent ? <div role="group" aria-label="Artifact view" className={css({ display: "inline-flex", border: "1px solid var(--border)", borderRadius: "0.375rem", padding: "0.125rem" })}>
-											{(["rendered", "raw"] as const).map((view) => <button key={view} type="button" aria-pressed={artifactContentView === view} className={css({ borderRadius: "0.25rem", background: artifactContentView === view ? "var(--ink)" : "transparent", padding: "0.25rem 0.45rem", fontSize: "0.625rem", fontWeight: 700, textTransform: "capitalize", color: artifactContentView === view ? "var(--paper, var(--background))" : "var(--muted-foreground)", _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })} onClick={() => setArtifactContentView(view)}>{view}</button>)}
+											{(["rendered", "raw"] as const).map((view) => <button key={view} type="button" aria-pressed={artifactContentView === view} className={css({ borderRadius: "0.25rem", background: artifactContentView === view ? "var(--ink)" : "transparent", padding: "0.25rem 0.45rem", fontSize: "0.625rem", fontWeight: 700, textTransform: "capitalize", color: artifactContentView === view ? "var(--paper, var(--background))" : "var(--muted-foreground)", _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } })} onClick={() => setArtifactContentView(view)}>{view}</button>)}
 										</div> : null}
 										{readOnly || !onStartAnnotation ? null : <button
 											type="button"
-											className={css({ borderRadius: "0.375rem", padding: "0.375rem 0.5rem", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })}
+											className={css({ borderRadius: "0.375rem", padding: "0.375rem 0.5rem", fontSize: "0.6875rem", fontWeight: 650, color: "var(--muted-foreground)", _hover: { background: "var(--accent)", color: "var(--accent-foreground)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } })}
 											onClick={() => onStartAnnotation({ kind: "artifact", artifact: activeArtifact.reference })}
 										>
 											Annotate artifact

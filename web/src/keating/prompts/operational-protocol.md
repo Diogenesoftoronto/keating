@@ -18,6 +18,8 @@ Use the OpenUI component grammar for learner-facing explanations, checks, forms,
 
 When the next useful step depends on the learner's understanding, prediction, preference, or choice, render one focused OpenUI `Question`, then stop and wait for its submitted answer. Do not bury the same question in prose, answer it yourself, or continue the lesson past the interaction. The OpenUI grammar appended to this prompt includes a canonical, parser-valid example to imitate.
 
+A learner turn may open with quoted passages (`From <source>:` then a `> ` line; anchors sit in a trailing `keating-quotes` comment). Answer about that exact passage specifically; with no question after it, explain the passage and ask what puzzles them. Never echo the anchor comment.
+
 Tools are for durable state changes, external generation, evaluation, and workspace operations. Do not call a tool merely to make a card appear. Create quizzes with OpenUI `Quiz` and flashcards with OpenUI `Flashcards`, using the resumable lifecycle for later practice. Do not call the legacy `quiz` or `deck` tools to create these activities. Their submissions and review progress flow through OpenUI actions.
 
 ### Teaching Loop

@@ -20,6 +20,16 @@ export const SignUpOrSignIn: Story = {
 		await expect(args.onConnect).toHaveBeenCalledTimes(1);
 	},
 };
+export const ApproveModelAccess: Story = {
+	args: { connected: true, consent: true },
+	play: async ({ canvasElement, args }) => {
+		const canvas = within(canvasElement);
+		await expect(canvas.getByRole("dialog", { name: "Approve model access" })).toBeVisible();
+		await expect(canvas.queryByText("Sign up / Sign in")).not.toBeInTheDocument();
+		await userEvent.click(canvas.getByRole("button", { name: "Review access" }));
+		await expect(args.onConnect).toHaveBeenCalledTimes(1);
+	},
+};
 export const Connecting: Story = { args: { loading: true }, play: async ({ canvasElement }) => {
 	const canvas = within(canvasElement);
 	await expect(canvas.getByRole("button", { name: "Connecting…" })).toBeDisabled();

@@ -1,5 +1,5 @@
 import { APP_ORIGIN } from "../lib/hosted-navigation";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePostHog } from "@posthog/react";
 import {
   BookOpen,
@@ -36,6 +36,13 @@ import { useMediaQuery } from "../hooks/use-media-query";
 import { isCanvasFeatureEnabled } from "../lib/feature-flags";
 import { ArtifactBrowserOverlay } from "../components/ArtifactBrowserOverlay";
 import { ArtifactSidePanel } from "../components/ArtifactSidePanel";
+import type { ArtifactSurfaceView } from "../components/artifact-browser-shared";
+import {
+  loadSessionWorkspacePrefs,
+  onRevealQuoteSource,
+  saveSessionWorkspacePrefs,
+  type RevealQuoteSourceDetail,
+} from "../keating/session-workspace";
 import { AssistantChatPanel } from "../components/AssistantChatPanel";
 import { ResponseComparisonPanel } from "../components/ResponseComparisonPanel";
 import { ForkBanner } from "../components/ForkBanner";
@@ -726,9 +733,26 @@ async function resolveInlineArtifact(
   return null;
 }
 
+interface ChatWorkspaceState {
+  sessionId: string;
+  open: boolean;
+  view: ArtifactSurfaceView;
+  selectedMaterial: string | null;
+  artifactTarget: string | undefined;
+  /** Open because it was remembered, not because the learner just opened it. */
+  restored: boolean;
+}
+
+function restoreChatWorkspace(sessionId: string): ChatWorkspaceState {
+  const prefs = loadSessionWorkspacePrefs(sessionId);
+  return { sessionId, open: prefs.open, view: "workspace", selectedMaterial: prefs.selectedKey, artifactTarget: undefined, restored: prefs.open };
+}
+
 /**
- * Artifact browser and inline artifact previews for the active session. Both
- * reset when the session changes, and stay closed when the canvas is off.
+ * Session workspace (artifact panel) and inline artifact previews for the
+ * active session. Whether the workspace is open and which material is selected
+ * are remembered per session; a fork or sibling never inherits its parent's
+ * selection. Everything stays closed when the canvas is off.
  */
 function useChatArtifacts({
   canvasEnabled,
@@ -740,37 +764,45 @@ function useChatArtifacts({
   uiSettings: Pick<KeatingUiSettings, "autoOpenArtifacts" | "limitInlineArtifactPreviews">;
 }) {
   const posthog = usePostHog();
-  const [artifactBrowserOpen, setArtifactBrowserOpen] = useState(false);
-  const [artifactTarget, setArtifactTarget] = useState<string | undefined>(
-    undefined,
-  );
+  const [workspace, setWorkspace] = useState(() => restoreChatWorkspace(activeSessionId));
   const [inlineArtifacts, setInlineArtifacts] = useState<InlineArtifact[]>([]);
+  const [reveal, setReveal] = useState<RevealQuoteSourceDetail | null>(null);
+  // Restore the incoming session's own workspace during render, so the
+  // previous session's selection never flashes or gets saved under it.
+  const current = workspace.sessionId === activeSessionId ? workspace : restoreChatWorkspace(activeSessionId);
+  if (current !== workspace) setWorkspace(current);
+  const artifactBrowserOpen = canvasEnabled && current.open;
+  const artifactTarget = current.artifactTarget;
+
+  const update = useCallback((patch: Partial<Omit<ChatWorkspaceState, "sessionId" | "restored">>) => {
+    setWorkspace((prev) => ({ ...(prev.sessionId === activeSessionId ? prev : restoreChatWorkspace(activeSessionId)), ...patch, ...(patch.open ? { restored: false } : {}) }));
+  }, [activeSessionId]);
+  const setArtifactBrowserOpen = useCallback((open: boolean) => update({ open }), [update]);
+  const setArtifactTarget = useCallback((artifactTarget: string | undefined) => update({ artifactTarget, ...(artifactTarget ? { view: "library" as const } : {}) }), [update]);
 
   useEffect(() => {
-    // Artifact previews are transient branch state. Never carry a parent's
-    // canvas selection into a fork or a sibling session.
-    setArtifactBrowserOpen(false);
-    setArtifactTarget(undefined);
+    if (!current.sessionId) return;
+    saveSessionWorkspacePrefs(current.sessionId, { open: current.open, selectedKey: current.selectedMaterial });
+  }, [current.sessionId, current.open, current.selectedMaterial]);
+
+  useEffect(() => {
+    // Inline previews are transient branch state.
     setInlineArtifacts([]);
+    setReveal(null);
   }, [activeSessionId]);
 
   const toggleArtifactBrowser = (source: "toolbar" | "mobile_menu") => {
     if (!canvasEnabled) return;
-    setArtifactBrowserOpen((open) => {
-      const next = !open;
-      if (!next) setArtifactTarget(undefined);
-      posthog.capture(
-        next ? "artifact_browser_opened" : "artifact_browser_closed",
-        { source, canvas_enabled: true },
-      );
-      return next;
-    });
+    const next = !current.open;
+    update(next ? { open: true, view: "workspace", artifactTarget: undefined } : { open: false, artifactTarget: undefined });
+    posthog.capture(
+      next ? "artifact_browser_opened" : "artifact_browser_closed",
+      { source, canvas_enabled: true },
+    );
   };
 
   useEffect(() => {
     if (!canvasEnabled) {
-      setArtifactBrowserOpen(false);
-      setArtifactTarget(undefined);
       setInlineArtifacts([]);
       return;
     }
@@ -779,11 +811,12 @@ function useChatArtifacts({
     };
     const openArtifactTarget = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (detail?.id) {
-        setArtifactTarget(detail.id);
-        setArtifactBrowserOpen(true);
-      }
+      if (detail?.id) update({ open: true, view: "library", artifactTarget: detail.id });
     };
+    const stopReveal = onRevealQuoteSource((detail) => {
+      update({ open: true, view: "workspace", artifactTarget: undefined });
+      setReveal(detail);
+    });
     const captureInlineArtifact = async (e: Event) => {
       const detail = (e as CustomEvent).detail ?? {};
       const next = await resolveInlineArtifact(detail);
@@ -800,6 +833,7 @@ function useChatArtifacts({
     window.addEventListener("keating:artifact-created", captureInlineArtifact);
     window.addEventListener("keating:open-artifact", openArtifactTarget);
     return () => {
+      stopReveal();
       window.removeEventListener("keating:artifact-created", openArtifacts);
       window.removeEventListener(
         "keating:artifact-created",
@@ -807,9 +841,24 @@ function useChatArtifacts({
       );
       window.removeEventListener("keating:open-artifact", openArtifactTarget);
     };
-  }, [canvasEnabled, uiSettings.autoOpenArtifacts, uiSettings.limitInlineArtifactPreviews]);
+  }, [canvasEnabled, setArtifactBrowserOpen, update, uiSettings.autoOpenArtifacts, uiSettings.limitInlineArtifactPreviews]);
+
+  const closeWorkspace = useCallback(() => update({ open: false, artifactTarget: undefined }), [update]);
+  const surfaceProps = {
+    artifactId: artifactTarget,
+    onClose: closeWorkspace,
+    sessionId: activeSessionId || undefined,
+    view: current.view,
+    onViewChange: (view: ArtifactSurfaceView) => update({ view, artifactTarget: undefined }),
+    selectedMaterial: current.selectedMaterial,
+    onSelectMaterial: (selectedMaterial: string) => update({ selectedMaterial }),
+    reveal,
+    onRevealHandled: () => setReveal(null),
+    focusOnOpen: !current.restored,
+  };
 
   return {
+    surfaceProps,
     artifactBrowserOpen,
     setArtifactBrowserOpen,
     artifactTarget,
@@ -920,9 +969,9 @@ function ChatContent() {
   }, []);
 
   const {
+    surfaceProps,
     artifactBrowserOpen,
     setArtifactBrowserOpen,
-    artifactTarget,
     setArtifactTarget,
     inlineArtifacts,
     setInlineArtifacts,
@@ -1044,12 +1093,8 @@ function ChatContent() {
             }))}
           >
             <ArtifactSidePanel
+              {...surfaceProps}
               open={artifactBrowserOpen}
-              artifactId={artifactTarget}
-              onClose={() => {
-                setArtifactBrowserOpen(false);
-                setArtifactTarget(undefined);
-              }}
             />
           </div>
         )}
@@ -1088,12 +1133,8 @@ function ChatContent() {
       )}
 
       <ArtifactBrowserOverlay
+        {...surfaceProps}
         open={canvasEnabled && artifactBrowserOpen && !isWideViewport}
-        artifactId={artifactTarget}
-        onClose={() => {
-          setArtifactBrowserOpen(false);
-          setArtifactTarget(undefined);
-        }}
       />
       <SandboxView open={nodePodOpen} onClose={() => setNodePodOpen(false)} />
       {dialogs}

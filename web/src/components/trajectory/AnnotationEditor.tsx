@@ -74,7 +74,7 @@ const addChipClass = css({
 	fontWeight: 600,
 	color: "var(--muted-foreground)",
 	_hover: { borderStyle: "solid", borderColor: "var(--ink)", color: "var(--foreground)" },
-	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 });
 
 export interface AnnotationEditorProps {
@@ -183,7 +183,7 @@ export function AnnotationEditor({
 									fontSize: "0.6875rem",
 									fontWeight: 650,
 									color: selected ? "var(--paper)" : "var(--foreground)",
-									_focusWithin: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+									_focusWithin: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 								})}
 								style={selected ? { borderColor: annotationKindColor(option.value) } : undefined}
 							>
@@ -248,7 +248,7 @@ export function AnnotationEditor({
 									className={css({ position: "absolute", opacity: 0, pointerEvents: "none" })}
 									onChange={() => onChange({ ...draft, severity })}
 								/>
-								<span className={css({ display: "inline-flex", width: "2rem", height: "2rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "1px solid", borderColor: draft.severity === severity ? "var(--ink)" : "var(--border)", background: draft.severity === severity ? "var(--ink)" : "var(--background)", fontSize: "0.75rem", fontWeight: 700, color: draft.severity === severity ? "var(--paper)" : "var(--foreground)", _focusWithin: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })}>
+								<span className={css({ display: "inline-flex", width: "2rem", height: "2rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "1px solid", borderColor: draft.severity === severity ? "var(--ink)" : "var(--border)", background: draft.severity === severity ? "var(--ink)" : "var(--background)", fontSize: "0.75rem", fontWeight: 700, color: draft.severity === severity ? "var(--paper)" : "var(--foreground)", _focusWithin: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } })}>
 									{severity}
 								</span>
 							</label>
@@ -256,7 +256,7 @@ export function AnnotationEditor({
 						{draft.severity ? (
 							<button
 								type="button"
-								className={css({ marginLeft: "0.25rem", fontSize: "0.6875rem", color: "var(--muted-foreground)", textDecoration: "underline", _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })}
+								className={css({ marginLeft: "0.25rem", fontSize: "0.6875rem", color: "var(--muted-foreground)", textDecoration: "underline", _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } })}
 								onClick={() => onChange({ ...draft, severity: undefined })}
 							>
 								Clear

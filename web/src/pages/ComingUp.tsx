@@ -37,6 +37,9 @@ import { webOnlineEvidence } from "../keating/judgement/online-evidence";
 import { projectOnlineLearningQueue } from "../keating/judgement/online-projection";
 import { useOnlineLearning } from "../hooks/useOnlineLearning";
 import { OnlineLearningStatus } from "../components/OnlineLearningStatus";
+import { OpenAssignmentsSection } from "../components/homework/OpenAssignmentsSection";
+import { useOpenAssignments } from "../components/homework/useOpenAssignments";
+import { assignmentChatTarget, type AssignmentEntry } from "../keating/homework/open-assignments";
 
 const PRIORITIES: Array<{ id: StudyPriority; label: string; note: string }> = [
 	{ id: "focus", label: "Focus", note: "What matters most now" },
@@ -61,7 +64,7 @@ const styles = {
 		fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", transition: "transform 120ms, box-shadow 120ms, background-color 120ms",
 		_hover: { transform: "translate(-1px, -1px)", boxShadow: "3px 3px 0 color-mix(in srgb, var(--ink) 22%, transparent)" },
 		_active: { transform: "translate(0, 0)", boxShadow: "none" },
-		_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" },
+		_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
 		_disabled: { cursor: "not-allowed", opacity: 0.5, transform: "none", boxShadow: "none" },
 	}),
 	primaryButton: css({ bg: "var(--ink)", color: "var(--paper)", _hover: { bg: "var(--accent-dim)", color: "white" } }),
@@ -84,7 +87,7 @@ const styles = {
 		fontSize: "0.625rem", fontWeight: 700, lineHeight: "1rem", overflowWrap: "anywhere",
 		"&[data-active=true]": { bg: "var(--ink)", color: "var(--paper)" },
 		_last: { borderRight: 0 },
-		_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-3px" },
+		_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "-3px" },
 	}),
 	board: css({ display: "grid", gap: 0, md: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" } }),
 	lane: css({ minW: 0, bg: "color-mix(in srgb, var(--paper) 72%, var(--card))", md: { borderRight: "1px solid var(--ink)", _last: { borderRight: 0 } } }),
@@ -109,8 +112,8 @@ const styles = {
 	weakList: css({ mt: "0.625rem", borderLeft: "2px solid var(--amber)", pl: "0.5rem", fontSize: "0.625rem", lineHeight: "1rem", color: "var(--ink-soft)" }),
 	cardFooter: css({ mt: "0.75rem", display: "flex", flexDir: "column", gap: "0.5rem", borderTop: "1px solid color-mix(in srgb, var(--ink) 20%, transparent)", pt: "0.625rem" }),
 	selectLabel: css({ display: "grid", gap: "0.25rem", fontSize: "0.625rem", color: "var(--ink-soft)" }),
-	select: css({ minH: "2.75rem", w: "100%", border: "1px solid var(--ink)", borderRadius: "0.25rem", bg: "var(--paper)", px: "0.625rem", color: "var(--ink)", fontSize: "0.6875rem", _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } }),
-	cardAction: css({ minH: "2.5rem", width: "100%", border: "1px solid var(--ink)", borderRadius: "0.25rem", bg: "var(--ink)", color: "var(--paper)", fontSize: "0.6875rem", fontWeight: 700, _hover: { bg: "var(--accent-dim)", color: "white" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" } }),
+	select: css({ minH: "2.75rem", w: "100%", border: "1px solid var(--ink)", borderRadius: "0.25rem", bg: "var(--paper)", px: "0.625rem", color: "var(--ink)", fontSize: "0.6875rem", _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } }),
+	cardAction: css({ minH: "2.5rem", width: "100%", border: "1px solid var(--ink)", borderRadius: "0.25rem", bg: "var(--ink)", color: "var(--paper)", fontSize: "0.6875rem", fontWeight: 700, _hover: { bg: "var(--accent-dim)", color: "white" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } }),
 	status: css({ borderTop: "1px solid var(--ink)", bg: "var(--paper)", px: "1rem", py: "0.75rem", fontSize: "0.6875rem", lineHeight: "1.1rem", color: "var(--ink-soft)" }),
 	statusError: css({ color: "var(--red)" }),
 	reviewer: css({ mt: "1.25rem", border: "2px solid var(--ink)", bg: "var(--card)", p: "1rem", boxShadow: "4px 4px 0 color-mix(in srgb, var(--ink) 18%, transparent)" }),
@@ -330,6 +333,11 @@ export function ComingUp() {
 	const estimateRuns = useRef(new Map<string, AbortController>());
 	const estimatesRef = useRef(estimates);
 	estimatesRef.current = estimates;
+	const assignments = useOpenAssignments();
+	// Chat has no message anchor yet, so this opens the session that holds the task.
+	const openAssignment = useCallback((entry: AssignmentEntry) => {
+		void navigate(assignmentChatTarget(entry));
+	}, [navigate]);
 
 	useEffect(() => {
 		let active = true;
@@ -569,6 +577,14 @@ export function ComingUp() {
 					</div>
 					<button type="button" className={cx(styles.button, styles.accentButton)} disabled={queue.dueCardCount === 0} onClick={() => startReview()}><Play size={15} />Start due review</button>
 				</section>
+
+				<OpenAssignmentsSection
+					open={assignments.data?.open ?? []}
+					handedIn={assignments.data?.handedIn ?? []}
+					now={now}
+					onOpen={openAssignment}
+					status={assignments.loading ? "Looking for assignments in your sessions…" : assignments.error || (assignments.data?.unrecoverable ? `${assignments.data.unrecoverable} older task${assignments.data.unrecoverable === 1 ? "" : "s"} could not be recovered from this device.` : "")}
+				/>
 
 				<LearningOutlook history={outlookHistory}
 					onPractice={(question) => navigate({ to: "/chat", search: { ask: `Can we practice this question again? I keep missing it: “${question}”` } })} />

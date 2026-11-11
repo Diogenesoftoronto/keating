@@ -26,6 +26,8 @@ type NotOrganicPromptRequest = {
 	packId?: NotOrganicPackId;
 	allowSignIn?: boolean;
 	reconnect?: boolean;
+	/** A signed-in account needs additional permissions, not another signup. */
+	consent?: boolean;
 	requiredScopes?: readonly string[];
 	checkoutReturned?: boolean;
 	resolve: (success: boolean) => void;
@@ -54,11 +56,11 @@ export async function hasNotOrganicProductSession(): Promise<boolean> {
 }
 
 export async function promptNotOrganicAccess(
-	options: { packId?: NotOrganicPackId; force?: boolean; allowSignIn?: boolean; reconnect?: boolean; requiredScopes?: readonly string[]; checkoutReturned?: boolean } = {},
+	options: { packId?: NotOrganicPackId; force?: boolean; allowSignIn?: boolean; reconnect?: boolean; consent?: boolean; requiredScopes?: readonly string[]; checkoutReturned?: boolean } = {},
 ): Promise<boolean> {
 	if (typeof window === "undefined") return false;
 	if (!isNotOrganicFeatureEnabled() && !(options.allowSignIn && !options.packId)) return false;
-	if (!options.force && !options.reconnect && !options.packId && await hasNotOrganicProductSession()) return true;
+	if (!options.force && !options.reconnect && !options.consent && !options.packId && await hasNotOrganicProductSession()) return true;
 
 	activePrompt?.resolve(false);
 	return new Promise((resolve) => {
@@ -67,6 +69,7 @@ export async function promptNotOrganicAccess(
 			packId: options.packId,
 			allowSignIn: options.allowSignIn,
 			reconnect: options.reconnect,
+			consent: options.consent,
 			requiredScopes: options.requiredScopes,
 			checkoutReturned: options.checkoutReturned,
 			resolve,
@@ -85,9 +88,11 @@ export function closeNotOrganicPrompt(success: boolean) {
 
 /** A failed account credential requires fresh authorization, even if a session remains stored. */
 export async function connectNotOrganicPrompt(request: NotOrganicPromptRequest): Promise<string | undefined> {
+	if (activePrompt?.id !== request.id) return;
 	const client = notOrganicPublicClient();
-	if (request.reconnect || (client && !client.getSession()) || (!client && request.allowSignIn)) {
-		await beginNotOrganicAuthorization(`${window.location.pathname}${window.location.search}`, request.requiredScopes);
+	if (request.consent || request.reconnect || (client && !client.getSession()) || (!client && request.allowSignIn)) {
+		await beginNotOrganicAuthorization(`${window.location.pathname}${window.location.search}`, request.requiredScopes,
+			() => activePrompt?.id === request.id);
 		return;
 	}
 	if (client && !request.packId && !request.checkoutReturned) {
@@ -113,6 +118,8 @@ export interface NotOrganicAccessPanelProps {
 	summary?: string;
 	connected?: boolean;
 	reconnect?: boolean;
+	/** A signed-in account needs additional permissions, not another signup. */
+	consent?: boolean;
 	pack?: NotOrganicPack;
 	onConnect(): void;
 	onDismiss(): void;
@@ -121,7 +128,7 @@ export interface NotOrganicAccessPanelProps {
 }
 
 /** Native modal semantics keep keyboard focus here and make the page behind it inert. */
-export function NotOrganicAccessPanel({ loading = false, error, summary, connected = false, reconnect = false, pack, onConnect, onDismiss, onCheckout, creditContent }: NotOrganicAccessPanelProps) {
+export function NotOrganicAccessPanel({ loading = false, error, summary, connected = false, reconnect = false, consent = false, pack, onConnect, onDismiss, onCheckout, creditContent }: NotOrganicAccessPanelProps) {
 	const dialog = useRef<HTMLDialogElement>(null);
 	const titleId = useId();
 	const descriptionId = useId();
@@ -143,9 +150,9 @@ export function NotOrganicAccessPanel({ loading = false, error, summary, connect
 		<header className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", padding: "1rem", borderBottom: "1px solid var(--border)" })}>
 			<div className={css({ display: "flex", alignItems: "center", gap: "0.625rem" })}>
 				<KeyRound size={20} aria-hidden="true" className={css({ color: "var(--primary)" })} />
-				<h2 id={titleId} className={css({ fontSize: "1.125rem", fontWeight: 600 })}>{creditContent ? "Your Keating credits" : pack ? "Add Keating credits" : reconnect ? "Sign in to Not Organic" : "Use Keating’s model"}</h2>
+				<h2 id={titleId} className={css({ fontSize: "1.125rem", fontWeight: 600 })}>{creditContent ? "Your Keating credits" : pack ? "Add Keating credits" : consent ? "Approve model access" : reconnect ? "Sign in to Not Organic" : "Use Keating’s model"}</h2>
 			</div>
-			<button type="button" onClick={onDismiss} aria-label="Close account sign-in" className={cx(iconButton({ size: "md", tone: "ghost" }), css({ minWidth: "2.75rem", minHeight: "2.75rem" }))}><X size={18} aria-hidden="true" /></button>
+			<button type="button" onClick={onDismiss} aria-label={consent ? "Close model access" : "Close account sign-in"} className={cx(iconButton({ size: "md", tone: "ghost" }), css({ minWidth: "2.75rem", minHeight: "2.75rem" }))}><X size={18} aria-hidden="true" /></button>
 		</header>
 		{creditContent ? <div id={descriptionId} className={css({ padding: "0.75rem" })}>{creditContent}</div> : <div className={css({ display: "flex", flexDirection: "column", gap: "1rem", padding: "1.25rem" })}>
 			{/* The sign-in ask is the first thing many people ever see of Keating.
@@ -155,7 +162,8 @@ export function NotOrganicAccessPanel({ loading = false, error, summary, connect
 			<KeatingBot size={64} state={loading ? "connecting" : connected ? "settled" : "greeting"} label="" />
 			<p id={descriptionId} className={css({ fontSize: "0.9375rem", lineHeight: 1.6 })}>{pack
 				? <>Add <strong>${pack.priceUsd}</strong> in Keating credits with your Not Organic account.</>
-				: reconnect ? <>Sign in with <strong>Not Organic</strong> to approve access to your selected model and web search.</>
+				: consent ? <>You’re signed in to <strong>Not Organic</strong>. Review access to your selected model to continue.</>
+				: reconnect ? <>Sign in with <strong>Not Organic</strong> to approve access to your selected model.</>
 				: <>Sign up or sign in with <strong>Not Organic</strong> to use Keating’s hosted models and web search. You can choose a hosted model.</>}</p>
 			</div>
 			{summary && <p role="status" className={css({ fontSize: "0.875rem", overflowWrap: "anywhere" })}>{summary}</p>}
@@ -163,7 +171,7 @@ export function NotOrganicAccessPanel({ loading = false, error, summary, connect
 			<div className={css({ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: "0.75rem" })}>
 				<button type="button" onClick={onDismiss} className={css({ minHeight: "2.75rem", paddingInline: "1rem", borderRadius: "0.375rem", border: "1px solid var(--border)", fontSize: "0.875rem", cursor: "pointer", _hover: { backgroundColor: "var(--secondary)" } })}>Not now</button>
 				<button type="button" autoFocus className={cx(primaryButton(), css({ minHeight: "2.75rem", paddingInline: "1rem" }))} onClick={onConnect} disabled={loading}>
-					{loading ? "Connecting…" : connected ? (pack ? "Refresh wallet" : "Continue") : reconnect ? "Sign in / Sign up" : "Sign up / Sign in"}
+					{loading ? "Connecting…" : consent ? "Review access" : connected ? (pack ? "Refresh wallet" : "Continue") : reconnect ? "Sign in / Sign up" : "Sign up / Sign in"}
 				</button>
 				{pack && onCheckout && <button type="button" className={cx(primaryButton(), css({ minHeight: "2.75rem", paddingInline: "1rem" }))} onClick={onCheckout} disabled={loading}>Continue to checkout</button>}
 			</div>
@@ -210,7 +218,7 @@ export function NotOrganicAccessPromptDialog() {
 	let connected = false;
 	try { connected = !request.reconnect && !!notOrganicPublicClient()?.getSession(); } catch { /* Unavailable storage is signed out. */ }
 	return <NotOrganicAccessPanel key={request.id} pack={request.packId ? pack : undefined}
-		connected={connected} reconnect={request.reconnect} loading={loading} summary={summary} error={error}
+		connected={connected} reconnect={request.reconnect} consent={connected && request.consent} loading={loading} summary={summary} error={error}
 		creditContent={connected && (request.packId || request.checkoutReturned) ? <NotOrganicCreditRecovery initialPackId={request.packId} checkoutReturned={request.checkoutReturned} preserveMessage={false} onRetry={() => closeNotOrganicPrompt(true)} /> : undefined}
 		onConnect={() => void refreshSession()}
 		onDismiss={() => closeNotOrganicPrompt(false)} />;

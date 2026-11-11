@@ -29,6 +29,7 @@ const REVIEW_SOURCE_FILES = [
   "packages/runtime-config/src/index.ts",
   "packages/runtime-config/src/models.ts",
   "packages/runtime-config/src/model-identities.ts",
+  "packages/runtime-config/src/text-scope.ts",
   "packages/runtime-config/src/services.ts",
   "packages/runtime-config/src/oauth.ts",
   "packages/runtime-config/src/budgets.ts",

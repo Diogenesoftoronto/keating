@@ -1,4 +1,6 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
+import { INTERACTIVE_PAGE_AUTHORING_GUIDE } from "../interactive-page/guide";
+import { createTutorPage } from "../interactive-page/tutor-page";
 import type { KeatingStorage } from "../storage";
 import { resolveTopic } from "../core";
 import { getProviderApiKey } from "../../lib/provider-models";
@@ -439,6 +441,34 @@ export function createMediaTools(storage: KeatingStorage): AgentTool[] {
 			["topic", "body"],
 		),
 
+		createTool(
+			"interactive_page",
+			[
+				"Render a self-contained interactive HTML page you write, inline in the chat, for the learner to manipulate. Use it when doing beats reading: a parameter to drag, a model to step through, an exercise the learner works and checks. For a plain question, quiz, flashcards or a parameter-and-readout simulation, prefer the built-in OpenUI components; use this when you need something they cannot express.",
+				"Set `purpose` to \"exercise\" or \"assignment\" when the learner should hand a result back: the page must then call keating.share(...) from a learner click, and you will receive their result as their next message. Respond to what they actually did.",
+				"The page runs in a locked-down frame: no network, no storage, no access to the app.",
+				"",
+				INTERACTIVE_PAGE_AUTHORING_GUIDE,
+			].join("\n"),
+			{
+				title: { type: "string", description: "REQUIRED. Short, specific title for the page, shown as its accessible name." },
+				description: { type: "string", description: "REQUIRED. Plain-text alternative: what the page shows and what the learner should take from it. Shown if the page cannot run, and read by screen readers." },
+				html: { type: "string", description: "REQUIRED. The page: HTML with inline <style> and <script>. Follow the authoring guide above." },
+				libraries: { type: "array", items: { type: "string", enum: ["d3", "katex", "three"] }, description: "Optional pinned libraries to load. Nothing else can be loaded." },
+				purpose: { type: "string", enum: ["explore", "exercise", "assignment"], description: "explore (default): free manipulation. exercise or assignment: the learner works it and shares a result with you via keating.share." },
+			},
+			async (params) => {
+				const page = createTutorPage(params);
+				// A rejected page comes back as a message you can act on, not as a broken frame.
+				if (!page.ok) return page.message;
+				return [
+					`Rendered the interactive page “${page.payload.title}” for the learner.${page.payload.purpose === "explore" ? "" : " Their shared result will arrive as their next message."}`,
+					"",
+					`<keating-interactive json=${JSON.stringify(JSON.stringify(page.payload))} />`,
+				].join("\n");
+			},
+			["title", "description", "html"],
+		),
 		createTool(
 			"generate_image",
 			"Generate a real raster learning image with the image generator the learner has configured in Settings → Image generation (Not Organic, OpenAI, Google Gemini, or a local OpenAI-compatible server). You MUST author the content yourself by passing `title`, `subtitle`, and at least 3 `points` describing what the visual should communicate — generic titles like 'Learning visual' or empty point lists are rejected. Use `kind` to shape the prompt: 'anatomy' for labeled structures, 'comparison' for size/category bars, 'process' for ordered step-by-step flows, 'cards' for grouped concepts. If no image generator is configured/available, the tool returns a short message instead of an image — there is no template fallback.",

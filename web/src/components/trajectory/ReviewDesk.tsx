@@ -136,7 +136,7 @@ function RubricRating({
 								transitionProperty: "background-color, color, box-shadow, transform",
 								transitionDuration: "{durations.fast}",
 								_hover: { borderColor: "var(--ink)", transform: "translateY(-1px)" },
-								_focusWithin: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+								_focusWithin: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 							})}
 						>
 							{rating}
@@ -193,7 +193,7 @@ function MovementHeader({
 				color: "var(--ink)",
 				textAlign: "left",
 				_hover: { background: "var(--muted)" },
-				_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-2px" },
+				_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "-2px" },
 			})}
 			onClick={onToggle}
 		>
@@ -440,7 +440,7 @@ export function ReviewDesk({
 													borderRadius: "{radii.keating}",
 													textAlign: "left",
 													cursor: "pointer",
-													_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" },
+													_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
 												})}
 												onClick={() => callbacks.onEditAnnotation(annotation)}
 											>

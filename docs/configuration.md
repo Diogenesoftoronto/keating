@@ -73,23 +73,54 @@ Registration alone does not activate or verify inference.
    `NOTORGANIC_IMAGE_MODEL_IDS`.
 2. Add the corresponding metadata entry to the Not Organic adapter's picker.
    The web configuration test checks that chat picker IDs equal the consent list.
-3. Verify the provider's gateway route and obtain fresh user consent for the
-   new `infer:<id>` permission. Updating a list does not expand an existing grant.
+3. Verify the provider route, deployment allowlist, billing limits and privacy /
+   processing requirements. Ordinary text aliases belong to the explicit
+   `NOTORGANIC_ORDINARY_TEXT_MODELS` list and the provider's matching
+   `ORDINARY_TEXT_MODEL_ALIASES`. They share `infer:text`; a release alone needs
+   no new permission. A different or unreviewed privacy boundary keeps its
+   separate `infer:<id>` scope. Unknown aliases fail closed for `infer:text`.
 
 `buildNotOrganicScope({ models, capabilities })` produces sorted, deduplicated
-inference scopes plus explicitly requested capabilities. The default comes from
-the chat/image lists and `NOTORGANIC_CAPABILITIES`. Capability placement preserves
-the previously shipped browser scope string byte for byte. Judgement and tabular
-permissions remain separate opt-ins. CLI and mobile retain their narrower grants;
-they do not inherit the browser's broader consent list.
+inference scopes plus explicitly requested capabilities. Ordinary text models
+map to `infer:text`; image, realtime, judgement, tabular, tutor and preview
+permissions remain separate. The browser default no longer requests Flint.
+Exact legacy model grants remain valid for their own models. Text model selection
+no longer requires optional web search/fetch permissions; those tools continue to
+require their own scopes. CLI and mobile retain their existing narrow login
+flows; this browser migration does not broaden them.
 
 `VITE_NOTORGANIC_SCOPE` is optional. Absent, blank or whitespace-only values use
-the derived scope. A non-empty value remains a restrictive explicit override
-(after trimming); it is not unioned with defaults. Selecting a hosted model adds
-that model's inference and web permissions to the authorization request, retaining
-previously approved grants. Existing connections need to reconnect once to approve
-a missing model permission; a token omitting the requested permissions is reported
-as an incomplete connection.
+the derived scope. A non-empty value is not unioned with defaults. Fresh
+production Keating browser authorization normalizes ordinary model scopes from
+legacy overrides to `infer:text` and retains existing granted capabilities.
+Third-party configured clients are not normalized. A token omitting an explicitly
+requested permission is still reported as an incomplete connection.
+
+### Existing browser sessions and rollout
+
+Deploy provider support for `infer:text` before releasing this browser change.
+On selecting or sending with an ordinary model missing from a legacy grant,
+Keating requests one DPoP-bound refresh without a `scope` parameter and adopts
+only the provider response. It never adds permissions to local session storage
+itself. Pending refreshes are deduplicated, and sign-out or a newer model/session
+prevents a stale response from restoring a session or displaying an old prompt.
+A transient refresh failure keeps the selected model without presenting consent
+as a connection fix; sending retries and reports the renewal error.
+
+The provider has a separate, **default-disabled** source policy,
+`GatewayConfig.legacyKeatingTextScopeMigration = { enabled: true, createdBeforeMs }`.
+An operator must explicitly review and activate it with a fixed historical cutoff.
+It applies only to registered production Keating origins and eligible historical
+personal device grants, not third-party, delegated, organization, or unknown
+privacy grants. Existing non-text permissions are preserved exactly. Stored
+legacy grants and explicitly narrowed refreshes remain unchanged. See provider
+`docs/named-text-models.md` for eligibility and rollback details.
+
+With that policy enabled, eligible already-signed-in browsers switch ordinary
+models without another approval. Without it, or for an ineligible/expired grant,
+one explicit authorization is still required; subsequent ordinary models share
+`infer:text`. No source change here activates the policy, rewrites a live grant,
+changes billing limits, or deploys either application.
 
 The former code fallback included `infer:image`, but Devenv and `.env.example`
 overrode it with a handwritten scope that omitted image consent. This migration

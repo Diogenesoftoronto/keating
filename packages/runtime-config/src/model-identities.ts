@@ -55,6 +55,7 @@ export const MODEL_IDS = {
   gpt_5_5_pro: "gpt-5.5-pro",
   gpt_5_6_sol: "gpt-5.6-sol",
   gpt_6_1_sol: "gpt-6.1-sol",
+  gpt_6_luna: "gpt-6-luna",
   gpt_image_1: "gpt-image-1",
   gpt_image_1_mini: "gpt-image-1-mini",
   gpt_image_1_5: "gpt-image-1.5",

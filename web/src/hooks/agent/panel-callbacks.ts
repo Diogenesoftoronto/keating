@@ -15,7 +15,8 @@ import type { ConversationRuntime } from "../../keating/integration";
 import { keatingLifecycle } from "../../keating/lifecycle";
 import { promptKeatingApiKey } from "../../components/KeatingApiKeyPromptDialog";
 import { getProviderApiKey } from "../../lib/provider-models";
-import { isNotOrganicProvider, notOrganicModelNeedsConsent, notOrganicModelScopes } from "../../notorganic-provider";
+import { modelKey } from "../../lib/model-catalog";
+import { isNotOrganicProvider, notOrganicModelNeedsConsentAfterRefresh, notOrganicModelScopes } from "../../notorganic-provider";
 import { clearPendingChatTurn, rememberChatTurn } from "../../notorganic-provider/pending-chat-turn";
 import type { ChatPanelSetupCallbacks } from "../../types/chat-panel";
 import { prepareMessagesForRetry } from "../session-recovery";
@@ -96,12 +97,14 @@ async function beginTurn(
  * first and resumed after the redirect (see resumeClaimedChatTurn).
  */
 function credentialCallbacks({
+  refs,
   agent,
   sessionId,
   persistTurn,
   posthog,
   onRecovered,
 }: {
+  refs: AgentHostRefs;
   agent: FlueConversation;
   sessionId: () => string;
   persistTurn: (sessionId: string) => Promise<void>;
@@ -110,16 +113,28 @@ function credentialCallbacks({
   onRecovered: (provider: string) => void;
 }): Pick<ChatPanelSetupCallbacks, "onApiKeyRequired" | "onAuthError"> {
   return {
-    onApiKeyRequired: async (provider: string) => {
-      if (provider === "browser") return true;
-      const needsModelConsent = notOrganicModelNeedsConsent(agent.context.model);
-      if (await getProviderApiKey(provider) && !needsModelConsent) return true;
+    onApiKeyRequired: async (provider: string, signal?: AbortSignal) => {
       const sourceSessionId = sessionId();
+      const sourceModel = modelKey(agent.context.model);
+      const request = refs.sessionSwitchRequestsRef.current.current;
+      const isCurrent = () => !signal?.aborted && refs.agentRef.current === agent
+        && refs.sessionIdRef.current === sourceSessionId
+        && refs.sessionSwitchRequestsRef.current.isCurrent(request)
+        && modelKey(agent.context.model) === sourceModel;
+      if (!isCurrent()) return false;
+      if (provider === "browser") return true;
+      const needsModelConsent = await notOrganicModelNeedsConsentAfterRefresh(agent.context.model);
+      if (!isCurrent()) return false;
+      const apiKey = await getProviderApiKey(provider);
+      if (!isCurrent()) return false;
+      if (apiKey && !needsModelConsent) return true;
       if (isNotOrganicProvider(provider)) {
         await persistTurn(sourceSessionId);
+        if (!isCurrent()) return false;
         rememberChatTurn(sourceSessionId, agent.context.messages);
       }
-      const allowed = await promptKeatingApiKey(provider, { force: needsModelConsent, requiredScopes: notOrganicModelScopes(agent.context.model) });
+      const allowed = await promptKeatingApiKey(provider, { force: needsModelConsent, consent: needsModelConsent, requiredScopes: notOrganicModelScopes(agent.context.model) });
+      if (!isCurrent()) return false;
       // Connected in place: this call continues the turn. Declined: the turn
       // stays with its chat and resumes there after a later sign-in.
       if (allowed && isNotOrganicProvider(provider)) clearPendingChatTurn(sourceSessionId);
@@ -210,6 +225,7 @@ export function sessionPanelCallbacks({
     sessionId,
     ...learnerResponseCallbacks(currentSession, conversationRuntime),
     ...credentialCallbacks({
+      refs,
       agent,
       sessionId: currentSession,
       persistTurn: () => persistSnapshot(),
@@ -285,6 +301,7 @@ export function reattachedPanelCallbacks({
     sessionId: refs.sessionIdRef.current,
     ...learnerResponseCallbacks(currentSession, conversationRuntime),
     ...credentialCallbacks({
+      refs,
       agent,
       sessionId: currentSession,
       persistTurn,

@@ -3,6 +3,7 @@
  * builders, plus window-event handlers that hand those turns to the thread's
  * send path. Kept free of React so the wording and routing can be tested.
  */
+import { interactiveShareSubmissionId, interactiveShareText, readInteractiveSharedDetail } from "../../keating/interactive-page/tutor-page";
 import {
   createQuestionLearnerResponse,
   serializeLearnerResponse,
@@ -199,6 +200,7 @@ type Capture = (event: string, properties: Record<string, unknown>) => void;
 
 /** Window-event handlers; each reads the event detail and routes one learner turn. */
 export interface QuizConversationHandlers {
+  interactiveShared: (event: Event) => void;
   questionAnswered: (event: Event) => void;
   quizSubmitted: (event: Event) => void;
   remediationRequested: (event: Event) => void;
@@ -227,6 +229,16 @@ export function createQuizConversationHandlers({
 }): QuizConversationHandlers {
   const detailOf = <T,>(event: Event) => (event as CustomEvent).detail as T | undefined;
   return {
+    // A result the learner chose to share from a tutor-written page. Claiming
+    // the event tells the page it was delivered; the same result is sent once.
+    interactiveShared: (event) => {
+      if (!hasAgent()) return;
+      const detail = readInteractiveSharedDetail(detailOf<unknown>(event));
+      if (!detail) return;
+      event.preventDefault();
+      capture("interactive_page_shared", { purpose: detail.purpose, scored: Boolean(detail.result.score) });
+      submit(interactiveShareText(detail), interactiveShareSubmissionId(detail));
+    },
     // Learner submissions made mid-reply must still reach the teacher, so
     // question answers and quiz results queue rather than being refused.
     questionAnswered: (event) => {

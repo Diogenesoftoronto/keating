@@ -19,6 +19,7 @@ import { PROVIDER_CREDENTIALS_CHANGED_EVENT } from "../keating/model-prefs";
 import { addRecentModel } from "../keating/ui-settings";
 import { promptKeatingApiKey } from "./KeatingApiKeyPromptDialog";
 import { ModelPicker } from "./ModelPicker";
+import { getModelCatalogStatus, refreshCloudModelCatalog } from "../lib/models-dev-catalog";
 import { ModelDownloadBar, ModelCacheControls } from "./ModelDownloadBar";
 import { useCachedModelSize, refreshCachedModelSizes } from "../hooks/useCachedModelSize";
 import { NOTORGANIC_DEFAULT_MODEL } from "../notorganic-provider";
@@ -116,7 +117,7 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, exc
  const unavailableProviders = providerAvailability.filter(provider => provider.cloud && !provider.configured);
  const unavailableProviderIds = new Set(unavailableProviders.map(provider => provider.id));
  const providerSetupNotice = unavailableProviders.length > 0 ? <div>
-  <p>Connect a provider to show its models.</p>
+  <p>Browse all supported chat models. Connect a provider to use its models.</p>
   {unavailableProviders.map(provider => <p key={provider.id}>
    <strong>{displayModelProvider(provider.id)}</strong>{" "}
    <button type="button" onClick={() => void requestProviderAccess(provider.id)}>Add key or sign in</button>{" "}
@@ -146,8 +147,12 @@ export function ModelSelectorDialog({ open, currentModel, onClose, onSelect, exc
    <button type="button" onClick={() => void requestProviderAccess(recoveryProvider)}>Add key or sign in for {displayModelProvider(recoveryProvider)}</button>{" "}
    <button type="button" onClick={openProviderSettings}>Open provider settings</button>
   </div> : undefined}
-  notice={providerSetupNotice || (notice ? <p>{notice}</p> : undefined)}
-  noticeLabel={providerSetupNotice ? "Provider setup" : undefined}
+  notice={<div>
+   <p>{getModelCatalogStatus().error ?? "Chat models refresh from models.dev when you browse, with a one-hour cache. Provider access still applies."}</p>
+   <button type="button" disabled={loading} onClick={() => { setLoading(true); void refreshCloudModelCatalog(true).then(loadModels); }}>Refresh model catalog</button>
+   {providerSetupNotice}{notice && <p>{notice}</p>}
+  </div>}
+  noticeLabel="Model catalog and provider setup"
   filters={<><label>Provider<select value={provider} onChange={e => setProvider(e.target.value)}><option value="">All providers</option>{providers.map(id => <option key={id} value={id}>{displayModelProvider(id)}</option>)}</select></label>
    <label>Use it for<select value={capability} onChange={e => setCapability(e.target.value)}><option value="">Any conversation</option><option value="reasoning">Step-by-step reasoning</option><option value="image">Understanding images</option></select></label></>}
   onSelect={async key => {

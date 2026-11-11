@@ -416,9 +416,16 @@ export interface OpenUiPresentationRecord {
 	sessionId?: string;
 	createdAt: number;
 	planRef: { documentId: string; itemId: string } | null;
-	/** Presented snapshot, kept only for study plans so the plan is known before any learner action. */
+	/**
+	 * Presented snapshot, kept for study plans (so the plan is known before any
+	 * learner action) and concept maps (so the session workspace can show them
+	 * after reload). Other components omit it.
+	 */
 	document?: UiDocument;
 }
+
+/** Fired on `window` after new OpenUI presentations are recorded; detail `{ sessionIds }`. */
+export const OPENUI_PRESENTATIONS_CHANGED_EVENT = "keating:openui-presentations-changed";
 
 /**
  * What the draft gate decided for one published tutor turn. Holds the same
@@ -2223,6 +2230,10 @@ export class KeatingStorage {
 			if (existing) continue;
 			await requestValue(store.put(record));
 			added += 1;
+		}
+		if (added && typeof window !== "undefined") {
+			const sessionIds = [...new Set(records.map((record) => record.sessionId).filter(Boolean))];
+			window.dispatchEvent(new window.CustomEvent(OPENUI_PRESENTATIONS_CHANGED_EVENT, { detail: { sessionIds } }));
 		}
 		return added;
 	}

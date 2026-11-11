@@ -57,6 +57,7 @@ const browserOnlyToolOrder = [
   "agent_runtime",
   "remote_execute",
   "animate",
+  "interactive_page",
   "deck",
   "course_list",
   "course_inspect",
@@ -276,6 +277,7 @@ describe("browser tool assembly contract", () => {
 
     for (const expected of [
       "animate",
+      "interactive_page",
       "course_list",
       "course_inspect",
       "course_create",

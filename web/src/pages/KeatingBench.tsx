@@ -11,6 +11,7 @@ import type { SessionData } from "../types/session";
 import { feedbackToOutcomeScore, inferBrowserLearnerTurnSignal, MIN_REAL_OUTCOMES } from "../keating/core";
 import { listCachedSharedSessions, type SharedModelInfo } from "../keating/shared-sessions";
 import { downloadTextFile } from "../lib/browser-download";
+import { describeRanking, meanInterval, rankByEvidence, type ScoreInterval } from "../keating/bench-stats";
 import { css, cx } from "../../styled-system/css";
 import { Nav } from "../components/Nav";
 import { LearningInsightsHeader, LearningMetric } from "../components/LearningInsightsHeader";
@@ -48,6 +49,10 @@ interface ModelAggregate {
 	quizCount: number;
 	quizAverage: number | null;
 	explicitSignals: number;
+	/** 95% interval for the learner-outcome score, on a 0-100 scale. */
+	outcomeInterval: ScoreInterval;
+	/** Signals read off the transcript by pattern matching, the weakest kind of evidence. */
+	inferredSignals: number;
 }
 
 interface BenchmarkData {
@@ -106,7 +111,7 @@ const styles = {
 	page: css({ minH: "100vh", bg: "var(--paper)", color: "var(--ink)" }),
 	min0: css({ minW: 0 }),
 	main: css({ mx: "auto", maxW: "72rem", px: "1rem", py: "1.5rem" }),
-	button: css({ display: "inline-flex", h: "2.25rem", w: "100%", alignItems: "center", justifyContent: "center", gap: "0.5rem", border: "1px solid var(--ink)", bg: "var(--card)", px: "0.75rem", fontSize: "0.875rem", sm: { w: "auto" }, _hover: { bg: "var(--accent)", color: "var(--accent-foreground)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" } }),
+	button: css({ display: "inline-flex", h: "2.25rem", w: "100%", alignItems: "center", justifyContent: "center", gap: "0.5rem", border: "1px solid var(--ink)", bg: "var(--card)", px: "0.75rem", fontSize: "0.875rem", sm: { w: "auto" }, _hover: { bg: "var(--accent)", color: "var(--accent-foreground)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } }),
 	sourceTabs: css({ display: "grid", w: "100%", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", overflow: "hidden", border: "1px solid var(--ink)", sm: { display: "inline-flex", w: "auto" } }),
 	sourceButton: css({ minW: 0, h: "2.25rem", px: "0.25rem", fontSize: "0.75rem", sm: { px: "0.75rem", fontSize: "0.875rem" } }),
 	sourceCompactLabel: css({ sm: { display: "none" } }),
@@ -133,7 +138,9 @@ const styles = {
 	explainerGrid: css({ mt: "1.5rem", display: "grid", gap: "1rem", lg: { gridTemplateColumns: "minmax(0, 1.05fr) minmax(0, 0.95fr)" } }),
 	methodology: css({ mt: "1.5rem", border: "1px solid var(--ink)", bg: "var(--card)", p: "1rem" }),
 	methodologyHead: css({ mb: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }),
-	twoGrid: css({ display: "grid", gap: "0.75rem", lg: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } }),
+	howDetails: css({ mt: "1.5rem" }),
+	howSummary: css({ display: "flex", alignItems: "center", minH: "2.75rem", px: "1rem", border: "1.5px solid var(--line)", borderRadius: "{radii.keating}", bg: "var(--card)", fontSize: "0.875rem", fontWeight: "650", cursor: "pointer", transitionProperty: "border-color", transitionDuration: "{durations.fast}", transitionTimingFunction: "{easings.standard}", _hover: { borderColor: "var(--ink)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } }),
+	twoGrid: css({ display: "grid", gap: "0.75rem", gridTemplateColumns: "minmax(0, 1fr)", lg: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } }),
 	section: css({ mt: "1.5rem", overflow: "hidden", border: "1px solid var(--ink)", bg: "var(--card)" }),
 	sectionHeader: css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border)", px: "1rem", py: "0.75rem" }),
 	sectionTitle: css({ fontSize: "0.875rem", fontWeight: "600" }),
@@ -161,8 +168,8 @@ const styles = {
 	wrapGap1: css({ display: "flex", flexWrap: "wrap", gap: "0.25rem" }),
 	stageCount: css({ borderRadius: "0.375rem", bg: "var(--muted)", px: "0.5rem", py: "0.25rem", fontSize: "11px" }),
 	tabular: css({ fontVariantNumeric: "tabular-nums" }),
-	belowGrid: css({ mt: "1.5rem", display: "grid", gap: "1.5rem", lg: { gridTemplateColumns: "minmax(0, 1fr) minmax(0, 0.85fr)" } }),
-	cardSection: css({ border: "1px solid var(--ink)", bg: "var(--card)", p: "1rem" }),
+	belowGrid: css({ mt: "1.5rem", display: "grid", gap: "1.5rem", gridTemplateColumns: "minmax(0, 1fr)", lg: { gridTemplateColumns: "minmax(0, 1fr) minmax(0, 0.85fr)" } }),
+	cardSection: css({ minW: 0, border: "1px solid var(--ink)", bg: "var(--card)", p: "1rem" }),
 	cardSectionHead: css({ mb: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }),
 	paragraph: css({ mb: "1rem", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" }),
 	stack3: css({ "& > * + *": { mt: "0.75rem" } }),
@@ -178,7 +185,7 @@ const styles = {
 	replayStep: css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", py: "0.75rem" }),
 	statusPill: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", px: "0.5rem", py: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
 	replayList: css({ "& > * + *": { borderTop: "1px solid var(--border)" } }),
-	replayCase: css({ display: "grid", gap: "0.75rem", px: "1rem", py: "0.75rem", lg: { gridTemplateColumns: "10rem minmax(0, 1fr) 12rem" } }),
+	replayCase: css({ display: "grid", gap: "0.75rem", px: "1rem", py: "0.75rem", gridTemplateColumns: "minmax(0, 1fr)", lg: { gridTemplateColumns: "10rem minmax(0, 1fr) 12rem" } }),
 	replayLeft: css({ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "0.5rem" }),
 	lineClamp2: css({ mt: "0.25rem", overflow: "hidden", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)", lineClamp: 2 }),
 	twoColNums: css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.5rem", fontSize: "0.75rem", fontVariantNumeric: "tabular-nums" }),
@@ -421,6 +428,8 @@ function aggregateSamples(
 			quizCount: 0,
 			quizAverage: null,
 			explicitSignals: 0,
+			outcomeInterval: meanInterval([], [0, 100]),
+			inferredSignals: 0,
 		};
 		existing.sessions += 1;
 		existing.sharedSessions += sample.source === "shared" ? 1 : 0;
@@ -520,6 +529,8 @@ function aggregateSamples(
 			return {
 				...aggregate,
 				quizAverage: quizScores.length > 0 ? quizScores.reduce((sum, value) => sum + value, 0) / quizScores.length : null,
+				outcomeInterval: meanInterval(aggregate.outcomes.map((outcome) => outcome.score * 100), [0, 100]),
+				inferredSignals: aggregate.outcomes.filter((outcome) => outcome.source === "inferred-turn").length,
 				score: mean * 100,
 				prosper,
 				prosperScore: prosperTotal(prosper),
@@ -680,7 +691,9 @@ function MethodologyExplainer() {
 			<div className={styles.twoGrid}>
 				<DefinitionRow label="Outcome" value="A normalized learner signal. Thumbs up maps high, confused maps mid-low, thumbs down maps low. Inferred learner turns use the same score scale." />
 				<DefinitionRow label="Quiz evidence" value="Graded quiz results (objective auto-grading plus teacher-judged open answers) attributed to the model that taught the session. Scored as fraction correct; the highest-quality evidence in the vector." />
-				<DefinitionRow label="PROSPER" value="A multi-objective judgement over performance, robustness, outcome lift, sparse-data caution, personalization, evidence quality, and retention or transfer." />
+				<DefinitionRow label="PROSPER" value="A weighted composite over performance, robustness, outcome lift, sparse-data caution, personalization, evidence quality, and retention or transfer. Most of these are scored by looking for keyword patterns in the tutor's reply, so treat it as a rough heuristic for ordering models, not a measurement of how much anyone learned." />
+				<DefinitionRow label="Ranking" value={`A model is placed only once it has ${READINESS_THRESHOLDS.provisional} signals. Each outcome score carries a 95% range; models whose ranges overlap are shown as tied, because the evidence cannot separate them.`} />
+				<DefinitionRow label="What this cannot show" value="Models are scored on the sessions they happened to teach, with different learners and topics, so a difference between two models may come from who and what they taught. Inferred signals come from pattern matching on learner messages and are the weakest evidence here." />
 				<DefinitionRow label="Performance" value="How well the observed learner signal turned out for the model in that session context." />
 				<DefinitionRow label="Robustness" value="Whether the response appears concrete, checks understanding, and has enough instructional substance to handle similar learners." />
 				<DefinitionRow label="Outcome lift" value="Whether the model seems to move the learner state forward, especially after confusion or correction." />
@@ -698,7 +711,13 @@ function KeatingBenchContent() {
 	const posthog = usePostHog();
 	const { samples, quizRecords, feedbackEntries } = useBenchmarkData();
 	const [source, setSource] = useState<BenchmarkSource>("shared");
-	const rows = useMemo(() => aggregateSamples(samples, source, quizRecords, feedbackEntries), [samples, source, quizRecords, feedbackEntries]);
+	const aggregates = useMemo(() => aggregateSamples(samples, source, quizRecords, feedbackEntries), [samples, source, quizRecords, feedbackEntries]);
+	// Only models with enough evidence get a place; the rest are listed as collecting evidence.
+	const rows = useMemo(() => rankByEvidence(
+		aggregates.map((row) => ({ ...row, interval: row.outcomeInterval, score: row.prosperScore, outcome: row.score })),
+		READINESS_THRESHOLDS.provisional,
+	), [aggregates]);
+	const rankingSummary = useMemo(() => describeRanking(rows, READINESS_THRESHOLDS.provisional), [rows]);
 	const replayCases = useMemo(() => replayCasesFor(samples, source), [samples, source]);
 	const totals = useMemo(() => rows.reduce(
 		(acc, row) => {
@@ -728,7 +747,14 @@ function KeatingBenchContent() {
 			source,
 			minSignalsForPolicyEvolution: MIN_REAL_OUTCOMES,
 			readinessThresholds: READINESS_THRESHOLDS,
-			models: rows,
+			minSignalsToRank: READINESS_THRESHOLDS.provisional,
+			rankingSummary,
+			scoreNotes: {
+				prosperScore: "Weighted composite of seven dimensions, most of them scored by keyword patterns in the reply. A heuristic, not a measured learning outcome.",
+				outcome: "Mean learner-outcome score, 0-100, over quiz results, explicit feedback and transcript-inferred signals.",
+				outcomeInterval: "95% interval for the outcome mean. Models whose intervals overlap are reported as tied.",
+			},
+			models: rows.map(({ interval: _interval, score: prosperRank, outcome, ...row }) => ({ ...row, score: outcome, prosperScore: prosperRank })),
 		}, null, 2));
 		posthog?.capture("keatingbench_exported", {
 			source,
@@ -766,13 +792,13 @@ function KeatingBenchContent() {
 					<LearningMetric icon={<BookOpenCheck size={18} />} label="Graded quizzes" value={formatNumber(totals.quizzes)} detail="Strongest evidence: observed retrieval performance" />
 				</div>
 
-				<KeatingBenchExplainer />
 
 				<section className={styles.section}>
 					<div className={styles.sectionHeader}>
 						<div>
 							<h2 className={styles.sectionTitle}>Leaderboard</h2>
-							<p className={styles.sectionSubtitle}>PROSPER is the rank score; outcome is the direct learner signal score.</p>
+							<p className={styles.sectionSubtitle}>PROSPER orders the ranked models; outcome is the direct learner-signal score with its 95% range.</p>
+							<p className={styles.sectionSubtitle} role="status">{rankingSummary}</p>
 						</div>
 						<div className={styles.inlineMuted}>
 							<Scale size={15} />
@@ -803,9 +829,13 @@ function KeatingBenchContent() {
 											No benchmarkable sessions in this view.
 										</td>
 									</tr>
-								) : rows.map((row, index) => (
+								) : rows.map((row) => (
 									<tr key={row.key} className={styles.tableRow}>
-										<td className={styles.tdRank}>{index + 1}</td>
+										<td className={styles.tdRank}>
+											{row.rank === null
+												? <span className={styles.smallMuted} title={`Needs ${row.signalsNeeded} more signals to be ranked`}>Not ranked<span className={css({ srOnly: true })}>: needs {row.signalsNeeded} more signals</span></span>
+												: <>{row.rank}{row.tiedWithRank !== null && <div className={styles.smallMuted}>tied with {row.tiedWithRank}</div>}</>}
+										</td>
 										<td className={styles.modelCell}>
 											<div className={cx(styles.truncate, styles.fontMedium)}>{row.name}</div>
 											<div className={cx(styles.smallMuted, styles.truncate, css({ mt: "0.25rem" }))}>{row.provider} | {row.key.split(":").slice(1).join(":")}</div>
@@ -820,8 +850,10 @@ function KeatingBenchContent() {
 											<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>Evidence {Math.round(row.confidence * 100)}%</div>
 										</td>
 										<td className={styles.td}>
-											<div className={styles.outcomeScore}>{row.score.toFixed(1)}</div>
-											<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>Learner outcome</div>
+											<div className={styles.outcomeScore}>{row.outcome.toFixed(1)}</div>
+											<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>
+												{row.signals < 2 ? "Too few signals for a range" : `Likely ${Math.round(row.interval.low)} to ${Math.round(row.interval.high)}`}
+											</div>
 										</td>
 										<td className={styles.td}>
 											<div className={styles.outcomeScore}>{row.quizAverage === null ? "—" : `${Math.round(row.quizAverage * 100)}%`}</div>
@@ -837,7 +869,7 @@ function KeatingBenchContent() {
 										</td>
 										<td className={styles.td}>
 												<div className={styles.tabular}>{formatNumber(row.signals)}</div>
-												<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>{formatNumber(row.explicitSignals)} explicit | {formatNumber(row.quizCount)} quiz</div>
+												<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>{formatNumber(row.quizCount)} quiz | {formatNumber(row.explicitSignals)} explicit | {formatNumber(row.inferredSignals)} inferred</div>
 											</td>
 										<td className={styles.td}>
 											<div className={styles.tabular}>{formatNumber(row.sessions)}</div>
@@ -847,6 +879,7 @@ function KeatingBenchContent() {
 										<td className={cx(styles.td, styles.tabular)}>{formatCost(row.cost)}</td>
 										<td className={styles.td}>
 											<ReadinessBadge readiness={row.readiness} />
+											{row.rank === null && <div className={cx(styles.smallMuted, css({ mt: "0.5rem" }))}>{row.signalsNeeded} more signals to rank</div>}
 											<div className={cx(styles.smallMuted, css({ mt: "0.5rem" }))}>Latest {formatDate(row.latestAt)}</div>
 										</td>
 									</tr>
@@ -903,13 +936,13 @@ function KeatingBenchContent() {
 							<UploadCloud size={18} className={styles.mutedIcon} />
 						</div>
 						<p className={styles.paragraph}>
-							Replay turns human session data into reusable benchmark states. The live steps score observed sessions; the queued provider step will send matched learner states to different models.
+							Replay turns human session data into reusable benchmark states. Today each model is scored only on the sessions it actually taught, so models are not yet compared on the same learner states. Sending matched states to every model is not built.
 						</p>
 						<div className={styles.divideText}>
 							{[
 								{ item: "shared-session ingestion", detail: `${formatNumber(replayCases.length)} replay states extracted`, status: "live" },
 								{ item: "deterministic replay scoring", detail: "PROSPER vector runs over observed learner states", status: "live" },
-								{ item: "provider replay execution", detail: "same state prompts can be sent to each model next", status: "queued" },
+								{ item: "provider replay execution", detail: "matched learner states sent to every model for a like-for-like comparison", status: "not built" },
 							].map(({ item, detail, status }) => (
 								<div key={item} className={styles.replayStep}>
 									<div className={styles.min0}>
@@ -960,7 +993,11 @@ function KeatingBenchContent() {
 					</div>
 				</section>
 
-				<MethodologyExplainer />
+				<details className={styles.howDetails}>
+					<summary className={styles.howSummary}>How these scores are computed, and what they cannot show</summary>
+					<KeatingBenchExplainer />
+					<MethodologyExplainer />
+				</details>
 			</main>
 		</>
 	);

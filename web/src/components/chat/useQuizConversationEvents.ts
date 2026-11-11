@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { usePostHog } from "@posthog/react";
 import type { FlueConversation } from "../../keating/flue/conversation";
 import { createQuizConversationHandlers } from "./quiz-conversation";
+import { INTERACTIVE_SHARED_EVENT } from "../../keating/interactive-page/tutor-page";
 import type { SubmitLearnerTurn } from "./useLearnerDelivery";
 
 export function useQuizConversationEvents({
@@ -29,6 +30,13 @@ export function useQuizConversationEvents({
     window.addEventListener("keating:question-answered", handler);
     return () =>
       window.removeEventListener("keating:question-answered", handler);
+  }, [agent, submitLearnerTurn]);
+
+  // A result shared from a tutor-written interactive page becomes a learner turn.
+  useEffect(() => {
+    const handler = handlers().interactiveShared;
+    window.addEventListener(INTERACTIVE_SHARED_EVENT, handler);
+    return () => window.removeEventListener(INTERACTIVE_SHARED_EVENT, handler);
   }, [agent, submitLearnerTurn]);
 
   // When the learner finishes a quiz, report their score, timing, partial

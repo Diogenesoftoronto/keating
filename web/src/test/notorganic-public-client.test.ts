@@ -45,7 +45,7 @@ describe("Not Organic public client", () => {
 		expect(publicClientConfig({})).toBeNull();
 		expect(publicClientConfig({ VITE_NOTORGANIC_PUBLIC_ISSUER: "https://provider.test/", VITE_NOTORGANIC_AUTHORIZATION_URL: "https://portal.test/authorize", VITE_NOTORGANIC_CLIENT_ID: "https://keating.test/client", VITE_NOTORGANIC_REDIRECT_URI: "https://keating.test/notorganic/callback" })).toMatchObject({
 			issuer: "https://provider.test",
-			scope: "wallet:read usage:read billing:checkout infer:balanced infer:flint infer:gpt-6.1-sol web:search web:fetch infer:image infer:inkling-2-small realtime:connect sync:key:read sync:read sync:write",
+			scope: "wallet:read usage:read billing:checkout web:search web:fetch infer:image infer:text realtime:connect sync:key:read sync:read sync:write",
 		});
 		expect(publicClientMaxCostMicrousd({})).toBe(100_000);
 		expect(() => publicClientMaxCostMicrousd({ VITE_NOTORGANIC_MAX_COST_MICROUSD: "0" })).toThrow("positive integer");
@@ -87,14 +87,14 @@ describe("Not Organic public client", () => {
 		for (const model of [NOTORGANIC_DEFAULT_MODEL, NOTORGANIC_SOL_MODEL]) {
 			const authorize = new URL(await client.authorizationUrl("/chat", notOrganicModelScopes(model)));
 			approvedScope = authorize.searchParams.get("scope")!;
-			expect(approvedScope.split(" ")).toContain(`infer:${model.id}`);
+			expect(approvedScope.split(" ")).toContain("infer:text");
 			expect(approvedScope.split(" ")).not.toContain("infer:flint");
 			expect(authorize.searchParams.has("prompt")).toBe(false);
 			await client.completeAuthorization(callback(authorize.toString(), `code-${model.id}`));
 			expect(notOrganicModelNeedsConsent(model, client.getSession())).toBe(false);
 		}
 		expect(notOrganicModelNeedsConsent(NOTORGANIC_DEFAULT_MODEL, client.getSession())).toBe(false);
-		expect(appConfig.scope).not.toContain("infer:inkling-2-small");
+		expect(appConfig.scope).not.toContain("infer:text");
 	});
 
 	it("reports omitted selected-model consent instead of completing another unusable connection", async () => {
@@ -338,6 +338,58 @@ describe("Not Organic public client", () => {
 		const renewed = client.getSession()!;
 		expect(renewed).toMatchObject({ accessToken: "access-2", refreshToken: "refresh-2", id: signedIn.id, returnTo: "/chat" });
 	});
+
+	it("refreshes current capabilities once and adopts only the provider response", async () => {
+    installBrowser();
+    let refreshes = 0;
+    const client = new NotOrganicPublicClient(config, stubFetch(async (input, init) => {
+      if (String(input).endsWith("/v1/public/token")) return deviceToken("access-1", "refresh-1");
+      refreshes++;
+      expect(JSON.parse(String(init?.body))).toEqual({ grant_type: "refresh_token", refresh_token: "refresh-1" });
+      return Response.json({ access_token: "migrated", token_type: "DPoP", expires_in: 300, scope: "wallet:read infer:text", refresh_token: "refresh-2", refresh_expires_in: 86400 });
+    }));
+    await client.completeAuthorization(callback(await client.authorizationUrl("/chat")));
+    const [a, b] = await Promise.all([client.activeSession({ refresh: true }), client.activeSession({ refresh: true })]);
+    expect(refreshes).toBe(1);
+    expect(a).toEqual(b);
+    expect(a?.scope).toBe("wallet:read infer:text");
+    expect(await client.activeSession()).toEqual(a);
+    expect(refreshes).toBe(1);
+  });
+
+  it("never invents text permission when forced refresh retains the old grant", async () => {
+    installBrowser();
+    const client = new NotOrganicPublicClient(config, stubFetch(async input => String(input).endsWith("/v1/public/token")
+      ? deviceToken("access-1", "refresh-1") : deviceToken("access-2", "refresh-2")));
+    await client.completeAuthorization(callback(await client.authorizationUrl("/chat")));
+    expect((await client.activeSession({ refresh: true }))?.scope).toBe("wallet:read");
+  });
+
+  it("does not upgrade narrow third-party configured scopes during authorization", async () => {
+    installBrowser();
+    const client = new NotOrganicPublicClient({ ...config, scope: "infer:balanced" });
+    expect(new URL(await client.authorizationUrl("/chat")).searchParams.get("scope")).toBe("infer:balanced");
+  });
+
+  it("cannot restore a signed-out session after forced refresh finishes", async () => {
+    installBrowser();
+    let complete!: (value: Response) => void;
+    let started!: () => void;
+    const pending = new Promise<void>(resolve => { started = resolve; });
+    const client = new NotOrganicPublicClient(config, stubFetch(async input => {
+      if (String(input).endsWith("/v1/public/token")) return deviceToken("access-1", "refresh-1");
+      if (String(input).endsWith("/v1/public/device/revoke")) return new Response(null, { status: 204 });
+      started();
+      return await new Promise<Response>(resolve => { complete = resolve; });
+    }));
+    await client.completeAuthorization(callback(await client.authorizationUrl("/chat")));
+    const refreshing = client.activeSession({ refresh: true });
+    await pending;
+    await client.signOut();
+    complete(Response.json({ access_token: "migrated", token_type: "DPoP", expires_in: 300, scope: "infer:text", refresh_token: "refresh-2", refresh_expires_in: 86400 }));
+    expect(await refreshing).toBeNull();
+    expect(client.getSession()).toBeNull();
+  });
 
 	it("signs out when the provider rejects the device session", async () => {
 		installBrowser();

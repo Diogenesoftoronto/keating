@@ -98,7 +98,7 @@ const chip = css({
 	font: "inherit",
 	cursor: "pointer",
 	_hover: { background: "color-mix(in srgb, var(--primary) 16%, transparent)" },
-	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 });
 const unresolved = css({ borderBottom: "1.5px dotted var(--muted-foreground)" });
 const card = css({

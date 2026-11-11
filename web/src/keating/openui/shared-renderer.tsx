@@ -5,6 +5,9 @@ import { LessonPlanJudgementReview } from "../../components/LessonPlanJudgementR
 import { localRead, localWrite } from "../../submissions/local-store";
 import { SubmissionAttachments, AttachmentLinks } from "../../components/SubmissionAttachments";
 import { SaveTaskToCourse } from "../../components/courses/SaveTaskToCourse";
+import { EarlierRounds, useEarlierRounds } from "../../components/homework/EarlierRounds";
+import { PrintAssignmentButton } from "../../components/homework/PrintAssignmentButton";
+import { taskDraftKey, taskSubmissionKey, type SavedTaskDraft } from "../homework/task-storage";
 import { Select } from "../../components/Select";
 import type { UiSubmissionAttachment } from "@keating/learner-contracts";
 import type React from "react";
@@ -63,11 +66,11 @@ export function SharedUiDocumentRenderer({ document, receipts = [], onAction }: 
 			<p>This interaction is {document.lifecycle.replace("_", " ")}. Its content remains available, but controls are disabled.</p>
 			{retryable ? <button className={button} type="button" onClick={() => onAction?.({ intent: { type: "retry" }, humanFriendlyMessage: "Retry this interaction" })}>Retry interaction</button> : null}
 		</div> : null}
-		{document.nodes.map((node) => <SharedNode key={`${document.id}:${node.id}`} documentId={document.id} documentRevision={document.revision} node={node} receipts={receipts} disabled={!interactive} onAction={onAction} />)}
+		{document.nodes.map((node) => <SharedNode key={`${document.id}:${node.id}`} documentId={document.id} documentRevision={document.revision} persistent={document.retention !== "ephemeral"} node={node} receipts={receipts} disabled={!interactive} onAction={onAction} />)}
 	</section>;
 }
 
-function SharedNode({ documentId, documentRevision, node, receipts, disabled, onAction }: { documentId: string; documentRevision: number; node: UiDocumentNode; receipts: UiActionReceipt[]; disabled: boolean; onAction?: (event: SharedUiActionEvent) => boolean }) {
+function SharedNode({ documentId, documentRevision, persistent = true, node, receipts, disabled, onAction }: { documentId: string; documentRevision: number; persistent?: boolean; node: UiDocumentNode; receipts: UiActionReceipt[]; disabled: boolean; onAction?: (event: SharedUiActionEvent) => boolean }) {
 	if (node.type === "markdown") return <div className={section}><MarkdownBlock content={node.markdown} /></div>;
 	if (node.type === "callout") return <aside className={css({ display: "grid", gap: "0.625rem", borderTop: "1px solid var(--border)", borderLeft: "3px solid var(--primary)", paddingTop: "0.75rem", paddingLeft: "0.75rem" })} data-callout-tone={node.tone}>
 		<strong>{node.title ?? node.tone}</strong><MarkdownBlock content={node.markdown} />
@@ -84,7 +87,7 @@ function SharedNode({ documentId, documentRevision, node, receipts, disabled, on
 	if (node.type === "concept-map") return <div className={section}>{node.title ? <h4 className={css({ fontWeight: 700 })}>{node.title}</h4> : null}<MermaidRenderer content={node.source} /></div>;
 	if (node.type === "notes") return <Notes node={node} disabled={disabled} onAction={onAction} />;
 	if (node.type === "image") return <RemoteImage node={node} receipt={completedNodeReceipt(receipts, node.id, ["save-artifact"])} disabled={disabled} onAction={onAction} />;
-	if (node.type === "simulation") return <SimulationRenderer node={node} />;
+	if (node.type === "simulation") return <SimulationRenderer node={node} documentId={persistent ? documentId : undefined} receipt={completedNodeReceipt(receipts, node.id, ["share-simulation"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "coding-challenge") return <CodingChallenge node={node} disabled={disabled} onAction={onAction} />;
 	if (node.type === "music-lab") return <MusicLab node={node} disabled={disabled} />;
 	if (node.type === "language-practice") return <LanguagePractice node={node} receipt={completedNodeReceipt(receipts, node.id, ["complete-language-practice"])} disabled={disabled} onAction={onAction} />;
@@ -809,15 +812,23 @@ function Task({ documentId, node, receipt, receipts, disabled, onAction }: { doc
 	const [saving, setSaving] = useState(false);
 	const [restored, setRestored] = useState(false);
 	const [saveError, setSaveError] = useState("");
-	const storageKey = JSON.stringify([documentId, node.id, node.round ?? 0]);
+	const storageKey = taskSubmissionKey(documentId, node.id, node.round);
+	const draftKey = taskDraftKey(documentId, node.id, node.round);
+	const earlierRounds = useEarlierRounds(documentId, node);
+	const draftEdited = useRef(false);
 	useEffect(() => {
 		let active = true;
+		draftEdited.current = false;
 		setRestored(false); setSaved(undefined);
-		void localRead<SavedTask>("tasks", storageKey).then((value) => {
+		void Promise.all([
+			localRead<SavedTask>("tasks", storageKey),
+			localRead<SavedTaskDraft>("tasks", draftKey).catch(() => undefined),
+		]).then(([value, draft]) => {
 			if (!active) return;
 			setSaved(value);
-			setSubmission(value?.intent.submission ?? submitted?.submission ?? "");
+			setSubmission(value?.intent.submission ?? submitted?.submission ?? draft?.submission ?? "");
 			setAttachments(value?.intent.attachments ?? submitted?.attachments ?? []);
+			if (!value && !submitted && draft?.notes) setNote(draft.notes);
 			setRestored(true);
 		}).catch(() => { if (active) { setSaveError("Could not restore local work. Try saving again."); setRestored(true); } });
 		return () => { active = false; };
@@ -832,6 +843,15 @@ function Task({ documentId, node, receipt, receipts, disabled, onAction }: { doc
 	const notYetOpen = opensAt !== undefined && Number.isFinite(opensAt) && now < opensAt;
 	const overdue = dueAt !== undefined && Number.isFinite(dueAt) && now > dueAt;
 	const terminal = receipt?.state === "completed" || Boolean(saved);
+	// Unsent work is kept on this device so the task can be finished, or printed with answers, later.
+	useEffect(() => {
+		if (!restored || terminal || !draftEdited.current) return;
+		const timer = setTimeout(() => {
+			void localWrite("tasks", draftKey, { submission, notes: note, savedAt: new Date().toISOString() } satisfies SavedTaskDraft).catch(() => undefined);
+		}, 600);
+		return () => clearTimeout(timer);
+	}, [draftKey, note, restored, submission, terminal]);
+	const answers = { submission: saved?.intent.submission ?? submitted?.submission ?? submission, notes: note };
 	const target = node.submission?.targetWords;
 	const words = wordCount(submission);
 	const itemDone = (itemId: string) => receipts.some((entry) => entry.state === "completed" && entry.action.type === "complete-task-item" && entry.action.nodeId === node.id && entry.action.itemId === itemId && entry.action.completed)
@@ -854,6 +874,8 @@ function Task({ documentId, node, receipt, receipts, disabled, onAction }: { doc
 
 	return <div className={section} data-task={node.id} data-task-kind={node.kind}>
 		<TaskBrief node={node} />
+		<EarlierRounds rounds={earlierRounds.rounds} failed={earlierRounds.failed} onRetry={earlierRounds.retry} />
+		<PrintAssignmentButton node={node} answers={answers} />
 		<SaveTaskToCourse task={node} />
 
 		{node.items?.length ? <div className={css({ display: "grid", gap: "0.375rem" })}>
@@ -883,7 +905,7 @@ function Task({ documentId, node, receipt, receipts, disabled, onAction }: { doc
 						aria-label={`Note for ${item.title}`}
 						placeholder="What happened? (optional)"
 						value={note[item.id] ?? ""}
-						onChange={(event) => { const value = event.currentTarget.value; setNote((current) => ({ ...current, [item.id]: value })); }}
+						onChange={(event) => { const value = event.currentTarget.value; draftEdited.current = true; setNote((current) => ({ ...current, [item.id]: value })); }}
 					/>}
 				</div>;
 			})}
@@ -897,14 +919,15 @@ function Task({ documentId, node, receipt, receipts, disabled, onAction }: { doc
 			<label className={css({ display: "grid", gap: "0.25rem", fontSize: "0.75rem", fontWeight: 650, color: "var(--muted-foreground)" })}>
 				{node.submission?.label ?? "Your submission"}
 				{format === "link"
-					? <input className={input} type="url" disabled={disabled || !restored || saving} value={submission} placeholder={node.submission?.placeholder ?? "https://"} onChange={(event) => setSubmission(event.currentTarget.value)} />
-					: <textarea className={cx(input, css({ minHeight: "6rem" }))} disabled={disabled || !restored || saving} value={submission} placeholder={node.submission?.placeholder ?? "Your work"} onChange={(event) => setSubmission(event.currentTarget.value)} />}
+					? <input className={input} type="url" disabled={disabled || !restored || saving} value={submission} placeholder={node.submission?.placeholder ?? "https://"} onChange={(event) => { draftEdited.current = true; setSubmission(event.currentTarget.value); }} />
+					: <textarea className={cx(input, css({ minHeight: "6rem" }))} disabled={disabled || !restored || saving} value={submission} placeholder={node.submission?.placeholder ?? "Your work"} onChange={(event) => { draftEdited.current = true; setSubmission(event.currentTarget.value); }} />}
 			</label>
 			{node.submission?.capture ? <ResponseCapture key={`${storageKey}:${node.submission.capture.kind}:${node.submission.capture.timeLimitSeconds}`} capture={node.submission.capture} disabled={disabled || !restored || saving || uploading || attachments.length >= 10} onBusyChange={setCaptureBusy} onAttach={(file, summary) => {
                 setAttachments(current => [...current, file]);
                 setSubmission(current => [current.trim(), summary].filter(Boolean).join("\n\n"));
             }} /> : null}
 			<SubmissionAttachments value={attachments} onChange={setAttachments} disabled={disabled || !restored || saving || captureBusy} onBusyChange={setUploading} />
+			{format === "text" ? <p data-task-paper-hint className={css({ margin: 0, fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Worked on paper? Attach a photo or scan of your pages. The file is kept with your submission, but the tutor only sees its name, so add a line above about what you did.</p> : null}
 			{target ? <small className={css({ color: words >= target ? "var(--muted-foreground)" : "var(--muted-foreground)" })}>{words} of about {target} words</small> : null}
 			<div>
 				<button className="shared-task__submit" type="button" disabled={disabled || !restored || saving || uploading || captureBusy || notYetOpen || (!submission.trim() && !attachments.length)} onClick={submit}>{saving ? "Saving…" : labels.verb}</button>

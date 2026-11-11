@@ -1,3 +1,5 @@
+import { publicProfileRecord, readPublicProfile, type FullLearningProfile, type PublicProfileInput } from "./public-profile-contract";
+
 /** Public, owner-authored summary. Never pass a learner record or transcript here. */
 export const LEARNING_PROFILE_COLLECTION = "app.keating.learningProfile";
 export const LEARNING_PROFILE_SCOPE = `atproto repo:${LEARNING_PROFILE_COLLECTION}`;
@@ -73,7 +75,7 @@ export class LearningProfilePublisher {
     }
   }
 
-  private async request(method: "GET" | "POST", record?: PublicLearningProfile | PrivateLearningProfile, signal?: AbortSignal, swapRecord?: string | null) {
+  private async request(method: "GET" | "POST", record?: PublicLearningProfile | FullLearningProfile | PrivateLearningProfile, signal?: AbortSignal, swapRecord?: string | null) {
     this.assertOwner();
     const token = await this.session.getTokenInfo();
     this.assertOwner();
@@ -113,6 +115,29 @@ export class LearningProfilePublisher {
       if (value.$type === LEARNING_PROFILE_COLLECTION && value.schemaVersion === 1 && value.visibility === "private" && typeof value.publicationId === "string" && value.publicationId && !Object.hasOwn(value, "topics") && !Object.hasOwn(value, "activity")) return null;
     }
     return readLearningProfile(result.value);
+  }
+
+  /** The full profile: null when confirmed absent or withdrawn; throws when the status is unknown. */
+  async readProfile(signal?: AbortSignal): Promise<FullLearningProfile | null> {
+    const result = await this.request("GET", undefined, signal);
+    if (result === null) return null;
+    if (result.value && typeof result.value === "object") {
+      const value = result.value as Record<string, unknown>;
+      if (value.$type === LEARNING_PROFILE_COLLECTION && value.schemaVersion === 1 && value.visibility === "private" && typeof value.publicationId === "string" && value.publicationId && !Object.hasOwn(value, "topics") && !Object.hasOwn(value, "activity")) return null;
+    }
+    return readPublicProfile(result.value);
+  }
+
+  /** Publishes exactly the reviewed content. Unknown fields never leave the device. */
+  publishProfile(input: PublicProfileInput & { consent: boolean }, signal?: AbortSignal): Promise<FullLearningProfile> {
+    if (input.consent !== true) return Promise.reject(new Error("Confirm that everything in the preview may be public."));
+    let record: FullLearningProfile;
+    try { record = publicProfileRecord(input); } catch (error) { return Promise.reject(error); }
+    return this.serialize(async () => {
+      const cid = await this.currentCid(signal);
+      await this.request("POST", record, signal, cid);
+      return record;
+    });
   }
 
   private async currentCid(signal?: AbortSignal): Promise<string | null> {

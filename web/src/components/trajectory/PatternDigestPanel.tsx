@@ -114,7 +114,7 @@ export function PatternDigestPanel({ sessions, pools, titleForSession, className
 													transitionProperty: "background-color, color, border-color",
 													transitionDuration: "{durations.base}",
 													_hover: { background: "var(--accent)", color: "var(--accent-foreground)", borderColor: "var(--accent-dim)" },
-													_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" },
+													_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
 												})}
 											>
 												<KeatingIcon icon={reviewIcon.page} size={10} />

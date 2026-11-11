@@ -22,7 +22,7 @@
 .retro-layout .landing-closing__download:is(:hover, :focus-visible) { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
 .retro-layout .landing-closing__download:is(:hover, :focus-visible)::before { opacity: .45; }
 .retro-layout .landing-closing__download:is(:hover, :focus-visible) svg { transform: translateY(4px); }
-.retro-layout .landing-closing__action:focus-visible { outline: 3px solid var(--accent); outline-offset: 6px; }
+.retro-layout .landing-closing__action:focus-visible { outline: 3px solid var(--accent-dim); outline-offset: 6px; }
 .retro-layout .landing-closing__action:active { transform: translate(2px, 2px); box-shadow: none; }
 @media (max-width: 560px) { .retro-layout .landing-closing__actions { grid-template-columns: 1fr; gap: 18px; margin-top: 34px; } .retro-layout .landing-closing__action { gap: 14px; padding: 21px 23px; } }
 @media (prefers-reduced-motion: reduce) { .retro-layout .landing-closing__action, .retro-layout .landing-closing__action svg, .retro-layout .landing-closing__action::before { transition: none; } .retro-layout .landing-closing__action:is(:hover, :focus-visible, :active), .retro-layout .landing-closing__action:is(:hover, :focus-visible) svg { transform: none; } }

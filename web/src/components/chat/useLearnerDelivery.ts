@@ -80,8 +80,10 @@ export function useLearnerDelivery({
         await callbacks.onLocalMessagesChanged?.();
         onAdmitted?.();
         const provider = agent.context.model.provider;
-        if (callbacks.onApiKeyRequired && !(await callbacks.onApiKeyRequired(provider))) {
-          throw new Error(`Authentication error: no credentials are available for ${provider}. Open Settings → Providers & Models, connect the provider, then retry this message.`);
+        if (callbacks.onApiKeyRequired) {
+          const admitted = await callbacks.onApiKeyRequired(provider, signal);
+          signal.throwIfAborted();
+          if (!admitted) throw new Error(`Authentication error: no credentials are available for ${provider}. Open Settings → Providers & Models, connect the provider, then retry this message.`);
         }
         signal.throwIfAborted();
         await callbacks.onBeforeSend?.();

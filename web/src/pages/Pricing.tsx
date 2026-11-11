@@ -1,4 +1,4 @@
-import { NOTORGANIC_CHAT_MODEL_IDS } from "@keating/runtime-config";
+import { NOTORGANIC_CHAT_MODEL_IDS, hasNotOrganicInferenceScope } from "@keating/runtime-config";
 import { useEffect, useRef, useState } from "react";
 import { AppLink as Link } from "../components/AppLink";
 import { ArrowRight, Check, RefreshCw } from "lucide-react";
@@ -58,7 +58,7 @@ export function isPublicCheckoutConfigured(
 		&& env.VITE_NOTORGANIC_CHECKOUT_ENABLED === "true"
 		&& !!config
 		&& REQUIRED_PUBLIC_SCOPES.every((scope) => scopes.has(scope))
-		&& NOTORGANIC_CHAT_MODEL_IDS.some((model) => scopes.has(`infer:${model}`));
+		&& NOTORGANIC_CHAT_MODEL_IDS.some((model) => hasNotOrganicInferenceScope(scopes, model));
 }
 
 export function pricingAvailability(

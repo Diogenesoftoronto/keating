@@ -2,6 +2,7 @@ import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { Model } from "@earendil-works/pi-ai";
 import type { SessionData, SessionMetadata } from "../types/session";
 import { learnerResponseReviewText } from "../keating/learner-response";
+import { passageQuoteSummaryText } from "../keating/passage-quote";
 import { stripReviewNotice } from "../keating/judgement/review-notice";
 
 export function createSessionId(): string {
@@ -94,14 +95,19 @@ const emptyUsage: SessionMetadata["usage"] = {
 	cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
 };
 
+/** Titles, previews and search show what the learner meant, never envelope or anchor markup. */
+function readableText(text: string): string {
+	return passageQuoteSummaryText(learnerResponseReviewText(stripReviewNotice(text)));
+}
+
 function messageText(message: AgentMessage): string {
 	const msg = message as any;
 	const content = msg.content;
-	if (typeof content === "string") return learnerResponseReviewText(stripReviewNotice(content));
+	if (typeof content === "string") return readableText(content);
 	if (Array.isArray(content)) {
 		return content
 			.filter((part) => part?.type === "text" && typeof part.text === "string")
-			.map((part) => learnerResponseReviewText(stripReviewNotice(part.text)))
+			.map((part) => readableText(part.text))
 			.join(" ");
 	}
 	return "";

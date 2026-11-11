@@ -1,6 +1,6 @@
 {
   "benchmark_id": "keating-teaching-v1",
-  "version": 1,
+  "version": "1.1.0",
   "title": "Keating Teaching Check",
   "description": "A fixed next-turn suite for whether a model helps the learner, adapts to feedback, and uses Keating interactions and durable tools correctly.",
   "created_at": "2026-09-07T12:00:00.000Z",
@@ -1625,7 +1625,7 @@
   ],
   "status": "public-development-benchmark",
   "version_policy": {
-    "definition": "Frozen v1 cases, expectations, rubric, and comparison context; no silent edits after release.",
+    "definition": "Frozen v1.1 cases, expectations, rubric, and comparison context; no silent edits after release. The original v1.0 freeze is preserved in versions/1.0.0.",
     "changes": "Publish a new version and hashes, retain earlier definitions/results, and identify scorer changes.",
     "training_exclusion": "Exclude benchmark prompts, rubric, and candidate responses from training targets; repeated evaluation is development use, not untouched holdout evidence.",
     "generalization": "Use separate fresh held-out conversations for claims beyond this known development suite."

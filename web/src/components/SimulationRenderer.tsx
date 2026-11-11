@@ -1,35 +1,142 @@
 import { Select } from "./Select";
-import { useId, useMemo, useState } from "react";
-import { Activity, RotateCcw } from "lucide-react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Activity, Check, RotateCcw, Send } from "lucide-react";
 import { CartesianGrid, ReferenceDot, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from "recharts";
-import { evaluateSimulationExpression, parseSimulationExpression, type UiSimulationNode } from "@keating/learner-contracts";
+import { evaluateSimulationExpression, parseSimulationExpression, type UiActionReceipt, type UiSimulationNode } from "@keating/learner-contracts";
 import { css } from "../../styled-system/css";
 import { MarkdownBlock } from "./MarkdownBlock";
 import { formatSimulationNumber, parameterPrecision, sampleSimulation } from "./simulation/sampling";
 import "./simulation/simulation.css";
+import type { StorageLike } from "../keating/event-store";
+import type { SharedUiActionEvent } from "../keating/openui/shared-renderer";
+import {
+	loadSimulationState,
+	saveSimulationState,
+	simulationDefaultValues,
+	simulationShareIntent,
+	simulationShareMatches,
+	type SimulationShareIntent,
+} from "../keating/openui/shared-actions";
 
 const focus = { outline: "2px solid var(--ring)", outlineOffset: "3px" };
-const selectClass = css({ width: "100%", minWidth: 0, minHeight: "2.75rem", border: "1px solid var(--border)", borderRadius: "0.5rem", paddingInline: "0.625rem", color: "var(--foreground)", background: "var(--background)", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer", _focusVisible: focus });
+const selectClass = css({ width: "100%", minWidth: 0, minHeight: "2.75rem", border: "1px solid var(--border)", borderRadius: "{radii.keating}", paddingInline: "0.625rem", color: "var(--foreground)", background: "var(--background)", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer", _focusVisible: focus });
 const labelClass = css({ display: "grid", minWidth: 0, gap: "0.25rem", color: "var(--muted-foreground)", fontSize: "0.75rem" });
 const numericClass = css({ fontVariantNumeric: "tabular-nums", fontWeight: 650 });
 const unitLabel = (label: string, unit?: string) => unit ? `${label} (${unit})` : label;
 const axisNumber = (value: number) => new Intl.NumberFormat("en-US", { notation: "compact", maximumSignificantDigits: 3 }).format(value);
 
-/** Reset local exploration when the authored model changes, not on parent renders. */
-export function SimulationRenderer({ node }: { node: UiSimulationNode }) {
-	return <SimulationControls key={JSON.stringify([node.id, node.parameters, node.readouts])} node={node} />;
+const shareClass = css({ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: "0.5rem", minHeight: "2.75rem", paddingInline: "0.875rem", border: "1.5px solid var(--ink)", borderRadius: "{radii.keating}", background: "var(--ink)", color: "var(--paper)", fontSize: "0.8125rem", fontWeight: 650, cursor: "pointer", _active: { background: "var(--ink-soft)", borderColor: "var(--ink-soft)" }, _focusVisible: focus, _disabled: { cursor: "default", background: "transparent", color: "var(--ink-soft)", borderColor: "var(--line)" }, "@media (prefers-reduced-motion: no-preference)": { transitionProperty: "background-color, color, border-color", transitionDuration: "{durations.fast}", transitionTimingFunction: "{easings.standard}" } });
+
+function browserStorage(): StorageLike | null {
+	try {
+		return typeof window === "undefined" ? null : window.localStorage;
+	} catch {
+		return null;
+	}
 }
 
-function SimulationControls({ node }: { node: UiSimulationNode }) {
-	const identifier = useId();
-	const [values, setValues] = useState<Record<string, number>>(() => Object.fromEntries(node.parameters.map((parameter) => [parameter.id, parameter.value])));
-	const compiled = useMemo(() => node.readouts.map((readout) => {
-		const parsed = parseSimulationExpression(readout.expr, node.parameters.map((parameter) => parameter.id));
+export interface SimulationRendererProps {
+	node: UiSimulationNode;
+	/** Shared document id; with it, exploration survives a reload. Omit for transient previews. */
+	documentId?: string;
+	/** Defaults to this browser's localStorage. Pass null to keep exploration in memory. */
+	storage?: Pick<StorageLike, "getItem" | "setItem"> | null;
+	/** The latest completed share for this node, if any. */
+	receipt?: UiActionReceipt;
+	disabled?: boolean;
+	/** Present when the host can deliver a share to the tutor. */
+	onAction?: (event: SharedUiActionEvent) => boolean;
+}
+
+/** Reset local exploration when the authored model changes, not on parent renders. */
+export function SimulationRenderer(props: SimulationRendererProps) {
+	const { node } = props;
+	return <SimulationControls key={JSON.stringify([props.documentId ?? null, node.id, node.parameters, node.readouts])} {...props} />;
+}
+
+function shareMessage(node: UiSimulationNode, intent: SimulationShareIntent): string {
+	const changed = intent.changedParameterIds.map((id) => node.parameters.find((parameter) => parameter.id === id)?.label ?? id);
+	return changed.length
+		? `Shared ${node.title} after changing ${changed.join(", ")}.`
+		: `Shared ${node.title} at its starting settings.`;
+}
+
+function compileReadouts(node: UiSimulationNode) {
+	const parameterIds = node.parameters.map((parameter) => parameter.id);
+	return node.readouts.map((readout) => {
+		const parsed = parseSimulationExpression(readout.expr, parameterIds);
 		return { readout, expression: parsed.ok ? parsed.node : undefined, parameters: parsed.ok ? parsed.parameters : [] };
-	}), [node.readouts, node.parameters]);
+	});
+}
+
+/**
+ * The learner's exploration of one simulation: restored from storage on mount,
+ * saved after each learner change (never on a bare render), and shared with the
+ * tutor only on an explicit share that differs from the last completed one.
+ */
+export function useSimulationInteraction({ node, documentId, storage: storageOverride, receipt, disabled = false, onAction }: SimulationRendererProps) {
+	const storage = useMemo(() => documentId === undefined ? null : storageOverride === undefined ? browserStorage() : storageOverride, [documentId, storageOverride]);
+	const [restored] = useState(() => documentId === undefined ? { values: simulationDefaultValues(node) } : loadSimulationState(storage, documentId, node));
+	const [values, setValues] = useState<Record<string, number>>(restored.values);
+	const compiled = useMemo(() => compileReadouts(node), [node]);
 	const defaultReadout = compiled.find((item) => item.readout.emphasis) ?? compiled[0];
-	const [outputId, setOutputId] = useState(defaultReadout?.readout.id ?? "");
-	const [parameterId, setParameterId] = useState(() => [...node.parameters].reverse().find((parameter) => defaultReadout?.parameters.includes(parameter.id))?.id ?? node.parameters[0]?.id ?? "");
+	const [readoutId, setReadoutId] = useState(restored.readoutId ?? defaultReadout?.readout.id ?? "");
+	const [parameterId, setParameterId] = useState(() => restored.parameterId ?? [...node.parameters].reverse().find((parameter) => defaultReadout?.parameters.includes(parameter.id))?.id ?? node.parameters[0]?.id ?? "");
+	const touched = useRef(false);
+	const [saveFailed, setSaveFailed] = useState(false);
+	const [shareStatus, setShareStatus] = useState<"idle" | "shared" | "failed">("idle");
+	useEffect(() => {
+		if (!touched.current || documentId === undefined || !storage) return;
+		setSaveFailed(!saveSimulationState(storage, documentId, node, { values, parameterId, readoutId }));
+	}, [documentId, node, parameterId, readoutId, storage, values]);
+	const interact = () => { touched.current = true; setShareStatus("idle"); };
+	const lastShared = receipt?.state === "completed" && receipt.action.type === "share-simulation" && receipt.action.nodeId === node.id ? receipt.action : undefined;
+	const alreadyShared = simulationShareMatches(lastShared, node, { values });
+	return {
+		compiled,
+		defaultReadout,
+		values,
+		parameterId,
+		readoutId,
+		saveFailed,
+		shareStatus,
+		lastShared,
+		alreadyShared,
+		canShare: Boolean(onAction) && !disabled && !alreadyShared,
+		setValue(id: string, raw: number) {
+			const parameter = node.parameters.find((item) => item.id === id);
+			if (!parameter) return;
+			interact();
+			setValues((current) => ({ ...current, [id]: Number.isFinite(raw) ? Math.max(parameter.min, Math.min(parameter.max, raw)) : parameter.value }));
+		},
+		reset() { interact(); setValues(simulationDefaultValues(node)); },
+		selectParameter(id: string) { interact(); setParameterId(id); },
+		selectReadout(id: string) { interact(); setReadoutId(id); },
+		/** One learner turn per distinct share; a repeat of the last shared settings sends nothing. */
+		share(): boolean {
+			if (!onAction || disabled || alreadyShared) return false;
+			const intent = simulationShareIntent(node, { values, parameterId, readoutId });
+			const accepted = onAction({ intent, humanFriendlyMessage: shareMessage(node, intent) });
+			setShareStatus(accepted ? "shared" : "failed");
+			return accepted;
+		},
+	};
+}
+
+function SimulationControls(props: SimulationRendererProps) {
+	const { node, onAction } = props;
+	const identifier = useId();
+	const interaction = useSimulationInteraction(props);
+	// The check pops once when a share is confirmed here; a page reload shows it already settled.
+	const sharedBefore = useRef(interaction.alreadyShared);
+	const [justShared, setJustShared] = useState(false);
+	useEffect(() => {
+		if (interaction.alreadyShared && !sharedBefore.current) setJustShared(true);
+		if (!interaction.alreadyShared) setJustShared(false);
+		sharedBefore.current = interaction.alreadyShared;
+	}, [interaction.alreadyShared]);
+	const { compiled, defaultReadout, values, parameterId, saveFailed, shareStatus, lastShared, alreadyShared } = interaction;
+	const outputId = interaction.readoutId;
 	const parameter = node.parameters.find((item) => item.id === parameterId) ?? node.parameters[0];
 	const selected = compiled.find((item) => item.readout.id === outputId) ?? compiled[0];
 	const samples = useMemo(() => parameter ? sampleSimulation(parameter, selected?.expression, values) : [], [parameter, selected?.expression, values]);
@@ -48,7 +155,7 @@ function SimulationControls({ node }: { node: UiSimulationNode }) {
 			<h4 id={`${identifier}-title`} className="simulation__title">
 				<Activity size={18} aria-hidden="true" className={css({ flexShrink: 0, color: "var(--primary)" })} />{node.title}
 			</h4>
-			<button type="button" aria-label="Reset simulation" title="Reset simulation" disabled={!dirty} onClick={() => setValues(Object.fromEntries(node.parameters.map((item) => [item.id, item.value])))} className="simulation__reset">
+			<button type="button" aria-label="Reset simulation" title="Reset simulation" disabled={!dirty} onClick={interaction.reset} className="simulation__reset">
 				<RotateCcw size={16} aria-hidden="true" /><span className="simulation__reset-label">Reset</span>
 			</button>
 		</header>
@@ -56,12 +163,12 @@ function SimulationControls({ node }: { node: UiSimulationNode }) {
 
 		<div className={css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.75rem" })}>
 			<label className={labelClass}>Vary
-				<Select aria-label="Graph horizontal axis" className={`simulation__select ${selectClass}`} value={parameter.id} onValueChange={setParameterId}>
+				<Select aria-label="Graph horizontal axis" className={`simulation__select ${selectClass}`} value={parameter.id} onValueChange={interaction.selectParameter}>
 					{node.parameters.map((item) => <option key={item.id} value={item.id}>{unitLabel(item.label, item.unit)}</option>)}
 				</Select>
 			</label>
 			<label className={labelClass}>Watch
-				<Select aria-label="Graph output" className={`simulation__select ${selectClass}`} value={readout.id} onValueChange={setOutputId}>
+				<Select aria-label="Graph output" className={`simulation__select ${selectClass}`} value={readout.id} onValueChange={interaction.selectReadout}>
 					{node.readouts.map((item) => <option key={item.id} value={item.id}>{unitLabel(item.label, item.unit)}</option>)}
 				</Select>
 			</label>
@@ -100,8 +207,7 @@ function SimulationControls({ node }: { node: UiSimulationNode }) {
 					<output className={numericClass}>{formatSimulationNumber(values[item.id], parameterPrecision(item))}{item.unit ? ` ${item.unit}` : ""}</output>
 				</span>
 				<input type="range" aria-label={unitLabel(item.label, item.unit)} min={item.min} max={item.max} step={item.step ?? "any"} value={values[item.id] ?? item.value} aria-valuetext={`${formatSimulationNumber(values[item.id], parameterPrecision(item))}${item.unit ? ` ${item.unit}` : ""}`} onChange={(event) => {
-					const value = Number(event.currentTarget.value);
-					setValues((current) => ({ ...current, [item.id]: Number.isFinite(value) ? Math.max(item.min, Math.min(item.max, value)) : item.value }));
+					interaction.setValue(item.id, Number(event.currentTarget.value));
 				}} className={css({ width: "100%", minWidth: 0, height: "2.75rem", margin: 0, cursor: "pointer", accentColor: "var(--primary)", _focusVisible: focus })} />
 			</label>)}
 		</div>
@@ -116,9 +222,26 @@ function SimulationControls({ node }: { node: UiSimulationNode }) {
 			})}
 		</dl>
 
+		{onAction ? <div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem" })}>
+			<button type="button" data-simulation-share={node.id} className={shareClass} disabled={!interaction.canShare} aria-describedby={`${identifier}-share-status`} onClick={interaction.share}>
+				{alreadyShared ? <Check size={16} aria-hidden="true" className={justShared ? "k-receipt" : undefined} /> : <Send size={16} aria-hidden="true" />}
+				{alreadyShared ? "Shared with your tutor" : "Share what I found"}
+			</button>
+			<p id={`${identifier}-share-status`} role="status" className={css({ margin: 0, minWidth: 0, fontSize: "0.75rem", color: "var(--muted-foreground)", lineHeight: 1.4 })}>
+				{shareStatus === "failed"
+					? "Not shared yet. Your settings are kept here; try again."
+					: alreadyShared
+						? shareStatus === "shared" ? "Sent. Your tutor will respond to these settings." : "These settings are with your tutor."
+						: lastShared
+							? "Changed since you last shared."
+							: "Sends your settings and readouts to your tutor."}
+			</p>
+		</div> : null}
+		{saveFailed ? <p role="status" className={css({ margin: 0, fontSize: "0.75rem", color: "var(--muted-foreground)" })}>This browser did not save your settings; they will reset if you reload.</p> : null}
+
 		<details className={css({ borderTop: "1px solid var(--border)", fontSize: "0.75rem" })}>
 			<summary className={css({ minHeight: "2.75rem", paddingBlock: "0.75rem", cursor: "pointer", width: "fit-content", color: "var(--muted-foreground)", fontWeight: 600, _focusVisible: focus })}>View sampled values</summary>
-			<div tabIndex={0} role="region" aria-label="Simulation sample data" className={css({ overflow: "auto", maxHeight: "16rem", borderRadius: "0.5rem", _focusVisible: focus })}>
+			<div tabIndex={0} role="region" aria-label="Simulation sample data" className={css({ overflow: "auto", maxHeight: "16rem", borderRadius: "{radii.keating}", _focusVisible: focus })}>
 				<table className={css({ width: "100%", borderCollapse: "collapse", textAlign: "left", fontVariantNumeric: "tabular-nums", "& th, & td": { padding: "0.5rem", borderBottom: "1px solid var(--border)", overflowWrap: "anywhere" }, "& th": { fontWeight: 600 }, "& th:last-child, & td:last-child": { textAlign: "right" } })}>
 					<caption className={css({ textAlign: "left", padding: "0.5rem", color: "var(--muted-foreground)" })}>{yLabel} as {xLabel} changes. {caption}</caption>
 					<thead><tr><th scope="col">{xLabel}</th><th scope="col">{yLabel}</th></tr></thead>

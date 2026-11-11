@@ -15,7 +15,10 @@ import {
 	type UiActionResult,
 	type UiDocument,
 	type UiDocumentNode,
+	type UiSimulationNode,
 	type UiStudyPlanItem,
+	evaluateSimulationExpression,
+	parseSimulationExpression,
 } from "@keating/learner-contracts";
 import type { StorageLike } from "../event-store";
 
@@ -373,4 +376,133 @@ export function acknowledgeSharedUiActionDelivery(
 		: delivery);
 	storage.setItem(sharedUiActionStateKey(sourceDocument.id), JSON.stringify({ ...state, deliveries }));
 	return true;
+}
+
+const SIMULATION_STATE_PREFIX = "keating:openui-simulation:v1:";
+
+/** What a learner left a simulation at. Readouts are derived, so they are never stored. */
+export interface SimulationInteractionState {
+	values: Record<string, number>;
+	parameterId?: string;
+	readoutId?: string;
+}
+
+interface StoredSimulationInteractionState extends SimulationInteractionState {
+	version: 1;
+	/** The authored model the values belong to; a re-authored node starts fresh. */
+	signature: string;
+}
+
+/** Keyed like other OpenUI component state: document id plus node id, independent of revision. */
+export function simulationStateKey(documentId: string, nodeId: string): string {
+	return `${SIMULATION_STATE_PREFIX}${encodeURIComponent(documentId)}:${encodeURIComponent(nodeId)}`;
+}
+
+export function simulationNodeSignature(node: UiSimulationNode): string {
+	return hashText(stableJson({ parameters: node.parameters, readouts: node.readouts }));
+}
+
+export function simulationDefaultValues(node: UiSimulationNode): Record<string, number> {
+	return Object.fromEntries(node.parameters.map((parameter) => [parameter.id, parameter.value]));
+}
+
+/**
+ * Restore exactly what the learner left. Anything unreadable, foreign to this
+ * node, or out of the authored range falls back to the authored default for
+ * that field; this never throws.
+ */
+export function loadSimulationState(
+	storage: Pick<StorageLike, "getItem"> | null,
+	documentId: string,
+	node: UiSimulationNode,
+): SimulationInteractionState {
+	const values = simulationDefaultValues(node);
+	if (!storage) return { values };
+	try {
+		const raw = storage.getItem(simulationStateKey(documentId, node.id));
+		if (!raw) return { values };
+		const parsed: unknown = JSON.parse(raw);
+		if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return { values };
+		const stored = parsed as Partial<StoredSimulationInteractionState>;
+		if (stored.version !== 1 || stored.signature !== simulationNodeSignature(node)) return { values };
+		const storedValues = stored.values && typeof stored.values === "object" && !Array.isArray(stored.values)
+			? stored.values as Record<string, unknown>
+			: {};
+		for (const parameter of node.parameters) {
+			const value = storedValues[parameter.id];
+			if (typeof value === "number" && Number.isFinite(value) && value >= parameter.min && value <= parameter.max) {
+				values[parameter.id] = value;
+			}
+		}
+		return {
+			values,
+			...(typeof stored.parameterId === "string" && node.parameters.some((parameter) => parameter.id === stored.parameterId)
+				? { parameterId: stored.parameterId }
+				: {}),
+			...(typeof stored.readoutId === "string" && node.readouts.some((readout) => readout.id === stored.readoutId)
+				? { readoutId: stored.readoutId }
+				: {}),
+		};
+	} catch {
+		return { values };
+	}
+}
+
+export function saveSimulationState(
+	storage: Pick<StorageLike, "setItem"> | null,
+	documentId: string,
+	node: UiSimulationNode,
+	state: SimulationInteractionState,
+): boolean {
+	if (!storage) return false;
+	const payload: StoredSimulationInteractionState = {
+		version: 1,
+		signature: simulationNodeSignature(node),
+		values: Object.fromEntries(node.parameters.map((parameter) => [parameter.id, state.values[parameter.id] ?? parameter.value])),
+		...(state.parameterId ? { parameterId: state.parameterId } : {}),
+		...(state.readoutId ? { readoutId: state.readoutId } : {}),
+	};
+	try {
+		storage.setItem(simulationStateKey(documentId, node.id), JSON.stringify(payload));
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+export type SimulationShareIntent = Extract<SharedUiActionIntent, { type: "share-simulation" }>;
+
+/** The explicit share: every authored parameter and readout, in authored order, with what changed. */
+export function simulationShareIntent(node: UiSimulationNode, state: SimulationInteractionState): SimulationShareIntent {
+	const values = Object.fromEntries(node.parameters.map((parameter) => {
+		const value = state.values[parameter.id];
+		return [parameter.id, typeof value === "number" && Number.isFinite(value)
+			? Math.max(parameter.min, Math.min(parameter.max, value))
+			: parameter.value];
+	}));
+	const parameterIds = node.parameters.map((parameter) => parameter.id);
+	return {
+		type: "share-simulation",
+		nodeId: node.id,
+		parameters: node.parameters.map((parameter) => ({ parameterId: parameter.id, value: values[parameter.id]! })),
+		readouts: node.readouts.map((readout) => {
+			const parsed = parseSimulationExpression(readout.expr, parameterIds);
+			return { readoutId: readout.id, value: parsed.ok ? evaluateSimulationExpression(parsed.node, values) ?? null : null };
+		}),
+		changedParameterIds: node.parameters.filter((parameter) => values[parameter.id] !== parameter.value).map((parameter) => parameter.id),
+		...(state.parameterId && parameterIds.includes(state.parameterId) ? { selectedParameterId: state.parameterId } : {}),
+		...(state.readoutId && node.readouts.some((readout) => readout.id === state.readoutId) ? { selectedReadoutId: state.readoutId } : {}),
+	};
+}
+
+/** True when the learner's current settings are exactly what an earlier share reported. */
+export function simulationShareMatches(
+	shared: Pick<SimulationShareIntent, "parameters"> | undefined,
+	node: UiSimulationNode,
+	state: SimulationInteractionState,
+): boolean {
+	if (!shared) return false;
+	const current = simulationShareIntent(node, state).parameters;
+	return shared.parameters.length === current.length
+		&& shared.parameters.every((item, index) => item.parameterId === current[index]?.parameterId && item.value === current[index]?.value);
 }

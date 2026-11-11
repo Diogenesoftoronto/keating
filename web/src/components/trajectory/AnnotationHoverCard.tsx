@@ -37,7 +37,7 @@ const actionClass = css({
 	fontWeight: 600,
 	color: "var(--foreground)",
 	_hover: { borderColor: "var(--ink)", background: "var(--muted)" },
-	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 });
 
 export function AnnotationHoverCard({

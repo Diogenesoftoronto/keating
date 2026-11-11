@@ -8,6 +8,7 @@ import type { AppendMessage } from "@assistant-ui/react";
 import type { KeatingAudioContent } from "../../keating/flue/conversation";
 import { modelSupportsAudio } from "../../lib/provider-models";
 import { recordingHasTranscript } from "../../lib/recording-transcripts";
+import { serializeQuotedTurn, type PassageQuote } from "../../keating/passage-quote";
 
 export type PromptContent = TextContent | ImageContent | KeatingAudioContent;
 
@@ -74,6 +75,24 @@ export function contentFromAppendMessage(message: AppendMessage): PromptContent[
   }
 
   return content;
+}
+
+/**
+ * Folds quoted passages into a composer message: the readable quotation and
+ * its anchors replace the text parts (see passage-quote.ts); attachments and
+ * other parts are kept as they are.
+ */
+export function appendMessageWithQuotes(message: AppendMessage, quotes: readonly PassageQuote[]): AppendMessage {
+  if (quotes.length === 0) return message;
+  const question = message.content.flatMap(part => part.type === "text" ? [part.text] : []).join("\n\n");
+  const text = serializeQuotedTurn({
+    quotes: quotes.map(({ source, exact, prefix, suffix }) => ({ source, exact, ...(prefix ? { prefix } : {}), ...(suffix ? { suffix } : {}) })),
+    question,
+  });
+  return {
+    ...message,
+    content: [{ type: "text", text }, ...message.content.filter(part => part.type !== "text")],
+  } as AppendMessage;
 }
 
 export function makeUserMessageFromAppend(

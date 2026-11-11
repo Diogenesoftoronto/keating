@@ -10,6 +10,8 @@ import {
 import type { StorageLike } from "./event-store";
 import { keatingLifecycle } from "./lifecycle";
 import { loadSharedUiActionState, sharedUiActionStateKey } from "./openui/shared-actions";
+import { overlayPlanStorage, savePlanWrites, type PlanStorage } from "./plan-pending-saves";
+import { appendPlanHistory, describePlanChange, loadPlanHistory, planHistoryKey } from "./plan-revision-history";
 import type { OpenUiPresentationRecord } from "./storage";
 
 /**
@@ -18,6 +20,8 @@ import type { OpenUiPresentationRecord } from "./storage";
  * their stored state on it.
  */
 export const PLAN_REVISED_EVENT = "keating:plan-revised";
+/** Fired on `window` when plan-change proposals are added or settled. */
+export const PLAN_PROPOSALS_CHANGED_EVENT = "keating:plan-proposals-changed";
 const PROPOSALS_KEY = "keating:plan-revision-proposals:v1";
 const MAX_PROPOSALS = 50;
 
@@ -47,7 +51,22 @@ export interface PlanRevisionSource {
 	getOpenUiPresentations(sessionId?: string): Promise<OpenUiPresentationRecord[]>;
 }
 
-type PlanStorage = Pick<StorageLike, "getItem" | "setItem">;
+/** A learner tick made outside the chat card (the workspace); rendered plans reload on it. */
+export interface PlanLearnerUpdateDetail {
+	documentId: string;
+	revision: number;
+	via: "learner";
+}
+
+/** Tell other rendered copies of a plan that its stored journal moved on. */
+export function announcePlanLearnerUpdate(documentId: string, revision: number): void {
+	if (typeof window === "undefined") return;
+	window.dispatchEvent(new window.CustomEvent<PlanLearnerUpdateDetail>(PLAN_REVISED_EVENT, { detail: { documentId, revision, via: "learner" } }));
+}
+
+function announceProposals(): void {
+	if (typeof window !== "undefined") window.dispatchEvent(new window.CustomEvent(PLAN_PROPOSALS_CHANGED_EVENT));
+}
 
 function browserStorage(): PlanStorage | null {
 	try {
@@ -69,26 +88,55 @@ export async function loadCurrentPlan(source: PlanRevisionSource, documentId: st
 		.sort((a, b) => b.createdAt - a.createdAt)[0];
 	if (!latest?.document) return null;
 	return {
-		document: loadSharedUiActionState(storage, latest.document).document,
+		document: loadSharedUiActionState(overlayPlanStorage(storage), latest.document).document,
 		...(latest.sessionId ? { sessionId: latest.sessionId } : {}),
 	};
 }
 
 /**
  * Persist `next` as the plan's newest revision, keeping the learner's action
- * journal and pending deliveries, then announce it on the lifecycle bus and
- * the window so hosts and rendered plans can react.
+ * journal and pending deliveries, and append it to the bounded revision
+ * history. Once stored, announce it on the lifecycle bus and the window so
+ * hosts and rendered plans can react. A refused write is kept in memory (see
+ * plan-pending-saves) and announced only after a retry stores it; returns
+ * whether it is stored now.
  */
-async function commitRevision(storage: PlanStorage, current: UiDocument, next: UiDocument, detail: Omit<PlanRevisedDetail, "documentId" | "revision">): Promise<void> {
-	const state = loadSharedUiActionState(storage, current);
-	storage.setItem(sharedUiActionStateKey(next.id), JSON.stringify({ ...state, document: next }));
+async function commitRevision(
+	storage: PlanStorage,
+	current: UiDocument,
+	next: UiDocument,
+	detail: Omit<PlanRevisedDetail, "documentId" | "revision">,
+	change: PlanRevisionChange,
+	now: number,
+	extraWrites: Record<string, string> = {},
+	onSaved?: () => void,
+): Promise<boolean> {
+	const state = loadSharedUiActionState(overlayPlanStorage(storage), current);
+	const history = appendPlanHistory(loadPlanHistory(storage, next.id), {
+		revision: next.revision,
+		previousRevision: current.revision,
+		op: detail.op,
+		via: detail.via,
+		summary: describePlanChange(change, current),
+		at: now,
+		before: current,
+		after: next,
+	});
 	const revised: PlanRevisedDetail = { documentId: next.id, revision: next.revision, ...detail };
-	await keatingLifecycle.emit({ type: "plan_revised", sessionId: detail.sessionId ?? "", documentId: next.id, revision: next.revision, op: detail.op, via: detail.via });
-	if (typeof window !== "undefined") window.dispatchEvent(new window.CustomEvent<PlanRevisedDetail>(PLAN_REVISED_EVENT, { detail: revised }));
+	return savePlanWrites(storage, next.id, {
+		[sharedUiActionStateKey(next.id)]: JSON.stringify({ ...state, document: next }),
+		[planHistoryKey(next.id)]: JSON.stringify(history),
+		...extraWrites,
+	}, async () => {
+		onSaved?.();
+		await keatingLifecycle.emit({ type: "plan_revised", sessionId: detail.sessionId ?? "", documentId: next.id, revision: next.revision, op: detail.op, via: detail.via });
+		if (typeof window !== "undefined") window.dispatchEvent(new window.CustomEvent<PlanRevisedDetail>(PLAN_REVISED_EVENT, { detail: revised }));
+	});
 }
 
 export type PlanRevisionOutcome =
-	| { status: "applied"; document: UiDocument }
+	/** `saved: false`: the browser refused the write; the change is held in memory awaiting a retry. */
+	| { status: "applied"; document: UiDocument; saved?: false }
 	| { status: "proposed"; proposal: PlanRevisionProposal }
 	| { status: "rejected"; reason: "no-plan" | "invalid-change" };
 
@@ -107,29 +155,40 @@ export async function revisePlan(
 	const next = applyPlanRevision(current.document, change, new Date(now()).toISOString());
 	if (!next) return { status: "rejected", reason: "invalid-change" };
 	if (mode === "autonomous") {
-		await commitRevision(storage, current.document, next, { op: change.op, via: "autonomous", ...(current.sessionId ? { sessionId: current.sessionId } : {}) });
-		return { status: "applied", document: next };
+		const saved = await commitRevision(storage, current.document, next, { op: change.op, via: "autonomous", ...(current.sessionId ? { sessionId: current.sessionId } : {}) }, change, now());
+		return { status: "applied", document: next, ...(saved ? {} : { saved: false as const }) };
 	}
 	const proposal: PlanRevisionProposal = {
 		id: `plan-rev-${now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
 		documentId, baseRevision: current.document.revision, change, status: "pending", createdAt: now(),
 		...(current.sessionId ? { sessionId: current.sessionId } : {}),
 	};
-	saveProposals(storage, [...loadProposals(storage), proposal]);
+	await saveProposals(storage, documentId, [...loadProposals(storage), proposal]);
 	return { status: "proposed", proposal };
 }
 
 function loadProposals(storage: Pick<StorageLike, "getItem"> | null): PlanRevisionProposal[] {
 	try {
-		const parsed: unknown = JSON.parse(storage?.getItem(PROPOSALS_KEY) ?? "[]");
+		const parsed: unknown = JSON.parse(overlayPlanStorage(storage)?.getItem(PROPOSALS_KEY) ?? "[]");
 		return Array.isArray(parsed) ? parsed as PlanRevisionProposal[] : [];
 	} catch {
 		return [];
 	}
 }
 
-function saveProposals(storage: PlanStorage, proposals: readonly PlanRevisionProposal[]): void {
-	storage.setItem(PROPOSALS_KEY, JSON.stringify(proposals.slice(-MAX_PROPOSALS)));
+function proposalsWrite(proposals: readonly PlanRevisionProposal[]): Record<string, string> {
+	return { [PROPOSALS_KEY]: JSON.stringify(proposals.slice(-MAX_PROPOSALS)) };
+}
+
+/** Guarded: a refused write is held in memory under the plan it concerns. */
+function saveProposals(storage: PlanStorage, documentId: string, proposals: readonly PlanRevisionProposal[]): Promise<boolean> {
+	return savePlanWrites(storage, documentId, proposalsWrite(proposals), announceProposals);
+}
+
+/** Proposals for the given plans (all plans when omitted), oldest first. */
+export function listPlanRevisionProposals(documentIds?: readonly string[], storage: Pick<StorageLike, "getItem"> | null = browserStorage()): PlanRevisionProposal[] {
+	const wanted = documentIds ? new Set(documentIds) : null;
+	return loadProposals(storage).filter((proposal) => !wanted || wanted.has(proposal.documentId));
 }
 
 export function getPlanRevisionProposal(id: string, storage: Pick<StorageLike, "getItem"> | null = browserStorage()): PlanRevisionProposal | null {
@@ -154,13 +213,19 @@ export async function resolvePlanRevisionProposal(
 	if (!proposal) return null;
 	if (proposal.status !== "pending") return proposal.status;
 	let status: PlanRevisionProposalStatus = "declined";
+	const settled = (next: PlanRevisionProposalStatus) => proposals.map((candidate) => candidate.id === id ? { ...candidate, status: next } : candidate);
 	if (decision === "accept") {
 		const current = await loadCurrentPlan(source, proposal.documentId, storage);
 		const next = current ? applyPlanRevision(current.document, proposal.change, new Date(now()).toISOString()) : null;
 		status = next ? "accepted" : "stale";
-		if (current && next) await commitRevision(storage, current.document, next, { op: proposal.change.op, via: "accepted", ...(proposal.sessionId ? { sessionId: proposal.sessionId } : {}) });
+		if (current && next) {
+			// The plan and the proposal's status are saved (or held unsaved) together.
+			await commitRevision(storage, current.document, next, { op: proposal.change.op, via: "accepted", ...(proposal.sessionId ? { sessionId: proposal.sessionId } : {}) },
+				proposal.change, now(), proposalsWrite(settled(status)), announceProposals);
+			return status;
+		}
 	}
-	saveProposals(storage, proposals.map((candidate) => candidate.id === id ? { ...candidate, status } : candidate));
+	await saveProposals(storage, proposal.documentId, settled(status));
 	return status;
 }
 
