@@ -163,22 +163,26 @@ export function el(doc: FakeDocument, tag: string, attrs: Record<string, string>
 
 /** Installs the fake as `document`/`window` globals; returns a restore function. */
 export function installFakeDom(): { doc: FakeDocument; selection: FakeSelection; events: CustomEvent[]; restore: () => void } {
-	const g = globalThis as Record<string, unknown>;
-	const saved = { document: g.document, window: g.window, Node: g.Node, NodeFilter: g.NodeFilter, sessionStorage: g.sessionStorage };
+	// Other test files may leave these as read-only own properties; define rather
+	// than assign so this helper works whatever order the files run in.
+	const keys = ["document", "window", "Node", "NodeFilter", "sessionStorage"] as const;
+	const saved = new Map(keys.map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+	const set = (key: (typeof keys)[number], value: unknown) =>
+		Object.defineProperty(globalThis, key, { configurable: true, writable: true, enumerable: true, value });
 	const doc = new FakeDocument();
 	const selection = new FakeSelection();
 	const events: CustomEvent[] = [];
 	const target = new EventTarget();
 	const store = new Map<string, string>();
-	g.document = doc;
-	g.Node = { ELEMENT_NODE: ELEMENT, TEXT_NODE: TEXT };
-	g.NodeFilter = { SHOW_TEXT: 4, FILTER_ACCEPT: 1, FILTER_REJECT: 2, FILTER_SKIP: 3 };
-	g.sessionStorage = {
+	set("document", doc);
+	set("Node", { ELEMENT_NODE: ELEMENT, TEXT_NODE: TEXT });
+	set("NodeFilter", { SHOW_TEXT: 4, FILTER_ACCEPT: 1, FILTER_REJECT: 2, FILTER_SKIP: 3 });
+	set("sessionStorage", {
 		getItem: (key: string) => store.get(key) ?? null,
 		setItem: (key: string, value: string) => void store.set(key, value),
 		removeItem: (key: string) => void store.delete(key),
-	};
-	g.window = {
+	});
+	set("window", {
 		getSelection: () => selection,
 		innerWidth: 360,
 		innerHeight: 640,
@@ -188,15 +192,15 @@ export function installFakeDom(): { doc: FakeDocument; selection: FakeSelection;
 			if (event instanceof CustomEvent) events.push(event);
 			return target.dispatchEvent(event);
 		},
-	};
+	});
 	return {
 		doc,
 		selection,
 		events,
 		restore: () => {
-			for (const [key, value] of Object.entries(saved)) {
-				if (value === undefined) delete g[key];
-				else g[key] = value;
+			for (const [key, descriptor] of saved) {
+				if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+				else Reflect.deleteProperty(globalThis, key);
 			}
 		},
 	};

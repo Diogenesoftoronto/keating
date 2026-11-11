@@ -164,7 +164,7 @@ export function NotOrganicAccessPanel({ loading = false, error, summary, connect
 				? <>Add <strong>${pack.priceUsd}</strong> in Keating credits with your Not Organic account.</>
 				: consent ? <>You’re signed in to <strong>Not Organic</strong>. Review access to your selected model to continue.</>
 				: reconnect ? <>Sign in with <strong>Not Organic</strong> to approve access to your selected model.</>
-				: <>Sign up or sign in with <strong>Not Organic</strong> to use Keating’s hosted models and web search. You can choose a hosted model.</>}</p>
+				: <>Sign up or sign in with <strong>Not Organic</strong> to use Keating’s hosted models. Sign-in also turns on web search and learning extraction from your lessons; you can turn either off in Settings.</>}</p>
 			</div>
 			{summary && <p role="status" className={css({ fontSize: "0.875rem", overflowWrap: "anywhere" })}>{summary}</p>}
 			{error && <p role="alert" className={css({ fontSize: "0.875rem", color: "var(--destructive)", overflowWrap: "anywhere" })}>{error}</p>}

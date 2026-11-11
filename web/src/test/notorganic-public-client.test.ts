@@ -45,7 +45,7 @@ describe("Not Organic public client", () => {
 		expect(publicClientConfig({})).toBeNull();
 		expect(publicClientConfig({ VITE_NOTORGANIC_PUBLIC_ISSUER: "https://provider.test/", VITE_NOTORGANIC_AUTHORIZATION_URL: "https://portal.test/authorize", VITE_NOTORGANIC_CLIENT_ID: "https://keating.test/client", VITE_NOTORGANIC_REDIRECT_URI: "https://keating.test/notorganic/callback" })).toMatchObject({
 			issuer: "https://provider.test",
-			scope: "wallet:read usage:read billing:checkout web:search web:fetch infer:image infer:text realtime:connect sync:key:read sync:read sync:write",
+			scope: "wallet:read usage:read billing:checkout web:search web:fetch infer:image infer:text realtime:connect extraction:run sync:key:read sync:read sync:write",
 		});
 		expect(publicClientMaxCostMicrousd({})).toBe(100_000);
 		expect(() => publicClientMaxCostMicrousd({ VITE_NOTORGANIC_MAX_COST_MICROUSD: "0" })).toThrow("positive integer");

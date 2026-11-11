@@ -117,6 +117,11 @@ test("automatic repair claims are bounded and deduplicated", () => {
 });
 
 test("mounted repair requests deduplicate remounts and stay isolated by document and session", async () => {
+	const saved = new Map<string, string>();
+	const previousStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+	Object.defineProperty(globalThis, "localStorage", { configurable: true, writable: true, value: {
+		getItem: (key: string) => saved.get(key) ?? null, setItem: (key: string, value: string) => { saved.set(key, value); } } });
+	try {
 	__resetOpenUICompileRecovery();
 	const attempts: number[] = [];
 	const documentIds: string[] = [];
@@ -140,12 +145,37 @@ test("mounted repair requests deduplicate remounts and stay isolated by document
 	expect(documentIds).toEqual(["document-a", "document-b"]);
 	await firstSession.unmount();
 
-	__resetOpenUICompileRecovery();
-	const secondSession = createReactMountHarness();
-	await secondSession.render(elementFor("document-a"));
+	// A reload must not ask again for a component it already asked to repair:
+	// that turn may have been withheld, and repeating it looped on every visit.
+	__resetOpenUICompileRecovery({ reload: true });
+	const afterReload = createReactMountHarness();
+	await afterReload.render(elementFor("document-a"));
+	await afterReload.render(elementFor("document-c"));
 	expect(attempts).toEqual([1, 2, 1]);
-	expect(documentIds).toEqual(["document-a", "document-b", "document-a"]);
-	await secondSession.unmount();
+	expect(documentIds).toEqual(["document-a", "document-b", "document-c"]);
+	await afterReload.unmount();
+	__resetOpenUICompileRecovery();
+	} finally {
+		if (previousStorage) Object.defineProperty(globalThis, "localStorage", previousStorage);
+		else Reflect.deleteProperty(globalThis, "localStorage");
+	}
+});
+
+test("a repair request names the failure without copying the broken source into the learner turn", async () => {
+	__resetOpenUICompileRecovery();
+	const actions: Parameters<KeatingOpenUIActionHandler>[0][] = [];
+	const invalid = 'root = LearningSurface([missing], "Broken interaction")';
+	const harness = createReactMountHarness();
+	await harness.render(
+		<KeatingOpenUIActionProvider onAction={action => { actions.push(action); return true; }}>
+			<KeatingOpenUIRenderer program={invalid} metadata={{ ...metadata, id: "document-source" }} />
+		</KeatingOpenUIActionProvider>,
+	);
+	expect(actions).toHaveLength(1);
+	expect(actions[0]!.params.source).toBeUndefined();
+	expect(JSON.stringify(actions[0])).not.toContain("Broken interaction");
+	expect(typeof actions[0]!.params.reason).toBe("string");
+	await harness.unmount();
 	__resetOpenUICompileRecovery();
 });
 

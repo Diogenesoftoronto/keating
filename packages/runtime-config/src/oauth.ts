@@ -4,6 +4,9 @@ import { notOrganicInferenceScope, NOTORGANIC_ORDINARY_TEXT_MODELS } from "./tex
 
 export const NOTORGANIC_CAPABILITIES = [
   "wallet:read", "usage:read", "billing:checkout", "web:search", "web:fetch", "realtime:connect",
+  // Clairic learning extraction is part of sign-in; learners can turn it off in Settings.
+  // The Not Organic portal lists extraction:run in PUBLIC_CLIENT_CAPABILITIES.
+  "extraction:run",
 ] as const;
 
 export interface NotOrganicScopeOptions {

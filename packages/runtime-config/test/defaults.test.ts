@@ -33,8 +33,10 @@ describe("public runtime configuration", () => {
     expect(SPENDING_LIMITS).toEqual({ notorganicRequestMicrousd: 100000, notorganicServerRequestMicrousd: 50000 });
   });
   test("browser sign-in uses stable text access without opting into preview models", () => {
-    expect(DEFAULT_NOTORGANIC_SCOPE).toBe("wallet:read usage:read billing:checkout web:search web:fetch infer:image infer:text realtime:connect");
+    expect(DEFAULT_NOTORGANIC_SCOPE).toBe("wallet:read usage:read billing:checkout web:search web:fetch infer:image infer:text realtime:connect extraction:run");
     expect(DEFAULT_NOTORGANIC_SCOPE.split(" ")).toContain("infer:text");
+    // Sign-in includes Clairic extraction and web search by default.
+    expect(DEFAULT_NOTORGANIC_SCOPE.split(" ")).toEqual(expect.arrayContaining(["extraction:run", "web:search", "web:fetch"]));
     expect(DEFAULT_NOTORGANIC_SCOPE.split(" ")).not.toContain("infer:flint");
     expect(DEFAULT_NOTORGANIC_SCOPE).not.toContain("infer:ampersand-tutor-v0.1");
     expect(DEFAULT_NOTORGANIC_SCOPE).not.toContain("judgement:evaluate");

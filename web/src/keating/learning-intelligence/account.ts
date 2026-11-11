@@ -5,9 +5,12 @@ export const LEARNING_INTELLIGENCE_CHANGED = "keating-learning-intelligence-chan
 const preferenceKey = "keating.learning-intelligence.enabled.v1";
 const permission = "extraction:run";
 
-/** A local opt-in; account capabilities still determine whether a call may run. */
+/**
+ * On by default (unset); only an explicit "false" saved from Settings turns it off.
+ * Account capabilities still determine whether a call may run.
+ */
 export function learningIntelligenceEnabled(): boolean {
-  try { return localStorage.getItem(preferenceKey) === "true"; } catch { return false; }
+  try { return localStorage.getItem(preferenceKey) !== "false"; } catch { return false; }
 }
 export function setLearningIntelligenceEnabled(enabled: boolean): void {
   localStorage.setItem(preferenceKey, enabled ? "true" : "false");

@@ -51,6 +51,24 @@ const tipClass = css({
 	"&[data-below]": { top: "calc(100% + 0.25rem)", bottom: "auto" },
 });
 
+/** The quiet unverified marker, with its explanation in a hover/focus tooltip. */
+export function UnverifiedBadge({ tip = UNVERIFIED_TIP }: { tip?: string }) {
+	return (
+		<span role="note" aria-label={tip} tabIndex={0} className={unverifiedBadgeClass}>
+			<ShieldQuestion size={13} aria-hidden />
+			<span data-tip aria-hidden className={tipClass}>{tip}</span>
+		</span>
+	);
+}
+
+/** Tooltip for a reply whose factual claims could not all be sourced after release. */
+export function unsourcedClaimTip(claims: readonly string[]): string {
+	const first = claims[0]?.trim().replace(/[.!?;:,]+$/, "");
+	if (!first) return UNVERIFIED_TIP;
+	const quoted = first.length > 160 ? `${first.slice(0, 157).trimEnd()}…` : first;
+	return `Not verified: Keating couldn't find a source for “${quoted}”${claims.length > 1 ? ` and ${claims.length - 1} other claim${claims.length > 2 ? "s" : ""}` : ""}. Double-check it before relying on it.`;
+}
+
 /**
  * A tutor turn that did not pass the full draft review. Both kinds stay quiet:
  * `unverified` shows the best available reply with a small icon, `withheld`
@@ -63,15 +81,7 @@ export function ReviewNoticeCard({ kind, children, reason }: { kind: ReviewNotic
 		return (
 			<div>
 				{children}
-				<span
-					role="note"
-					aria-label={UNVERIFIED_TIP}
-					tabIndex={0}
-					className={unverifiedBadgeClass}
-				>
-					<ShieldQuestion size={13} aria-hidden />
-					<span data-tip aria-hidden className={tipClass}>{UNVERIFIED_TIP}</span>
-				</span>
+				<UnverifiedBadge />
 			</div>
 		);
 	}

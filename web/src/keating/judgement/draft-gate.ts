@@ -108,6 +108,12 @@ export interface TeachingDraftGateOptions {
   readonly onProgress?: (snapshot: TeachingDraftSnapshot) => void;
   /** Terminal review outcome for a published (non-stopped) message, keyed by its timestamp. */
   readonly onReceipt?: (receipt: TeachingDraftReceipt) => void;
+  /**
+   * A reply was released. Runs after publication for follow-up checks (claim
+   * citations); it cannot change what was published.
+   */
+  readonly onReleasedReply?: (release: { readonly messageTimestamp: number; readonly text: string;
+    readonly sources: TeachingPolicyTurn["sources"]; readonly unverified: boolean }) => void;
   /** Optional advisory ranking of already-approved replies; never authorizes a tool call. */
   readonly activityLearning?: (input: ActivitySelectionInput) => Promise<ActivitySelection>;
   /** Read once at turn start. Loading/research happens outside the public response path. */
@@ -481,7 +487,13 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       });
       if (stopped()) { publish(safeMessage("", true)); return; }
       if (result.status === "released" && result.value && result.reply && current()) {
-        publish(approvedMessage(result.value, result.reply, usage, result.receipt.reason === "best-effort-draft"), result.activitySelection);
+        const unverified = result.receipt.reason === "best-effort-draft";
+        const released = approvedMessage(result.value, result.reply, usage, unverified);
+        publish(released, result.activitySelection);
+        if (result.reply.text.trim()) {
+          try { options.onReleasedReply?.({ messageTimestamp: released.timestamp, text: result.reply.text, sources: turn.sources, unverified }); }
+          catch { /* Follow-up checks cannot change publication. */ }
+        }
       } else {
         publish(safeMessage(withReviewNotice("withheld", describeDraftFailure(lastProgress))));
       }

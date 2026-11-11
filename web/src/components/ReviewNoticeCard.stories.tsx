@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { ReviewNoticeCard } from "./ReviewNoticeCard";
+import { ReviewNoticeCard, UnverifiedBadge, unsourcedClaimTip } from "./ReviewNoticeCard";
 
 const meta = {
   title: "Conversation/ReviewNoticeCard",
@@ -21,4 +21,14 @@ export const Unverified: Story = {
     kind: "unverified",
     children: <p>Ohm's law says the current through a resistor is the voltage across it divided by its resistance.</p>,
   },
+};
+
+export const UnsourcedClaim: Story = {
+  args: { kind: "unverified" },
+  render: () => (
+    <div>
+      <p>The Eiffel Tower was completed in 1889, and its original permit allowed it to stand for 20 years.</p>
+      <UnverifiedBadge tip={unsourcedClaimTip(["Its original permit allowed it to stand for 20 years."])} />
+    </div>
+  ),
 };

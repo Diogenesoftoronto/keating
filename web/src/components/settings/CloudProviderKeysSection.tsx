@@ -511,7 +511,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 							</div>
 							<div className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
 								<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-									Sign in to use hosted models with your Not Organic credit.
+									Sign in to use hosted models with your Not Organic credit. Sign-in includes web search and learning extraction; turn either off in Settings.
 								</p>
 								{hasSession && hostedSummary && (
 									<p className={css({ marginTop: "0.5rem", fontSize: "0.75rem", color: "var(--foreground)" })}>
