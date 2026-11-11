@@ -1,4 +1,4 @@
-import { MODEL_PREFERENCES, FLINT_PREVIEW_PROFILE } from "@keating/runtime-config";
+import { MODEL_PREFERENCES, FLINT_PREVIEW_PROFILE, GPT_6_LUNA_PROFILE, SERVICE_ENDPOINTS } from "@keating/runtime-config";
 import { browserInputMessages } from "../lib/browser-model-input";
 import {
 	createAssistantMessageEventStream,
@@ -89,6 +89,17 @@ export function withProviderWebSearch(
 	};
 }
 
+// Pi 0.80.7 does not bundle GPT-6 Luna. Keep this search-only fallback local;
+// a future bundled entry takes precedence and the main chat defaults are unchanged.
+const LUNA_AUXILIARY_SEARCH_MODEL: Model<"openai-responses"> = {
+	...GPT_6_LUNA_PROFILE,
+	provider: "openai", api: "openai-responses", baseUrl: SERVICE_ENDPOINTS.openai,
+	reasoning: true, input: ["text", "image"],
+	thinkingLevelMap: { off: "none", minimal: "low", xhigh: "xhigh", max: "max" },
+	// GPT-6 uses prompt_cache_options, not the SDK's legacy 24h retention field.
+	compat: { supportsLongCacheRetention: false },
+};
+
 const AUXILIARY_SEARCH_PROVIDERS = ["openai", "google", "anthropic"] as const;
 const PREFERRED_AUXILIARY_SEARCH_MODELS: Record<(typeof AUXILIARY_SEARCH_PROVIDERS)[number], readonly string[]> = MODEL_PREFERENCES.auxiliarySearch;
 
@@ -113,9 +124,10 @@ export async function resolveAuxiliaryWebSearchModel(dependencies: {
 	getApiKey?: (provider: string) => Promise<string | undefined>;
 } = {}): Promise<{ model: Model<Api>; apiKey: string } | undefined> {
 	const getApiKey = dependencies.getApiKey ?? getProviderApiKey;
-	const models = dependencies.models ?? AUXILIARY_SEARCH_PROVIDERS.flatMap(
-		(provider) => getModels(provider as any) as Model<Api>[],
-	);
+	const models = dependencies.models ?? [
+		...AUXILIARY_SEARCH_PROVIDERS.flatMap((provider) => getModels(provider as any) as Model<Api>[]),
+		LUNA_AUXILIARY_SEARCH_MODEL,
+	];
 	for (const provider of AUXILIARY_SEARCH_PROVIDERS) {
 		const apiKey = await getApiKey(provider);
 		if (!apiKey) continue;
@@ -171,7 +183,11 @@ export async function searchWithConfiguredProvider(query: string, signal?: Abort
 	let requestOptions: SimpleStreamOptions = {
 		apiKey,
 		maxTokens: 2_000,
-		temperature: 0.1,
+		// Preserve GPT-5 mini's effective medium effort. Luna rejects temperature
+		// with reasoning, and the old SDK cannot send GPT-6 cache retention options.
+		...(model.provider === "openai" && model.id === GPT_6_LUNA_PROFILE.id
+			? { reasoning: "medium" as const, cacheRetention: "short" as const }
+			: { temperature: 0.1 }),
 		signal,
 	};
 	if (shouldProxyModel(model)) {

@@ -1,10 +1,11 @@
-import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, MODEL_CHOICES, FLINT_PREVIEW_PROFILE, INKLING_2_SMALL_PROFILE } from "@keating/runtime-config";
+import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, MODEL_CHOICES, FLINT_PREVIEW_PROFILE, INKLING_2_SMALL_PROFILE, notOrganicInferenceScope, hasNotOrganicInferenceScope } from "@keating/runtime-config";
 import { checkoutSelection, subscriptionAvailable, subscriptionCheckoutEnabled } from "./plans";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { availableCreditPacks, normalizeCreditWallet } from "./credit-wallet";
 import { isNotOrganicDesktop, prepareNotOrganicDesktopAuthorization } from "../keating/notorganic-desktop";
 import {
 	NotOrganicPublicClient,
+	NotOrganicPublicClientError,
 	publicClientConfig,
 	type NotOrganicProviderSession,
 } from "./public-client";
@@ -97,17 +98,38 @@ export async function getAvailableNotOrganicChatModels(
 }
 
 export function notOrganicModelScopes(model: Pick<Model<Api>, "id" | "provider">): string[] {
-	return model.provider === NOTORGANIC_PROVIDER_ID ? [`infer:${model.id}`, "web:search", "web:fetch"] : [];
+	return model.provider === NOTORGANIC_PROVIDER_ID ? [notOrganicInferenceScope(model.id)] : [];
 }
 
-/** A stored account session does not imply consent to every selectable model. */
+/** Stable text access covers ordinary choices; exact legacy and privacy-specific grants remain valid. */
 export function notOrganicModelNeedsConsent(
 	model: Pick<Model<Api>, "id" | "provider">,
 	session: Pick<NotOrganicProviderSession, "scope"> | null | undefined = notOrganicPublicClient()?.getSession(),
 ): boolean {
 	if (model.provider !== NOTORGANIC_PROVIDER_ID || !session) return false;
 	const granted = new Set(session.scope.split(/\s+/));
-	return notOrganicModelScopes(model).some(scope => !granted.has(scope));
+	return !hasNotOrganicInferenceScope(granted, model.id);
+}
+
+
+/** Ask only the provider to renew its grant before showing a legacy upgrade prompt.
+ * The client neither adds scopes nor requests a wider refresh scope. A reviewed,
+ * enabled first-party provider migration may issue infer:text; otherwise the
+ * existing exact grant is preserved and one explicit authorization is needed.
+ */
+export async function notOrganicModelNeedsConsentAfterRefresh(
+  model: Pick<Model<Api>, "id" | "provider">,
+): Promise<boolean> {
+  const client = notOrganicPublicClient();
+  if (!notOrganicModelNeedsConsent(model, client?.getSession())) return false;
+  const before = client?.getSession();
+  if (before?.refreshToken) {
+    const refreshed = await client!.activeSession({ refresh: true });
+    if (!refreshed || refreshed.id !== before.id) {
+      throw new NotOrganicPublicClientError("Your Not Organic session changed. Sign in again or retry to continue.");
+    }
+  }
+  return notOrganicModelNeedsConsent(model, client?.getSession());
 }
 
 export interface NotOrganicAccount {
@@ -166,11 +188,14 @@ export function notOrganicPublicClient(): NotOrganicPublicClient | null {
 export async function beginNotOrganicAuthorization(
 	returnTo = `${window.location.pathname}${window.location.search}`,
 	requiredScopes: readonly string[] = [],
+	isCurrent: () => boolean = () => true,
 ): Promise<void> {
 	const client = notOrganicPublicClient();
 	if (!client) throw new Error("This Keating deployment has not enabled Not Organic sign-in.");
 	const url = await client.authorizationUrl(returnTo, requiredScopes);
+	if (!isCurrent()) return;
 	if (isNotOrganicDesktop()) await prepareNotOrganicDesktopAuthorization(url);
+	if (!isCurrent()) return;
 	// Electron externalizes this navigation while preserving this renderer's
 	// session storage and DPoP key. The native receiver returns the callback.
 	window.location.assign(url);

@@ -87,7 +87,7 @@ export function ModelPoolEditor({ pools, availableModels, activePoolId, onSelect
 						<legend className={sectionHeadingClass}>Generation tasks</legend>
 						<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.25rem", paddingTop: "0.5rem" })}>
 							{REVIEW_TASK_OPTIONS.map((task) => (
-								<label key={task.value} className={css({ cursor: "pointer", borderRadius: "9999px", border: "1px solid", borderColor: pool.tasks.includes(task.value) ? "var(--ink)" : "var(--border)", background: pool.tasks.includes(task.value) ? "var(--ink)" : "var(--background)", padding: "0.25rem 0.5rem", fontSize: "0.625rem", fontWeight: 650, color: pool.tasks.includes(task.value) ? "var(--paper)" : "var(--foreground)", _focusWithin: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })}>
+								<label key={task.value} className={css({ cursor: "pointer", borderRadius: "9999px", border: "1px solid", borderColor: pool.tasks.includes(task.value) ? "var(--ink)" : "var(--border)", background: pool.tasks.includes(task.value) ? "var(--ink)" : "var(--background)", padding: "0.25rem 0.5rem", fontSize: "0.625rem", fontWeight: 650, color: pool.tasks.includes(task.value) ? "var(--paper)" : "var(--foreground)", _focusWithin: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } })}>
 									<input type="checkbox" checked={pool.tasks.includes(task.value)} className={css({ position: "absolute", opacity: 0, pointerEvents: "none" })} onChange={() => toggleTask(task.value)} />
 									{task.label}
 								</label>

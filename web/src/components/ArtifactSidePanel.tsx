@@ -1,9 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArtifactViewer } from "./ArtifactViewer";
-import {
-	artifactBrowserStorage,
-	type ArtifactBrowserSurfaceProps,
-} from "./artifact-browser-shared";
+import { useCallback, useRef, useState } from "react";
+import type { ArtifactBrowserSurfaceProps } from "./artifact-browser-shared";
+import { ArtifactSurfaceBody } from "./workspace/ArtifactSurfaceBody";
+import { useSurfaceFocus } from "./workspace/useSurfaceFocus";
 import { css, cx } from "../../styled-system/css";
 
 const MIN_WIDTH = 288;
@@ -32,18 +30,19 @@ function saveWidth(value: number) {
 	}
 }
 
-export function ArtifactSidePanel({ open, artifactId, onClose }: ArtifactBrowserSurfaceProps) {
+export function ArtifactSidePanel(props: ArtifactBrowserSurfaceProps) {
+	const { open, onClose } = props;
 	const [width, setWidth] = useState(loadSavedWidth);
 	const dragState = useRef({ active: false, startX: 0, startWidth: 0 });
+	const headingRef = useSurfaceFocus(open, onClose, undefined, false, props.focusOnOpen ?? true);
 
-	useEffect(() => {
-		if (!open) return;
-		const onKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape") onClose();
-		};
-		window.addEventListener("keydown", onKeyDown);
-		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [open, onClose]);
+	const resizeBy = useCallback((delta: number) => {
+		setWidth((current) => {
+			const next = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, current + delta));
+			saveWidth(next);
+			return next;
+		});
+	}, []);
 
 	const handleDragStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
 		e.preventDefault();
@@ -82,7 +81,8 @@ export function ArtifactSidePanel({ open, artifactId, onClose }: ArtifactBrowser
 	}, [width]);
 
 	return (
-		<div
+		<aside
+			aria-label="Session workspace"
 			className={css({
 				position: "relative",
 				display: "flex",
@@ -105,7 +105,19 @@ export function ArtifactSidePanel({ open, artifactId, onClose }: ArtifactBrowser
 					cursor: "col-resize",
 					alignItems: "center",
 					justifyContent: "center",
+					_focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "-2px" },
 				}))}
+				role="separator"
+				aria-orientation="vertical"
+				aria-label="Resize workspace panel"
+				aria-valuemin={MIN_WIDTH}
+				aria-valuemax={MAX_WIDTH}
+				aria-valuenow={width}
+				tabIndex={0}
+				onKeyDown={(event) => {
+					if (event.key === "ArrowLeft") { event.preventDefault(); resizeBy(32); }
+					if (event.key === "ArrowRight") { event.preventDefault(); resizeBy(-32); }
+				}}
 				onMouseDown={handleDragStart}
 				onTouchStart={handleDragStart}
 			>
@@ -117,9 +129,10 @@ export function ArtifactSidePanel({ open, artifactId, onClose }: ArtifactBrowser
 					opacity: 0,
 					transitionProperty: "opacity",
 					transitionDuration: "150ms",
-					".group:is(:hover, :active) &": {
+					".group:is(:hover, :active, :focus-visible) &": {
 						opacity: 1,
 					},
+					"@media (prefers-reduced-motion: reduce)": { transitionDuration: "0ms" },
 				})} />
 			</div>
 
@@ -131,9 +144,9 @@ export function ArtifactSidePanel({ open, artifactId, onClose }: ArtifactBrowser
 					padding: "0.75rem",
 					sm: { padding: "1rem" },
 				})}>
-					<ArtifactViewer storage={artifactBrowserStorage} artifactId={artifactId} onClose={onClose} />
+					<ArtifactSurfaceBody {...props} headingRef={headingRef} />
 				</div>
 			)}
-		</div>
+		</aside>
 	);
 }

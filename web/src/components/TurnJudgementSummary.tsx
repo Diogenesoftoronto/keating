@@ -12,10 +12,10 @@ import type { JudgementLabelRecord, MemoryVerdict, TurnExtraction, TurnJudgement
 
 const muted = css({ color: "var(--muted-foreground)", fontSize: "0.75rem", lineHeight: 1.5 });
 const mono = css({ fontFamily: "var(--mono-body)", fontSize: "0.6875rem" });
-const sectionSummary = css({ cursor: "pointer", fontSize: "0.75rem", fontWeight: 650, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } });
+const sectionSummary = css({ cursor: "pointer", fontSize: "0.75rem", fontWeight: 650, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } });
 const quoteClass = css({ borderInlineStart: "3px solid var(--border)", paddingInlineStart: "0.5rem", fontSize: "0.75rem", lineHeight: 1.5, whiteSpace: "pre-wrap", overflowWrap: "anywhere" });
 const button = css({ borderRadius: "0.375rem", border: "1px solid var(--border)", background: "var(--background)", paddingInline: "0.5rem", minHeight: "1.75rem", fontSize: "0.6875rem", fontWeight: 600,
-	_hover: { background: "var(--accent)", color: "var(--accent-foreground)" }, _disabled: { opacity: 0.45, cursor: "not-allowed" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" } });
+	_hover: { background: "var(--accent)", color: "var(--accent-foreground)" }, _disabled: { opacity: 0.45, cursor: "not-allowed" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } });
 
 const extractionKinds: Record<string, string> = {
 	"answer-step": "Learner reasoning step",

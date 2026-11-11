@@ -62,7 +62,7 @@ const launcher = css({
 		background: "color-mix(in srgb, var(--accent) 10%, transparent)",
 		"& .keating-duo-icon": { transform: "rotate(-10deg) scale(1.12)" },
 	},
-	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-3px" },
+	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "-3px" },
 });
 
 const nibRunning = css({ animation: "socratic-nib 900ms ease-in-out infinite" });
@@ -165,7 +165,7 @@ export function SocraticPass({
 									color: "var(--ink)",
 									paddingInline: "0.5rem",
 									fontSize: "0.75rem",
-									_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" },
+									_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
 								})}
 							>
 								{pools.map((pool) => <option key={pool.id} value={pool.id}>{pool.name}</option>)}

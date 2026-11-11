@@ -5,13 +5,11 @@
  * failures are swallowed so feedback can never break the review flow.
  */
 
+import { motionReduced } from "../../lib/motion";
+
+/** Honours the operating-system setting and Keating's own "Reduce motion" setting. */
 export function prefersReducedMotion(): boolean {
-	if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
-	try {
-		return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-	} catch {
-		return false;
-	}
+	return motionReduced();
 }
 
 /** Streak milestones that get a celebratory pulse. */

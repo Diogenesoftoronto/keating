@@ -1,5 +1,6 @@
-/** Consent follows enabled model IDs; judgement and tabular access remain explicit opt-ins. */
+/** Ordinary text inference is stable across model releases; other capabilities stay separate. */
 import { DEFAULT_MODELS, NOTORGANIC_CHAT_MODEL_IDS, NOTORGANIC_IMAGE_MODEL_IDS } from "./models.js";
+import { notOrganicInferenceScope, NOTORGANIC_ORDINARY_TEXT_MODELS } from "./text-scope.js";
 
 export const NOTORGANIC_CAPABILITIES = [
   "wallet:read", "usage:read", "billing:checkout", "web:search", "web:fetch", "realtime:connect",
@@ -13,7 +14,7 @@ export interface NotOrganicScopeOptions {
 export function buildNotOrganicScope({ models, capabilities }: NotOrganicScopeOptions): string {
   const explicit = [...new Set(capabilities.map(scope => scope.trim()).filter(Boolean))];
   const inference = [...new Set([
-    ...models.map(model => model.trim()).filter(Boolean).map(model => `infer:${model}`),
+    ...models.map(model => model.trim()).filter(Boolean).map(notOrganicInferenceScope),
     ...explicit.filter(scope => scope.startsWith("infer:")),
   ])].sort();
   // Retain the shipped browser scope byte order: account, chat, web, image, realtime.
@@ -36,6 +37,6 @@ export function buildNotOrganicScope({ models, capabilities }: NotOrganicScopeOp
 // Optional tutor consultation is not approved for public-client authorization.
 // Requesting its scope here prevents the entire account sign-in from completing.
 export const DEFAULT_NOTORGANIC_SCOPE = buildNotOrganicScope({
-  models: [...NOTORGANIC_CHAT_MODEL_IDS, ...NOTORGANIC_IMAGE_MODEL_IDS],
+  models: [...NOTORGANIC_CHAT_MODEL_IDS.filter(model => NOTORGANIC_ORDINARY_TEXT_MODELS.includes(model)), ...NOTORGANIC_IMAGE_MODEL_IDS],
   capabilities: NOTORGANIC_CAPABILITIES,
 });

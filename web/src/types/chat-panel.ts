@@ -5,7 +5,7 @@ import type { PendingLearnerResponse } from "../keating/event-store";
 export interface ChatPanelSetupCallbacks {
 	/** Durable session/fork identity used to scope rendered interaction state. */
 	sessionId?: string;
-	onApiKeyRequired?: (provider: string) => Promise<boolean>;
+	onApiKeyRequired?: (provider: string, signal?: AbortSignal) => Promise<boolean>;
 	onAuthError?: (provider: string) => Promise<boolean>;
 	onBeforeSend?: () => void | Promise<void>;
 	onCostClick?: () => void;

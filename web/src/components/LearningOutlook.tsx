@@ -13,7 +13,7 @@ const styles = {
 	range: css({ position: "absolute", top: 0, bottom: 0, borderRadius: "999px", background: "color-mix(in srgb, var(--primary) 35%, transparent)" }),
 	median: css({ position: "absolute", top: "-0.125rem", bottom: "-0.125rem", width: "2px", background: "var(--primary)" }),
 	button: css({ minH: "2.75rem", border: "1px solid var(--ink)", borderRadius: "0.25rem", bg: "var(--card)", color: "var(--ink)", px: "0.875rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", justifySelf: "start",
-		_hover: { bg: "var(--ink)", color: "var(--paper)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" } }),
+		_hover: { bg: "var(--ink)", color: "var(--paper)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } }),
 };
 
 const RATINGS = ["forgot", "hard", "good", "easy"];

@@ -4,9 +4,12 @@ import { createHash } from "node:crypto";
 import { chmod, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { createRequire } from "node:module";
-import ts from "typescript";
+import type * as TypeScript from "typescript";
 
 const root = resolve(import.meta.dir, "../..");
+// The root package is TypeScript 7 (native, no JS API); the compiler API lives in
+// web's TypeScript 6 install, as in scripts/generate-nodepod-boot-files.ts.
+const ts = (await import(resolve(root, "web/node_modules/typescript/lib/typescript.js"))).default as typeof TypeScript;
 const output = resolve(root, process.argv[2] ?? ".keating/outputs/training/system-prompt.txt");
 const digest = (value: string | Buffer) => createHash("sha256").update(value).digest("hex");
 
@@ -75,20 +78,22 @@ const composed = appendCourseCollaborationPrompt(
 // Independently execute the actual builder declaration from the React hook. We
 // deliberately avoid importing that hook, which initializes application storage.
 // TypeScript removes only types; dependencies are the same functions imported above.
-const hookPath = "web/src/hooks/useKeatingAgent.tsx";
+const hookPath = "web/src/hooks/agent/system-prompt.ts";
 const hook = await readFile(resolve(root, hookPath), "utf8");
-const sourceFile = ts.createSourceFile(hookPath, hook, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+const sourceFile = ts.createSourceFile(hookPath, hook, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
 const builders = sourceFile.statements.filter((node): node is ts.FunctionDeclaration =>
   ts.isFunctionDeclaration(node) && node.name?.text === "buildAgentSystemPrompt",
 );
 if (builders.length !== 1) throw new Error("Expected exactly one original web prompt builder");
 const originalSource = builders[0]!.getText(sourceFile);
-const executable = ts.transpileModule(originalSource, {
-  compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None },
+// The builder now lives in its own module as an exported function; evaluate it
+// as a plain declaration inside new Function below.
+const executable = ts.transpileModule(originalSource.replace(/^export\s+/, ""), {
+  compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None, ignoreDeprecations: "6.0" },
   reportDiagnostics: true,
 });
 if (executable.diagnostics?.some((diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error)) {
-  throw new Error("Could not compile original web prompt builder");
+  throw new Error(`Could not compile original web prompt builder: ${executable.diagnostics.map((d) => ts.flattenDiagnosticMessageText(d.messageText, " ")).join("; ")}`);
 }
 const originalBuilder = new Function(
   "buildKeatingSystemPrompt", "keatingOpenUIPrompt", "composeSessionStartSystemPrompt",

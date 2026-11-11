@@ -7,7 +7,7 @@ import { DRAFT_CHECK_PASS_LINE, describeTeachingCheck } from "../../keating/judg
 import type { DraftCheckVerdict, JudgementLabelRecord } from "../../keating/judgement/turn-records";
 
 const muted = css({ color: "var(--muted-foreground)", fontSize: "0.75rem", lineHeight: 1.5 });
-const summary = css({ cursor: "pointer", fontSize: "0.75rem", fontWeight: 650, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } });
+const summary = css({ cursor: "pointer", fontSize: "0.75rem", fontWeight: 650, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } });
 const pre = css({ marginTop: "0.35rem", overflowX: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: "0.6875rem", lineHeight: 1.5 });
 
 const actionLabels: Record<TeachingDraftInteraction["action"], string> = {

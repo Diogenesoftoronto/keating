@@ -398,7 +398,7 @@ export function SurfaceScreencasts() {
               className={css({
                 position: "absolute",
                 inset: 0,
-                _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-6px" },
+                _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "-6px" },
               })}
             >
               <video
@@ -555,7 +555,7 @@ export function SurfaceScreencasts() {
                     _hover: {
                       background: selected ? "var(--ink)" : "color-mix(in srgb, var(--accent) 22%, transparent)",
                     },
-                    _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-4px", zIndex: 1 },
+                    _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "-4px", zIndex: 1 },
                   })}
                 >
                   <span
@@ -754,7 +754,7 @@ export function SurfaceScreencasts() {
                       textTransform: "uppercase",
                       _dark: { color: "var(--phosphor)" },
                       _hover: { textDecoration: "underline", textUnderlineOffset: "0.25rem" },
-                      _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "4px" },
+                      _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "4px" },
                     })}
                   >
                     {feature.action} →

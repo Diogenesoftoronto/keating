@@ -213,7 +213,7 @@ export function CandidateLedger({
 										type="button"
 										role="radio"
 										aria-checked={selected}
-										className={css({ display: "inline-flex", minWidth: "8rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid", borderColor: selected ? "var(--ink)" : "transparent", background: selected ? "var(--muted)" : "transparent", padding: "0.5rem", textAlign: "left", _hover: { borderColor: "var(--border)", background: "var(--muted)" }, _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" }, md: { width: "100%" } })}
+										className={css({ display: "inline-flex", minWidth: "8rem", alignItems: "center", gap: "0.5rem", borderRadius: "0.375rem", border: "1px solid", borderColor: selected ? "var(--ink)" : "transparent", background: selected ? "var(--muted)" : "transparent", padding: "0.5rem", textAlign: "left", _hover: { borderColor: "var(--border)", background: "var(--muted)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" }, md: { width: "100%" } })}
 										onClick={() => onSelectCandidate(candidate.id)}
 									>
 										<span className={css({ display: "inline-flex", width: "1.25rem", height: "1.25rem", flex: "0 0 auto", alignItems: "center", justifyContent: "center", borderRadius: "9999px", background: chosen ? "var(--accent-green)" : "var(--muted)", fontSize: "0.625rem", fontWeight: 700, color: chosen ? "var(--ink)" : "var(--muted-foreground)" })}>
@@ -237,7 +237,7 @@ export function CandidateLedger({
 									</div>
 									<div className={css({ display: "flex", alignItems: "center", gap: "0.375rem" })}>
 										<div role="group" aria-label="Candidate view" className={css({ display: "inline-flex", border: "1px solid var(--border)", borderRadius: "0.375rem", padding: "0.125rem" })}>
-											{(["rendered", "raw"] as const).map((view) => <button key={view} type="button" aria-pressed={contentView === view} className={css({ borderRadius: "0.25rem", background: contentView === view ? "var(--ink)" : "transparent", padding: "0.25rem 0.45rem", fontSize: "0.625rem", fontWeight: 700, textTransform: "capitalize", color: contentView === view ? "var(--paper, var(--background))" : "var(--muted-foreground)", _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "1px" } })} onClick={() => setContentView(view)}>{view}</button>)}
+											{(["rendered", "raw"] as const).map((view) => <button key={view} type="button" aria-pressed={contentView === view} className={css({ borderRadius: "0.25rem", background: contentView === view ? "var(--ink)" : "transparent", padding: "0.25rem 0.45rem", fontSize: "0.625rem", fontWeight: 700, textTransform: "capitalize", color: contentView === view ? "var(--paper, var(--background))" : "var(--muted-foreground)", _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" } })} onClick={() => setContentView(view)}>{view}</button>)}
 										</div>
 										<button
 											type="button"

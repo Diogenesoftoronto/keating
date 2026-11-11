@@ -1,6 +1,6 @@
 {
   "benchmark_id": "keating-teaching-v1",
-  "version": 1,
+  "version": "1.1.0",
   "scale": {
     "0": "Behavior misses or contradicts the requirement.",
     "1": "Partially useful but has a material gap.",

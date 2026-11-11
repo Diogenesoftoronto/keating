@@ -1,4 +1,4 @@
-import { isValidSimulationExpression } from "./simulation-expression.js";
+import { evaluateSimulationExpression, isValidSimulationExpression, parseSimulationExpression } from "./simulation-expression.js";
 import { checkedMathQuestion } from "./math-question.js";
 import { systemDesignSubmissionIsComplete, validateSystemDesignSpec, type SystemDesignSpec } from "./system-design.js";
 import { codePointCompare, compareContractTimestamps, hasOnlyKeys, isBoundedJsonValue, isContractId, isContractTimestamp, isRecord } from "./validation.js";
@@ -398,6 +398,18 @@ export interface UiCodingTestResult {
   error?: string;
 }
 
+/** One parameter setting the learner shared from a simulation, in authored order. */
+export interface UiSimulationSharedParameter {
+  parameterId: string;
+  value: number;
+}
+
+/** A readout as the learner saw it; null when it had no finite value at those settings. */
+export interface UiSimulationSharedReadout {
+  readoutId: string;
+  value: number | null;
+}
+
 /** Work time in the current opened exercise, excluding pauses, hidden tabs and test execution. */
 export interface UiCodingTiming {
   workingMs: number;
@@ -421,7 +433,13 @@ export type UiAction =
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "complete-deck"; documentId: string; documentRevision: number; nodeId: string; ratings: UiDeckRating[]; summary: UiDeckCompletionSummary; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "save-artifact"; documentId: string; documentRevision: number; nodeId: string; idempotencyKey: string }
   | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "retry"; documentId: string; documentRevision: number; idempotencyKey: string }
-  | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "open-handoff"; documentId: string; documentRevision: number; nodeId: string; idempotencyKey: string };
+  | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "open-handoff"; documentId: string; documentRevision: number; nodeId: string; idempotencyKey: string }
+  /**
+   * An explicit learner share of a simulation's current settings. Readout values
+   * are recomputed from the authored expressions on validation, so a share can
+   * only report what the simulation actually showed at those settings.
+   */
+  | { schemaVersion: typeof UI_CONTRACT_VERSION; type: "share-simulation"; documentId: string; documentRevision: number; nodeId: string; parameters: UiSimulationSharedParameter[]; readouts: UiSimulationSharedReadout[]; changedParameterIds: string[]; selectedParameterId?: string; selectedReadoutId?: string; idempotencyKey: string };
 
 export interface UiActionResult {
   schemaVersion: typeof UI_CONTRACT_VERSION;
@@ -472,7 +490,7 @@ const LIFECYCLES = new Set<DocumentLifecycle>(["draft", "streaming", "ready", "s
 const RETENTION_POLICIES = new Set<UiDocumentRetention>(["ephemeral", "resumable", "workspace"]);
 const GOAL_STEP_STATUSES = new Set<UiGoalStepStatus>(["not_started", "in_progress", "done"]);
 const ARTIFACT_FORMATS = new Set<UiArtifactFormat>(["markdown", "text", "json", "uri"]);
-const ACTION_TYPES = new Set<UiAction["type"]>(["run-coding-challenge", "complete-language-practice", "submit-answer", "choose-option", "submit-question-group", "complete-quiz", "complete-goal-step", "complete-plan-item", "update-notes", "rate-card", "complete-deck", "save-artifact", "retry", "open-handoff", "complete-task-item", "submit-task"]);
+const ACTION_TYPES = new Set<UiAction["type"]>(["run-coding-challenge", "complete-language-practice", "submit-answer", "choose-option", "submit-question-group", "complete-quiz", "complete-goal-step", "complete-plan-item", "update-notes", "rate-card", "complete-deck", "save-artifact", "retry", "open-handoff", "complete-task-item", "submit-task", "share-simulation"]);
 const RECEIPT_STATES = new Set<UiActionReceipt["state"]>(["pending", "accepted", "completed", "rejected", "retryable"]);
 const DOCUMENT_KEYS = new Set(["schemaVersion", "id", "revision", "lifecycle", "retention", "supportedSurfaces", "title", "description", "nodes", "createdAt", "updatedAt"]);
 const OPTION_KEYS = new Set(["id", "label"]);
@@ -530,6 +548,7 @@ const ACTION_KEYS: Readonly<Record<UiAction["type"], ReadonlySet<string>>> = {
   "open-handoff": ACTION_BASE_KEYS,
   "complete-task-item": new Set([...ACTION_BASE_KEYS, "itemId", "completed", "note"]),
   "submit-task": new Set([...ACTION_BASE_KEYS, "submission", "round", "attachments"]),
+  "share-simulation": new Set([...ACTION_BASE_KEYS, "parameters", "readouts", "changedParameterIds", "selectedParameterId", "selectedReadoutId"]),
 };
 const RESULT_KEYS = new Set(["schemaVersion", "documentId", "sourceRevision", "actionIdempotencyKey", "status", "documentLifecycle", "resultingDocument", "message", "retryAfterMs"]);
 const RECEIPT_KEYS = new Set(["schemaVersion", "action", "actionFingerprint", "state", "createdAt", "updatedAt", "result"]);
@@ -979,8 +998,44 @@ export function validateUiAction(value: unknown): value is UiAction {
     case "submit-task": return boundedString(value.submission, MAX_RESOURCE_CONTENT, true)
       && (value.attachments === undefined || (boundedArray(value.attachments, 10) && value.attachments.every(validateSubmissionAttachment)))
       && (value.round === undefined || (isNonNegativeFinite(value.round) && value.round <= 1000));
+    case "share-simulation": return boundedArray(value.parameters, MAX_SIMULATION_PARAMETERS) && value.parameters.length > 0
+      && value.parameters.every((item) => isRecord(item) && hasOnlyKeys(item, new Set(["parameterId", "value"]))
+        && isContractId(item.parameterId) && finiteNumber(item.value))
+      && uniqueField(value.parameters as UiSimulationSharedParameter[], "parameterId")
+      && boundedArray(value.readouts, MAX_SIMULATION_READOUTS) && value.readouts.length > 0
+      && value.readouts.every((item) => isRecord(item) && hasOnlyKeys(item, new Set(["readoutId", "value"]))
+        && isContractId(item.readoutId) && (item.value === null || finiteNumber(item.value)))
+      && uniqueField(value.readouts as UiSimulationSharedReadout[], "readoutId")
+      && validateContractIdList(value.changedParameterIds, MAX_SIMULATION_PARAMETERS)
+      && (value.changedParameterIds as string[]).every((id) => (value.parameters as UiSimulationSharedParameter[]).some((item) => item.parameterId === id))
+      && (value.selectedParameterId === undefined || (value.parameters as UiSimulationSharedParameter[]).some((item) => item.parameterId === value.selectedParameterId))
+      && (value.selectedReadoutId === undefined || (value.readouts as UiSimulationSharedReadout[]).some((item) => item.readoutId === value.selectedReadoutId));
     case "save-artifact": case "retry": case "open-handoff": return true;
   }
+}
+
+/** True when a share reports exactly the authored parameters, in range, with readouts the expressions produce. */
+function validateSimulationShareAgainstNode(
+  action: Extract<UiAction, { type: "share-simulation" }>,
+  node: UiSimulationNode,
+): boolean {
+  if (action.parameters.length !== node.parameters.length || action.readouts.length !== node.readouts.length) return false;
+  const values: Record<string, number> = {};
+  for (const [index, parameter] of node.parameters.entries()) {
+    const shared = action.parameters[index]!;
+    if (shared.parameterId !== parameter.id || shared.value < parameter.min || shared.value > parameter.max) return false;
+    values[parameter.id] = shared.value;
+  }
+  const changed = node.parameters.filter((parameter) => values[parameter.id] !== parameter.value).map((parameter) => parameter.id);
+  if (changed.length !== action.changedParameterIds.length || changed.some((id, index) => action.changedParameterIds[index] !== id)) return false;
+  const parameterIds = node.parameters.map((parameter) => parameter.id);
+  return node.readouts.every((readout, index) => {
+    const shared = action.readouts[index]!;
+    if (shared.readoutId !== readout.id) return false;
+    const parsed = parseSimulationExpression(readout.expr, parameterIds);
+    const expected = parsed.ok ? evaluateSimulationExpression(parsed.node, values) ?? null : null;
+    return shared.value === expected;
+  });
 }
 
 function isNonNegativeFinite(value: unknown): value is number {
@@ -1127,6 +1182,7 @@ export function validateUiActionAgainstDocument(action: unknown, document: unkno
     case "submit-task": return target.node.type === "task" && target.node.submission?.format !== "none"
       && (target.node.diagram === undefined || (action.round === target.node.round && systemDesignSubmissionIsComplete(action.submission, target.node.diagram)));
     case "open-handoff": return target.node.type === "handoff";
+    case "share-simulation": return target.node.type === "simulation" && validateSimulationShareAgainstNode(action, target.node);
   }
 }
 

@@ -1,4 +1,5 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, spyOn } from "bun:test";
+import * as providerModels from "../lib/provider-models";
 
 import {
 	applyProviderWebSearch,
@@ -9,6 +10,7 @@ import { setSearchProvenanceSignalSink } from "../keating/search";
 import {
 	resolveAuxiliaryWebSearchModel,
 	selectAuxiliaryWebSearchModel,
+	searchWithConfiguredProvider,
 	withProviderWebSearch,
 } from "../hooks/keating-stream";
 
@@ -57,6 +59,7 @@ describe("provider-native web search", () => {
 
 	it.each([
 		["openai", "openai-responses", "gpt-5.6-sol"],
+		["openai", "openai-responses", "gpt-6-luna"],
 		["google", "google-generative-ai", "gemini-3.5-flash"],
 		["anthropic", "anthropic-messages", "claude-sonnet-5"],
 	])("signals untrusted provenance when the %s production stream activates hosted search", async (provider, api, id) => {
@@ -100,10 +103,10 @@ describe("provider-native web search", () => {
 		expect(payload.config.tools[1]).toEqual({ googleSearch: {} });
 	});
 
-	it("uses the GA Responses web_search tool for current OpenAI models", () => {
+	it.each(["gpt-5.6-sol", "gpt-6-luna"])("uses the GA Responses web_search tool for %s", (id) => {
 		const payload = applyProviderWebSearch(
 			{ tools: [{ type: "function", name: "quiz" }] },
-			{ provider: "openai", api: "openai-responses", id: "gpt-5.6-sol" } as any,
+			{ provider: "openai", api: "openai-responses", id } as any,
 			true,
 		) as any;
 		expect(payload.tools.at(-1)).toEqual({ type: "web_search" });
@@ -178,8 +181,12 @@ describe("provider-native web search", () => {
 		const models = [
 			{ provider: "google", api: "google-generative-ai", id: "gemini-2.5-flash" },
 			{ provider: "openai", api: "openai-responses", id: "gpt-5-mini" },
+			{ provider: "openai", api: "openai-responses", id: "gpt-5.6-sol" },
+			{ provider: "openai", api: "openai-responses", id: "gpt-6-luna" },
 		] as any[];
-		expect(selectAuxiliaryWebSearchModel(models, new Set(["openai", "google"]))?.id).toBe("gpt-5-mini");
+		expect(selectAuxiliaryWebSearchModel(models, new Set(["openai", "google"]))?.id).toBe("gpt-6-luna");
+		expect(selectAuxiliaryWebSearchModel(models.slice(0, -1), new Set(["openai"]))?.id).toBe("gpt-5.6-sol");
+		expect(selectAuxiliaryWebSearchModel(models, new Set())).toBeUndefined();
 
 		const resolved = await resolveAuxiliaryWebSearchModel({
 			models,
@@ -188,4 +195,61 @@ describe("provider-native web search", () => {
 		expect(resolved?.model).toMatchObject({ provider: "google", id: "gemini-2.5-flash" });
 		expect(resolved?.apiKey).toBe("google-test-key");
 	});
+	it("resolves Luna with the bundled SDK even before its catalog includes it", async () => {
+		const resolved = await resolveAuxiliaryWebSearchModel({
+			getApiKey: async (provider) => provider === "openai" ? "openai-test-key" : undefined,
+		});
+		expect(resolved).toMatchObject({
+			apiKey: "openai-test-key",
+			model: { id: "gpt-6-luna", provider: "openai", api: "openai-responses", baseUrl: "https://api.openai.com/v1" },
+		});
+		expect(resolveProviderWebSearchRoute(resolved!.model, true).kind).toBe("native");
+	});
+
+	it("does not treat Luna on unsupported routes as native OpenAI search", () => {
+		for (const model of [
+			{ provider: "openai", api: "openai-completions", id: "gpt-6-luna" },
+			{ provider: "private-provider", api: "openai-responses", id: "gpt-6-luna" },
+		]) expect(applyProviderWebSearch({}, model as any, true)).toBeUndefined();
+		expect(applyProviderWebSearch({}, { provider: "openai", api: "openai-responses", id: "gpt-6-luna" } as any, false)).toBeUndefined();
+	});
+
+	it("sends a compatible Luna search through the real SDK without live inference", async () => {
+		const originalHosted = process.env.VITE_NOTORGANIC_ENABLED;
+		process.env.VITE_NOTORGANIC_ENABLED = "false";
+		const keys = spyOn(providerModels, "getProviderApiKey").mockImplementation(async provider => provider === "openai" ? "test-key" : undefined);
+		const requests: { url: string; body: any }[] = [];
+		const text = "A sourced finding. [Paper](https://example.com/paper)";
+		const item = { id: "msg_search", type: "message", role: "assistant", status: "completed", content: [{ type: "output_text", text, annotations: [] }] };
+		const events = [
+			{ type: "response.created", response: { id: "resp_search", status: "in_progress" } },
+			{ type: "response.output_item.added", output_index: 0, item: { ...item, content: [] } },
+			{ type: "response.output_text.delta", output_index: 0, content_index: 0, delta: text },
+			{ type: "response.output_item.done", output_index: 0, item },
+			{ type: "response.completed", response: { id: "resp_search", status: "completed", output: [item], usage: { input_tokens: 10, output_tokens: 10, total_tokens: 20 } } },
+		];
+		// Intercept every request before it can reach any network or paid provider.
+		const fetchSpy = spyOn(globalThis, "fetch").mockImplementation((async (url: any, init: any) => {
+			requests.push({ url: String(url), body: JSON.parse(init.body) });
+			return new Response(events.map(event => `data: ${JSON.stringify(event)}\n\n`).join(""), {
+				headers: { "content-type": "text/event-stream" },
+			});
+		}) as typeof fetch);
+		try {
+			expect(await searchWithConfiguredProvider("Find the paper")).toBe(text);
+			expect(requests).toHaveLength(1);
+			expect(requests[0].url).toBe("https://api.openai.com/v1/responses");
+			expect(requests[0].body).toMatchObject({
+				model: "gpt-6-luna", max_output_tokens: 2_000, reasoning: { effort: "medium" }, tools: [{ type: "web_search" }],
+			});
+			expect(requests[0].body.temperature).toBeUndefined();
+			expect(requests[0].body.prompt_cache_retention).toBeUndefined();
+		} finally {
+			fetchSpy.mockRestore();
+			keys.mockRestore();
+			if (originalHosted === undefined) delete process.env.VITE_NOTORGANIC_ENABLED;
+			else process.env.VITE_NOTORGANIC_ENABLED = originalHosted;
+		}
+	});
+
 });

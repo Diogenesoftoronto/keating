@@ -1,11 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import * as appStorage from "../keating/app-storage";
+import * as modelsDevCatalog from "../lib/models-dev-catalog";
 import { IndexedDBStorageBackend } from "../lib/cloud-storage-backend";
 
 let providerKeys: Record<string, string | undefined> = {};
 
 let storageSpy: ReturnType<typeof spyOn> | undefined;
+let catalogSpy: ReturnType<typeof spyOn> | undefined;
 beforeEach(() => {
+	catalogSpy = spyOn(modelsDevCatalog, "refreshCloudModelCatalog").mockResolvedValue(undefined);
 	const keys = new appStorage.ProviderKeysStore();
 	keys.get = async (provider) => providerKeys[provider] ?? null;
 	keys.set = async (provider, value) => { providerKeys[provider] = value; };
@@ -21,6 +24,7 @@ beforeEach(() => {
 const originalFetch = globalThis.fetch;
 
 afterEach(() => {
+	catalogSpy?.mockRestore();
 	storageSpy?.mockRestore();
 	globalThis.fetch = originalFetch;
 	providerKeys = {};
@@ -321,5 +325,28 @@ describe("chat model fallback selection", () => {
 
 		expect(selected.provider).toBe("anthropic");
 		expect(selected.id).toBe("claude-sonnet-4-6");
+	});
+});
+
+
+describe("public cloud model browsing", () => {
+	it.each([false, true])("shows unconnected Anthropic and OpenAI models unless explicitly hidden (%s)", async hidden => {
+		const descriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+		Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
+			getItem: (key: string) => key === "keating_model_prefs" ? JSON.stringify({ hiddenProviders: hidden ? ["anthropic", "openai"] : [], customModels: [] }) : null,
+		} });
+		try {
+			const { discoverModels, requiresProviderCredential } = await import("../lib/model-catalog");
+			const { hasProviderCredential } = await import("../lib/provider-models");
+			const models = await discoverModels({});
+			for (const provider of ["anthropic", "openai"]) {
+				expect(models.some(entry => entry.model.provider === provider)).toBe(!hidden);
+				expect(await hasProviderCredential(provider)).toBe(false);
+				expect(requiresProviderCredential(provider)).toBe(true);
+			}
+		} finally {
+			if (descriptor) Object.defineProperty(globalThis, "localStorage", descriptor);
+			else delete (globalThis as any).localStorage;
+		}
 	});
 });

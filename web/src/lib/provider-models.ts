@@ -1,7 +1,8 @@
 import { MODEL_CHOICES, SERVICE_ENDPOINTS, MODEL_PREFERENCES } from "@keating/runtime-config";
-import { getModels, getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
+import { getProviders, type Api, type Model } from "@earendil-works/pi-ai/compat";
 import { getAppStorage, type CustomProvider } from "../keating/app-storage";
 import { proxiedProviderRequestUrl } from "./provider-proxy";
+import { getCloudProviderModels, refreshCloudModelCatalog } from "./models-dev-catalog";
 import {
 	isNotOrganicFeatureEnabled,
 	NOTORGANIC_DEFAULT_MODEL,
@@ -508,6 +509,7 @@ function keatingCompatibilityModels(filter?: (provider: string) => boolean): Arr
 export async function getSelectableModels(
 	filter?: (provider: string) => boolean,
 ): Promise<Array<Model<Api>>> {
+	await refreshCloudModelCatalog();
 	const models: Array<Model<Api>> = [];
 	if (!filter || filter(DESKTOP_OFFLINE_PROVIDER)) {
 		models.push(...await installedDesktopOfflineModels());
@@ -519,7 +521,7 @@ export async function getSelectableModels(
 
 	for (const provider of getProviders()) {
 		if (!filter || filter(provider)) {
-			models.push(...(getModels(provider as any) as Array<Model<Api>>));
+			models.push(...getCloudProviderModels(provider));
 		}
 	}
 

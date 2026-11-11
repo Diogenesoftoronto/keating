@@ -13,6 +13,7 @@ export const PERSISTENT_STORES = [
   ["keating:courses", "KEATING_COURSES_STORAGE_DIR"],
   ["keating:course-materials", "KEATING_COURSE_MATERIALS_STORAGE_DIR"],
   ["keating:submission-attachments", "KEATING_SUBMISSION_STORAGE_DIR"],
+  ["keating:profile-moderation", "KEATING_PROFILE_MODERATION_STORAGE_DIR"],
 ] as const;
 
 export function persistentStorageMounts(env: Record<string, string | undefined>): Array<{ mount: string; base: string }> {

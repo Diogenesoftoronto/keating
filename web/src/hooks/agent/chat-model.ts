@@ -8,7 +8,7 @@ import type { Api, Model } from "@earendil-works/pi-ai";
 import { hasNotOrganicProductSession, promptNotOrganicAccess } from "../../components/NotOrganicAccessPromptDialog";
 import { addRecentModel } from "../../keating/model-prefs";
 import { modelKey } from "../../lib/model-catalog";
-import { isNotOrganicProvider, notOrganicModelNeedsConsent, notOrganicModelScopes } from "../../notorganic-provider";
+import { isNotOrganicProvider, notOrganicModelNeedsConsentAfterRefresh, notOrganicModelScopes } from "../../notorganic-provider";
 import { pauseLearnerDelivery } from "../../components/chat/learner-delivery";
 import { loadBrowserModel } from "./browser-model";
 import type { AgentHostRefs } from "./host-refs";
@@ -70,11 +70,19 @@ export async function changeChatModel({
       release();
     }
   }
-  const needsModelConsent = notOrganicModelNeedsConsent(model);
+  let needsModelConsent: boolean;
+  try {
+    needsModelConsent = await notOrganicModelNeedsConsentAfterRefresh(model);
+  } catch {
+    // A transient renewal failure is not a request for new consent. Keep the
+    // chosen model; sending retries renewal and reports the connection error.
+    return;
+  }
   if (isNotOrganicProvider(model.provider) && (needsModelConsent || !(await hasNotOrganicProductSession()))
-    && isNotOrganicProvider(refs.selectedModelRef.current.provider)) {
-    // Keep the chosen model. Account setup should be visible, with sending
-    // still gated by onApiKeyRequired if the learner dismisses the popup.
-    void promptNotOrganicAccess({ allowSignIn: true, reconnect: needsModelConsent, requiredScopes: notOrganicModelScopes(model) });
+    && refs.sessionSwitchRequestsRef.current.isCurrent(request)
+    && modelKey(refs.selectedModelRef.current) === modelKey(model)) {
+    // Keep the chosen model. Distinguish additional model permissions from
+    // sign-in; sending remains gated by onApiKeyRequired if the learner dismisses the popup.
+    void promptNotOrganicAccess({ allowSignIn: true, consent: needsModelConsent, requiredScopes: notOrganicModelScopes(model) });
   }
 }

@@ -69,7 +69,7 @@ const spineButtonClass = css({
 	background: "var(--background)",
 	color: "var(--foreground)",
 	_hover: { borderColor: "var(--ink)", background: "var(--muted)" },
-	_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" },
+	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
 });
 
 const spineBadgeClass = css({
@@ -325,7 +325,7 @@ export function TrajectoryReviewWorkspace({ data, callbacks, renderArtifact, pas
 								borderRadius: "9999px",
 								border: "1.5px solid var(--border)",
 								_hover: { outline: "2px solid var(--ink)", outlineOffset: "3px" },
-								_focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "2px" },
+								_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" },
 							})}
 							style={{
 								background: dot.tone ?? "transparent",

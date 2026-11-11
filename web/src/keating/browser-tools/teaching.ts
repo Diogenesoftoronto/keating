@@ -375,7 +375,11 @@ ${profileBeliefs}
 						? `Error: no presented study plan with id ${documentId}.`
 						: "Error: the change does not fit the plan (unknown item id, duplicate new id, or too many items). Nothing changed.";
 				}
-				if (outcome.status === "applied") return `Plan revised (${change.op}); now at revision ${outcome.document.revision}. Tell the learner what changed.`;
+				if (outcome.status === "applied") {
+					// The browser refused the write: the change shows now but is not durable until the learner retries.
+					if (outcome.saved === false) return `Plan revised (${change.op}) on screen, but this device could not save it. The learner sees a "Retry save" control in the workspace panel. Tell them what changed and that it needs saving; do not say it is saved.`;
+					return `Plan revised (${change.op}); now at revision ${outcome.document.revision}. Tell the learner what changed.`;
+				}
 				return `Plan change proposed (${change.op}); the learner sees Accept/Decline. Do not treat it as applied until they accept.\n\n<keating-plan-revision json=${JSON.stringify(JSON.stringify(outcome.proposal))} />`;
 			},
 			["plan_document_id", "change", "item_id"],

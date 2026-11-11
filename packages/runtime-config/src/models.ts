@@ -48,6 +48,18 @@ export const FLINT_PREVIEW_PROFILE = {
 } as const;
 export const NOTORGANIC_IMAGE_MODEL_IDS = [DEFAULT_MODELS.image.notorganic] as const;
 
+/** Compatibility metadata until Pi bundles Luna; verified 2026-11-11 against OpenAI's model and pricing docs.
+ * https://developers.openai.com/api/docs/models/gpt-6-luna
+ * https://developers.openai.com/api/docs/pricing
+ */
+export const GPT_6_LUNA_PROFILE = {
+  id: MODEL_IDS.gpt_6_luna, name: "GPT-6 Luna", contextWindow: 1_050_000, maxTokens: 128_000,
+  cost: {
+    input: 0.1, output: 0.5, cacheRead: 0.01, cacheWrite: 0.125,
+    tiers: [{ inputTokensAbove: 272_000, input: 0.2, output: 0.75, cacheRead: 0.02, cacheWrite: 0.25 }],
+  },
+};
+
 /** Discovery preferences; provider catalogs still own availability and metadata. */
 export const MODEL_PREFERENCES = {
   webChat: {
@@ -64,7 +76,7 @@ export const MODEL_PREFERENCES = {
     anthropic: { match: MODEL_IDS.claude_3_5_sonnet, model: MODEL_IDS.claude_3_5_sonnet_20240620 },
   },
   auxiliarySearch: {
-    openai: [MODEL_IDS.gpt_5_mini, MODEL_IDS.gpt_5_6_sol, MODEL_IDS.gpt_5_5, MODEL_IDS.gpt_5_4, MODEL_IDS.gpt_4_1_mini],
+    openai: [MODEL_IDS.gpt_6_luna, MODEL_IDS.gpt_5_6_sol, MODEL_IDS.gpt_5_5, MODEL_IDS.gpt_5_4, MODEL_IDS.gpt_4_1_mini],
     google: [MODEL_IDS.gemini_2_5_flash, MODEL_IDS.gemini_3_5_flash, MODEL_IDS.gemini_3_1_pro_preview],
     anthropic: [MODEL_IDS.claude_haiku_4_5, MODEL_IDS.claude_sonnet_4_6, MODEL_IDS.claude_sonnet_5],
   },

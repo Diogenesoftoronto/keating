@@ -32,19 +32,18 @@ describe("public runtime configuration", () => {
     expect(API_VERSIONS).toEqual({ anthropic: "2023-06-01", google: "v1beta" });
     expect(SPENDING_LIMITS).toEqual({ notorganicRequestMicrousd: 100000, notorganicServerRequestMicrousd: 50000 });
   });
-  test("derived browser consent includes the preview only in a fresh authorization request", () => {
-    expect(DEFAULT_NOTORGANIC_SCOPE).toBe("wallet:read usage:read billing:checkout infer:balanced infer:flint infer:gpt-6.1-sol web:search web:fetch infer:image infer:inkling-2-small realtime:connect");
-    for (const model of [...NOTORGANIC_CHAT_MODEL_IDS, ...NOTORGANIC_IMAGE_MODEL_IDS]) {
-      expect(DEFAULT_NOTORGANIC_SCOPE.split(" ")).toContain(`infer:${model}`);
-    }
+  test("browser sign-in uses stable text access without opting into preview models", () => {
+    expect(DEFAULT_NOTORGANIC_SCOPE).toBe("wallet:read usage:read billing:checkout web:search web:fetch infer:image infer:text realtime:connect");
+    expect(DEFAULT_NOTORGANIC_SCOPE.split(" ")).toContain("infer:text");
+    expect(DEFAULT_NOTORGANIC_SCOPE.split(" ")).not.toContain("infer:flint");
     expect(DEFAULT_NOTORGANIC_SCOPE).not.toContain("infer:ampersand-tutor-v0.1");
     expect(DEFAULT_NOTORGANIC_SCOPE).not.toContain("judgement:evaluate");
     expect(DEFAULT_NOTORGANIC_SCOPE).not.toContain("tabular:predict");
   });
-  test("new models automatically gain sorted, unique inference scopes without widening capabilities", () => {
+  test("unclassified models stay explicit while ordinary models share stable scope", () => {
     const options = { models: ["qwen-new", DEFAULT_MODELS.image.notorganic, "gpt-new", "gpt-new", " balanced "], capabilities: ["web:search", "wallet:read", "wallet:read"] };
     const scope = buildNotOrganicScope(options).split(" ");
-    expect(scope.filter(value => value.startsWith("infer:"))).toEqual(["infer:balanced", "infer:gpt-new", "infer:image", "infer:qwen-new"]);
+    expect(scope.filter(value => value.startsWith("infer:"))).toEqual(["infer:gpt-new", "infer:image", "infer:qwen-new", "infer:text"]);
     expect(scope).toHaveLength(new Set(scope).size);
     expect(buildNotOrganicScope({ ...options, models: [...options.models].reverse() })).toBe(scope.join(" "));
     expect(buildNotOrganicScope({ models: [], capabilities: ["usage:read"] })).toBe("usage:read");

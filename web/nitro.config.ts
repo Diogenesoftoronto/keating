@@ -49,6 +49,11 @@ export default defineNitroConfig({
       driver: "fs",
       base: process.env.KEATING_SHARE_STORAGE_DIR ?? ".data/keating-shares",
     },
+    // Reports and operator hide decisions for public learner profiles.
+    "keating:profile-moderation": {
+      driver: "fs",
+      base: process.env.KEATING_PROFILE_MODERATION_STORAGE_DIR ?? ".data/keating-profile-moderation",
+    },
   },
   renderer: {
     // Nitro was inlining the source web/index.html template into the server
@@ -240,6 +245,21 @@ export default defineNitroConfig({
     {
       route: "/api/share/**",
       handler: "server/api/share/[id].ts",
+    },
+    // Static profile routes come before the :did route so "report" is never read as an identity.
+    {
+      route: "/api/profiles/report",
+      method: "POST" as const,
+      handler: "server/api/profiles/report.post.ts",
+    },
+    {
+      route: "/api/profiles/moderation",
+      handler: "server/api/profiles/moderation.ts",
+    },
+    {
+      route: "/api/profiles/:did",
+      method: "GET" as const,
+      handler: "server/api/profiles/[did].get.ts",
     },
     {
       route: "/api/submission-attachments",

@@ -1,30 +1,25 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
-import { ArtifactViewer } from "./ArtifactViewer";
-import {
-  artifactBrowserStorage,
-  type ArtifactBrowserSurfaceProps,
-} from "./artifact-browser-shared";
+import type { ArtifactBrowserSurfaceProps } from "./artifact-browser-shared";
+import { ArtifactSurfaceBody } from "./workspace/ArtifactSurfaceBody";
+import { useSurfaceFocus } from "./workspace/useSurfaceFocus";
 import { css, cx } from "../../styled-system/css";
 
-export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBrowserSurfaceProps) {
+export function ArtifactBrowserOverlay(props: ArtifactBrowserSurfaceProps) {
+  const { open, onClose } = props;
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Modal: Escape closes, Tab stays inside, focus returns to the opener.
+  const headingRef = useSurfaceFocus(open, onClose, dialogRef, true);
+
   useEffect(() => {
     if (!open) return;
-
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-
-    window.addEventListener("keydown", onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", onKeyDown);
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open || typeof document === "undefined") {
     return null;
@@ -39,12 +34,13 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
         background: "color-mix(in srgb, var(--background) 70%, transparent)",
         backdropFilter: "blur(4px)",
       })}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Artifact browser"
       onClick={onClose}
     >
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={props.sessionId ? "Session workspace" : "Artifact browser"}
         className={css({
           position: "absolute",
           top: 0,
@@ -53,7 +49,9 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
           display: "flex",
           height: "100%",
           width: "100%",
-          maxWidth: "100dvw",
+          maxWidth: "100vw",
+          minWidth: 0,
+          overflow: "hidden",
           flexDirection: "column",
           borderLeftWidth: "1px",
           borderColor: "var(--border)",
@@ -76,15 +74,16 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
           paddingBlock: "0.625rem",
         })}>
           <div className={css({ minWidth: 0 })}>
-            <div className={css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>Artifact browser</div>
-            <div className={css({ maxWidth: "100%", overflowWrap: "break-word", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" })}>Browse lesson plans, maps, animations, benchmarks, and evolutions.</div>
+            <div className={css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>{props.sessionId ? "Workspace" : "Artifact browser"}</div>
+            <div className={css({ maxWidth: "100%", overflowWrap: "break-word", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" })}>{props.sessionId ? "This session's study plan and concept maps." : "Browse lesson plans, maps, animations, benchmarks, and evolutions."}</div>
           </div>
           <button
             type="button"
             className={cx("dialog-icon-button", css({
               display: "inline-flex",
-              height: "2rem",
-              width: "2rem",
+              flexShrink: 0,
+              height: "2.75rem",
+              width: "2.75rem",
               alignItems: "center",
               justifyContent: "center",
               borderRadius: "0.375rem",
@@ -94,8 +93,9 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
                 background: "var(--accent)",
                 color: "var(--accent-foreground)",
               },
+              _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" },
             }))}
-            aria-label="Close artifact browser"
+            aria-label={props.sessionId ? "Close workspace" : "Close artifact browser"}
             title="Close"
             onClick={onClose}
           >
@@ -112,7 +112,7 @@ export function ArtifactBrowserOverlay({ open, artifactId, onClose }: ArtifactBr
           padding: { base: "0.625rem", sm: "0.75rem" },
           sm: { padding: "1.5rem" },
         })}>
-          <ArtifactViewer storage={artifactBrowserStorage} artifactId={artifactId} onClose={onClose} />
+          <ArtifactSurfaceBody {...props} headingRef={headingRef} />
         </div>
       </div>
     </div>,

@@ -56,8 +56,8 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
     ? [[chatHref, "Chat"], ["/courses", "Courses"], ["/rooms", "Rooms"], ["/usage", "Usage"], ["/bench", "Bench"], ["/coming-up", "Coming up"], ["/live", "Live"]]
     : [["/download", "Download"], ["/pricing", "Pricing"], [DOCUMENTATION_URL, "Documentation"], [BLOG_URL, "Blog"], ["/paper", "Paper"]].filter(([to]) => primaryAction !== "download" || to !== "/download");
   const secondaryLinks = appNavigation
-    ? [["https://keating.help/", "Keating website"], ["/download", "Download"], ["/pricing", "Pricing"], [DOCUMENTATION_URL, "Documentation"], [BLOG_URL, "Blog"], ["/paper", "Paper"], ["/training-data", "Training data"]]
-    : [["/courses", "Courses"], ["/rooms", "Rooms"], ["/coming-up", "Coming up"], ["/live", "Live"], ["/usage", "Usage"], ["/bench", "Bench"], ["/training-data", "Training data"]];
+    ? [["https://keating.help/", "Keating website"], ["/download", "Download"], ["/pricing", "Pricing"], [DOCUMENTATION_URL, "Documentation"], [BLOG_URL, "Blog"], ["/paper", "Paper"], ["/learn", "Self-paced courses"], ["/review", "Session review"], ["/review/learning-profile", "Your public profile"], ["/training-data", "Training data"]]
+    : [["/courses", "Courses"], ["/learn", "Self-paced courses"], ["/rooms", "Rooms"], ["/coming-up", "Coming up"], ["/live", "Live"], ["/usage", "Usage"], ["/bench", "Bench"], ["/training-data", "Training data"]];
   const openPrimaryAction = () => {
     closeMenus();
     const path = primaryAction === "download" ? "/download" : chatHref;
@@ -177,7 +177,7 @@ export function Nav({ primaryAction = "chat" }: NavProps) {
                   "& > a": {
                     padding: "0.65rem 0.75rem",
                     whiteSpace: "nowrap",
-                    _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-2px" }
+                    _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "-2px" }
                   }
                 })}
               >

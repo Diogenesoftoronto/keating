@@ -140,9 +140,9 @@ export async function discoverModels(
 		cloud: cloudProviders.has(provider),
 		configured: configured.has(provider),
 		manuallyHidden: hidden.has(provider),
-		// Account-backed choices are discoverable before sign-in. Selection still
-		// requires a real provider session, and explicit hiding remains respected.
-		revealed: revealed.has(provider) || (provider === NOTORGANIC_PROVIDER_ID && !hidden.has(provider)),
+		// Browse every supported provider before connecting. Selection still checks
+		// credentials; catalog discovery does not grant access or change saved visibility.
+		revealed: revealed.has(provider) || !hidden.has(provider),
 	}));
 
 	for (const saved of modelPrefs.customModels) {

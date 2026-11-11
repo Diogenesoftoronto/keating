@@ -197,6 +197,25 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
             {assemblerOpen ? <X size={17} /> : <Plus size={17} />}
             {assemblerOpen ? "Close assembler" : "Assemble manually"}
           </button>
+          <Link
+            to="/learn"
+            className={css({
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.5rem",
+              border: "1px solid var(--ink)",
+              bg: "var(--paper)",
+              px: "1rem",
+              py: "0.75rem",
+              fontWeight: 750,
+              color: "var(--ink)",
+              textDecoration: "none",
+              _hover: { bg: "var(--card)" },
+            })}
+          >
+            <BookOpen size={17} /> Study one paper at your own pace
+          </Link>
         </div>
       </header>
       {assemblerOpen && (

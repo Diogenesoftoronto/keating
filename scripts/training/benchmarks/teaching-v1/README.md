@@ -29,6 +29,12 @@ The fixed question envelopes were serialized with `createQuestionLearnerResponse
 
 Authoring was grounded in `DEFAULT_TEACHER_PERSONA`, `operational-protocol.md`, learner-contract definitions, and assessment/teaching tool schemas. The comparison context separately freezes the exact application prompt and tool schemas. Use the same files, hashes, sampling settings, and per-case output caps for every compared model. The exam has a larger output cap than short conversational cases so a complete twenty-item response is feasible; record truncation and never quietly shorten or drop it.
 
+## Versions
+
+**1.1.0 (current, sealed 2026-11-11).** The 32 cases, expectations and rubric are unchanged apart from their version field. The comparison context is re-exported from today's application: the system prompt now includes the quoted-passage protocol, and the tool list grows from 14 to 18 (`interactive_page`, `room_list`, `room_invite`, `revise_study_plan`). The contract checker's dependency closure is re-hashed against the current sources, `bun.lock` and Bun 1.4.4. It now reaches npm code through the judgement runtime (`@huggingface/transformers`, `onnxruntime-web` and others); those packages are recorded by name and installed version in `contract_packages`, and the hashed `bun.lock` pins their exact resolution. Results measured against 1.0 do not carry over to 1.1.
+
+**1.0 (2026-09-07).** The original freeze is preserved byte for byte in [`versions/1.0.0`](versions/1.0.0/README.md). Its scores apply only to that definition. Its contract sources no longer match the working tree, so it can be inspected but not re-run with the current checker.
+
 ## Version policy
 
 Keep the released cases, rubric, and context immutable. Do not fix a weak case or adjust an output cap silently after seeing a model's results. Publish the change as a new benchmark version with new hashes, retain the prior definition/results, and rerun compared models when claiming a change in relative performance. Runner/checker changes that alter scoring must also be identified with their source hash or revision.

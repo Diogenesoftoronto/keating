@@ -81,7 +81,7 @@ const styles = {
     transitionDuration: "150ms",
     _last: { borderRight: 0 },
     _hover: { bg: "var(--accent)", color: "var(--accent-foreground)" },
-    _focusVisible: { outline: "3px solid var(--accent)", outlineOffset: "-3px" },
+    _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "-3px" },
   }),
   switchActive: css({ bg: "var(--ink)", color: "var(--paper)" }),
   switchInactive: css({ color: "var(--ink)" }),

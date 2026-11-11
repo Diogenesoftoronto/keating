@@ -52,7 +52,7 @@ export const BASELINE_TEACHING_TOOLS = new Set([
 ]);
 
 const TOOL_NAMES: Record<KeatingCapabilityId, string[]> = {
-  media: ["animate", "generate_image"],
+  media: ["animate", "interactive_page", "generate_image"],
   workspace: ["workspace_inspect", "workspace_change", "workspace_exec"],
   improvement: ["evaluate_teaching", "request_teaching_improvement"],
   voice: ["keating_voice"],

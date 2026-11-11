@@ -18,6 +18,9 @@ const cases = read('cases.json');
 const rubric = read('rubric.json');
 const context = read('context.json');
 const manifest = read('manifest.json');
+// The published learning-to-teach report collected its responses under the v1.0 freeze.
+const reported = Object.fromEntries(['cases.json', 'rubric.json', 'context.json', 'manifest.json']
+  .map(name => [name, read(`versions/1.0.0/${name}`)])) as Record<string, any>;
 
 test('released benchmark inputs and checker match the frozen manifest', () => {
   for (const [name, digest] of Object.entries(manifest.files)) {
@@ -34,7 +37,20 @@ test('released benchmark inputs and checker match the frozen manifest', () => {
   expect(context.provenance.private_context).toBe(false);
   expect(context.provenance.application_state.learnerContext).toBe('');
   expect(context.provenance.application_state.sessionStartContext).toBe('');
-  expect(context.tools).toHaveLength(14);
+  expect(context.tools).toHaveLength(18);
+  expect(manifest.version).toBe('1.1.0');
+  expect(cases.version).toBe(manifest.version);
+  expect(rubric.version).toBe(manifest.version);
+});
+
+test('the original v1.0 freeze is preserved byte for byte', () => {
+  const archive = new URL('./versions/1.0.0/', directory);
+  const archived = JSON.parse(readFileSync(new URL('manifest.json', archive), 'utf8'));
+  expect(archived.version).toBe(1);
+  expect(sha(readFileSync(new URL('manifest.json', archive)))).toBe(manifest.previous_versions[0].manifest_sha256);
+  for (const [name, digest] of Object.entries(archived.files)) {
+    expect(sha(readFileSync(new URL(name, archive)))).toBe(digest);
+  }
 });
 
 test('the fixed suite covers distinct cases with applicable behavioral anchors and real OpenUI histories', () => {
@@ -63,19 +79,19 @@ test('the fixed suite covers distinct cases with applicable behavioral anchors a
   expect(cases.generation_policy.teacher_hints).toBe(false);
 });
 
-test('public benchmark preserves its frozen definition after collecting model responses', () => {
+test('the published report preserves the v1.0 definition its responses were collected under', () => {
   const report = JSON.parse(readFileSync(new URL('web/public/reports/learning-to-teach/report-data.json', root), 'utf8'));
   const benchmark = report.benchmark;
   expect(benchmark.status).toBe('responses_collected');
   expect(benchmark.human_scores).toBeNull();
-  expect(benchmark.cases).toEqual(cases.cases);
-  expect(benchmark.rubric).toEqual(rubric);
-  expect(benchmark.manifest).toEqual(manifest);
-  expect(benchmark.system_prompt_sha256).toBe(context.system_prompt_sha256);
-  expect(report.system_prompts[benchmark.system_prompt_sha256].text).toBe(context.system_prompt);
+  expect(benchmark.cases).toEqual(reported['cases.json'].cases);
+  expect(benchmark.rubric).toEqual(reported['rubric.json']);
+  expect(benchmark.manifest).toEqual(reported['manifest.json']);
+  expect(benchmark.system_prompt_sha256).toBe(reported['context.json'].system_prompt_sha256);
+  expect(report.system_prompts[benchmark.system_prompt_sha256].text).toBe(reported['context.json'].system_prompt);
   for (const [name, body] of Object.entries({ 'cases.json': benchmark.case_definition, 'rubric.json': benchmark.rubric, 'context.json': benchmark.context })) {
     // Browser downloads must reconstruct the source bytes covered by the release manifest.
-    expect(sha(JSON.stringify(body, null, 2) + '\n')).toBe(manifest.files[name]);
+    expect(sha(JSON.stringify(body, null, 2) + '\n')).toBe(reported['manifest.json'].files[name]);
   }
 });
 
@@ -84,9 +100,9 @@ test('reported comparisons retain every core response, honest denominators and u
   const benchmark = report.benchmark, results = benchmark.results;
   expect(results.human_scores).toBeNull();
   expect(results.teaching_status).toBe('unreviewed');
-  expect(results.case_ids).toEqual(cases.core_case_ids);
-  expect(results.system_prompt_sha256).toBe(context.system_prompt_sha256);
-  expect(results.tool_schema_sha256).toBe(context.tool_schema_sha256);
+  expect(results.case_ids).toEqual(reported['cases.json'].core_case_ids);
+  expect(results.system_prompt_sha256).toBe(reported['context.json'].system_prompt_sha256);
+  expect(results.tool_schema_sha256).toBe(reported['context.json'].tool_schema_sha256);
   expect(results.arms.slice(0, 4).map((arm: any) => arm.requested_model)).toEqual(['base', 'identity-sft-run-v2', 'openui-sft-run', 'openui-sdpo-run']);
   expect(new Set(results.arms.map((arm: any) => arm.requested_model)).size).toBe(results.arms.length);
   for (const arm of results.arms) {

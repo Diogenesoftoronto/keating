@@ -14,6 +14,8 @@ import type { OpenUiPresentationRecord, QuestionCheckRecord } from "../storage";
 
 /** Prose and layout nodes; every other component is recorded so policy can see what was used. */
 const NON_INTERACTIVE = new Set(["markdown", "text", "callout", "rows"]);
+/** Components whose presented snapshot is kept on the record: plans for revisions, maps for the session workspace. */
+const SNAPSHOT_COMPONENTS = new Set(["study-plan", "concept-map"]);
 
 export interface ActiveWorkSource {
 	getOpenUiPresentations(sessionId?: string): Promise<OpenUiPresentationRecord[]>;
@@ -56,7 +58,7 @@ export function presentationsFromAssistantText(
 			createdAt: now,
 			// A plan's own nodes are never evidence for one of its items.
 			planRef: node.type === "study-plan" ? null : planRef,
-			...(node.type === "study-plan" ? { document } : {}),
+			...(SNAPSHOT_COMPONENTS.has(node.type) ? { document } : {}),
 		})));
 }
 

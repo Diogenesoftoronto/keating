@@ -16,6 +16,18 @@ import {
 import { css, cx } from "../../styled-system/css";
 import { Nav } from "../components/Nav";
 import { LearningInsightsHeader, LearningMetric } from "../components/LearningInsightsHeader";
+import { HostedCreditsPanel } from "../components/usage/HostedCreditsPanel";
+import {
+	USAGE_RANGES,
+	USAGE_RANGE_LABELS,
+	describeChange,
+	loadUsageRange,
+	modelSpend,
+	saveUsageRange,
+	sessionsInRange,
+	usageWindow,
+	type UsageRange,
+} from "../keating/usage-summary";
 
 let metadataPromise: Promise<SessionMetadata[]> | null = null;
 
@@ -29,10 +41,6 @@ function formatCost(value: number) {
 
 function formatDate(iso: string) {
 	return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-
-function daysBetween(start: string, end: string) {
-	return Math.max(1, Math.ceil((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000) + 1);
 }
 
 function firstSentence(text: string) {
@@ -89,6 +97,20 @@ const styles = {
 	badgeRow: css({ display: "flex", minW: 0, flexWrap: "wrap", gap: "0.5rem", fontSize: "11px", color: "var(--muted-foreground)" }),
 	badge: css({ display: "inline-flex", minW: 0, alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", bg: "var(--muted)", px: "0.5rem", py: "0.25rem" }),
 	shrink0: css({ flexShrink: 0 }),
+	rangeBar: css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", mb: "1rem" }),
+	rangeGroup: css({ display: "inline-flex", flexWrap: "wrap", gap: "0.4rem" }),
+	rangeButton: css({ minH: "2.75rem", px: "0.85rem", border: "1.5px solid var(--line)", borderRadius: "{radii.keating}", bg: "var(--card)", color: "var(--ink)", fontSize: "0.8125rem", cursor: "pointer", transitionProperty: "background-color, color, border-color", transitionDuration: "{durations.fast}", transitionTimingFunction: "{easings.standard}", _hover: { borderColor: "var(--ink)" }, "&[aria-pressed=true]": { bg: "var(--ink)", color: "var(--paper)", borderColor: "var(--ink)", fontWeight: "650" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } }),
+	rangeEmpty: css({ mb: "1rem", border: "1.5px solid var(--line)", borderRadius: "{radii.keating}", px: "1rem", py: "0.75rem", fontSize: "0.875rem" }),
+	linkButton: css({ textDecoration: "underline", cursor: "pointer", minH: "2rem", _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } }),
+	spendWrap: css({ overflowX: "auto", px: "1rem", py: "0.75rem" }),
+	spendTable: css({ w: "100%", minW: "32rem", borderCollapse: "collapse", fontSize: "0.8125rem" }),
+	spendTh: css({ textAlign: "left", fontWeight: "600", fontSize: "0.75rem", color: "var(--muted-foreground)", px: "0.5rem", py: "0.4rem", borderBottom: "1px solid var(--border)" }),
+	spendTd: css({ px: "0.5rem", py: "0.5rem", borderBottom: "1px solid var(--border)", fontVariantNumeric: "tabular-nums", fontWeight: "400" }),
+	spendModel: css({ textAlign: "left", overflowWrap: "anywhere", fontWeight: "500" }),
+	right: css({ textAlign: "right" }),
+	shareRow: css({ display: "flex", alignItems: "center", gap: "0.5rem", minW: "8rem" }),
+	shareTrack: css({ flex: "1 1 0%", h: "0.5rem", borderRadius: "0.125rem", bg: "var(--muted)", overflow: "hidden" }),
+	shareFill: css({ w: "100%", h: "100%", bg: "var(--ink)", transformOrigin: "left center", transitionProperty: "transform", transitionDuration: "{durations.base}", transitionTimingFunction: "{easings.standard}" }),
 	centerContent: css({ display: "flex", minH: "16rem", alignItems: "center", justifyContent: "center", fontSize: "0.875rem", color: "var(--ink-soft)" }),
 };
 
@@ -252,25 +274,23 @@ function useArtifactMetrics() {
 
 function UsageContent() {
 	const navigate = useNavigate();
-	const metadata = useSessionMetadata().sort((a, b) => b.lastModified.localeCompare(a.lastModified));
+	const allSessions = useSessionMetadata();
+	// Sort a copy: the cached list is shared with other readers of the same promise.
+	const metadata = useMemo(() => [...allSessions].sort((a, b) => b.lastModified.localeCompare(a.lastModified)), [allSessions]);
 	const artifactMetrics = useArtifactMetrics();
-	const totals = metadata.reduce(
-		(acc, session) => {
-			acc.messages += session.messageCount;
-			acc.input += session.usage.input;
-			acc.output += session.usage.output;
-			acc.tokens += session.usage.totalTokens;
-			acc.cost += session.usage.cost.total;
-			return acc;
-		},
-		{ messages: 0, input: 0, output: 0, tokens: 0, cost: 0 },
-	);
-	const activeSpan = metadata.length
-		? daysBetween(metadata[metadata.length - 1].createdAt, metadata[0].lastModified)
-		: 0;
-	const recent = metadata.slice(0, 8);
-	const deepest = [...metadata].sort((a, b) => b.messageCount - a.messageCount).slice(0, 5);
-	const dailyMessages = activeSpan ? totals.messages / activeSpan : 0;
+	const [range, setRange] = useState<UsageRange>(loadUsageRange);
+	const chooseRange = (next: UsageRange) => { setRange(next); saveUsageRange(next); };
+	const window_ = useMemo(() => usageWindow(metadata, range), [metadata, range]);
+	const inRange = useMemo(() => sessionsInRange(metadata, range), [metadata, range]);
+	const spend = useMemo(() => modelSpend(inRange), [inRange]);
+	const totals = window_.current;
+	const previous = window_.previous;
+	const rangeLabel = USAGE_RANGE_LABELS[range].toLowerCase();
+	const change = (current: number, before: number | undefined) => describeChange(current, before, rangeLabel);
+	const recent = inRange.slice(0, 8);
+	const deepest = [...inRange].sort((a, b) => b.messageCount - a.messageCount).slice(0, 5);
+	const dailyMessages = totals.activeDays ? totals.messages / totals.activeDays : 0;
+	const emptyRange = metadata.length > 0 && inRange.length === 0;
 
 	const selfImprovement = artifactMetrics ? artifactMetrics.benchmarks + artifactMetrics.evolutions + artifactMetrics.promptEvolutions + artifactMetrics.improvements : 0;
 	const teachingMats = artifactMetrics ? artifactMetrics.plans + artifactMetrics.maps + artifactMetrics.animations : 0;
@@ -285,32 +305,93 @@ function UsageContent() {
 				description="Your sessions, learning materials, model usage, and improvement history in one local-first view."
 			/>
 			<main className={styles.main}>
+				<div className={styles.rangeBar}>
+					<div role="group" aria-label="Period" className={styles.rangeGroup}>
+						{USAGE_RANGES.map((option) => (
+							<button key={option} type="button" aria-pressed={range === option} className={styles.rangeButton} onClick={() => chooseRange(option)}>
+								{USAGE_RANGE_LABELS[option]}
+							</button>
+						))}
+					</div>
+					<p className={styles.panelSubtitle}>
+						{range === "all" ? `All ${formatNumber(metadata.length)} saved sessions on this device.` : `Sessions last active in the past ${rangeLabel}, on this device.`}
+					</p>
+				</div>
+				{emptyRange && (
+					<p role="status" className={styles.rangeEmpty}>
+						Nothing in the past {rangeLabel}. <button type="button" className={styles.linkButton} onClick={() => chooseRange("all")}>Show all time</button>
+					</p>
+				)}
 				<div className={styles.metricGrid}>
 					<LearningMetric
 						icon={<BookOpenCheck size={18} />}
 						label="Learning sessions"
-						value={formatNumber(metadata.length)}
-						detail={activeSpan ? `${activeSpan} day learning window` : "No sessions yet"}
+						value={formatNumber(totals.sessions)}
+						detail={change(totals.sessions, previous?.sessions) ?? (totals.sessions ? `${totals.activeDays} active ${totals.activeDays === 1 ? "day" : "days"}` : "No sessions yet")}
 					/>
 					<LearningMetric
 						icon={<MessageSquareText size={18} />}
 						label="Socratic turns"
 						value={formatNumber(totals.messages)}
-						detail={`${dailyMessages.toFixed(1)} messages per active day`}
+						detail={change(totals.messages, previous?.messages) ?? `${dailyMessages.toFixed(1)} messages per active day`}
 					/>
 					<LearningMetric
 						icon={<Brain size={18} />}
 						label="Model tokens"
-						value={formatNumber(totals.tokens || totals.input + totals.output)}
-						detail={`${formatNumber(totals.input)} in / ${formatNumber(totals.output)} out`}
+						value={formatNumber(totals.tokens)}
+						detail={`${formatNumber(totals.inputTokens)} in / ${formatNumber(totals.outputTokens)} out${totals.cachedTokens ? ` · ${formatNumber(totals.cachedTokens)} cached` : ""}`}
 					/>
 					<LearningMetric
 						icon={<TrendingUp size={18} />}
 						label="Estimated spend"
 						value={formatCost(totals.cost)}
-						detail="Based on provider usage metadata"
+						detail={change(totals.cost, previous?.cost) ?? "From the usage each provider reported"}
 					/>
 				</div>
+
+				<section className={styles.panel} aria-labelledby="model-spend-heading">
+					<div className={styles.panelHeader}>
+						<h2 id="model-spend-heading" className={styles.panelTitle}>Spend by model</h2>
+						<p className={styles.panelSubtitle}>
+							{spend.basis === "cost"
+								? "Estimated from the token counts and prices each provider reported. Your provider's own bill is the authority."
+								: "No prices were reported in this period, so models are compared by tokens."}
+						</p>
+					</div>
+					{spend.rows.length === 0 ? (
+						<div className={styles.emptyState}>No model usage in this period.</div>
+					) : (
+						<div className={styles.spendWrap}>
+							<table className={styles.spendTable}>
+								<thead><tr>
+									<th scope="col" className={styles.spendTh}>Model</th>
+									<th scope="col" className={cx(styles.spendTh, styles.right)}>Sessions</th>
+									<th scope="col" className={cx(styles.spendTh, styles.right)}>Tokens</th>
+									<th scope="col" className={cx(styles.spendTh, styles.right)}>Est. cost</th>
+									<th scope="col" className={styles.spendTh}>Share of {spend.basis === "cost" ? "spend" : "tokens"}</th>
+								</tr></thead>
+								<tbody>
+									{spend.rows.map((row) => (
+										<tr key={row.key}>
+											<th scope="row" className={cx(styles.spendTd, styles.spendModel)}>{row.label}</th>
+											<td className={cx(styles.spendTd, styles.right)}>{formatNumber(row.sessions)}</td>
+											<td className={cx(styles.spendTd, styles.right)}>{formatNumber(row.tokens)}</td>
+											<td className={cx(styles.spendTd, styles.right)}>{row.cost > 0 ? formatCost(row.cost) : "Not priced"}</td>
+											<td className={styles.spendTd}>
+												<div className={styles.shareRow}>
+													<div className={styles.shareTrack} aria-hidden="true"><div className={styles.shareFill} style={{ transform: `scaleX(${row.share.toFixed(3)})` }} /></div>
+													<span>{Math.round(row.share * 100)}%</span>
+												</div>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					)}
+				</section>
+
+				<HostedCreditsPanel />
 
 				{/* Self-improvement vs Learning distinction */}
 				<div className={styles.metricGridThree}>
@@ -341,12 +422,12 @@ function UsageContent() {
 					<section className={styles.section}>
 						<div className={styles.panelHeader}>
 							<h2 className={styles.panelTitle}>Recent learning</h2>
-							<p className={styles.panelSubtitle}>Latest saved sessions and their focus</p>
+							<p className={styles.panelSubtitle}>Latest saved sessions in this period and their focus</p>
 						</div>
 						<div className={styles.dividerList}>
 							{recent.length === 0 ? (
 								<div className={styles.emptyState}>
-									Start a chat and Keating will track your learning activity here.
+									{emptyRange ? "No sessions in this period." : "Start a chat and Keating will track your learning activity here."}
 								</div>
 							) : recent.map((session) => (
 								<SessionRow key={session.id} session={session} onOpen={openSession} />
@@ -357,11 +438,11 @@ function UsageContent() {
 					<section className={styles.section}>
 						<div className={styles.panelHeader}>
 							<h2 className={styles.panelTitle}>Deepest dives</h2>
-							<p className={styles.panelSubtitle}>Sessions with the most back-and-forth</p>
+							<p className={styles.panelSubtitle}>Sessions with the most back-and-forth in this period</p>
 						</div>
 						<div className={styles.stack3}>
 							{deepest.length === 0 ? (
-								<div className={styles.emptyState}>No learning history yet</div>
+								<div className={styles.emptyState}>{emptyRange ? "No sessions in this period." : "No learning history yet"}</div>
 							) : deepest.map((session, index) => (
 								<button key={session.id} type="button" className={styles.deepButton} onClick={() => openSession(session.id)}>
 									<div className={styles.rankBox}>

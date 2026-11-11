@@ -149,7 +149,7 @@ export function TutorialSurfaceAtlas() {
             boxShadow: "4px 4px 0 var(--ink)",
             transition: "transform 160ms ease, box-shadow 160ms ease",
             _hover: { transform: "translate(-2px, -2px)", boxShadow: "6px 6px 0 var(--ink)" },
-            _focusWithin: { outline: "3px solid var(--accent)", outlineOffset: "3px" },
+            _focusWithin: { outline: "3px solid var(--accent-dim)", outlineOffset: "3px" },
           })}
         >
           <a

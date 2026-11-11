@@ -3,3 +3,4 @@ export * from "./models.js";
 export * from "./services.js";
 export * from "./oauth.js";
 export * from "./budgets.js";
+export * from "./text-scope.js";
