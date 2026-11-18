@@ -1,0 +1,111 @@
+{
+  "rows": [
+    {
+      "case": "typed-tile-answer",
+      "learner": "My guess is round, because three of the four tiles are round.",
+      "previousDisposition": "withheld",
+      "disposition": "withheld",
+      "actualTutorRequests": 4,
+      "completeTutorMessages": 4,
+      "fourTutorRequestsOverlapMs": 5807,
+      "individualReviews": 4,
+      "pairRequests": 2,
+      "concurrentPairReviewsMs": 58,
+      "pairs": [
+        {
+          "candidateAttempts": [
+            1,
+            2
+          ],
+          "wire": "c9eb195ec3dc4fb8ee51a0a004d5a9c8b1b3fd7e7178d636456295db90db00e6",
+          "status": "compared",
+          "preferredAttempt": 1,
+          "eligibleAttempts": [],
+          "finalistAttempt": null,
+          "sentAt": 1795038110552,
+          "receivedAt": 1795038110626
+        },
+        {
+          "candidateAttempts": [
+            3,
+            4
+          ],
+          "wire": "2e2be664c966236eee91aaf6d753c85f8ffca32a471c23d295dfccdebceb9b19",
+          "status": "compared",
+          "preferredAttempt": 4,
+          "eligibleAttempts": [],
+          "finalistAttempt": null,
+          "sentAt": 1795038110568,
+          "receivedAt": 1795038110658
+        }
+      ],
+      "selectedAttempt": null,
+      "visibleText": "Couldn't produce a reply\nTry again\nReload Keating\nIf this keeps happening, reload the page or start a new conversation.",
+      "rendered": [],
+      "elapsedMs": 11913,
+      "recordedSnapshotPairCount": 2,
+      "diagnosticPairCount": 2
+    },
+    {
+      "case": "copper-symbol",
+      "learner": "What is the chemical symbol for copper? Just the symbol, please.",
+      "previousDisposition": "released",
+      "disposition": "released",
+      "actualTutorRequests": 4,
+      "completeTutorMessages": 4,
+      "fourTutorRequestsOverlapMs": 1084,
+      "individualReviews": 4,
+      "pairRequests": 2,
+      "concurrentPairReviewsMs": 86,
+      "pairs": [
+        {
+          "candidateAttempts": [
+            1,
+            2
+          ],
+          "wire": "033214bd91ea4368181ee41a0d0dc6da77b4cde2cfba97eb14360407cb16a226",
+          "status": "compared",
+          "preferredAttempt": 1,
+          "eligibleAttempts": [
+            1,
+            2
+          ],
+          "finalistAttempt": 1,
+          "sentAt": 1795038124984,
+          "receivedAt": 1795038125088
+        },
+        {
+          "candidateAttempts": [
+            3,
+            4
+          ],
+          "wire": "dab8f1bf910cb5d9a4823257e42bbd113614ca05edf367c6f8189c4350020914",
+          "status": "compared",
+          "preferredAttempt": 3,
+          "eligibleAttempts": [
+            3,
+            4
+          ],
+          "finalistAttempt": 3,
+          "sentAt": 1795038125002,
+          "receivedAt": 1795038125104
+        }
+      ],
+      "selectedAttempt": 1,
+      "visibleText": "Cu",
+      "rendered": [],
+      "elapsedMs": 6185,
+      "recordedSnapshotPairCount": 2,
+      "diagnosticPairCount": 2
+    }
+  ],
+  "requests": 23,
+  "metered": 23,
+  "priorBoundUsd": 2.77319968,
+  "newBoundUsd": 0.084002124,
+  "totalBoundUsd": 2.857201804,
+  "phaseCapUsd": 1.25,
+  "globalCapUsd": 10,
+  "invoiceUsd": null,
+  "sourceSha256": "19c80df9cc279bdf27e43fa1547abb68c422089e4b68ea7760efc7459c457130"
+}

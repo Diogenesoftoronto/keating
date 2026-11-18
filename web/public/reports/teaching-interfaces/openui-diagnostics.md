@@ -6,6 +6,10 @@ Follow a learner’s request from the tutor’s first draft through selection an
 
 ## Inspect an incident
 
+Choose **Jev pair reviews** to see which replies advanced from drafts 1–2 and 3–4. A pair can prefer a reply that failed an individual check. A pair with no eligible reply has no finalist. The inspector shows how long both comparisons were in progress at the same time. A feedback-only flag identifies a draft asked to answer the learner’s current item without tools. Older recordings can omit both kinds of evidence. [Inspect the first classroom check](diagnostics.html?source=jev-pairs-first&view=pair-reviews)
+
+Expand a pair to see the observed checks for each candidate. A scored uncertainty can appear on an eligible reply. **Review issues across all drafts** collects flags from the whole turn, including drafts the learner never saw. Where two finalists received a valid final comparison, the record includes both choice probabilities, the preferred draft and the reviewer’s reported confidence. **Released draft** identifies the actual published reply. [Inspect the reconstructed paper and sock reviews](diagnostics.html?source=jev-pairs-review&view=pair-reviews)
+
 To reproduce a report, include the recording and turn filter in the URL. Open `/chat?settings=diagnostics&source=final&view=action-unmet` to inspect the four final study turns. In the standalone inspector, the same query opens directly from the field guide. It reports zero missed actions across three known outcomes and one unknown. Choose **Final reply with editable code** to see the two Python exercises. [Inspect learner actions](diagnostics.html?source=final&view=action-unmet)
 
 Open **Settings → Diagnostics → Interface use** in Chat. The local deep link is `/chat?settings=diagnostics`. Select **This browser** or **Import JSON**, choose the tutor and learner cue, then switch between **In a draft**, **In the final reply** and **Shown in chat**. Each stage has its own measured denominator and unknown count. In **Inspect turns**, choose **Interface compiled, then dropped** to see the decision model, offered types, private draft count and recorded review issues for individual turns. **Export trace** downloads the source rows, while **Download filtered summary** downloads the current query.
@@ -18,6 +22,9 @@ Choose a recording that observed the stage you want to investigate.
 
 | Recording | What it measures |
 | --- | --- |
+| Jev pair reviews · two predictions | Two learners who wanted to guess saw a Question on the first reply. One ordinary draft and one prediction-focused draft won. [Compare the pair decisions](diagnostics.html?source=jev-pairs-prediction&view=pair-reviews) |
+| Jev pair reviews · five classroom turns | Two typed answers, a one-word request and two implicit requests for controls. Includes the feedback-only prompt assignments and a withheld prediction. [Open the five turns](diagnostics.html?source=jev-pairs&view=pair-reviews) |
+| Jev pair reviews · first classroom check | Four MiniMax replies on each of two Jev-guided turns. Both pair preferences, the individual eligibility decisions and the classroom outcome are recorded. |
 | Final review · selected tutor replies | Follows guided turns through review and release. Includes withheld turns and provider errors. [Open the two lost prediction fields](diagnostics.html?source=review&cue=implicit-action&view=draft-loss) |
 | Final review · original drafts with two decision models | Compares 24 primary assignments by tutor and task with Jev, Gemini Decision and unguided generation. [Compare first drafts](diagnostics.html?source=review-first) |
 | When the learner declined a quiz | Four public simulations with the same learner opt-out. Two still instructed the learner to predict. [Inspect the turns](diagnostics.html?source=assessment-opt-out&view=assessment-opt-out) |

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   classifyOpenUiCue, isOpenUiDiagnosticGateIssue, normalizeOpenUiComponent, OPENUI_DIAGNOSTIC_EXPORT_SCHEMA, TEACHING_DEBUGGING_ISSUES,
   observeAssessmentCheckpoints, observeAssessmentOptOut, openUiCheckpointAfterOptOut,
+  pairReviewOverlapMs, projectOpenUiPairReviews, type OpenUiPairReview,
   openUiDiagnosticComponentForNode, openUiDiagnosticLoss, parseOpenUiDiagnosticExport, queryOpenUiDiagnosticTurns, summarizeOpenUiDiagnostics,
   type OpenUiDiagnosticTurn, type UiDocumentNode,
 } from "../src/index.js";
@@ -14,6 +15,37 @@ function turn(index: number, fields: Partial<OpenUiDiagnosticTurn> = {}): OpenUi
 }
 function cueQuestion() { return { kind: question.kind, targets: [...question.targets] }; }
 function cueDirect() { return { kind: direct.kind, targets: [...direct.targets] }; }
+
+test("pair evidence separates Jev preferences from release eligibility, incomplete pairs and absent measurements", () => {
+  const first: OpenUiPairReview = { pair: 1, candidateAttempts: [1,2], status: "compared", preferredAttempt: 1, model: "jev-1.14.0",
+    policyVersion: "keating-teaching-policy/v2.4.1", eligibleAttempts: [2], feedbackOnlyAttempts: [1], candidateIssueIds: [{ attempt: 1, issues: ["checkpoint_answer_leaked"] }, { attempt: 2, issues: [] }], finalistAttempt: 2, startedAtMs: 201, finishedAtMs: 281 };
+  const second: OpenUiPairReview = { pair: 2, candidateAttempts: [3,4], status: "unavailable", preferredAttempt: null, model: null,
+    error: "backend-rate-limited", eligibleAttempts: [], predictionQuestionAttempts: [3], finalistAttempt: null, startedAtMs: 209, finishedAtMs: 250 };
+  const privateReview = { ...first, secret: "private candidate", probabilities: { draft_1: 1, draft_2: 0 } };
+  expect(projectOpenUiPairReviews([second,privateReview])).toEqual([first,second]);
+  expect(pairReviewOverlapMs([first,second])).toBe(41);
+  expect(pairReviewOverlapMs([first])).toBeNull();
+  expect(pairReviewOverlapMs([first,{...second, startedAtMs:281, finishedAtMs:320}])).toBe(0);
+  const rows = [turn(0, { pairReviews: [first,second] }), turn(1, { reply: "withheld", pairReviews: [
+    {pair:1, candidateAttempts:[], status:"incomplete", preferredAttempt:null, model:null},
+  ] }), turn(2)];
+  expect(queryOpenUiDiagnosticTurns(rows,{view:"pair-reviews",limit:1})).toMatchObject({
+    matchingTurns:2, turnsWithoutPairRecords:1, comparedPairs:1, unavailablePairs:1, incompletePairs:1,
+    unrecordedPairs:1, turnsWithMeasuredOverlap:1, turnsWithConcurrentReviews:1, turns:[rows[0]],
+  });
+  for (const bad of [[privateReview], [first,first], [{...first, preferredAttempt:4}], [{...first, finalistAttempt:1}],
+    [{...first, candidateAttempts:[2,2]}], [{...first, feedbackOnlyAttempts:[3]}], [{...first, predictionQuestionAttempts:[1]}],
+    [{...first, policyVersion:"private note"}], [{...first, candidateIssueIds:[{attempt:3,issues:[]}]}], [{...first, candidateIssueIds:[{attempt:1,issues:["secret"]}]}],
+    [{...second, predictionQuestionAttempts:[2]}], [{...second, finishedAtMs:15}], [{...second, error:"private provider text"}]]) {
+    expect(() => parseOpenUiDiagnosticExport([{...turn(0),pairReviews:bad}])).toThrow("Invalid OpenUI");
+  }
+  const finalComparison = { candidateAttempts:[2,4] as const, preferredAttempt:2, model:"jev-1.14.0", probabilities:{draft_2:0.54,draft_4:0.46}, confidence:0.08 };
+  expect(parseOpenUiDiagnosticExport([{...turn(0), finalComparison}])[0]?.finalComparison).toEqual(finalComparison);
+  expect(() => parseOpenUiDiagnosticExport([{...turn(0), pairReviews:[first,second], finalComparison}])).toThrow("Invalid OpenUI");
+  for (const change of [{preferredAttempt:4}, {confidence:1.04}, {candidateAttempts:[1,2]}, {probabilities:{draft_2:1,draft_4:1}}, {note:"private"}]) {
+    expect(() => parseOpenUiDiagnosticExport([{...turn(0),finalComparison:{...finalComparison,...change}}])).toThrow("Invalid OpenUI");
+  }
+});
 
 describe("local OpenUI diagnostic cues", () => {
   test("recognizes a learner asking to predict a named attribute before being told", () => {

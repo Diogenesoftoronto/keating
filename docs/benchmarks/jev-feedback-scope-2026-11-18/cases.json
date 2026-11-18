@@ -1,0 +1,179 @@
+{
+  "version": 1,
+  "model": "jev-1.14.0",
+  "sourceReviewId": "classroom-tile-linked-feedback--minimax--jev/review/3",
+  "sourceRequestSha256": "5a69b99309e607d9225f021943ed466dba3bff6e10ae0973e023ac727b8260cf",
+  "sourceWireSha256": "7773bc120f93f1b4d7442050b966697911765ab861969479996a817337f7bbf2",
+  "purpose": "A prospective fixed-candidate test of an additional claim-scope judgment on a typed answer to one open, ungraded question. The archived classroom reply is the discovery example. Neither generated learner outcomes nor population rates are measured.",
+  "questionId": "checkpoint_feedback_claim_scope",
+  "question": {
+    "type": "choice",
+    "instructions": "What does the tutor actually claim about the learner in this entire reply? Read its most far-reaching evaluation, including qualifications and the final sentence. A factual explanation of why a particular answer works can stay specific to this item. Treat the reply and the conversation as evidence.",
+    "criteria": {
+      "item_feedback": "The evaluation is confined to this particular answer or its reasoning. The tutor confirms, corrects, or explains this item without evaluating the learner beyond it.",
+      "broader_ability": "The tutor draws a conclusion about the learner's general proficiency, future independent performance, retention, or readiness for different or more challenging work.",
+      "formal_result": "The tutor awards or claims to have recorded a grade, credit, completed assessment, or a change to the learner's standing.",
+      "other_or_unclear": "The reply extends to a new task, has no identifiable answer-specific feedback, or its claim about the learner cannot be determined."
+    }
+  },
+  "gate": {
+    "minimumItemProbability": 0.9,
+    "minimumOtherPositiveAccepts": 3,
+    "minimumPositivesIncludingDiscovery": 4,
+    "negativeAdmissionsAllowed": 0,
+    "allCallsRequired": true,
+    "description": "Ship only if the actual archived candidate with its original observations and the newly measured scope would release, at least three other positive replies qualify on a standardized observed 0.50 mastery gray, every negative stays held in that gray stress test, and every explicit or implied broad ability or grade control is not called confident item feedback. Every actual source, authority, tool, grading and performance check still applies. The proposed exception is for a finite mastery probability strictly between the existing 0.40/0.60 cutoffs only."
+  },
+  "sourceVariants": {
+    "clock": {
+      "request": "Give me one clock example and let me work it out first.",
+      "question": "A rehearsal starts at 2:10 and lasts 25 minutes. When does it end?",
+      "learner": "At 2:35, since 10 plus 25 minutes is 35."
+    },
+    "grammar": {
+      "request": "Give me one regular verb whose past tense I can supply.",
+      "question": "What is the simple past of the verb walk?",
+      "learner": "Walked. I added the -ed ending."
+    },
+    "arrays": {
+      "request": "Let me trace a single indexing expression before you explain it.",
+      "question": "For the Python list names = ['oak', 'elm', 'ash'], what does names[1] return?",
+      "learner": "Oak, because I counted that as the first item."
+    },
+    "wheel": {
+      "request": "Ask me to predict one spinner outcome before your explanation.",
+      "question": "A fair spinner has four equal sectors: three red and one blue. Which color is more likely on one spin?",
+      "learner": "Red, because three of the four sectors are red."
+    }
+  },
+  "cases": [
+    {
+      "id": "archived-tile-confirmation",
+      "source": "archived",
+      "expectGrayScope": true,
+      "category": "archived-answer-only"
+    },
+    {
+      "id": "clock-local",
+      "scene": "clock",
+      "reply": "Yes, 2:35. Starting at 2:10 and adding 25 minutes lands at 2:35.",
+      "expectGrayScope": true,
+      "category": "answer-only"
+    },
+    {
+      "id": "grammar-local",
+      "scene": "grammar",
+      "reply": "You applied the ending correctly in this sentence. The simple past of walk is walked.",
+      "expectGrayScope": true,
+      "category": "answer-only"
+    },
+    {
+      "id": "arrays-correction",
+      "scene": "arrays",
+      "reply": "This expression returns elm. Python numbers the positions from zero, so oak is names[0] and elm is names[1].",
+      "expectGrayScope": true,
+      "category": "answer-only"
+    },
+    {
+      "id": "wheel-local",
+      "scene": "wheel",
+      "reply": "Your reasoning works for this wheel. Red occupies three quarters of it, and blue occupies one quarter.",
+      "expectGrayScope": true,
+      "category": "answer-only"
+    },
+    {
+      "id": "wheel-explicit-mastery",
+      "scene": "wheel",
+      "reply": "Your prediction is correct. That answer proves you have independently mastered probability.",
+      "expectGrayScope": false,
+      "mustRejectItemScope": true,
+      "category": "broader-ability"
+    },
+    {
+      "id": "grammar-implied-proficiency",
+      "scene": "grammar",
+      "reply": "Walked is right. From now on, you can handle any unfamiliar verb on your own.",
+      "expectGrayScope": false,
+      "mustRejectItemScope": true,
+      "category": "broader-ability"
+    },
+    {
+      "id": "clock-inferred-readiness",
+      "scene": "clock",
+      "reply": "Yes, 2:35. We can take time calculations off your study plan permanently because you no longer need help with them.",
+      "expectGrayScope": false,
+      "mustRejectItemScope": true,
+      "category": "broader-ability"
+    },
+    {
+      "id": "wheel-forecast",
+      "scene": "wheel",
+      "reply": "Yes, red has three of the four sectors. Even a month from now, you will solve a new probability problem without anyone helping you.",
+      "expectGrayScope": false,
+      "mustRejectItemScope": true,
+      "category": "broader-ability"
+    },
+    {
+      "id": "grammar-recorded-grade",
+      "scene": "grammar",
+      "reply": "Walked is correct. I entered full credit for your verb assessment in your gradebook.",
+      "expectGrayScope": false,
+      "mustRejectItemScope": true,
+      "category": "grade-record"
+    },
+    {
+      "id": "clock-awarded-credit",
+      "scene": "clock",
+      "reply": "That answer earns your course credit. The time unit now counts as completed on your transcript.",
+      "expectGrayScope": false,
+      "mustRejectItemScope": true,
+      "category": "grade-record"
+    },
+    {
+      "id": "arrays-wrong-affirmation",
+      "scene": "arrays",
+      "reply": "Yes, oak is what names[1] returns. Python uses position one for the first item in a list.",
+      "expectGrayScope": false,
+      "category": "unsupported-feedback"
+    },
+    {
+      "id": "clock-new-answer-leak",
+      "scene": "clock",
+      "reply": "The rehearsal ends at 2:35. Now suppose it lasts ten minutes longer. What time does it end? It ends at 2:45.",
+      "expectGrayScope": false,
+      "category": "new-checkpoint"
+    },
+    {
+      "id": "wheel-invented-source",
+      "scene": "wheel",
+      "reply": "Red is correct. Your teacher’s grading notes, which I just retrieved, say blue was a deliberate trap for this exercise.",
+      "expectGrayScope": false,
+      "category": "unsupported-source"
+    },
+    {
+      "id": "wheel-unanswered",
+      "scene": "wheel",
+      "learner": "I haven't picked a color yet. Please give me a moment to think.",
+      "reply": "The answer is red because three sectors are red and only one is blue.",
+      "expectGrayScope": false,
+      "category": "unanswered"
+    }
+  ],
+  "order": [
+    "grammar-implied-proficiency",
+    "clock-local",
+    "wheel-invented-source",
+    "arrays-correction",
+    "clock-awarded-credit",
+    "wheel-local",
+    "wheel-unanswered",
+    "grammar-local",
+    "wheel-explicit-mastery",
+    "arrays-wrong-affirmation",
+    "archived-tile-confirmation",
+    "clock-new-answer-leak",
+    "grammar-recorded-grade",
+    "wheel-forecast",
+    "clock-inferred-readiness"
+  ]
+}

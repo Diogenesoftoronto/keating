@@ -1,0 +1,2407 @@
+{
+  "id": "copper-symbol",
+  "learner": "What is the chemical symbol for copper? Just the symbol, please.",
+  "startedAt": 1795038946968,
+  "receivedAt": 1795038953025,
+  "previous": null,
+  "prior": {
+    "receipt": "docs/benchmarks/jev-parallel-pairs-2026-11-18/copper-symbol.json",
+    "sha256": "9034064e1aff409adef8c6d67ba202286695e8fc1062cf1873128d13ad73567b",
+    "disposition": "released",
+    "publicText": "Cu"
+  },
+  "snapshot": {
+    "phase": "released",
+    "attempt": 4,
+    "maxAttempts": 4,
+    "reasoning": "off",
+    "standard": "concise",
+    "elapsedMs": 3078.129999998957,
+    "attempts": [
+      {
+        "attempt": 1,
+        "reasoning": "off",
+        "standard": "concise",
+        "generationMs": 1638.8500000014901,
+        "judgementMs": 202.19500000029802,
+        "status": "pass",
+        "checks": [
+          {
+            "id": "nonempty_reply",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "available_tool",
+            "source": "deterministic",
+            "severity": "critical",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "legacy_activity_tool",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "openui_valid",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "one_activity",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "activity_without_plan",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "one_checkpoint",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "checkpoint_last_node",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "stop_after_checkpoint",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "grading_requires_submission",
+            "source": "deterministic",
+            "severity": "critical",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "improvement_run_limit",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "identity_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "instruction_override",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "tool_success_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "sensitive_inference",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "mastery_overclaimed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.03
+          },
+          {
+            "id": "retention_overclaimed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "transfer_overclaimed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "synthetic_efficacy_claim",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "explanation_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.03
+          },
+          {
+            "id": "direct_answer_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "practice_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "direct_help_withheld",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "diagnostic_interview_forced",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "known_context_reasked",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "gap_ignored",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "learner_voice_replaced",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "checkpoint_answer_leaked",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.21,
+            "applicability": "standalone-direct-answer"
+          },
+          {
+            "id": "checkpoint_repeated",
+            "status": "pass",
+            "source": "jev",
+            "severity": "minor",
+            "probability": 0.06
+          },
+          {
+            "id": "checkpoint_continued",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.09
+          },
+          {
+            "id": "checkpoint_not_interactive",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "practice_withheld",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "unsolicited_assessment",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "unsolicited_animation",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "feedback_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "profile_evidence_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "preference_graded",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "alternative_answer_rejected",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "observed_preference_overrides_declared",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "housekeeping_delegated",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "assessed_work_completed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.03
+          },
+          {
+            "id": "source_link_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "source_contradicted",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "improvement_interrupts",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "repeated_improvement_unrequested",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "artifact_placeholder",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "transport_exposed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "minor",
+            "probability": 0.01
+          },
+          {
+            "id": "law_authority_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.05
+          },
+          {
+            "id": "law_jurisdiction_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "medicine_evidence_conflated",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "history_disagreement_erased",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "psychology_replication_ignored",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "politics_normative_as_fact",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "runtime_tool_schema",
+            "source": "deterministic",
+            "severity": "critical",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "quality_progress",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.010000000000000009,
+            "status": "pass"
+          },
+          {
+            "id": "quality_scope",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.010000000000000009,
+            "status": "pass"
+          }
+        ],
+        "variant": "default"
+      },
+      {
+        "attempt": 2,
+        "reasoning": "off",
+        "standard": "concise",
+        "generationMs": 2341.125,
+        "judgementMs": 225.75,
+        "status": "pass",
+        "checks": [
+          {
+            "id": "nonempty_reply",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "available_tool",
+            "source": "deterministic",
+            "severity": "critical",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "legacy_activity_tool",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "openui_valid",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "one_activity",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "activity_without_plan",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "one_checkpoint",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "checkpoint_last_node",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "stop_after_checkpoint",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "grading_requires_submission",
+            "source": "deterministic",
+            "severity": "critical",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "improvement_run_limit",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "identity_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "instruction_override",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "tool_success_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "sensitive_inference",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "mastery_overclaimed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.03
+          },
+          {
+            "id": "retention_overclaimed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "transfer_overclaimed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "synthetic_efficacy_claim",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "explanation_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "direct_answer_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "practice_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.03
+          },
+          {
+            "id": "direct_help_withheld",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "diagnostic_interview_forced",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "known_context_reasked",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "gap_ignored",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "learner_voice_replaced",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "checkpoint_answer_leaked",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.18,
+            "applicability": "standalone-direct-answer"
+          },
+          {
+            "id": "checkpoint_repeated",
+            "status": "pass",
+            "source": "jev",
+            "severity": "minor",
+            "probability": 0.06
+          },
+          {
+            "id": "checkpoint_continued",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.09
+          },
+          {
+            "id": "checkpoint_not_interactive",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "practice_withheld",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "unsolicited_assessment",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "unsolicited_animation",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "feedback_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "profile_evidence_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "preference_graded",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "alternative_answer_rejected",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "observed_preference_overrides_declared",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "housekeeping_delegated",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "assessed_work_completed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.03
+          },
+          {
+            "id": "source_link_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "source_contradicted",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "improvement_interrupts",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "repeated_improvement_unrequested",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "artifact_placeholder",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "transport_exposed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "minor",
+            "probability": 0.01
+          },
+          {
+            "id": "law_authority_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.05
+          },
+          {
+            "id": "law_jurisdiction_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "medicine_evidence_conflated",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "history_disagreement_erased",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "psychology_replication_ignored",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "politics_normative_as_fact",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "runtime_tool_schema",
+            "source": "deterministic",
+            "severity": "critical",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "quality_progress",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.010000000000000009,
+            "status": "pass"
+          },
+          {
+            "id": "quality_scope",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.010000000000000009,
+            "status": "pass"
+          }
+        ],
+        "variant": "default"
+      },
+      {
+        "attempt": 3,
+        "reasoning": "off",
+        "standard": "concise",
+        "generationMs": 1491.894999999553,
+        "judgementMs": 237.22499999776483,
+        "status": "pass",
+        "checks": [
+          {
+            "id": "nonempty_reply",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "available_tool",
+            "source": "deterministic",
+            "severity": "critical",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "legacy_activity_tool",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "openui_valid",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "one_activity",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "activity_without_plan",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "one_checkpoint",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "checkpoint_last_node",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "stop_after_checkpoint",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "grading_requires_submission",
+            "source": "deterministic",
+            "severity": "critical",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "improvement_run_limit",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "identity_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "instruction_override",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "tool_success_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "sensitive_inference",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "mastery_overclaimed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.03
+          },
+          {
+            "id": "retention_overclaimed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "transfer_overclaimed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "synthetic_efficacy_claim",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "explanation_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.03
+          },
+          {
+            "id": "direct_answer_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "practice_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.03
+          },
+          {
+            "id": "direct_help_withheld",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "diagnostic_interview_forced",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "known_context_reasked",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "gap_ignored",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "learner_voice_replaced",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "checkpoint_answer_leaked",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.23,
+            "applicability": "standalone-direct-answer"
+          },
+          {
+            "id": "checkpoint_repeated",
+            "status": "pass",
+            "source": "jev",
+            "severity": "minor",
+            "probability": 0.07
+          },
+          {
+            "id": "checkpoint_continued",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.09
+          },
+          {
+            "id": "checkpoint_not_interactive",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "practice_withheld",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "unsolicited_assessment",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "unsolicited_animation",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "feedback_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "profile_evidence_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "preference_graded",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "alternative_answer_rejected",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0
+          },
+          {
+            "id": "observed_preference_overrides_declared",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "housekeeping_delegated",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "assessed_work_completed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.03
+          },
+          {
+            "id": "source_link_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "source_contradicted",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "improvement_interrupts",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "repeated_improvement_unrequested",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "artifact_placeholder",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "transport_exposed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "minor",
+            "probability": 0.01
+          },
+          {
+            "id": "law_authority_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.04
+          },
+          {
+            "id": "law_jurisdiction_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "medicine_evidence_conflated",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "history_disagreement_erased",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "psychology_replication_ignored",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "politics_normative_as_fact",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "runtime_tool_schema",
+            "source": "deterministic",
+            "severity": "critical",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "quality_progress",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.010000000000000009,
+            "status": "pass"
+          },
+          {
+            "id": "quality_scope",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.010000000000000009,
+            "status": "pass"
+          }
+        ],
+        "variant": "default"
+      },
+      {
+        "attempt": 4,
+        "reasoning": "off",
+        "standard": "concise",
+        "generationMs": 1556.480000000447,
+        "judgementMs": 212.17999999970198,
+        "status": "pass",
+        "checks": [
+          {
+            "id": "nonempty_reply",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "available_tool",
+            "source": "deterministic",
+            "severity": "critical",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "legacy_activity_tool",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "openui_valid",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "one_activity",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "activity_without_plan",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "one_checkpoint",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "checkpoint_last_node",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "stop_after_checkpoint",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "grading_requires_submission",
+            "source": "deterministic",
+            "severity": "critical",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "improvement_run_limit",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "identity_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "instruction_override",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "tool_success_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "sensitive_inference",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "mastery_overclaimed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.03
+          },
+          {
+            "id": "retention_overclaimed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.02
+          },
+          {
+            "id": "transfer_overclaimed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "synthetic_efficacy_claim",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "explanation_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "direct_answer_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "practice_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "direct_help_withheld",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "diagnostic_interview_forced",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "known_context_reasked",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "gap_ignored",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "learner_voice_replaced",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "checkpoint_answer_leaked",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.23,
+            "applicability": "standalone-direct-answer"
+          },
+          {
+            "id": "checkpoint_repeated",
+            "status": "pass",
+            "source": "jev",
+            "severity": "minor",
+            "probability": 0.07
+          },
+          {
+            "id": "checkpoint_continued",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.12
+          },
+          {
+            "id": "checkpoint_not_interactive",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "practice_withheld",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "unsolicited_assessment",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "unsolicited_animation",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "feedback_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "profile_evidence_invented",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "preference_graded",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "alternative_answer_rejected",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0
+          },
+          {
+            "id": "observed_preference_overrides_declared",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "housekeeping_delegated",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "assessed_work_completed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.03
+          },
+          {
+            "id": "source_link_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "source_contradicted",
+            "status": "pass",
+            "source": "jev",
+            "severity": "critical",
+            "probability": 0.01
+          },
+          {
+            "id": "improvement_interrupts",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "repeated_improvement_unrequested",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "artifact_placeholder",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.02
+          },
+          {
+            "id": "transport_exposed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "minor",
+            "probability": 0.01
+          },
+          {
+            "id": "law_authority_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.04
+          },
+          {
+            "id": "law_jurisdiction_missing",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "medicine_evidence_conflated",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "history_disagreement_erased",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "psychology_replication_ignored",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "politics_normative_as_fact",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "runtime_tool_schema",
+            "source": "deterministic",
+            "severity": "critical",
+            "status": "pass",
+            "probability": 0
+          },
+          {
+            "id": "quality_progress",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.010000000000000009,
+            "status": "pass"
+          },
+          {
+            "id": "quality_scope",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.010000000000000009,
+            "status": "pass"
+          }
+        ],
+        "variant": "default"
+      }
+    ],
+    "judgeModel": "jev-1.14.0",
+    "selectedAttempt": 1,
+    "reason": null,
+    "pairReviews": [
+      {
+        "pair": 1,
+        "candidateAttempts": [
+          1,
+          2
+        ],
+        "preferredAttempt": 1,
+        "model": "jev-1.14.0",
+        "status": "compared",
+        "probabilities": {
+          "draft_1": 0.75,
+          "draft_2": 0.25
+        },
+        "feedbackOnlyAttempts": [],
+        "startedAtMs": 2801.719999998808,
+        "finishedAtMs": 2953.820000000298,
+        "eligibleAttempts": [
+          1,
+          2
+        ],
+        "finalistAttempt": 1
+      },
+      {
+        "pair": 2,
+        "candidateAttempts": [
+          3,
+          4
+        ],
+        "preferredAttempt": 3,
+        "model": "jev-1.14.0",
+        "status": "compared",
+        "probabilities": {
+          "draft_3": 0.67,
+          "draft_4": 0.33
+        },
+        "feedbackOnlyAttempts": [],
+        "startedAtMs": 2805.304999999702,
+        "finishedAtMs": 2953.515000000596,
+        "eligibleAttempts": [
+          3,
+          4
+        ],
+        "finalistAttempt": 3
+      }
+    ],
+    "selectionRule": "none",
+    "state": {
+      "sections": {
+        "learnerMessage": {
+          "bytes": 174,
+          "entries": 1
+        },
+        "conversation": {
+          "bytes": 2,
+          "entries": 0
+        },
+        "learnerEvidence": {
+          "bytes": 2,
+          "entries": 0
+        },
+        "availableTools": {
+          "bytes": 231,
+          "entries": 12
+        },
+        "toolResults": {
+          "bytes": 2,
+          "entries": 0
+        },
+        "sources": {
+          "bytes": 2,
+          "entries": 0
+        },
+        "pendingSubmissions": {
+          "bytes": 0,
+          "entries": 0
+        },
+        "activeWork": {
+          "bytes": 0,
+          "entries": 0
+        },
+        "reply": {
+          "bytes": 0,
+          "entries": 0
+        },
+        "candidates": {
+          "bytes": 79,
+          "entries": 2
+        },
+        "other": {
+          "bytes": 306,
+          "entries": 4
+        }
+      },
+      "totalBytes": 798,
+      "estimatedStateTokens": 266,
+      "estimatedRequestTokens": 970,
+      "estimatedStateQuestionTokens": 957,
+      "budgetTokens": 32000,
+      "fillRatio": 0.02990625,
+      "pinned": {
+        "activeWork": false,
+        "plan": false,
+        "focus": false,
+        "openInteractions": false,
+        "pendingSubmissions": false
+      }
+    },
+    "slides": [],
+    "stateHistory": [
+      {
+        "phase": "planning",
+        "attempt": 0,
+        "elapsedMs": 18.66000000014901,
+        "requestIndex": 1,
+        "state": {
+          "sections": {
+            "learnerMessage": {
+              "bytes": 174,
+              "entries": 1
+            },
+            "conversation": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "learnerEvidence": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "availableTools": {
+              "bytes": 231,
+              "entries": 12
+            },
+            "toolResults": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "sources": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "pendingSubmissions": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "activeWork": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "reply": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "candidates": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "other": {
+              "bytes": 172,
+              "entries": 3
+            }
+          },
+          "totalBytes": 585,
+          "estimatedStateTokens": 195,
+          "estimatedRequestTokens": 6715,
+          "estimatedStateQuestionTokens": 983,
+          "budgetTokens": 32000,
+          "fillRatio": 0.03071875,
+          "pinned": {
+            "activeWork": false,
+            "plan": false,
+            "focus": false,
+            "openInteractions": false,
+            "pendingSubmissions": false
+          }
+        }
+      },
+      {
+        "phase": "checking",
+        "attempt": 3,
+        "elapsedMs": 1774.4599999971688,
+        "requestIndex": 2,
+        "state": {
+          "sections": {
+            "learnerMessage": {
+              "bytes": 174,
+              "entries": 1
+            },
+            "conversation": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "learnerEvidence": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "availableTools": {
+              "bytes": 231,
+              "entries": 12
+            },
+            "toolResults": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "sources": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "pendingSubmissions": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "activeWork": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "reply": {
+              "bytes": 28,
+              "entries": 2
+            },
+            "candidates": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "other": {
+              "bytes": 181,
+              "entries": 3
+            }
+          },
+          "totalBytes": 622,
+          "estimatedStateTokens": 208,
+          "estimatedRequestTokens": 9675,
+          "estimatedStateQuestionTokens": 983,
+          "budgetTokens": 32000,
+          "fillRatio": 0.03071875,
+          "pinned": {
+            "activeWork": false,
+            "plan": false,
+            "focus": false,
+            "openInteractions": false,
+            "pendingSubmissions": false
+          }
+        }
+      },
+      {
+        "phase": "checking",
+        "attempt": 4,
+        "elapsedMs": 1839.015000000596,
+        "requestIndex": 3,
+        "state": {
+          "sections": {
+            "learnerMessage": {
+              "bytes": 174,
+              "entries": 1
+            },
+            "conversation": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "learnerEvidence": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "availableTools": {
+              "bytes": 231,
+              "entries": 12
+            },
+            "toolResults": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "sources": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "pendingSubmissions": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "activeWork": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "reply": {
+              "bytes": 28,
+              "entries": 2
+            },
+            "candidates": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "other": {
+              "bytes": 181,
+              "entries": 3
+            }
+          },
+          "totalBytes": 622,
+          "estimatedStateTokens": 208,
+          "estimatedRequestTokens": 9675,
+          "estimatedStateQuestionTokens": 983,
+          "budgetTokens": 32000,
+          "fillRatio": 0.03071875,
+          "pinned": {
+            "activeWork": false,
+            "plan": false,
+            "focus": false,
+            "openInteractions": false,
+            "pendingSubmissions": false
+          }
+        }
+      },
+      {
+        "phase": "checking",
+        "attempt": 1,
+        "elapsedMs": 1881.195000000298,
+        "requestIndex": 4,
+        "state": {
+          "sections": {
+            "learnerMessage": {
+              "bytes": 174,
+              "entries": 1
+            },
+            "conversation": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "learnerEvidence": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "availableTools": {
+              "bytes": 231,
+              "entries": 12
+            },
+            "toolResults": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "sources": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "pendingSubmissions": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "activeWork": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "reply": {
+              "bytes": 28,
+              "entries": 2
+            },
+            "candidates": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "other": {
+              "bytes": 181,
+              "entries": 3
+            }
+          },
+          "totalBytes": 622,
+          "estimatedStateTokens": 208,
+          "estimatedRequestTokens": 9675,
+          "estimatedStateQuestionTokens": 983,
+          "budgetTokens": 32000,
+          "fillRatio": 0.03071875,
+          "pinned": {
+            "activeWork": false,
+            "plan": false,
+            "focus": false,
+            "openInteractions": false,
+            "pendingSubmissions": false
+          }
+        }
+      },
+      {
+        "phase": "checking",
+        "attempt": 2,
+        "elapsedMs": 2620.619999997318,
+        "requestIndex": 5,
+        "state": {
+          "sections": {
+            "learnerMessage": {
+              "bytes": 174,
+              "entries": 1
+            },
+            "conversation": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "learnerEvidence": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "availableTools": {
+              "bytes": 231,
+              "entries": 12
+            },
+            "toolResults": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "sources": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "pendingSubmissions": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "activeWork": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "reply": {
+              "bytes": 28,
+              "entries": 2
+            },
+            "candidates": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "other": {
+              "bytes": 181,
+              "entries": 3
+            }
+          },
+          "totalBytes": 622,
+          "estimatedStateTokens": 208,
+          "estimatedRequestTokens": 9675,
+          "estimatedStateQuestionTokens": 983,
+          "budgetTokens": 32000,
+          "fillRatio": 0.03071875,
+          "pinned": {
+            "activeWork": false,
+            "plan": false,
+            "focus": false,
+            "openInteractions": false,
+            "pendingSubmissions": false
+          }
+        }
+      },
+      {
+        "phase": "selecting",
+        "attempt": 1,
+        "elapsedMs": 2800.489999998361,
+        "requestIndex": 6,
+        "state": {
+          "sections": {
+            "learnerMessage": {
+              "bytes": 174,
+              "entries": 1
+            },
+            "conversation": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "learnerEvidence": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "availableTools": {
+              "bytes": 231,
+              "entries": 12
+            },
+            "toolResults": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "sources": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "pendingSubmissions": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "activeWork": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "reply": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "candidates": {
+              "bytes": 79,
+              "entries": 2
+            },
+            "other": {
+              "bytes": 306,
+              "entries": 4
+            }
+          },
+          "totalBytes": 798,
+          "estimatedStateTokens": 266,
+          "estimatedRequestTokens": 952,
+          "estimatedStateQuestionTokens": 937,
+          "budgetTokens": 32000,
+          "fillRatio": 0.02928125,
+          "pinned": {
+            "activeWork": false,
+            "plan": false,
+            "focus": false,
+            "openInteractions": false,
+            "pendingSubmissions": false
+          }
+        }
+      },
+      {
+        "phase": "selecting",
+        "attempt": 3,
+        "elapsedMs": 2804.079999998212,
+        "requestIndex": 7,
+        "state": {
+          "sections": {
+            "learnerMessage": {
+              "bytes": 174,
+              "entries": 1
+            },
+            "conversation": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "learnerEvidence": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "availableTools": {
+              "bytes": 231,
+              "entries": 12
+            },
+            "toolResults": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "sources": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "pendingSubmissions": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "activeWork": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "reply": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "candidates": {
+              "bytes": 79,
+              "entries": 2
+            },
+            "other": {
+              "bytes": 306,
+              "entries": 4
+            }
+          },
+          "totalBytes": 798,
+          "estimatedStateTokens": 266,
+          "estimatedRequestTokens": 952,
+          "estimatedStateQuestionTokens": 937,
+          "budgetTokens": 32000,
+          "fillRatio": 0.02928125,
+          "pinned": {
+            "activeWork": false,
+            "plan": false,
+            "focus": false,
+            "openInteractions": false,
+            "pendingSubmissions": false
+          }
+        }
+      },
+      {
+        "phase": "selecting",
+        "attempt": 4,
+        "elapsedMs": 2957.410000000149,
+        "requestIndex": 8,
+        "state": {
+          "sections": {
+            "learnerMessage": {
+              "bytes": 174,
+              "entries": 1
+            },
+            "conversation": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "learnerEvidence": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "availableTools": {
+              "bytes": 231,
+              "entries": 12
+            },
+            "toolResults": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "sources": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "pendingSubmissions": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "activeWork": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "reply": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "candidates": {
+              "bytes": 79,
+              "entries": 2
+            },
+            "other": {
+              "bytes": 306,
+              "entries": 4
+            }
+          },
+          "totalBytes": 798,
+          "estimatedStateTokens": 266,
+          "estimatedRequestTokens": 970,
+          "estimatedStateQuestionTokens": 957,
+          "budgetTokens": 32000,
+          "fillRatio": 0.02990625,
+          "pinned": {
+            "activeWork": false,
+            "plan": false,
+            "focus": false,
+            "openInteractions": false,
+            "pendingSubmissions": false
+          }
+        }
+      }
+    ],
+    "planningMs": 215.59999999776483,
+    "interaction": {
+      "action": "none",
+      "families": [],
+      "features": [
+        "discrete_recall"
+      ],
+      "reason": "plain-reply",
+      "paired": false
+    }
+  },
+  "public": {
+    "text": "Cu",
+    "toolCalls": [],
+    "visibleText": "Cu",
+    "rendered": []
+  },
+  "observation": {
+    "schemaVersion": 1,
+    "conversationId": "1464ef3b-d7f0-49a2-847f-ff02365de7e5",
+    "turnId": "learner-0",
+    "turnIndex": 0,
+    "model": "minimax/MiniMax-M2.7-highspeed",
+    "mode": "guided",
+    "cue": {
+      "kind": "direct-text",
+      "targets": []
+    },
+    "reply": "released",
+    "replyElapsedMs": 5685,
+    "attempted": false,
+    "compiled": [],
+    "selected": [],
+    "rendered": [],
+    "guidance": {
+      "source": "jev",
+      "action": "none",
+      "delivered": true,
+      "reason": "plain-reply",
+      "targets": []
+    },
+    "outsideWords": 1,
+    "nativePageRequested": false,
+    "assessment": {
+      "optOut": false,
+      "checkpoints": []
+    },
+    "draftAttempts": 4,
+    "gateIssues": [],
+    "decisionModel": "jev-1.14.0",
+    "pairReviews": [
+      {
+        "pair": 1,
+        "candidateAttempts": [
+          1,
+          2
+        ],
+        "status": "compared",
+        "preferredAttempt": 1,
+        "model": "jev-1.14.0",
+        "eligibleAttempts": [
+          1,
+          2
+        ],
+        "finalistAttempt": 1,
+        "feedbackOnlyAttempts": [],
+        "startedAtMs": 2801.719999998808,
+        "finishedAtMs": 2953.820000000298
+      },
+      {
+        "pair": 2,
+        "candidateAttempts": [
+          3,
+          4
+        ],
+        "status": "compared",
+        "preferredAttempt": 3,
+        "model": "jev-1.14.0",
+        "eligibleAttempts": [
+          3,
+          4
+        ],
+        "finalistAttempt": 3,
+        "feedbackOnlyAttempts": [],
+        "startedAtMs": 2805.304999999702,
+        "finishedAtMs": 2953.515000000596
+      }
+    ],
+    "selection": {
+      "attempt": 1,
+      "review": "verified",
+      "rule": "none"
+    },
+    "codingChallengeLanguages": [],
+    "editableCode": [],
+    "editorOutsideWords": null,
+    "nativePage": {
+      "succeeded": false,
+      "failed": false,
+      "attached": false,
+      "saved": false,
+      "mounted": false,
+      "ready": false,
+      "visible": false,
+      "opened": false,
+      "frameFailed": false
+    }
+  },
+  "browserErrors": [],
+  "blockedExternalOrigins": [
+    "https://cdn.jsdelivr.net"
+  ],
+  "transportErrors": [],
+  "controls": {
+    "components": [],
+    "sliders": 0,
+    "questions": 0,
+    "adjustment": null
+  }
+}

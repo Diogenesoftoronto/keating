@@ -107,7 +107,7 @@ export function DraftProgressCard({ status }: { status: TeachingDraftStatus | nu
   })}>
     <div className={css({ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: ".75rem" })}>
       <span className={css({ fontSize: ".875rem", fontWeight: 600 })}>{guidance.headline}…</span>
-      <AttemptDots attempt={snapshot.attempt} max={snapshot.maxAttempts} />
+      {!snapshot.pairReviews && <AttemptDots attempt={snapshot.attempt} max={snapshot.maxAttempts} />}
     </div>
     <DraftStageStepper snapshot={snapshot} compact />
     <DraftTimeBar elapsedMs={elapsed} />
@@ -146,7 +146,9 @@ const statusColor: Record<string, string> = { pass: "var(--primary)", fail: "var
 export function DraftTimeline({ snapshot }: { snapshot: TeachingDraftSnapshot }) {
   const planning = snapshot.planningMs ?? 0;
   const rows = snapshot.attempts;
-  const scale = Math.max(1, snapshot.elapsedMs, planning + rows.reduce((sum, attempt) => sum + attempt.generationMs + attempt.judgementMs, 0));
+  const durations = rows.map(attempt => attempt.generationMs + attempt.judgementMs);
+  const scale = snapshot.pairReviews ? Math.max(1, snapshot.elapsedMs, planning, ...durations)
+    : Math.max(1, snapshot.elapsedMs, planning + durations.reduce((sum, duration) => sum + duration, 0));
   const offsets = rows.reduce<number[]>((starts, attempt, index) => [...starts, index === 0 ? planning : starts[index - 1]! + rows[index - 1]!.generationMs + rows[index - 1]!.judgementMs], []);
   const gap = (ms: number) => ms > 0 && <span aria-hidden="true" className={css({ display: "block", height: "100%" })} style={{ width: `${(ms / scale) * 100}%` }} />;
   const bar = (ms: number, color: string, title: string, striped = false) => ms > 0 && <span title={`${title}: ${(ms / 1_000).toFixed(1)} s`}
@@ -166,11 +168,12 @@ export function DraftTimeline({ snapshot }: { snapshot: TeachingDraftSnapshot })
         {attempt.variant !== "default" && <span> · {attempt.variant}</span>}
       </span>
       <span className={css({ display: "flex", height: ".625rem", borderRadius: ".2rem", background: "var(--muted)", overflow: "hidden" })}>
-        {gap(offsets[index]!)}{bar(attempt.generationMs, "var(--primary)", "Writing")}{bar(attempt.judgementMs, "var(--accent-dim, var(--primary))", "Review", true)}
+        {!snapshot.pairReviews && gap(offsets[index]!)}{bar(attempt.generationMs, "var(--primary)", "Writing")}{bar(attempt.judgementMs, "var(--accent-dim, var(--primary))", "Review", true)}
       </span>
       <span className={cx(small, css({ textAlign: "right", fontVariantNumeric: "tabular-nums" }))}>{((attempt.generationMs + attempt.judgementMs) / 1_000).toFixed(1)} s</span>
     </div>)}
     <figcaption className={cx(small, css({ display: "flex", gap: ".875rem", flexWrap: "wrap" }))}>
+      {snapshot.pairReviews && <span>Bars show time spent on each draft. Drafts run concurrently.</span>}
       <Legend swatch="var(--primary)">Writing</Legend><Legend swatch="repeating-linear-gradient(135deg, var(--accent-dim, var(--primary)) 0 4px, transparent 4px 7px)">Review</Legend>
       <span>Total {(snapshot.elapsedMs / 1_000).toFixed(1)} s of {Math.round(DRAFT_TIME_BUDGET_MS / 1_000)} s</span>
     </figcaption>

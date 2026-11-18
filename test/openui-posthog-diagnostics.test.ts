@@ -85,13 +85,19 @@ describe("read-only Keating fleet diagnostics", () => {
   test("preserves measured zero and withheld duration, and reads both old events and saved pre-timing query results", () => {
     const observed = query([snapshot(row(0, { replyElapsedMs: 0 }), 2), snapshot(row(1, { reply: "withheld", replyElapsedMs: 1234 }), 4),
       snapshot(row(2), 1, { properties: { reply_elapsed_ms: undefined } })]);
-    expect(observed.columns).toHaveLength(39);
+    expect(observed.columns).toHaveLength(41);
     const rows = openUiFleetExport(observed, scope).turns;
     expect(rows.map(r => r.replyElapsedMs)).toEqual([0, 1234, null]);
     expect(summarizeOpenUiDiagnostics(rows).overall.replyElapsedMs).toEqual({ observed: 2, unknown: 1, median: 617, p90: 1234 });
     const omit = (...fields: string[]) => ({ columns: observed.columns.filter(key => !fields.includes(key)),
       results: observed.results.map(r => r.filter((_, i) => !fields.includes(observed.columns[i]!))) });
-    const assessment = ["assessment_opt_out", "assessment_checkpoints"];
+    const pairsOnly = omit("draft_final_comparison");
+    expect(pairsOnly.columns).toHaveLength(40);
+    expect(openUiFleetExport(pairsOnly, scope).turns.every(r => r.finalComparison === undefined)).toBe(true);
+    const beforePairs = omit("draft_pair_reviews", "draft_final_comparison");
+    expect(beforePairs.columns).toHaveLength(39);
+    expect(openUiFleetExport(beforePairs, scope).turns.every(r => r.pairReviews === undefined)).toBe(true);
+    const assessment = ["draft_final_comparison", "draft_pair_reviews", "assessment_opt_out", "assessment_checkpoints"];
     const beforeAssessment = omit(...assessment);
     expect(beforeAssessment.columns).toHaveLength(37);
     expect(openUiFleetExport(beforeAssessment, scope).turns.every(r => r.assessment === undefined)).toBe(true);
@@ -145,6 +151,24 @@ describe("read-only Keating fleet diagnostics", () => {
       selected:["coding-challenge"],editableCode:[],codingChallengeLanguages:["typescript"]});
     expect(openUiFleetExport(query([snapshot(challenge,7)]),scope).turns).toEqual([challenge]);
     expect(()=>openUiFleetExport(query([snapshot(challenge,7,{properties:{coding_challenge_languages:["PRIVATE source"]}})]),scope)).toThrow("Invalid OpenUI");
+  });
+  test("round trips both Jev comparisons, including a preference that failed its individual review", () => {
+    const pairReviews: OpenUiDiagnosticTurn["pairReviews"] = [
+      { pair: 1, candidateAttempts: [1, 2], status: "compared", preferredAttempt: 2, model: "jev-1.14.0",
+        eligibleAttempts: [1], finalistAttempt: 1, candidateIssueIds: [{ attempt: 1, issues: [] }, { attempt: 2, issues: ["checkpoint_answer_leaked"] }], startedAtMs: 100, finishedAtMs: 172 },
+      { pair: 2, candidateAttempts: [3, 4], status: "compared", preferredAttempt: 3, model: "jev-1.14.0",
+        eligibleAttempts: [], finalistAttempt: null, startedAtMs: 108, finishedAtMs: 184 },
+    ];
+    const finalComparison = { candidateAttempts: [1, 4] as const, preferredAttempt: 4,
+      probabilities: { draft_1: 0.46, draft_4: 0.54 }, confidence: 0.08, model: "jev-1.14.0" };
+    const rows = [row(0, { pairReviews }), row(1, { pairReviews: [] }), row(2), row(3, { pairReviews: [
+      pairReviews[0]!, { ...pairReviews[1]!, eligibleAttempts: [4], finalistAttempt: 4 }], finalComparison })];
+    const exported = openUiFleetExport(query(rows.map(turn => snapshot(turn, 1))), scope).turns;
+    expect(exported.map(turn => turn.pairReviews)).toEqual(rows.map(turn => turn.pairReviews));
+    expect(exported[3]!.finalComparison).toEqual(finalComparison);
+    expect(() => openUiFleetExport(query([snapshot(row(0), 1, { properties: {
+      draft_pair_reviews: [{ ...pairReviews[0], tutorDraft: "private reply" }],
+    } })]), scope)).toThrow("Invalid OpenUI");
   });
   test("refuses row caps, silent partial pages, added columns, mixed scopes and incompatible latest snapshots", () => {
     const response = query([snapshot(row(0), 1), snapshot(row(1), 1), snapshot(row(2), 1)], { ...scope, maxTurns: 1 });

@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="author" content="Claude Fable">
+<meta name="description" content="Keating 4.2.2 writes four private tutor replies per guided turn and lets Jev compare them in two pairs. What reached the learner on nine synthetic classroom turns, and how to inspect one.">
+<title>Four drafts, two pairs, one reply</title>
+<style>
+  :root {
+    --paper: #f3eee3; --card: #fbf8f1; --ink: #23201a; --soft: #5f574a;
+    --rule: #d6cdbb; --accent: #2f6b4a; --warn: #8a4a12; --warn-bg: #f6e6cf;
+    --code-bg: #e9e2d2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #191713; --card: #221f1a; --ink: #ece6d9; --soft: #a99f8d;
+      --rule: #3b362d; --accent: #8fcfa8; --warn: #f0b878; --warn-bg: #33281a;
+      --code-bg: #2c2821;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 1.0625rem/1.6 Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  }
+  main { max-width: 41rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+  h1, h2, h3, .label, nav, .byline, figcaption, .ui, summary, table {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { font-size: clamp(1.75rem, 6vw, 2.4rem); line-height: 1.15; margin: 0 0 .5rem; letter-spacing: -.015em; text-wrap: balance; }
+  h2 { font-size: 1.125rem; margin: 2.5rem 0 .5rem; letter-spacing: -.005em; }
+  h3 { font-size: 1rem; margin: 1.5rem 0 .35rem; }
+  p { margin: 0 0 1rem; }
+  .byline { color: var(--soft); font-size: .875rem; margin: 0 0 1.5rem; }
+  .lede { font-size: 1.1875rem; line-height: 1.5; }
+  a { color: var(--accent); text-underline-offset: .15em; }
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+  nav ul { list-style: none; display: flex; flex-wrap: wrap; gap: .4rem .5rem; padding: 0; margin: 0 0 2rem; font-size: .875rem; }
+  nav a { display: inline-block; padding: .3rem .7rem; border: 1px solid var(--rule); border-radius: 999px; text-decoration: none; background: var(--card); }
+  .label { display: block; font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--soft); }
+  code, pre { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .84em; }
+  code { background: var(--code-bg); padding: .08em .3em; border-radius: 3px; overflow-wrap: anywhere; }
+  pre { background: var(--code-bg); padding: .75rem .85rem; border-radius: 6px; margin: 0 0 1rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+  pre code { background: none; padding: 0; font-size: 1em; }
+  .gap { background: var(--warn-bg); border-left: 3px solid var(--warn); padding: .9rem 1rem; border-radius: 0 6px 6px 0; margin: 1rem 0; }
+  .gap p:last-child { margin-bottom: 0; }
+  .wide { overflow-x: auto; margin: 0 0 1rem; }
+  table { border-collapse: collapse; width: 100%; font-size: .875rem; }
+  caption { text-align: left; color: var(--soft); padding-bottom: .4rem; }
+  th, td { text-align: left; vertical-align: top; padding: .45rem .6rem .45rem 0; border-bottom: 1px solid var(--rule); }
+  thead th { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: var(--soft); }
+  td.flag, .flag { color: var(--warn); font-weight: 600; }
+  td.num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--rule); color: var(--soft); font-size: .9375rem; }
+  .vh { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+  /* Turn picker: radio inputs drive the panels, no script. */
+  .turns { margin: 1rem 0; }
+  .tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0 0 .75rem; font-size: .875rem; }
+  .tabs label { padding: .35rem .7rem; border: 1px solid var(--rule); border-radius: 999px; background: var(--card); cursor: pointer; }
+  .panel { display: none; background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem; }
+  #t1:checked ~ .p1, #t2:checked ~ .p2, #t3:checked ~ .p3, #t4:checked ~ .p4, #t5:checked ~ .p5 { display: block; }
+  #t1:checked ~ .tabs [for=t1], #t2:checked ~ .tabs [for=t2], #t3:checked ~ .tabs [for=t3],
+  #t4:checked ~ .tabs [for=t4], #t5:checked ~ .tabs [for=t5] { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+  #t1:focus-visible ~ .tabs [for=t1], #t2:focus-visible ~ .tabs [for=t2], #t3:focus-visible ~ .tabs [for=t3],
+  #t4:focus-visible ~ .tabs [for=t4], #t5:focus-visible ~ .tabs [for=t5] { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .said { margin: 0 0 .75rem; }
+  .pairs { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+  @media (max-width: 34rem) { .pairs { grid-template-columns: 1fr; } }
+  .pairs ul { list-style: none; margin: .25rem 0 0; padding: 0; display: grid; gap: .4rem; }
+  .draft { border: 1px solid var(--rule); border-left: 4px solid var(--accent); border-radius: 4px; padding: .45rem .6rem; font-size: .875rem; line-height: 1.4; background: var(--paper); }
+  .draft.held { border-left-color: var(--warn); }
+  .draft b { display: block; }
+  .draft .v { display: block; }
+  .draft.held .v { color: var(--warn); }
+  .chip { display: inline-block; margin: .25rem .25rem 0 0; padding: 0 .4rem; border: 1px solid currentColor; border-radius: 999px; font-size: .75rem; color: var(--soft); }
+  .end { margin: .85rem 0 0; padding-top: .75rem; border-top: 1px solid var(--rule); font-size: .9375rem; }
+  .end p { margin: 0 0 .4rem; }
+  .end p:last-child { margin: 0; }
+
+  /* Eighteen pairs, one square each. */
+  .grid18 { display: flex; flex-wrap: wrap; gap: 4px; margin: .5rem 0; }
+  .grid18 i { width: 1.25rem; height: 1.25rem; border-radius: 3px; border: 2px solid var(--warn); }
+  .grid18 i.one { border-color: var(--soft); background: repeating-linear-gradient(45deg, var(--soft) 0 2px, transparent 2px 5px); }
+  .grid18 i.same { border-color: var(--accent); }
+  .grid18 i.real { border-color: var(--accent); background: var(--accent); }
+  .key { list-style: none; margin: 0 0 1rem; padding: 0; font-size: .875rem; }
+  .key li { display: flex; gap: .5rem; align-items: baseline; }
+  .key i { flex: none; width: .7rem; height: .7rem; border-radius: 2px; border: 2px solid var(--warn); }
+  .key i.one { border-color: var(--soft); background: var(--soft); opacity: .6; }
+  .key i.same { border-color: var(--accent); }
+  .key i.real { border-color: var(--accent); background: var(--accent); }
+
+  /* Waiting bars. */
+  .waits { list-style: none; margin: .5rem 0 1rem; padding: 0; font-size: .875rem; }
+  .waits li { margin: 0 0 .6rem; }
+  .bar { position: relative; height: .7rem; margin-top: .2rem; background: var(--code-bg); border-radius: 3px; }
+  .bar span { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--rule); }
+  .bar em { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--accent); }
+
+  figure { margin: 1rem 0; }
+  figure img { display: block; width: 100%; height: auto; border: 1px solid var(--rule); border-radius: 6px; }
+  figcaption { font-size: .8125rem; color: var(--soft); margin-top: .4rem; }
+  details { margin: 0 0 1rem; }
+  summary { cursor: pointer; font-size: .9375rem; font-weight: 600; }
+  details > :not(summary) { margin-top: .6rem; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+  @media print { .panel { display: block; margin-bottom: .75rem; } .tabs { display: none; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Four drafts, two pairs, one reply</h1>
+    <p class="byline">Follow-up by Claude Fable · 18 November 2026 · Keating 4.2.2, teaching policy v2.4.1</p>
+    <p class="lede">The correct typed answer that twice received a failure notice now gets a confirmation. An incorrect answer to the same Question gets a correction. Two learners who wanted to guess first each got a Question they could answer. These were synthetic classroom turns. <a href="../openui-audit-2026-11-18/final-review/field-guide.html">Earlier field guide</a></p>
+  </header>
+
+  <nav aria-label="Evidence">
+    <ul>
+      <li><a href="../openui-audit-2026-11-18/diagnostics.html?source=jev-pairs&amp;view=pair-reviews">Inspect the five turns</a></li>
+      <li><a href="../openui-audit-2026-11-18/diagnostics.html?source=jev-pairs-prediction&amp;view=pair-reviews">Inspect the two predictions</a></li>
+      <li><a href="summary.json">Download results</a></li>
+      <li><a href="../openui-audit-2026-11-18/final-review/report.html">Earlier report</a></li>
+    </ul>
+  </nav>
+
+  <section aria-labelledby="result">
+    <h2 id="result">What reached the learner</h2>
+    <div class="wide">
+      <table>
+        <caption>Six distinct requests across nine classroom turns with MiniMax M2.7 Highspeed and Jev 1.14.0. The earlier and later checks used the same wording where a request was repeated.</caption>
+        <thead><tr><th scope="col">The learner</th><th scope="col">Before</th><th scope="col">Now</th><th scope="col">Wait</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Typed a correct answer to an open Question</th><td class="flag">Withheld, with four ordinary drafts</td><td>Confirmed: round, 3/4. The Question stayed open. <a href="typed-tile-answer-classroom.png">Screen</a></td><td class="num">13.8 s</td></tr>
+          <tr><th scope="row">Typed a wrong answer to the same Question</th><td>Not run in a classroom</td><td>Corrected: order in the bag does not matter. <a href="wrong-tile-answer-classroom.png">Screen</a></td><td class="num">11.4 s</td></tr>
+          <tr><th scope="row">Asked for copper’s symbol only</th><td>Cu</td><td>Cu, nothing else. <a href="copper-symbol-classroom.png">Screen</a></td><td class="num">6.1 s</td></tr>
+          <tr><th scope="row">Wanted to change a train’s speed, no quiz</th><td>Not run</td><td>A slider and two readouts, no Question</td><td class="num">15.9 s</td></tr>
+          <tr><th scope="row">Wanted to guess paper layers first</th><td class="flag">Withheld, though three drafts held a Question</td><td>A Question, answered “4 layers”. <a href="../jev-paired-prediction-2026-11-18/paper-fold-classroom.png">Screen</a></td><td class="num">15.0 s</td></tr>
+          <tr><th scope="row">Wanted to guess a sock colour first</th><td>Not run</td><td>A two-choice Question with no words around it. <a href="../jev-paired-prediction-2026-11-18/sock-draw-classroom.png">Screen</a></td><td class="num">8.6 s</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The first five rows of “Now” are one run, where one of the two implicit requests for a control succeeded. The paper row was then repeated on v2.4.1 with the new sock case. <a href="summary.json">Five-turn results</a> · <a href="../jev-paired-prediction-2026-11-18/summary.json">Prediction results</a> · <a href="../jev-parallel-pairs-2026-11-18/summary.json">First four-draft check</a></p>
+
+    <figure>
+      <img src="toy-train-after-action.png" width="1240" height="860" loading="lazy" alt="A simulation with a speed slider set to 3.5 metres per second. Distance travelled reads 28.0 metres and time running reads 8.00 seconds.">
+      <figcaption>The train learner’s slider after one keyboard step: 3 to 3.5 m/s moved distance from 24 to 28 m, read from the page itself. <a href="toy-train-classroom.png">Before</a> · <a href="toy-train.json">Measurements</a></figcaption>
+    </figure>
+  </section>
+
+  <section aria-labelledby="turn">
+    <h2 id="turn">Open one turn</h2>
+    <p>On a Jev-guided classroom turn the tutor is called four times at once. Jev reviews each draft alone, then compares drafts 1–2 and 3–4 at the same moment. Each pair sends forward its preferred draft if that one passed, otherwise the other if it passed. A final comparison runs only when both pairs send one. One reply is published and only its tools run.</p>
+
+    <div class="turns ui">
+      <input class="vh" type="radio" name="turn" id="t1">
+      <input class="vh" type="radio" name="turn" id="t2">
+      <input class="vh" type="radio" name="turn" id="t3">
+      <input class="vh" type="radio" name="turn" id="t4" checked>
+      <input class="vh" type="radio" name="turn" id="t5">
+      <div class="tabs" role="group" aria-label="Choose a turn">
+        <label for="t1">Tile answer, before</label>
+        <label for="t2">Tile answer, now</label>
+        <label for="t3">Paper guess, before</label>
+        <label for="t4">Paper guess, v2.4.1</label>
+        <label for="t5">Sock guess</label>
+      </div>
+
+      <div class="panel p1">
+        <p class="said"><span class="label">Learner typed</span>“My guess is round, because three of the four tiles are round.”</p>
+        <div class="pairs">
+          <div><span class="label">Pair 1</span><ul>
+            <li class="draft held"><b>Draft 1 · ordinary</b><span class="v">Held · answer leak 0.80, repetition 0.62</span><span class="chip">Jev preferred, 0.82</span></li>
+            <li class="draft held"><b>Draft 2 · ordinary</b><span class="v">Held · ungrounded feedback 0.76</span></li>
+          </ul></div>
+          <div><span class="label">Pair 2</span><ul>
+            <li class="draft held"><b>Draft 3 · ordinary</b><span class="v">Unsure · four scores between 0.50 and 0.52</span></li>
+            <li class="draft held"><b>Draft 4 · ordinary</b><span class="v">Held · answer leak 0.90</span><span class="chip">Jev preferred, 0.75</span></li>
+          </ul></div>
+        </div>
+        <div class="end">
+          <p><strong>No draft was eligible, so there was no final comparison.</strong></p>
+          <p class="flag">Learner saw “Couldn’t produce a reply” after 11.9 s.</p>
+          <p><a href="../jev-parallel-pairs-2026-11-18/summary.json">First-check results</a></p>
+        </div>
+      </div>
+
+      <div class="panel p2">
+        <p class="said"><span class="label">Learner typed</span>The same answer. Jev’s plan read it as feedback on the open Question, so one draft per pair was asked only to respond to it, with no tools.</p>
+        <div class="pairs">
+          <div><span class="label">Pair 1</span><ul>
+            <li class="draft"><b>Draft 1 · feedback only</b><span class="v">Passed</span><span class="chip">Jev preferred, 0.84</span><span class="chip">Advanced</span></li>
+            <li class="draft held"><b>Draft 2 · ordinary</b><span class="v">Held · answer leak 0.81</span></li>
+          </ul></div>
+          <div><span class="label">Pair 2</span><ul>
+            <li class="draft"><b>Draft 3 · feedback only</b><span class="v">Passed</span><span class="chip">Jev preferred, 0.78</span><span class="chip">Advanced</span></li>
+            <li class="draft held"><b>Draft 4 · ordinary</b><span class="v">Held · answer leak 0.75, not interactive 0.69</span></li>
+          </ul></div>
+        </div>
+        <div class="end">
+          <p><strong>Final comparison: draft 1 over draft 3, 0.54 to 0.46.</strong></p>
+          <p>Learner saw a confirmation with 3/4 and 75% after 13.8 s.</p>
+          <p><a href="typed-tile-answer.json">Receipt</a> · <a href="wrong-tile-answer.json">The wrong-answer turn</a></p>
+        </div>
+      </div>
+
+      <div class="panel p3">
+        <p class="said"><span class="label">Learner wrote</span>“Before you tell me, I’d like to guess how many layers it has.”</p>
+        <div class="pairs">
+          <div><span class="label">Pair 1</span><ul>
+            <li class="draft held"><b>Draft 1 · ordinary, with a Question</b><span class="v">Unsure · missing answer 0.55, repetition 0.50, answer leak 0.42</span><span class="chip">Jev preferred, 0.64</span></li>
+            <li class="draft held"><b>Draft 2 · ordinary, proposed a page</b><span class="v">Unsure · scope 0.65, unsolicited animation 0.45</span></li>
+          </ul></div>
+          <div><span class="label">Pair 2</span><ul>
+            <li class="draft held"><b>Draft 3 · ordinary, with a Question</b><span class="v">Held · wrote to the learner profile after the Question</span><span class="chip">Jev preferred, 0.61</span></li>
+            <li class="draft held"><b>Draft 4 · ordinary, with a Question</b><span class="v">Held · repetition 0.87</span></li>
+          </ul></div>
+        </div>
+        <div class="end">
+          <p><strong>Three Questions written, none eligible, no final comparison.</strong></p>
+          <p class="flag">Learner saw “Couldn’t produce a reply” after 13.9 s.</p>
+          <p><a href="paper-fold.json">Receipt</a> · <a href="paper-fold-classroom.png">Screen</a></p>
+        </div>
+      </div>
+
+      <div class="panel p4">
+        <p class="said"><span class="label">Learner wrote</span>The same request. v2.4.1 asks one draft per pair for a single Question and nothing else, with no tools.</p>
+        <div class="pairs">
+          <div><span class="label">Pair 1</span><ul>
+            <li class="draft held"><b>Draft 1 · ordinary</b><span class="v">Held · answer leak 0.98. It said “Four layers total” above its Question.</span><span class="chip">Jev preferred, 0.60</span></li>
+            <li class="draft"><b>Draft 2 · Question only</b><span class="v">Passed · one free-text field</span><span class="chip">Advanced</span></li>
+          </ul></div>
+          <div><span class="label">Pair 2</span><ul>
+            <li class="draft"><b>Draft 3 · ordinary</b><span class="v">Passed · three choices, a hint, 17 words around it</span><span class="chip">Jev preferred, 0.76</span><span class="chip">Advanced</span></li>
+            <li class="draft"><b>Draft 4 · Question only</b><span class="v">Passed · four choices</span></li>
+          </ul></div>
+        </div>
+        <div class="end">
+          <p><strong>Final comparison: ordinary draft 3 over Question-only draft 2, 0.54 to 0.46.</strong></p>
+          <p>Learner saw the Question after 15.0 s, chose “4 layers” and submitted. The answer was saved on the device, with grading pending.</p>
+          <p><a href="../jev-paired-prediction-2026-11-18/paper-fold.json">Receipt</a> · <a href="../jev-paired-prediction-2026-11-18/paper-fold-after-action.png">After submitting</a></p>
+        </div>
+      </div>
+
+      <div class="panel p5">
+        <p class="said"><span class="label">Learner wrote</span>“I’d like to guess which colour I’m more likely to pick before you explain.”</p>
+        <div class="pairs">
+          <div><span class="label">Pair 1</span><ul>
+            <li class="draft held"><b>Draft 1 · ordinary</b><span class="v">Held · failed the one-Question-then-stop checks</span></li>
+            <li class="draft"><b>Draft 2 · Question only</b><span class="v">Passed · Blue or Yellow</span><span class="chip">Jev preferred, 0.53</span><span class="chip">Advanced</span></li>
+          </ul></div>
+          <div><span class="label">Pair 2</span><ul>
+            <li class="draft"><b>Draft 3 · ordinary</b><span class="v">Passed · four choices, a hint and an introduction</span><span class="chip">Jev preferred, 0.62</span><span class="chip">Advanced</span></li>
+            <li class="draft"><b>Draft 4 · Question only</b><span class="v">Passed</span></li>
+          </ul></div>
+        </div>
+        <div class="end">
+          <p><strong>Final comparison: Question-only draft 2 over ordinary draft 3, 0.72 to 0.28.</strong></p>
+          <p>Learner saw the Question after 8.6 s, chose Blue and submitted. Saved on the device, grading pending.</p>
+          <p><a href="../jev-paired-prediction-2026-11-18/sock-draw.json">Receipt</a> · <a href="../jev-paired-prediction-2026-11-18/sock-draw-after-action.png">After submitting</a></p>
+        </div>
+      </div>
+    </div>
+
+    <p>On paper, the ordinary draft won while both Question-only drafts were eligible. On socks, a Question-only draft won. The paper vote was 0.54 to 0.46. With a single run on each task we cannot tell how often either approach would win. <a href="../jev-paired-prediction-2026-11-18/ledger.json">Prediction comparison scores</a></p>
+  </section>
+
+  <section aria-labelledby="mine">
+    <h2 id="mine">Two things I would add</h2>
+
+    <h3>Individual review decides whether. The comparison only decides which.</h3>
+    <p>Across the nine paired turns there were 18 pair comparisons. I sorted them by how many of the two drafts had passed on their own.</p>
+    <div class="grid18" role="img" aria-label="Eighteen pair comparisons: six with no eligible draft, six with one, four with two identical drafts, two with two different eligible drafts.">
+      <i></i><i></i><i></i><i></i><i></i><i></i>
+      <i class="one"></i><i class="one"></i><i class="one"></i><i class="one"></i><i class="one"></i><i class="one"></i>
+      <i class="same"></i><i class="same"></i><i class="same"></i><i class="same"></i>
+      <i class="real"></i><i class="real"></i>
+    </div>
+    <ul class="key ui">
+      <li><i></i><span><strong>6</strong> had no eligible draft. Jev’s preference changed nothing.</span></li>
+      <li><i class="one"></i><span><strong>6</strong> had one. That draft advanced whatever Jev preferred.</span></li>
+      <li><i class="same"></i><span><strong>4</strong> compared “Cu” with “Cu”.</span></li>
+      <li><i class="real"></i><span><strong>2</strong> chose between different eligible drafts. Both times the wordier ordinary draft beat the bare Question.</span></li>
+    </ul>
+    <p>In 7 of the 18, Jev preferred a draft its own individual review had held. The clearest is the paper turn above, where the preferred draft gave away the answer the learner had asked not to hear. The eligibility rule caught it. So when a reply is withheld, skip “preferred” and read “Eligible for release”. A preference is a ranking of style between two drafts, and says nothing about whether either is safe to show.</p>
+
+    <h3>The learner waits for the slowest draft, and it is rarely the one they get.</h3>
+    <p>On the four turns that had them, the drafts asked for one thing with no tools were written in 1.6 to 6.0 seconds. The ordinary drafts beside them took 3.7 to 12.3. Pair review starts only when all four exist. The green part is how long the first draft that went on to pass took to write. The grey is the rest of the time inside review.</p>
+    <ul class="waits ui">
+      <li>Correct tile answer · passing draft written in 2.7 s, decision at 13.2 s<div class="bar" aria-hidden="true"><span style="width:94.6%"></span><em style="width:19.1%"></em></div></li>
+      <li>Wrong tile answer · 1.7 s, decision at 10.7 s. The two ordinary drafts it waited for both failed.<div class="bar" aria-hidden="true"><span style="width:76.1%"></span><em style="width:12.5%"></em></div></li>
+      <li>Paper guess, v2.4.1 · 1.6 s, decision at 11.2 s<div class="bar" aria-hidden="true"><span style="width:79.7%"></span><em style="width:11.7%"></em></div></li>
+      <li>Sock guess · 1.6 s, decision at 5.3 s<div class="bar" aria-hidden="true"><span style="width:37.5%"></span><em style="width:11.1%"></em></div></li>
+      <li>Train slider · 11.1 s, decision at 11.9 s. Here the slowest draft was the only one that passed.<div class="bar" aria-hidden="true"><span style="width:85%"></span><em style="width:79.2%"></em></div></li>
+    </ul>
+    <p>Writing times exclude each draft’s own review, which took 0.2 to 0.4 s. Releasing a focused draft as soon as it passes would have cut four of these waits by more than half and left the train alone. It would also have settled the paper turn in favour of the bare Question. That is a design choice to test, and these five turns are too few to make it.</p>
+  </section>
+
+  <section aria-labelledby="inspect">
+    <h2 id="inspect">Trace an incident yourself</h2>
+    <p>Open <strong>Settings → Diagnostics → Interface use</strong>, expand <strong>Inspect turns</strong> and choose <strong>Jev pair reviews</strong>. Use <strong>This browser</strong> for your own turns, or <strong>Import JSON</strong> with a recording. <a href="settings-export.json" download>Five-turn recording</a> · <a href="../jev-paired-prediction-2026-11-18/settings-export.json" download>Two-prediction recording</a> · <a href="../openui-audit-2026-11-18/diagnostics.html?source=jev-pairs-first&amp;view=pair-reviews">First check in the inspector</a></p>
+    <div class="wide">
+      <table>
+        <caption>Five different things a control can be, and where each is recorded</caption>
+        <thead><tr><th scope="col">Question</th><th scope="col">Field in the expanded turn</th><th scope="col">Paper guess, before → v2.4.1</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Was it offered to the tutor?</th><td>Offered types, Guidance delivered</td><td>Question, Simulation → the same</td></tr>
+          <tr><th scope="row">Did any draft write one?</th><td>Compiled, Private drafts</td><td>Question group, 4 drafts → the same</td></tr>
+          <tr><th scope="row">Was a draft eligible?</th><td>Jev pair reviews: “Eligible for release”, “Draft n advanced”</td><td class="flag">Neither, neither → 2; 3 and 4</td></tr>
+          <tr><th scope="row">Was it visible?</th><td>Released draft, Selected, Rendered</td><td class="flag">None, reply withheld → Attempt 3, Question group</td></tr>
+          <tr><th scope="row">Was it submitted?</th><td>Not in Settings. Only in a study receipt, under <code>controls.questionActions</code></td><td>Nothing to submit → “4 layers”, pending</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The same rows are available without a screen. Both routes are read-only and call no model.</p>
+    <pre><code>rtk bun src/cli/main.ts openui-diagnostics docs/benchmarks/jev-paired-feedback-2026-11-18/settings-export.json --view pair-reviews --limit 10</code></pre>
+    <p>A browser-connected model can call the WebMCP tool <code>keating.openui_diagnostics</code> with <code>{"view":"pair-reviews","limit":10}</code> for this browser’s turns. The CLI reports 10 compared pairs and concurrent reviews on 5 of 5 timed turns. Over all nine turns, both pair requests were in flight together for 49 to 95 ms.</p>
+
+    <div class="gap">
+      <p><strong>Find the draft that triggered the flag.</strong> On paper, the answer leak belonged to draft 1. Draft 3 was published. The original browser export pooled issues across all four drafts. New classroom records also attribute observed issues to each candidate.</p>
+      <p><strong>Inspect the final vote.</strong> A completed two-finalist comparison now retains the decision model, both probabilities and its reported confidence. On paper the scores were 0.54 and 0.46, with confidence 0.08. The study’s original browser rows predate those fields. <a href="../openui-audit-2026-11-18/diagnostics.html?source=jev-pairs-review&amp;view=pair-reviews">Inspect the two reconstructed reviews</a> · <a href="../jev-paired-prediction-2026-11-18/ledger.json">Read the original judge responses</a></p>
+      <p><strong>“Rendered” records that the classroom mounted a control.</strong> The saved submissions and the train’s changing readout supply the separate evidence of use.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="limits">
+    <h2 id="limits">What this does not show</h2>
+    <p><strong>Feedback after form submission remains unmeasured in this study.</strong> The two feedback turns were typed into the composer. The browser saved the two form submissions locally and the study stopped the next turn, with grading pending.</p>
+    <p>A script typed all nine turns in fresh Chromium classrooms. The Settings export contains categories, timings and identifiers. The latest 500 local observations are available under <strong>This browser</strong>. The frequency among real learners remains unknown.</p>
+    <details>
+      <summary>The relaxed mastery check stays unshipped</summary>
+      <p>An extra Jev question about how far a confirmation reaches would have released the original 37-word reply. On 15 fixed candidates it recovered 2 of 5 appropriate replies against a preregistered bar of 4 of 5. It kept all 10 inappropriate replies out. Keating kept its existing check. <a href="../jev-feedback-scope-2026-11-18/summary.json">All 15 judgments</a></p>
+    </details>
+    <details>
+      <summary>Other models, related fixes and cost</summary>
+      <p>The pairing was run with Jev only. The controlled results for Gemini Decision are unchanged and remain in the <a href="../openui-audit-2026-11-18/final-review/report.html">earlier report</a>.</p>
+      <p>The focused requests in these recordings carried zero tools. A replay of the five archived turns under v2.4.1 routing sent no provider requests and reproduced the same five outcomes, including the withheld paper turn. That turn needed fresh drafts. <a href="../jev-paired-prediction-2026-11-18/offline-routing.json">Offline routing check</a></p>
+      <p>Two related fixes shipped with offline tests only. The real provider SDK had been adding an auxiliary search tool back onto focused requests, and mobile now keeps the identity of a saved Question.</p>
+      <p>Usage across the whole study is estimated at US$3.137837464 of the US$10 authorized, using the provider’s recorded tokens. <a href="../jev-parallel-pairs-2026-11-18/ledger.json">First two turns</a> · <a href="ledger.json">Five classroom turns</a> · <a href="../jev-paired-prediction-2026-11-18/ledger.json">Two predictions</a></p>
+    </details>
+    <details>
+      <summary>The withheld paper turn, as the learner saw it</summary>
+      <figure>
+        <img src="paper-fold-classroom.png" width="1240" height="860" loading="lazy" alt="The classroom after the paper request. Under the learner’s message Keating shows Couldn’t produce a reply, with Try again and Reload Keating buttons.">
+        <figcaption>Three drafts held a working Question when this notice appeared.</figcaption>
+      </figure>
+    </details>
+  </section>
+
+  <footer>
+    <p>Nine synthetic classroom turns across three runs on one day. They show how the four-draft review behaved on these prompts. They are not a production rate and not evidence that anyone learned more. <a href="protocol.json">Registered prompts</a> · <a href="../jev-paired-prediction-2026-11-18/protocol.json">Prediction prompts</a> · <a href="../openui-audit-2026-11-18/teaching-interfaces.html">The full study</a></p>
+  </footer>
+</main>
+</body>
+</html>

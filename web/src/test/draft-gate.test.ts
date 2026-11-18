@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import * as fc from "fast-check";
+import { getModels } from "@earendil-works/pi-ai/compat";
+import { hybridStreamFn } from "../hooks/keating-stream";
 import type { AgentOptions } from "@earendil-works/pi-agent-core";
 import {
   createAssistantMessageEventStream,
@@ -28,6 +30,9 @@ import operationalProtocolMarkdown from "../keating/prompts/operational-protocol
 import { configureJudgementDiagnostics, getJudgementDiagnostics, observeJudgementCaller } from "../keating/judgement/diagnostics";
 import type { WebJudgementRuntime } from "../keating/judgement/runtime";
 import { answerDraftGateReview as answer } from "./helpers/teaching-draft-judge";
+import { presentationsFromAssistantText } from "../keating/judgement/active-work-host";
+import { registerQuestionSourceRow } from "../keating/judgement/previous-question-presentation";
+import { learningMessageId } from "../keating/learning-intelligence/source-navigation";
 import { getModelRequestLog, setModelRequestLogEnabled } from "../keating/model-request-log";
 
 type StreamFn = NonNullable<AgentOptions["streamFn"]>;
@@ -588,6 +593,198 @@ describe("private teaching draft stream", () => {
     })(MODEL, context(), { reasoning: "high" }));
     expect(seen).toHaveLength(1);
     expect(seen[0]).not.toHaveProperty("reasoning");
+  });
+
+  test("one private reply per pair addresses the existing Question while the other keeps real tool schemas", async () => {
+    const session = "feedback-pair", display = "shown-question";
+    const surface = 'Given seven red tiles and two blue tiles.\n\n```openui lifecycle=ephemeral id=tiles\nroot = LearningSurface([guess], "Tiles", "", "ephemeral")\nguess = Question([{ question: "Which color is more likely on one random draw, and why?", type: "text" }], "ephemeral", "Predict", "Explain your choice.")\n```';
+    const node = presentationsFromAssistantText(surface, {sessionId:session, messageId:display},null)[0]!;
+    const assistant = message(surface);
+    const sourceId = learningMessageId(assistant, 1);
+    const shown = {getAttribute:(name:string)=>name==="data-shared-openui-document" ? node.documentId : node.component};
+    const document = {getAttribute:()=>node.documentId,querySelector:()=>shown};
+    const part = {getAttribute:()=>"ready",querySelectorAll:()=>[document]};
+    const row = {isConnected:true,querySelectorAll:()=>[part]} as unknown as Element;
+    const unmount = registerQuestionSourceRow(session,row,sourceId,display,surface)!;
+    try {
+      const cases = [
+        {learner:"Red because seven out of nine are red.", mode:"feedback", focus:true},
+        {learner:"Blue because it is rarer.", mode:"feedback", focus:true},
+        {learner:"I think red but I haven't worked out why.", mode:"feedback", focus:true},
+        {learner:"Could I get a hint about the color counts?", mode:"feedback", focus:true},
+        {learner:"Give me more time to think.", mode:"feedback", focus:true},
+        {learner:"I'd like to stop this question.", mode:"feedback", focus:true},
+        {learner:"Red. Now let me change the counts myself.", mode:"new_action", focus:false, handsOn:true},
+        {learner:"Red. Open the lesson notes for me too.", mode:"new_action", focus:false},
+        {learner:"Let me try something with those colors.", mode:"unclear", focus:false},
+        {learner:"Please grade the work I submitted.", mode:"feedback", focus:false, pending:true},
+      ] as const;
+      for (const c of cases) {
+        const input = context(c.learner);
+        input.messages = [{role:"user",content:"Let me predict one draw.",timestamp:1},assistant,...input.messages];
+        input.tools = [{name:"workspace_inspect", description:"Read a note",
+          parameters:{type:"object",properties:{path:{type:"string"}},required:["path"]}}];
+        const receipts: TeachingDraftReceipt[] = [];
+        const privateContexts: Context[] = [];
+        let asked = false;
+        const judge: JudgementCaller = async request => {
+          const outcome = answer(request);
+          if (!outcome.ok) return outcome;
+          const answers = {...outcome.response.answers};
+          const choice = request.questions.checkpoint_reply_mode;
+          if (choice?.type === "choice") {
+            asked = true;
+            const turn = (request.state as {turn:TeachingPolicyTurn}).turn;
+            expect(turn.previousQuestionPresentation?.nodeId).toBe(node.nodeId);
+            expect(turn.learnerMessage).toBe(c.learner);
+            answers.checkpoint_reply_mode = {type:"choice",choice:c.mode,confidence:1,
+              probabilities:Object.fromEntries(Object.keys(choice.criteria).map(id=>[id,Number(id===c.mode)]))};
+          }
+          if (request.questions.draft_standard) {
+            // As in the live incident, the broad subject suggests a Simulation even after the learner already answered.
+            answers.variable_relationship = {type:"noul",noul:1};
+            answers.attempt_present = {type:"noul",noul:1};
+            answers.hands_on_requested = {type:"noul",noul:Number("handsOn" in c)};
+          }
+          return {ok:true,response:{...outcome.response,backend:{backend:"system-one",model:"jev-1.14.0",calibrationSha256:null},answers}};
+        };
+        const result = await (await gate((_model, actual) => {
+          privateContexts.push(actual);
+          // Simulate a provider that ignores the missing schema on the first focused lane.
+          return streamOf(message("This draw depends on the counts.", c.focus && privateContexts.length === 1));
+        }, {sessionId:session,makeCaller:()=>judge,onReceipt:r=>receipts.push(r),evidence:async()=>({
+          activeWork:{truncated:false,plan:null,focus:null,openInteractions:[{documentId:node.documentId,nodeId:node.nodeId,
+            component:node.component,state:"awaiting",itemId:null,presentedAt:1}]},
+          ...("pending" in c ? {pendingSubmissions:[{kind:"comprehension",id:"real-check",questionIds:["q"]}]} : {}),
+        })})(MODEL,input)).result();
+        expect(asked).toBe(!("pending" in c));
+        expect(privateContexts).toHaveLength(4);
+        expect(new Set(privateContexts.map(row=>row.systemPrompt)).size).toBe(4);
+        expect(privateContexts.map(row=>row.tools?.map(tool=>tool.name))).toEqual(c.focus
+          ? [[],["workspace_inspect"],[],["workspace_inspect"]] : Array.from({length:4},()=>["workspace_inspect"]));
+        const snapshot = receipts[0]!.snapshot;
+        expect(snapshot.pairReviews?.map(pair=>pair.feedbackOnlyAttempts)).toEqual(c.focus ? [[1],[3]] : [[],[]]);
+        expect(snapshot.attempts.filter(a=>a.feedbackOnly).map(a=>a.attempt)).toEqual(c.focus ? [1,3] : []);
+        if (c.focus) {
+          expect(privateContexts[0]!.systemPrompt).toContain("Reply to the existing question in the conversation.");
+          expect(privateContexts[2]!.systemPrompt).toContain("Stay with the learner's reasoning on the existing question.");
+          expect(privateContexts[0]!.systemPrompt).not.toContain("At most one OpenUI activity may help");
+          expect(privateContexts[1]!.systemPrompt).toContain("Simulation");
+          expect(snapshot.attempts[0]!.checks.find(check=>check.id==="question_feedback_format")?.status).toBe("fail");
+          expect(snapshot.selectedAttempt).not.toBe(1);
+          expect(result.content.some(part=>part.type==="toolCall")).toBe(false);
+        }
+        expect(input.tools).toHaveLength(1);
+      }
+    } finally { unmount(); }
+  });
+
+  test("the real Anthropic SDK wire offers hosted search only on tool-capable feedback and prediction candidates", async () => {
+    const model = {...getModels("anthropic").find(row => row.id === "claude-haiku-4-5")!, baseUrl:"http://127.0.0.1:9"};
+    const input = context("I think red because there are more red tiles.");
+    input.messages.unshift({role:"user",content:"Give me one draw to predict.",timestamp:1},
+      message("A bag holds three red tiles and one blue tile. Which color is more likely?"));
+    input.tools = [{name:"workspace_inspect",description:"Read a note",parameters:{type:"object",properties:{}}}];
+    const fresh = context("Let me predict which sock it will be before you reveal it. Give me somewhere to put my guess.");
+    fresh.tools = input.tools;
+    const question = '```openui\nroot = LearningSurface([response])\nresponse = Question([{ question: "Which color do you predict?", type: "text" }])\n```';
+    const bodies: {system:{text:string}[];tools?:{name:string}[]}[] = [];
+    const fakeFetch = (async (url, init) => {
+      const raw = init?.body ?? (url instanceof Request ? await url.text() : undefined);
+      const body = JSON.parse(String(raw));
+      bodies.push(body);
+      const prediction = body.system.some((part: {text:string})=>part.text.includes("Collect the learner's own answer in one OpenUI Question."));
+      const reply = prediction ? question : "Red is more likely because three tiles are red.";
+      const events = [
+        {type:"message_start",message:{id:"m",type:"message",role:"assistant",model:model.id,content:[],stop_reason:null,
+          stop_sequence:null,usage:{input_tokens:4,output_tokens:0}}},
+        {type:"content_block_start",index:0,content_block:{type:"text",text:""}},
+        {type:"content_block_delta",index:0,delta:{type:"text_delta",text:reply}},
+        {type:"content_block_stop",index:0},
+        {type:"message_delta",delta:{stop_reason:"end_turn",stop_sequence:null},usage:{output_tokens:12}},
+        {type:"message_stop"},
+      ];
+      return new Response(events.map(event=>"event: "+event.type+"\ndata: "+JSON.stringify(event)+"\n\n").join(""),
+        {headers:{"content-type":"text/event-stream"}});
+    }) as typeof fetch;
+    const transportErrors: string[] = [];
+    const realGate = gate(async (...args) => {
+      try {
+        const stream = await hybridStreamFn(...args);
+        void stream.result().then(reply => { if (reply.errorMessage) transportErrors.push(reply.errorMessage); });
+        return stream;
+      } catch (error) { transportErrors.push(String(error)); throw error; }
+    }, {makeCaller:()=>async request=>{
+      const outcome = answer(request);
+      if (!outcome.ok) return outcome;
+      const answers = {...outcome.response.answers};
+      if (request.questions.draft_standard && (request.state as {turn:TeachingPolicyTurn}).turn.learnerMessage.startsWith("Let me predict which sock")) {
+        Object.assign(answers,{learner_response_due:{type:"noul",noul:1},prediction_opportunity:{type:"noul",noul:1},direct_answer_requested:{type:"noul",noul:0}});
+      }
+      return {ok:true,response:{...outcome.response,backend:{backend:"system-one",model:"jev-1.14.0",calibrationSha256:null},answers}};
+    }});
+    const location = Object.getOwnPropertyDescriptor(globalThis, "location");
+    let result: AssistantMessage;
+    try {
+      Object.defineProperty(globalThis,"location",{configurable:true,value:new URL("http://127.0.0.1:9")});
+      const streamOptions = {apiKey:"test-key",fetch:fakeFetch,maxRetries:0};
+      result = await (await realGate(model,input,streamOptions)).result();
+      await (await realGate(model,fresh,streamOptions)).result();
+    } finally {
+      if (location) Object.defineProperty(globalThis,"location",location);
+      else Reflect.deleteProperty(globalThis,"location");
+    }
+    expect(transportErrors).toEqual([]);
+    expect(text(result)).toBe("Red is more likely because three tiles are red.");
+    expect(bodies).toHaveLength(8);
+    const marker = "Collect the learner's own answer in one OpenUI Question.";
+    for (const [index,turnWires] of [bodies.slice(0,4),bodies.slice(4)].entries()) {
+      const schemas = turnWires.map(body=>({system:body.system.map(entry=>entry.text).join("\n"), names:body.tools?.map(tool=>tool.name) ?? []}));
+      expect(new Set(schemas.map(body=>body.system)).size).toBe(4);
+      const focused = schemas.filter(body=>index===1 ? body.system.includes(marker) : body.system.includes("Reply to the existing question in the conversation.")
+        || body.system.includes("Stay with the learner's reasoning on the existing question."));
+      expect(focused).toHaveLength(2);
+      expect(focused.map(body=>body.names)).toEqual([[],[]]);
+      expect(schemas.filter(body=>!focused.includes(body)).map(body=>body.names)).toEqual([
+        ["workspace_inspect","web_search"],["workspace_inspect","web_search"]]);
+      if (index===1) expect(focused.every(body=>body.system.includes("OPENUI GRAMMAR"))).toBe(true);
+    }
+  });
+
+  test("publishes only the winning Jev candidate's native tool events across both private pairs", async () => {
+    const input = context("Please open the lesson note.");
+    input.tools = [{ name: "workspace_inspect", description: "Read a workspace file",
+      parameters: {type:"object",properties:{path:{type:"string"}},required:["path"],additionalProperties:false} }];
+    const receipts: TeachingDraftReceipt[] = [];
+    let generated = 0;
+    const judge: JudgementCaller = async request => {
+      const outcome = answer(request);
+      if (!outcome.ok) return outcome;
+      const answers = { ...outcome.response.answers };
+      for (const id of ["draft_pair_choice","draft_choice"]) {
+        const question = request.questions[id];
+        if (question?.type !== "choice") continue;
+        const keys = Object.keys(question.criteria);
+        const choice = keys.at(-1)!;
+        answers[id] = {type:"choice",choice,confidence:1,probabilities:Object.fromEntries(keys.map(key => [key, Number(key === choice)]))};
+      }
+      return {ok:true,response:{...outcome.response,backend:{backend:"system-one",model:"jev-1.14.0",calibrationSha256:null},answers}};
+    };
+    const { events, result } = await collect(await gate(() => {
+      const id = ++generated;
+      const proposal = message(`Candidate ${id}`, true);
+      const call = proposal.content.find(part=>part.type === "toolCall")!;
+      call.id = `candidate-${id}`;
+      call.arguments = {path:`lesson-${id}.md`};
+      return streamOf(proposal);
+    }, {makeCaller:()=>judge, onReceipt:receipt=>receipts.push(receipt)})(MODEL,input));
+    expect(generated).toBe(4);
+    expect(receipts.map(r=>r.snapshot.selectedAttempt)).toEqual([4]);
+    expect(result.usage.totalTokens).toBe(4*18);
+    expect(result.content).toEqual([{type:"text",text:"Candidate 4"},
+      {type:"toolCall",id:"candidate-4",name:"workspace_inspect",arguments:{path:"lesson-4.md"}}]);
+    expect(events.filter(event=>event.type==="toolcall_end")).toHaveLength(1);
+    expect(JSON.stringify(events)).not.toMatch(/lesson-[123]\.md|Candidate [123]|PRIVATE/);
   });
 
   test("releases approved tool calls only after live schema validation", async () => {

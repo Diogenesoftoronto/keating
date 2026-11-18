@@ -3,9 +3,11 @@ import { INTERACTION_REASONS, type InteractionReason } from "./judgement/interac
 import { requestedCodePracticeLanguage, type CodePracticeLanguage } from "./judgement/code-practice-language.js";
 import { asksForNamedPrediction, contextualExerciseLanguage, learnerCueProse } from "./openui-cue-context.js";
 import { inspectSimulationBrief } from "./judgement/assessment-opt-out.js";
-import { CHECKPOINT_FEEDBACK_ISSUE, TEACHING_POLICY_DETERMINISTIC_RULES, TEACHING_POLICY_RULES } from "./judgement/teaching-policy-catalog.js";
-import { TEACHING_DEBUGGING_ISSUES } from "./judgement/debugging-issue-ids.js";
+import { OPENUI_DIAGNOSTIC_GATE_ISSUES, isOpenUiDiagnosticGateIssue } from "./openui-diagnostic-issues.js";
+export { isOpenUiDiagnosticGateIssue } from "./openui-diagnostic-issues.js";
 import { TEACHING_DRAFT_SELECTION_RULES, isTeachingDraftSelection, type TeachingDraftSelection } from "./judgement/teaching-selection.js";
+import { OPENUI_PAIR_REVIEWS_SCHEMA, OPENUI_FINAL_COMPARISON_SCHEMA, validOpenUiPairReviews, validOpenUiFinalComparison, type OpenUiPairReview, type OpenUiFinalComparison } from "./openui-pair-reviews.js";
+export { pairReviewOverlapMs, projectOpenUiPairReviews, projectOpenUiFinalComparison, type OpenUiPairReview, type OpenUiFinalComparison } from "./openui-pair-reviews.js";
 export { projectTeachingDraftSelection, type TeachingDraftSelection, type TeachingDraftSelectionRule } from "./judgement/teaching-selection.js";
 
 export const OPENUI_DIAGNOSTIC_MODES = ["guided", "offer-only", "baseline", "unknown"] as const;
@@ -75,6 +77,9 @@ export interface OpenUiDiagnosticTurn {
   draftAttempts?: number;
   /** Winning attempt and review of the public final tutor round, when a real release receipt was observed. */
   selection?: TeachingDraftSelection;
+  /** Paired comparisons observed on the final tutor round. Earlier records omit this field. */
+  pairReviews?: OpenUiPairReview[];
+  finalComparison?: OpenUiFinalComparison;
   gateIssues?: string[];
   decisionModel?: string | null;
   /** Explicit assessment opt-out and checkpoint signals. Neither value measures educational fit. */
@@ -89,8 +94,6 @@ const COMPONENTS = [
   "fieldwork", "connect", "person", "audio-response", "video-response",
 ];
 const componentMap = new Map(COMPONENTS.map(kind => [kind.replaceAll("-", ""), kind]));
-const gateIssues = [...new Set<string>([...TEACHING_POLICY_DETERMINISTIC_RULES, ...TEACHING_POLICY_RULES.map(rule => rule.id), ...TEACHING_DEBUGGING_ISSUES, CHECKPOINT_FEEDBACK_ISSUE])];
-export function isOpenUiDiagnosticGateIssue(id: string): boolean { return gateIssues.includes(id); }
 export function isOpenUiDiagnosticInterface(component: string): boolean {
   return COMPONENTS.includes(component) && !["markdown", "callout", "handoff"].includes(component);
 }
@@ -250,7 +253,7 @@ export function openUiMatchesTargets(components: readonly string[], targets: rea
 }
 
 const ROW_KEYS = ["schemaVersion", "conversationId", "turnId", "turnIndex", "model", "mode", "cue", "reply",
-  "attempted", "compiled", "selected", "rendered", "guidance", "experiment", "fit", "draftAttempts", "selection", "gateIssues", "decisionModel", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"];
+  "attempted", "compiled", "selected", "rendered", "guidance", "experiment", "fit", "draftAttempts", "selection", "pairReviews", "finalComparison", "gateIssues", "decisionModel", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"];
 type RecordValue = Record<string, unknown>;
 function fields(value: unknown, allowed: readonly string[]): value is RecordValue {
   return value !== null && typeof value === "object" && !Array.isArray(value) && Object.keys(value).every(key => allowed.includes(key));
@@ -330,10 +333,12 @@ export function isOpenUiDiagnosticTurn(value: unknown): value is OpenUiDiagnosti
     && (value.outsideWords == null || (typeof value.outsideWords === "number" && Number.isSafeInteger(value.outsideWords) && value.outsideWords >= 0))
     && validGuidance(value.guidance)
     && (value.selection === undefined || (value.reply === "released" && isTeachingDraftSelection(value.selection)))
+    && (value.pairReviews === undefined || validOpenUiPairReviews(value.pairReviews))
+    && (value.finalComparison === undefined || validOpenUiFinalComparison(value.finalComparison, value.pairReviews))
     && (value.draftAttempts === undefined || (Number.isSafeInteger(value.draftAttempts) && (value.draftAttempts as number) >= 0))
     && (value.decisionModel === undefined || value.decisionModel === null || identifier(value.decisionModel))
     && (value.assessment === undefined || validAssessment(value.assessment, value.reply, value.selected))
-    && (value.gateIssues === undefined || (Array.isArray(value.gateIssues) && value.gateIssues.length <= gateIssues.length
+    && (value.gateIssues === undefined || (Array.isArray(value.gateIssues) && value.gateIssues.length <= OPENUI_DIAGNOSTIC_GATE_ISSUES.length
       && value.gateIssues.every(id => typeof id === "string" && isOpenUiDiagnosticGateIssue(id)) && new Set(value.gateIssues).size === value.gateIssues.length))
     && (value.experiment === undefined || (fields(value.experiment, ["experimentId", "caseId", "pairId"])
       && [value.experiment.experimentId, value.experiment.caseId, value.experiment.pairId].every(identifier)))
@@ -356,7 +361,7 @@ const targetsSchema = stringList([...COMPONENTS, "any"]);
 const measuredComponents = { anyOf: [stringList(COMPONENTS), { type: "null" }] };
 const recordSchema = (properties: Record<string, unknown>, required: string[] = Object.keys(properties)) =>
   ({ type: "object", additionalProperties: false, required, properties });
-const requiredTurnKeys = ROW_KEYS.filter(k => !["fit", "experiment", "decisionModel", "draftAttempts", "selection", "gateIssues", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"].includes(k));
+const requiredTurnKeys = ROW_KEYS.filter(k => !["fit", "experiment", "decisionModel", "draftAttempts", "selection", "pairReviews", "finalComparison", "gateIssues", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"].includes(k));
 const cueSchema = {
   ...recordSchema({ kind: { enum: OPENUI_DIAGNOSTIC_CUES }, targets: stringList([...COMPONENTS, "any", "editable-code"]),
     repeat: { type: "boolean" }, codeLanguage: { enum: EDITABLE_CODE_LANGUAGES } }, ["kind", "targets"]),
@@ -376,7 +381,9 @@ const turnSchema = recordSchema({
   }, ["source", "action", "delivered", "targets"])] },
   experiment: recordSchema({ experimentId: identifierSchema, caseId: identifierSchema, pairId: identifierSchema }),
   fit: recordSchema({ source: identifierSchema, passed: measuredBoolean }),
-  draftAttempts: { type: "integer", minimum: 0, maximum: Number.MAX_SAFE_INTEGER }, gateIssues: stringList(gateIssues),
+  draftAttempts: { type: "integer", minimum: 0, maximum: Number.MAX_SAFE_INTEGER }, gateIssues: stringList(OPENUI_DIAGNOSTIC_GATE_ISSUES),
+  pairReviews: OPENUI_PAIR_REVIEWS_SCHEMA,
+  finalComparison: OPENUI_FINAL_COMPARISON_SCHEMA,
   selection: { ...recordSchema({ attempt: { type: "integer", minimum: 1, maximum: 10 },
     review: { enum: ["verified", "best-effort"] }, rule: { enum: TEACHING_DRAFT_SELECTION_RULES } }, ["attempt", "review"]),
     allOf: [{ if: { properties: { review: { const: "verified" } } }, then: { properties: { rule: { enum: ["none", "requested-prediction-over-prose"] } } },

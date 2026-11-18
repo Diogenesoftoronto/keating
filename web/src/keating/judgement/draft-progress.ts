@@ -26,7 +26,7 @@ const PHASE_STAGE: Partial<Record<TeachingDraftSnapshot["phase"], DraftStageId>>
  */
 export function draftStages(snapshot: TeachingDraftSnapshot): DraftStage[] {
   const { phase } = snapshot;
-  const rewriting = phase === "revising" || (phase === "drafting" && snapshot.attempt > 1) || (phase === "checking" && snapshot.attempt > 1);
+  const rewriting = !snapshot.pairReviews && (phase === "revising" || (phase === "drafting" && snapshot.attempt > 1) || (phase === "checking" && snapshot.attempt > 1));
   const label = (id: DraftStageId) => id === "plan" ? "Plan"
     : id === "write" ? rewriting ? `Rewrite ${snapshot.attempt}` : "Write"
     : id === "check" ? "Check" : "Choose";
@@ -50,6 +50,9 @@ export function learnerDraftGuidance(snapshot: TeachingDraftSnapshot, elapsedMs:
   const combining = snapshot.phase === "revising" && !!snapshot.synthesisSourceAttempts?.length;
   const [headline, detail] = snapshot.phase === "planning" ? ["Planning the reply", "Deciding how much help this question needs."]
     : combining ? ["Combining the best drafts", "Two drafts each got something right; Keating is merging them into one reply."]
+    : snapshot.pairReviews && snapshot.phase === "drafting" ? ["Writing candidate replies", "Keating is preparing alternatives for Jev to review."]
+    : snapshot.pairReviews && snapshot.phase === "checking" ? ["Checking candidate replies", "Jev is reviewing how well each reply answers you."]
+    : snapshot.pairReviews && snapshot.phase === "selecting" ? ["Choosing your reply", "Keating is choosing among the eligible drafts."]
     : snapshot.phase === "revising" || (snapshot.phase === "drafting" && snapshot.attempt > 1)
       ? ["Improving the reply", "The last draft missed something, so Keating is writing a better one."]
     : snapshot.phase === "drafting" ? ["Writing your reply", "Keating checks every reply before you see it."]
@@ -101,21 +104,26 @@ export function diagnoseDraft(snapshot: TeachingDraftSnapshot, elapsedMs = snaps
     if (failures < 2 && !(failures === 1 && reviewed.length === 1 && row.blocking)) continue;
     findings.push({ tone: row.blocking && snapshot.phase !== "released" ? "blocked" : "caution",
       title: `“${row.title}” failed in ${failures} of ${reviewed.length} ${reviewed.length === 1 ? "draft" : "drafts"}`,
-      detail: (failures > 1 ? "Revision did not fix it. " : "")
+      detail: (failures > 1 ? (snapshot.pairReviews ? "Multiple independent drafts failed this check. " : "Revision did not fix it. ") : "")
         + (row.source === "deterministic" ? "This is an exact runtime check: look at the tool call or markup the model produced."
           : "The judge kept flagging this. Either the reply prompt doesn't steer away from it, or the rule is too strict for this request; compare against your own read of the reply.") });
   }
-  const unknown = new Set(reviewed.flatMap(attempt => attempt.checks.filter(check => check.status === "unknown").map(check => check.id)));
-  if (unknown.size) findings.push({ tone: "caution", title: `${unknown.size} ${unknown.size === 1 ? "check" : "checks"} returned no verdict`,
-    detail: "The judge gave no probability. That usually means missing evidence (an attachment without text) or a question batch that was dropped for size." });
+  const uncertain = reviewed.flatMap(attempt => attempt.checks.filter(check => check.status === "unknown"));
+  const gray = new Set(uncertain.filter(check => check.probability !== null).map(check => check.id));
+  const missing = new Set(uncertain.filter(check => check.probability === null).map(check => check.id));
+  if (gray.size) findings.push({ tone: "caution", title: `${gray.size} ${gray.size === 1 ? "check was" : "checks were"} inconclusive`,
+    detail: "The reviewer returned a probability in the uncertain range. Expand the check grid to inspect it for each draft." });
+  if (missing.size) findings.push({ tone: "caution", title: `${missing.size} ${missing.size === 1 ? "check" : "checks"} returned no verdict`,
+    detail: "These checks have no recorded probability. Inspect the review requests and the evidence available to the judge." });
 
   const generationMs = snapshot.attempts.reduce((sum, attempt) => sum + attempt.generationMs, 0);
   const judgementMs = snapshot.attempts.reduce((sum, attempt) => sum + attempt.judgementMs, 0);
   if (elapsedMs >= budgetMs * 0.7) findings.push({ tone: reason.startsWith("time-budget") ? "blocked" : "caution",
     title: `Used ${Math.round(Math.min(1, elapsedMs / budgetMs) * 100)}% of the ${Math.round(budgetMs / 1_000)} s budget`,
-    detail: `Writing took ${seconds(generationMs)}${snapshot.planningMs ? `, planning ${seconds(snapshot.planningMs)}` : ""}, review took ${seconds(judgementMs)}. `
+    detail: snapshot.pairReviews ? `This turn has taken ${seconds(elapsedMs)}. The concurrent drafts used a combined ${seconds(generationMs)} for generation and ${seconds(judgementMs)} for individual reviews.`
+      : `Writing took ${seconds(generationMs)}${snapshot.planningMs ? `, planning ${seconds(snapshot.planningMs)}` : ""}, review took ${seconds(judgementMs)}. `
       + (generationMs >= judgementMs ? "The reply model is the bottleneck; a faster reply model or lower reasoning helps most." : "Review is the bottleneck; a faster judgement model or a smaller context helps most."),
-    action: generationMs >= judgementMs ? MODEL_SETTINGS : JUDGEMENT_SETTINGS });
+    ...(snapshot.pairReviews ? {} : { action: generationMs >= judgementMs ? MODEL_SETTINGS : JUDGEMENT_SETTINGS }) });
 
   const fill = snapshot.state?.fillRatio ?? null;
   const dropped = snapshot.slides?.reduce((sum, slide) => sum + slide.turnsDropped, 0) ?? 0;

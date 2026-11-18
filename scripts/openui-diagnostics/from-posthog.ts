@@ -9,7 +9,7 @@ const PROPERTIES = [
   "rendered_components", "guidance_source", "guidance_action", "guidance_delivered", "guidance_targets",
   "draft_attempts", "gate_issues", "decision_model", "outside_words", "native_page_requested", "reply_elapsed_ms", "native_page", "guidance_reason",
   "editable_code", "cue_code_language", "guidance_code_language", "editor_outside_words", "coding_challenge_languages", "draft_selection",
-  "assessment_opt_out", "assessment_checkpoints",
+  "assessment_opt_out", "assessment_checkpoints", "draft_pair_reviews", "draft_final_comparison",
 ] as const;
 const COLUMNS = [...PROPERTIES, "observation_host", "observation_version", "observation_second", "total_turns"];
 type Property = typeof PROPERTIES[number];
@@ -87,6 +87,8 @@ function fromProperties(fields: Record<Property, unknown>): OpenUiDiagnosticTurn
       ...(p.guidance_code_language === null ? {} : { codeLanguage: p.guidance_code_language }) },
     ...(p.draft_attempts === null ? {} : { draftAttempts: p.draft_attempts }),
     ...(p.draft_selection === null ? {} : { selection: p.draft_selection }),
+    ...(p.draft_pair_reviews === null ? {} : { pairReviews: p.draft_pair_reviews }),
+    ...(p.draft_final_comparison === null ? {} : { finalComparison: p.draft_final_comparison }),
     ...(p.gate_issues === null ? {} : { gateIssues: p.gate_issues }),
     decisionModel: p.decision_model, outsideWords: p.outside_words, nativePageRequested: p.native_page_requested,
     ...(p.native_page === null ? {} : {nativePage: p.native_page}),
@@ -106,13 +108,15 @@ export function openUiFleetExport(response: unknown, scope: OpenUiFleetScope) {
     throw new Error("Expected the complete diagnostic HogQL result with its original column names.");
   }
   const { results, columns } = response;
-  const beforeAssessment = COLUMNS.filter(key => key !== "assessment_opt_out" && key !== "assessment_checkpoints");
+  const beforeFinalComparison = COLUMNS.filter(key => key !== "draft_final_comparison");
+  const beforePairReviews = beforeFinalComparison.filter(key => key !== "draft_pair_reviews");
+  const beforeAssessment = beforePairReviews.filter(key => key !== "assessment_opt_out" && key !== "assessment_checkpoints");
   const beforeSelection = beforeAssessment.filter(key => key !== "draft_selection");
   const beforeChallenges = beforeSelection.filter(key => key !== "coding_challenge_languages");
   const beforeWords = beforeChallenges.filter(key => key !== "editor_outside_words");
   const beforeCode = beforeWords.filter(key => !["editable_code", "cue_code_language", "guidance_code_language"].includes(key));
   const beforeNative = beforeCode.filter(key => key !== "native_page" && key !== "guidance_reason");
-  const schemas = [COLUMNS, beforeAssessment, beforeSelection, beforeChallenges, beforeWords, beforeCode, beforeNative, beforeNative.filter(key => key !== "reply_elapsed_ms")];
+  const schemas = [COLUMNS, beforeFinalComparison, beforePairReviews, beforeAssessment, beforeSelection, beforeChallenges, beforeWords, beforeCode, beforeNative, beforeNative.filter(key => key !== "reply_elapsed_ms")];
   if (!schemas.some(expected => columns.length === expected.length && expected.every(key => columns.includes(key)))) {
     throw new Error("Expected the complete diagnostic HogQL result with its original column names.");
   }

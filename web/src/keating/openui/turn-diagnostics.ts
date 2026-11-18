@@ -58,6 +58,8 @@ export function openUIDiagnosticEvent(row: OpenUiDiagnosticTurn, revision: numbe
     guidance_delivered: row.guidance?.delivered ?? null, guidance_targets: row.guidance?.targets ?? null,
     draft_attempts: row.draftAttempts ?? null, gate_issues: row.gateIssues ?? null, decision_model: row.decisionModel ?? null,
     draft_selection: row.selection ?? null,
+    draft_pair_reviews: row.pairReviews ?? null,
+    draft_final_comparison: row.finalComparison ?? null,
     assessment_opt_out: row.assessment?.optOut ?? null, assessment_checkpoints: row.assessment?.checkpoints ?? null,
   };
 }

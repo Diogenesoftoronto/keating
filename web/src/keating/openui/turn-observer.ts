@@ -1,6 +1,6 @@
 import { INTERACTION_REASONS, type TeachingDraftSnapshot } from "@keating/learner-contracts";
 import {
-  classifyOpenUiCue, isOpenUiDiagnosticGateIssue, normalizeOpenUiComponent, observeAssessmentOptOut, projectTeachingDraftSelection, type OpenUiDiagnosticTurn,
+  classifyOpenUiCue, isOpenUiDiagnosticGateIssue, normalizeOpenUiComponent, observeAssessmentOptOut, projectOpenUiPairReviews, projectOpenUiFinalComparison, projectTeachingDraftSelection, type OpenUiDiagnosticTurn,
 } from "../../../../packages/learner-contracts/src/openui-diagnostic-turn";
 import { learningMessageId, learningMessageText } from "../learning-intelligence/source-navigation";
 import { isPrivateForkContextMessage } from "../private-fork-provenance";
@@ -82,6 +82,8 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
     beginRound() {
       const token = ++round;
       finalSelection = undefined;
+      delete row.pairReviews;
+      delete row.finalComparison;
       const attemptTutors = new Map<number, string>();
       // A tool-call round can have its own plan. Preserve the turn's authored
       // candidates by actual tutor, and attribute the final round's offer separately.
@@ -96,6 +98,10 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
       return {
         plan(snapshot: TeachingDraftSnapshot, reviewer: Reviewer | null) {
           if (ended || token !== round) return;
+          const pairReviews = projectOpenUiPairReviews(snapshot.pairReviews);
+          if (pairReviews) row.pairReviews = pairReviews;
+          const finalComparison = projectOpenUiFinalComparison(snapshot.finalComparison);
+          if (finalComparison) row.finalComparison = finalComparison;
           const selection = projectTeachingDraftSelection(snapshot);
           const tutor = selection && attemptTutors.get(selection.attempt);
           if (selection && tutor) finalSelection = { tutor, evidence: selection };

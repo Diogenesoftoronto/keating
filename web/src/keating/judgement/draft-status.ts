@@ -4,6 +4,7 @@ import { recordedCodePracticeLanguage } from "../editable-code-language";
 import { STATE_SECTION_KEYS, type StateComposition, type TeachingDraftPhase } from "@keating/learner-contracts";
 import { ACTIVITY_KINDS, projectActivitySelectionReceipt } from "../../../../packages/learner-contracts/src/judgement/activity-learning";
 import { projectTeachingDraftSelection } from "../../../../packages/learner-contracts/src/judgement/teaching-selection";
+import { projectOpenUiPairReviews, projectOpenUiFinalComparison } from "../../../../packages/learner-contracts/src/openui-pair-reviews";
 
 export type TeachingDraftFeedbackKind = "helpful" | "too-strict" | "missed-problem";
 export interface TeachingDraftStatus {
@@ -102,6 +103,8 @@ function projectState(state: StateComposition): StateComposition {
 export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): TeachingDraftSnapshot {
   const activityLearning = projectActivitySelectionReceipt(snapshot.activityLearning);
   const selectionRule = projectTeachingDraftSelection(snapshot)?.rule;
+  const pairReviews = projectOpenUiPairReviews(snapshot.pairReviews);
+  const finalComparison = projectOpenUiFinalComparison(snapshot.finalComparison);
   const background = snapshot.backgroundActivity;
   const backgroundActivity = background?.version === 1 && background.target === "next-linked-objective-score" && background.causal === false
     && Number.isSafeInteger(background.policyCreatedAt) && background.policyCreatedAt > 0 && ACTIVITY_KINDS.includes(background.preferredKind)
@@ -112,6 +115,8 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     reasoning: snapshot.reasoning, standard: snapshot.standard, elapsedMs: snapshot.elapsedMs,
     judgeModel: snapshot.judgeModel, selectedAttempt: snapshot.selectedAttempt, reason: snapshot.reason,
     ...(selectionRule ? { selectionRule } : {}),
+    ...(pairReviews ? { pairReviews } : {}),
+    ...(finalComparison ? { finalComparison } : {}),
     ...projectSynthesisSources(snapshot.synthesisSourceAttempts, snapshot.attempt),
     ...(snapshot.planningMs === undefined ? {} : { planningMs: snapshot.planningMs }),
     ...(snapshot.interaction ? { interaction: projectInteraction(snapshot.interaction) } : {}),
@@ -123,6 +128,8 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     ...(snapshot.stateHistory ? { stateHistory: snapshot.stateHistory.slice(-64).map(sample => ({ phase: safePhase(sample.phase), attempt: nonnegative(sample.attempt), elapsedMs: nonnegative(sample.elapsedMs), requestIndex: nonnegative(sample.requestIndex), state: projectState(sample.state) })) } : {}),
     attempts: snapshot.attempts.map(attempt => ({ attempt: attempt.attempt, reasoning: attempt.reasoning, standard: attempt.standard, variant: attempt.variant ?? "default",
       generationMs: attempt.generationMs, judgementMs: attempt.judgementMs, status: attempt.status,
+      ...(attempt.feedbackOnly === true ? { feedbackOnly: true as const } : {}),
+      ...(attempt.predictionQuestionOnly === true ? { predictionQuestionOnly: true as const } : {}),
       ...projectSynthesisSources(attempt.synthesisSourceAttempts, attempt.attempt),
       ...projectToolNames(attempt.unavailableTools),
       checks: attempt.checks.filter(check => isOpenUiDiagnosticGateIssue(check.id) || checkIds.has(check.id)).map(check => ({

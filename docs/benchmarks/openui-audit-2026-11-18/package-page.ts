@@ -84,12 +84,36 @@ const alongside = [
       .map(id=>"study/receipts/"+id+".json"),
   ].map(name=>"final-review/"+name),
 ];
-const recordings = ["november-audit", "policy-holdout", "decision-models", "terminal-episodes", "paired-benchmark", "policy-v2.2", "policy-v2.3","final-review","final-review-first","assessment-opt-out"];
+const recordings = ["november-audit", "policy-holdout", "decision-models", "terminal-episodes", "paired-benchmark", "policy-v2.2", "policy-v2.3","final-review","final-review-first","assessment-opt-out","jev-pairs-first","jev-pairs","jev-pairs-prediction","jev-pairs-review"];
 if (!readFileSync(resolve(study,"final-review/assessment-opt-out/turns.json")).equals(readFileSync(resolve(study,"../../../web/src/keating/openui/examples/assessment-opt-out.json")))) {
   throw new Error("The Settings opt-out example must match the four measured simulation replies.");
 }
+for (const [recording, folder] of [
+  ["jev-pairs-first", "jev-parallel-pairs-2026-11-18"],
+  ["jev-pairs", "jev-paired-feedback-2026-11-18"],
+  ["jev-pairs-prediction", "jev-paired-prediction-2026-11-18"],
+] as const) {
+  const measured = readFileSync(resolve(study, "..", folder, "settings-export.json"));
+  const example = readFileSync(resolve(repository, "web/src/keating/openui/examples", recording + ".json"));
+  if (!measured.equals(example)) throw new Error("The Settings recording differs from the classroom export: " + recording);
+}
 const files = new Map<string, string>();
+if (!readFileSync(resolve(study, "../jev-paired-prediction-2026-11-18/review-projection.json")).equals(
+  readFileSync(resolve(repository, "web/src/keating/openui/examples/jev-pairs-review.json")),
+)) throw new Error("The reconstructed review example must match the verified offline projection.");
 for (const name of alongside) files.set(resolve(study, name), name);
+files.set(resolve(study, "../jev-parallel-pairs-2026-11-18/summary.json"), "jev-pairs/first-classroom-check.json");
+files.set(resolve(study, "../jev-parallel-pairs-2026-11-18/ledger.json"), "jev-pairs/first-classroom-ledger.json");
+files.set(resolve(study, "../jev-feedback-scope-2026-11-18/summary.json"), "jev-pairs/mastery-calibration.json");
+for (const name of [
+  "index.html", "summary.json", "protocol.json", "ledger.json", "settings-export.json", "typed-tile-answer.json", "wrong-tile-answer.json", "copper-symbol.json", "toy-train.json", "paper-fold.json",
+  "typed-tile-answer-classroom.png", "wrong-tile-answer-classroom.png", "copper-symbol-classroom.png", "paper-fold-classroom.png",
+  "toy-train-classroom.png", "toy-train-after-action.png",
+]) files.set(resolve(study, "../jev-paired-feedback-2026-11-18", name), "jev-pairs/" + name);
+for (const name of [
+  "summary.json", "protocol.json", "ledger.json", "settings-export.json", "review-projection.json", "offline-routing.json", "paper-fold.json", "sock-draw.json",
+  "paper-fold-classroom.png", "paper-fold-after-action.png", "sock-draw-classroom.png", "sock-draw-after-action.png",
+]) files.set(resolve(study, "../jev-paired-prediction-2026-11-18", name), "jev-pairs/prediction/" + name);
 files.set(resolve(study, "../../openui-diagnostics.md"), "openui-diagnostics.md");
 files.set(resolve(study, "../../../scripts/prompt-adherence/benchmark.ts"), "quality-checks/prompt-adherence-benchmark.ts.txt");
 files.set(resolve(study, "../../../packages/learner-contracts/src/judgement/debugging-example-proof.ts"), "quality-checks/debugging-example-proof.ts.txt");
@@ -113,7 +137,7 @@ const verify = args[0] === "--verify";
 const pages = new Map<string, Buffer>();
 for (const [source, target] of files) {
   let bytes = readFileSync(source);
-  if (source === article || target === "final-review/report.html") {
+  if (source === article || target === "final-review/report.html" || target === "final-review/field-guide.html" || target === "jev-pairs/index.html") {
     const html = bytes.toString("utf8").replace(/href="([^"]+)"/g, (attribute, href: string) => {
       if (href.startsWith("#") || /^[a-z]+:/i.test(href)) return attribute;
       const [, localPath, suffix] = /^([^?#]+)(.*)$/.exec(href) ?? [];
