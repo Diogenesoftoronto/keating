@@ -100,7 +100,7 @@ for (const [recording, folder] of [
 }
 const files = new Map<string, string>();
 for (const name of [
-  "summary.json", "protocol.json", "ledger.json", "settings-export.json", "review-projection.json", "production-window.json", "paper-fold.json", "sock-draw.json",
+  "summary.json", "protocol.json", "ledger.json", "settings-export.json", "review-projection.json", "production-window.json", "production-relay.json", "production-before.json", "paper-fold.json", "sock-draw.json",
   "paper-fold-classroom.png", "paper-fold-after-action.png", "sock-draw-classroom.png",
 ]) files.set(resolve(study, "../minimax-m31-predictions-2026-11-18", name), "jev-pairs/minimax-flash/" + name);
 if (!readFileSync(resolve(study, "../jev-paired-prediction-2026-11-18/review-projection.json")).equals(

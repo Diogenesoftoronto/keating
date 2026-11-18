@@ -94,6 +94,12 @@ rtk devenv tasks run keating:deploy-staging --input yes=true
 
 The plan shows SHA, dirty state and Railway target IDs. The existing staging flow creates its bounded immutable snapshot, waits for its exact fingerprint and chat health, and publishes the promotion candidate/archive. Dirty previews remain ineligible. Uploads and deployment listing use explicit `--project`, `--environment`, `--service`; no per-directory `railway link` is required. If older CLI versions reject these flags, enter Devenv/use the pinned scheduler CLI rather than silently deploying to a linked target.
 
+Before publishing a clean promotion candidate, staging sends an empty same-origin POST to the Jev relay. HTTP 401 means the request reached the API key check. You can run the same check against a hosted classroom. It uses no credentials or learner data.
+
+```sh
+rtk bun scripts/openui-diagnostics/probe-decision-relay.ts https://chat.keating.help
+```
+
 Compatibility tasks `keating:staging-deploy`, `keating:staging-scheduler`, staging status tasks and `keating:promote-staging` retain their existing semantics. **`devenv up` still deploys staging intentionally**, through `processes.staging`.
 
 ## Promotion and rollback

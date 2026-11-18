@@ -65,35 +65,37 @@ export function useAgentHostRefs(
   courseContext: KeatingToolsOptions["course"],
   speechEnabled: boolean,
 ): AgentHostRefs {
-  const refs: AgentHostRefs = {
-    agentRef: useRef<FlueConversation | null>(null),
-    panelRef: useRef<ChatPanelHandle | null>(null),
-    sessionSwitchRequestsRef: useRef(new SessionSwitchRequests()),
-    sessionIdRef: useRef<string>(createSessionId()),
-    sessionCreatedAtRef: useRef(new Date().toISOString()),
-    sessionParentIdRef: useRef<string | null>(null),
-    sessionForkedAtRef: useRef<string | undefined>(undefined),
-    toolExecutorRef: useRef(new AuthorizedToolExecutor()),
-    untrustedSearchProvenanceRef: useRef(false),
-    selectedModelRef: useRef<Model<Api>>(DEFAULT_MODEL),
-    explicitModelSelectionRef: useRef(false),
-    courseContextRef: useRef(courseContext),
-    speechEnabledRef: useRef(speechEnabled),
-    systemPromptBaseRef: useRef<string>(""),
-    agentRuntimeRef: useRef<KeatingAgentRuntimeConfig | undefined>(undefined),
-    sessionStartContextRef: useRef<SessionStartRecord>({ sessionId: "", context: "", promise: null }),
-    ensureSessionStartContextRef: useRef<() => Promise<void>>(async () => {}),
-    analyticsTurnIndexRef: useRef(0),
-    imageModelRetryRef: useRef<null | (() => Promise<void>)>(null),
-    arizeConfigRef: useRef<ArizePublicConfig>({
-      enabled: false,
-      reason: "loading",
-      evaluationContentEnabled: false,
-      maxContentChars: 16_000,
-      rateLimitPerMinute: 30,
-    }),
-    arizeTraceClientRef: useRef<ArizeTraceClient | null>(null),
-  };
+  // Lifecycle effects subscribe for this host's entire mount, including ordinary chat rerenders.
+  const host = useRef<AgentHostRefs | null>(null);
+  if (host.current === null) {
+    host.current = {
+      agentRef: { current: null },
+      panelRef: { current: null },
+      sessionSwitchRequestsRef: { current: new SessionSwitchRequests() },
+      sessionIdRef: { current: createSessionId() },
+      sessionCreatedAtRef: { current: new Date().toISOString() },
+      sessionParentIdRef: { current: null },
+      sessionForkedAtRef: { current: undefined },
+      toolExecutorRef: { current: new AuthorizedToolExecutor() },
+      untrustedSearchProvenanceRef: { current: false },
+      selectedModelRef: { current: DEFAULT_MODEL },
+      explicitModelSelectionRef: { current: false },
+      courseContextRef: { current: courseContext },
+      speechEnabledRef: { current: speechEnabled },
+      systemPromptBaseRef: { current: "" },
+      agentRuntimeRef: { current: undefined },
+      sessionStartContextRef: { current: { sessionId: "", context: "", promise: null } },
+      ensureSessionStartContextRef: { current: async () => {} },
+      analyticsTurnIndexRef: { current: 0 },
+      imageModelRetryRef: { current: null },
+      arizeConfigRef: { current: {
+        enabled: false, reason: "loading", evaluationContentEnabled: false,
+        maxContentChars: 16_000, rateLimitPerMinute: 30,
+      } },
+      arizeTraceClientRef: { current: null },
+    };
+  }
+  const refs = host.current;
   refs.courseContextRef.current = courseContext;
   refs.speechEnabledRef.current = speechEnabled;
   if (!refs.arizeTraceClientRef.current && typeof window !== "undefined") {

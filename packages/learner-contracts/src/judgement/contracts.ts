@@ -124,6 +124,8 @@ export type JudgementErrorCode =
 
 export interface JudgementError {
   readonly code: JudgementErrorCode;
+  /** Set only by Keating’s BYOK relay adapter for its own origin-denial response. */
+  readonly detail?: "relay-origin-denied";
   /** Rate-limited and overloaded are the retryable pair; the rest are not. */
   readonly retryable: boolean;
 }

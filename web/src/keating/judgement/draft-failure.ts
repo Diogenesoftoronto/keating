@@ -1,4 +1,4 @@
-import { blocksRelease, TUTOR_RATE_LIMIT_MESSAGE, TUTOR_RATE_LIMIT_REASON, type TeachingDraftSnapshot } from "@keating/learner-contracts";
+import { blocksRelease, describeDecisionPlanningFailure, TUTOR_RATE_LIMIT_MESSAGE, TUTOR_RATE_LIMIT_REASON, type TeachingDraftSnapshot } from "@keating/learner-contracts";
 
 const failures: Record<string, string> = {
   [TUTOR_RATE_LIMIT_REASON]: TUTOR_RATE_LIMIT_MESSAGE,
@@ -24,9 +24,10 @@ export function describeReviewCause(cause: string): string | null {
 
 /** Only code-owned explanations and counts reach the transcript, never provider bodies or drafts. */
 export function describeDraftFailure(snapshot: TeachingDraftSnapshot): string {
-  const reason = snapshot.reason ?? "review-unavailable";
+  const reason = snapshot.decisionFailure?.reason ?? snapshot.reason ?? "review-unavailable";
   const known = Object.hasOwn(failures, reason) || reason === "no-approved-draft";
-  let explanation = Object.hasOwn(failures, reason) ? failures[reason]! : failures["review-unavailable"]!;
+  let explanation = snapshot.decisionFailure ? describeDecisionPlanningFailure(snapshot.decisionFailure)
+    : Object.hasOwn(failures, reason) ? failures[reason]! : failures["review-unavailable"]!;
   if (reason === "no-approved-draft") {
     const checks = snapshot.attempts.flatMap(attempt => attempt.checks).filter(blocksRelease);
     const details = [
@@ -43,5 +44,5 @@ export function describeDraftFailure(snapshot: TeachingDraftSnapshot): string {
   }
   const count = Math.max(snapshot.attempt, snapshot.attempts.length);
   const generated = snapshot.attempts.filter(attempt => attempt.status !== "generation-error").length;
-  return `${explanation}\n\nFailure: ${known ? reason : "review-unavailable"}. Draft attempts: ${count}; completed drafts: ${generated}.`;
+  return `${explanation}\n\nFailure: ${known || snapshot.decisionFailure ? reason : "review-unavailable"}. Draft attempts: ${count}; completed drafts: ${generated}.`;
 }

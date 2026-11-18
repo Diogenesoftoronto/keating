@@ -3,8 +3,10 @@ import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { strToU8, unzipSync, zipSync } from "fflate";
+import { H3 } from "h3";
 import { buildWebFineTuneExportFromSources } from "../keating/export";
 import { buildWebTrainingArchive } from "../keating/training-archive";
+import uploadDataset from "../../server/api/training-datasets/index.post";
 import { MAX_TRAINING_DATASET_BYTES, receiveTrainingDataset, TRAINING_DATASET_CONSENT, validateTrainingDataset } from "../../server/utils/training-datasets";
 
 const directories: string[] = [];
@@ -36,6 +38,30 @@ it("requires explicit consent, same-origin requests and a server-resolved accoun
  await expect(receiveTrainingDataset(request(bytes, { origin: "https://attacker.example" }), { storageDir, resolveAccount: async () => "owner" })).rejects.toMatchObject({ statusCode: 403 });
  await expect(receiveTrainingDataset(request(bytes, { "x-account-id": "forged" }), { storageDir, resolveAccount: async () => null })).rejects.toMatchObject({ statusCode: 401 });
  expect(await readdir(storageDir)).toEqual([]);
+});
+
+it("checks consent and sign-in behind the Railway edge before accepting any dataset body", async () => {
+ const originalRailway = process.env.RAILWAY_ENVIRONMENT_ID;
+ process.env.RAILWAY_ENVIRONMENT_ID = "test-environment";
+ try {
+  let accountChecks = 0;
+  const server = new H3().use(event => {
+   event.context.notOrganicSessionAdapter = { getProductSession: async () => { accountChecks++; return null; } };
+  }).post("/api/training-datasets", uploadDataset);
+  for (const host of ["chat.keating.help", "keating-staging.up.railway.app"]) {
+   const send = (headers: Record<string, string>) => server.fetch(new Request(`http://${host}/api/training-datasets`, {
+    method: "POST", headers: { origin: `https://${host}`, "x-forwarded-proto": "https", ...headers },
+   }));
+   const consent = { "x-keating-training-consent": TRAINING_DATASET_CONSENT };
+   expect((await send({})).status).toBe(400);
+   expect((await send(consent)).status).toBe(401);
+   expect((await send({ ...consent, origin: "https://another.test", "x-forwarded-host": "another.test" })).status).toBe(403);
+  }
+  expect(accountChecks).toBe(2);
+ } finally {
+  if (originalRailway === undefined) delete process.env.RAILWAY_ENVIRONMENT_ID;
+  else process.env.RAILWAY_ENVIRONMENT_ID = originalRailway;
+ }
 });
 
 it("fails closed without configured durable storage and rejects upload size and type", async () => {

@@ -84,6 +84,22 @@ describe("custom TypeSafe judgement", () => {
       error: { code: "backend-unavailable", retryable: true } });
   });
 
+  test("concurrent BYOK requests cannot transfer the relay marker and 401 cannot forge a relay-origin denial", async () => {
+    const cases = [{status:403,marker:"relay-origin-denied"}, {status:403,marker:"other"}, {status:401,marker:"relay-origin-denied"}];
+    let requests = 0;
+    let release!: () => void;
+    const started = new Promise<void>(resolve => { release = resolve; });
+    const backend = createCustomJudgementBackend({...config, fetch:async () => {
+      const testCase = cases[requests++]!;
+      if (requests === cases.length) release();
+      await started;
+      return new Response(null, {status:testCase.status,headers:{"X-Keating-Judgement-Error":testCase.marker}});
+    }})!;
+    const outcomes = await Promise.all(cases.map(() => backend.call(request)));
+    expect(outcomes).toEqual(cases.map((_, i) => ({ ok:false, error:{code:"backend-unauthorized",retryable:false,
+      ...(i === 0 ? {detail:"relay-origin-denied"} : {})} })));
+  });
+
   test("pre-aborted requests cost nothing", async () => {
     let calls = 0;
     const backend = createCustomJudgementBackend({ ...config, fetch: async () => { calls++; return response(); } })!;

@@ -4,7 +4,7 @@
  * developer review (what needs attention, where the time went, which checks
  * failed in which draft). Nothing here reads private draft text.
  */
-import { blocksRelease, TUTOR_RATE_LIMIT_REASON, type TeachingDraftSnapshot, type TeachingPolicyCheck } from "@keating/learner-contracts";
+import { blocksRelease, describeDecisionPlanningFailure, TUTOR_RATE_LIMIT_REASON, type TeachingDraftSnapshot, type TeachingPolicyCheck } from "@keating/learner-contracts";
 import { describeTeachingCheck } from "./check-descriptions";
 import { describeReviewCause } from "./draft-failure";
 
@@ -83,15 +83,20 @@ export function diagnoseDraft(snapshot: TeachingDraftSnapshot, elapsedMs = snaps
   const findings: DraftDiagnosis[] = [];
   const terminal = ["released", "withheld", "cancelled"].includes(snapshot.phase);
   const reason = snapshot.reason ?? "";
-  if (snapshot.phase === "withheld") {
+  if (snapshot.decisionFailure) {
+    const failure = snapshot.decisionFailure;
+    findings.push({ tone: "blocked", title: "Decision planning failed", detail: describeDecisionPlanningFailure(failure)
+      + (failure.configuredModel ? " The configured model is " + failure.configuredModel + "." : "")
+      + " The recorded reason is " + failure.reason + ".", action: JUDGEMENT_SETTINGS });
+  } else if (snapshot.phase === "withheld") {
     const cause = describeReviewCause(reason);
     findings.push({ tone: "blocked", title: `Withheld: ${reason || "unknown reason"}`,
       detail: cause ?? "No draft passed the blocking checks. The rows marked ✕ below are what stopped release.",
       ...(reason.startsWith("backend-") || reason === "review-unavailable" || reason === "request-invalid" ? { action: JUDGEMENT_SETTINGS }
         : reason === TUTOR_RATE_LIMIT_REASON || reason === "generation-unavailable" || reason === "time-budget" ? { action: MODEL_SETTINGS } : {}) });
   }
-  if (terminal && snapshot.phase !== "cancelled" && !snapshot.judgeModel)
-    findings.push({ tone: "blocked", title: "No reviewer was dispatched", detail: "No judgement model handled this turn, so nothing was checked.", action: JUDGEMENT_SETTINGS });
+  if (terminal && snapshot.phase !== "cancelled" && !snapshot.judgeModel && !snapshot.decisionFailure)
+    findings.push({ tone: "blocked", title: "No reviewer response was recorded", detail: "This receipt has no response identifying the judgement model.", action: JUDGEMENT_SETTINGS });
 
   const generationErrors = snapshot.attempts.filter(attempt => attempt.status === "generation-error").length;
   const rateLimited = snapshot.attempts.filter(attempt => attempt.generationFailure === TUTOR_RATE_LIMIT_REASON).length;
@@ -122,10 +127,11 @@ export function diagnoseDraft(snapshot: TeachingDraftSnapshot, elapsedMs = snaps
   const judgementMs = snapshot.attempts.reduce((sum, attempt) => sum + attempt.judgementMs, 0);
   if (elapsedMs >= budgetMs * 0.7) findings.push({ tone: reason.startsWith("time-budget") ? "blocked" : "caution",
     title: `Used ${Math.round(Math.min(1, elapsedMs / budgetMs) * 100)}% of the ${Math.round(budgetMs / 1_000)} s budget`,
-    detail: snapshot.pairReviews ? `This turn has taken ${seconds(elapsedMs)}. The concurrent drafts used a combined ${seconds(generationMs)} for generation and ${seconds(judgementMs)} for individual reviews.`
+    detail: snapshot.decisionFailure ? `The planning step ended before tutor generation began.${snapshot.planningMs === undefined ? "" : " Planning took " + seconds(snapshot.planningMs) + "."}`
+      : snapshot.pairReviews ? `This turn has taken ${seconds(elapsedMs)}. The concurrent drafts used a combined ${seconds(generationMs)} for generation and ${seconds(judgementMs)} for individual reviews.`
       : `Writing took ${seconds(generationMs)}${snapshot.planningMs ? `, planning ${seconds(snapshot.planningMs)}` : ""}, review took ${seconds(judgementMs)}. `
       + (generationMs >= judgementMs ? "The reply model is the bottleneck; a faster reply model or lower reasoning helps most." : "Review is the bottleneck; a faster judgement model or a smaller context helps most."),
-    ...(snapshot.pairReviews ? {} : { action: generationMs >= judgementMs ? MODEL_SETTINGS : JUDGEMENT_SETTINGS }) });
+    ...(snapshot.pairReviews ? {} : { action: snapshot.decisionFailure || generationMs < judgementMs ? JUDGEMENT_SETTINGS : MODEL_SETTINGS }) });
 
   const fill = snapshot.state?.fillRatio ?? null;
   const dropped = snapshot.slides?.reduce((sum, slide) => sum + slide.turnsDropped, 0) ?? 0;

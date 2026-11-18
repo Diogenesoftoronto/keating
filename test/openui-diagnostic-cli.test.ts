@@ -52,6 +52,17 @@ test("a model can find both withheld Gemini Decision text-control turns without 
     t.decisionModel === "gemini-decision-1" && t.gateIssues.includes("checkpoint_answer_leaked"))).toBe(true);
 });
 
+test("a model can retrieve a recorded planning failure by configured decision model through CLI stdin", () => {
+  const failed = { schemaVersion:1, conversationId:"classroom", turnId:"a", turnIndex:0, model:null,
+    mode:"unknown", cue:{kind:"none",targets:[]}, reply:"withheld", attempted:null, compiled:null, selected:[], rendered:null, guidance:null,
+    decisionModel:null, draftAttempts:0, gateIssues:[], decisionFailure:{stage:"planning",reason:"backend-unauthorized",detail:"relay-origin-denied",configuredModel:"jev-latest"} };
+  const legacy = {...failed, turnId:"b", turnIndex:1, decisionFailure:undefined};
+  const command = ["src/cli/main.ts","openui-diagnostics","-","--decision-model","jev-latest","--view","withheld"];
+  const result = spawnSync(process.execPath,command,{cwd:root,encoding:"utf8",input:JSON.stringify([failed,legacy])});
+  expect(result.status).toBe(0);
+  expect(JSON.parse(result.stdout)).toMatchObject({matchingTurns:1,turns:[{turnId:"a",decisionModel:null,decisionFailure:failed.decisionFailure}]});
+});
+
 test("lists the saved irrigation replies that pressed a learner who declined a quiz", () => {
   const file = resolve(root, "docs/benchmarks/openui-audit-2026-11-18/final-review/assessment-opt-out/turns.json");
   const result = spawnSync(process.execPath, ["src/cli/main.ts", "openui-diagnostics", file, "--view", "assessment-opt-out"], { cwd: root, encoding: "utf8" });

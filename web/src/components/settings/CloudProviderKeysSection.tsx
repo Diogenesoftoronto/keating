@@ -115,13 +115,15 @@ const TEST_LABELS: Record<string, string> = {
 };
 
 /** API-key input that saves on blur and verifies the key automatically while you type or paste. */
-function ApiKeyField({ provider, value, error, onChange, onSave }: {
+function ApiKeyField({ provider, savedValue, error, onSave }: {
 	provider: string;
-	value: string;
+	savedValue: string;
 	error?: string;
-	onChange: (value: string) => void;
 	onSave: (value: string) => Promise<void>;
 }) {
+	// A pending storage read may finish after the user has pasted or cleared a key.
+	const [editedValue, setEditedValue] = useState<string | null>(null);
+	const value = editedValue ?? savedValue;
 	const [result, setResult] = useState<{ status: string; detail?: string } | null>(null);
 	const lastTested = useRef("");
 
@@ -136,7 +138,11 @@ function ApiKeyField({ provider, value, error, onChange, onSave }: {
 			lastTested.current = key;
 			setResult({ status: "checking" });
 			testProviderKey(target, key, { signal: controller.signal })
-				.then((r) => { setResult(r); if (r.status === "ok") void onSave(key); })
+				.then((r) => {
+					if (controller.signal.aborted) return;
+					setResult(r);
+					if (r.status === "ok" && editedValue !== null) void onSave(key);
+				})
 				.catch(() => {});
 		}, 700);
 		return () => { clearTimeout(timer); controller.abort(); };
@@ -166,8 +172,8 @@ function ApiKeyField({ provider, value, error, onChange, onSave }: {
 				className={inputClass}
 				placeholder={`Paste your ${provider} API key`}
 				value={value}
-				onChange={(e) => onChange(e.target.value)}
-				onBlur={(e) => void onSave(e.target.value)}
+				onChange={(e) => setEditedValue(e.target.value)}
+				onBlur={(e) => { if (editedValue !== null) void onSave(e.target.value); }}
 			/>
 			{status && (
 				<p role="status" className={css({ fontSize: "0.75rem" })} style={{ color: tone }}>
@@ -225,6 +231,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 
 	useEffect(() => {
 		const storage = getAppStorage();
+		let active = true;
 		Promise.all(providers.map(async (p) => {
 			try {
 				return { provider: p, key: (await storage.providerKeys.get(p)) ?? "", error: "" };
@@ -236,6 +243,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 				};
 			}
 		})).then((results) => {
+			if (!active) return;
 			const map: Record<string, string> = {};
 			const errors: Record<string, string> = {};
 			for (const { provider, key, error } of results) {
@@ -245,6 +253,7 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 			setKeys(map);
 			setKeyErrors(errors);
 		});
+		return () => { active = false; };
 	}, [providers.join(",")]);
 
 	useEffect(() => {
@@ -657,9 +666,8 @@ function OAuthProviderKeys({ providers }: { providers: string[] }) {
 					<ApiKeyField
 						key={provider}
 						provider={provider}
-						value={keys[provider] ?? ""}
+						savedValue={keys[provider] ?? ""}
 						error={keyErrors[provider]}
-						onChange={(value) => setKeys((prev) => ({ ...prev, [provider]: value }))}
 						onSave={(value) => save(provider, value)}
 					/>
 				);

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  NATIVE_PAGE_STAGES, OPENUI_DIAGNOSTIC_CUES, OPENUI_DIAGNOSTIC_MODES, findUnmetOpenUiCues, isOpenUiDiagnosticInterface, matchesLearnerInterface, matchesOpenUiTutor, matchesSelectedLearnerAction, openUiCheckpointAfterOptOut, openUiDiagnosticLoss, queryOpenUiDiagnosticTurns, summarizeOpenUiDiagnostics,
+  NATIVE_PAGE_STAGES, OPENUI_DIAGNOSTIC_CUES, OPENUI_DIAGNOSTIC_MODES, findUnmetOpenUiCues, isOpenUiDiagnosticInterface, matchesLearnerInterface, matchesOpenUiDecisionModel, matchesOpenUiTutor, matchesSelectedLearnerAction, openUiCheckpointAfterOptOut, openUiDiagnosticLoss, queryOpenUiDiagnosticTurns, summarizeOpenUiDiagnostics,
   type OpenUiDiagnosticFilter, type OpenUiDiagnosticRate, type OpenUiDiagnosticSummary, type OpenUiDiagnosticTurn,
 } from "@keating/learner-contracts";
 import { downloadTextFile } from "../../lib/browser-download";
@@ -13,9 +13,9 @@ const STAGES: Record<ObservationStage, string> = { compiled: "In a draft", selec
 const CUES = { "implicit-action": "Implicit learning cue", "explicit-interface": "Explicit interface request", "direct-text": "Direct text request", none: "No detected cue", unknown: "Unknown cue" };
 const MODES = { guided: "Decision-guided", baseline: "Baseline", "offer-only": "Offer only", unknown: "Unknown guidance" };
 const STAGE_NOTES = {
-  compiled: "A complete draft contained a valid interface. Each turn counts once, including turns with multiple drafts.",
-  selected: "A valid interface appeared in the final reply selected by the harness.",
-  rendered: "The chat renderer confirmed the component. A missing observation stays unknown.",
+  compiled: "A learner turn counts once if any observed tutor draft contained a valid interface.",
+  selected: "Counts learner turns with a known selection outcome, including turns when no reply was released.",
+  rendered: "Counts learner turns with a known chat presentation outcome, including turns that ended with a withholding notice.",
 };
 const percent = (rate: number | null) => rate === null ? "—" : Math.round(rate * 100) + "%";
 const fraction = (r: OpenUiDiagnosticRate) => r.denominator ? r.numerator + " / " + r.denominator : "—";
@@ -144,11 +144,13 @@ function TurnDetails({ row, unmet }: {row: OpenUiDiagnosticTurn; unmet: boolean}
   return <details className="ou-turn"><summary>
     <span>{row.experiment?.caseId ?? `Turn ${row.turnIndex + 1}`}</span>
     <span>{row.model ?? (row.requestedModel ? "Requested " + row.requestedModel : "Unknown tutor")}</span>
-    <span>{unmet ? describeUnmetCue(row) : outcome}</span><span>{row.reply}</span>
+    <span>{row.decisionFailure ? "Decision planning failed" : unmet ? describeUnmetCue(row) : outcome}</span><span>{row.reply}</span>
   </summary><dl>
     <dt>Observed tutor</dt><dd>{row.model ?? "Unknown"}</dd>
     {row.requestedModel && row.requestedModel !== row.model && <><dt>Requested tutor</dt><dd>{row.requestedModel}</dd></>}
     <dt>Guidance</dt><dd>{MODES[row.mode]}{row.decisionModel && " · " + row.decisionModel}</dd>
+    {row.decisionFailure && <><dt>Planning failure</dt><dd>{row.decisionFailure.reason}{row.decisionFailure.detail && " · " + row.decisionFailure.detail}</dd>
+      {row.decisionFailure.configuredModel && <><dt>Configured decision model</dt><dd>{row.decisionFailure.configuredModel}</dd></>}</>}
     {unmet && <><dt>Learner cue</dt><dd>{CUES[row.cue.kind]}</dd></>}
     <dt>Expected types</dt><dd>{types(row.cue.targets)}</dd>
     {row.cue.codeLanguage && <><dt>Requested code language</dt><dd>{row.cue.codeLanguage}</dd></>}
@@ -184,7 +186,7 @@ function TurnDetails({ row, unmet }: {row: OpenUiDiagnosticTurn; unmet: boolean}
       if (issue === "question_feedback_format") return "The feedback draft lacked a standalone text reply (" + issue + ")";
       if (issue === "prediction_question_format") return "The prediction draft lacked one standalone Question without hints or an answer key (" + issue + ")";
       return issue;
-    }).join(", ") : "None"}</dd></>}
+    }).join(", ") : row.decisionFailure && row.draftAttempts === 0 ? "No draft was available to review" : "None"}</dd></>}
     {row.fit && <><dt>Assessment</dt><dd>{row.fit.passed === null ? "Unknown" : row.fit.passed ? "Passed" : "Failed"} · {row.fit.source}</dd></>}
     <dt>Conversation</dt><dd><code>{row.conversationId}</code></dd><dt>Turn ID</dt><dd><code>{row.turnId}</code></dd>
   </dl></details>;
@@ -202,14 +204,15 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
   const [loss, setLoss] = useState<OpenUiTurnView>(initialView ?? "all");
   const summary = useMemo(() => summarizeOpenUiDiagnostics(turns, filter), [turns, filter]);
   const models = useMemo(() => [...new Set(turns.flatMap(r => [r.model, r.requestedModel]).filter((m): m is string => Boolean(m)))].sort(), [turns]);
-  const decisionModels = useMemo(() => [...new Set(turns.map(r => r.decisionModel ?? "unknown"))].sort(), [turns]);
+  const decisionModels = useMemo(() => [...new Set(turns.flatMap(r => [r.decisionModel ?? "unknown",
+    ...(r.decisionFailure?.configuredModel ? [r.decisionFailure.configuredModel] : [])]))].sort(), [turns]);
   const visible = useMemo(() => {
     const seen = new Set<string>();
     return turns.filter(r => {
       const key = JSON.stringify([r.conversationId, r.turnId]);
       if (seen.has(key)) return false;
       seen.add(key);
-      return matchesOpenUiTutor(r, filter.model) && (!filter.decisionModel || (r.decisionModel ?? "unknown") === filter.decisionModel)
+      return matchesOpenUiTutor(r, filter.model) && matchesOpenUiDecisionModel(r, filter.decisionModel)
         && (!filter.mode || r.mode === filter.mode) && (!filter.cue || r.cue.kind === filter.cue);
     }).slice().reverse();
   }, [turns, filter]);
@@ -246,15 +249,20 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
       <label>Decision mode<select aria-label="Decision mode" value={filter.mode ?? ""} onChange={e => changeFilter({mode: e.target.value as OpenUiDiagnosticFilter["mode"] || undefined})}><option value="">All guidance</option>
         {OPENUI_DIAGNOSTIC_MODES.map(k => <option value={k} key={k}>{MODES[k]}</option>)}</select></label>
     </div>
+    {summary.decisionPlanningFailures && <p className="ou-muted">Recorded decision planning failures · {summary.decisionPlanningFailures.turns}</p>}
     <div className="ou-stages" role="group" aria-label="Observation stage">
       {(Object.keys(STAGES) as ObservationStage[]).map(k => <button type="button" key={k} aria-pressed={k === stage} onClick={() => setStage(k)}>{STAGES[k]}</button>)}
     </div>
     <p className="ou-muted">{STAGE_NOTES[stage]} {summary.coverage.includedTurns} {summary.coverage.includedTurns === 1 ? "turn" : "turns"} in scope.</p>
     <dl className="ou-metrics">
-      <Metric title="Replies with OpenUI" value={summary.overall[stage]} />
+      <Metric title="Learner turns with OpenUI" value={summary.overall[stage]} />
       <Metric title="Matched the cued component type" value={summary.overall[opportunity]} />
       <Metric title="UI on a text-only request" value={summary.overall[overuse]} />
     </dl>
+    {stage === "compiled" && <p className="ou-muted">{summary.overall.attempted.denominator
+      ? <>The tutor attempted OpenUI on <strong>{fraction(summary.overall.attempted)}</strong> learner turns with measured draft content.</>
+      : "No tutor draft content was measured."}
+      {summary.overall.attempted.unknown > 0 && ` Authoring attempts unobserved on ${summary.overall.attempted.unknown} ${summary.overall.attempted.unknown === 1 ? "turn" : "turns"}.`}</p>}
     {summary.overall.fit.denominator > 0 && <p className="ou-muted">Passed the recorded assessment · {fraction(summary.overall.fit)} scored turns{summary.overall.fit.unknown > 0 && ` · ${summary.overall.fit.unknown} unscored`}</p>}
     {summary.overall.proseBesideInterface.observed > 0 ? <p className="ou-muted">
       Words outside the interface in final replies · median {summary.overall.proseBesideInterface.median},
@@ -264,7 +272,7 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
       Outside word count unavailable for {summary.overall.proseBesideInterface.unknown} final replies with an interface.
     </p>}
     {summary.byModel.length > 1 && <section className="ou-section ou-pair"><h4>By tutor</h4>
-      <table><thead><tr><th>Tutor</th><th>Any interface</th><th>Matched cue</th><th>Unobserved</th></tr></thead>
+      <table><thead><tr><th>Tutor</th><th>Turns with OpenUI</th><th>Matched cue</th><th>Unobserved</th></tr></thead>
         <tbody>{summary.byModel.map(({key, metrics}) => <tr key={key}><th scope="row">{key}</th>
           <td>{fraction(metrics[stage])}</td><td>{fraction(metrics[opportunity])}</td><td>{metrics[stage].unknown}</td></tr>)}</tbody>
       </table>
@@ -273,7 +281,7 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
       {componentRates.length ? <ul className="ou-bars" aria-label="Turns containing a component">
         {componentRates.map(c => <li key={c.key}><span>{c.key}</span><span className="ou-track" aria-hidden="true"><i style={{width: percent(c[stage].rate)}} /></span><b>{fraction(c[stage])}</b></li>)}
       </ul> : <p>{summary.overall[stage].denominator ? "No components recorded at this stage." : "No observations at this stage."}</p>}
-      <p className="ou-muted">Tutor used an offered type · {fraction(summary.overall.offeredType[stage])}</p>
+      <p className="ou-muted">Offered type present at this stage · {fraction(summary.overall.offeredType[stage])}</p>
       {summary.overall.nativePageRequested.denominator > 0 && <p className="ou-muted">
         Native interactive page requested · {fraction(summary.overall.nativePageRequested)} observed turns
         {summary.overall.nativePageRequested.unknown > 0 && ` · ${summary.overall.nativePageRequested.unknown} unknown`}.

@@ -146,9 +146,13 @@ export function matchesOpenUiTutor(row: Row, filter?: string): boolean {
   return !filter || (row.model ?? "unknown") === filter || row.requestedModel === filter;
 }
 
+export function matchesOpenUiDecisionModel(row: Row, filter?: string): boolean {
+  return !filter || (row.decisionModel ?? "unknown") === filter || row.decisionFailure?.configuredModel === filter;
+}
+
 function selectRows(rows: Row[], filter: OpenUiDiagnosticFilter): Row[] {
   return rows.filter(row => matchesOpenUiTutor(row, filter.model)
-    && (!filter.decisionModel || (row.decisionModel ?? "unknown") === filter.decisionModel)
+    && matchesOpenUiDecisionModel(row, filter.decisionModel)
     && (!filter.mode || row.mode === filter.mode) && (!filter.cue || row.cue.kind === filter.cue)
     && (!filter.experimentId || row.experiment?.experimentId === filter.experimentId));
 }
@@ -444,8 +448,17 @@ export function summarizeOpenUiDiagnostics(input: readonly Row[], filter: OpenUi
   const experimentGroups = groups(experimentRows, row => JSON.stringify([row.experiment!.experimentId, row.model]));
   const noComparator = [...experimentGroups.values()].filter(set => !set.some(row => row.mode === "baseline" || row.mode === "offer-only"));
   const assessmentOptOut = assessmentOptOutSummary(rows);
+  const planningFailures = rows.flatMap(row => row.decisionFailure ? [row.decisionFailure] : []);
   return {
     ...(assessmentOptOut && { assessmentOptOut }),
+    ...(planningFailures.length ? { decisionPlanningFailures: {
+      turns: planningFailures.length,
+      groups: [...groups(planningFailures, failure => JSON.stringify([failure.reason, failure.detail, failure.configuredModel])).values()]
+        .map(([first, ...others]) => ({ reason: first!.reason, ...(first!.detail ? { detail: first!.detail } : {}),
+          configuredModel: first!.configuredModel ?? null, turns: 1 + others.length }))
+        .sort((a,b) => a.reason.localeCompare(b.reason) || (a.detail ?? "").localeCompare(b.detail ?? "")
+          || (a.configuredModel ?? "").localeCompare(b.configuredModel ?? "")),
+    } } : {}),
     schemaVersion: 1 as const, overall, byModel: groupedMetrics(rows, row => row.model ?? "unknown", delays),
     byDecisionModel: groupedMetrics(rows, row => row.decisionModel ?? "unknown", delays),
     byMode: groupedMetrics(rows, row => row.mode, delays), byCue: groupedMetrics(rows, row => row.cue.kind, delays),
@@ -485,7 +498,7 @@ export const openUiDiagnosticQuerySchema = {
   type: "object",
   properties: {
     model: { type: "string", description: "Exact tutor ID from the byModel summary." },
-    decisionModel: { type: "string", description: "Exact decision model ID from byDecisionModel, or unknown when unrecorded." },
+    decisionModel: { type: "string", description: "Exact observed decision model or configured model in a recorded planning failure. Use unknown for an unrecorded planning answer." },
     cue: { type: "string", enum: OPENUI_DIAGNOSTIC_CUES },
     mode: { type: "string", enum: OPENUI_DIAGNOSTIC_MODES },
     view: { type: "string", enum: ["summary", "unmet", "combined-unmet", "action-unmet", "native", "editable-code", "draft-loss", "render-loss", "withheld", "released-drafts", "assessment-opt-out", "pair-reviews"], default: "summary",

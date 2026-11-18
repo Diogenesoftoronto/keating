@@ -5,11 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.3
+
+- Fixed a hosted classroom failure that stopped Jev from planning a reply when Railway handled HTTPS. Staging now checks that a browser-origin request reaches the relay’s API key check before promoting a clean build.
+- The hosted Jev relay preserves nested decision state as JSON. The training-dataset upload route recognizes the same public HTTPS origin before checking consent and sign-in.
+- Settings, CLI and WebMCP recordings identify planning failures before the tutor writes a draft. New records preserve the configured reviewer and failure reason. [Production incident and field guide](https://keating.help/reports/teaching-interfaces/jev-pairs/index.html#production-relay)
+- The classroom keeps its turn observers attached across screen updates. A failed first turn in a new conversation now survives reload and can be inspected from Settings or WebMCP.
+- A late read of saved provider keys can no longer erase a key someone has just typed in Settings.
+
 ## 4.2.2
 
 - On each Jev-guided classroom turn, the tutor writes four private replies. Jev checks each reply and compares drafts 1–2 and 3–4 concurrently. Keating publishes one eligible answer and executes only its tools.
 - A learner answering an open Question can receive feedback in chat. A learner who wants to guess before hearing the explanation can get a Question field. In each case, one draft per pair focuses on that action while the others retain the usual teaching tools.
 - Settings, the CLI and WebMCP now expose which drafts Jev preferred, which passed their individual checks and which reached the final comparison. Each recorded pair has timing information. [Inspect the classroom recordings](https://keating.help/reports/teaching-interfaces/diagnostics.html?source=jev-pairs&view=pair-reviews)
+- MiniMax M3.1 Flash is selectable as a tutor. If every draft request reaches the provider’s rate limit, the learner sees a rate-limit notice and the inspector retains the requested tutor. [Two matched prediction prompts](https://keating.help/reports/teaching-interfaces/jev-pairs/index.html#later)
 
 ## 4.2.1
 

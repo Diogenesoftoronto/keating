@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import { TUTOR_RATE_LIMIT_MESSAGE } from "@keating/learner-contracts";
 import { createMobileTeachingDraftRound, MOBILE_WITHHELD_TEACHING_REPLY } from "../src/lib/judgement/teaching-drafts";
+import { createMobileJudgementRuntime } from "../src/lib/judgement/runtime";
 import { settingsForProvider } from "../src/lib/provider-config";
 import { acceptingTeachingJudge, EMPTY_LEARNER_DATA } from "./helpers/judgement-fixtures";
 
@@ -44,4 +45,28 @@ test.each([429, 503])("native classroom attributes a tutor HTTP %i using the res
   expect([tutorRequests, judgeRequests]).toEqual([4, 1]);
   expect(result).toEqual({ text: status === 429 ? TUTOR_RATE_LIMIT_MESSAGE : MOBILE_WITHHELD_TEACHING_REPLY,
     calls: [], assistantTurn: null, usage: null });
+});
+
+test("native decision planning denial identifies the configured router alias without starting the tutor or leaking the denied response", async () => {
+  let decisionRequests = 0;
+  let tutorRequests = 0;
+  const runtime = createMobileJudgementRuntime({
+    hostedEnabled: true,
+    request: async () => {
+      decisionRequests++;
+      return Response.json({failure:"PRIVATE denial relay-origin-denied"}, {status:403, headers:{"X-Keating-Judgement-Error":"relay-origin-denied"}});
+    },
+  });
+  const model = runtime.policy.tiers[0]!.key.model;
+  const round = createMobileTeachingDraftRound({judge:runtime.call, configuredDecisionModel:model,
+    current:() => true, evidence:async () => EMPTY_LEARNER_DATA, onReleased() {},
+    request:async () => { tutorRequests++; throw Error("unexpected tutor request"); }});
+  const reply = await round(settingsForProvider("minimax"), "fixture",
+    [{id:"learner",role:"user",content:"PRIVATE answer",createdAt:1}]);
+  expect([decisionRequests,tutorRequests]).toEqual([1,0]);
+  expect(reply.text).toContain("Decision planning stopped before the tutor could draft a reply");
+  expect(reply.text).toContain("denied access");
+  expect(reply.text).toContain(model);
+  expect(reply.text).not.toMatch(/PRIVATE|relay-origin-denied|rejected the page/);
+  expect(reply).toMatchObject({usage:null,assistantTurn:null,calls:[]});
 });

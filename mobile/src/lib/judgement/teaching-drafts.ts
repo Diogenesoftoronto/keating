@@ -1,4 +1,4 @@
-import { runTeachingDrafts, validateToolCall, projectActiveWork, TUTOR_RATE_LIMIT_REASON, TUTOR_RATE_LIMIT_MESSAGE, type UiDocument, type ActivitySelectionInput, type ActivitySelection,
+import { runTeachingDrafts, validateToolCall, projectActiveWork, TUTOR_RATE_LIMIT_REASON, TUTOR_RATE_LIMIT_MESSAGE, describeDecisionPlanningFailure, type UiDocument, type ActivitySelectionInput, type ActivitySelection,
   type JudgementCaller, type PortableLearnerData, type ReleasedActivitySelection, type UiActionJournal,
   type TeachingPolicyCheck, type TeachingPolicyReply, type TeachingPolicyTurn, type TeachingDraftRefinement } from "@keating/learner-contracts";
 import { requestProviderRound, type ProviderRound, type ProviderToolResult } from "../provider-client";
@@ -27,6 +27,7 @@ function schemaMatches(schema: Record<string, unknown>, value: unknown): boolean
 /** Uses the provider's existing request-round seam; no private candidate can emit text or execute a tool. */
 export function createMobileTeachingDraftRound(options: {
   judge: JudgementCaller;
+  configuredDecisionModel?: string;
   current: () => boolean;
   evidence: () => Promise<PortableLearnerData>;
   sessionId?: string;
@@ -94,7 +95,7 @@ export function createMobileTeachingDraftRound(options: {
       return [{ id: "native_tool_schema", source: "deterministic", severity: "critical", status: validTools ? "pass" : "fail", probability: validTools ? 0 : 1 },
         { id: "native_ui_schema", source: "deterministic", severity: "critical", status: validUi ? "pass" : "fail", probability: validUi ? 0 : 1 }];
     };
-    const result = await runTeachingDrafts<ProviderRound>({ turn, signal: providerOptions.signal,
+    const result = await runTeachingDrafts<ProviderRound>({ turn, signal: providerOptions.signal, configuredDecisionModel: options.configuredDecisionModel,
       judge: async (input, signal) => { await stillCurrent(); const result = await options.judge(input, signal); await stillCurrent(); return result; },
       check, refinement: options.refinement, timeoutMs: 120_000,
       maxReasoning: providerOptions.reasoningLevel === "xhigh" ? "high" : providerOptions.reasoningLevel === "minimal" ? "low" : providerOptions.reasoningLevel ?? "off",
@@ -141,8 +142,10 @@ export function createMobileTeachingDraftRound(options: {
       !feedbackQuestion && result.receipt.interaction?.action === "continue" && result.receipt.interaction.continueNodeId === activeNode?.id);
     if (result.status === "cancelled") throw new DOMException("Teaching request changed.", "AbortError");
     if (result.status !== "released" || !result.reply || !result.value) {
-      return { text: result.receipt.reason === TUTOR_RATE_LIMIT_REASON ? TUTOR_RATE_LIMIT_MESSAGE : MOBILE_WITHHELD_TEACHING_REPLY,
-        calls: [], assistantTurn: null, usage: totalUsage };
+      const failure = result.receipt.decisionFailure;
+      const text = failure ? describeDecisionPlanningFailure(failure) + (failure.configuredModel ? " The configured decision model is " + failure.configuredModel + "." : "")
+        : result.receipt.reason === TUTOR_RATE_LIMIT_REASON ? TUTOR_RATE_LIMIT_MESSAGE : MOBILE_WITHHELD_TEACHING_REPLY;
+      return { text, calls: [], assistantTurn: null, usage: totalUsage };
     }
     // The reviewed reply is authoritative; native continuation metadata may accompany only the same proposed calls.
     if (result.value.calls.length !== result.reply.toolCalls.length || result.value.calls.some((call, index) =>

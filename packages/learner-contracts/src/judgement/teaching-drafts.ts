@@ -20,9 +20,11 @@ import type { ActivitySelection, ActivitySelectionInput, ReleasedActivitySelecti
 import type { StateComposition } from "./state-metrics.js";
 import type { TeachingDraftSelectionRule } from "./teaching-selection.js";
 import type { TeachingDraftPairReview } from "./teaching-drafts/pair-review.js";
+import type { DecisionPlanningFailure } from "./teaching-drafts/planning-failure.js";
 
 export type { TeachingDraftPairReview } from "./teaching-drafts/pair-review.js";
 export { isTutorRateLimit, TUTOR_RATE_LIMIT_MESSAGE, TUTOR_RATE_LIMIT_REASON } from "./teaching-drafts/generation-failure.js";
+export { DECISION_PLANNING_NOTICE, describeDecisionPlanningFailure, isDecisionPlanningFailure, type DecisionPlanningFailure } from "./teaching-drafts/planning-failure.js";
 
 export type TeachingDraftReasoning = "off" | "low" | "medium" | "high";
 export type TeachingDraftStandard = "concise" | "supported" | "deep";
@@ -129,6 +131,8 @@ export interface TeachingDraftSnapshot {
   /** Observed prediction-specific selection rule on a released draft. Older receipts omit it. */
   readonly selectionRule?: TeachingDraftSelectionRule;
   readonly reason: string | null;
+  /** A failed typed planning outcome on this round. Missing in older or unobserved rounds. */
+  readonly decisionFailure?: DecisionPlanningFailure;
   readonly planningMs?: number;
   readonly interaction?: TeachingDraftInteraction;
   /** Why the plan was reviewed this turn and the proposal the tutor was asked to make. */
@@ -186,6 +190,8 @@ export interface TeachingDraftOptions<T> {
   readonly judge: JudgementCaller;
   /** The active judge's declared request and state-plus-longest-question budgets. */
   readonly judgementModel?: { readonly id: string; readonly requestTokens: number | null; readonly stateQuestionTokens: number | null };
+  /** Primary model selected for planning diagnostics; null when no route was configured. */
+  readonly configuredDecisionModel?: string | null;
   readonly generate: (input: TeachingDraftGenerationInput) => Promise<{ readonly reply: TeachingPolicyReply; readonly value: T }>;
   readonly maxAttempts?: number;
   /** Explicit research capture: collect the full bounded attempt budget before selection.

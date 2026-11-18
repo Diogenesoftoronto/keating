@@ -132,6 +132,7 @@ export async function prepareActivityRound(env: ActivityEnv, turn: TurnIdentity,
   const activeDocument = await mobileUnansweredActivityDocument(env.stateRef.current.sessions.find(session => session.id === sessionId),
     await repository.records.snapshot(), id => repository.uiActions.getJournal(id)).catch(() => null);
   round.privateRound = createMobileTeachingDraftRound({ judge: judgement.call, current, sessionId,
+    configuredDecisionModel: judgement.policy.tiers[0]?.key.model,
     activityLearningMode: activityMode, backgroundActivityPolicy,
     learnerContext: env.learnerContextRef.current,
     activeDocument, questionJournal: id => repository.uiActions.getJournal(id),

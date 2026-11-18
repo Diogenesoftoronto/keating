@@ -1,0 +1,99 @@
+{
+  "production": "https://chat.keating.help",
+  "mode": "paid-release-verification",
+  "expectedTeachingPolicy": "keating-teaching-policy/v2.4.1",
+  "priorBoundUsd": 3.787884632,
+  "phaseMaximumUsd": 2,
+  "cumulativeMaximumUsd": 5.787884632,
+  "rateCard": {
+    "model": "MiniMax-M3.1-Flash",
+    "usdPerMillion": {
+      "input": 0.15,
+      "cacheRead": 0.015,
+      "output": 0.6
+    },
+    "contextUpper": 1000000,
+    "outputUpper": 524288,
+    "pricingSource": "https://www.minimax.io/blog/minimax-m31f"
+  },
+  "startedUtc": "2026-11-18T23:17:34.586Z",
+  "settings": {
+    "typeSafeByokSaved": true,
+    "miniMaxByokSaved": true,
+    "personalAccount": false,
+    "selectedBuiltinTutor": "MiniMax-M3.1-Flash",
+    "displayedTutor": "Change model. Current model: MiniMax M3.1 Flash",
+    "api": "openai-completions"
+  },
+  "dispatched": [
+    {
+      "provider": "typesafe",
+      "stage": "planning",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.003,
+      "startedAt": 1795043863245,
+      "finishedAt": 1795043863428,
+      "http": 403,
+      "reportedModel": null,
+      "usage": null,
+      "status": "response",
+      "providerFailureCode": null
+    }
+  ],
+  "intercepted": {
+    "foreign-origin": 5,
+    "other-background": 23,
+    "unrelated-api": 15,
+    "unrelated-tutor": 2
+  },
+  "status": "no-terminal-pair-row",
+  "verifiedWorstCaseUsd": 1.8822912,
+  "release": {
+    "sha": "261d27c9a615459911779694872dd8947479ee0c",
+    "verifiedChatAssetSha256": "1e669fac7a9fe80b896a93e50ca05f9498c9a2abbe2053ea6a0ea84b2f4f35b0"
+  },
+  "progress": "learner-turn",
+  "initialPairTurns": 0,
+  "submittedAt": 1795043861102,
+  "interceptedTutorShapes": [
+    {
+      "reason": "unrelated-tutor",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "slotMarker": null,
+      "maxOutput": 800,
+      "userCount": 1,
+      "containsRegisteredPrompt": true,
+      "sessionTitle": false,
+      "auxiliaryWebSearch": false
+    }
+  ],
+  "partialPairs": {
+    "rows": [],
+    "comparedPairs": 0,
+    "matchingTurns": 0
+  },
+  "withheld": {
+    "rows": [],
+    "matchingTurns": 0
+  },
+  "publicNotice": "Couldn't produce a reply\nTry again\nReload Keating\nIf this keeps happening, reload the page or start a new conversation.",
+  "finishedUtc": "2026-11-18T23:20:56.362Z",
+  "verification": {
+    "count": 1,
+    "knownUsageCount": 0,
+    "checkedAttempts": 0,
+    "fourCandidateHttpOverlapMs": null,
+    "twoReviewHttpOverlapMs": null,
+    "pairCounts": null,
+    "tutorReturnedIdentities": [],
+    "verifiedTutorIdentities": 0,
+    "policyMatches": false,
+    "learnerElapsedMs": null
+  },
+  "isolatedContextClosed": true,
+  "additionalBoundUsd": 0.003,
+  "cumulativeBoundUsd": 3.790884632,
+  "invoiceUsd": null
+}
