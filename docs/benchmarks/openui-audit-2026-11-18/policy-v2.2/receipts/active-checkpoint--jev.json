@@ -1,0 +1,93 @@
+{
+  "id": "active-checkpoint--jev",
+  "caseId": "active-checkpoint",
+  "provider": "jev",
+  "decisionModel": "jev-1.14.0",
+  "kind": "fixed",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "3c084a8de61fb1c395a000dca792c3a10bf67ec5d02a0ab3be319bc0b52c3dfc",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "errorCode": null
+    },
+    {
+      "phase": "review",
+      "requestSha256": "a2956c7dd84efce93a3024e8cc4a3790ace307bebbfd4a79dd9d68a9f1f0730f",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "none",
+    "offered": [],
+    "reason": "no-supported-family",
+    "directives": [
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond."
+    ]
+  },
+  "drafts": [
+    {
+      "label": "active-checkpoint--jev/tutor/1",
+      "kind": "fixed",
+      "systemSha256": "bd672b4a1184e7c59d34c3012956f3b097b9f933f1c446c9f327326ab1f488ce",
+      "text": "63.",
+      "attempted": false,
+      "components": [],
+      "outsideWords": 1,
+      "guidanceDelivered": true,
+      "tools": [],
+      "stop": "stop"
+    }
+  ],
+  "status": "withheld",
+  "public": null,
+  "notice": "withheld",
+  "selectedAttempt": null,
+  "findings": [
+    {
+      "attempt": 1,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "instruction_override",
+          "status": "unknown",
+          "probability": 0.52
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "unknown",
+          "probability": 0.41
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "probability": 0.86
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "fail",
+          "probability": 0.62
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "fail",
+          "probability": 0.71
+        },
+        {
+          "id": "quality_progress",
+          "status": "unknown",
+          "probability": 0.61
+        },
+        {
+          "id": "quality_scope",
+          "status": "unknown",
+          "probability": 0.76
+        }
+      ]
+    }
+  ]
+}

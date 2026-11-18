@@ -1,0 +1,326 @@
+{
+  "id": "MiniMax-M2.7-highspeed--choice",
+  "scenario": "choice",
+  "model": "MiniMax-M2.7-highspeed",
+  "startedAt": "2026-11-18T12:57:13.863Z",
+  "judge": [
+    {
+      "phase": "plan",
+      "hash": "006d62a7cf5d9e2d83cdb98c4120343f707a71149c2207bcf52c4a02b29da8cc",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 3515,
+        "outputTokens": 675
+      },
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.96
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.79
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 0.99
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.19
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.17
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.13
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.19
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.54
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.18
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.07
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.19
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.07
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 0.14,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.88,
+            "1": 0.11,
+            "2": 0.01,
+            "3": 0
+          },
+          "confidence": 0.87
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.06,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.95,
+            "1": 0.03,
+            "2": 0.02,
+            "3": 0
+          },
+          "confidence": 0.93
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 0.7,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.67,
+            "1": 0.03,
+            "2": 0.21,
+            "3": 0.09
+          },
+          "confidence": 0.28
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "concise",
+          "probabilities": {
+            "concise": 0.98,
+            "supported": 0.02,
+            "deep": 0
+          },
+          "confidence": 0.97
+        }
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "768906e82e83d3bcccbd49397e2b6d4be360f4a36fa0e7efcfca2a4ad39a4ec0",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 7267,
+        "outputTokens": 896
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "6315d9c546ea8b15adf1560c70e4f06d9eb9394ce1fde9a748a48255f91638bb",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5893,
+        "outputTokens": 896
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha": "5747af59b5cafd3fe9ad45e07c9c3c8f7a6ae505880e8ac757d10931f7e7222a",
+      "messagesSha": "537cbcf36c783c6b428fa357b71aa5eef6901c57c18af146f79907a9830245a7",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "",
+        "toolNames": [
+          "interactive_page"
+        ],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "toolUse",
+        "errorClass": null,
+        "usage": {
+          "input": 18071,
+          "output": 1668,
+          "cacheRead": 513,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 2,
+      "systemSha": "5747af59b5cafd3fe9ad45e07c9c3c8f7a6ae505880e8ac757d10931f7e7222a",
+      "messagesSha": "2aca6c5eebe4b014c3bf77c3dece176fa91aa1cb0797bbc8c9fa90078a3f83d6",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "Two solid paths, both about buying well:\n\n- **Estimating a shopping total** — build a mental total from a basket, round it out, then check against the receipt.\n- **Comparing unit prices** — work out the real cost per unit so you can rank products that don't compare directly on sticker price.\n\nSince you want to pick, here's the choice:\n\n```openui lifecycle=ephemeral id=shopping-math-path\n\nroot = LearningSurface([pathChoice], \"Choose your practice path\", \"Each path gets its own focused drill. You can switch later.\", \"ephemeral\")\npathChoice = Question([\n  { header: \"Pick one\", question: \"Which do you want to work on first: estimating a shopping total, or comparing unit prices?\", type: \"choice\", choices: [\"Estimating a shopping total — add up a basket fast, round it, then reconcile with the receipt\", \"Comparing unit prices — find the cost per unit and rank options that aren't directly comparable\"], allowText: true, hint: \"If you like quick mental arithmetic, take the total. If you like catching tricks, take unit price.\" }\n], \"ephemeral\", \"Shopping math\", \"One answer, and I'll set the drill up to match.\")\n```",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 18482,
+          "output": 542,
+          "cacheRead": 128,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "counterfactual": null,
+  "decision": {
+    "action": "none",
+    "families": [],
+    "features": [],
+    "paired": false
+  },
+  "offer": null,
+  "phase": "released",
+  "selection": 2,
+  "reason": "best-effort-draft",
+  "release": {
+    "text": "Two solid paths, both about buying well:\n\n- **Estimating a shopping total** — build a mental total from a basket, round it out, then check against the receipt.\n- **Comparing unit prices** — work out the real cost per unit so you can rank products that don't compare directly on sticker price.\n\nSince you want to pick, here's the choice:\n\n```openui lifecycle=ephemeral id=shopping-math-path\n\nroot = LearningSurface([pathChoice], \"Choose your practice path\", \"Each path gets its own focused drill. You can switch later.\", \"ephemeral\")\npathChoice = Question([\n  { header: \"Pick one\", question: \"Which do you want to work on first: estimating a shopping total, or comparing unit prices?\", type: \"choice\", choices: [\"Estimating a shopping total — add up a basket fast, round it, then reconcile with the receipt\", \"Comparing unit prices — find the cost per unit and rank options that aren't directly comparable\"], allowText: true, hint: \"If you like quick mental arithmetic, take the total. If you like catching tricks, take unit price.\" }\n], \"ephemeral\", \"Shopping math\", \"One answer, and I'll set the drill up to match.\")\n```",
+    "unverified": true
+  },
+  "publicText": "<!--keating:review=unverified-->\nTwo solid paths, both about buying well:\n\n- **Estimating a shopping total** — build a mental total from a basket, round it out, then check against the receipt.\n- **Comparing unit prices** — work out the real cost per unit so you can rank products that don't compare directly on sticker price.\n\nSince you want to pick, here's the choice:\n\n```openui lifecycle=ephemeral id=shopping-math-path\n\nroot = LearningSurface([pathChoice], \"Choose your practice path\", \"Each path gets its own focused drill. You can switch later.\", \"ephemeral\")\npathChoice = Question([\n  { header: \"Pick one\", question: \"Which do you want to work on first: estimating a shopping total, or comparing unit prices?\", type: \"choice\", choices: [\"Estimating a shopping total — add up a basket fast, round it, then reconcile with the receipt\", \"Comparing unit prices — find the cost per unit and rank options that aren't directly comparable\"], allowText: true, hint: \"If you like quick mental arithmetic, take the total. If you like catching tricks, take unit price.\" }\n], \"ephemeral\", \"Shopping math\", \"One answer, and I'll set the drill up to match.\")\n```",
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "unknown",
+      "checks": [
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "unknown",
+          "probability": 0.45
+        },
+        {
+          "id": "quality_progress",
+          "status": "unknown",
+          "probability": 0.53
+        },
+        {
+          "id": "quality_scope",
+          "status": "unknown",
+          "probability": 0.75
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "checkpoint_repeated",
+          "status": "fail",
+          "probability": 0.82
+        }
+      ]
+    }
+  ],
+  "directives": [
+    "- Provide one requested OpenUI practice activity now, without requiring a lesson first or attaching a study plan.",
+    "- A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+    "- Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+    "- Choose one useful next learning step based on demonstrated understanding, then let the learner respond."
+  ],
+  "finishedAt": "2026-11-18T12:57:29.462Z"
+}

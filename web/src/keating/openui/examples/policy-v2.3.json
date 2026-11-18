@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "turns": [
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.3/filling-line--jev",
+      "turnId": "filling-line--jev",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "decisionModel": "jev-1.14.0",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "released",
+      "attempted": true,
+      "compiled": [
+        "simulation"
+      ],
+      "selected": [
+        "simulation"
+      ],
+      "rendered": null,
+      "outsideWords": 57,
+      "editableCode": [],
+      "editorOutsideWords": null,
+      "nativePageRequested": false,
+      "guidance": {
+        "source": "jev",
+        "action": "create",
+        "targets": [
+          "simulation"
+        ],
+        "delivered": true
+      },
+      "draftAttempts": 1,
+      "gateIssues": [
+        "checkpoint_repeated"
+      ],
+      "fit": {
+        "source": "policy-v2.3-case-rubric",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.3/filling-line--google",
+      "turnId": "filling-line--google",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "decisionModel": "gemini-decision-1",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "error",
+      "attempted": null,
+      "compiled": null,
+      "selected": null,
+      "rendered": null,
+      "outsideWords": null,
+      "editableCode": null,
+      "editorOutsideWords": null,
+      "nativePageRequested": null,
+      "guidance": {
+        "source": "other",
+        "action": "create",
+        "targets": [
+          "concept-map",
+          "simulation"
+        ],
+        "delivered": null
+      },
+      "draftAttempts": 1,
+      "gateIssues": [],
+      "fit": {
+        "source": "policy-v2.3-case-rubric",
+        "passed": null
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.3/python-practice--jev",
+      "turnId": "python-practice--jev",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "decisionModel": "jev-1.14.0",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "editable-code"
+        ],
+        "codeLanguage": "python"
+      },
+      "reply": "released",
+      "attempted": true,
+      "compiled": [],
+      "selected": [],
+      "rendered": null,
+      "outsideWords": 24,
+      "editableCode": [
+        "python"
+      ],
+      "editorOutsideWords": 10,
+      "nativePageRequested": false,
+      "guidance": {
+        "source": "jev",
+        "action": "none",
+        "targets": [],
+        "delivered": true,
+        "reason": "no-supported-family"
+      },
+      "draftAttempts": 2,
+      "gateIssues": [
+        "activity_without_plan",
+        "checkpoint_last_node",
+        "checkpoint_repeated",
+        "one_activity",
+        "one_checkpoint",
+        "openui_valid",
+        "stop_after_checkpoint"
+      ],
+      "fit": {
+        "source": "policy-v2.3-case-rubric",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.3/python-practice--google",
+      "turnId": "python-practice--google",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "decisionModel": "gemini-decision-1",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "editable-code"
+        ],
+        "codeLanguage": "python"
+      },
+      "reply": "released",
+      "attempted": false,
+      "compiled": [],
+      "selected": [],
+      "rendered": null,
+      "outsideWords": 26,
+      "editableCode": [
+        "python"
+      ],
+      "editorOutsideWords": 0,
+      "nativePageRequested": false,
+      "guidance": {
+        "source": "other",
+        "action": "create",
+        "targets": [
+          "question"
+        ],
+        "delivered": true,
+        "codeLanguage": "python"
+      },
+      "draftAttempts": 2,
+      "gateIssues": [
+        "checkpoint_not_interactive",
+        "feedback_invented"
+      ],
+      "fit": {
+        "source": "policy-v2.3-case-rubric",
+        "passed": true
+      }
+    }
+  ]
+}

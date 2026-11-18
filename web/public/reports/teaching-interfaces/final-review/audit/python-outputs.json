@@ -1,0 +1,79 @@
+[
+  {
+    "arm": "google",
+    "attempt": 1,
+    "codeSha256": "dc184be2b50deabbd077833fd3b225ace90b2fbd7b9f9c571772cea7ff1641ac",
+    "supplied": [
+      5,
+      4,
+      9
+    ],
+    "expected": [
+      5,
+      9
+    ],
+    "actual": [
+      5
+    ],
+    "showsFault": true,
+    "originallySelected": true
+  },
+  {
+    "arm": "jev",
+    "attempt": 1,
+    "codeSha256": "bb28a629ca1ebc4ec48a674df573d7b44376a8511a9c3b76a0532f441f742677",
+    "supplied": [
+      5,
+      4,
+      9
+    ],
+    "expected": [
+      5,
+      9
+    ],
+    "actual": [
+      9
+    ],
+    "showsFault": true,
+    "originallySelected": false
+  },
+  {
+    "arm": "jev",
+    "attempt": 2,
+    "codeSha256": "b41153e3688dbc940d70f65cc4018d6fee6dec9ffb9e2a2b9c271c9852a630f0",
+    "supplied": [
+      5,
+      4,
+      9
+    ],
+    "expected": [
+      5,
+      9
+    ],
+    "actual": [
+      4
+    ],
+    "showsFault": true,
+    "originallySelected": false
+  },
+  {
+    "arm": "jev",
+    "attempt": 3,
+    "codeSha256": "0eb2bad6556580975e14c846bb7c0773a840d896f945edf6227682d6a3018039",
+    "supplied": [
+      5,
+      4,
+      9
+    ],
+    "expected": [
+      5,
+      9
+    ],
+    "actual": [
+      5,
+      9
+    ],
+    "showsFault": false,
+    "originallySelected": false
+  }
+]

@@ -1,0 +1,269 @@
+{
+  "study": "Blind Jev review of archived candidates under Keating teaching policy v2",
+  "dateUtc": "2026-11-18",
+  "policy": "keating-teaching-policy/v2",
+  "modelIds": [
+    "jev-1.14.0"
+  ],
+  "manifestSha256": "c90603983befcfd629331c18f2c03175766560e73bcdfe76d94cc9dd0831bf77",
+  "calls": 15,
+  "tutorCalls": 0,
+  "reviews": {
+    "structurallyAdmissible": 9,
+    "verifiedReleasesInReplay": 1,
+    "withheld": 8,
+    "distinctHistoricalTurns": 6,
+    "turnsWithAnApprovedCandidate": 1,
+    "primaryAccepted": 1,
+    "primaryReviewed": 5,
+    "repeatAccepted": 0,
+    "repeatReviewed": 4,
+    "details": [
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction/1",
+        "gate": "withheld",
+        "leakProbability": 0.13,
+        "blocking": [
+          {
+            "id": "checkpoint_repeated",
+            "status": "unknown",
+            "probability": 0.48
+          }
+        ]
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction/2",
+        "gate": "released",
+        "leakProbability": 0.37,
+        "blocking": []
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--order/2",
+        "gate": "withheld",
+        "leakProbability": 0.51,
+        "blocking": [
+          {
+            "id": "checkpoint_answer_leaked",
+            "status": "unknown",
+            "probability": 0.51
+          },
+          {
+            "id": "checkpoint_repeated",
+            "status": "unknown",
+            "probability": 0.51
+          }
+        ]
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--recall/2",
+        "gate": "withheld",
+        "leakProbability": 0.28,
+        "blocking": [
+          {
+            "id": "checkpoint_repeated",
+            "status": "fail",
+            "probability": 0.64
+          }
+        ]
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--code/2",
+        "gate": "withheld",
+        "leakProbability": 0.74,
+        "blocking": [
+          {
+            "id": "checkpoint_answer_leaked",
+            "status": "fail",
+            "probability": 0.74
+          },
+          {
+            "id": "checkpoint_repeated",
+            "status": "unknown",
+            "probability": 0.44
+          }
+        ]
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction--repeat-1/1",
+        "gate": "withheld",
+        "leakProbability": 0.22,
+        "blocking": [
+          {
+            "id": "checkpoint_repeated",
+            "status": "unknown",
+            "probability": 0.44
+          }
+        ]
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction--repeat-1/2",
+        "gate": "withheld",
+        "leakProbability": 0.11,
+        "blocking": [
+          {
+            "id": "checkpoint_repeated",
+            "status": "unknown",
+            "probability": 0.44
+          }
+        ]
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction--repeat-3/1",
+        "gate": "withheld",
+        "leakProbability": 0.31,
+        "blocking": [
+          {
+            "id": "checkpoint_repeated",
+            "status": "unknown",
+            "probability": 0.42
+          }
+        ]
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction--repeat-3/2",
+        "gate": "withheld",
+        "leakProbability": 0.27,
+        "blocking": [
+          {
+            "id": "checkpoint_repeated",
+            "status": "unknown",
+            "probability": 0.49
+          }
+        ]
+      }
+    ]
+  },
+  "planning": {
+    "matches": 5,
+    "cases": 6,
+    "requestedActivitiesOffered": 4,
+    "activityCases": 4,
+    "noOfferOnTextControls": 1,
+    "textControls": 2,
+    "allExpectedSignalsMatched": 4,
+    "definition": "A positive match includes the expected component among the offers. A text control requires no offer. No tutor received these offers.",
+    "details": [
+      {
+        "id": "openui-question-two-viable",
+        "target": "Question",
+        "offered": [
+          "Question",
+          "Simulation",
+          "ConceptMap"
+        ],
+        "match": true,
+        "signalMatches": {
+          "learner_response_due": false
+        },
+        "probabilities": {
+          "plain_reply_requested": 0.05,
+          "learner_response_due": 0.38,
+          "hands_on_requested": 0.28
+        }
+      },
+      {
+        "id": "openui-simulation-break-even",
+        "target": "Simulation",
+        "offered": [
+          "Simulation",
+          "ConceptMap"
+        ],
+        "match": true,
+        "signalMatches": {
+          "hands_on_requested": true,
+          "variable_relationship": true
+        },
+        "probabilities": {
+          "plain_reply_requested": 0.07,
+          "learner_response_due": 0.04,
+          "hands_on_requested": 0.9,
+          "variable_relationship": 0.99
+        }
+      },
+      {
+        "id": "interaction-mitosis-order",
+        "target": "Question",
+        "offered": [
+          "Question"
+        ],
+        "match": true,
+        "signalMatches": {
+          "ordered_procedure": true
+        },
+        "probabilities": {
+          "plain_reply_requested": 0.39,
+          "learner_response_due": 0.03,
+          "hands_on_requested": 0.07,
+          "ordered_procedure": 0.98
+        }
+      },
+      {
+        "id": "interaction-moonrise",
+        "target": "Fieldwork",
+        "offered": [
+          "Simulation",
+          "ConceptMap",
+          "Fieldwork"
+        ],
+        "match": true,
+        "signalMatches": {
+          "hands_on_requested": true,
+          "outside_observation": true
+        },
+        "probabilities": {
+          "plain_reply_requested": 0.44,
+          "learner_response_due": 0.03,
+          "hands_on_requested": 0.69,
+          "outside_observation": 0.89
+        }
+      },
+      {
+        "id": "direct-derivative-help",
+        "target": null,
+        "offered": [],
+        "match": true,
+        "signalMatches": {
+          "plain_reply_requested": true,
+          "hands_on_requested": true,
+          "learner_response_due": true
+        },
+        "probabilities": {
+          "plain_reply_requested": 0.95,
+          "learner_response_due": 0.03,
+          "hands_on_requested": 0.03
+        }
+      },
+      {
+        "id": "worked-equation-negative",
+        "target": null,
+        "offered": [
+          "Question"
+        ],
+        "match": false,
+        "signalMatches": {
+          "plain_reply_requested": false,
+          "hands_on_requested": true,
+          "learner_response_due": true
+        },
+        "probabilities": {
+          "plain_reply_requested": 0.41,
+          "learner_response_due": 0.04,
+          "hands_on_requested": 0.08
+        }
+      }
+    ]
+  },
+  "accounting": {
+    "providerInputTokens": 76797,
+    "providerOutputTokens": 12345,
+    "missingUsageCalls": 0,
+    "followupListPriceUsd": 0.003225474,
+    "followupLimitUsd": 0.25,
+    "priorAccountedUsd": 0.8314054280000001,
+    "cumulativeAccountedUsd": 0.834630902,
+    "studyLimitUsd": 2,
+    "priceSource": "https://docs.typesafe.ai/models",
+    "amountBasis": "Provider-reported input tokens times published list price; output is free. Earlier study accounting includes reservations on unknown usage."
+  },
+  "scope": "The nine inputs span six historical turns and were selected because each previously failed the suffix rule. They are not independent draws from production. The gate used frozen planning answers and fresh blind semantic reviews of the actual trimmed text. The six selected planning probes predate this change. No tutor generated a new response, and no learner saw these replays."
+}

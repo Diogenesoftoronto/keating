@@ -1,0 +1,21 @@
+{
+  "id": "classroom-tile-confirm--minimax--jev",
+  "policy": "keating-teaching-policy/v2.3.7",
+  "kind": "single-live-browser-continuation",
+  "learner": "My guess is round, because three of the four tiles are round.",
+  "parentReceipt": "../supplement/prediction/receipts/tile-bag--minimax--jev.json",
+  "parentReceiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+  "priorSummary": "../feedback-v2.3.6/summary.json",
+  "priorSummarySha256": "e0c4bf7c2ada24962011d8f96792841ba3d24c6cc2bcc0ade71b07016636be6c",
+  "priorLedgerSha256": "69326a1e1a6dc073706f90edd6008a8cd07b370d1374b6c35bedb5312503354f",
+  "priorBoundUsd": 2.726584462,
+  "phaseMaximumAdditionalUsd": 0.60,
+  "globalCapUsd": 10,
+  "tutor": "MiniMax-M2.7-highspeed",
+  "decision": "jev-1.14.0",
+  "maxDrafts": 3,
+  "maxOutputTokens": 3072,
+  "temperature": 0,
+  "method": "In one fresh local classroom, submit the original first learner prompt and mount its untouched, previously authored public Question using recorded transport only. Type the authentic learner confirmation in the ordinary composer without choosing or submitting a formal Question answer. Exactly one fresh ordinary guided turn can use the single-owner loopback bridge. Before the first provider POST, require the normal projected decision state to show the actual previously published assistant question, exactly one matching open question-group node guess in awaiting status and no pending submission. Journal physical requests under the common cross-phase budget lock. No second tutor turn, provider fallback, parental rerun or ambiguous retry.",
+  "expected": "The true classroom learner should see a mathematically correct acknowledgement of the 3:1 tile mix. Record whether it is concise direct feedback, whether a new checkpoint or native proposal is offered, whether grading was wrongly advertised or proposed, the terminal review and evidence of genuine visible rendering. The grade must not be invented. A withheld or failed reply stays in the one scheduled denominator. Retain separate browser and actual provider evidence."
+}

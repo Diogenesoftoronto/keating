@@ -146,13 +146,124 @@ describe("ordinary teaching draft release", () => {
     expect(result.receipt.reason).toBe("best-effort-draft");
   });
 
-  test("semantic checkpoint concerns remain recorded in best effort", async () => {
+  test("a confirmed checkpoint leak cannot be released through best effort", async () => {
     const confirmed = await runTeachingDrafts({ turn, maxAttempts: 1, judge: judge(() => ({ checkpoint_answer_leaked: .95 })), generate });
-    expect(confirmed.status).toBe("released");
+    expect(confirmed.status).toBe("withheld");
     const assessed = await runTeachingDrafts({ turn: { ...turn, assessment: "assessed" }, maxAttempts: 1,
       judge: judge(() => ({ checkpoint_answer_leaked: .4 })), generate });
     expect(assessed.status).toBe("released");
     expect(assessed.receipt.attempts[0]!.checks.find(check => check.id === "checkpoint_answer_leaked")?.severity).toBe("critical");
+  });
+
+  describe("recovery before checkpoint review", () => {
+    const checkpoint = 'Try the next case.\n\n```openui lifecycle=ephemeral id=example\n'
+      + 'root = LearningSurface([q], "Choose a path", "", "ephemeral")\n'
+      + 'q = Question([{header: "Next topic", question: "Which path would you like?", type: "choice", choices: ["Poetry", "Essays"]}], "ephemeral")\n```';
+    const raw = checkpoint + "\n\nTake your pick and tell me why.";
+    const candidate = async () => ({ reply: { text: raw, toolCalls: [] }, value: { providerId: "fixture" } });
+
+    test.each([true, false])("the tutor gets one repair for a requested learner response left in prose; repair valid %s", async validRepair => {
+      const text = "Which learning path would you like to choose?";
+      const feedback: string[][] = [];
+      const result = await runTeachingDrafts({ turn, maxAttempts: 5, judge: judge(request => {
+        const state = request.state as { reply?: { text: string } };
+        return { learning_task: .99, learner_response_due: .95, checkpoint_not_interactive: state.reply?.text === text ? .97 : .01,
+          draft_choice: "draft_2" };
+      }), generate: async input => {
+        feedback.push(input.feedback.map(x => x.id));
+        return { reply: { text: input.attempt === 1 ? text : validRepair ? checkpoint : "```openui\ninvalid", toolCalls: [] }, value: input.attempt };
+      } });
+      expect(feedback).toEqual([[], ["checkpoint_not_interactive"]]);
+      expect(result).toMatchObject({ status: "released", reply: { text: validRepair ? checkpoint : text }, value: validRepair ? 2 : 1 });
+    });
+
+    test.each(["plain", "no learner response", "tool", "useful prose"])("a recommendation alone does not spend a repair: %s", async mode => {
+      const calls = mode === "tool" ? [{ name: "read", arguments: {} }] : [];
+      const result = await runTeachingDrafts({ turn: { ...turn, availableTools: ["read"] }, judge: judge(() => ({
+        learning_task: .99, prediction_opportunity: .95, learner_response_due: mode === "no learner response" ? .01 : .95,
+        plain_reply_requested: mode === "plain" ? .99 : .01, checkpoint_not_interactive: mode === "useful prose" ? .01 : .97,
+      })), generate: async () => ({ reply: { text: calls.length ? "" : "A concise answer.", toolCalls: calls }, value: 1 }) });
+      expect(result.receipt.attempts).toHaveLength(1);
+      expect(result).toMatchObject({ status: "released", value: 1 });
+    });
+
+    test("an existing checkpoint is kept when only the prose-question reviewer disagrees", async () => {
+      const result = await runTeachingDrafts({ turn, judge: judge(() => ({
+        learning_task: .99, learner_response_due: .95, checkpoint_not_interactive: .97,
+      })), generate: async () => ({ reply: { text: checkpoint, toolCalls: [] }, value: 1 }) });
+      expect(result.receipt.attempts).toHaveLength(1);
+      expect(result.reply?.text).toBe(checkpoint);
+    });
+
+    test("a terminal checkpoint also needs an answered leak check in a narrowed review", async () => {
+      const result = await runTeachingDrafts({ turn, maxAttempts: 1, ruleIds: [],
+        judge: judge(() => ({ checkpoint_answer_leaked: .5 })), generate: async () => ({ reply: { text: checkpoint, toolCalls: [] }, value: 1 }) });
+      expect(result.status).toBe("withheld");
+      expect(result.receipt.attempts[0]?.trimmedCheckpointSuffix).toBeUndefined();
+      expect(result.receipt.attempts[0]?.checks.find(check => check.id === "checkpoint_answer_leaked")?.status).toBe("unknown");
+    });
+
+    test.each([["ordinary", .49, "released"], ["extended", .49, "withheld"], ["ordinary", .64, "withheld"]] as const)(
+      "%s gate handles repetition probability %s on a repaired checkpoint", async (refinement, checkpoint_repeated, status) => {
+        const result = await runTeachingDrafts({ turn, maxAttempts: 1, refinement, judge: judge(() => ({ checkpoint_repeated })), generate: candidate });
+        expect(result.status).toBe(status);
+        expect(result.receipt.attempts[0]?.checks.find(c => c.id === "checkpoint_repeated")?.probability).toBe(checkpoint_repeated);
+      });
+
+    test("a failed mandatory review cannot publish an intact checkpoint through best effort", async () => {
+      for (const scores of [{ checkpoint_repeated: .71 }, { checkpoint_continued: .5 }, { tool_success_invented: .9 }]) {
+        const result = await runTeachingDrafts({ turn, maxAttempts: 1, judge: judge(() => scores),
+          generate: async () => ({ reply: { text: checkpoint, toolCalls: [] }, value: 1 }) });
+        expect(result.status).toBe("withheld");
+      }
+    });
+
+    test("an ordinary selector can consider uncertain repetition when comparing otherwise useful approved replies", async () => {
+      let selector = "";
+      const result = await runTeachingDrafts({ turn, maxAttempts: 2, collectAllAttempts: true,
+        generate: async input => ({ reply: { text: checkpoint.replace("Try the next case.", "Option " + input.attempt), toolCalls: [] }, value: 1 }),
+        judge: judge(req => { if (req.questions.draft_choice) selector = JSON.stringify(req.questions.draft_choice); return { checkpoint_repeated: .48 }; }) });
+      expect(result.status).toBe("released");
+      expect(selector).toContain("surrounding introduction");
+    });
+
+    test("semantic review, host validation and publication see the same trimmed response; inspection still sees raw output", async () => {
+      const reviewed: string[] = [], validated: string[] = [], generated: string[] = [];
+      const result = await runTeachingDrafts({ turn, maxAttempts: 1, ruleIds: [], generate: async input => {
+        expect(input.variant).toBe("default");
+        return candidate();
+      },
+      onDraftContent: entry => { generated.push(entry.text); },
+      judge: judge(req => {
+        const state = req.state as { reply?: { text: string } };
+        if (state.reply) {
+          reviewed.push(state.reply.text);
+          expect(req.questions.checkpoint_answer_leaked).toBeDefined();
+          expect(req.questions.tool_success_invented).toBeDefined();
+        }
+        return {};
+      }), check: reply => { validated.push(reply.text); return []; } });
+      expect(generated).toEqual([raw]);
+      expect(reviewed).toEqual([checkpoint]);
+      expect(validated).toEqual([checkpoint]);
+      expect(result).toMatchObject({ status: "released", reply: { text: checkpoint, toolCalls: [] }, value: { providerId: "fixture" } });
+      expect(result.receipt).toMatchObject({ selectedAttempt: 1, attempts: [{ trimmedCheckpointSuffix: true, status: "pass" }] });
+      expect(JSON.stringify(result.receipt)).not.toContain("Poetry");
+    });
+
+    test.each(["answer-leak", "unknown-leak", "host", "unsupported-claim", "unreviewed"])("a repaired candidate cannot bypass %s through best effort", async mode => {
+      const base = judge(() => ({ checkpoint_answer_leaked: mode === "answer-leak" ? .95 : mode === "unknown-leak" ? .48 : .01,
+        tool_success_invented: mode === "unsupported-claim" ? .95 : .01 }));
+      const result = await runTeachingDrafts({ turn, maxAttempts: 1, generate: candidate,
+        judge: async (req, signal) => mode === "unreviewed" && req.questions.quality_progress
+          ? { ok: false, error: { code: "backend-unavailable", retryable: false } } : base(req, signal),
+        check: () => mode === "host" ? [{ id: "host-evidence", source: "deterministic", severity: "critical", status: "fail", probability: 1 }] : [],
+      });
+      expect(result.status).toBe("withheld");
+      expect(result.reply).toBeUndefined();
+      expect(result.receipt.selectedAttempt).toBeNull();
+      expect(result.receipt.attempts[0]?.trimmedCheckpointSuffix).toBe(true);
+    });
   });
 
   test("missing or malformed review releases structurally valid text without inventing a pass", async () => {

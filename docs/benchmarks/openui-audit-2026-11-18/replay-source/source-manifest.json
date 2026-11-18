@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "bundle": "policy-v2.1-sources.json.gz",
+  "bundleSha256": "800cf8ca8f4f0da11d4c13e6609e52f4a3e27c99d15823d0a373a46a699943ca",
+  "sourceSha256": {
+    "packages/learner-contracts/src/judgement/interaction-affordances.ts": "940b7f3895199e1c77f23e1ac08bf9b6b382d752217833b6cd78ade37f1a9c32",
+    "packages/learner-contracts/src/judgement/system-one.ts": "f21ee0359c5b927ac7bd257e3b72170b9112cdf49a7b4a766984c46c5234bd26",
+    "packages/learner-contracts/src/judgement/teaching-drafts.ts": "84e5a62708d0f0208f25a8465012965e68a2ebd9ca0398ae14e16ce715f45fd7",
+    "packages/learner-contracts/src/judgement/teaching-drafts/policy.ts": "0842b56d5e35603e7da5b9fc046df8d8ae6c945051fd279a570af472f925e3bc",
+    "packages/learner-contracts/src/judgement/teaching-drafts/session.ts": "1a8c9576d7e9e2a3ee09c17b8858d8ec21e70aabe07fdacd1332a0cf87f25ccc",
+    "packages/learner-contracts/src/judgement/teaching-policy-catalog.ts": "d435be7a0621d248a012ed3baf3976bc420cc2dbb62b49ae6faa0c10fe90fa32",
+    "packages/learner-contracts/src/judgement/teaching-policy-types.ts": "04448d1865ef64cd95ae98b1c9b5d23ff6b0d9a3e49bca3e33eea8593cc76db3",
+    "packages/learner-contracts/src/judgement/teaching-policy.ts": "af16a6495e8aa3d5d1ffed672665dc96d81f3a5fd753511411371bf434f12ae9",
+    "packages/learner-contracts/src/judgement/wire.ts": "bb4d5c48b73536067ec273d6c89721d8c7104a8b7b263471923d78a04b612774",
+    "packages/learner-contracts/src/openui-diagnostics.ts": "d3f69d9ee066c42770d21a3c89386b5662bb902f96c2d5a2961d6c6f98874e50",
+    "packages/learner-contracts/src/openui-source.ts": "6fa90d91030d47366824fa42edbba7eaf2caf14a2feefb0352caa6b52fc75656",
+    "packages/learner-contracts/src/ui.ts": "20ba95180972b8d35faf50af7bf4c57e70a8780ef20d0f1d9bcffa59d7289cfc",
+    "scripts/openui-diagnostics/gemini-decision.ts": "be060b862bca26549dc5e7783160069b97ee939a61e710229aee00145bce034c",
+    "web/src/keating/browser-tools/prompt.ts": "2f7d529404e9b2d8911ee2d65cfca0a9c0cdf148da069395dd192332586a28bf",
+    "web/src/keating/judgement/draft-gate.ts": "f1afd2e064f79576862557fb5be3fe7c476c1f728e7a5dc55ecf51124f77240b",
+    "web/src/keating/judgement/draft-status.ts": "40e45720a0329643dcc2e25308cea4ce4ade5be5f328dbd170046e4a99ceaaba",
+    "web/src/keating/openui/diagnostic-components.ts": "029103eacb24843ab1ccb24a611abb95167933127cbaa6ea7bf7b5251df8d34c",
+    "web/src/keating/openui/segments.ts": "4bb1bad47c0298f869ed127b886320ee4d40ec24bdb5d5d96db261fe2dfaa178",
+    "web/src/keating/openui/shared-bridge.ts": "ff8193ebe7813cb0d9bbde00c4a3cbcf69a25d87f9b6769832b37d86d81162cd",
+    "web/src/keating/openui/turn-diagnostics.ts": "6cac5c5f4568312878945836c10544e64ea52030c14389749f0580aeb431019d",
+    "web/src/keating/openui/turn-observer.ts": "e67d66ba4f407682d4f745b5dca24fdab338a23972c26a79824f6d9e7d70629d",
+    "web/src/keating/persona.ts": "20c0f04feacb6318fe50a4eea1996e3bca074f9c83e26fe11fdcb7345f02ba4c",
+    "web/src/keating/prompts/operational-protocol.md": "087f66d117234d4f8caacd740189a1e76889f7fb373a2071dedebd8a6eb352e5",
+    "web/src/keating/prompts/speech-system-prompt.md": "8763cec1732bbc808e81a68e76e9ed543c1c47c9edfd745b0c2bfec605133cf8"
+  },
+  "diagnostic": {
+    "path": "packages/learner-contracts/src/openui-diagnostic-turn.ts",
+    "source": "openui-diagnostic-turn.ts",
+    "sha256": "992ab5730cec0e1f78a6f380676e35147fc19d2ba9cf5f2a3d40d5ff04aeb700"
+  },
+  "storeCheckpoint": "2d63adcc2a570f93930b47f5e1ffea346fb20df1"
+}

@@ -1,0 +1,23 @@
+{
+  "id": "classroom-tile-linked-feedback--minimax--jev",
+  "policy": "keating-teaching-policy/v2.3.8",
+  "manifestSha256": "63ba92deaeec1aa25ab66cc9da3149dbf7a28661e51f26069513fbaca16b95a3",
+  "stageSha256": "c82bc39d8356f055ff5c84678983065b42f00f3ac473ee93bc8362c8373baa89",
+  "receipts": {
+    "classroom-tile-linked-feedback--minimax--jev": "9638349b2d44f32d4d6c0a876b772a8a25bb37bac4fa213935bfbb2bdacba413"
+  },
+  "scheduled": 1,
+  "stageVerified": true,
+  "disposition": "withheld",
+  "selectedAttempt": null,
+  "selectionRule": null,
+  "providerRequests": 7,
+  "metered": 7,
+  "unknownUsage": 0,
+  "previousBoundUsd": 2.74353571,
+  "newBoundUsd": 0.02966397,
+  "totalBoundUsd": 2.77319968,
+  "peakReservedUsd": 2.886560746,
+  "capUsd": 10,
+  "phaseLimitUsd": 0.6
+}

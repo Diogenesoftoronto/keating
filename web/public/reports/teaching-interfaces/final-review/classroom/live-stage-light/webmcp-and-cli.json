@@ -1,0 +1,2027 @@
+{
+  "schemaVersion": 1,
+  "overall": {
+    "turns": 1,
+    "attempted": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "compiled": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "selected": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "rendered": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "nativePageRequested": {
+      "numerator": 0,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 0
+    },
+    "nativePage": {
+      "succeeded": {
+        "numerator": 0,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 0
+      },
+      "failed": {
+        "numerator": 0,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 0
+      },
+      "attached": {
+        "numerator": 0,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 0
+      },
+      "saved": {
+        "numerator": 0,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 0
+      },
+      "mounted": {
+        "numerator": 0,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 0
+      },
+      "ready": {
+        "numerator": 0,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 0
+      },
+      "visible": {
+        "numerator": 0,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 0
+      },
+      "opened": {
+        "numerator": 0,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 0
+      },
+      "frameFailed": {
+        "numerator": 0,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 0
+      }
+    },
+    "learnerInterfaces": {
+      "selected": {
+        "any": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "fencedOnly": 1,
+        "nativeOnly": 0,
+        "both": 0,
+        "otherSourceUnknown": 0
+      },
+      "rendered": {
+        "any": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "fencedOnly": 1,
+        "nativeOnly": 0,
+        "both": 0,
+        "otherSourceUnknown": 0
+      }
+    },
+    "editableCode": {
+      "any": {
+        "numerator": 0,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 0
+      },
+      "outsideWords": {
+        "observed": 0,
+        "unknown": 0,
+        "median": null,
+        "p90": null
+      },
+      "languages": [
+        {
+          "language": "python",
+          "selected": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          }
+        },
+        {
+          "language": "javascript",
+          "selected": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          }
+        },
+        {
+          "language": "typescript",
+          "selected": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          }
+        }
+      ]
+    },
+    "learnerActionSelected": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "offeredCodeLanguageSelected": {
+      "numerator": 0,
+      "denominator": 0,
+      "unknown": 0,
+      "rate": null
+    },
+    "combinedOpportunitySelected": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "combinedOpportunityRendered": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "guidanceReasons": [],
+    "losses": {
+      "draftToSelection": {
+        "numerator": 0,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 0
+      },
+      "selectionToRender": {
+        "numerator": 0,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 0
+      }
+    },
+    "proseBesideInterface": {
+      "observed": 1,
+      "unknown": 0,
+      "median": 47,
+      "p90": 47
+    },
+    "replyElapsedMs": {
+      "observed": 1,
+      "unknown": 0,
+      "median": 24123,
+      "p90": 24123
+    },
+    "opportunityCompiled": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "opportunitySelected": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "opportunityRendered": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "directTextCompiled": {
+      "numerator": 0,
+      "denominator": 0,
+      "unknown": 0,
+      "rate": null
+    },
+    "directTextSelected": {
+      "numerator": 0,
+      "denominator": 0,
+      "unknown": 0,
+      "rate": null
+    },
+    "directTextRendered": {
+      "numerator": 0,
+      "denominator": 0,
+      "unknown": 0,
+      "rate": null
+    },
+    "offeredType": {
+      "compiled": {
+        "numerator": 1,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 1
+      },
+      "selected": {
+        "numerator": 1,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 1
+      },
+      "rendered": {
+        "numerator": 1,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 1
+      }
+    },
+    "jevGuidanceDelivered": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "jevCompiled": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "jevSelected": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "jevRendered": {
+      "numerator": 1,
+      "denominator": 1,
+      "unknown": 0,
+      "rate": 1
+    },
+    "fit": {
+      "numerator": 0,
+      "denominator": 0,
+      "unknown": 1,
+      "rate": null
+    },
+    "delays": {
+      "selected": {
+        "opportunities": 1,
+        "reminders": 0,
+        "firstResponse": 1,
+        "later": 0,
+        "unknown": 0,
+        "unresolved": 0,
+        "superseded": 0,
+        "byResponse": [
+          {
+            "responseNumber": 1,
+            "count": 1
+          }
+        ],
+        "medianResponseNumber": 1
+      },
+      "rendered": {
+        "opportunities": 1,
+        "reminders": 0,
+        "firstResponse": 1,
+        "later": 0,
+        "unknown": 0,
+        "unresolved": 0,
+        "superseded": 0,
+        "byResponse": [
+          {
+            "responseNumber": 1,
+            "count": 1
+          }
+        ],
+        "medianResponseNumber": 1
+      },
+      "combinedSelected": {
+        "opportunities": 1,
+        "reminders": 0,
+        "firstResponse": 1,
+        "later": 0,
+        "unknown": 0,
+        "unresolved": 0,
+        "superseded": 0,
+        "byResponse": [
+          {
+            "responseNumber": 1,
+            "count": 1
+          }
+        ],
+        "medianResponseNumber": 1
+      },
+      "combinedRendered": {
+        "opportunities": 1,
+        "reminders": 0,
+        "firstResponse": 1,
+        "later": 0,
+        "unknown": 0,
+        "unresolved": 0,
+        "superseded": 0,
+        "byResponse": [
+          {
+            "responseNumber": 1,
+            "count": 1
+          }
+        ],
+        "medianResponseNumber": 1
+      },
+      "learnerActionSelected": {
+        "opportunities": 1,
+        "reminders": 0,
+        "firstResponse": 1,
+        "later": 0,
+        "unknown": 0,
+        "unresolved": 0,
+        "superseded": 0,
+        "byResponse": [
+          {
+            "responseNumber": 1,
+            "count": 1
+          }
+        ],
+        "medianResponseNumber": 1
+      }
+    }
+  },
+  "byModel": [
+    {
+      "key": "minimax/MiniMax-M2.7-highspeed",
+      "metrics": {
+        "turns": 1,
+        "attempted": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "compiled": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "selected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "rendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "nativePageRequested": {
+          "numerator": 0,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 0
+        },
+        "nativePage": {
+          "succeeded": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "failed": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "attached": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "saved": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "mounted": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "ready": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "visible": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "opened": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "frameFailed": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          }
+        },
+        "learnerInterfaces": {
+          "selected": {
+            "any": {
+              "numerator": 1,
+              "denominator": 1,
+              "unknown": 0,
+              "rate": 1
+            },
+            "fencedOnly": 1,
+            "nativeOnly": 0,
+            "both": 0,
+            "otherSourceUnknown": 0
+          },
+          "rendered": {
+            "any": {
+              "numerator": 1,
+              "denominator": 1,
+              "unknown": 0,
+              "rate": 1
+            },
+            "fencedOnly": 1,
+            "nativeOnly": 0,
+            "both": 0,
+            "otherSourceUnknown": 0
+          }
+        },
+        "editableCode": {
+          "any": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "outsideWords": {
+            "observed": 0,
+            "unknown": 0,
+            "median": null,
+            "p90": null
+          },
+          "languages": [
+            {
+              "language": "python",
+              "selected": {
+                "numerator": 0,
+                "denominator": 1,
+                "unknown": 0,
+                "rate": 0
+              }
+            },
+            {
+              "language": "javascript",
+              "selected": {
+                "numerator": 0,
+                "denominator": 1,
+                "unknown": 0,
+                "rate": 0
+              }
+            },
+            {
+              "language": "typescript",
+              "selected": {
+                "numerator": 0,
+                "denominator": 1,
+                "unknown": 0,
+                "rate": 0
+              }
+            }
+          ]
+        },
+        "learnerActionSelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "offeredCodeLanguageSelected": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "combinedOpportunitySelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "combinedOpportunityRendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "guidanceReasons": [],
+        "losses": {
+          "draftToSelection": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "selectionToRender": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          }
+        },
+        "proseBesideInterface": {
+          "observed": 1,
+          "unknown": 0,
+          "median": 47,
+          "p90": 47
+        },
+        "replyElapsedMs": {
+          "observed": 1,
+          "unknown": 0,
+          "median": 24123,
+          "p90": 24123
+        },
+        "opportunityCompiled": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "opportunitySelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "opportunityRendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "directTextCompiled": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "directTextSelected": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "directTextRendered": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "offeredType": {
+          "compiled": {
+            "numerator": 1,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 1
+          },
+          "selected": {
+            "numerator": 1,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 1
+          },
+          "rendered": {
+            "numerator": 1,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 1
+          }
+        },
+        "jevGuidanceDelivered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "jevCompiled": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "jevSelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "jevRendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "fit": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 1,
+          "rate": null
+        },
+        "delays": {
+          "selected": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "rendered": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "combinedSelected": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "combinedRendered": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "learnerActionSelected": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          }
+        }
+      }
+    }
+  ],
+  "byDecisionModel": [
+    {
+      "key": "jev-1.14.0",
+      "metrics": {
+        "turns": 1,
+        "attempted": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "compiled": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "selected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "rendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "nativePageRequested": {
+          "numerator": 0,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 0
+        },
+        "nativePage": {
+          "succeeded": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "failed": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "attached": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "saved": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "mounted": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "ready": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "visible": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "opened": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "frameFailed": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          }
+        },
+        "learnerInterfaces": {
+          "selected": {
+            "any": {
+              "numerator": 1,
+              "denominator": 1,
+              "unknown": 0,
+              "rate": 1
+            },
+            "fencedOnly": 1,
+            "nativeOnly": 0,
+            "both": 0,
+            "otherSourceUnknown": 0
+          },
+          "rendered": {
+            "any": {
+              "numerator": 1,
+              "denominator": 1,
+              "unknown": 0,
+              "rate": 1
+            },
+            "fencedOnly": 1,
+            "nativeOnly": 0,
+            "both": 0,
+            "otherSourceUnknown": 0
+          }
+        },
+        "editableCode": {
+          "any": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "outsideWords": {
+            "observed": 0,
+            "unknown": 0,
+            "median": null,
+            "p90": null
+          },
+          "languages": [
+            {
+              "language": "python",
+              "selected": {
+                "numerator": 0,
+                "denominator": 1,
+                "unknown": 0,
+                "rate": 0
+              }
+            },
+            {
+              "language": "javascript",
+              "selected": {
+                "numerator": 0,
+                "denominator": 1,
+                "unknown": 0,
+                "rate": 0
+              }
+            },
+            {
+              "language": "typescript",
+              "selected": {
+                "numerator": 0,
+                "denominator": 1,
+                "unknown": 0,
+                "rate": 0
+              }
+            }
+          ]
+        },
+        "learnerActionSelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "offeredCodeLanguageSelected": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "combinedOpportunitySelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "combinedOpportunityRendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "guidanceReasons": [],
+        "losses": {
+          "draftToSelection": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "selectionToRender": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          }
+        },
+        "proseBesideInterface": {
+          "observed": 1,
+          "unknown": 0,
+          "median": 47,
+          "p90": 47
+        },
+        "replyElapsedMs": {
+          "observed": 1,
+          "unknown": 0,
+          "median": 24123,
+          "p90": 24123
+        },
+        "opportunityCompiled": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "opportunitySelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "opportunityRendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "directTextCompiled": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "directTextSelected": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "directTextRendered": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "offeredType": {
+          "compiled": {
+            "numerator": 1,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 1
+          },
+          "selected": {
+            "numerator": 1,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 1
+          },
+          "rendered": {
+            "numerator": 1,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 1
+          }
+        },
+        "jevGuidanceDelivered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "jevCompiled": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "jevSelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "jevRendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "fit": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 1,
+          "rate": null
+        },
+        "delays": {
+          "selected": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "rendered": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "combinedSelected": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "combinedRendered": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "learnerActionSelected": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          }
+        }
+      }
+    }
+  ],
+  "byMode": [
+    {
+      "key": "guided",
+      "metrics": {
+        "turns": 1,
+        "attempted": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "compiled": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "selected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "rendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "nativePageRequested": {
+          "numerator": 0,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 0
+        },
+        "nativePage": {
+          "succeeded": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "failed": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "attached": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "saved": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "mounted": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "ready": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "visible": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "opened": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "frameFailed": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          }
+        },
+        "learnerInterfaces": {
+          "selected": {
+            "any": {
+              "numerator": 1,
+              "denominator": 1,
+              "unknown": 0,
+              "rate": 1
+            },
+            "fencedOnly": 1,
+            "nativeOnly": 0,
+            "both": 0,
+            "otherSourceUnknown": 0
+          },
+          "rendered": {
+            "any": {
+              "numerator": 1,
+              "denominator": 1,
+              "unknown": 0,
+              "rate": 1
+            },
+            "fencedOnly": 1,
+            "nativeOnly": 0,
+            "both": 0,
+            "otherSourceUnknown": 0
+          }
+        },
+        "editableCode": {
+          "any": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "outsideWords": {
+            "observed": 0,
+            "unknown": 0,
+            "median": null,
+            "p90": null
+          },
+          "languages": [
+            {
+              "language": "python",
+              "selected": {
+                "numerator": 0,
+                "denominator": 1,
+                "unknown": 0,
+                "rate": 0
+              }
+            },
+            {
+              "language": "javascript",
+              "selected": {
+                "numerator": 0,
+                "denominator": 1,
+                "unknown": 0,
+                "rate": 0
+              }
+            },
+            {
+              "language": "typescript",
+              "selected": {
+                "numerator": 0,
+                "denominator": 1,
+                "unknown": 0,
+                "rate": 0
+              }
+            }
+          ]
+        },
+        "learnerActionSelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "offeredCodeLanguageSelected": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "combinedOpportunitySelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "combinedOpportunityRendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "guidanceReasons": [],
+        "losses": {
+          "draftToSelection": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "selectionToRender": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          }
+        },
+        "proseBesideInterface": {
+          "observed": 1,
+          "unknown": 0,
+          "median": 47,
+          "p90": 47
+        },
+        "replyElapsedMs": {
+          "observed": 1,
+          "unknown": 0,
+          "median": 24123,
+          "p90": 24123
+        },
+        "opportunityCompiled": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "opportunitySelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "opportunityRendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "directTextCompiled": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "directTextSelected": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "directTextRendered": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "offeredType": {
+          "compiled": {
+            "numerator": 1,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 1
+          },
+          "selected": {
+            "numerator": 1,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 1
+          },
+          "rendered": {
+            "numerator": 1,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 1
+          }
+        },
+        "jevGuidanceDelivered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "jevCompiled": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "jevSelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "jevRendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "fit": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 1,
+          "rate": null
+        },
+        "delays": {
+          "selected": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "rendered": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "combinedSelected": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "combinedRendered": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "learnerActionSelected": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          }
+        }
+      }
+    }
+  ],
+  "byCue": [
+    {
+      "key": "implicit-action",
+      "metrics": {
+        "turns": 1,
+        "attempted": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "compiled": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "selected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "rendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "nativePageRequested": {
+          "numerator": 0,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 0
+        },
+        "nativePage": {
+          "succeeded": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "failed": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "attached": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "saved": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "mounted": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "ready": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "visible": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "opened": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "frameFailed": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          }
+        },
+        "learnerInterfaces": {
+          "selected": {
+            "any": {
+              "numerator": 1,
+              "denominator": 1,
+              "unknown": 0,
+              "rate": 1
+            },
+            "fencedOnly": 1,
+            "nativeOnly": 0,
+            "both": 0,
+            "otherSourceUnknown": 0
+          },
+          "rendered": {
+            "any": {
+              "numerator": 1,
+              "denominator": 1,
+              "unknown": 0,
+              "rate": 1
+            },
+            "fencedOnly": 1,
+            "nativeOnly": 0,
+            "both": 0,
+            "otherSourceUnknown": 0
+          }
+        },
+        "editableCode": {
+          "any": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "outsideWords": {
+            "observed": 0,
+            "unknown": 0,
+            "median": null,
+            "p90": null
+          },
+          "languages": [
+            {
+              "language": "python",
+              "selected": {
+                "numerator": 0,
+                "denominator": 1,
+                "unknown": 0,
+                "rate": 0
+              }
+            },
+            {
+              "language": "javascript",
+              "selected": {
+                "numerator": 0,
+                "denominator": 1,
+                "unknown": 0,
+                "rate": 0
+              }
+            },
+            {
+              "language": "typescript",
+              "selected": {
+                "numerator": 0,
+                "denominator": 1,
+                "unknown": 0,
+                "rate": 0
+              }
+            }
+          ]
+        },
+        "learnerActionSelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "offeredCodeLanguageSelected": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "combinedOpportunitySelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "combinedOpportunityRendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "guidanceReasons": [],
+        "losses": {
+          "draftToSelection": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          },
+          "selectionToRender": {
+            "numerator": 0,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 0
+          }
+        },
+        "proseBesideInterface": {
+          "observed": 1,
+          "unknown": 0,
+          "median": 47,
+          "p90": 47
+        },
+        "replyElapsedMs": {
+          "observed": 1,
+          "unknown": 0,
+          "median": 24123,
+          "p90": 24123
+        },
+        "opportunityCompiled": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "opportunitySelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "opportunityRendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "directTextCompiled": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "directTextSelected": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "directTextRendered": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 0,
+          "rate": null
+        },
+        "offeredType": {
+          "compiled": {
+            "numerator": 1,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 1
+          },
+          "selected": {
+            "numerator": 1,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 1
+          },
+          "rendered": {
+            "numerator": 1,
+            "denominator": 1,
+            "unknown": 0,
+            "rate": 1
+          }
+        },
+        "jevGuidanceDelivered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "jevCompiled": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "jevSelected": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "jevRendered": {
+          "numerator": 1,
+          "denominator": 1,
+          "unknown": 0,
+          "rate": 1
+        },
+        "fit": {
+          "numerator": 0,
+          "denominator": 0,
+          "unknown": 1,
+          "rate": null
+        },
+        "delays": {
+          "selected": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "rendered": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "combinedSelected": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "combinedRendered": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          },
+          "learnerActionSelected": {
+            "opportunities": 1,
+            "reminders": 0,
+            "firstResponse": 1,
+            "later": 0,
+            "unknown": 0,
+            "unresolved": 0,
+            "superseded": 0,
+            "byResponse": [
+              {
+                "responseNumber": 1,
+                "count": 1
+              }
+            ],
+            "medianResponseNumber": 1
+          }
+        }
+      }
+    }
+  ],
+  "components": [
+    {
+      "key": "simulation",
+      "compiled": {
+        "numerator": 1,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 1
+      },
+      "selected": {
+        "numerator": 1,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 1
+      },
+      "rendered": {
+        "numerator": 1,
+        "denominator": 1,
+        "unknown": 0,
+        "rate": 1
+      }
+    }
+  ],
+  "delays": {
+    "selected": {
+      "opportunities": 1,
+      "reminders": 0,
+      "firstResponse": 1,
+      "later": 0,
+      "unknown": 0,
+      "unresolved": 0,
+      "superseded": 0,
+      "byResponse": [
+        {
+          "responseNumber": 1,
+          "count": 1
+        }
+      ],
+      "medianResponseNumber": 1
+    },
+    "rendered": {
+      "opportunities": 1,
+      "reminders": 0,
+      "firstResponse": 1,
+      "later": 0,
+      "unknown": 0,
+      "unresolved": 0,
+      "superseded": 0,
+      "byResponse": [
+        {
+          "responseNumber": 1,
+          "count": 1
+        }
+      ],
+      "medianResponseNumber": 1
+    },
+    "combinedSelected": {
+      "opportunities": 1,
+      "reminders": 0,
+      "firstResponse": 1,
+      "later": 0,
+      "unknown": 0,
+      "unresolved": 0,
+      "superseded": 0,
+      "byResponse": [
+        {
+          "responseNumber": 1,
+          "count": 1
+        }
+      ],
+      "medianResponseNumber": 1
+    },
+    "combinedRendered": {
+      "opportunities": 1,
+      "reminders": 0,
+      "firstResponse": 1,
+      "later": 0,
+      "unknown": 0,
+      "unresolved": 0,
+      "superseded": 0,
+      "byResponse": [
+        {
+          "responseNumber": 1,
+          "count": 1
+        }
+      ],
+      "medianResponseNumber": 1
+    },
+    "learnerActionSelected": {
+      "opportunities": 1,
+      "reminders": 0,
+      "firstResponse": 1,
+      "later": 0,
+      "unknown": 0,
+      "unresolved": 0,
+      "superseded": 0,
+      "byResponse": [
+        {
+          "responseNumber": 1,
+          "count": 1
+        }
+      ],
+      "medianResponseNumber": 1
+    }
+  },
+  "comparisons": [],
+  "coverage": {
+    "inputRows": 1,
+    "uniqueTurns": 1,
+    "duplicateRows": 0,
+    "includedTurns": 1,
+    "conversations": 1,
+    "unknownCue": 0,
+    "missingModel": 0,
+    "experimentTurns": 0,
+    "experimentTurnsWithoutControlArm": 0,
+    "experimentTurnsMissingModel": 0,
+    "unknownGuidance": 0
+  }
+}

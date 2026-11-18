@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "cell": "classroom-tile-confirm--minimax--jev",
+  "policy": "keating-teaching-policy/v2.3.7",
+  "source": "live-typed-classroom-followup",
+  "parentStage": "released-message-replay",
+  "parentReceiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+  "parentPublicTextSha256": "65eecea1789dffb357f65748832beaceaea4d5a144da07fcb1b00a96485265de",
+  "stageSha256": "9c0e52a6a1b44b331b3d62033db2063752507605708b976f2510616a4cad3eab",
+  "receipt": "../../study/classroom-v2.3.7/receipts/classroom-tile-confirm--minimax--jev.json",
+  "receiptSha256": "43137d6bcc3cdd31b5b136bfc77e00dd41074f679d649d198acf0f31d3883aa4",
+  "sourcePublicTextMatches": true,
+  "sentAt": "2026-11-18T19:19:18.456Z",
+  "completedAt": "2026-11-18T19:19:54.753Z",
+  "typedLearner": "My guess is round, because three of the four tiles are round.",
+  "publicText": "<!--keating:review=withheld-->\nThe reply model failed before producing a complete draft. Try again or check the reply model and connection in Settings.\n\nFailure: generation-unavailable. Draft attempts: 3; completed drafts: 0.",
+  "publicTextSha256": "796e0099574f8727c834f24f542eeb8a0ecfce55a4bfe043d3460f3a07cf640b",
+  "plannedFollowup": {
+    "previousQuestionPresentation": {
+      "assistantTurnIndex": 1,
+      "documentId": "openui-1qwjlss-tile-draw-prediction",
+      "nodeId": "guess"
+    },
+    "openInteractions": [
+      {
+        "documentId": "openui-1qwjlss-tile-draw-prediction",
+        "nodeId": "guess",
+        "component": "question-group",
+        "presentedAt": 1795029558177,
+        "itemId": null,
+        "state": "awaiting"
+      }
+    ],
+    "pendingSubmissions": 0,
+    "conversationTurns": 2,
+    "previousRole": "assistant"
+  },
+  "actualTutor": {
+    "provider": "minimax",
+    "model": "MiniMax-M2.7-highspeed",
+    "responseModel": null
+  },
+  "gatePhases": [
+    "planning",
+    "drafting",
+    "withheld"
+  ],
+  "disposition": "withheld",
+  "sourceSelectionRule": null,
+  "sourceSelectedAttempt": null,
+  "measuredTurn": {
+    "schemaVersion": 1,
+    "conversationId": "242b6bad-a49e-4f9a-9c50-ea8cf0ae62cf",
+    "turnId": "learner-1",
+    "turnIndex": 1,
+    "model": null,
+    "mode": "guided",
+    "cue": {
+      "kind": "none",
+      "targets": []
+    },
+    "reply": "withheld",
+    "replyElapsedMs": 36044,
+    "attempted": null,
+    "compiled": null,
+    "selected": [],
+    "rendered": [],
+    "guidance": {
+      "source": "jev",
+      "action": "continue",
+      "delivered": null,
+      "targets": [
+        "question",
+        "simulation"
+      ]
+    },
+    "outsideWords": null,
+    "nativePageRequested": null,
+    "draftAttempts": 3,
+    "gateIssues": [],
+    "decisionModel": "jev-1.14.0",
+    "nativePage": {
+      "succeeded": null,
+      "failed": null,
+      "attached": null,
+      "saved": null,
+      "mounted": null,
+      "ready": null,
+      "visible": null,
+      "opened": null,
+      "frameFailed": null
+    }
+  },
+  "localQuestionSubmits": 0,
+  "transport": [
+    {
+      "kind": "recorded-public-message",
+      "status": 200
+    },
+    {
+      "kind": "decision",
+      "status": 200
+    },
+    {
+      "kind": "tutor",
+      "status": 200
+    },
+    {
+      "kind": "tutor",
+      "status": 422
+    },
+    {
+      "kind": "tutor",
+      "status": 422
+    }
+  ],
+  "blockedExternalOrigins": [
+    "https://cdn.jsdelivr.net"
+  ],
+  "mobile": {
+    "viewport": 390,
+    "body": 390
+  },
+  "pageErrors": [],
+  "settingsExportRows": 2,
+  "locallyRegisteredWebMcpMatchesCli": true,
+  "screenshots": [
+    "classroom-desktop.png",
+    "classroom-mobile.png",
+    "settings-inspector.png"
+  ]
+}

@@ -1,0 +1,592 @@
+{
+  "version": 1,
+  "policy": "keating-teaching-policy/v2.1",
+  "models": {
+    "jev": "jev-1.14.0",
+    "gemini": "gemini-decision-1"
+  },
+  "manifestFileSha256": "edf4d646df846810090b8f2961c75ae027e0bc2c87417968b2970299c5941eb0",
+  "googleFileSha256": "81f48d3bf5a0872aea8a0a3b7782e7c004fdb5b827edf373dfd2805ef06e088f",
+  "planning": {
+    "scheduled": 6,
+    "measured": 6,
+    "unavailable": 0,
+    "notObserved": 0,
+    "assessmentPreference": {
+      "jev": {
+        "numerator": 6,
+        "denominator": 6,
+        "unknown": 0,
+        "rate": 1
+      },
+      "gemini": {
+        "numerator": 5,
+        "denominator": 6,
+        "unknown": 0,
+        "rate": 0.8333333333333334
+      },
+      "paired": {
+        "measured": 6,
+        "unknown": 0,
+        "both": 5,
+        "jevOnly": 1,
+        "geminiOnly": 0,
+        "neither": 0
+      }
+    },
+    "offerFit": {
+      "jev": {
+        "numerator": 6,
+        "denominator": 6,
+        "unknown": 0,
+        "rate": 1
+      },
+      "gemini": {
+        "numerator": 5,
+        "denominator": 6,
+        "unknown": 0,
+        "rate": 0.8333333333333334
+      },
+      "paired": {
+        "measured": 6,
+        "unknown": 0,
+        "both": 5,
+        "jevOnly": 1,
+        "geminiOnly": 0,
+        "neither": 0
+      }
+    },
+    "exactPreferenceAgreement": {
+      "numerator": 5,
+      "denominator": 6,
+      "unknown": 0,
+      "rate": 0.8333333333333334
+    },
+    "actionAndOfferedTypesAgreement": {
+      "numerator": 3,
+      "denominator": 6,
+      "unknown": 0,
+      "rate": 0.5
+    }
+  },
+  "review": {
+    "scheduled": 9,
+    "measured": 3,
+    "unavailable": 6,
+    "notObserved": 0,
+    "released": {
+      "jev": {
+        "numerator": 6,
+        "denominator": 9,
+        "unknown": 0,
+        "rate": 0.6666666666666666
+      },
+      "gemini": {
+        "numerator": 2,
+        "denominator": 3,
+        "unknown": 6,
+        "rate": 0.6666666666666666
+      },
+      "paired": {
+        "measured": 3,
+        "unknown": 6,
+        "both": 2,
+        "jevOnly": 0,
+        "geminiOnly": 0,
+        "neither": 1
+      }
+    },
+    "dispositionAgreement": {
+      "numerator": 3,
+      "denominator": 3,
+      "unknown": 6,
+      "rate": 1
+    },
+    "sameBlockingRules": {
+      "numerator": 3,
+      "denominator": 3,
+      "unknown": 6,
+      "rate": 1
+    }
+  },
+  "cases": [
+    {
+      "id": "pause-after-questioning",
+      "stage": "plan",
+      "requestSha256": "acf2cd3445a86e908757d349693d658645306dccabce508b2b0459495ea8bfbf",
+      "jevWireSha256": "0201c826a39ca8b515769b6aeef67ae3febb5851c83ba0a124efb31fe5e98927",
+      "expected": {
+        "declined": true,
+        "mode": "no-assessment"
+      },
+      "jev": {
+        "action": "none",
+        "offered": [],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "gemini": {
+        "action": "none",
+        "offered": [],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "observation": {
+        "status": "measured",
+        "error": null,
+        "http": 200,
+        "reportedModel": null,
+        "cacheFile": "decision-cache/acf2cd3445a86e908757d349693d658645306dccabce508b2b0459495ea8bfbf.json",
+        "wireSha256": "a0f7bc377a4b5dd1ca2505e353ec4ec35ab01b30e987e571766fd2b7c6394718",
+        "responseSha256": "d151f7e231a728f60b446647422858643e4e0a498884c23acfa1d9b2fb356cb7",
+        "usage": {
+          "inputTokens": 4905,
+          "outputTokens": 0
+        }
+      }
+    },
+    {
+      "id": "brief-explanation",
+      "stage": "plan",
+      "requestSha256": "a7ee1413b18ea6137bf29edfbdb0bd6c7776d9ab839cd1a44605f08491ecdc2c",
+      "jevWireSha256": "d406da5b7fe0da8d81510db672a634ad2d61398293f281909d9f0723bbf0f6af",
+      "expected": {
+        "declined": true,
+        "mode": "none"
+      },
+      "jev": {
+        "action": "none",
+        "offered": [],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "gemini": {
+        "action": "none",
+        "offered": [],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "observation": {
+        "status": "measured",
+        "error": null,
+        "http": 200,
+        "reportedModel": null,
+        "cacheFile": "decision-cache/a7ee1413b18ea6137bf29edfbdb0bd6c7776d9ab839cd1a44605f08491ecdc2c.json",
+        "wireSha256": "4ddde71e927362108b79eeee3131eb29f818fe1996b71112ada65d7f9390b1b0",
+        "responseSha256": "05654662c0e5dfcf1ac30877be2cbf666be12f9c53e8fb9d9ca6f9b9441745db",
+        "usage": {
+          "inputTokens": 4772,
+          "outputTokens": 0
+        }
+      }
+    },
+    {
+      "id": "debug-without-quiz",
+      "stage": "plan",
+      "requestSha256": "347460a4e7591ba7b3067330215b0788857577f171c5b8d8b663cf3408d670a6",
+      "jevWireSha256": "b1c7853cd394a8519aefbbd061da85d307cfc0aeb5c6e7ee3559e7d3a9b08270",
+      "expected": {
+        "declined": true,
+        "mode": "no-assessment"
+      },
+      "jev": {
+        "action": "none",
+        "offered": [],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "gemini": {
+        "action": "none",
+        "offered": [],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "observation": {
+        "status": "measured",
+        "error": null,
+        "http": 200,
+        "reportedModel": null,
+        "cacheFile": "decision-cache/347460a4e7591ba7b3067330215b0788857577f171c5b8d8b663cf3408d670a6.json",
+        "wireSha256": "0470eb5750b9368a1bf73245a2f2a7a2cced7150b72166156e2bf62dbf277c04",
+        "responseSha256": "763b6b8ff87126f2b6a21de5e241bb4daf208c7838459a8eb414e85990da740e",
+        "usage": {
+          "inputTokens": 5072,
+          "outputTokens": 0
+        }
+      }
+    },
+    {
+      "id": "simulation-without-test",
+      "stage": "plan",
+      "requestSha256": "cfa3995f36ef1cf11919cee4285026bc5a1abd63c4f372e43ae7a33685f30708",
+      "jevWireSha256": "accee95bc4c8bf2845f0b37ce90540ca892a896c7495b9acb6530935f93f4e5a",
+      "expected": {
+        "declined": true,
+        "mode": "visual-without-assessment",
+        "component": "Simulation"
+      },
+      "jev": {
+        "action": "create",
+        "offered": [
+          "Simulation"
+        ],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "gemini": {
+        "action": "none",
+        "offered": [],
+        "declined": null,
+        "offerMatches": false,
+        "decisionMatches": false
+      },
+      "observation": {
+        "status": "measured",
+        "error": null,
+        "http": 200,
+        "reportedModel": null,
+        "cacheFile": "decision-cache/cfa3995f36ef1cf11919cee4285026bc5a1abd63c4f372e43ae7a33685f30708.json",
+        "wireSha256": "8d6721dbf461cb83704794d4201c3f322b305654bd3c02f26b9c03568cf0b084",
+        "responseSha256": "0915c59844527ba2d7098eb2054c429198685321a926d75fe2f36059bc03fae1",
+        "usage": {
+          "inputTokens": 4806,
+          "outputTokens": 0
+        }
+      }
+    },
+    {
+      "id": "simulation-with-prediction",
+      "stage": "plan",
+      "requestSha256": "49a593a8cbd03234f998be756872565d19ccd6b93f54d5b56e95289cfc0ed817",
+      "jevWireSha256": "5c4372d63b422e908f6a127aa3ab38f14729b4419ad17f69faa4bf5916aba9b2",
+      "expected": {
+        "declined": false,
+        "mode": "includes",
+        "component": "Simulation"
+      },
+      "jev": {
+        "action": "create",
+        "offered": [
+          "Simulation"
+        ],
+        "declined": false,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "gemini": {
+        "action": "create",
+        "offered": [
+          "Simulation",
+          "CodingChallenge"
+        ],
+        "declined": false,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "observation": {
+        "status": "measured",
+        "error": null,
+        "http": 200,
+        "reportedModel": null,
+        "cacheFile": "decision-cache/49a593a8cbd03234f998be756872565d19ccd6b93f54d5b56e95289cfc0ed817.json",
+        "wireSha256": "66f25a488ba15160885cd5bccc92ea57284af665ab0d17656e10dbbe96bd87cd",
+        "responseSha256": "23432db36e543b78ccfb3892972d4f0fb0160903545c3a761f670ff4c8bc3b25",
+        "usage": {
+          "inputTokens": 4811,
+          "outputTokens": 0
+        }
+      }
+    },
+    {
+      "id": "independent-choice",
+      "stage": "plan",
+      "requestSha256": "818c66ccf80f831ee6f579bce6bf15d809298bbd5d477cf8151be303e2155728",
+      "jevWireSha256": "233e53ac2da38d12e14835a81fdd521c5066dbeab0f04664a0e2554943c16f38",
+      "expected": {
+        "declined": false,
+        "mode": "includes",
+        "component": "Question"
+      },
+      "jev": {
+        "action": "create",
+        "offered": [
+          "Question",
+          "Quiz",
+          "Flashcards"
+        ],
+        "declined": false,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "gemini": {
+        "action": "create",
+        "offered": [
+          "Question"
+        ],
+        "declined": false,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "observation": {
+        "status": "measured",
+        "error": null,
+        "http": 200,
+        "reportedModel": null,
+        "cacheFile": "decision-cache/818c66ccf80f831ee6f579bce6bf15d809298bbd5d477cf8151be303e2155728.json",
+        "wireSha256": "2c6b469cbdc798e41ad5fdc410b7d09375802f26ef8eef87f9dc6529b07805b7",
+        "responseSha256": "ef087d1f288e3f325a62cfa44eea6ade1c39f5e420d554aa68a3b148b2a08ddd",
+        "usage": {
+          "inputTokens": 4873,
+          "outputTokens": 0
+        }
+      }
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction/1",
+      "stage": "review",
+      "requestSha256": "f45e93e3e9221c041dbaada8afe9fe718b3b0e93c07f7b58f318d4ccced8463d",
+      "jevWireSha256": "b54df070d56c4763a00a6b0e405e5e34791f99db95970e7dae7445fc2c4a926c",
+      "expected": null,
+      "jev": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "gemini": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "observation": {
+        "status": "measured",
+        "error": null,
+        "http": 200,
+        "reportedModel": null,
+        "cacheFile": "decision-cache/f45e93e3e9221c041dbaada8afe9fe718b3b0e93c07f7b58f318d4ccced8463d.json",
+        "wireSha256": "529df061d720cf59db886e75d10d036d7d71ff76ecabb78ac1a7a8409eb7dd6f",
+        "responseSha256": "1c1fa77e53ea9453888607148ec4170e4aee0922e236f07dba86935b0c33bda7",
+        "usage": {
+          "inputTokens": 7117,
+          "outputTokens": 0
+        }
+      }
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction/2",
+      "stage": "review",
+      "requestSha256": "f01b739d7093b3f7269504f773548ace379e26f7da572955288e5be74b8c9fd7",
+      "jevWireSha256": "a629689f76e4e52de182a4fe893eb99d4346a76d956452ed59b3c400ab28abd9",
+      "expected": null,
+      "jev": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "gemini": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "observation": {
+        "status": "measured",
+        "error": null,
+        "http": 200,
+        "reportedModel": null,
+        "cacheFile": "decision-cache/f01b739d7093b3f7269504f773548ace379e26f7da572955288e5be74b8c9fd7.json",
+        "wireSha256": "895108fcbfb62e0d6c1b87113e290a602301813c526db2ebe91a0f4e4cadd69a",
+        "responseSha256": "690c35a701b3631b116c89f61c40668f883a6038f7e200f74480cc97fafcdca1",
+        "usage": {
+          "inputTokens": 7136,
+          "outputTokens": 0
+        }
+      }
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--order/2",
+      "stage": "review",
+      "requestSha256": "d58984b16ed724626babc4fd7dcb6af41d11b93e9b68f11fd9e4b1dbd5d8794e",
+      "jevWireSha256": "2edb62c9e43f1bc927b4db6126d86f9b8f252315fd3075a40b75244bf178198c",
+      "expected": null,
+      "jev": {
+        "gate": "withheld",
+        "attempt": "unknown",
+        "blockers": [
+          {
+            "id": "checkpoint_answer_leaked",
+            "status": "unknown",
+            "probability": 0.51
+          }
+        ]
+      },
+      "gemini": {
+        "gate": "withheld",
+        "attempt": "unknown",
+        "blockers": [
+          {
+            "id": "checkpoint_answer_leaked",
+            "status": "unknown",
+            "probability": 0.47230069556621984
+          }
+        ]
+      },
+      "observation": {
+        "status": "measured",
+        "error": null,
+        "http": 200,
+        "reportedModel": null,
+        "cacheFile": "decision-cache/d58984b16ed724626babc4fd7dcb6af41d11b93e9b68f11fd9e4b1dbd5d8794e.json",
+        "wireSha256": "0174ae93cf904061fe594a70656a0064ad00c5b8af7b07ccf046c25bbd0f7c1f",
+        "responseSha256": "79e12294731cf675e85240205118ea50e8956a00a704d3910a5098bb401f73b2",
+        "usage": {
+          "inputTokens": 7306,
+          "outputTokens": 0
+        }
+      }
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--recall/2",
+      "stage": "review",
+      "requestSha256": "eaf4ddc0cd2484bf6b27de4a3d6169e0aa70d03022853a37bc1ac998f429e933",
+      "jevWireSha256": "5185ba08bb39e2570c0e3b84e42079d275d9254e93e95fd91da5d531bd20505b",
+      "expected": null,
+      "jev": {
+        "gate": "withheld",
+        "attempt": "fail",
+        "blockers": [
+          {
+            "id": "checkpoint_repeated",
+            "status": "fail",
+            "probability": 0.64
+          }
+        ]
+      },
+      "gemini": null,
+      "observation": {
+        "status": "unavailable",
+        "error": "backend-rate-limited",
+        "reportedModel": null,
+        "http": 429,
+        "cacheFile": "decision-cache/eaf4ddc0cd2484bf6b27de4a3d6169e0aa70d03022853a37bc1ac998f429e933.json",
+        "wireSha256": "037411dc4d91184219f6feb79c9187241cdbe80970b752cfe684b70e204ae7b5"
+      }
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--code/2",
+      "stage": "review",
+      "requestSha256": "6ef613c2b6b97b24557185dca051e1b9ac74773e8338fc23e8d362d1444c03a4",
+      "jevWireSha256": "b6838d8a5706f884b3fd973c344f66b08e39a87686578075b88ceb9dcaaa3f4d",
+      "expected": null,
+      "jev": {
+        "gate": "withheld",
+        "attempt": "fail",
+        "blockers": [
+          {
+            "id": "checkpoint_answer_leaked",
+            "status": "fail",
+            "probability": 0.74
+          }
+        ]
+      },
+      "gemini": null,
+      "observation": {
+        "status": "unavailable",
+        "error": "backend-rate-limited",
+        "reportedModel": null,
+        "http": 429,
+        "cacheFile": "decision-cache/6ef613c2b6b97b24557185dca051e1b9ac74773e8338fc23e8d362d1444c03a4.json",
+        "wireSha256": "98dfd2c70f25fc462b5cca4235667a46490a1c4a07cef2b59f401ff8582f082b"
+      }
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction--repeat-1/1",
+      "stage": "review",
+      "requestSha256": "c81e5091904728d42e54027064539cb9262ed5b0cea9e5c6b70b38114e6a406f",
+      "jevWireSha256": "c098a90ea523fd309ae0515bf4e2afdf62056080b6a1698c13e703459540b1d7",
+      "expected": null,
+      "jev": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "gemini": null,
+      "observation": {
+        "status": "unavailable",
+        "error": "backend-rate-limited",
+        "reportedModel": null,
+        "http": 429,
+        "cacheFile": "decision-cache/c81e5091904728d42e54027064539cb9262ed5b0cea9e5c6b70b38114e6a406f.json",
+        "wireSha256": "67627edbd4acca58dab75e316c5058b606c94325aa8da9ef51c53b33192bcc4e"
+      }
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction--repeat-1/2",
+      "stage": "review",
+      "requestSha256": "ef1d5b923eb550654c1745ce1f9fd726b68b0b8f8c951885303ac23e28524d79",
+      "jevWireSha256": "9e9b525dbc9578321d4d8cd81a18bdcaca1b713cffcb45f15a1c7d4f0935041a",
+      "expected": null,
+      "jev": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "gemini": null,
+      "observation": {
+        "status": "unavailable",
+        "error": "backend-rate-limited",
+        "reportedModel": null,
+        "http": 429,
+        "cacheFile": "decision-cache/ef1d5b923eb550654c1745ce1f9fd726b68b0b8f8c951885303ac23e28524d79.json",
+        "wireSha256": "18dcbbd8f91d50c898b5f9490de54572a4547ee40b768d0058a8ced5a238cdb3"
+      }
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction--repeat-3/1",
+      "stage": "review",
+      "requestSha256": "df3ecbabc333c74f0a73ed856ee4898da4755c83198782e89f4a0ba219f49e20",
+      "jevWireSha256": "0ab75662a551628e6870f7372d8776a22e0d62b905a4dd88a71beb12add400bf",
+      "expected": null,
+      "jev": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "gemini": null,
+      "observation": {
+        "status": "unavailable",
+        "error": "backend-rate-limited",
+        "reportedModel": null,
+        "http": 429,
+        "cacheFile": "decision-cache/df3ecbabc333c74f0a73ed856ee4898da4755c83198782e89f4a0ba219f49e20.json",
+        "wireSha256": "110a51ff4e035df8f1255c76fc27667d15745e6e7cb32b6b26d7cf76140f6235"
+      }
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction--repeat-3/2",
+      "stage": "review",
+      "requestSha256": "bb5861cf35980e78701bdb2a978eae79e8e0b2097d95402e388e2e5eee731810",
+      "jevWireSha256": "738ea62a59911b5107110022b4507414aee1733d5b77e40c6a22814308925125",
+      "expected": null,
+      "jev": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "gemini": null,
+      "observation": {
+        "status": "unavailable",
+        "error": "backend-rate-limited",
+        "reportedModel": null,
+        "http": 429,
+        "cacheFile": "decision-cache/bb5861cf35980e78701bdb2a978eae79e8e0b2097d95402e388e2e5eee731810.json",
+        "wireSha256": "174fd5d29fc8d63ee487a610d60d0714fbb79ecb1091583547fe0d109bbbec29"
+      }
+    }
+  ]
+}

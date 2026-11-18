@@ -1,0 +1,149 @@
+{
+  "design": "Sequential, non-blind implementation checks with a freshly mounted copy of the same parent and the same typed learner answer.",
+  "selection": "The requirement to remove the earlier contradiction was evaluated only on the historical response. The fresh provider decision was retained as returned.",
+  "sharedHistoricalPlanProofSha256": "34977214580c5c975fd4cddce8fd9bcb1e2c4fbaa1e21f3ed159a8021fd21531",
+  "codeSha256": "2b8c8a93f17674d80770c139de11cf62f59c2fd97324e9be9b44ff2780a0a73e",
+  "original": {
+    "id": "classroom-tile-confirm--minimax--jev",
+    "policy": "keating-teaching-policy/v2.3.7",
+    "manifestSha256": "ebc3b2c4b4bba077336fd696e7a32200e8772d812effba2c7642dc66a2af4899",
+    "receiptSha256": "43137d6bcc3cdd31b5b136bfc77e00dd41074f679d649d198acf0f31d3883aa4",
+    "stageSha256": "9c0e52a6a1b44b331b3d62033db2063752507605708b976f2510616a4cad3eab",
+    "sourceSha256": "7045fa9fc97c180996d4684bbd9eedcc5e5ae270eb1651b77ba2eb2f57fd08ab",
+    "priorBoundUsd": 2.726584462,
+    "costUsd": 0.016951248,
+    "cumulativeBoundUsd": 2.74353571,
+    "matchedPresentation": {
+      "documentId": "openui-1qwjlss-tile-draw-prediction",
+      "nodeId": "guess",
+      "component": "question-group",
+      "state": "awaiting"
+    },
+    "pendingSubmissions": 0,
+    "planningRequestSha256": "0bdf4738bffd87d835c8c05f4e3dcb17185e627b3b49caaa812d50f0beb3b004",
+    "planningWireSha256": "b678b8e2c40c6449bf5a52b40d3cd59e1a2aaadfc59e6b0b1d1765fe45fbf1b8",
+    "freshRawResponseDue": {
+      "type": "noul",
+      "noul": 0.18
+    },
+    "projectedResponseDue": false,
+    "planAction": "continue",
+    "plannedFamilies": [
+      "Question",
+      "Simulation"
+    ],
+    "tutorWires": [
+      {
+        "entryId": "classroom-tile-confirm--minimax--jev/tutor/1",
+        "bodySha256": "23e450bf0841c706f3e572d54eb7238b973edfc74d5572cdbe4b963e2acda005",
+        "tutor": "MiniMax-M2.7-highspeed",
+        "reportedModels": [
+          "MiniMax-M2.7-highspeed"
+        ],
+        "http": 200,
+        "outputTokens": 3072,
+        "maxOutputTokens": 3072,
+        "stop": "length",
+        "containsEarlierFalseDirective": true,
+        "allPlanDirectives": true,
+        "gradeToolAdvertised": false
+      }
+    ],
+    "logicalGenerationAttempts": 3,
+    "completeCandidates": 0,
+    "candidateReviews": 0,
+    "selectedAttempt": null,
+    "reviewNotice": "withheld",
+    "disposition": "withheld",
+    "releasedText": null,
+    "outerWords": null,
+    "nativeProposals": null
+  },
+  "current": {
+    "id": "classroom-tile-linked-feedback--minimax--jev",
+    "policy": "keating-teaching-policy/v2.3.8",
+    "manifestSha256": "63ba92deaeec1aa25ab66cc9da3149dbf7a28661e51f26069513fbaca16b95a3",
+    "receiptSha256": "9638349b2d44f32d4d6c0a876b772a8a25bb37bac4fa213935bfbb2bdacba413",
+    "stageSha256": "c82bc39d8356f055ff5c84678983065b42f00f3ac473ee93bc8362c8373baa89",
+    "sourceSha256": "aeebc83dbbb3b9322ced2974a140995dcb0e303f6d31a431d47ebe108feb2bd6",
+    "priorBoundUsd": 2.74353571,
+    "costUsd": 0.02966397,
+    "cumulativeBoundUsd": 2.77319968,
+    "matchedPresentation": {
+      "documentId": "openui-g18a19-tile-draw-prediction",
+      "nodeId": "guess",
+      "component": "question-group",
+      "state": "awaiting"
+    },
+    "pendingSubmissions": 0,
+    "planningRequestSha256": "92cc52e9c571c3602d2b9a5599ca750442eb2adabfe4490c14933f946d2a4961",
+    "planningWireSha256": "64f19d006bdeff8c5ab72a7fd37ed2286daaeb7c80dd1d6cf09ed56b757c5e7c",
+    "freshRawResponseDue": {
+      "type": "noul",
+      "noul": 0.2
+    },
+    "projectedResponseDue": false,
+    "planAction": "continue",
+    "plannedFamilies": [
+      "Question",
+      "Simulation"
+    ],
+    "tutorWires": [
+      {
+        "entryId": "classroom-tile-linked-feedback--minimax--jev/tutor/1",
+        "bodySha256": "bd60d18d9a852fdb4a7c502400ea0037a2434e647514540ba60196d31a6a0485",
+        "tutor": "MiniMax-M2.7-highspeed",
+        "reportedModels": [
+          "MiniMax-M2.7-highspeed"
+        ],
+        "http": 200,
+        "outputTokens": 288,
+        "maxOutputTokens": 3072,
+        "stop": "stop",
+        "containsEarlierFalseDirective": false,
+        "allPlanDirectives": true,
+        "gradeToolAdvertised": false
+      },
+      {
+        "entryId": "classroom-tile-linked-feedback--minimax--jev/tutor/2",
+        "bodySha256": "4c9cd9a2a0b1e54da7c0c56846db8b9ced83feb4e04f9038f821827900a299e2",
+        "tutor": "MiniMax-M2.7-highspeed",
+        "reportedModels": [
+          "MiniMax-M2.7-highspeed"
+        ],
+        "http": 200,
+        "outputTokens": 1062,
+        "maxOutputTokens": 3072,
+        "stop": "stop",
+        "containsEarlierFalseDirective": false,
+        "allPlanDirectives": true,
+        "gradeToolAdvertised": false
+      },
+      {
+        "entryId": "classroom-tile-linked-feedback--minimax--jev/tutor/3",
+        "bodySha256": "2490481d93e822df5ee4ea951e945a9eb6641df589190c41b5bd0fce1a380eab",
+        "tutor": "MiniMax-M2.7-highspeed",
+        "reportedModels": [
+          "MiniMax-M2.7-highspeed"
+        ],
+        "http": 200,
+        "outputTokens": 96,
+        "maxOutputTokens": 3072,
+        "stop": "stop",
+        "containsEarlierFalseDirective": false,
+        "allPlanDirectives": true,
+        "gradeToolAdvertised": false
+      }
+    ],
+    "logicalGenerationAttempts": 3,
+    "completeCandidates": 3,
+    "candidateReviews": 3,
+    "selectedAttempt": null,
+    "reviewNotice": "withheld",
+    "disposition": "withheld",
+    "releasedText": null,
+    "outerWords": null,
+    "nativeProposals": null
+  },
+  "newProviderCalls": 0
+}

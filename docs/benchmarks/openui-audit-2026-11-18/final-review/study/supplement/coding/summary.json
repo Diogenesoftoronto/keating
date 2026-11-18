@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "phase": "coding",
+  "policy": "keating-teaching-policy/v2.3.4",
+  "protocolSha256": "5497917bb6ce551da937bff050ba5663cea1fd7b4560bd4d12422dbf9db6a685",
+  "receipts": {
+    "js-largest--minimax--jev": "91b75de0b3dfb4f4dd87a407f8544e64a10117ab3fc10802d5abdfbb02d5d7ff",
+    "odd-filter--minimax--google": "65f07e95e29fbcaeeff4398dd8752fdf94b8cbbbb4239dd52afe32db32768514",
+    "js-largest--minimax--google": "9a4e6fd2f53159b8cefb7669653c24227bd6ebf67dd5194dcfb22f08052e45d2",
+    "odd-filter--minimax--jev": "585c7e50d341f52f0017f3130511c9510c1b21c44866e8c56f8ff902945376fc"
+  },
+  "scheduled": 4,
+  "publicReplies": 3,
+  "providerRequests": 16,
+  "unknownUsage": 0,
+  "previousBoundUsd": 2.538514874,
+  "newBoundUsd": 0.074873548,
+  "totalBoundUsd": 2.613388422,
+  "capUsd": 10
+}

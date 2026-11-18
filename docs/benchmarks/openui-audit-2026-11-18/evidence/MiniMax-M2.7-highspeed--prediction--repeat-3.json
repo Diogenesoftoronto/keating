@@ -1,0 +1,397 @@
+{
+  "id": "MiniMax-M2.7-highspeed--prediction--repeat-3",
+  "cohort": "default-repeat",
+  "scenario": "prediction",
+  "model": "MiniMax-M2.7-highspeed",
+  "startedAt": "2026-11-18T12:59:53.697Z",
+  "judge": [
+    {
+      "phase": "plan",
+      "hash": "877d6e53fbfadfcac9c5a7c304579d5b974bddcfff0942cf027b40e561ab5f06",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 3521,
+        "outputTokens": 674
+      },
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.19
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.57
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.79
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.79
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.53
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.13
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.32
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.19
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.26
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.37
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.27
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.96
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.07
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.08
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 1.03,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.19,
+            "1": 0.6,
+            "2": 0.21,
+            "3": 0
+          },
+          "confidence": 0.6
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.12,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.9,
+            "1": 0.09,
+            "2": 0.01,
+            "3": 0
+          },
+          "confidence": 0.89
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 0.7,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.6,
+            "1": 0.17,
+            "2": 0.17,
+            "3": 0.06
+          },
+          "confidence": 0.31
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "supported",
+          "probabilities": {
+            "concise": 0.32,
+            "supported": 0.65,
+            "deep": 0.03
+          },
+          "confidence": 0.48
+        }
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "278e5c6a7bf947a276ac8a01fc2ae5abf613d3748fbfd0d8760d23d771961f99",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5934,
+        "outputTokens": 896
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "60fc374b2d8525f63f61078504dcb22495f88919e9c8339f7897b36616712561",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 6027,
+        "outputTokens": 896
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "9a62aaf0e1b4ea06e395c8205f5ab7ec2d774969f5e5750f92cbea5545af5e19",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5659,
+        "outputTokens": 896
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha": "93258c674c00e549624766751a5a9798ae155b1cf68dec4e8f4c8bdf1b76dd6a",
+      "messagesSha": "0ec9fe70f4bd6e97791ae82e071949ed7151262ab7f0d4809760f064552f702c",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "Good instinct to commit to a prediction first — that makes the explanation land somewhere real. Let's capture your guess before I say anything about coin flips.\n\n```openui lifecycle=ephemeral id=coin-gamblers-fallacy-prediction\n\nroot = LearningSurface([prediction], \"Your prediction\", \"Commit to a guess before we look at the math. There is no wrong answer here — only your current model.\", \"ephemeral\")\nprediction = Question([\n  { header: \"Prediction\", question: \"The coin has landed heads four times in a row. What do you predict for the next flip?\", type: \"choice\", choices: [\"Heads\", \"Tails\", \"It is a coin flip — heads and tails are equally likely\"], allowText: true, hint: \"Pick the outcome you actually expect, and add your own if none of these fit.\" },\n  { header: \"Your reasoning\", question: \"Why did you pick that? Write it as a claim you could be shown to be wrong — for example, \\\"tails is more likely now because...\\\"\", type: \"text\", hint: \"A sentence or two. I want your actual reason, not a polished one.\" }\n], \"ephemeral\", \"Gambler's fallacy\", \"Predict first, then we'll test it.\")\n```\n\nOnce you've sent it, I'll show you what the fair-coin math actually says and where the \\\"tails is due\\\" feeling comes from.",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 95,
+          "output": 686,
+          "cacheRead": 18432,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 2,
+      "systemSha": "93258c674c00e549624766751a5a9798ae155b1cf68dec4e8f4c8bdf1b76dd6a",
+      "messagesSha": "215f1aa01d40102852cdce5a6308fd9523613295570a67e567f85d95d307235d",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "Good instinct to commit to a prediction before I explain anything — let's do it properly. One note for your own record: \"tails is due\" is a *claim* worth testing, and the way to test it is to state your prediction in a way that could come out wrong. You don't have to believe it, just make it falsifiable.\n\nWhat's your prediction for the next flip?\n\n```openui lifecycle=ephemeral id=coin-prediction-checkpoint\n\nroot = LearningSurface([predict], \"Commit to a prediction\", \"State your expectation for the next flip before any explanation.\", \"ephemeral\")\npredict = Question([\n  { header: \"Your prediction\", question: \"A fair coin has just landed heads four times in a row. What is the probability that the next flip is heads?\", type: \"choice\", choices: [\"About 50% — heads and tails are still equally likely\", \"Less than 50% — tails is 'due' after four heads\", \"More than 50% — heads is on a run and will continue\"], allowText: true, hint: \"Pick a number, or write your own reasoning and estimate. Commit before we talk about why.\" },\n  { header: \"Your reasoning\", question: \"In one or two sentences, why do you predict that? Try to state it as a rule you could check against later flips, not just a feeling.\", type: \"text\", hint: \"If it helps: what would have to be true about this coin for your answer to be right?\" }\n], \"ephemeral\", \"Coin flips and probability\", \"Commit first — we will examine it together afterwards.\")\n```\n\nTake your time on the reasoning box — a written rule is easier to test against the record than a feeling is. I'll dig into whichever way your reasoning goes, including the part about what's happening with the four heads.",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 18249,
+          "output": 575,
+          "cacheRead": 512,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 3,
+      "systemSha": "91e3e88d46a950f6b8120b14e68bddfde9d96f8151eb3db5f01381ca855ea02a",
+      "messagesSha": "9da96bc457db68f1a05d7fdb3056f2edd474202fb58c24323657f65923bf50b1",
+      "toolsSha": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "response": {
+        "text": "Four heads in a row may feel like tails is “due,” but let’s capture your prediction before testing it: **What is the probability that the fifth flip is tails—and why?**",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 174,
+          "output": 138,
+          "cacheRead": 9315,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "counterfactual": null,
+  "decision": {
+    "action": "create",
+    "families": [
+      {
+        "family": "question",
+        "components": [
+          "Question"
+        ]
+      }
+    ],
+    "features": [
+      "prediction_opportunity"
+    ],
+    "paired": false
+  },
+  "offer": "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining. Prose is acceptable when it serves the learner better.",
+  "phase": "released",
+  "selection": 3,
+  "reason": null,
+  "release": {
+    "text": "Four heads in a row may feel like tails is “due,” but let’s capture your prediction before testing it: **What is the probability that the fifth flip is tails—and why?**",
+    "unverified": false
+  },
+  "publicText": "Four heads in a row may feel like tails is “due,” but let’s capture your prediction before testing it: **What is the probability that the fifth flip is tails—and why?**",
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "stop_after_checkpoint",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "unknown",
+          "probability": 0.59
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "unknown",
+          "probability": 0.43
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "probability": 0.42
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "stop_after_checkpoint",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "unknown",
+          "probability": 0.43
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "fail",
+          "probability": 0.64
+        }
+      ]
+    },
+    {
+      "attempt": 3,
+      "status": "pass",
+      "checks": [
+        {
+          "id": "direct_help_withheld",
+          "status": "unknown",
+          "probability": 0.44
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "fail",
+          "probability": 0.73
+        }
+      ]
+    }
+  ],
+  "directives": [
+    "- Respond to the learner's actual reasoning before choosing the next step.",
+    "- Identify the specific mistaken step and offer a targeted hint or contrasting example.",
+    "- Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+    "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining. Prose is acceptable when it serves the learner better.",
+    "- If you pose a question or quiz, stop and wait for the learner's answer. Do not answer it yourself."
+  ],
+  "publicToolNames": [],
+  "finishedAt": "2026-11-18T13:00:16.658Z"
+}

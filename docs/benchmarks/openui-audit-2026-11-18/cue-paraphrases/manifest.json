@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "protocolSha256": "2a202e5d203f3651c80d9b1f96677d9d4b3b8d3ab3a0b5bc74a15c221180b4b1",
+  "requestSetSha256": "3fb7742b4bda413c45ae565b6a65de7236a8aaf2482ad69b1b188394337aff3b",
+  "runnerSha256": "3c2b1aa6349c9c7698dc4d679f0109736592438222ea7692e4259f1a3bca0ab7",
+  "sourceHashes": {
+    "packages/learner-contracts/src/judgement/teaching-drafts.ts": "84e5a62708d0f0208f25a8465012965e68a2ebd9ca0398ae14e16ce715f45fd7",
+    "packages/learner-contracts/src/judgement/teaching-drafts/session.ts": "1a8c9576d7e9e2a3ee09c17b8858d8ec21e70aabe07fdacd1332a0cf87f25ccc",
+    "packages/learner-contracts/src/judgement/teaching-drafts/policy.ts": "0842b56d5e35603e7da5b9fc046df8d8ae6c945051fd279a570af472f925e3bc",
+    "packages/learner-contracts/src/judgement/teaching-policy.ts": "af16a6495e8aa3d5d1ffed672665dc96d81f3a5fd753511411371bf434f12ae9",
+    "packages/learner-contracts/src/judgement/teaching-policy-catalog.ts": "d435be7a0621d248a012ed3baf3976bc420cc2dbb62b49ae6faa0c10fe90fa32",
+    "packages/learner-contracts/src/judgement/interaction-affordances.ts": "940b7f3895199e1c77f23e1ac08bf9b6b382d752217833b6cd78ade37f1a9c32",
+    "packages/learner-contracts/src/judgement/system-one.ts": "f21ee0359c5b927ac7bd257e3b72170b9112cdf49a7b4a766984c46c5234bd26",
+    "packages/learner-contracts/src/judgement/wire.ts": "bb4d5c48b73536067ec273d6c89721d8c7104a8b7b263471923d78a04b612774",
+    "scripts/openui-diagnostics/gemini-decision.ts": "be060b862bca26549dc5e7783160069b97ee939a61e710229aee00145bce034c",
+    "docs/benchmarks/openui-audit-2026-11-18/gemini-decision/journal.mjs": "7dfd7098c2d1e9b69efb3844b5feddd8d4ad9c7057a88d8e60c874bdaf401e54"
+  },
+  "priorAccountedUsd": 1.639857998,
+  "scheduled": [
+    "guess-first/jev",
+    "guess-first/google",
+    "predict-first/jev",
+    "predict-first/google",
+    "change-this/jev",
+    "change-this/google",
+    "play-with-numbers/jev",
+    "play-with-numbers/google",
+    "short-fact/jev",
+    "short-fact/google",
+    "account-password/jev",
+    "account-password/google"
+  ],
+  "maximumAdditionalUsd": 0.1752864,
+  "frozenAt": "2026-11-18T16:32:33.446Z"
+}

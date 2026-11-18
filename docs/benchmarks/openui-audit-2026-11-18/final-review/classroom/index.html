@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data: file:; style-src 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<title>Keating classroom observations</title>
+<style>
+:root{color-scheme:light;font:16px/1.5 system-ui,sans-serif;color:#1c2720;background:#fcfaf3}
+*{box-sizing:border-box}body{margin:0}main{max-width:75rem;margin:auto;padding:clamp(1.1rem,4vw,3.5rem)}
+h1{font:normal clamp(2.2rem,5vw,4rem)/1.05 Georgia,serif;letter-spacing:-.045em;margin:.4rem 0 1rem}
+p{max-width:47rem;margin:.4rem 0 1.2rem}fieldset{border:0;padding:0;margin:0}legend{font-weight:650;margin:0 0 .4rem}
+.controls{display:flex;flex-wrap:wrap;gap:1rem 2rem;border-block:1px solid #c2c6b9;padding:1rem 0}
+.choices{display:flex;gap:.3rem;flex-wrap:wrap}button{font:inherit;border:1px solid #919c8c;background:transparent;color:inherit;padding:.35rem .7rem;border-radius:.45rem;cursor:pointer}
+button[aria-pressed=true]{background:#294e38;border-color:#294e38;color:#fff}a{color:#20523e;text-underline-offset:3px}a:focus-visible,button:focus-visible{outline:3px solid #d78826;outline-offset:3px}
+figure{margin:1.1rem 0}figcaption{max-width:56rem;margin:0 0 .75rem;font-size:1.05rem}
+.screen{background:#e8e8de;border:1px solid #acb3a4;border-radius:.65rem;padding:clamp(.25rem,1.4vw,.95rem);display:grid;place-items:start center}
+img{display:block;max-width:100%;height:auto;width:min(100%,62rem);border-radius:.3rem}img.phone{width:min(100%,24.375rem)}footer{display:flex;flex-wrap:wrap;gap:.35rem 1rem;border-top:1px solid #c2c6b9;padding-top:.85rem;font-size:.93rem}
+@media(max-width:35rem){button{padding:.4rem .55rem}.controls{gap:.8rem}main{padding:1rem}.screen{padding:.15rem}}
+</style></head>
+<body><main>
+<h1>Inside the classroom</h1>
+<p>The stage light and two versions of a typed tile answer ran live. Four other classroom activities replay the exact published tutor replies from the study.</p>
+<div class="controls">
+<fieldset><legend>Activity</legend><div class="choices" id="activities">
+<button type="button" data-value="stage" aria-pressed="true">Stage light</button><button type="button" data-value="question" aria-pressed="false">Paper fold</button><button type="button" data-value="python" aria-pressed="false">Python editor</button>
+<button type="button" data-value="tile" aria-pressed="false">Tile prediction</button><button type="button" data-value="multiples" aria-pressed="false">Multiples of three</button>
+<button type="button" data-value="typed" aria-pressed="false">Typed tile answer</button>
+<button type="button" data-value="linked" aria-pressed="false">Typed answer retest</button>
+</div></fieldset>
+<fieldset><legend>Screenshot</legend><div class="choices" id="views">
+<button type="button" data-value="reply" aria-pressed="false">Original reply</button><button type="button" data-value="action" aria-pressed="true">Learner action</button><button type="button" data-value="mobile" aria-pressed="false">Phone</button><button type="button" data-value="settings" aria-pressed="false">Settings</button>
+</div></fieldset></div>
+<figure><figcaption aria-live="polite" id="caption">Jev offered a simulation and MiniMax produced it. At 7 flashes per second, the control displays 84 flashes in 12 seconds.</figcaption>
+<div class="screen"><img id="capture" alt="Keating’s stage-light slider after a keyboard adjustment, showing 7 flashes per second and 84 flashes in 12 seconds." src="live-stage-light/classroom-after-action.png"></div></figure>
+<footer><a id="evidence" href="live-stage-light/evidence.json">Browser evidence</a><a id="trace" href="live-stage-light/settings-export.json">Settings export</a><a id="source" href="../study/receipts/classroom-stage-light--minimax--jev.json">Study receipt</a><a href="README.md">Method and local replay</a></footer>
+</main><script>
+const examples={
+ stage:{dir:"live-stage-light",id:"classroom-stage-light--minimax--jev", action:"classroom-after-action.png",
+  reply:"Jev offered a simulation. The gate released MiniMax’s second draft with an unverified notice. The control opened at 6 flashes per second.",
+  actionText:"Jev offered a simulation and MiniMax produced it. At 7 flashes per second, the control displays 84 flashes in 12 seconds.",
+  mobile:"The same live classroom after the adjustment, at a 390-pixel viewport. The original interaction was performed once.",
+  settings:"Settings confirmed a simulation in the draft, selected reply and rendered classroom. The released reply had 47 words outside OpenUI."},
+ question:{dir:"recorded-question",id:"paper-fold--flash--jev",action:"classroom-after-action.png",
+  reply:"Gemini 3.1 Flash-Lite used Jev’s Question offer. This one-item question group has five choices and zero words outside its interface.",
+  actionText:"Choosing 4 and submitting it saved a completed question-group response. The following model turn was cancelled before dispatch.",
+  mobile:"The saved paper-fold answer in the same classroom at 390 pixels wide.",
+  settings:"Settings recorded the mounted question group and a separate cancelled learner turn after the answer was saved. Original decision details are in the study receipt."},
+ python:{dir:"recorded-python",id:"python-sum--flash--jev",action:"classroom-edit.png",
+  reply:"Jev requested editable Python and Gemini 3.1 Flash-Lite supplied a code fence. The code indexes past the end of the list.",
+  actionText:"The Python editor accepted the added comment on its last line. Reset restored the original code. This demonstration used no code execution.",
+  mobile:"The real code editor at a 390-pixel viewport after reset.",
+  settings:"The trace identifies Python, 48 words around the editor and zero fenced OpenUI components. The frozen wording classifier missed the editable-code cue."},
+ tile:{dir:"final-prediction",id:"tile-bag--minimax--jev",phase:"prediction",action:"classroom-after-action.png",
+  reply:"The verified first MiniMax draft offered four answers to a prediction about one square and three round tiles. Jev reviewed the original turn.",
+  actionText:"The learner selected Round and submitted. The classroom saved that answer with grading pending.",
+  mobile:"The submitted tile prediction in the 390-pixel classroom.",
+  settings:"The replay recorded an actual QuestionGroup mount and 15 words around it. The frozen cue classifier missed this invitation to guess."},
+ multiples:{dir:"final-python",id:"multiples-loop--minimax--jev",phase:"addendum",action:"classroom-edit.png",
+  reply:"The first MiniMax draft passed Jev review and supplied an editable Python loop for finding multiples of three.",
+  actionText:"The learner changed the condition to test the value at each index. Reset restored the original program. This browser run exercised editing only.",
+  mobile:"The Python exercise after reset at 390 pixels wide.",
+  settings:"The trace recorded editable Python and 51 words around the editor. The frozen classifier missed the request to find the bug independently."},
+ typed:{dir:"live-tile-confirm",id:"classroom-tile-confirm--minimax--jev",studyFolder:"classroom-v2.3.7/",action:"classroom-desktop.png",phone:"notice-mobile-replay.png",
+  reply:"The stage attested the earlier four-option question. The live tutor reached its 3,072-token cap without a complete draft. The learner saw “Couldn't produce a reply.”",
+  actionText:"The learner typed a reason for choosing round without submitting the card. Jev received the exact awaiting question. The live turn ended with a failure notice and no grade.",
+  mobile:"Read-only replay of the exact sealed conversation at 390 pixels, scrolled to the failure notice. The screenshot from the live mobile view is in the browser evidence.",
+  settings:"Settings recorded a guided withheld turn with zero selected and rendered OpenUI components. The previous question belongs to its own earlier turn."},
+ linked:{dir:"linked-tile-confirm",id:"classroom-tile-linked-feedback--minimax--jev",studyFolder:"classroom-v2.3.8/",action:"classroom-desktop.png",replyImage:"staged-question.png",
+  reply:"The same four-choice parent was shown in a fresh v2.3.8 classroom. Its exact question and node were recorded before any live decision or tutor request.",
+  actionText:"The learner typed the same reason for choosing round. The corrected instruction reached the tutor. Three drafts were reviewed, including a correct, 37-word confirmation. The classroom withheld all three.",
+  mobile:"The actual 390-pixel mobile classroom displayed “Couldn't produce a reply.” No grade or new activity appeared.",
+  settings:"The first private draft compiled another question group. Settings recorded zero selected or rendered components on the withheld follow-up. The earlier tile question stayed open."},
+};
+let selected="stage",view="action";
+function paint(){const item=examples[selected];const file={reply:item.replyImage??"classroom-desktop.png",action:item.action,mobile:item.phone??"classroom-mobile.png",settings:"settings-inspector.png"}[view];
+ const description=item[view==="action"?"actionText":view];document.querySelector("#caption").textContent=description;
+ const image=document.querySelector("#capture");image.src=item.dir+"/"+file; image.alt=description;image.classList.toggle("phone",view==="mobile");
+ document.querySelector("#evidence").href=item.dir+"/evidence.json";document.querySelector("#trace").href=item.dir+"/settings-export.json";document.querySelector("#source").href="../study/"+(item.studyFolder??(item.phase?"supplement/"+item.phase+"/":""))+"receipts/"+item.id+".json";
+ for(const button of document.querySelectorAll("#activities button"))button.setAttribute("aria-pressed",String(button.dataset.value===selected));
+ for(const button of document.querySelectorAll("#views button"))button.setAttribute("aria-pressed",String(button.dataset.value===view));}
+for(const button of document.querySelectorAll("#activities button"))button.onclick=()=>{selected=button.dataset.value;paint()};
+for(const button of document.querySelectorAll("#views button"))button.onclick=()=>{view=button.dataset.value;paint()};
+</script></body></html>

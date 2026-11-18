@@ -1,0 +1,502 @@
+{
+  "id": "MiniMax-M2.7-highspeed--structure",
+  "scenario": "structure",
+  "model": "MiniMax-M2.7-highspeed",
+  "startedAt": "2026-11-18T12:54:33.677Z",
+  "judge": [
+    {
+      "phase": "plan",
+      "hash": "936c130b9c369a526fe1f0da6e28ad7d823b11dd7c789f6ac801ee7a150ae14d",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 3528,
+        "outputTokens": 674
+      },
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.72
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.32
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.14
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.08
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.96
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 0.99
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.49
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.34
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.37
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.27
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.8
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.08
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.69
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.1
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.12
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 1.36,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.05,
+            "1": 0.56,
+            "2": 0.38,
+            "3": 0.01
+          },
+          "confidence": 0.55
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.53,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.68,
+            "1": 0.11,
+            "2": 0.21,
+            "3": 0
+          },
+          "confidence": 0.47
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 0.82,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.53,
+            "1": 0.18,
+            "2": 0.22,
+            "3": 0.07
+          },
+          "confidence": 0.17
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "supported",
+          "probabilities": {
+            "concise": 0.4,
+            "supported": 0.54,
+            "deep": 0.06
+          },
+          "confidence": 0.31
+        }
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "0ed0689445cb8f28df09b27bf450963ada63287d9a8ca8e0d19a97c984c505b1",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 6314,
+        "outputTokens": 896
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "c088ccae1b0f294052f6c0762dc3cb03c1bf14d621960eb574d2971d23dceda6",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 6480,
+        "outputTokens": 896
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "228fd41b2fd60df693e8e7fa97b50b4fe0dac1efaa10f5834cf35a3d130f3ab4",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 6273,
+        "outputTokens": 896
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha": "5c95a2a9f25d8d5b9ae02616756fbc39419dab5730d2c1ea1aa3714a66f3237b",
+      "messagesSha": "4180b1b69d7c89b9139240a57362dfcb5ae874a34924673435349b1175b409e7",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "Here's a starter web you can build in — the four organisms are placed, the arrows are yours to draw and label.\n\nThe convention: **an arrow points the way energy moves**, i.e. from the organism being eaten *to* the organism that eats it.\n\n```openui lifecycle=workspace id=food-web-herons\n\nroot = LearningSurface([intro, web], \"Grass → Heron food web\", \"Build the web and label each energy transfer.\", \"workspace\")\n\nintro = Callout(\"Draw one arrow per feeding relationship. Point it from the food toward the eater, and label it with the energy that moves (for example: \\\"energy to the frog\\\"). One organism may eat more than one thing, and one may be eaten by more than one predator.\", \"info\", \"How to draw it\")\n\nweb = Diagram(\"food-web-herons-diagram\", \"Who eats whom?\", \"Add arrows between these four organisms so the whole web is connected, then explain what each arrow means. Check the structure once you have drawn every arrow.\", [\n  { id: \"grass\", label: \"Grass\", kind: \"producer\" },\n  { id: \"grasshopper\", label: \"Grasshopper\", kind: \"primary consumer\" },\n  { id: \"frog\", label: \"Frog\", kind: \"secondary consumer\" },\n  { id: \"heron\", label: \"Heron\", kind: \"apex consumer\" }\n], [], [\n  { id: \"c1\", label: \"Grass feeds the grasshopper\", type: \"connection\", fromKind: \"producer\", toKind: \"primary consumer\" },\n  { id: \"c2\", label: \"Grasshopper feeds the frog\", type: \"connection\", fromKind: \"primary consumer\", toKind: \"secondary consumer\" },\n  { id: \"c3\", label: \"Frog feeds the heron\", type: \"connection\", fromKind: \"secondary consumer\", toKind: \"apex consumer\" },\n  { id: \"p1\", label: \"Energy reaches the heron from the grass\", type: \"path\", fromKind: \"producer\", toKind: \"apex consumer\" }\n], [\n  \"Every arrow points from the organism being eaten to the organism that eats it.\",\n  \"Each of the four organisms is connected to at least one other organism.\",\n  \"Arrows form a connected web, not separate chains.\",\n  \"Every arrow has a label naming the energy that moves along it.\",\n  \"No arrow points from an eater back to its food.\"\n], \"workspace\", [\"producer\", \"primary consumer\", \"secondary consumer\", \"apex consumer\"])\n```\n\nA few things worth deciding while you build:\n\n- The **frog** is a good place to look for a second arrow — real herons and frogs eat more than one prey item, so the web usually branches rather than forming one clean line.\n- The **grasshopper** may also feed something besides the frog.\n- Herons will eat grasshoppers *and* frogs, so both arrows can point into the heron.\n\nWhen you've drawn it, tell me which arrows you added and I'll check the direction and labels against the actual feeding relationships.",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 18464,
+          "output": 1538,
+          "cacheRead": 128,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 2,
+      "systemSha": "5c95a2a9f25d8d5b9ae02616756fbc39419dab5730d2c1ea1aa3714a66f3237b",
+      "messagesSha": "85235eaf6957bd44962cc8bf33f2b0d38b8ee6490aaca1d9c9bf8f9dd99d82b2",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "Here we go — I've laid out the four organisms with the connections already sketched, and you can move anything you disagree with. The convention: an arrow points from the organism being eaten **toward** the organism that eats it, so energy always travels the same way as the arrow.\n\nOne thing worth keeping in mind while you look: only a small fraction of the energy at one level ever reaches the next — roughly a tenth. The rest is spent on living and lost as heat.\n\n```openui lifecycle=workspace id=pond-food-web\nroot = LearningSurface([intro, web, checkpoint], \"Pond food web: arranging the connections\", \"Grass, grasshopper, frog, heron — and the direction energy moves.\", \"workspace\")\nintro = Explanation(\"**How to read the arrows**\\n\\n- An arrow runs **from the food to the feeder** — the direction energy actually moves.\\n- **Grass** is the producer: it captures sunlight and makes its own food, so energy enters the web here.\\n- **Grasshopper** eats the grass, **frog** eats the grasshopper, **heron** eats the frog.\\n- Only about **10%** of the energy at one level reaches the next; the rest is used in living and lost as heat.\\n\\nEdit the diagram if you want a different arrangement — then answer the check below.\", \"Reading the web\")\nweb = Diagram(\"pond-web\", \"Pond food web\", \"Check each connection and label. The arrows should point from the organism being eaten to the organism that eats it, since that is the direction energy flows. Add or relabel anything you think is wrong.\", [{ id: \"grass\", label: \"Grass (producer)\", kind: \"producer\" }, { id: \"grasshopper\", label: \"Grasshopper\", kind: \"consumer\" }, { id: \"frog\", label: \"Frog\", kind: \"consumer\" }, { id: \"heron\", label: \"Heron\", kind: \"top predator\" }], [{ id: \"c1\", from: \"grass\", to: \"grasshopper\", label: \"energy flows to\" }, { id: \"c2\", from: \"grasshopper\", to: \"frog\", label: \"energy flows to\" }, { id: \"c3\", from: \"frog\", to: \"heron\", label: \"energy flows to\" }], [{ id: \"k1\", label: \"At least one producer\", type: \"component\", kind: \"producer\", minimum: 1 }, { id: \"k2\", label: \"At least one top predator\", type: \"component\", kind: \"top predator\", minimum: 1 }, { id: \"k3\", label: \"A path runs from producer to top predator\", type: \"path\", fromKind: \"producer\", toKind: \"top predator\" }, { id: \"k4\", label: \"Producers feed consumers\", type: \"connection\", fromKind: \"producer\", toKind: \"consumer\" }], [\"Every organism appears exactly once as a node\", \"Each arrow points from eaten to eater, not the reverse\", \"Each connection label names the relationship, not just a line\", \"The chain from grass to heron is complete with no gaps\"], \"workspace\", [\"producer\", \"consumer\", \"top predator\"])\ncheckpoint = Question([{ header: \"Trophic levels\", question: \"Counting the organisms in order from the one that makes its own food up to the top predator, how many trophic levels does energy pass through in this web?\", type: \"choice\", choices: [\"2\", \"3\", \"4\", \"5\"], allowText: true, hint: \"Start at the producer and follow the arrows, counting each organism you land on.\" }], \"ephemeral\", \"Pond food web\", \"Answer from the diagram you just checked.\")\n```\n\nHave a look at the connections and tell me your count.",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 429,
+          "output": 3060,
+          "cacheRead": 18560,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 3,
+      "systemSha": "088c3d10924c2f766bf86e8e4d4760702a132a031ef302094cdbe12352760ae6",
+      "messagesSha": "84a3e2a617a7e1f4b6271b0278a5354ded156b8c0fa8034e1f460bfa2a3f5b94",
+      "toolsSha": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "response": {
+        "text": "Use each arrow to represent **energy moving from the organism being eaten to the organism that eats it**. Complete the starter web, then use the checkpoint to explain the direction.\n\n```openui lifecycle=workspace id=grass-food-web\n\nroot = LearningSurface([foodWeb, checkpoint], \"Grass Food Web\", \"Arrange the organisms and connect them in the direction that energy flows.\", \"workspace\")\nfoodWeb = Diagram(\"grass-food-web-diagram\", \"Build the food web\", \"Move the four organisms into a useful arrangement. Add the missing feeding relationships as directed arrows labeled 'energy flows to'. Grass is the producer; the other organisms are consumers. Use the evidence in your diagram to show more than one pathway through the web.\", [\n  { id: \"grass\", label: \"Grass\", kind: \"producer\" },\n  { id: \"grasshopper\", label: \"Grasshopper\", kind: \"primary consumer\" },\n  { id: \"frog\", label: \"Frog\", kind: \"secondary consumer\" },\n  { id: \"heron\", label: \"Heron\", kind: \"predator\" }\n], [\n  { id: \"grass-to-grasshopper\", from: \"grass\", to: \"grasshopper\", label: \"energy flows to\" }\n], [\n  { id: \"all-organisms-present\", label: \"Includes all four organisms\", type: \"component\", kind: \"producer\", minimum: 1 },\n  { id: \"grasshopper-present\", label: \"Includes a grasshopper\", type: \"component\", kind: \"primary consumer\", minimum: 1 },\n  { id: \"frog-present\", label: \"Includes a frog\", type: \"component\", kind: \"secondary consumer\", minimum: 1 },\n  { id: \"heron-present\", label: \"Includes a heron\", type: \"component\", kind: \"predator\", minimum: 1 },\n  { id: \"producer-to-consumer\", label: \"Connects a producer to a consumer\", type: \"connection\", fromKind: \"producer\", toKind: \"primary consumer\" },\n  { id: \"complete-path\", label: \"Provides a path from producer to predator\", type: \"path\", fromKind: \"producer\", toKind: \"predator\" }\n], [\n  \"Every organism appears exactly once.\",\n  \"Arrows point from the food source toward the consumer.\",\n  \"Each arrow is labeled 'energy flows to'.\",\n  \"The diagram contains at least one complete pathway from grass to the heron.\",\n  \"The web shows how more than one organism can receive energy from the same food source.\"\n], \"workspace\", [\"producer\", \"primary consumer\", \"secondary consumer\", \"predator\"])\ncheckpoint = Question([\n  { header: \"Direction check\", question: \"In your completed food web, what does each arrow represent?\", type: \"text\", hint: \"Describe where the energy begins and where it goes.\" }\n], \"workspace\", \"Energy-flow direction\", \"Use your finished diagram to answer.\")\n```",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 9796,
+          "output": 1946,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "counterfactual": {
+    "systemSha": "ada9c657d656d626fee7e1a434843f307004ccfcb45ce1957bc2a670169e4a56",
+    "messagesSha": "4180b1b69d7c89b9139240a57362dfcb5ae874a34924673435349b1175b409e7",
+    "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+    "response": {
+      "text": "I'll set up a diagram you can build the web in, and one question to pin down the arrow convention.\n\n```openui lifecycle=ephemeral id=food-web-heron\nroot = LearningSurface([web, check], \"Build the food web\", \"Add the feeding links, then read the energy flow off the arrows.\", \"ephemeral\")\nweb = Diagram(\"food-web-heron\", \"Grass → grasshopper → frog → heron\", \"These four organisms share one food web. Add a connection for each feeding relationship, and label each arrow with what is being eaten. Draw arrows in the direction that energy moves (from the food to the animal that eats it). When you are done, explain in your own words why the arrows point that way and what happens to energy at each step.\", [\n  { id: \"grass\", label: \"Grass\", kind: \"producer\" },\n  { id: \"grasshopper\", label: \"Grasshopper\", kind: \"consumer\" },\n  { id: \"frog\", label: \"Frog\", kind: \"consumer\" },\n  { id: \"heron\", label: \"Heron\", kind: \"predator\" }\n], [\n  { id: \"c1\", from: \"grass\", to: \"grasshopper\", label: \"eaten by\" },\n  { id: \"c2\", from: \"grasshopper\", to: \"frog\", label: \"eaten by\" },\n  { id: \"c3\", from: \"frog\", to: \"heron\", label: \"eaten by\" }\n], [\n  { id: \"k1\", label: \"Grass is a producer\", type: \"component\", kind: \"producer\", minimum: 1 },\n  { id: \"k2\", label: \"Heron is a predator\", type: \"component\", kind: \"predator\", minimum: 1 },\n  { id: \"k3\", label: \"Producer feeds a consumer\", type: \"connection\", fromKind: \"producer\", toKind: \"consumer\" },\n  { id: \"k4\", label: \"Consumer is eaten by a predator\", type: \"connection\", fromKind: \"consumer\", toKind: \"predator\" },\n  { id: \"k5\", label: \"Energy reaches the heron from grass\", type: \"path\", fromKind: \"producer\", toKind: \"predator\" }\n], [\n  \"Every organism that eats another is connected by an arrow pointing from food to eater.\",\n  \"Each connection names the feeding relationship clearly enough to stand on its own.\",\n  \"The four organisms form a single chain of energy: producer, then consumers, then the top predator.\",\n  \"The explanation states that energy flows one way along the arrows and decreases at each feeding step.\"\n], \"ephemeral\", [\"producer\", \"consumer\", \"predator\"])\ncheck = Question([{ header: \"Arrow direction\", question: \"In this web, an arrow from grass to grasshopper means what?\", type: \"choice\", choices: [\"Energy passes from the grass into the grasshopper when it eats the grass\", \"The grasshopper moves toward the grass to find food\", \"The grasshopper is eaten by the grass\"], allowText: true, hint: \"Think about which organism is doing the eating, and where the energy in a grass blade ends up.\" }], \"ephemeral\", \"Energy flow\", \"Pick the reading that matches the energy direction.\")\n```\n\nThe diagram starts with all four organisms in place and the three candidate links pre-labelled \"eaten by\" — edit them if you'd rather label them differently (for example \"is eaten by\" or \"provides energy to\"), and connect the arrows so each points from food toward eater.\n\nOne note on the check above: it asks about a single arrow, which is the smallest piece. The more interesting question is what happens *along* a whole chain — grass gets sunlight, only a fraction of its energy becomes grasshopper biomass, less again becomes frog, less again becomes heron. Answer the arrow question first, and then tell me what you think happens to the energy as it moves up the chain.",
+      "toolNames": [],
+      "requestedModel": "MiniMax-M2.7-highspeed",
+      "responseModel": null,
+      "stop": "stop",
+      "errorClass": null,
+      "usage": {
+        "input": 18115,
+        "output": 1397,
+        "cacheRead": 513,
+        "cacheWrite": 0
+      }
+    }
+  },
+  "decision": {
+    "action": "create",
+    "families": [
+      {
+        "family": "question",
+        "components": [
+          "Question"
+        ]
+      },
+      {
+        "family": "workspace",
+        "components": [
+          "ConceptMap",
+          "LearningImage"
+        ]
+      }
+    ],
+    "features": [
+      "structure_relations",
+      "prediction_opportunity",
+      "visual_reference"
+    ],
+    "lead": "answer-first",
+    "paired": false
+  },
+  "offer": "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; or ConceptMap or LearningImage to lay out how the concepts relate; show the visual the explanation depends on. Prose is acceptable when it serves the learner better.",
+  "phase": "withheld",
+  "selection": null,
+  "reason": "no-approved-draft",
+  "release": null,
+  "publicText": "<!--keating:review=withheld-->\nKeating couldn't verify a reply after reviewing the drafts: the reviewer could not verify claims about tool results. Retry or choose a different reply model in Settings. Blocking checks: openui_valid, one_activity, activity_without_plan, one_checkpoint, checkpoint_last_node, stop_after_checkpoint, checkpoint_answer_leaked, checkpoint_repeated, tool_success_invented.\n\nFailure: no-approved-draft. Draft attempts: 3; completed drafts: 3.",
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "openui_valid",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "one_activity",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "activity_without_plan",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "one_checkpoint",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "checkpoint_last_node",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "unknown",
+          "probability": 0.41
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "fail",
+          "probability": 0.74
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "unknown",
+          "probability": 0.42
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "openui_valid",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "one_activity",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "activity_without_plan",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "one_checkpoint",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "checkpoint_last_node",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "unknown",
+          "probability": 0.52
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "fail",
+          "probability": 0.72
+        }
+      ]
+    },
+    {
+      "attempt": 3,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "openui_valid",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "one_activity",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "activity_without_plan",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "one_checkpoint",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "checkpoint_last_node",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "unknown",
+          "probability": 0.43
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "fail",
+          "probability": 0.69
+        }
+      ]
+    }
+  ],
+  "directives": [
+    "- Answer the bounded question directly; do not start a diagnostic interview.",
+    "- A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+    "- Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+    "- Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+    "- Answer the learner's request first; any activity comes after the answer.",
+    "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; or ConceptMap or LearningImage to lay out how the concepts relate; show the visual the explanation depends on. Prose is acceptable when it serves the learner better.",
+    "- If you pose a question or quiz, stop and wait for the learner's answer. Do not answer it yourself."
+  ],
+  "finishedAt": "2026-11-18T12:55:53.664Z"
+}

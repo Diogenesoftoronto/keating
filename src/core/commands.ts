@@ -39,6 +39,7 @@ export const extensionCommandSpecs: CommandSpec[] = [
 ];
 
 export const cliCommandSpecs: CommandSpec[] = [
+	{ name: "openui-diagnostics", args: "<export.json|->|schema [filters]", section: "Review", description: "Measure OpenUI use and response timing from content-free turn evidence." },
 	{ name: "sync", args: "[login|logout|status|list|open <id>|add <file>]", section: "Core", description: "Sync encrypted account conversations across devices; keep hosted inference separate." },
 	{ name: "shell",        args: "[prompt]",       section: "Core",          description: "Launch the AI-powered hyperteacher shell." },
 	{ name: "tui",          args: "[prompt]",       section: "Core",          description: "Launch the OpenTUI host over Pi RPC." },

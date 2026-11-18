@@ -1,0 +1,34 @@
+{
+  "id": "plain-relationship--jev",
+  "caseId": "plain-relationship",
+  "provider": "jev",
+  "decisionModel": "jev-1.14.0",
+  "kind": "plan",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "327e8e1733f4962ee98f7f21a34d7d705f25b7b6b5f720b5ce9d1cb9a6bcb3e5",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "none",
+    "offered": [],
+    "reason": "plain-reply",
+    "directives": [
+      "Answer the bounded question directly; do not start a diagnostic interview.",
+      "Give the requested explanation or worked example openly before inviting an attempt.",
+      "Honor the requested plain reply. Give the answer in the requested form and stop.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it."
+    ]
+  },
+  "drafts": [],
+  "status": "plan-only",
+  "public": null,
+  "notice": null,
+  "selectedAttempt": null,
+  "findings": []
+}

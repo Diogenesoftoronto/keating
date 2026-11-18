@@ -1,6 +1,7 @@
 import { expect, test } from 'bun:test';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { gunzipSync } from 'node:zlib';
 import { compileMessage } from '../report-site/openui-preview';
 import { benchmarkCaseResponses, selectBenchmarkCases } from '../../web/public/reports/learning-to-teach/report.js';
 
@@ -22,14 +23,38 @@ const manifest = read('manifest.json');
 const reported = Object.fromEntries(['cases.json', 'rubric.json', 'context.json', 'manifest.json']
   .map(name => [name, read(`versions/1.0.0/${name}`)])) as Record<string, any>;
 
-test('released benchmark inputs and checker match the frozen manifest', () => {
+const suitePrefix = 'scripts/training/benchmarks/teaching-v1/';
+function readCheckerArchive(name: string, expected: string): Record<string, string> {
+  const bytes = readFileSync(new URL('versions/1.1.0/' + name, directory));
+  expect(sha(bytes)).toBe(expected);
+  return JSON.parse(gunzipSync(bytes).toString('utf8'));
+}
+
+const originalChecker = readCheckerArchive('frozen-checker.json.gz', '91673f5bcabb680b397c742530d42b08b564172cf397f6f05ea47954517e4197');
+const releaseDelta = readCheckerArchive('v4.2.0-delta.json.gz', '3efe952422349a7cf8b53ca039621b9b07450be4f02271bd40679b7c0806d4ec');
+const releaseChecker = { ...originalChecker, ...releaseDelta };
+for (const [name, files, manifestSha] of [
+  ['original', originalChecker, '59da1fc04cc0509f43d0c5b44d3f9d3ae78addd0bb4736b42dedb9f1f7328459'],
+  ['Keating 4.2.0', releaseChecker, '8a5c194975d96ab62befd32960c399e9a1519844a71128bc325f83df30757359'],
+] as const) {
+  test('the complete ' + name + ' v1.1 checker matches its own manifest', () => {
+    const manifestPath = suitePrefix + 'manifest.json';
+    expect(sha(files[manifestPath]!)).toBe(manifestSha);
+    const frozen = JSON.parse(files[manifestPath]!);
+    const expected: Record<string, string> = { ...frozen.contract_sources,
+      [frozen.contract_checker.path]: frozen.contract_checker.sha256,
+      [frozen.contract_inventory.path]: frozen.contract_inventory.sha256,
+      [manifestPath]: manifestSha };
+    for (const [path, digest] of Object.entries<string>(frozen.files)) expected[suitePrefix + path] = digest;
+    expect(Object.keys(files).sort()).toEqual(Object.keys(expected).sort());
+    for (const [path, digest] of Object.entries(expected)) expect(sha(files[path]!)).toBe(digest);
+  });
+}
+
+test('released benchmark inputs match the active archived checker', () => {
+  expect(readFileSync(new URL('manifest.json', directory), 'utf8')).toBe(releaseChecker[suitePrefix + 'manifest.json']);
   for (const [name, digest] of Object.entries(manifest.files)) {
     expect(sha(readFileSync(new URL(name, directory)))).toBe(digest);
-  }
-  expect(sha(readFileSync(new URL(manifest.contract_checker.path, root)))).toBe(manifest.contract_checker.sha256);
-  expect(sha(readFileSync(new URL(manifest.contract_inventory.path, root)))).toBe(manifest.contract_inventory.sha256);
-  for (const [name, digest] of Object.entries(manifest.contract_sources)) {
-    expect(sha(readFileSync(new URL(name, root)))).toBe(digest);
   }
   expect(manifest.contract_runtime.version).toBe(Bun.version);
   expect(manifest.contract_runtime.revision).toBe(Bun.revision);

@@ -6,9 +6,10 @@ import type { TeachingDraftReasoning, TeachingDraftStandard, TeachingDraftRefine
 import { decodeAnswer } from "../wire.js";
 import { modalLevel } from "../projections.js";
 import { buildCompactTeachingPrompt } from "../teaching-policy.js";
-import { TEACHING_POLICY_RULES } from "../teaching-policy-catalog.js";
+import { CHECKPOINT_FEEDBACK_ISSUE, TEACHING_POLICY_RULES, TEACHING_POLICY_THRESHOLDS } from "../teaching-policy-catalog.js";
 
 import { interactionDirectives } from "../interaction-affordances.js";
+import { debuggingRepairDirections, isUncertainDebugFinding } from "../debugging-exercise.js";
 
 import { estimatedRequestTokens, estimatedStateQuestionTokens } from "../state-metrics.js";
 
@@ -21,7 +22,7 @@ export const standardInstructions: Record<TeachingDraftStandard, string> = {
 export const PROSE_DIRECTIVE = "Answer without a new OpenUI activity this turn.";
 
 export function variantPrompt(plan: TeachingPolicyPlan, variant: TeachingDraftVariant): string {
-  if (variant === "default") return buildCompactTeachingPrompt(plan);
+  if (variant === "default" || plan.interaction.continueInteraction?.typedAttempt) return buildCompactTeachingPrompt(plan);
   const offered = new Set(interactionDirectives(plan.interaction));
   const base = plan.directives.filter((directive) => !offered.has(directive));
   const extra = variant === "interactive" ? interactionDirectives(plan.interaction, "require") : [PROSE_DIRECTIVE];
@@ -29,10 +30,11 @@ export function variantPrompt(plan: TeachingPolicyPlan, variant: TeachingDraftVa
 }
 
 export function interactionSummary(plan: TeachingPolicyPlan, paired: boolean): TeachingDraftInteraction {
-  const { action, families, continueInteraction, lead } = plan.interaction;
+  const { action, families, continueInteraction, lead, reason, codePracticeLanguage } = plan.interaction;
   return { action, families: families.map(({ family, components }) => ({ family, components: [...components] })),
     features: Object.entries(plan.features).filter(([, value]) => value === true).map(([id]) => id),
-    ...(continueInteraction ? { continueNodeId: continueInteraction.nodeId } : {}), ...(lead ? { lead } : {}), paired };
+    ...(continueInteraction ? { continueNodeId: continueInteraction.nodeId } : {}), ...(lead ? { lead } : {}), ...(reason ? { reason } : {}),
+    ...(codePracticeLanguage ? { codePracticeLanguage } : {}), paired };
 }
 
 // These are product acceptance thresholds, not calibrated learning outcomes.
@@ -47,6 +49,7 @@ export const advisoryTeachingChecks = new Set([
   "math_formalism_missing", "philosophy_alternative_missing", "philosophy_limit_missing",
   "science_prediction_missing", "history_timeline_missing", "politics_framework_missing",
   "art_work_missing", "art_effect_missing",
+  "debug_location_hint",
 ]);
 // Confirmed violations still require repair. Ambiguous lesson pacing and
 // presentation are advisory; executable actions still require approval.
@@ -55,24 +58,35 @@ export const uncertainTeachingChecks = new Set([
   "practice_withheld", "unsolicited_assessment", "housekeeping_delegated",
 ]);
 export function blocksDraft(check: TeachingPolicyCheck): boolean {
-  if (check.status === "pass") return false;
+  if (check.status === "pass" || isInapplicableCheckpoint(check) || isUncertainDebugFinding(check)) return false;
   return !(check.status === "unknown" && check.source === "jev" && check.severity !== "critical"
     && check.probability !== null && Number.isFinite(check.probability)
     && check.probability >= 0 && check.probability < 0.8
     && (advisoryTeachingChecks.has(check.id) || uncertainTeachingChecks.has(check.id)));
 }
 export const MAX_QUESTIONS_PER_SUBQUERY = 64;
+export function uncertainCheckpointRepetition(check: TeachingPolicyCheck): boolean {
+  return check.id === "checkpoint_repeated" && check.source === "jev" && check.severity !== "critical"
+    && check.status === "unknown" && check.probability !== null && Number.isFinite(check.probability)
+    && check.probability > TEACHING_POLICY_THRESHOLDS.passAtMost && check.probability < TEACHING_POLICY_THRESHOLDS.failAtLeast;
+}
 /**
  * Presentation and usefulness scores rank completed replies and guide repair;
  * they are not release vetoes. Every other unknown blocks: the band is narrow,
  * so an unknown is a genuine coin-flip on a rule that matters.
  */
 export function blocksRelease(check: TeachingPolicyCheck): boolean {
-  if (check.status === "pass") return false;
+  if (check.status === "pass" || isInapplicableCheckpoint(check) || uncertainCheckpointRepetition(check) || isUncertainDebugFinding(check)) return false;
   return !(check.source === "jev" && check.severity !== "critical"
     && check.probability !== null && Number.isFinite(check.probability)
     && check.probability >= 0 && check.probability <= 1
     && (advisoryTeachingChecks.has(check.id) || check.id === "quality_progress" || check.id === "quality_scope"));
+}
+
+function isInapplicableCheckpoint(check: TeachingPolicyCheck): boolean {
+  if (check.source !== "jev" || check.severity === "critical" || check.probability === null || !Number.isFinite(check.probability)) return false;
+  if (check.applicability === "feedback-on-attempt") return check.id === "checkpoint_answer_leaked" || check.id === "checkpoint_continued";
+  return check.id === "checkpoint_answer_leaked" && (check.applicability === "standalone-direct-answer" || check.applicability === "debugging-expected-output");
 }
 
 /** Shared by hosts so their progress display reports the real drafting budget. */
@@ -185,6 +199,8 @@ export interface DraftCandidate<T> {
   readonly reply: TeachingPolicyReply;
   readonly value: T;
   readonly quality: number;
+  /** A reviewed Question retained because the learner asked to answer first; see attempt-first.ts. */
+  readonly attemptFirst?: true;
 }
 
 /** Highest measured quality first; preserve the existing earlier-attempt tie break. */
@@ -198,11 +214,17 @@ export function rankDraftCandidates<T>(candidates: readonly DraftCandidate<T>[])
   return [...candidates].sort(compareDraftCandidates);
 }
 
+/** Among unverified drafts the learner's requested answer field leads; measured quality orders the rest. */
+export function rankBestEffortDrafts<T>(drafts: readonly DraftCandidate<T>[]): DraftCandidate<T>[] {
+  return [...drafts].sort((a, b) => Number(b.attemptFirst === true) - Number(a.attemptFirst === true) || compareDraftCandidates(a, b));
+}
+
 /** Only structurally accepted, tool-free prose may enter the best-effort release pool. */
 export function canRetainTextDraft(reply: TeachingPolicyReply, assessmentChecks: readonly TeachingPolicyCheck[],
   hostChecks: readonly TeachingPolicyCheck[]): boolean {
   return !!(reply.text.trim() && reply.toolCalls.length === 0
     && assessmentChecks.filter(check => check.source === "deterministic").every(check => check.status === "pass")
+    && !assessmentChecks.some(check => check.id === "checkpoint_answer_leaked" && check.status === "fail")
     && hostChecks.every(check => check.status === "pass"));
 }
 
@@ -219,8 +241,11 @@ export function needsTextOnlyRecovery(attempt: number, extended: boolean, maxAtt
 
 export function buildRepairFeedback(revisionChecks: readonly TeachingPolicyCheck[], standard: TeachingDraftStandard): TeachingDraftFeedback[] {
   return revisionChecks.map((check) => ({ id: check.id, probability: check.probability,
-    instruction: TEACHING_POLICY_RULES.find(({ id }) => id === check.id)?.question.instructions
-      ?? (check.id === "quality_progress" ? "Provide substantive progress on the learner's immediate request, not mere acknowledgement."
+    instruction: debuggingRepairDirections[check.id] ?? TEACHING_POLICY_RULES.find(({ id }) => id === check.id)?.question.instructions
+      ?? (check.id === CHECKPOINT_FEEDBACK_ISSUE ? "Read the learner's own answer to the immediately preceding question. Confirm only what the problem supports or explain the specific correction. If they have not answered, leave it open. Do not claim a grade or supply a different answer."
+        : check.id === "exercise_language_preserved" ? "Keep the learner's exercise in the programming language they requested. For Python use a fenced python code block the learner can edit, and one OpenUI Question if they are submitting a fix. A CodingChallenge executes JavaScript or TypeScript. Execution of Python requires an available hosted runner."
+        : check.id === "declined_assessment_structure" ? "Respect the learner's request to pause testing. Remove imposed questions from the control and let them try it immediately. Keep instructions, safety precautions and any explicitly requested help."
+        : check.id === "quality_progress" ? "Provide substantive progress on the learner's immediate request, not mere acknowledgement."
         : check.id === "quality_scope" ? standardInstructions[standard] : `Satisfy the runtime check ${check.id}; use only supplied schemas and observed evidence.`) }));
 }
 

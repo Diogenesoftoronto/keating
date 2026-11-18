@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "recordedAt": "2026-11-18T14:20:17Z",
+  "reason": "The first segment permanently retained the full reserve for a Gemini HTTP 503 without usage. Its internal cap could not reserve the next tutor call. The coordinator authorized a separate second segment to finish only the untouched cells in the original schedule, within the user's original US$2 study ceiling.",
+  "userStudyLimitUsd": 2,
+  "priorAllBeforeHoldoutUsd": 0.835679054,
+  "firstHoldoutAccountedUsd": 0.133147818,
+  "firstHoldoutUnmeteredReserveUsd": 0.12,
+  "secondIncrementalLimitUsd": 0.60,
+  "tutorReserveUsd": 0.12,
+  "judgeReserveUsd": 0.003,
+  "scope": ["gemini-3.1-flash-lite--bus", "MiniMax-M2.7-highspeed--bus", "gemini-3.1-flash-lite--perimeter", "MiniMax-M2.7-highspeed--perimeter"],
+  "provenance": {
+    "cohort.json": "d3393c08ee1903f9e4a426d37cab65add70f5e2d5157cd09a085ddfac174afe8",
+    "manifest.json": "551f3aeac1b8463284f841f3c83f1dadaba546d1b8d98817387ea69bcd4824cc",
+    "ledger.json": "f10299aa1f75f94984cdcf0cb677c20a3e28e1254b24930d1c906426e4c47f65",
+    "run.mjs": "76f7322a955d9ac11e85256f3332e1264c9ddd10d6020c5073ef760bd6d85bbc",
+    "gemini-3.1-flash-lite--bus.json": "229455ab255f1442575b575ba3630bb9d95e149605b4172789e7f7fec8b517f0",
+    "gemini-3.1-flash-lite--spinner.json": "92de08513f036e67f23d1e6b2a09bc16a535bf4b44c5a4572c5167003363fd95",
+    "MiniMax-M2.7-highspeed--spinner.json": "ef608d645b5923513a319ded7f492a9092e1e5bc0fd6b801ad45ef9e71042927"
+  },
+  "firstSent": [
+    "gemini-3.1-flash-lite--spinner/judge-1", "gemini-3.1-flash-lite--spinner/tutor-1",
+    "MiniMax-M2.7-highspeed--spinner/judge-1", "MiniMax-M2.7-highspeed--spinner/tutor-1", "MiniMax-M2.7-highspeed--spinner/judge-2",
+    "gemini-3.1-flash-lite--bus/judge-1"
+  ],
+  "originalBusPlanRequestSha256": "679b354c85a0859f8e5e8c97775cbdf4e5af5d588a82198cefa53192b9f078df",
+  "procedure": "The first segment is closed. Retain its cells, ledger and missing-usage reserve. Re-enter the unchanged gate in original order. Reuse a prior successful Jev response only when the original full state and questions hash identically, with the original pinned judge and complete answer keys. A started or settled tutor dispatch is never submitted again. All fresh charges go to the second ledger. The six prompts, rubrics, model IDs, endpoints, options and release inputs remain frozen."
+}

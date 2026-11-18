@@ -1,0 +1,1159 @@
+{
+  "schemaVersion": 1,
+  "turns": [
+    {
+      "schemaVersion": 1,
+      "conversationId": "paper-fold--minimax--jev",
+      "turnId": "paper-fold--minimax--jev",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "jev-1.14.0",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question"
+        ]
+      },
+      "reply": "unknown",
+      "attempted": true,
+      "compiled": [
+        "question-group"
+      ],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "jev",
+        "action": "create",
+        "targets": [
+          "question",
+          "simulation"
+        ],
+        "delivered": true
+      },
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "paper-fold",
+        "pairId": "minimax-paper-fold"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "irrigation--flash--google",
+      "turnId": "irrigation--flash--google",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": "gemini-decision-1",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "unknown",
+      "attempted": null,
+      "compiled": null,
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "other",
+        "action": "create",
+        "targets": [
+          "simulation"
+        ],
+        "delivered": true
+      },
+      "draftAttempts": 0,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "irrigation",
+        "pairId": "flash-irrigation"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": null
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "python-sum--minimax--none",
+      "turnId": "python-sum--minimax--none",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": null,
+      "mode": "baseline",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "editable-code"
+        ],
+        "codeLanguage": "python"
+      },
+      "reply": "unknown",
+      "attempted": false,
+      "compiled": [],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": null,
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "python-sum",
+        "pairId": "minimax-python-sum"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "copper--flash--jev",
+      "turnId": "copper--flash--jev",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": "jev-1.14.0",
+      "mode": "guided",
+      "cue": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "reply": "unknown",
+      "attempted": null,
+      "compiled": null,
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "jev",
+        "action": "none",
+        "targets": [],
+        "delivered": true,
+        "reason": "plain-reply"
+      },
+      "draftAttempts": 0,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "copper",
+        "pairId": "flash-copper"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": null
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "irrigation--minimax--none",
+      "turnId": "irrigation--minimax--none",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": null,
+      "mode": "baseline",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "unknown",
+      "attempted": true,
+      "compiled": [
+        "simulation"
+      ],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": null,
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "irrigation",
+        "pairId": "minimax-irrigation"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": false
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "python-sum--flash--jev",
+      "turnId": "python-sum--flash--jev",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": "jev-1.14.0",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "editable-code"
+        ],
+        "codeLanguage": "python"
+      },
+      "reply": "unknown",
+      "attempted": false,
+      "compiled": [],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "jev",
+        "action": "none",
+        "targets": [],
+        "delivered": true,
+        "codeLanguage": "python"
+      },
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "python-sum",
+        "pairId": "flash-python-sum"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "copper--minimax--google",
+      "turnId": "copper--minimax--google",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "gemini-decision-1",
+      "mode": "guided",
+      "cue": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "reply": "unknown",
+      "attempted": false,
+      "compiled": [],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "other",
+        "action": "none",
+        "targets": [],
+        "delivered": true,
+        "reason": "plain-reply"
+      },
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "copper",
+        "pairId": "minimax-copper"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "paper-fold--flash--google",
+      "turnId": "paper-fold--flash--google",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": "gemini-decision-1",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question"
+        ]
+      },
+      "reply": "unknown",
+      "attempted": false,
+      "compiled": [],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "other",
+        "action": "create",
+        "targets": [
+          "question",
+          "simulation"
+        ],
+        "delivered": true
+      },
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "paper-fold",
+        "pairId": "flash-paper-fold"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": false
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "python-sum--minimax--google",
+      "turnId": "python-sum--minimax--google",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "gemini-decision-1",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "editable-code"
+        ],
+        "codeLanguage": "python"
+      },
+      "reply": "unknown",
+      "attempted": false,
+      "compiled": [],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "other",
+        "action": "create",
+        "targets": [
+          "question"
+        ],
+        "delivered": true,
+        "codeLanguage": "python"
+      },
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "python-sum",
+        "pairId": "minimax-python-sum"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "copper--flash--none",
+      "turnId": "copper--flash--none",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": null,
+      "mode": "baseline",
+      "cue": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "reply": "unknown",
+      "attempted": false,
+      "compiled": [],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": null,
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "copper",
+        "pairId": "flash-copper"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "paper-fold--minimax--none",
+      "turnId": "paper-fold--minimax--none",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": null,
+      "mode": "baseline",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question"
+        ]
+      },
+      "reply": "unknown",
+      "attempted": true,
+      "compiled": [
+        "question-group"
+      ],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": null,
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "paper-fold",
+        "pairId": "minimax-paper-fold"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "irrigation--flash--jev",
+      "turnId": "irrigation--flash--jev",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": "jev-1.14.0",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "unknown",
+      "attempted": null,
+      "compiled": null,
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "jev",
+        "action": "create",
+        "targets": [
+          "simulation"
+        ],
+        "delivered": true
+      },
+      "draftAttempts": 0,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "irrigation",
+        "pairId": "flash-irrigation"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": null
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "copper--minimax--jev",
+      "turnId": "copper--minimax--jev",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "jev-1.14.0",
+      "mode": "guided",
+      "cue": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "reply": "unknown",
+      "attempted": false,
+      "compiled": [],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "jev",
+        "action": "none",
+        "targets": [],
+        "delivered": true,
+        "reason": "plain-reply"
+      },
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "copper",
+        "pairId": "minimax-copper"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "paper-fold--flash--jev",
+      "turnId": "paper-fold--flash--jev",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": "jev-1.14.0",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question"
+        ]
+      },
+      "reply": "unknown",
+      "attempted": true,
+      "compiled": [
+        "question-group"
+      ],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "jev",
+        "action": "create",
+        "targets": [
+          "question",
+          "simulation"
+        ],
+        "delivered": true
+      },
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "paper-fold",
+        "pairId": "flash-paper-fold"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "irrigation--minimax--google",
+      "turnId": "irrigation--minimax--google",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "gemini-decision-1",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "unknown",
+      "attempted": true,
+      "compiled": [
+        "simulation"
+      ],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "other",
+        "action": "create",
+        "targets": [
+          "simulation"
+        ],
+        "delivered": true
+      },
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "irrigation",
+        "pairId": "minimax-irrigation"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "python-sum--flash--none",
+      "turnId": "python-sum--flash--none",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": null,
+      "mode": "baseline",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "editable-code"
+        ],
+        "codeLanguage": "python"
+      },
+      "reply": "unknown",
+      "attempted": false,
+      "compiled": [],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": null,
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "python-sum",
+        "pairId": "flash-python-sum"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": false
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "paper-fold--minimax--google",
+      "turnId": "paper-fold--minimax--google",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "gemini-decision-1",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question"
+        ]
+      },
+      "reply": "unknown",
+      "attempted": true,
+      "compiled": [
+        "question-group"
+      ],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "other",
+        "action": "create",
+        "targets": [
+          "question",
+          "simulation"
+        ],
+        "delivered": true
+      },
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "paper-fold",
+        "pairId": "minimax-paper-fold"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "irrigation--flash--none",
+      "turnId": "irrigation--flash--none",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": null,
+      "mode": "baseline",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "unknown",
+      "attempted": true,
+      "compiled": [
+        "simulation"
+      ],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": null,
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "irrigation",
+        "pairId": "flash-irrigation"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": false
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "python-sum--minimax--jev",
+      "turnId": "python-sum--minimax--jev",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "jev-1.14.0",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "editable-code"
+        ],
+        "codeLanguage": "python"
+      },
+      "reply": "unknown",
+      "attempted": false,
+      "compiled": [],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "jev",
+        "action": "none",
+        "targets": [],
+        "delivered": true,
+        "codeLanguage": "python"
+      },
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "python-sum",
+        "pairId": "minimax-python-sum"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": false
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "copper--flash--google",
+      "turnId": "copper--flash--google",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": "gemini-decision-1",
+      "mode": "guided",
+      "cue": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "reply": "unknown",
+      "attempted": false,
+      "compiled": [],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "other",
+        "action": "none",
+        "targets": [],
+        "delivered": true,
+        "reason": "plain-reply"
+      },
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "copper",
+        "pairId": "flash-copper"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "irrigation--minimax--jev",
+      "turnId": "irrigation--minimax--jev",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "jev-1.14.0",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "unknown",
+      "attempted": true,
+      "compiled": [
+        "simulation"
+      ],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "jev",
+        "action": "create",
+        "targets": [
+          "simulation"
+        ],
+        "delivered": true
+      },
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "irrigation",
+        "pairId": "minimax-irrigation"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "python-sum--flash--google",
+      "turnId": "python-sum--flash--google",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": "gemini-decision-1",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "editable-code"
+        ],
+        "codeLanguage": "python"
+      },
+      "reply": "unknown",
+      "attempted": null,
+      "compiled": null,
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": {
+        "source": "other",
+        "action": "create",
+        "targets": [
+          "question"
+        ],
+        "delivered": true,
+        "codeLanguage": "python"
+      },
+      "draftAttempts": 0,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "python-sum",
+        "pairId": "flash-python-sum"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": null
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "copper--minimax--none",
+      "turnId": "copper--minimax--none",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": null,
+      "mode": "baseline",
+      "cue": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "reply": "unknown",
+      "attempted": false,
+      "compiled": [],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": null,
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "copper",
+        "pairId": "minimax-copper"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "paper-fold--flash--none",
+      "turnId": "paper-fold--flash--none",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": null,
+      "mode": "baseline",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question"
+        ]
+      },
+      "reply": "unknown",
+      "attempted": false,
+      "compiled": [],
+      "selected": null,
+      "rendered": null,
+      "nativePageRequested": null,
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      },
+      "guidance": null,
+      "draftAttempts": 1,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-first",
+        "caseId": "paper-fold",
+        "pairId": "flash-paper-fold"
+      },
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": false
+      }
+    }
+  ]
+}

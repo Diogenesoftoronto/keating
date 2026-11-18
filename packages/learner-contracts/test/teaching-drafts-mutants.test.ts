@@ -50,10 +50,15 @@ describe("public release eligibility", () => {
       for (const probability of [0, .5, 1]) expect(blocksRelease(check(id, { status, probability }))).toBe(false);
     }
   });
-  test.each(uncertain)("an unknown on %s blocks release; only a pass releases", id => {
+  test.each(uncertain.filter(id => id !== "checkpoint_repeated"))("an unknown on %s blocks release; only a pass releases", id => {
     for (const probability of [0, .5, .799999, 1]) expect(blocksRelease(check(id, { probability }))).toBe(true);
     expect(blocksRelease(check(id, { status: "fail", probability: .7 }))).toBe(true);
     expect(blocksRelease(check(id, { status: "pass", probability: .1 }))).toBe(false);
+  });
+  test("only a finite, noncritical Jev repetition score strictly inside the policy's uncertain interval is advisory", () => {
+    for (const probability of [.4001, .5, .5999]) expect(blocksRelease(check("checkpoint_repeated", { probability }))).toBe(false);
+    for (const probability of [null, NaN, -1, 0, .4, .6, 1, Infinity]) expect(blocksRelease(check("checkpoint_repeated", { probability }))).toBe(true);
+    expect(blocksRelease(check("checkpoint_repeated", { status: "fail", probability: .65 }))).toBe(true);
   });
   test("untrusted probabilities never turn a missing review into an advisory pass", () => {
     for (const id of [...advisory, ...uncertain]) {

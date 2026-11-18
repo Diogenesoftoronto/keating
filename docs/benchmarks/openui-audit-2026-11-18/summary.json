@@ -1,0 +1,297 @@
+{
+  "primary": {
+    "turns": 20,
+    "opportunities": 16,
+    "markedPrivate": 15,
+    "validPrivate": 14,
+    "validFirst": 8,
+    "completedFirst": 14,
+    "validFinal": 10,
+    "formFit": 10,
+    "requestFit": 9,
+    "questions": 7,
+    "explicitOffers": 9,
+    "offersMatched": 3,
+    "offersAnyFinal": 4,
+    "generalPractice": 9,
+    "generalPracticeFinal": 7,
+    "noOfferFinal": 6,
+    "pairedOffers": 8,
+    "pairedMatchesWith": 3,
+    "pairedMatchesWithout": 4,
+    "pairedAnyWith": 4,
+    "pairedAnyWithout": 4,
+    "pairedMatchTransitions": {
+      "1 to 1": 3,
+      "0 to 0": 4,
+      "0 to 1": 1
+    },
+    "controls": 4,
+    "cleanProse": 4,
+    "offersOnControls": 4,
+    "lostAfterDraft": [
+      "MiniMax-M2.7-highspeed--code",
+      "MiniMax-M2.7-highspeed--order",
+      "MiniMax-M2.7-highspeed--prediction",
+      "MiniMax-M2.7-highspeed--recall"
+    ],
+    "gainedAfterFirst": [
+      "MiniMax-M2.7-highspeed--choice",
+      "MiniMax-M2.7-highspeed--transfer",
+      "gemini-3.1-flash-lite--variable"
+    ],
+    "releasedNative": [
+      "gemini-3.1-flash-lite--structure"
+    ],
+    "withheld": [
+      "MiniMax-M2.7-highspeed--structure"
+    ],
+    "bestEffort": [
+      "MiniMax-M2.7-highspeed--choice",
+      "MiniMax-M2.7-highspeed--code",
+      "MiniMax-M2.7-highspeed--variable",
+      "gemini-3.1-flash-lite--choice",
+      "gemini-3.1-flash-lite--code",
+      "gemini-3.1-flash-lite--recall"
+    ],
+    "finalTypes": {
+      "Question": 7,
+      "Simulation": 2,
+      "CodingChallenge": 1
+    }
+  },
+  "models": {
+    "gemini-3.1-flash-lite": {
+      "turns": 10,
+      "opportunities": 8,
+      "markedPrivate": 7,
+      "validPrivate": 7,
+      "validFirst": 6,
+      "completedFirst": 8,
+      "validFinal": 7,
+      "formFit": 7,
+      "requestFit": 6,
+      "questions": 5,
+      "explicitOffers": 4,
+      "offersMatched": 2,
+      "offersAnyFinal": 3,
+      "generalPractice": 5,
+      "generalPracticeFinal": 5,
+      "noOfferFinal": 4,
+      "pairedOffers": 4,
+      "pairedMatchesWith": 1,
+      "pairedMatchesWithout": 1,
+      "pairedAnyWith": 2,
+      "pairedAnyWithout": 1,
+      "pairedMatchTransitions": {
+        "1 to 1": 1,
+        "0 to 0": 3
+      },
+      "controls": 2,
+      "cleanProse": 2,
+      "offersOnControls": 2,
+      "lostAfterDraft": [],
+      "gainedAfterFirst": [
+        "gemini-3.1-flash-lite--variable"
+      ],
+      "releasedNative": [
+        "gemini-3.1-flash-lite--structure"
+      ],
+      "withheld": [],
+      "bestEffort": [
+        "gemini-3.1-flash-lite--choice",
+        "gemini-3.1-flash-lite--code",
+        "gemini-3.1-flash-lite--recall"
+      ],
+      "finalTypes": {
+        "Question": 5,
+        "CodingChallenge": 1,
+        "Simulation": 1
+      }
+    },
+    "MiniMax-M2.7-highspeed": {
+      "turns": 10,
+      "opportunities": 8,
+      "markedPrivate": 8,
+      "validPrivate": 7,
+      "validFirst": 2,
+      "completedFirst": 6,
+      "validFinal": 3,
+      "formFit": 3,
+      "requestFit": 3,
+      "questions": 2,
+      "explicitOffers": 5,
+      "offersMatched": 1,
+      "offersAnyFinal": 1,
+      "generalPractice": 4,
+      "generalPracticeFinal": 2,
+      "noOfferFinal": 2,
+      "pairedOffers": 4,
+      "pairedMatchesWith": 2,
+      "pairedMatchesWithout": 3,
+      "pairedAnyWith": 2,
+      "pairedAnyWithout": 3,
+      "pairedMatchTransitions": {
+        "1 to 1": 2,
+        "0 to 0": 1,
+        "0 to 1": 1
+      },
+      "controls": 2,
+      "cleanProse": 2,
+      "offersOnControls": 2,
+      "lostAfterDraft": [
+        "MiniMax-M2.7-highspeed--code",
+        "MiniMax-M2.7-highspeed--order",
+        "MiniMax-M2.7-highspeed--prediction",
+        "MiniMax-M2.7-highspeed--recall"
+      ],
+      "gainedAfterFirst": [
+        "MiniMax-M2.7-highspeed--choice",
+        "MiniMax-M2.7-highspeed--transfer"
+      ],
+      "releasedNative": [],
+      "withheld": [
+        "MiniMax-M2.7-highspeed--structure"
+      ],
+      "bestEffort": [
+        "MiniMax-M2.7-highspeed--choice",
+        "MiniMax-M2.7-highspeed--code",
+        "MiniMax-M2.7-highspeed--variable"
+      ],
+      "finalTypes": {
+        "Question": 2,
+        "Simulation": 1
+      }
+    }
+  },
+  "defaultPredictionRepeats": {
+    "gemini-3.1-flash-lite": {
+      "n": 3,
+      "firstQuestions": 3,
+      "finalQuestions": 3,
+      "turns": [
+        {
+          "id": "gemini-3.1-flash-lite--prediction--repeat-1",
+          "selectedAttempt": 1,
+          "phase": "released",
+          "final": [
+            "Question"
+          ]
+        },
+        {
+          "id": "gemini-3.1-flash-lite--prediction--repeat-2",
+          "selectedAttempt": 1,
+          "phase": "released",
+          "final": [
+            "Question"
+          ]
+        },
+        {
+          "id": "gemini-3.1-flash-lite--prediction--repeat-3",
+          "selectedAttempt": 1,
+          "phase": "released",
+          "final": [
+            "Question"
+          ]
+        }
+      ]
+    },
+    "MiniMax-M2.7-highspeed": {
+      "n": 3,
+      "firstQuestions": 3,
+      "finalQuestions": 1,
+      "turns": [
+        {
+          "id": "MiniMax-M2.7-highspeed--prediction--repeat-1",
+          "selectedAttempt": 3,
+          "phase": "released",
+          "final": []
+        },
+        {
+          "id": "MiniMax-M2.7-highspeed--prediction--repeat-2",
+          "selectedAttempt": 2,
+          "phase": "released",
+          "final": [
+            "Question"
+          ]
+        },
+        {
+          "id": "MiniMax-M2.7-highspeed--prediction--repeat-3",
+          "selectedAttempt": 3,
+          "phase": "released",
+          "final": []
+        }
+      ]
+    }
+  },
+  "cost": {
+    "modelCalls": {
+      "jev": 73,
+      "actor": 63
+    },
+    "accountedUpperUsd": 0.831405428,
+    "estimatedFromUsageUsd": 0.591405428,
+    "withoutUsage": 2,
+    "invoiceUsd": null
+  },
+  "production": {
+    "release": "4.2.0",
+    "sourceCommit": "feb14a770371032619839271cfb3d1a4fe5079ff",
+    "railwayDeployment": "491d80e4-7c3e-4d58-bb04-5d55425eaa2c",
+    "hosts": [
+      "keating.help",
+      "chat.keating.help"
+    ],
+    "productionReceipt": "https://keating.help/staging-build.json",
+    "classroomArizeConfig": "https://chat.keating.help/api/observability/v1/arize/config",
+    "posthogProject": 473463,
+    "windowUTC": {
+      "startInclusive": "2026-10-19T00:00:00Z",
+      "endExclusive": "2026-11-18T00:00:00Z"
+    },
+    "counts": {
+      "message_sent": 129,
+      "agent_turn_started": 67,
+      "distinctStartedRunIds": 67,
+      "agent_turn_completed": 58,
+      "distinctCompletedRunIds": 58,
+      "success": 40,
+      "failure": 18,
+      "$ai_generation": 62,
+      "distinctGenerationRunIds": 58,
+      "tool_invoked": 4
+    },
+    "completedByVersion": {
+      "4.0.11": {
+        "success": 8,
+        "failure": 0
+      },
+      "4.0.17": {
+        "success": 32,
+        "failure": 18
+      }
+    },
+    "latestCompletedUTC": "2026-11-05T13:00:16Z",
+    "releaseWindowUTC": {
+      "startInclusive": "2026-11-11T00:00:00Z",
+      "endExclusive": "2026-11-18T00:00:00Z",
+      "app_version": "4.2.0",
+      "message_sent": 38,
+      "agent_turn_started": 3,
+      "agent_turn_completed": 0,
+      "$ai_generation": 0
+    },
+    "aggregation": "Count each event type, then distinct nonempty run_id for start, end and generation events. Group completed turns by app_version and success. Filter to the two production hostnames. All message, start and end events in the 30-day query belonged to chat.keating.help.",
+    "observedToolNames": {
+      "client-web-search": 3,
+      "remember_learner_profile": 1
+    },
+    "coverage": "Opt-in/opt-out and Do Not Track affect capture. Tool events cover native calls. Fenced interfaces travel inside assistant messages. Production analytics has no joinable per-turn field for Jev's projected offer, proposed source components, validity, or actual renderer presentation. No learner content was retrieved.",
+    "rates": {
+      "offered": null,
+      "generatedOpenUi": null,
+      "validQuestionPresented": null,
+      "matchingOfferPresented": null
+    }
+  }
+}

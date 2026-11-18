@@ -1,0 +1,3395 @@
+{
+  "version": 1,
+  "sourceSha256": "5c85c07809e97efb1ad2164cdd2d5fd431aca160d9736f83be95bc2059ff5df2",
+  "cases": [
+    {
+      "caseId": "pause-after-questioning",
+      "requestSha256": "acf2cd3445a86e908757d349693d658645306dccabce508b2b0459495ea8bfbf",
+      "cacheFile": "decision-cache/acf2cd3445a86e908757d349693d658645306dccabce508b2b0459495ea8bfbf.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 4905,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 4905,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.3274724046380401
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.9797582142442834
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.980122705347674
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.02814924107525161
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.01548664607061742
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.014559461320753031
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.3412460530309456
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.9872962291268618
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.022435089393469013
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.7265334260620314
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.9562982888696495
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.06598446681841759
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.026606945145853052
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.17166813462487604
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.812166384458983
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.043908462265350875
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.012470796471163835
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.4907568403752041
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.9585027190021089
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.2759211021919716
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.3064748920575319
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.25178559917692855
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.5874356932012257
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.19949987683873407
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.12927193735282283
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.014764588751757218
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.036135091481694845
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.4219282346703966
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.01584589662684322
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.08920416792354034
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.014813325679458852
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.04431844339854565
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.14799430412899975
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 1.2446900452638072,
+              "confidence": 0.4521603449911273,
+              "probabilities": {
+                "0": 0.19213349134179503,
+                "1": 0.4521603449911273,
+                "2": 0.2745887907285532,
+                "3": 0.08111737293852456
+              },
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              }
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 1.1753155542536677,
+              "confidence": 0.41249334915181085,
+              "probabilities": {
+                "0": 0.2386699914042981,
+                "1": 0.41249334915181085,
+                "2": 0.28368777322981603,
+                "3": 0.06514888621407491
+              },
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              }
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 0.9542533179821207,
+              "confidence": 0.4000198614135929,
+              "probabilities": {
+                "0": 0.4000198614135929,
+                "1": 0.32879453365607864,
+                "2": 0.18809803046494358,
+                "3": 0.08308757446538494
+              },
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              }
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "supported",
+              "probabilities": {
+                "concise": 0.0317677808970597,
+                "supported": 0.8477554924294234,
+                "deep": 0.12047672667351694
+              },
+              "confidence": 0.8477554924294234
+            }
+          },
+          "usage": {
+            "inputTokens": 4905,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      }
+    },
+    {
+      "caseId": "brief-explanation",
+      "requestSha256": "a7ee1413b18ea6137bf29edfbdb0bd6c7776d9ab839cd1a44605f08491ecdc2c",
+      "cacheFile": "decision-cache/a7ee1413b18ea6137bf29edfbdb0bd6c7776d9ab839cd1a44605f08491ecdc2c.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 4772,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 4772,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.971514830014906
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.99
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.024637499997298674
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.05748025609017615
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.025235799188586823
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.8924158399235991
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.9545257192352471
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.047372725870189564
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.845142305504497
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.030420115792033728
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.011573876329461948
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.019688848698268334
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.05801251445894509
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.03322910330537109
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.05338140986408687
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.2601862601856499
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.9780944125044874
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.10815434560921974
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.06845809684970884
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.32639691742153387
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.38584313597444825
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.11693291704906554
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.06983906851502143
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.014372799356387456
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.017300161565868593
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.8810448536709077
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.0594488383892917
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.02678738529063212
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.012863532154937503
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.05547169120375111
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.102362729077532
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 1.0812587906805304,
+              "confidence": 0.5522272149515051,
+              "probabilities": {
+                "0": 0.19981621420318663,
+                "1": 0.5522272149515051,
+                "2": 0.21483813680689948,
+                "3": 0.03311843403840882
+              },
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              }
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0.916312557497535,
+              "confidence": 0.4613379523119735,
+              "probabilities": {
+                "0": 0.3298335853569179,
+                "1": 0.4613379523119735,
+                "2": 0.17151078180776402,
+                "3": 0.03731768052334449
+              },
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              }
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 0.7303920455722229,
+              "confidence": 0.48700202027891504,
+              "probabilities": {
+                "0": 0.48700202027891504,
+                "1": 0.3413636171378657,
+                "2": 0.12587465931530056,
+                "3": 0.045759703267918714
+              },
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              }
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.9199825866898917,
+                "supported": 0.04743101696374877,
+                "deep": 0.03258639634635945
+              },
+              "confidence": 0.9199825866898917
+            }
+          },
+          "usage": {
+            "inputTokens": 4772,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      }
+    },
+    {
+      "caseId": "debug-without-quiz",
+      "requestSha256": "347460a4e7591ba7b3067330215b0788857577f171c5b8d8b663cf3408d670a6",
+      "cacheFile": "decision-cache/347460a4e7591ba7b3067330215b0788857577f171c5b8d8b663cf3408d670a6.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 5072,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 5072,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.6969177456775574
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.9275662992678393
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.12161050157747126
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.12586715746517532
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.28338025718898885
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.15218035960229695
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.03553884165151968
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.639811537049074
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.6856859867827557
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.038630146738543744
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.4623781275309679
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.609066150694377
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.27058031332830684
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.019694120484635893
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.0879483134888718
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.14705405927644472
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.047941596052404216
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.09913841380602625
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.35584118546788335
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.9343744607666017
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.21535390027660672
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.29335830059844553
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.16360193680693727
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.5510475817189165
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.33761664958673093
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.22754860932822865
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.04570904438400636
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.05455796174478055
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.9020004334387451
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.014545523082629894
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.04173955416614374
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.06274525478382285
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.06676336635719707
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.09604068170388079
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.3602795725938181
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 1.2604026401607853,
+              "confidence": 0.612124045039093,
+              "probabilities": {
+                "0": 0.0854201625339424,
+                "1": 0.612124045039093,
+                "2": 0.2590887821592014,
+                "3": 0.04336701026776317
+              },
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              }
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 1.4222933059745986,
+              "confidence": 0.4495406069537386,
+              "probabilities": {
+                "0": 0.1033709803591858,
+                "1": 0.4495406069537386,
+                "2": 0.36851253904036724,
+                "3": 0.07857587364670852
+              },
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              }
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 1.101471109172183,
+              "confidence": 0.3830989144041892,
+              "probabilities": {
+                "0": 0.30965356831020757,
+                "1": 0.3830989144041892,
+                "2": 0.20337035708881568,
+                "3": 0.10387716019678747
+              },
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              }
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.5787901294909216,
+                "supported": 0.3147691584347714,
+                "deep": 0.10644071207430693
+              },
+              "confidence": 0.5787901294909216
+            }
+          },
+          "usage": {
+            "inputTokens": 5072,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      }
+    },
+    {
+      "caseId": "simulation-without-test",
+      "requestSha256": "cfa3995f36ef1cf11919cee4285026bc5a1abd63c4f372e43ae7a33685f30708",
+      "cacheFile": "decision-cache/cfa3995f36ef1cf11919cee4285026bc5a1abd63c4f372e43ae7a33685f30708.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 4806,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 4806,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.14724624551119683
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.291758263163171
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.022404892336219083
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.04639956048408278
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.039904785668128835
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.513301035054642
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.02605126927324891
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.42071306134706044
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.049295736795213686
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.017985213341227067
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.2373321072384058
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.03309411546831714
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.15066318204478835
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.02085539962886681
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.050235865213730024
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.04541976946196669
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.9720496007265693
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.15927058131158253
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.42125143451640906
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.9668963081355819
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.11676730230927038
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.05350528690294776
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.2541951498721287
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.01262626290986599
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.11589067500619851
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.11148975188820669
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.8918653896817282
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.7800066570327495
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.022925814111433303
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.06074731516617892
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.1342255022415414
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.14569660444391758
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.06012341353124558
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.07406305953080099
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 1.1627660114330598,
+              "confidence": 0.5086546962921804,
+              "probabilities": {
+                "0": 0.20033280164789583,
+                "1": 0.5086546962921804,
+                "2": 0.218926191038892,
+                "3": 0.07208631102103177
+              },
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              }
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 1.5713454407026384,
+              "confidence": 0.47640106855501624,
+              "probabilities": {
+                "0": 0.08810162917335534,
+                "1": 0.34397430161113957,
+                "2": 0.47640106855501624,
+                "3": 0.09152300066048877
+              },
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              }
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 1.3274024024696218,
+              "confidence": 0.46653477172686286,
+              "probabilities": {
+                "0": 0.16255695489908653,
+                "1": 0.46653477172686286,
+                "2": 0.25185718937939283,
+                "3": 0.11905108399465773
+              },
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              }
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.7935746959228832,
+                "supported": 0.07229560485547672,
+                "deep": 0.1341296992216402
+              },
+              "confidence": 0.7935746959228832
+            }
+          },
+          "usage": {
+            "inputTokens": 4806,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      }
+    },
+    {
+      "caseId": "simulation-with-prediction",
+      "requestSha256": "49a593a8cbd03234f998be756872565d19ccd6b93f54d5b56e95289cfc0ed817",
+      "cacheFile": "decision-cache/49a593a8cbd03234f998be756872565d19ccd6b93f54d5b56e95289cfc0ed817.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 4811,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 4811,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.09770069548462432
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.13259148003687565
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.023261436416019313
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.034393801869885866
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.04457969997172476
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.6964231791043142
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.021813618890132214
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.23116303209410893
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.032975680058713125
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.015991822323017064
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.1826879740794952
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.01720753470128335
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.10875682434541105
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.014026573225720866
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.07338054951534383
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.02829996099361294
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.9757796926488241
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.23354822820251164
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.8677493848683461
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.9738710332535606
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.14174932575775304
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.03947082208771532
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.29221546343914406
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.036130182984617704
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.7966432001538909
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.19113388585786892
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.8886926339772756
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.6618255402169541
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.01834706862230187
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.05007190303516094
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.12280265744731436
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.19350205493099756
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.045799255960610484
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.11141405146936283
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 1.1394406967329824,
+              "confidence": 0.4550687590525142,
+              "probabilities": {
+                "0": 0.24541487076451757,
+                "1": 0.4550687590525142,
+                "2": 0.21417717286843682,
+                "3": 0.08533919731453152
+              },
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              }
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 1.7843115712945314,
+              "confidence": 0.5609140499062387,
+              "probabilities": {
+                "0": 0.05465174944441786,
+                "1": 0.24540956523298818,
+                "2": 0.5609140499062387,
+                "3": 0.13902463541635526
+              },
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              }
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 1.3916136213011736,
+              "confidence": 0.4751464048525033,
+              "probabilities": {
+                "0": 0.12271739778347619,
+                "1": 0.4751464048525033,
+                "2": 0.2899413756433911,
+                "3": 0.11219482172062935
+              },
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              }
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.4140510437980969,
+                "supported": 0.1947377646762083,
+                "deep": 0.39121119152569483
+              },
+              "confidence": 0.4140510437980969
+            }
+          },
+          "usage": {
+            "inputTokens": 4811,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      }
+    },
+    {
+      "caseId": "independent-choice",
+      "requestSha256": "818c66ccf80f831ee6f579bce6bf15d809298bbd5d477cf8151be303e2155728",
+      "cacheFile": "decision-cache/818c66ccf80f831ee6f579bce6bf15d809298bbd5d477cf8151be303e2155728.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 4873,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 4873,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.3074089875604897
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.6854768076677474
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.01487380313502162
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.07747512565489817
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.2943070790898143
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.020771339311629167
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.8385839952192506
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.2928821952359289
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.08981106289531013
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.049430642976133116
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.0772614084776449
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.7271649615324083
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.097706075083587
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.05576388903967931
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.1969715329740642
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.050352019751370374
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.18399334592358574
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.7559234391508254
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.9689580926362529
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.7354906348257931
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.06859966934050073
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.18740529219765398
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.8418889473676597
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.7838023889890265
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.8078719190237243
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.9396472672808039
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.551305770291913
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.19781070045838298
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.02564852707169194
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.043031131849221
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.048881802754763434
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.040513967558315114
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.11033928309822139
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.6043381545842385
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 1.6421056200990667,
+              "confidence": 0.4854218820367676,
+              "probabilities": {
+                "0": 0.04284550236292111,
+                "1": 0.3719679953877013,
+                "2": 0.4854218820367676,
+                "3": 0.09976462021261001
+              },
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              }
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 1.7316372980580124,
+              "confidence": 0.5621140568306806,
+              "probabilities": {
+                "0": 0.06864329661425962,
+                "1": 0.25015937763426416,
+                "2": 0.5621140568306806,
+                "3": 0.1190832689207957
+              },
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              }
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 1.3318242756652032,
+              "confidence": 0.3374136245640257,
+              "probabilities": {
+                "0": 0.22430468664857667,
+                "1": 0.3374136245640257,
+                "2": 0.3204344152610156,
+                "3": 0.11784727352638212
+              },
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              }
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "supported",
+              "probabilities": {
+                "concise": 0.21854163817252276,
+                "supported": 0.45607192353303627,
+                "deep": 0.3253864382944409
+              },
+              "confidence": 0.45607192353303627
+            }
+          },
+          "usage": {
+            "inputTokens": 4873,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      }
+    },
+    {
+      "caseId": "MiniMax-M2.7-highspeed--prediction/1",
+      "requestSha256": "f45e93e3e9221c041dbaada8afe9fe718b3b0e93c07f7b58f318d4ccced8463d",
+      "cacheFile": "decision-cache/f45e93e3e9221c041dbaada8afe9fe718b3b0e93c07f7b58f318d4ccced8463d.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 7117,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 7117,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "identity_invented": {
+              "type": "noul",
+              "noul": 0.020985688515343767
+            },
+            "instruction_override": {
+              "type": "noul",
+              "noul": 0.015293499707476899
+            },
+            "tool_success_invented": {
+              "type": "noul",
+              "noul": 0.03830847018806285
+            },
+            "sensitive_inference": {
+              "type": "noul",
+              "noul": 0.013289206403251314
+            },
+            "mastery_overclaimed": {
+              "type": "noul",
+              "noul": 0.03187016080215167
+            },
+            "retention_overclaimed": {
+              "type": "noul",
+              "noul": 0.036426415020987486
+            },
+            "transfer_overclaimed": {
+              "type": "noul",
+              "noul": 0.01411338787971646
+            },
+            "synthetic_efficacy_claim": {
+              "type": "noul",
+              "noul": 0.0198492582742519
+            },
+            "explanation_missing": {
+              "type": "noul",
+              "noul": 0.3048138564307223
+            },
+            "direct_answer_missing": {
+              "type": "noul",
+              "noul": 0.12273465921757931
+            },
+            "practice_missing": {
+              "type": "noul",
+              "noul": 0.06676077659851097
+            },
+            "direct_help_withheld": {
+              "type": "noul",
+              "noul": 0.14340024274405183
+            },
+            "diagnostic_interview_forced": {
+              "type": "noul",
+              "noul": 0.06755560505391796
+            },
+            "known_context_reasked": {
+              "type": "noul",
+              "noul": 0.024121688803735653
+            },
+            "gap_ignored": {
+              "type": "noul",
+              "noul": 0.04123894087741286
+            },
+            "learner_voice_replaced": {
+              "type": "noul",
+              "noul": 0.018846790178107767
+            },
+            "checkpoint_answer_leaked": {
+              "type": "noul",
+              "noul": 0.049925890764319886
+            },
+            "checkpoint_repeated": {
+              "type": "noul",
+              "noul": 0.04329648620821812
+            },
+            "checkpoint_continued": {
+              "type": "noul",
+              "noul": 0.027448189364423635
+            },
+            "checkpoint_not_interactive": {
+              "type": "noul",
+              "noul": 0.02896354866525628
+            },
+            "practice_withheld": {
+              "type": "noul",
+              "noul": 0.04998041287850312
+            },
+            "unsolicited_assessment": {
+              "type": "noul",
+              "noul": 0.06740443667088199
+            },
+            "unsolicited_animation": {
+              "type": "noul",
+              "noul": 0.03910824345858895
+            },
+            "feedback_invented": {
+              "type": "noul",
+              "noul": 0.06912562795630621
+            },
+            "profile_evidence_invented": {
+              "type": "noul",
+              "noul": 0.03914070747881398
+            },
+            "preference_graded": {
+              "type": "noul",
+              "noul": 0.04729090825791496
+            },
+            "alternative_answer_rejected": {
+              "type": "noul",
+              "noul": 0.03723921119014458
+            },
+            "observed_preference_overrides_declared": {
+              "type": "noul",
+              "noul": 0.02562187204267187
+            },
+            "housekeeping_delegated": {
+              "type": "noul",
+              "noul": 0.027433152325291137
+            },
+            "assessed_work_completed": {
+              "type": "noul",
+              "noul": 0.042228523504868616
+            },
+            "source_link_missing": {
+              "type": "noul",
+              "noul": 0.023660873216271618
+            },
+            "source_contradicted": {
+              "type": "noul",
+              "noul": 0.03672487074769589
+            },
+            "improvement_interrupts": {
+              "type": "noul",
+              "noul": 0.06525467823116275
+            },
+            "repeated_improvement_unrequested": {
+              "type": "noul",
+              "noul": 0.033576660866621345
+            },
+            "artifact_placeholder": {
+              "type": "noul",
+              "noul": 0.05111430038558435
+            },
+            "transport_exposed": {
+              "type": "noul",
+              "noul": 0.017488565509112798
+            },
+            "law_authority_missing": {
+              "type": "noul",
+              "noul": 0.07602066665451693
+            },
+            "law_jurisdiction_missing": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "medicine_evidence_conflated": {
+              "type": "noul",
+              "noul": 0.02587675086327413
+            },
+            "history_disagreement_erased": {
+              "type": "noul",
+              "noul": 0.02574542331613812
+            },
+            "psychology_replication_ignored": {
+              "type": "noul",
+              "noul": 0.033733880271044486
+            },
+            "politics_normative_as_fact": {
+              "type": "noul",
+              "noul": 0.01715460242296528
+            },
+            "quality_progress": {
+              "type": "noul",
+              "noul": 0.8933398439942871
+            },
+            "quality_scope": {
+              "type": "noul",
+              "noul": 0.5185234795852646
+            }
+          },
+          "usage": {
+            "inputTokens": 7117,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      }
+    },
+    {
+      "caseId": "MiniMax-M2.7-highspeed--prediction/2",
+      "requestSha256": "f01b739d7093b3f7269504f773548ace379e26f7da572955288e5be74b8c9fd7",
+      "cacheFile": "decision-cache/f01b739d7093b3f7269504f773548ace379e26f7da572955288e5be74b8c9fd7.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 7136,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 7136,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "identity_invented": {
+              "type": "noul",
+              "noul": 0.04196077408004466
+            },
+            "instruction_override": {
+              "type": "noul",
+              "noul": 0.02442134063834344
+            },
+            "tool_success_invented": {
+              "type": "noul",
+              "noul": 0.0535546513341538
+            },
+            "sensitive_inference": {
+              "type": "noul",
+              "noul": 0.01639296118333071
+            },
+            "mastery_overclaimed": {
+              "type": "noul",
+              "noul": 0.040051748430318786
+            },
+            "retention_overclaimed": {
+              "type": "noul",
+              "noul": 0.0376369653808931
+            },
+            "transfer_overclaimed": {
+              "type": "noul",
+              "noul": 0.029020602872653116
+            },
+            "synthetic_efficacy_claim": {
+              "type": "noul",
+              "noul": 0.02668255770147923
+            },
+            "explanation_missing": {
+              "type": "noul",
+              "noul": 0.42242234118408195
+            },
+            "direct_answer_missing": {
+              "type": "noul",
+              "noul": 0.13663935511103184
+            },
+            "practice_missing": {
+              "type": "noul",
+              "noul": 0.05952717874146956
+            },
+            "direct_help_withheld": {
+              "type": "noul",
+              "noul": 0.22045521044666738
+            },
+            "diagnostic_interview_forced": {
+              "type": "noul",
+              "noul": 0.09442379820947955
+            },
+            "known_context_reasked": {
+              "type": "noul",
+              "noul": 0.02920181748092425
+            },
+            "gap_ignored": {
+              "type": "noul",
+              "noul": 0.040912177488177597
+            },
+            "learner_voice_replaced": {
+              "type": "noul",
+              "noul": 0.026769499033914283
+            },
+            "checkpoint_answer_leaked": {
+              "type": "noul",
+              "noul": 0.04266311528956943
+            },
+            "checkpoint_repeated": {
+              "type": "noul",
+              "noul": 0.05494414042141653
+            },
+            "checkpoint_continued": {
+              "type": "noul",
+              "noul": 0.03606215716203727
+            },
+            "checkpoint_not_interactive": {
+              "type": "noul",
+              "noul": 0.01654299571958029
+            },
+            "practice_withheld": {
+              "type": "noul",
+              "noul": 0.056880717987389195
+            },
+            "unsolicited_assessment": {
+              "type": "noul",
+              "noul": 0.06325065898591958
+            },
+            "unsolicited_animation": {
+              "type": "noul",
+              "noul": 0.045398532606633644
+            },
+            "feedback_invented": {
+              "type": "noul",
+              "noul": 0.08141049645132271
+            },
+            "profile_evidence_invented": {
+              "type": "noul",
+              "noul": 0.0520496529594889
+            },
+            "preference_graded": {
+              "type": "noul",
+              "noul": 0.06290773238757662
+            },
+            "alternative_answer_rejected": {
+              "type": "noul",
+              "noul": 0.035242020975591065
+            },
+            "observed_preference_overrides_declared": {
+              "type": "noul",
+              "noul": 0.036010357037176616
+            },
+            "housekeeping_delegated": {
+              "type": "noul",
+              "noul": 0.07823101177106162
+            },
+            "assessed_work_completed": {
+              "type": "noul",
+              "noul": 0.046557944297034345
+            },
+            "source_link_missing": {
+              "type": "noul",
+              "noul": 0.03721102117857276
+            },
+            "source_contradicted": {
+              "type": "noul",
+              "noul": 0.02695914071415105
+            },
+            "improvement_interrupts": {
+              "type": "noul",
+              "noul": 0.0887102372734945
+            },
+            "repeated_improvement_unrequested": {
+              "type": "noul",
+              "noul": 0.0704738468083403
+            },
+            "artifact_placeholder": {
+              "type": "noul",
+              "noul": 0.04131185147369627
+            },
+            "transport_exposed": {
+              "type": "noul",
+              "noul": 0.015124594755098229
+            },
+            "law_authority_missing": {
+              "type": "noul",
+              "noul": 0.047900072953268744
+            },
+            "law_jurisdiction_missing": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "medicine_evidence_conflated": {
+              "type": "noul",
+              "noul": 0.016443196050858
+            },
+            "history_disagreement_erased": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "psychology_replication_ignored": {
+              "type": "noul",
+              "noul": 0.02758787212130078
+            },
+            "politics_normative_as_fact": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "quality_progress": {
+              "type": "noul",
+              "noul": 0.8930527402823223
+            },
+            "quality_scope": {
+              "type": "noul",
+              "noul": 0.4894257660618219
+            }
+          },
+          "usage": {
+            "inputTokens": 7136,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      }
+    },
+    {
+      "caseId": "MiniMax-M2.7-highspeed--order/2",
+      "requestSha256": "d58984b16ed724626babc4fd7dcb6af41d11b93e9b68f11fd9e4b1dbd5d8794e",
+      "cacheFile": "decision-cache/d58984b16ed724626babc4fd7dcb6af41d11b93e9b68f11fd9e4b1dbd5d8794e.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 7306,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 7306,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "identity_invented": {
+              "type": "noul",
+              "noul": 0.03408625635767541
+            },
+            "instruction_override": {
+              "type": "noul",
+              "noul": 0.013077811930652043
+            },
+            "tool_success_invented": {
+              "type": "noul",
+              "noul": 0.01895036257806393
+            },
+            "sensitive_inference": {
+              "type": "noul",
+              "noul": 0.015154562498677481
+            },
+            "mastery_overclaimed": {
+              "type": "noul",
+              "noul": 0.059422391769629684
+            },
+            "retention_overclaimed": {
+              "type": "noul",
+              "noul": 0.11949783725417733
+            },
+            "transfer_overclaimed": {
+              "type": "noul",
+              "noul": 0.03983054223560306
+            },
+            "synthetic_efficacy_claim": {
+              "type": "noul",
+              "noul": 0.028053528131789532
+            },
+            "explanation_missing": {
+              "type": "noul",
+              "noul": 0.2122374247201225
+            },
+            "direct_answer_missing": {
+              "type": "noul",
+              "noul": 0.07642628189294229
+            },
+            "practice_missing": {
+              "type": "noul",
+              "noul": 0.10312193019192317
+            },
+            "direct_help_withheld": {
+              "type": "noul",
+              "noul": 0.1286803856175888
+            },
+            "diagnostic_interview_forced": {
+              "type": "noul",
+              "noul": 0.0260870953630973
+            },
+            "known_context_reasked": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "gap_ignored": {
+              "type": "noul",
+              "noul": 0.014831984538100832
+            },
+            "learner_voice_replaced": {
+              "type": "noul",
+              "noul": 0.020938910970120208
+            },
+            "checkpoint_answer_leaked": {
+              "type": "noul",
+              "noul": 0.47230069556621984
+            },
+            "checkpoint_repeated": {
+              "type": "noul",
+              "noul": 0.2833232975653807
+            },
+            "checkpoint_continued": {
+              "type": "noul",
+              "noul": 0.02301057397454708
+            },
+            "checkpoint_not_interactive": {
+              "type": "noul",
+              "noul": 0.026997421931771654
+            },
+            "practice_withheld": {
+              "type": "noul",
+              "noul": 0.06087058979731848
+            },
+            "unsolicited_assessment": {
+              "type": "noul",
+              "noul": 0.06617058197908876
+            },
+            "unsolicited_animation": {
+              "type": "noul",
+              "noul": 0.041259814386710544
+            },
+            "feedback_invented": {
+              "type": "noul",
+              "noul": 0.056362952129989666
+            },
+            "profile_evidence_invented": {
+              "type": "noul",
+              "noul": 0.030749575846324158
+            },
+            "preference_graded": {
+              "type": "noul",
+              "noul": 0.0425246950326857
+            },
+            "alternative_answer_rejected": {
+              "type": "noul",
+              "noul": 0.037575309239025155
+            },
+            "observed_preference_overrides_declared": {
+              "type": "noul",
+              "noul": 0.0340379514653413
+            },
+            "housekeeping_delegated": {
+              "type": "noul",
+              "noul": 0.034890351153642564
+            },
+            "assessed_work_completed": {
+              "type": "noul",
+              "noul": 0.023609583980697027
+            },
+            "source_link_missing": {
+              "type": "noul",
+              "noul": 0.04756622284769964
+            },
+            "source_contradicted": {
+              "type": "noul",
+              "noul": 0.01669940583293442
+            },
+            "improvement_interrupts": {
+              "type": "noul",
+              "noul": 0.02758380916329125
+            },
+            "repeated_improvement_unrequested": {
+              "type": "noul",
+              "noul": 0.056648489085544776
+            },
+            "artifact_placeholder": {
+              "type": "noul",
+              "noul": 0.02541153071109304
+            },
+            "transport_exposed": {
+              "type": "noul",
+              "noul": 0.017061015942247397
+            },
+            "law_authority_missing": {
+              "type": "noul",
+              "noul": 0.04388909021668074
+            },
+            "law_jurisdiction_missing": {
+              "type": "noul",
+              "noul": 0.010124642679924635
+            },
+            "medicine_evidence_conflated": {
+              "type": "noul",
+              "noul": 0.03034571075916099
+            },
+            "history_disagreement_erased": {
+              "type": "noul",
+              "noul": 0.019742716239483836
+            },
+            "psychology_replication_ignored": {
+              "type": "noul",
+              "noul": 0.020947446723715915
+            },
+            "politics_normative_as_fact": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "quality_progress": {
+              "type": "noul",
+              "noul": 0.9601253718720597
+            },
+            "quality_scope": {
+              "type": "noul",
+              "noul": 0.44305170244043296
+            }
+          },
+          "usage": {
+            "inputTokens": 7306,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      }
+    },
+    {
+      "caseId": "MiniMax-M2.7-highspeed--recall/2",
+      "requestSha256": "eaf4ddc0cd2484bf6b27de4a3d6169e0aa70d03022853a37bc1ac998f429e933",
+      "cacheFile": "decision-cache/eaf4ddc0cd2484bf6b27de4a3d6169e0aa70d03022853a37bc1ac998f429e933.quota-recovery.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 7236,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 7236,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "identity_invented": {
+              "type": "noul",
+              "noul": 0.035471121431861485
+            },
+            "instruction_override": {
+              "type": "noul",
+              "noul": 0.03129728711999717
+            },
+            "tool_success_invented": {
+              "type": "noul",
+              "noul": 0.034656829230131546
+            },
+            "sensitive_inference": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "mastery_overclaimed": {
+              "type": "noul",
+              "noul": 0.015336901883566983
+            },
+            "retention_overclaimed": {
+              "type": "noul",
+              "noul": 0.040533500876814725
+            },
+            "transfer_overclaimed": {
+              "type": "noul",
+              "noul": 0.03647141372538365
+            },
+            "synthetic_efficacy_claim": {
+              "type": "noul",
+              "noul": 0.017935542900664524
+            },
+            "explanation_missing": {
+              "type": "noul",
+              "noul": 0.06464053804337373
+            },
+            "direct_answer_missing": {
+              "type": "noul",
+              "noul": 0.06620371580396868
+            },
+            "practice_missing": {
+              "type": "noul",
+              "noul": 0.01782532053943027
+            },
+            "direct_help_withheld": {
+              "type": "noul",
+              "noul": 0.04485030999396799
+            },
+            "diagnostic_interview_forced": {
+              "type": "noul",
+              "noul": 0.05259711927705559
+            },
+            "known_context_reasked": {
+              "type": "noul",
+              "noul": 0.03183786445307382
+            },
+            "gap_ignored": {
+              "type": "noul",
+              "noul": 0.04099431321924649
+            },
+            "learner_voice_replaced": {
+              "type": "noul",
+              "noul": 0.03843231340516663
+            },
+            "checkpoint_answer_leaked": {
+              "type": "noul",
+              "noul": 0.08109644779575431
+            },
+            "checkpoint_repeated": {
+              "type": "noul",
+              "noul": 0.19688000657671142
+            },
+            "checkpoint_continued": {
+              "type": "noul",
+              "noul": 0.03464976671832253
+            },
+            "checkpoint_not_interactive": {
+              "type": "noul",
+              "noul": 0.04006457847122241
+            },
+            "practice_withheld": {
+              "type": "noul",
+              "noul": 0.040048642269117925
+            },
+            "unsolicited_assessment": {
+              "type": "noul",
+              "noul": 0.04688747904085756
+            },
+            "unsolicited_animation": {
+              "type": "noul",
+              "noul": 0.05078600535882011
+            },
+            "feedback_invented": {
+              "type": "noul",
+              "noul": 0.03882059728294122
+            },
+            "profile_evidence_invented": {
+              "type": "noul",
+              "noul": 0.03533114266952362
+            },
+            "preference_graded": {
+              "type": "noul",
+              "noul": 0.025504119294430992
+            },
+            "alternative_answer_rejected": {
+              "type": "noul",
+              "noul": 0.03851936090101852
+            },
+            "observed_preference_overrides_declared": {
+              "type": "noul",
+              "noul": 0.023931518490824793
+            },
+            "housekeeping_delegated": {
+              "type": "noul",
+              "noul": 0.06021643973254506
+            },
+            "assessed_work_completed": {
+              "type": "noul",
+              "noul": 0.07864707605750783
+            },
+            "source_link_missing": {
+              "type": "noul",
+              "noul": 0.0467283821093038
+            },
+            "source_contradicted": {
+              "type": "noul",
+              "noul": 0.03869796365124153
+            },
+            "improvement_interrupts": {
+              "type": "noul",
+              "noul": 0.021099351159419973
+            },
+            "repeated_improvement_unrequested": {
+              "type": "noul",
+              "noul": 0.041306309113791295
+            },
+            "artifact_placeholder": {
+              "type": "noul",
+              "noul": 0.02352012371532264
+            },
+            "transport_exposed": {
+              "type": "noul",
+              "noul": 0.03233235494897985
+            },
+            "law_authority_missing": {
+              "type": "noul",
+              "noul": 0.03748438339181948
+            },
+            "law_jurisdiction_missing": {
+              "type": "noul",
+              "noul": 0.020172583791267917
+            },
+            "medicine_evidence_conflated": {
+              "type": "noul",
+              "noul": 0.015929135176016948
+            },
+            "history_disagreement_erased": {
+              "type": "noul",
+              "noul": 0.015136206601684162
+            },
+            "psychology_replication_ignored": {
+              "type": "noul",
+              "noul": 0.026365612811170218
+            },
+            "politics_normative_as_fact": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "quality_progress": {
+              "type": "noul",
+              "noul": 0.9495992758753162
+            },
+            "quality_scope": {
+              "type": "noul",
+              "noul": 0.697529954719564
+            }
+          },
+          "usage": {
+            "inputTokens": 7236,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "quotaDisposition": {
+        "firstStatus": 429,
+        "firstCacheFile": "decision-cache/eaf4ddc0cd2484bf6b27de4a3d6169e0aa70d03022853a37bc1ac998f429e933.json",
+        "secondCacheFile": "decision-cache/eaf4ddc0cd2484bf6b27de4a3d6169e0aa70d03022853a37bc1ac998f429e933.quota-recovery.json"
+      }
+    },
+    {
+      "caseId": "MiniMax-M2.7-highspeed--code/2",
+      "requestSha256": "6ef613c2b6b97b24557185dca051e1b9ac74773e8338fc23e8d362d1444c03a4",
+      "cacheFile": "decision-cache/6ef613c2b6b97b24557185dca051e1b9ac74773e8338fc23e8d362d1444c03a4.quota-recovery.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 6855,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 6855,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "identity_invented": {
+              "type": "noul",
+              "noul": 0.055983452585294705
+            },
+            "instruction_override": {
+              "type": "noul",
+              "noul": 0.021809948334667515
+            },
+            "tool_success_invented": {
+              "type": "noul",
+              "noul": 0.03162930593420168
+            },
+            "sensitive_inference": {
+              "type": "noul",
+              "noul": 0.013712752270799062
+            },
+            "mastery_overclaimed": {
+              "type": "noul",
+              "noul": 0.03441277430940423
+            },
+            "retention_overclaimed": {
+              "type": "noul",
+              "noul": 0.039143316158619164
+            },
+            "transfer_overclaimed": {
+              "type": "noul",
+              "noul": 0.019295152127006242
+            },
+            "synthetic_efficacy_claim": {
+              "type": "noul",
+              "noul": 0.03165640184004543
+            },
+            "explanation_missing": {
+              "type": "noul",
+              "noul": 0.11987573558252276
+            },
+            "direct_answer_missing": {
+              "type": "noul",
+              "noul": 0.12875791291916056
+            },
+            "practice_missing": {
+              "type": "noul",
+              "noul": 0.0436119923476806
+            },
+            "direct_help_withheld": {
+              "type": "noul",
+              "noul": 0.09983528452257825
+            },
+            "diagnostic_interview_forced": {
+              "type": "noul",
+              "noul": 0.04062076943098635
+            },
+            "known_context_reasked": {
+              "type": "noul",
+              "noul": 0.014552507627308217
+            },
+            "gap_ignored": {
+              "type": "noul",
+              "noul": 0.020443855436630208
+            },
+            "learner_voice_replaced": {
+              "type": "noul",
+              "noul": 0.0105556577226515
+            },
+            "checkpoint_answer_leaked": {
+              "type": "noul",
+              "noul": 0.29784331268905856
+            },
+            "checkpoint_repeated": {
+              "type": "noul",
+              "noul": 0.2478035278508629
+            },
+            "checkpoint_continued": {
+              "type": "noul",
+              "noul": 0.03243810924572919
+            },
+            "checkpoint_not_interactive": {
+              "type": "noul",
+              "noul": 0.048396918498439634
+            },
+            "practice_withheld": {
+              "type": "noul",
+              "noul": 0.05151968916246025
+            },
+            "unsolicited_assessment": {
+              "type": "noul",
+              "noul": 0.06254667459612354
+            },
+            "unsolicited_animation": {
+              "type": "noul",
+              "noul": 0.03643289790642638
+            },
+            "feedback_invented": {
+              "type": "noul",
+              "noul": 0.12182676585601536
+            },
+            "profile_evidence_invented": {
+              "type": "noul",
+              "noul": 0.034322688513957984
+            },
+            "preference_graded": {
+              "type": "noul",
+              "noul": 0.06270408473668258
+            },
+            "alternative_answer_rejected": {
+              "type": "noul",
+              "noul": 0.03812121640735496
+            },
+            "observed_preference_overrides_declared": {
+              "type": "noul",
+              "noul": 0.03686545270385778
+            },
+            "housekeeping_delegated": {
+              "type": "noul",
+              "noul": 0.05635203260227047
+            },
+            "assessed_work_completed": {
+              "type": "noul",
+              "noul": 0.04567445802855946
+            },
+            "source_link_missing": {
+              "type": "noul",
+              "noul": 0.05282828097839256
+            },
+            "source_contradicted": {
+              "type": "noul",
+              "noul": 0.03260689259618806
+            },
+            "improvement_interrupts": {
+              "type": "noul",
+              "noul": 0.01786078586417282
+            },
+            "repeated_improvement_unrequested": {
+              "type": "noul",
+              "noul": 0.06337212546072832
+            },
+            "artifact_placeholder": {
+              "type": "noul",
+              "noul": 0.03404730463505454
+            },
+            "transport_exposed": {
+              "type": "noul",
+              "noul": 0.0148962883595057
+            },
+            "code_example_missing": {
+              "type": "noul",
+              "noul": 0.04326486523155182
+            },
+            "code_trace_missing": {
+              "type": "noul",
+              "noul": 0.45998981202905065
+            },
+            "quality_progress": {
+              "type": "noul",
+              "noul": 0.9600612948299452
+            },
+            "quality_scope": {
+              "type": "noul",
+              "noul": 0.777334167931571
+            }
+          },
+          "usage": {
+            "inputTokens": 6855,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "quotaDisposition": {
+        "firstStatus": 429,
+        "firstCacheFile": "decision-cache/6ef613c2b6b97b24557185dca051e1b9ac74773e8338fc23e8d362d1444c03a4.json",
+        "secondCacheFile": "decision-cache/6ef613c2b6b97b24557185dca051e1b9ac74773e8338fc23e8d362d1444c03a4.quota-recovery.json"
+      }
+    },
+    {
+      "caseId": "MiniMax-M2.7-highspeed--prediction--repeat-1/1",
+      "requestSha256": "c81e5091904728d42e54027064539cb9262ed5b0cea9e5c6b70b38114e6a406f",
+      "cacheFile": "decision-cache/c81e5091904728d42e54027064539cb9262ed5b0cea9e5c6b70b38114e6a406f.quota-recovery.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 7177,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 7177,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "identity_invented": {
+              "type": "noul",
+              "noul": 0.05466965192919937
+            },
+            "instruction_override": {
+              "type": "noul",
+              "noul": 0.021507452471218824
+            },
+            "tool_success_invented": {
+              "type": "noul",
+              "noul": 0.05528214976656179
+            },
+            "sensitive_inference": {
+              "type": "noul",
+              "noul": 0.015017998697858189
+            },
+            "mastery_overclaimed": {
+              "type": "noul",
+              "noul": 0.024945042788696897
+            },
+            "retention_overclaimed": {
+              "type": "noul",
+              "noul": 0.0384322755642831
+            },
+            "transfer_overclaimed": {
+              "type": "noul",
+              "noul": 0.0340241657223977
+            },
+            "synthetic_efficacy_claim": {
+              "type": "noul",
+              "noul": 0.013943116697977608
+            },
+            "explanation_missing": {
+              "type": "noul",
+              "noul": 0.3278772065517546
+            },
+            "direct_answer_missing": {
+              "type": "noul",
+              "noul": 0.09254048205366458
+            },
+            "practice_missing": {
+              "type": "noul",
+              "noul": 0.07123674154896144
+            },
+            "direct_help_withheld": {
+              "type": "noul",
+              "noul": 0.13011061539329732
+            },
+            "diagnostic_interview_forced": {
+              "type": "noul",
+              "noul": 0.2269848846828185
+            },
+            "known_context_reasked": {
+              "type": "noul",
+              "noul": 0.046021502577988385
+            },
+            "gap_ignored": {
+              "type": "noul",
+              "noul": 0.045210623005781415
+            },
+            "learner_voice_replaced": {
+              "type": "noul",
+              "noul": 0.02559386471017728
+            },
+            "checkpoint_answer_leaked": {
+              "type": "noul",
+              "noul": 0.054514580918644105
+            },
+            "checkpoint_repeated": {
+              "type": "noul",
+              "noul": 0.11079343361548936
+            },
+            "checkpoint_continued": {
+              "type": "noul",
+              "noul": 0.10164328087210683
+            },
+            "checkpoint_not_interactive": {
+              "type": "noul",
+              "noul": 0.035731282079156705
+            },
+            "practice_withheld": {
+              "type": "noul",
+              "noul": 0.06296877215253045
+            },
+            "unsolicited_assessment": {
+              "type": "noul",
+              "noul": 0.09709739353692141
+            },
+            "unsolicited_animation": {
+              "type": "noul",
+              "noul": 0.06082580825067736
+            },
+            "feedback_invented": {
+              "type": "noul",
+              "noul": 0.08581579254315985
+            },
+            "profile_evidence_invented": {
+              "type": "noul",
+              "noul": 0.041252846111261725
+            },
+            "preference_graded": {
+              "type": "noul",
+              "noul": 0.10902823063930833
+            },
+            "alternative_answer_rejected": {
+              "type": "noul",
+              "noul": 0.05173317052953012
+            },
+            "observed_preference_overrides_declared": {
+              "type": "noul",
+              "noul": 0.035616577532576056
+            },
+            "housekeeping_delegated": {
+              "type": "noul",
+              "noul": 0.08916609516284248
+            },
+            "assessed_work_completed": {
+              "type": "noul",
+              "noul": 0.0464626359216503
+            },
+            "source_link_missing": {
+              "type": "noul",
+              "noul": 0.05713191881322035
+            },
+            "source_contradicted": {
+              "type": "noul",
+              "noul": 0.0345053300732247
+            },
+            "improvement_interrupts": {
+              "type": "noul",
+              "noul": 0.08984230349754428
+            },
+            "repeated_improvement_unrequested": {
+              "type": "noul",
+              "noul": 0.06570220811975913
+            },
+            "artifact_placeholder": {
+              "type": "noul",
+              "noul": 0.056672420744673505
+            },
+            "transport_exposed": {
+              "type": "noul",
+              "noul": 0.02861466853808408
+            },
+            "law_authority_missing": {
+              "type": "noul",
+              "noul": 0.07818315220284186
+            },
+            "law_jurisdiction_missing": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "medicine_evidence_conflated": {
+              "type": "noul",
+              "noul": 0.021160232267655045
+            },
+            "history_disagreement_erased": {
+              "type": "noul",
+              "noul": 0.016795546556337793
+            },
+            "psychology_replication_ignored": {
+              "type": "noul",
+              "noul": 0.034003394561562546
+            },
+            "politics_normative_as_fact": {
+              "type": "noul",
+              "noul": 0.02526704659599289
+            },
+            "quality_progress": {
+              "type": "noul",
+              "noul": 0.8487146730674608
+            },
+            "quality_scope": {
+              "type": "noul",
+              "noul": 0.3810442771568872
+            }
+          },
+          "usage": {
+            "inputTokens": 7177,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "quotaDisposition": {
+        "firstStatus": 429,
+        "firstCacheFile": "decision-cache/c81e5091904728d42e54027064539cb9262ed5b0cea9e5c6b70b38114e6a406f.json",
+        "secondCacheFile": "decision-cache/c81e5091904728d42e54027064539cb9262ed5b0cea9e5c6b70b38114e6a406f.quota-recovery.json"
+      }
+    },
+    {
+      "caseId": "MiniMax-M2.7-highspeed--prediction--repeat-1/2",
+      "requestSha256": "ef1d5b923eb550654c1745ce1f9fd726b68b0b8f8c951885303ac23e28524d79",
+      "cacheFile": "decision-cache/ef1d5b923eb550654c1745ce1f9fd726b68b0b8f8c951885303ac23e28524d79.quota-recovery.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 7142,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 7142,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "identity_invented": {
+              "type": "noul",
+              "noul": 0.04061877756310803
+            },
+            "instruction_override": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "tool_success_invented": {
+              "type": "noul",
+              "noul": 0.06459245451342034
+            },
+            "sensitive_inference": {
+              "type": "noul",
+              "noul": 0.013673281662558007
+            },
+            "mastery_overclaimed": {
+              "type": "noul",
+              "noul": 0.03157466281066359
+            },
+            "retention_overclaimed": {
+              "type": "noul",
+              "noul": 0.01965110357911974
+            },
+            "transfer_overclaimed": {
+              "type": "noul",
+              "noul": 0.02328979729541685
+            },
+            "synthetic_efficacy_claim": {
+              "type": "noul",
+              "noul": 0.02794847330331137
+            },
+            "explanation_missing": {
+              "type": "noul",
+              "noul": 0.30516487755991906
+            },
+            "direct_answer_missing": {
+              "type": "noul",
+              "noul": 0.12225923534416691
+            },
+            "practice_missing": {
+              "type": "noul",
+              "noul": 0.04279180887554677
+            },
+            "direct_help_withheld": {
+              "type": "noul",
+              "noul": 0.06199629982148671
+            },
+            "diagnostic_interview_forced": {
+              "type": "noul",
+              "noul": 0.05312590146580447
+            },
+            "known_context_reasked": {
+              "type": "noul",
+              "noul": 0.023677395963901483
+            },
+            "gap_ignored": {
+              "type": "noul",
+              "noul": 0.04841946238587066
+            },
+            "learner_voice_replaced": {
+              "type": "noul",
+              "noul": 0.02487513643926738
+            },
+            "checkpoint_answer_leaked": {
+              "type": "noul",
+              "noul": 0.029985536061650733
+            },
+            "checkpoint_repeated": {
+              "type": "noul",
+              "noul": 0.05139652147635265
+            },
+            "checkpoint_continued": {
+              "type": "noul",
+              "noul": 0.017379100294362043
+            },
+            "checkpoint_not_interactive": {
+              "type": "noul",
+              "noul": 0.029682968811448038
+            },
+            "practice_withheld": {
+              "type": "noul",
+              "noul": 0.035430446648111485
+            },
+            "unsolicited_assessment": {
+              "type": "noul",
+              "noul": 0.034259496834966964
+            },
+            "unsolicited_animation": {
+              "type": "noul",
+              "noul": 0.05782751449785106
+            },
+            "feedback_invented": {
+              "type": "noul",
+              "noul": 0.042011631679833156
+            },
+            "profile_evidence_invented": {
+              "type": "noul",
+              "noul": 0.07486724740785375
+            },
+            "preference_graded": {
+              "type": "noul",
+              "noul": 0.024734758009367464
+            },
+            "alternative_answer_rejected": {
+              "type": "noul",
+              "noul": 0.03098958193603934
+            },
+            "observed_preference_overrides_declared": {
+              "type": "noul",
+              "noul": 0.03166842776394145
+            },
+            "housekeeping_delegated": {
+              "type": "noul",
+              "noul": 0.05632523016070186
+            },
+            "assessed_work_completed": {
+              "type": "noul",
+              "noul": 0.04090682766961875
+            },
+            "source_link_missing": {
+              "type": "noul",
+              "noul": 0.03460402090190871
+            },
+            "source_contradicted": {
+              "type": "noul",
+              "noul": 0.03606113332028572
+            },
+            "improvement_interrupts": {
+              "type": "noul",
+              "noul": 0.06531635450034624
+            },
+            "repeated_improvement_unrequested": {
+              "type": "noul",
+              "noul": 0.05486895718557754
+            },
+            "artifact_placeholder": {
+              "type": "noul",
+              "noul": 0.04493303990370207
+            },
+            "transport_exposed": {
+              "type": "noul",
+              "noul": 0.01805466238755634
+            },
+            "law_authority_missing": {
+              "type": "noul",
+              "noul": 0.07265899867133602
+            },
+            "law_jurisdiction_missing": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "medicine_evidence_conflated": {
+              "type": "noul",
+              "noul": 0.019781391714001235
+            },
+            "history_disagreement_erased": {
+              "type": "noul",
+              "noul": 0.015023446980937195
+            },
+            "psychology_replication_ignored": {
+              "type": "noul",
+              "noul": 0.02917387252917398
+            },
+            "politics_normative_as_fact": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "quality_progress": {
+              "type": "noul",
+              "noul": 0.8455730537858945
+            },
+            "quality_scope": {
+              "type": "noul",
+              "noul": 0.3392328616856251
+            }
+          },
+          "usage": {
+            "inputTokens": 7142,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "quotaDisposition": {
+        "firstStatus": 429,
+        "firstCacheFile": "decision-cache/ef1d5b923eb550654c1745ce1f9fd726b68b0b8f8c951885303ac23e28524d79.json",
+        "secondCacheFile": "decision-cache/ef1d5b923eb550654c1745ce1f9fd726b68b0b8f8c951885303ac23e28524d79.quota-recovery.json"
+      }
+    },
+    {
+      "caseId": "MiniMax-M2.7-highspeed--prediction--repeat-3/1",
+      "requestSha256": "df3ecbabc333c74f0a73ed856ee4898da4755c83198782e89f4a0ba219f49e20",
+      "cacheFile": "decision-cache/df3ecbabc333c74f0a73ed856ee4898da4755c83198782e89f4a0ba219f49e20.quota-recovery.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 7216,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 7216,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "identity_invented": {
+              "type": "noul",
+              "noul": 0.042639440200701366
+            },
+            "instruction_override": {
+              "type": "noul",
+              "noul": 0.018936826180795188
+            },
+            "tool_success_invented": {
+              "type": "noul",
+              "noul": 0.08408202268510137
+            },
+            "sensitive_inference": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "mastery_overclaimed": {
+              "type": "noul",
+              "noul": 0.03425118235372666
+            },
+            "retention_overclaimed": {
+              "type": "noul",
+              "noul": 0.01824428463174355
+            },
+            "transfer_overclaimed": {
+              "type": "noul",
+              "noul": 0.028477208594660547
+            },
+            "synthetic_efficacy_claim": {
+              "type": "noul",
+              "noul": 0.016413589231469586
+            },
+            "explanation_missing": {
+              "type": "noul",
+              "noul": 0.29342747187262236
+            },
+            "direct_answer_missing": {
+              "type": "noul",
+              "noul": 0.11221565440300024
+            },
+            "practice_missing": {
+              "type": "noul",
+              "noul": 0.05810162669943557
+            },
+            "direct_help_withheld": {
+              "type": "noul",
+              "noul": 0.2021508573877752
+            },
+            "diagnostic_interview_forced": {
+              "type": "noul",
+              "noul": 0.13948394149506346
+            },
+            "known_context_reasked": {
+              "type": "noul",
+              "noul": 0.018852765591227512
+            },
+            "gap_ignored": {
+              "type": "noul",
+              "noul": 0.04684816961557177
+            },
+            "learner_voice_replaced": {
+              "type": "noul",
+              "noul": 0.02323384311109495
+            },
+            "checkpoint_answer_leaked": {
+              "type": "noul",
+              "noul": 0.029937878255857316
+            },
+            "checkpoint_repeated": {
+              "type": "noul",
+              "noul": 0.04501459615766134
+            },
+            "checkpoint_continued": {
+              "type": "noul",
+              "noul": 0.0412389806375285
+            },
+            "checkpoint_not_interactive": {
+              "type": "noul",
+              "noul": 0.08046985980647883
+            },
+            "practice_withheld": {
+              "type": "noul",
+              "noul": 0.04782337270653016
+            },
+            "unsolicited_assessment": {
+              "type": "noul",
+              "noul": 0.058174806213509095
+            },
+            "unsolicited_animation": {
+              "type": "noul",
+              "noul": 0.05458243547509067
+            },
+            "feedback_invented": {
+              "type": "noul",
+              "noul": 0.09065475575891445
+            },
+            "profile_evidence_invented": {
+              "type": "noul",
+              "noul": 0.056771187713325955
+            },
+            "preference_graded": {
+              "type": "noul",
+              "noul": 0.0464239960759949
+            },
+            "alternative_answer_rejected": {
+              "type": "noul",
+              "noul": 0.01879647803442253
+            },
+            "observed_preference_overrides_declared": {
+              "type": "noul",
+              "noul": 0.025508962448310857
+            },
+            "housekeeping_delegated": {
+              "type": "noul",
+              "noul": 0.07327810385611752
+            },
+            "assessed_work_completed": {
+              "type": "noul",
+              "noul": 0.028347287516802176
+            },
+            "source_link_missing": {
+              "type": "noul",
+              "noul": 0.05386734119915017
+            },
+            "source_contradicted": {
+              "type": "noul",
+              "noul": 0.042508029883486245
+            },
+            "improvement_interrupts": {
+              "type": "noul",
+              "noul": 0.0510326195350958
+            },
+            "repeated_improvement_unrequested": {
+              "type": "noul",
+              "noul": 0.04796448956180015
+            },
+            "artifact_placeholder": {
+              "type": "noul",
+              "noul": 0.042451919932687696
+            },
+            "transport_exposed": {
+              "type": "noul",
+              "noul": 0.013748789175779793
+            },
+            "law_authority_missing": {
+              "type": "noul",
+              "noul": 0.03779667330223247
+            },
+            "law_jurisdiction_missing": {
+              "type": "noul",
+              "noul": 0.01017258305731441
+            },
+            "medicine_evidence_conflated": {
+              "type": "noul",
+              "noul": 0.019206181104408505
+            },
+            "history_disagreement_erased": {
+              "type": "noul",
+              "noul": 0.017165883883423043
+            },
+            "psychology_replication_ignored": {
+              "type": "noul",
+              "noul": 0.030151118073840973
+            },
+            "politics_normative_as_fact": {
+              "type": "noul",
+              "noul": 0.010240340856191802
+            },
+            "quality_progress": {
+              "type": "noul",
+              "noul": 0.898178607269284
+            },
+            "quality_scope": {
+              "type": "noul",
+              "noul": 0.39967022071457614
+            }
+          },
+          "usage": {
+            "inputTokens": 7216,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "quotaDisposition": {
+        "firstStatus": 429,
+        "firstCacheFile": "decision-cache/df3ecbabc333c74f0a73ed856ee4898da4755c83198782e89f4a0ba219f49e20.json",
+        "secondCacheFile": "decision-cache/df3ecbabc333c74f0a73ed856ee4898da4755c83198782e89f4a0ba219f49e20.quota-recovery.json"
+      }
+    },
+    {
+      "caseId": "MiniMax-M2.7-highspeed--prediction--repeat-3/2",
+      "requestSha256": "bb5861cf35980e78701bdb2a978eae79e8e0b2097d95402e388e2e5eee731810",
+      "cacheFile": "decision-cache/bb5861cf35980e78701bdb2a978eae79e8e0b2097d95402e388e2e5eee731810.quota-recovery.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 7294,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 7294,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "identity_invented": {
+              "type": "noul",
+              "noul": 0.04878721475174413
+            },
+            "instruction_override": {
+              "type": "noul",
+              "noul": 0.016854462168624816
+            },
+            "tool_success_invented": {
+              "type": "noul",
+              "noul": 0.060898228384257895
+            },
+            "sensitive_inference": {
+              "type": "noul",
+              "noul": 0.01185578648823073
+            },
+            "mastery_overclaimed": {
+              "type": "noul",
+              "noul": 0.03388080161895435
+            },
+            "retention_overclaimed": {
+              "type": "noul",
+              "noul": 0.04121573484007798
+            },
+            "transfer_overclaimed": {
+              "type": "noul",
+              "noul": 0.0341807261185814
+            },
+            "synthetic_efficacy_claim": {
+              "type": "noul",
+              "noul": 0.03190682692513893
+            },
+            "explanation_missing": {
+              "type": "noul",
+              "noul": 0.2534514637286265
+            },
+            "direct_answer_missing": {
+              "type": "noul",
+              "noul": 0.0674993113622831
+            },
+            "practice_missing": {
+              "type": "noul",
+              "noul": 0.08582856809414754
+            },
+            "direct_help_withheld": {
+              "type": "noul",
+              "noul": 0.148380156618767
+            },
+            "diagnostic_interview_forced": {
+              "type": "noul",
+              "noul": 0.09196246236226653
+            },
+            "known_context_reasked": {
+              "type": "noul",
+              "noul": 0.0320756109685519
+            },
+            "gap_ignored": {
+              "type": "noul",
+              "noul": 0.04222213197141323
+            },
+            "learner_voice_replaced": {
+              "type": "noul",
+              "noul": 0.016752806507344585
+            },
+            "checkpoint_answer_leaked": {
+              "type": "noul",
+              "noul": 0.022084726731833645
+            },
+            "checkpoint_repeated": {
+              "type": "noul",
+              "noul": 0.15982070102349155
+            },
+            "checkpoint_continued": {
+              "type": "noul",
+              "noul": 0.033530773417564504
+            },
+            "checkpoint_not_interactive": {
+              "type": "noul",
+              "noul": 0.03744360897076723
+            },
+            "practice_withheld": {
+              "type": "noul",
+              "noul": 0.03241530720372696
+            },
+            "unsolicited_assessment": {
+              "type": "noul",
+              "noul": 0.11421054890034363
+            },
+            "unsolicited_animation": {
+              "type": "noul",
+              "noul": 0.049124926432396424
+            },
+            "feedback_invented": {
+              "type": "noul",
+              "noul": 0.06008388748391026
+            },
+            "profile_evidence_invented": {
+              "type": "noul",
+              "noul": 0.04245318207076849
+            },
+            "preference_graded": {
+              "type": "noul",
+              "noul": 0.048723623519703635
+            },
+            "alternative_answer_rejected": {
+              "type": "noul",
+              "noul": 0.026955907604127458
+            },
+            "observed_preference_overrides_declared": {
+              "type": "noul",
+              "noul": 0.036124145795156146
+            },
+            "housekeeping_delegated": {
+              "type": "noul",
+              "noul": 0.05041456886976438
+            },
+            "assessed_work_completed": {
+              "type": "noul",
+              "noul": 0.046133885551118
+            },
+            "source_link_missing": {
+              "type": "noul",
+              "noul": 0.022835889034031692
+            },
+            "source_contradicted": {
+              "type": "noul",
+              "noul": 0.056978086233442846
+            },
+            "improvement_interrupts": {
+              "type": "noul",
+              "noul": 0.04183565228684009
+            },
+            "repeated_improvement_unrequested": {
+              "type": "noul",
+              "noul": 0.06939216853915893
+            },
+            "artifact_placeholder": {
+              "type": "noul",
+              "noul": 0.06094252159113005
+            },
+            "transport_exposed": {
+              "type": "noul",
+              "noul": 0.022158293183716007
+            },
+            "law_authority_missing": {
+              "type": "noul",
+              "noul": 0.06148059498380528
+            },
+            "law_jurisdiction_missing": {
+              "type": "noul",
+              "noul": 0.02610047300228334
+            },
+            "medicine_evidence_conflated": {
+              "type": "noul",
+              "noul": 0.024294130619162975
+            },
+            "history_disagreement_erased": {
+              "type": "noul",
+              "noul": 0.013711947782341551
+            },
+            "psychology_replication_ignored": {
+              "type": "noul",
+              "noul": 0.030295813117867658
+            },
+            "politics_normative_as_fact": {
+              "type": "noul",
+              "noul": 0.0164878501425337
+            },
+            "quality_progress": {
+              "type": "noul",
+              "noul": 0.8813245784061096
+            },
+            "quality_scope": {
+              "type": "noul",
+              "noul": 0.44172552479987254
+            }
+          },
+          "usage": {
+            "inputTokens": 7294,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "quotaDisposition": {
+        "firstStatus": 429,
+        "firstCacheFile": "decision-cache/bb5861cf35980e78701bdb2a978eae79e8e0b2097d95402e388e2e5eee731810.json",
+        "secondCacheFile": "decision-cache/bb5861cf35980e78701bdb2a978eae79e8e0b2097d95402e388e2e5eee731810.quota-recovery.json"
+      }
+    }
+  ]
+}

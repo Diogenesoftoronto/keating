@@ -21,5 +21,9 @@ const execute = selected === "chat" ? async () => {
   const result = await runFlueChatFixture();
   state.result = { exitCode: 0, stdout: "FLUE_CHAT_RESULT=" + JSON.stringify(result) };
   state.stage = "done";
+} : selected === "native-page" ? async () => {
+  const { runNativePageFixture } = await import("../../../web/src/test/fixtures/flue-native-page");
+  state.result = await runNativePageFixture();
+  state.stage = "done";
 } : run;
 execute().catch((error) => { state.error = error.stack ?? String(error); state.stage = "failed"; });

@@ -1,0 +1,366 @@
+{
+  "id": "gemini-3.1-flash-lite--variable",
+  "scenario": "variable",
+  "model": "gemini-3.1-flash-lite",
+  "startedAt": "2026-11-18T12:53:40.701Z",
+  "judge": [
+    {
+      "phase": "plan",
+      "hash": "e1d5f35a8a25231987537c42c5dbcbd4a89689a50780e45066f6652e47dff35a",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 3523,
+        "outputTokens": 674
+      },
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.69
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.14
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.6
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.33
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.49
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.08
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.57
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.96
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.67
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.91
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.11
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 0.99
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.1
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.25
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.87
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.83
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.07
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.11
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.32
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.46
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 1.1,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.18,
+            "1": 0.54,
+            "2": 0.27,
+            "3": 0.01
+          },
+          "confidence": 0.53
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.18,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.85,
+            "1": 0.13,
+            "2": 0.02,
+            "3": 0
+          },
+          "confidence": 0.83
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 0.6,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.6,
+            "1": 0.25,
+            "2": 0.12,
+            "3": 0.03
+          },
+          "confidence": 0.42
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "supported",
+          "probabilities": {
+            "concise": 0.21,
+            "supported": 0.78,
+            "deep": 0.01
+          },
+          "confidence": 0.67
+        }
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "c20fd8995e744cf5cfbfe9c9f8da50f3d3f911aa248c4c20f1092f1de57f6f71",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 6384,
+        "outputTokens": 896
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "9b8326b623c97b28cba43bec46308c1ad7fee92755ed9287055f4942ba65aead",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5846,
+        "outputTokens": 896
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha": "d40778543069dbd6e38876d844bc655603389dd892114004ad7c47ce526508ba",
+      "messagesSha": "c66ed8b90d8771a9336b9ff41420328b6ce45d82a536d371d3c1ac9830c82543",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "",
+        "toolNames": [
+          "interactive_page"
+        ],
+        "requestedModel": "gemini-3.1-flash-lite",
+        "responseModel": null,
+        "stop": "toolUse",
+        "errorClass": null,
+        "usage": {
+          "input": 10400,
+          "output": 752,
+          "cacheRead": 8145,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 2,
+      "systemSha": "d40778543069dbd6e38876d844bc655603389dd892114004ad7c47ce526508ba",
+      "messagesSha": "375918d71d609a8c7e68e3c90317d51c55451909b9bd851d99ea88584d28597b",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "```openui lifecycle=ephemeral id=area-perimeter-sim\nroot = LearningSurface([sim], \"Area vs. Perimeter\", \"Watch how changing the width affects area and perimeter when the height is fixed at 4.\", \"ephemeral\")\nsim = Simulation(\"rect-sim\", \"Rectangle Dimensions\", \n  [\n    { id: \"width\", label: \"Width\", min: 1, max: 10, step: 1, value: 5 }\n  ],\n  [\n    { id: \"area\", label: \"Area\", unit: \"sq units\", expr: \"width * 4\", emphasis: true },\n    { id: \"perimeter\", label: \"Perimeter\", unit: \"units\", expr: \"(width + 4) * 2\" }\n  ],\n  \"ephemeral\",\n  \"Predict what happens to the area and perimeter if you double the width from 5 to 10. Then, move the slider and see if your prediction matches.\"\n)\n```",
+        "toolNames": [],
+        "requestedModel": "gemini-3.1-flash-lite",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 2376,
+          "output": 220,
+          "cacheRead": 16292,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "counterfactual": {
+    "systemSha": "67b0a252c382f30cbd5dc02bd33a9147f5b0adada8a77a5908c3c446b39adc71",
+    "messagesSha": "c66ed8b90d8771a9336b9ff41420328b6ce45d82a536d371d3c1ac9830c82543",
+    "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+    "response": {
+      "text": "",
+      "toolNames": [
+        "interactive_page"
+      ],
+      "requestedModel": "gemini-3.1-flash-lite",
+      "responseModel": null,
+      "stop": "toolUse",
+      "errorClass": null,
+      "usage": {
+        "input": 18478,
+        "output": 554,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    }
+  },
+  "decision": {
+    "action": "create",
+    "families": [
+      {
+        "family": "question",
+        "components": [
+          "Question"
+        ]
+      },
+      {
+        "family": "manipulable",
+        "components": [
+          "Simulation"
+        ]
+      },
+      {
+        "family": "workspace",
+        "components": [
+          "ConceptMap"
+        ]
+      }
+    ],
+    "features": [
+      "variable_relationship",
+      "structure_relations",
+      "category_distinction",
+      "prediction_opportunity"
+    ],
+    "lead": "answer-first",
+    "paired": false
+  },
+  "offer": "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; have the learner sort or tell apart similar cases; or Simulation to let the learner change a variable and observe the outcome; or ConceptMap to lay out how the concepts relate. Prose is acceptable when it serves the learner better.",
+  "phase": "released",
+  "selection": 2,
+  "reason": null,
+  "release": {
+    "text": "```openui lifecycle=ephemeral id=area-perimeter-sim\nroot = LearningSurface([sim], \"Area vs. Perimeter\", \"Watch how changing the width affects area and perimeter when the height is fixed at 4.\", \"ephemeral\")\nsim = Simulation(\"rect-sim\", \"Rectangle Dimensions\", \n  [\n    { id: \"width\", label: \"Width\", min: 1, max: 10, step: 1, value: 5 }\n  ],\n  [\n    { id: \"area\", label: \"Area\", unit: \"sq units\", expr: \"width * 4\", emphasis: true },\n    { id: \"perimeter\", label: \"Perimeter\", unit: \"units\", expr: \"(width + 4) * 2\" }\n  ],\n  \"ephemeral\",\n  \"Predict what happens to the area and perimeter if you double the width from 5 to 10. Then, move the slider and see if your prediction matches.\"\n)\n```",
+    "unverified": false
+  },
+  "publicText": "```openui lifecycle=ephemeral id=area-perimeter-sim\nroot = LearningSurface([sim], \"Area vs. Perimeter\", \"Watch how changing the width affects area and perimeter when the height is fixed at 4.\", \"ephemeral\")\nsim = Simulation(\"rect-sim\", \"Rectangle Dimensions\", \n  [\n    { id: \"width\", label: \"Width\", min: 1, max: 10, step: 1, value: 5 }\n  ],\n  [\n    { id: \"area\", label: \"Area\", unit: \"sq units\", expr: \"width * 4\", emphasis: true },\n    { id: \"perimeter\", label: \"Perimeter\", unit: \"units\", expr: \"(width + 4) * 2\" }\n  ],\n  \"ephemeral\",\n  \"Predict what happens to the area and perimeter if you double the width from 5 to 10. Then, move the slider and see if your prediction matches.\"\n)\n```",
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "unknown",
+      "checks": [
+        {
+          "id": "artifact_placeholder",
+          "status": "unknown",
+          "probability": 0.5
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "status": "pass",
+      "checks": [
+        {
+          "id": "direct_help_withheld",
+          "status": "unknown",
+          "probability": 0.51
+        }
+      ]
+    }
+  ],
+  "directives": [
+    "- Answer the bounded question directly; do not start a diagnostic interview.",
+    "- Reduce the difficulty and provide concrete help; do not demand more guessing.",
+    "- A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+    "- An available animation tool may be used for the requested motion; author topic-specific content.",
+    "- Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+    "- Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+    "- Answer the learner's request first; any activity comes after the answer.",
+    "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; have the learner sort or tell apart similar cases; or Simulation to let the learner change a variable and observe the outcome; or ConceptMap to lay out how the concepts relate. Prose is acceptable when it serves the learner better.",
+    "- If you pose a question or quiz, stop and wait for the learner's answer. Do not answer it yourself."
+  ],
+  "finishedAt": "2026-11-18T12:53:50.998Z"
+}

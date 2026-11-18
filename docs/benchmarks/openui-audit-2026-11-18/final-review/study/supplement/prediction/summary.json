@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "phase": "prediction",
+  "policy": "keating-teaching-policy/v2.3.5",
+  "protocolSha256": "47f4d9085d19a8b948f055f3cd02337f48c1b81331e75533da01b39e4b71495c",
+  "receipts": {
+    "tile-bag--minimax--jev": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015"
+  },
+  "scheduled": 1,
+  "publicReplies": 1,
+  "providerRequests": 3,
+  "unknownUsage": 0,
+  "previousBoundUsd": 2.613388422,
+  "newBoundUsd": 0.012524328,
+  "totalBoundUsd": 2.62591275,
+  "capUsd": 10
+}

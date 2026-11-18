@@ -1,0 +1,130 @@
+{
+  "id": "python-practice--jev",
+  "caseId": "python-practice",
+  "provider": "jev",
+  "decisionModel": "jev-1.14.0",
+  "kind": "live",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "2f30a96055683294919a753b724f045768e75c98f062ab96bcb3a3a074e645dd",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "errorCode": null
+    },
+    {
+      "phase": "review",
+      "requestSha256": "c9da4f1049fc65b996e40e738906ec50cb16a4f4d1aeb9433414aafac25161a0",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "errorCode": null
+    },
+    {
+      "phase": "review",
+      "requestSha256": "62f8621cd3592a8f55dc31e642422bf8af64975dad0c6936a436773208a8324a",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "none",
+    "offered": [],
+    "reason": "no-supported-family",
+    "codeLanguage": null,
+    "directives": [
+      "Provide one requested OpenUI practice activity now, without requiring a lesson first or attaching a study plan.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond."
+    ]
+  },
+  "drafts": [
+    {
+      "label": "python-practice--jev/tutor/1",
+      "kind": "live",
+      "systemSha256": "69448ee0d9f4733cca3cbbc61f8d3005b13d970601f8139a0ca5c588acba6b94",
+      "text": "Here's a small one to dig into — the loop *looks* right at a glance.\n\n```python\nnumbers = [3, 8, 12, 5, 20]\nevens = []\n\nfor i in range(1, len(numbers)):\n    if numbers[i] % 2 == 0:\n        evens.append(numbers[i])\n\nprint(\"Even numbers:\", evens)\n```\n\nBefore you touch it: run it, and also predict what it prints. Then fix it however you like — there isn't one \"correct\" edit, only one that prints every even number.\n\nI've put an editor below so you can paste your fixed version and send it back to me.\n\n```openui lifecycle=ephemeral id=python-list-loop-fix\n```\n",
+      "attempted": true,
+      "components": [],
+      "outsideWords": 91,
+      "guidanceDelivered": true,
+      "tools": [
+        "interactive_page"
+      ],
+      "stop": "toolUse"
+    },
+    {
+      "label": "python-practice--jev/tutor/2",
+      "kind": "live",
+      "systemSha256": "b6fd316c731389bf3eb54946621941a86c0fb72798bd13ed5aa92247f58ebc14",
+      "text": "```python\nfruits = [\"apple\", \"banana\", \"cherry\"]\n\nfor i in range(len(fruits) + 1):\n    print(fruits[i].upper())\n```\n\nEdit the loop so it processes every item without crashing.",
+      "attempted": false,
+      "components": [],
+      "outsideWords": 24,
+      "guidanceDelivered": true,
+      "tools": [],
+      "stop": "stop"
+    }
+  ],
+  "status": "released",
+  "public": {
+    "text": "```python\nfruits = [\"apple\", \"banana\", \"cherry\"]\n\nfor i in range(len(fruits) + 1):\n    print(fruits[i].upper())\n```\n\nEdit the loop so it processes every item without crashing.",
+    "attempted": false,
+    "components": [],
+    "outsideWords": 24,
+    "tools": []
+  },
+  "notice": null,
+  "selectedAttempt": 2,
+  "findings": [
+    {
+      "attempt": 1,
+      "status": "fail",
+      "adjustments": [],
+      "checks": [
+        {
+          "id": "openui_valid",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "one_activity",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "activity_without_plan",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "one_checkpoint",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "checkpoint_last_node",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "fail",
+          "probability": 0.77
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "status": "pass",
+      "adjustments": [],
+      "checks": []
+    }
+  ]
+}

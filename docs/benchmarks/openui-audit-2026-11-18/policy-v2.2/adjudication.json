@@ -1,0 +1,6 @@
+{
+  "direct-label--jev": {"passed":true,"observation":"24 centimetres. No follow-up."},
+  "direct-label--google": {"passed":true,"observation":"24 cm. The classroom displays an unverified badge. Both private drafts contained the same answer."},
+  "conveyor--jev": {"passed":null,"observation":"The released reply requested interactive_page and set_learner_goal. The original provider harness stopped at tool selection. The separately labelled sandbox replay evaluates the authored page."},
+  "conveyor--google": {"passed":false,"observation":"Speed changes the ten-minute count. The simulation brief asks for a prediction before touching the slider despite an explicit opt-out."}
+}

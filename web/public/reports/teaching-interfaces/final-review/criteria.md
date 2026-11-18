@@ -1,0 +1,15 @@
+# How the final review scores a learner turn
+
+The four primary learner prompts, their expected actions, the fixed prediction follow-up and the designated classroom prompt are in the [prospective cohort](study/cohort.json). The primary comparison crosses two tutors with Jev, Gemini Decision and an unguided first draft. The same judge handles planning and review within a guided cell. The classroom run is an additional observation.
+
+| Measure | Evidence required |
+| --- | --- |
+| Authored on the first attempt | The original first tutor response completed. Parse its text with the application compiler and the Markdown editor parser. Retain a native page proposal as a separate observation. |
+| Reached the final reply | The app published a guided draft. On the unguided arm record the ordinary tutor output and identify that there was no private review. A withheld candidate contributes no released control. A failed generation with no reply has an unknown delivery outcome. |
+| Fits the request | Apply the corresponding row of the prospective rubric to the visible reply and any learner-visible tool surfaces. Record a missing control, revealed answer, unwanted quiz, unusable exercise or unnecessary line hint. Compile success alone supplies no fit judgment. |
+| Rendered and usable | Observe the actual classroom component and operate it. For a simulation test two settings against the requested relationship. For an editor, change its contents. For a Question, submit an answer. Distinguish replayed provider payloads from providers contacted during an actual classroom session. |
+| Promptness | Measure the original physical learner turn and subsequent replies where a continuous transcript exists. A private retry consumes a draft and adds no learner turn. A session that ends before delivery is unresolved. |
+
+For the Python task, the expected sum is 17. Check the observed starting input and visible output by inspection, with a local interpreter only for individually inspected and hash-pinned synthetic examples. An expected-output comment alone is acceptable. If a program already returns 17 on the stated input, inspect any explicitly proposed alternative before judging the exercise. For the irrigation task compare litres in six minutes to six times litres per minute. A native page that has only been proposed cannot establish a usable slider. For the short-answer control, compare the released text to `Cu` after removing presentation markup and ordinary terminal punctuation.
+
+The first-draft comparison pairs the same learner prompt and tutor across conditions, one observation per condition. Report guided-only successes, unguided-only successes, ties and unknowns. Report release and classroom exposure separately. A reviewer sees anonymized response bodies and the learner task before the tutor and decision-model identities are joined to the scores. Scheduled counts include missing observations. Conditional rates name their observed denominator. None of the prompts measures retention, transfer or real-learner frequency.

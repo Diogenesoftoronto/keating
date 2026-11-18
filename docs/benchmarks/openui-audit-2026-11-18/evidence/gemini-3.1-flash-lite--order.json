@@ -1,0 +1,311 @@
+{
+  "id": "gemini-3.1-flash-lite--order",
+  "scenario": "order",
+  "model": "gemini-3.1-flash-lite",
+  "startedAt": "2026-11-18T12:57:29.463Z",
+  "judge": [
+    {
+      "phase": "plan",
+      "hash": "a91a3090e71e64c5b6c07a7ca103e4ce15926b8a33f4cc012c7a9a358683dcb8",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 3522,
+        "outputTokens": 675
+      },
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.82
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.1
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.23
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.26
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.77
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.25
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.96
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.12
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 1
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.08
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.45
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.27
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.2
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.57
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.12
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.13
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.15
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.1
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 0.92,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.29,
+            "1": 0.5,
+            "2": 0.2,
+            "3": 0.01
+          },
+          "confidence": 0.49
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.03,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.98,
+            "1": 0.01,
+            "2": 0.01,
+            "3": 0
+          },
+          "confidence": 0.97
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 0.7,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.63,
+            "1": 0.09,
+            "2": 0.22,
+            "3": 0.06
+          },
+          "confidence": 0.29
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "concise",
+          "probabilities": {
+            "concise": 0.52,
+            "supported": 0.48,
+            "deep": 0
+          },
+          "confidence": 0.28
+        }
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "1322026034c1d2e613bfa402c2f8cf230987c51f583c4b08ab3c308cdaa0d286",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5842,
+        "outputTokens": 896
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "17c0eb2b3d2faa3106c18d76007e199463e755c7838f5143b55e4d751ab7360c",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5785,
+        "outputTokens": 896
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha": "5a6cd37810f1560ac137c854946ff00a4e50e53e6f553b1dea105b493091da2c",
+      "messagesSha": "5a27dc01848b6f20dfb9f21d7ca195ae812843f96c6cc199a67f845dcc2925ec",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "```openui lifecycle=ephemeral id=bar-chart-ordering\n\nroot = LearningSurface([ordering], \"Bar Chart Sequence\", \"Drag the steps into the correct order to create a bar chart.\", \"ephemeral\")\nordering = Question([{\n  question: \"Arrange the steps for creating a bar chart in the correct order.\",\n  type: \"ordering\",\n  items: [\n    \"Label the axes and add a title\",\n    \"Choose a scale for the axes\",\n    \"Draw the bars for each category\",\n    \"Identify the data categories and values\",\n    \"Determine the range of the data\"\n  ],\n  correctAnswers: [\n    \"Identify the data categories and values\",\n    \"Determine the range of the data\",\n    \"Choose a scale for the axes\",\n    \"Draw the bars for each category\",\n    \"Label the axes and add a title\"\n  ],\n  itemLabel: \"Step\"\n}], \"ephemeral\", \"Bar Chart Sequence\", \"Arrange the steps logically.\")\n```",
+        "toolNames": [],
+        "requestedModel": "gemini-3.1-flash-lite",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 18417,
+          "output": 221,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 2,
+      "systemSha": "5a6cd37810f1560ac137c854946ff00a4e50e53e6f553b1dea105b493091da2c",
+      "messagesSha": "b5455776773659c1f05fc1f3d8ed79fa79c4a696c26c2a644a9b5dd8b00386e8",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "```openui lifecycle=ephemeral id=bar-chart-ordering\n\nroot = LearningSurface([ordering], \"Bar Chart Sequence\", \"Drag the steps into the correct order to create a bar chart.\", \"ephemeral\")\nordering = Question([{\n  question: \"Arrange the steps for creating a bar chart in the correct order.\",\n  type: \"ordering\",\n  items: [\n    \"Label the axes and add a title\",\n    \"Determine the scale and intervals\",\n    \"Draw the bars for each category\",\n    \"Identify the data categories and values\",\n    \"Choose a chart type and layout\"\n  ],\n  itemLabel: \"Step\"\n}], \"ephemeral\", \"Bar Chart Steps\", \"Order the steps from start to finish.\")\n```",
+        "toolNames": [],
+        "requestedModel": "gemini-3.1-flash-lite",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 2260,
+          "output": 163,
+          "cacheRead": 16291,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "counterfactual": null,
+  "decision": {
+    "action": "none",
+    "families": [],
+    "features": [
+      "ordered_procedure"
+    ],
+    "paired": false
+  },
+  "offer": null,
+  "phase": "released",
+  "selection": 2,
+  "reason": null,
+  "release": {
+    "text": "```openui lifecycle=ephemeral id=bar-chart-ordering\n\nroot = LearningSurface([ordering], \"Bar Chart Sequence\", \"Drag the steps into the correct order to create a bar chart.\", \"ephemeral\")\nordering = Question([{\n  question: \"Arrange the steps for creating a bar chart in the correct order.\",\n  type: \"ordering\",\n  items: [\n    \"Label the axes and add a title\",\n    \"Determine the scale and intervals\",\n    \"Draw the bars for each category\",\n    \"Identify the data categories and values\",\n    \"Choose a chart type and layout\"\n  ],\n  itemLabel: \"Step\"\n}], \"ephemeral\", \"Bar Chart Steps\", \"Order the steps from start to finish.\")\n```",
+    "unverified": false
+  },
+  "publicText": "```openui lifecycle=ephemeral id=bar-chart-ordering\n\nroot = LearningSurface([ordering], \"Bar Chart Sequence\", \"Drag the steps into the correct order to create a bar chart.\", \"ephemeral\")\nordering = Question([{\n  question: \"Arrange the steps for creating a bar chart in the correct order.\",\n  type: \"ordering\",\n  items: [\n    \"Label the axes and add a title\",\n    \"Determine the scale and intervals\",\n    \"Draw the bars for each category\",\n    \"Identify the data categories and values\",\n    \"Choose a chart type and layout\"\n  ],\n  itemLabel: \"Step\"\n}], \"ephemeral\", \"Bar Chart Steps\", \"Order the steps from start to finish.\")\n```",
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "probability": 0.75
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "status": "pass",
+      "checks": []
+    }
+  ],
+  "directives": [
+    "- Answer the bounded question directly; do not start a diagnostic interview.",
+    "- Provide one requested OpenUI practice activity now, without requiring a lesson first or attaching a study plan.",
+    "- A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+    "- Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+    "- Choose one useful next learning step based on demonstrated understanding, then let the learner respond."
+  ],
+  "finishedAt": "2026-11-18T12:57:33.996Z"
+}

@@ -1,0 +1,200 @@
+{
+  "phase": "v2.3.6",
+  "caseSha256": "f1b8122f675c9797d02553ca4e7bb496fa49d8828dd85911d55cff64e2754816",
+  "classifierSha256": "4e0289ab4ae287c818085510bc072f04ebd2282617d1c4fafbb78a2526fc7404",
+  "positiveCorrect": 8,
+  "positives": 10,
+  "falsePositives": 0,
+  "negativeControls": 6,
+  "rows": [
+    {
+      "id": "paint",
+      "expectedTarget": "question",
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "correct": true
+    },
+    {
+      "id": "coin",
+      "expectedTarget": "question",
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "correct": true
+    },
+    {
+      "id": "sequence",
+      "expectedTarget": "question",
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "correct": true
+    },
+    {
+      "id": "chord",
+      "expectedTarget": "question",
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "correct": true
+    },
+    {
+      "id": "graph",
+      "expectedTarget": "question",
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "correct": true
+    },
+    {
+      "id": "python-loop",
+      "expectedTarget": "editable-code",
+      "expectedLanguage": "python",
+      "predicted": {
+        "kind": "implicit-action",
+        "targets": [
+          "coding-challenge"
+        ]
+      },
+      "correct": false
+    },
+    {
+      "id": "javascript-loop",
+      "expectedTarget": "editable-code",
+      "expectedLanguage": "javascript",
+      "predicted": {
+        "kind": "implicit-action",
+        "targets": [
+          "coding-challenge",
+          "editable-code"
+        ],
+        "codeLanguage": "javascript"
+      },
+      "correct": true
+    },
+    {
+      "id": "python-scope",
+      "expectedTarget": "editable-code",
+      "expectedLanguage": "python",
+      "predicted": {
+        "kind": "implicit-action",
+        "targets": [
+          "editable-code"
+        ],
+        "codeLanguage": "python"
+      },
+      "correct": true
+    },
+    {
+      "id": "type-loop",
+      "expectedTarget": "editable-code",
+      "expectedLanguage": "typescript",
+      "predicted": {
+        "kind": "implicit-action",
+        "targets": [
+          "coding-challenge",
+          "editable-code"
+        ],
+        "codeLanguage": "typescript"
+      },
+      "correct": true
+    },
+    {
+      "id": "switch-language",
+      "expectedTarget": "editable-code",
+      "expectedLanguage": "javascript",
+      "predicted": {
+        "kind": "none",
+        "targets": []
+      },
+      "correct": false
+    },
+    {
+      "id": "describe-prediction",
+      "expectedTarget": null,
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "none",
+        "targets": []
+      },
+      "correct": true
+    },
+    {
+      "id": "guess-declined",
+      "expectedTarget": null,
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "correct": true
+    },
+    {
+      "id": "quotation",
+      "expectedTarget": null,
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "none",
+        "targets": []
+      },
+      "correct": true
+    },
+    {
+      "id": "explain-own-loop",
+      "expectedTarget": null,
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "correct": true
+    },
+    {
+      "id": "no-exercise",
+      "expectedTarget": null,
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "correct": true
+    },
+    {
+      "id": "declarative",
+      "expectedTarget": null,
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "none",
+        "targets": []
+      },
+      "correct": true
+    }
+  ],
+  "contextModuleSha256": "e6059817db9655bb3e10a467bde964515f2b907cb2cf570c9d68fde803b6f25a"
+}

@@ -1,0 +1,81 @@
+{
+  "kind": "offline same-decision prompt projection",
+  "version": 1,
+  "providerCalls": 0,
+  "originalReceiptSha256": "43137d6bcc3cdd31b5b136bfc77e00dd41074f679d649d198acf0f31d3883aa4",
+  "originalPlanRequestSha256": "0bdf4738bffd87d835c8c05f4e3dcb17185e627b3b49caaa812d50f0beb3b004",
+  "originalPlanWireSha256": "b678b8e2c40c6449bf5a52b40d3cd59e1a2aaadfc59e6b0b1d1765fe45fbf1b8",
+  "decisionModel": "jev-1.14.0",
+  "recordedProbabilities": {
+    "attempt_present": 0.93,
+    "learner_response_due": 0.18,
+    "learning_task": 0.97,
+    "hands_on_requested": 0.08,
+    "practice_requested": 0.02,
+    "assessment_declined": 0.04
+  },
+  "previousQuestionPresentation": {
+    "assistantTurnIndex": 1,
+    "documentId": "openui-1qwjlss-tile-draw-prediction",
+    "nodeId": "guess"
+  },
+  "awaiting": [
+    {
+      "documentId": "openui-1qwjlss-tile-draw-prediction",
+      "nodeId": "guess",
+      "state": "awaiting"
+    }
+  ],
+  "pendingSubmissions": 0,
+  "old": {
+    "policy": "keating-teaching-policy/v2.3.7",
+    "action": "continue",
+    "directives": [
+      "Respond to the learner's actual reasoning before choosing the next step.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+      "The learner has not yet answered the open question-group guess for the current focus. Refer back to it instead of posing a new one, unless the learner has moved on."
+    ],
+    "originalTutorWireSha256": "23e450bf0841c706f3e572d54eb7238b973edfc74d5572cdbe4b963e2acda005",
+    "privatePromptSha256": "5ae3dcd81038328caca99557dde363e2fb079ec9b5c5c1655d6797169105b78a",
+    "completion": "length",
+    "selectedAttempt": null
+  },
+  "revised": {
+    "policy": "keating-teaching-policy/v2.3.8",
+    "action": "continue",
+    "continued": {
+      "documentId": "openui-1qwjlss-tile-draw-prediction",
+      "nodeId": "guess",
+      "component": "question-group",
+      "typedAttempt": true
+    },
+    "directives": [
+      "The learner typed an attempt while the preceding question-group guess still awaits a form submission. Read their answer against that item. Give concise feedback confirming what is correct or explaining the correction, then stop unless the learner explicitly requested another action. If their answer is incomplete or concerns something else, address what they actually wrote and leave the unanswered item open."
+    ],
+    "projectedTutorWireSha256": "bacd36e3cbd5df282f7f24230cafbbe51951ce8a5b0164db3a6957b974c8db7e",
+    "privatePromptSha256": "4336295de37cc1b7fe2d8d30d0326207e5af6a47903b8a8c9bf3371023c85989",
+    "newTutorOutput": null
+  },
+  "identical": {
+    "planAppAndWire": true,
+    "decisionResponse": true,
+    "modelSettings": true,
+    "messages": true,
+    "tools": true,
+    "toolCount": 10,
+    "attachedToolNames": [
+      "animate",
+      "interactive_page",
+      "generate_image",
+      "feedback",
+      "remember_learner_profile",
+      "set_learner_goal",
+      "update_goal_step",
+      "revise_study_plan",
+      "evaluate_teaching",
+      "request_teaching_improvement"
+    ],
+    "systemOutsideCapturedDraftPrompt": true
+  },
+  "note": "The old body was actually dispatched. The revised full body is a reversible offline substitution of the real generator's new private prompt on the archived body. It has no attached provider response."
+}

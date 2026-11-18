@@ -4,6 +4,9 @@ import { LearningReferenceScope } from "./LearningReferenceLink";
 import { ConstraintPlanChips } from "./ConstraintPlanChips";
 import { PLAN_AROUND_CONSTRAINT_EVENT } from "../keating/learning-intelligence/outlook";
 import { learningRowSourceIds } from "../keating/learning-intelligence/source-navigation";
+import { observeOpenUIRenderedRow } from "../keating/openui/render-diagnostics";
+import { observeNativeToolCards } from "../keating/openui/native-page-render";
+import { nativeRowOrigins } from "../keating/openui/native-page-evidence";
 import { isPrivateForkContextMessage } from "../keating/private-fork-provenance";
 import { ImportedPrivateForkContext } from "./private-fork/ImportedPrivateForkContext";
 import {
@@ -132,6 +135,7 @@ import { KeatingStorage } from "../keating/storage";
 import type { PlanRevisionProposal } from "../keating/plan-revisions";
 import { PlanRevisionCard } from "./PlanRevisionCard";
 import { recordAssistantPresentations } from "../keating/judgement/active-work-host";
+import { registerQuestionSourceRow } from "../keating/judgement/previous-question-presentation";
 import { recordWebActivityPresentation } from "../keating/judgement/activity-learning";
 import { parseReviewNotice, stripReviewNotice, withheldSummary } from "../keating/judgement/review-notice";
 import { WithheldReplyRecovery } from "./WithheldReplyRecovery";
@@ -181,6 +185,8 @@ import {
   KeatingOpenUIRenderer,
 } from "../keating/openui/renderer";
 import type { OpenUIDocumentScope } from "../keating/openui/types";
+import { handsOnFirstLayout } from "../keating/openui/hands-on-first";
+import { HandsOnExplanation } from "./chat/HandsOnExplanation";
 import { parseLearnerResponse } from "../keating/learner-response";
 import { useLearnerDelivery } from "./chat/useLearnerDelivery";
 import { useQuizConversationEvents } from "./chat/useQuizConversationEvents";
@@ -523,6 +529,14 @@ function StreamingTextPart({
 	const sessionId = useContext(OpenUISessionScopeContext);
   const developerMode = useContext(DeveloperChatDetails);
   const handledFailure = useAuiState(({ message }) => Boolean(message.metadata.custom?.keatingLlmFailure && message.metadata.custom?.keatingRetryable));
+  // The learner turn this reply answers, only when the reply is one text part
+  // with nothing else beside it. Used solely to order a requested simulation.
+  const answeredLearnerRequest = useAuiState(({ thread, message }) => {
+    if (message.role !== "assistant" || message.content.length !== 1 || message.content[0]?.type !== "text") return undefined;
+    const learner = thread.messages[message.index - 1];
+    if (learner?.role !== "user" || !learner.content.every(part => part.type === "text")) return undefined;
+    return learner.content.map(part => part.type === "text" ? part.text : "").join("\n\n");
+  });
   const isMarkedError = text.startsWith(ERROR_TEXT_PREFIX);
   // Only turns completed while this view is open link to the current plan
   // focus; reopened history must not be linked to today's focus.
@@ -633,10 +647,13 @@ function StreamingTextPart({
   }
 
   const notice = parseReviewNotice(visibleText);
+  const diagnosticPart = messageRole === "assistant"
+    ? status?.type !== "running" && visibleText === displayText ? "ready" : "pending"
+    : undefined;
   if (notice?.kind === "withheld") {
     return (
       <>
-        <ReviewNoticeCard kind="withheld" reason={withheldSummary(notice.text)} />
+        <div data-openui-diagnostic-part={diagnosticPart}><ReviewNoticeCard kind="withheld" reason={withheldSummary(notice.text)} /></div>
         {messageRole === "assistant" && <WithheldReplyRecovery />}
       </>
     );
@@ -646,8 +663,10 @@ function StreamingTextPart({
     <>
     <MarkdownText
       text={searchContent.text}
+      diagnosticPart={diagnosticPart}
 		documentScope={sessionId ? { sessionId, messageId } : messageId}
       isRunning={status?.type === "running"}
+      learnerRequest={diagnosticPart === "ready" && !notice ? answeredLearnerRequest : undefined}
     />
     {searchContent.sites.length > 0 && <WebSearchPart toolName="web_search" result={{ citations: searchContent.sites }} status={{ type: "complete" }} />}
     </>
@@ -1892,10 +1911,15 @@ const MarkdownText = memo(function MarkdownText({
   text,
   documentScope,
   isRunning,
+  diagnosticPart,
+  learnerRequest,
 }: {
   text: string;
   documentScope: string | OpenUIDocumentScope;
   isRunning?: boolean;
+  diagnosticPart?: "ready" | "pending";
+  /** Set only for a finished reply; lets a requested simulation come first. */
+  learnerRequest?: string;
 }) {
   const developerMode = useContext(DeveloperChatDetails);
   const displayText = stripArtifactLinks(text);
@@ -1905,35 +1929,29 @@ const MarkdownText = memo(function MarkdownText({
     () => parseOpenUIMessageSegments(displayText, documentScope),
     [displayText, documentScope],
   );
-  return (
-    <div
-      className={css({
-        overflowWrap: "break-word",
-        fontSize: "0.6875rem",
-        lineHeight: "1.125rem",
-        sm: { fontSize: "0.875rem", lineHeight: "1.5rem" },
-      })}
-    >
-      <ArtifactChips text={text} />
-      {segments.map((seg, i) => {
+  const handsOnFirst = useMemo(
+    () => isRunning || learnerRequest === undefined ? null : handsOnFirstLayout(segments, learnerRequest),
+    [isRunning, learnerRequest, segments],
+  );
+  const rendered = segments.map((seg, i): ReactNode[] => {
         if (seg.type === "openui") {
           if (seg.format === "document") {
             if (seg.error) {
-              return <div key={`${seg.metadata.id}-${i}`} role="alert" className={css({ marginBlock: "0.75rem", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--destructive) 10%, transparent)", padding: "0.75rem", color: "var(--destructive)" })}>
+              return [<div key={`${seg.metadata.id}-${i}`} role="alert" className={css({ marginBlock: "0.75rem", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--destructive) 10%, transparent)", padding: "0.75rem", color: "var(--destructive)" })}>
                 This activity could not be displayed. Ask Keating to try it again.
                 {developerMode && <details><summary>Development details</summary>{seg.error}</details>}
-              </div>;
+              </div>];
             }
-            return <KeatingOpenUIRenderer
+            return [<KeatingOpenUIRenderer
               developerMode={developerMode}
               key={`${seg.metadata.id}-${seg.metadata.revision}-${i}`}
               document={seg.document}
               metadata={seg.metadata}
               isStreaming={!seg.complete}
 			  sourceComplete={seg.complete}
-            />;
+            />];
           }
-          return (
+          return [
             <KeatingOpenUIRenderer
               developerMode={developerMode}
               key={`${seg.metadata.id}-${seg.metadata.revision}-${i}`}
@@ -1942,8 +1960,8 @@ const MarkdownText = memo(function MarkdownText({
               metadata={seg.metadata}
 			  sourceComplete={seg.complete}
               isStreaming={openUISegmentIsStreaming(Boolean(isRunning), seg)}
-            />
-          );
+            />,
+          ];
         }
         return parseInteractiveSegments(seg.content)
           .filter(
@@ -1961,7 +1979,31 @@ const MarkdownText = memo(function MarkdownText({
               streaming={isRunning}
             />;
           });
+  });
+  // One flat keyed list in both orders, so the control keeps its identity and
+  // state when a finished reply moves it ahead of the prose written before it.
+  const ordered = handsOnFirst
+    ? [
+        ...rendered[handsOnFirst.control]!,
+        <HandsOnExplanation key="hands-on-explanation">
+          {handsOnFirst.lead.flatMap((index) => rendered[index]!)}
+        </HandsOnExplanation>,
+        ...rendered.slice(handsOnFirst.control + 1).flat(),
+      ]
+    : rendered.flat();
+  return (
+    <div
+      data-openui-diagnostic-part={diagnosticPart}
+      data-hands-on-first={handsOnFirst ? "" : undefined}
+      className={css({
+        overflowWrap: "break-word",
+        fontSize: "0.6875rem",
+        lineHeight: "1.125rem",
+        sm: { fontSize: "0.875rem", lineHeight: "1.5rem" },
       })}
+    >
+      <ArtifactChips text={text} />
+      {ordered}
       {isRunning ? (
         <span className={cx(pulseClass, css({ marginLeft: "0.125rem" }))}>
           |
@@ -2086,6 +2128,7 @@ function formatToolResult(result: unknown) {
 
 function ToolPart({
   toolName,
+  toolCallId,
   args,
   result,
   isError,
@@ -2095,6 +2138,7 @@ function ToolPart({
   onImageGenerationModelSelect,
 }: {
   toolName: string;
+  toolCallId?: string;
   args?: unknown;
   result?: unknown;
   isError?: boolean;
@@ -2105,13 +2149,24 @@ function ToolPart({
 }) {
   const resultText = formatToolResult(result);
   const state = resolveToolVisualState({ result, isError, status });
+  const nativeRoot = useRef<HTMLDivElement>(null);
+  const sessionId = useContext(OpenUISessionScopeContext);
+  const nativeSource = useAuiState(({ message }) => {
+    const origins = message.metadata.custom?.keatingNativeOrigins as Array<[string, string]> | undefined;
+    return origins?.find(([id]) => id === toolCallId)?.[1];
+  });
+  useEffect(() => {
+    if (toolName === "interactive_page" && state === "success" && toolCallId && nativeSource && sessionId && nativeRoot.current) {
+      return observeNativeToolCards(nativeRoot.current, sessionId, toolCallId, nativeSource);
+    }
+  }, [toolName, toolCallId, sessionId, nativeSource, state]);
 
   // Older tool results can contain legacy quiz, goal, or animation tags. Keep
   // them renderable for saved sessions, independent of the details toggle.
   const interactiveCards =
     state === "success" ? extractInteractiveCards(resultText) : [];
   if (interactiveCards.length > 0) {
-    return <div className={css({ width: "100%" })}>{interactiveCards}</div>;
+    return <div ref={nativeRoot} className={css({ width: "100%" })}>{interactiveCards}</div>;
   }
 
   const stateClass =
@@ -3441,10 +3496,19 @@ function projectThreadMessages(
   provider: string | undefined,
 ): ThreadMessageLike[] {
   const decorate = (rows: ThreadMessageLike[]): ThreadMessageLike[] => {
-    const sourceIds = learningRowSourceIds(rows, agent?.context.messages ?? messages);
-    return rows.map((row, index) => ({ ...row, metadata: { ...row.metadata, custom: {
-      ...row.metadata?.custom, keatingLearningSourceIds: sourceIds[index],
-    } } }));
+    const originals = agent?.context.messages ?? messages;
+    const sourceIds = learningRowSourceIds(rows, originals);
+    const native = nativeRowOrigins(rows, originals);
+    return rows.map((row, index) => {
+      const origins = native.size && Array.isArray(row.content) ? row.content.flatMap(part => {
+        if (part.type !== "tool-call" || part.toolName !== "interactive_page") return [];
+        const source = native.get(part.toolCallId);
+        return source ? [[part.toolCallId, source]] : [];
+      }) : [];
+      return { ...row, metadata: { ...row.metadata, custom: {
+        ...row.metadata?.custom, keatingLearningSourceIds: sourceIds[index], ...(origins.length ? { keatingNativeOrigins: origins } : {}),
+      } } };
+    });
   };
   const native = agent?.getSnapshot().conversation;
   if (!native || !agent) return decorate(messages.map((message, index) => toAssistantMessage(message, index, messages.length, isRunning, provider)));
@@ -4380,6 +4444,14 @@ function AssistantMessage({
   const developerMode = useContext(DeveloperChatDetails);
   const learningSessionId = useContext(OpenUISessionScopeContext);
   const learningSourceIds = useAuiState(({ message }) => message.metadata.custom?.keatingLearningSourceIds as string[] | undefined);
+  const diagnosticRoot = useRef<HTMLDivElement>(null);
+  const textPartCount = useAuiState(({ message }) => message.content.filter(part => part.type === "text").length);
+  const diagnosticSourceId = learningSourceIds?.length === 1 ? learningSourceIds[0] : undefined;
+  useEffect(() => {
+    if (diagnosticRoot.current && learningSessionId && diagnosticSourceId && textPartCount > 0) {
+      return observeOpenUIRenderedRow(diagnosticRoot.current, learningSessionId, [diagnosticSourceId], textPartCount);
+    }
+  }, [learningSessionId, diagnosticSourceId, textPartCount]);
   const authError = useAuiState(
     ({ message }) =>
       message.metadata.custom?.keatingAuthError as AuthErrorEntry | undefined,
@@ -4414,6 +4486,11 @@ function AssistantMessage({
       .map((part) => part.text ?? "")
       .join("\n\n"),
   );
+  useEffect(() => {
+    if (learningSessionId && diagnosticSourceId && textPartCount === 1 && diagnosticRoot.current) {
+      return registerQuestionSourceRow(learningSessionId, diagnosticRoot.current, diagnosticSourceId, messageId, messageText);
+    }
+  }, [learningSessionId, diagnosticSourceId, textPartCount, messageId, messageText]);
   const copyText = stripOpenUIPrograms(
     stripQuizTags(
       stripGeneratedImageTags(
@@ -4460,6 +4537,7 @@ function AssistantMessage({
   return (
     <>
       <MessagePrimitive.Root
+        ref={diagnosticRoot}
         data-learning-session-id={learningSessionId}
         data-learning-message-ids={JSON.stringify(learningSourceIds ?? [])}
         tabIndex={-1}

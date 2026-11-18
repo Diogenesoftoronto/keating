@@ -1,0 +1,112 @@
+{
+  "policy-v2.3.2-review/prepare.mjs": {
+    "requests": 4,
+    "fileSha256": "c78d335036142bf008615d411988fcffe9c2ac59702492de392902be1220e79c",
+    "newTutorCalls": 0,
+    "newReviews": 0
+  },
+  "policy-v2.3.3-proof/run.mjs": {
+    "rows": 8,
+    "released": 3,
+    "hardStaticFindings": 2,
+    "providerCalls": 0,
+    "sha256": "588a7be9e3470013426c916b1cf52b0e58aa33704b743983e1335fc307c66a27"
+  },
+  "probe": {
+    "archivedDraftSha256": "8f9d3916b021755c268c59375b97468a638d5e5eb0c55ed52fa33ddac74527ac",
+    "observedComponents": [
+      "coding-challenge",
+      "markdown"
+    ],
+    "challengeLanguages": null,
+    "markdownEditor": {
+      "editableCode": [],
+      "editorOutsideWords": null
+    },
+    "cases": [
+      {
+        "prompt": "Give me a JavaScript coding challenge I can fix and test myself.",
+        "cue": {
+          "kind": "implicit-action",
+          "targets": [
+            "editable-code"
+          ],
+          "codeLanguage": "javascript"
+        },
+        "actionMatched": false,
+        "missedActionTurns": 1
+      },
+      {
+        "prompt": "Give me a short JavaScript loop I can fix myself.",
+        "cue": {
+          "kind": "implicit-action",
+          "targets": [
+            "editable-code"
+          ],
+          "codeLanguage": "javascript"
+        },
+        "actionMatched": false,
+        "missedActionTurns": 1
+      },
+      {
+        "prompt": "Give me a short TypeScript loop I can fix myself.",
+        "cue": {
+          "kind": "implicit-action",
+          "targets": [
+            "editable-code"
+          ],
+          "codeLanguage": "typescript"
+        },
+        "actionMatched": false,
+        "missedActionTurns": 1
+      },
+      {
+        "prompt": "Give me a short Python loop I can fix myself.",
+        "cue": {
+          "kind": "implicit-action",
+          "targets": [
+            "editable-code"
+          ],
+          "codeLanguage": "python"
+        },
+        "actionMatched": false,
+        "missedActionTurns": 1
+      }
+    ],
+    "proofCases": [
+      {
+        "suffix": "",
+        "staticFindings": [
+          "debug_native_fix_disclosed"
+        ],
+        "disposition": "withheld",
+        "failedChecks": [
+          "debug_native_fix_disclosed"
+        ]
+      },
+      {
+        "suffix": " No hints, please.",
+        "staticFindings": [],
+        "disposition": "released",
+        "failedChecks": []
+      },
+      {
+        "suffix": " No spoilers, please.",
+        "staticFindings": [
+          "debug_native_fix_disclosed"
+        ],
+        "disposition": "withheld",
+        "failedChecks": [
+          "debug_native_fix_disclosed"
+        ]
+      },
+      {
+        "suffix": " No solutions, but give me a hint.",
+        "staticFindings": [],
+        "disposition": "released",
+        "failedChecks": []
+      }
+    ],
+    "paidCalls": 0
+  }
+}

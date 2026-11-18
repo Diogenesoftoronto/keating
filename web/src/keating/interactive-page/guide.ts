@@ -40,5 +40,6 @@ export const INTERACTIVE_PAGE_AUTHORING_GUIDE = [
 	"- Never convey meaning by color alone: add text, shape or pattern (\"Correct\" with a check mark, not only green).",
 	"- Announce results in an `aria-live=\"polite\"` region. Give canvas/SVG a role=\"img\" and an aria-label describing what it shows, and keep the key numbers in text too.",
 	"- Honour reduced motion: when `keating.reducedMotion` is true (also `html[data-reduced-motion=true]` and the prefers-reduced-motion media query), jump to end states instead of animating and never auto-play loops.",
+	"- When objects illustrate a count or rate, give each one a distinct visible position. At two different control settings, the picture and its labelled numbers should both communicate the change, including with reduced motion.",
 	"- Supply a `description`: a plain-text alternative that conveys what the page teaches, shown if the page cannot run.",
 ].join("\n");

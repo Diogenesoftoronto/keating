@@ -34,6 +34,7 @@ describe("interactive_page tool", () => {
 	test("is part of the tutor's callable surface and its guide reaches the model", () => {
 		expect(classifyTool("interactive_page").known).toBe(true);
 		expect(tool().description).toContain("window.keating");
+		expect(tool().description).toContain("give each one a distinct visible position");
 		expect(tool().description).toContain("Accessibility (required)");
 	});
 

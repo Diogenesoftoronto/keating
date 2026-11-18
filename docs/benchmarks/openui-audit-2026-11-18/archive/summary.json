@@ -1,0 +1,485 @@
+{
+  "runId": "2026-09-21T23-55-00-055Z-2ed0179e",
+  "createdAt": "2026-09-21T23:55:01.029Z",
+  "judgeModel": "jev-1.13.0",
+  "policyVersion": "keating-teaching-policy/v1",
+  "corpusSha256": "65faf0025300e87c2534294056bfa6d64875cc549b2d165ea532c0c119a1f5b9",
+  "manifestSha256": "fb13ed07b193d8c9ef91354ee2cb54d8cc1046f509b9a777ebe0f6ae9327785f",
+  "trialBundleSha256": "5402fda1281bb705078c3a19e616c9792a3db6049da4ba335b71654fc1f23a30",
+  "cases": [
+    "bounded-factorial",
+    "stuck-distribution",
+    "fraction-denominator-gap",
+    "independent-next-checkpoint",
+    "return-to-saved-project",
+    "practice-without-prerequisite-lesson"
+  ],
+  "models": [
+    "google/gemini-3.5-flash",
+    "google/gemini-3.1-flash-lite",
+    "minimax/MiniMax-M2.7-highspeed"
+  ],
+  "scheduled": 72,
+  "repetitions": 1,
+  "duplicateCells": 0,
+  "completeFinalTexts": 54,
+  "duplicateCompleteFinalTexts": 0,
+  "arms": {
+    "full": {
+      "scheduled": 18,
+      "usable": 16,
+      "valid": 7,
+      "question": 4,
+      "quiz": 2,
+      "invalidFence": 2,
+      "noFence": 7,
+      "generationErrors": {
+        "provider-failed": 2
+      },
+      "finalAssessment": {
+        "pass": 9,
+        "fail": 4,
+        "unknown": 5
+      },
+      "releaseFlag": {
+        "observe-only": 18
+      }
+    },
+    "compact": {
+      "scheduled": 18,
+      "usable": 14,
+      "valid": 9,
+      "question": 6,
+      "quiz": 1,
+      "invalidFence": 0,
+      "noFence": 5,
+      "generationErrors": {
+        "provider-failed": 4
+      },
+      "finalAssessment": {
+        "unknown": 10,
+        "pass": 7,
+        "fail": 1
+      },
+      "releaseFlag": {
+        "observe-only": 18
+      }
+    },
+    "governed": {
+      "scheduled": 18,
+      "usable": 15,
+      "valid": 7,
+      "question": 6,
+      "quiz": 1,
+      "invalidFence": 1,
+      "noFence": 7,
+      "generationErrors": {
+        "provider-failed": 3
+      },
+      "finalAssessment": {
+        "pass": 10,
+        "unknown": 7,
+        "fail": 1
+      },
+      "releaseFlag": {
+        "would-release": 10,
+        "would-hold": 8
+      }
+    },
+    "drafted": {
+      "scheduled": 18,
+      "usable": 9,
+      "valid": 5,
+      "question": 5,
+      "quiz": 0,
+      "invalidFence": 0,
+      "noFence": 4,
+      "generationErrors": {
+        "draft-withheld": 9
+      },
+      "finalAssessment": {
+        "unknown": 10,
+        "pass": 8
+      },
+      "releaseFlag": {
+        "would-hold": 10,
+        "would-release": 8
+      }
+    }
+  },
+  "matchedAll": {
+    "any": {
+      "scheduled": 18,
+      "matched": 14,
+      "compact": 9,
+      "governed": 6,
+      "both": 6,
+      "compactOnly": 3,
+      "governedOnly": 0,
+      "neither": 5
+    },
+    "question": {
+      "scheduled": 18,
+      "matched": 14,
+      "compact": 6,
+      "governed": 5,
+      "both": 4,
+      "compactOnly": 2,
+      "governedOnly": 1,
+      "neither": 7
+    },
+    "quiz": {
+      "scheduled": 18,
+      "matched": 14,
+      "compact": 1,
+      "governed": 1,
+      "both": 1,
+      "compactOnly": 0,
+      "governedOnly": 0,
+      "neither": 13
+    },
+    "responseSurface": {
+      "scheduled": 18,
+      "matched": 14,
+      "compact": 7,
+      "governed": 6,
+      "both": 5,
+      "compactOnly": 2,
+      "governedOnly": 1,
+      "neither": 6
+    }
+  },
+  "matchedAnyByModel": {
+    "google/gemini-3.5-flash": {
+      "scheduled": 6,
+      "matched": 2,
+      "compact": 2,
+      "governed": 2,
+      "both": 2,
+      "compactOnly": 0,
+      "governedOnly": 0,
+      "neither": 0
+    },
+    "google/gemini-3.1-flash-lite": {
+      "scheduled": 6,
+      "matched": 6,
+      "compact": 6,
+      "governed": 4,
+      "both": 4,
+      "compactOnly": 2,
+      "governedOnly": 0,
+      "neither": 0
+    },
+    "minimax/MiniMax-M2.7-highspeed": {
+      "scheduled": 6,
+      "matched": 6,
+      "compact": 1,
+      "governed": 0,
+      "both": 0,
+      "compactOnly": 1,
+      "governedOnly": 0,
+      "neither": 5
+    }
+  },
+  "matchedPractice": {
+    "scheduled": 6,
+    "matched": 4,
+    "compact": 3,
+    "governed": 2,
+    "both": 2,
+    "compactOnly": 1,
+    "governedOnly": 0,
+    "neither": 1
+  },
+  "matchedPracticeByModel": {
+    "google/gemini-3.5-flash": {
+      "scheduled": 2,
+      "matched": 0,
+      "compact": 0,
+      "governed": 0,
+      "both": 0,
+      "compactOnly": 0,
+      "governedOnly": 0,
+      "neither": 0
+    },
+    "google/gemini-3.1-flash-lite": {
+      "scheduled": 2,
+      "matched": 2,
+      "compact": 2,
+      "governed": 2,
+      "both": 2,
+      "compactOnly": 0,
+      "governedOnly": 0,
+      "neither": 0
+    },
+    "minimax/MiniMax-M2.7-highspeed": {
+      "scheduled": 2,
+      "matched": 2,
+      "compact": 1,
+      "governed": 0,
+      "both": 0,
+      "compactOnly": 1,
+      "governedOnly": 0,
+      "neither": 1
+    }
+  },
+  "exclusionsFromMatching": [
+    {
+      "caseId": "bounded-factorial",
+      "modelId": "google/gemini-3.5-flash",
+      "compact": "provider-failed",
+      "governed": "question-group"
+    },
+    {
+      "caseId": "independent-next-checkpoint",
+      "modelId": "google/gemini-3.5-flash",
+      "compact": "provider-failed",
+      "governed": "provider-failed"
+    },
+    {
+      "caseId": "return-to-saved-project",
+      "modelId": "google/gemini-3.5-flash",
+      "compact": "provider-failed",
+      "governed": "provider-failed"
+    },
+    {
+      "caseId": "practice-without-prerequisite-lesson",
+      "modelId": "google/gemini-3.5-flash",
+      "compact": "provider-failed",
+      "governed": "provider-failed"
+    }
+  ],
+  "governedDecisions": {
+    "guided": 18,
+    "labels": {
+      "total": 45,
+      "agree": 44,
+      "disagree": 0,
+      "unresolved": 1
+    },
+    "practiceDirective": "Provide one requested OpenUI practice activity now, without requiring a lesson first or attaching a study plan."
+  },
+  "privateDrafts": {
+    "internal": {
+      "withheld": 9,
+      "released": 9
+    },
+    "blindFinal": {
+      "would-hold": 10,
+      "would-release": 8
+    },
+    "totalPrivateGenerations": 43,
+    "targetTurnsWithAnyPrivateResponseSurface": 5,
+    "targetInternalReleases": 2,
+    "targetBlindFinalWouldRelease": 1
+  },
+  "requestedPractice": [
+    {
+      "caseId": "independent-next-checkpoint",
+      "modelId": "google/gemini-3.5-flash",
+      "compactOrdinal": 38,
+      "compact": "provider-failed",
+      "governedOrdinal": 39,
+      "governed": "provider-failed",
+      "governedFinal": "would-hold",
+      "governedFailedChecks": [],
+      "governedUncertainChecks": [
+        "nonempty_reply",
+        "available_tool",
+        "legacy_activity_tool",
+        "openui_valid",
+        "one_activity",
+        "activity_without_plan",
+        "one_checkpoint",
+        "checkpoint_last_node",
+        "stop_after_checkpoint",
+        "grading_requires_submission",
+        "improvement_run_limit",
+        "identity_invented",
+        "instruction_override",
+        "tool_success_invented",
+        "sensitive_inference",
+        "mastery_overclaimed",
+        "retention_overclaimed",
+        "transfer_overclaimed",
+        "synthetic_efficacy_claim",
+        "explanation_missing",
+        "direct_answer_missing",
+        "practice_missing",
+        "checkpoint_answer_leaked",
+        "checkpoint_repeated",
+        "checkpoint_continued",
+        "checkpoint_not_interactive",
+        "native_tool_schema"
+      ],
+      "jevRequestedPractice": true,
+      "jevPracticeProbability": 0.86,
+      "practiceDirectivePresent": true,
+      "draftedOrdinal": 36,
+      "draftedAttempts": 3,
+      "privateAttemptsWithResponseSurface": 1,
+      "draftSelectedAttempt": null,
+      "drafted": "draft-withheld",
+      "internalDraftStatus": "withheld",
+      "blindFinal": "would-hold"
+    },
+    {
+      "caseId": "independent-next-checkpoint",
+      "modelId": "google/gemini-3.1-flash-lite",
+      "compactOrdinal": 42,
+      "compact": "question-group",
+      "governedOrdinal": 43,
+      "governed": "question-group",
+      "governedFinal": "would-hold",
+      "governedFailedChecks": [],
+      "governedUncertainChecks": [
+        "checkpoint_repeated"
+      ],
+      "jevRequestedPractice": true,
+      "jevPracticeProbability": 0.87,
+      "practiceDirectivePresent": true,
+      "draftedOrdinal": 40,
+      "draftedAttempts": 1,
+      "privateAttemptsWithResponseSurface": 1,
+      "draftSelectedAttempt": 1,
+      "drafted": "question-group",
+      "internalDraftStatus": "released",
+      "blindFinal": "would-release"
+    },
+    {
+      "caseId": "independent-next-checkpoint",
+      "modelId": "minimax/MiniMax-M2.7-highspeed",
+      "compactOrdinal": 46,
+      "compact": "prose",
+      "governedOrdinal": 47,
+      "governed": "prose",
+      "governedFinal": "would-hold",
+      "governedFailedChecks": [],
+      "governedUncertainChecks": [
+        "checkpoint_repeated",
+        "checkpoint_not_interactive"
+      ],
+      "jevRequestedPractice": true,
+      "jevPracticeProbability": 0.87,
+      "practiceDirectivePresent": true,
+      "draftedOrdinal": 44,
+      "draftedAttempts": 3,
+      "privateAttemptsWithResponseSurface": 1,
+      "draftSelectedAttempt": 3,
+      "drafted": "question-group",
+      "internalDraftStatus": "released",
+      "blindFinal": "would-hold"
+    },
+    {
+      "caseId": "practice-without-prerequisite-lesson",
+      "modelId": "google/gemini-3.5-flash",
+      "compactOrdinal": 64,
+      "compact": "provider-failed",
+      "governedOrdinal": 65,
+      "governed": "provider-failed",
+      "governedFinal": "would-hold",
+      "governedFailedChecks": [],
+      "governedUncertainChecks": [
+        "nonempty_reply",
+        "available_tool",
+        "legacy_activity_tool",
+        "openui_valid",
+        "one_activity",
+        "activity_without_plan",
+        "one_checkpoint",
+        "checkpoint_last_node",
+        "stop_after_checkpoint",
+        "grading_requires_submission",
+        "improvement_run_limit",
+        "identity_invented",
+        "instruction_override",
+        "tool_success_invented",
+        "sensitive_inference",
+        "mastery_overclaimed",
+        "retention_overclaimed",
+        "transfer_overclaimed",
+        "synthetic_efficacy_claim",
+        "explanation_missing",
+        "direct_answer_missing",
+        "practice_missing",
+        "practice_withheld",
+        "unsolicited_assessment",
+        "native_tool_schema"
+      ],
+      "jevRequestedPractice": true,
+      "jevPracticeProbability": 0.99,
+      "practiceDirectivePresent": true,
+      "draftedOrdinal": 66,
+      "draftedAttempts": 3,
+      "privateAttemptsWithResponseSurface": 0,
+      "draftSelectedAttempt": null,
+      "drafted": "draft-withheld",
+      "internalDraftStatus": "withheld",
+      "blindFinal": "would-hold"
+    },
+    {
+      "caseId": "practice-without-prerequisite-lesson",
+      "modelId": "google/gemini-3.1-flash-lite",
+      "compactOrdinal": 68,
+      "compact": "quiz",
+      "governedOrdinal": 69,
+      "governed": "quiz",
+      "governedFinal": "would-hold",
+      "governedFailedChecks": [],
+      "governedUncertainChecks": [
+        "direct_answer_missing"
+      ],
+      "jevRequestedPractice": true,
+      "jevPracticeProbability": 0.99,
+      "practiceDirectivePresent": true,
+      "draftedOrdinal": 70,
+      "draftedAttempts": 3,
+      "privateAttemptsWithResponseSurface": 1,
+      "draftSelectedAttempt": null,
+      "drafted": "draft-withheld",
+      "internalDraftStatus": "withheld",
+      "blindFinal": "would-hold"
+    },
+    {
+      "caseId": "practice-without-prerequisite-lesson",
+      "modelId": "minimax/MiniMax-M2.7-highspeed",
+      "compactOrdinal": 60,
+      "compact": "question-group",
+      "governedOrdinal": 61,
+      "governed": "Compiled OpenUI document does not satisfy the shared learner contract.",
+      "governedFinal": "would-hold",
+      "governedFailedChecks": [
+        "openui_valid"
+      ],
+      "governedUncertainChecks": [
+        "one_activity",
+        "activity_without_plan",
+        "one_checkpoint",
+        "checkpoint_last_node",
+        "stop_after_checkpoint",
+        "direct_answer_missing"
+      ],
+      "jevRequestedPractice": true,
+      "jevPracticeProbability": 0.99,
+      "practiceDirectivePresent": true,
+      "draftedOrdinal": 62,
+      "draftedAttempts": 3,
+      "privateAttemptsWithResponseSurface": 2,
+      "draftSelectedAttempt": null,
+      "drafted": "draft-withheld",
+      "internalDraftStatus": "withheld",
+      "blindFinal": "would-hold"
+    }
+  ],
+  "excludedEarlierRun": {
+    "runId": "2026-09-21T23-52-25-863Z-b8f71522",
+    "total": 72,
+    "statuses": {
+      "unknown": 72
+    },
+    "generationErrors": {
+      "credential-unavailable": 54,
+      "draft-withheld": 18
+    }
+  }
+}

@@ -71,6 +71,24 @@ describe("simulation exploration survives a reload", () => {
 		await reloaded.unmount();
 	});
 
+	test("reset returns to the authored graph as well as the authored values, and that persists", async () => {
+		const storage = memoryStorage();
+		const first = await mountInteraction({ node, documentId: document.id, storage });
+		expect(first.api.dirty).toBe(false);
+		first.api.selectParameter("sensitivity");
+		first.api.selectReadout("true_positives");
+		await settle();
+		expect(first.api.dirty).toBe(true); // a changed graph alone is something to reset
+		first.api.reset();
+		await settle();
+		expect([first.api.parameterId, first.api.readoutId, first.api.dirty]).toEqual(["prevalence", "share", false]);
+		await first.unmount();
+		const reloaded = await mountInteraction({ node, documentId: document.id, storage });
+		expect([reloaded.api.parameterId, reloaded.api.readoutId]).toEqual(["prevalence", "share"]);
+		expect(reloaded.api.values).toEqual({ prevalence: 10, sensitivity: 99 });
+		await reloaded.unmount();
+	});
+
 	test("reset persists, so a reload shows the authored defaults again", async () => {
 		const storage = memoryStorage();
 		const first = await mountInteraction({ node, documentId: document.id, storage });
@@ -140,6 +158,14 @@ describe("corrupt stored simulation state", () => {
 		const stored = JSON.parse(storage.values.get(key)!);
 		storage.values.set(key, JSON.stringify({ ...stored, values: { prevalence: 42, sensitivity: "high" }, parameterId: "missing", readoutId: 7 }));
 		expect(loadSimulationState(storage, document.id, node)).toEqual({ values: { prevalence: 42, sensitivity: 99 } });
+		// Ids this node no longer offers fall back, per field, to the authored graph.
+		const fallback = await mountInteraction({ node, documentId: document.id, storage });
+		expect([fallback.api.parameterId, fallback.api.readoutId, fallback.api.values.prevalence]).toEqual(["prevalence", "share", 42]);
+		await fallback.unmount();
+		storage.values.set(key, JSON.stringify({ ...stored, parameterId: "sensitivity", readoutId: "missing" }));
+		const partial = await mountInteraction({ node, documentId: document.id, storage });
+		expect([partial.api.parameterId, partial.api.readoutId]).toEqual(["sensitivity", "share"]);
+		await partial.unmount();
 		storage.values.set(key, JSON.stringify({ ...stored, values: { prevalence: -5, sensitivity: Number.MAX_VALUE } }));
 		expect(loadSimulationState(storage, document.id, node).values).toEqual({ prevalence: 10, sensitivity: 99 });
 	});

@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "protocolSha256": "19208d7613cbd185e4ec0518e3969ae84dce9fc0ca5b1e7f724a5f27d3129554",
+  "originalCohortSha256": "d3393c08ee1903f9e4a426d37cab65add70f5e2d5157cd09a085ddfac174afe8",
+  "systemSha256": "5ec2384dc7524c0afa4e7de5498ff8868a933e5089eeccaac216b296841da66c",
+  "toolsSha256": "c03ca9351998a17512996805bae6b65df19787a03f0d91aef9afa51d609cb13e",
+  "sourceRelease": "feb14a770371032619839271cfb3d1a4fe5079ff",
+  "policy": "keating-teaching-policy/v2.1",
+  "scheduled": [
+    "MiniMax-M2.7-highspeed--spinner",
+    "MiniMax-M2.7-highspeed--bus",
+    "MiniMax-M2.7-highspeed--perimeter",
+    "gemini-3.1-flash-lite--spinner",
+    "gemini-3.1-flash-lite--bus",
+    "gemini-3.1-flash-lite--perimeter"
+  ],
+  "sourceHashes": {
+    "web/src/keating/judgement/draft-gate.ts": "f1afd2e064f79576862557fb5be3fe7c476c1f728e7a5dc55ecf51124f77240b",
+    "web/src/keating/openui/diagnostic-components.ts": "029103eacb24843ab1ccb24a611abb95167933127cbaa6ea7bf7b5251df8d34c",
+    "web/src/keating/openui/segments.ts": "4bb1bad47c0298f869ed127b886320ee4d40ec24bdb5d5d96db261fe2dfaa178",
+    "web/src/keating/openui/shared-bridge.ts": "ff8193ebe7813cb0d9bbde00c4a3cbcf69a25d87f9b6769832b37d86d81162cd",
+    "packages/learner-contracts/src/openui-source.ts": "6fa90d91030d47366824fa42edbba7eaf2caf14a2feefb0352caa6b52fc75656",
+    "packages/learner-contracts/src/ui.ts": "20ba95180972b8d35faf50af7bf4c57e70a8780ef20d0f1d9bcffa59d7289cfc",
+    "packages/learner-contracts/src/openui-diagnostic-turn.ts": "992ab5730cec0e1f78a6f380676e35147fc19d2ba9cf5f2a3d40d5ff04aeb700",
+    "packages/learner-contracts/src/judgement/teaching-policy-catalog.ts": "d435be7a0621d248a012ed3baf3976bc420cc2dbb62b49ae6faa0c10fe90fa32",
+    "packages/learner-contracts/src/judgement/teaching-policy.ts": "af16a6495e8aa3d5d1ffed672665dc96d81f3a5fd753511411371bf434f12ae9",
+    "packages/learner-contracts/src/judgement/interaction-affordances.ts": "940b7f3895199e1c77f23e1ac08bf9b6b382d752217833b6cd78ade37f1a9c32",
+    "packages/learner-contracts/src/judgement/teaching-drafts/session.ts": "1a8c9576d7e9e2a3ee09c17b8858d8ec21e70aabe07fdacd1332a0cf87f25ccc",
+    "packages/learner-contracts/src/judgement/teaching-drafts/policy.ts": "0842b56d5e35603e7da5b9fc046df8d8ae6c945051fd279a570af472f925e3bc",
+    "packages/learner-contracts/src/judgement/system-one.ts": "f21ee0359c5b927ac7bd257e3b72170b9112cdf49a7b4a766984c46c5234bd26",
+    "node_modules/@earendil-works/pi-ai/dist/api/google-generative-ai.js": "c0a85f0e3de668b4b8278c339f11ee8ab1e1c2d802ff895324ab8c26b4fd03c7",
+    "node_modules/@earendil-works/pi-ai/dist/api/anthropic-messages.js": "99bbeeb84f99ac7d3d5a3167d6fd1efad5aaf84d4e5c3445720af08f2275ec6b",
+    "scripts/openui-diagnostics/gemini-decision.ts": "be060b862bca26549dc5e7783160069b97ee939a61e710229aee00145bce034c"
+  },
+  "frozenAt": "2026-11-18T15:39:20.289Z"
+}

@@ -1,0 +1,22 @@
+{
+  "labelledBeforeRepair": true,
+  "population": "One independently authored English-language diagnostic panel. The maintainer received the two observed misses but did not receive these prompts before freezing the revised classifier.",
+  "cases": [
+    {"id":"paint","text":"Before you explain, can I guess the colour the paints will make?","target":"question"},
+    {"id":"coin","text":"Before you tell me, could I predict the side that will land face up?","target":"question"},
+    {"id":"sequence","text":"Can I guess the missing letter first?","target":"question"},
+    {"id":"chord","text":"I would like to guess which chord comes next.","target":"question"},
+    {"id":"graph","text":"Let me predict what happens before seeing the graph.","target":"question"},
+    {"id":"python-loop","text":"I'm learning Python. Give me a broken loop I can fix myself. No hints.","target":"editable-code","language":"python"},
+    {"id":"javascript-loop","text":"I'm learning JavaScript. Give me a buggy loop to debug on my own.","target":"editable-code","language":"javascript"},
+    {"id":"python-scope","text":"Give me a short Python example I can edit myself to fix the result.","target":"editable-code","language":"python"},
+    {"id":"type-loop","text":"I’m practicing TypeScript. Give me a small broken loop. I want to find the error myself.","target":"editable-code","language":"typescript"},
+    {"id":"switch-language","text":"I normally use Python. Give me a buggy JavaScript loop I can fix myself.","target":"editable-code","language":"javascript"},
+    {"id":"describe-prediction","text":"Can a musician guess the next chord from the melody?","target":null},
+    {"id":"guess-declined","text":"Before you explain, I don't want to guess the shape. Just tell me the answer.","target":null},
+    {"id":"quotation","text":"The workbook says “can I guess the missing letter first?” What does that sentence mean?","target":null},
+    {"id":"explain-own-loop","text":"I write Python. Explain how iteration works in a single sentence.","target":null},
+    {"id":"no-exercise","text":"I'm learning JavaScript. Don't give me a broken loop. Just explain the idea.","target":null},
+    {"id":"declarative","text":"I used to edit my own Python examples at school.","target":null}
+  ]
+}

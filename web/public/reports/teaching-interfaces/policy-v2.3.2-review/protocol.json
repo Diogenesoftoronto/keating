@@ -1,0 +1,18 @@
+{
+  "previousBoundUsd": 1.912935216,
+  "studyCapUsd": 2,
+  "requestsSha256": "c78d335036142bf008615d411988fcffe9c2ac59702492de392902be1220e79c",
+  "examplesSha256": "cad9087aa9399e383ce2e26497f6754c73b6ef627ae71ada521e0ea95831757d",
+  "runnerSha256": "9adfc3b04902bac0550de7713fed050d92be06c2334f46510ec7c300cf8f888d",
+  "schedule": [
+    "python-practice--jev--1/jev",
+    "python-practice--jev--1/google",
+    "python-practice--jev--2/jev",
+    "python-practice--jev--2/google",
+    "python-practice--google--1/jev",
+    "python-practice--google--1/google",
+    "python-practice--google--2/jev",
+    "python-practice--google--2/google"
+  ],
+  "method": "Post-hoc review of the four original synthetic tutor drafts with the application review request. Each provider sees each input once. No new tutor responses."
+}

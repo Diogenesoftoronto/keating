@@ -1,0 +1,19 @@
+{
+  "checkedUtc": "2026-11-18T19:27:43+00:00",
+  "publicBuilds": [
+    {
+      "url": "https://keating.help/staging-build.json",
+      "httpStatus": 200,
+      "sha": "feb14a770371032619839271cfb3d1a4fe5079ff",
+      "fingerprint": "81f53d81207a74e51cf724256b9c3f398942b4b5cb69870f4b23b3dd99adc5f9",
+      "builtUtc": "2026-11-11T10:42:30.385Z",
+      "matchesArchivedRelease": true
+    },
+    {
+      "url": "https://chat.keating.help/staging-build.json",
+      "httpStatus": 404,
+      "sha": null,
+      "matchesArchivedRelease": null
+    }
+  ]
+}

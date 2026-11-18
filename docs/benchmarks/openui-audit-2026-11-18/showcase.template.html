@@ -1,0 +1,1800 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; font-src data:; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <title>OpenUI response audit · Keating</title>
+  <link rel="icon" href="@@BOT@@">
+  <style>
+    @font-face {
+      font-family: Atkinson;
+      src: url("@@FONT_REGULAR@@") format("woff2");
+      font-display: swap;
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: Atkinson;
+      src: url("@@FONT_BOLD@@") format("woff2");
+      font-display: swap;
+      font-weight: 700;
+    }
+    :root {
+      --paper: #fbfaf5;
+      --white: #fffefa;
+      --ink: #192a24;
+      --text: #293a32;
+      --muted: #506158;
+      --line: #c7cfc3;
+      --darkline: #819085;
+      --green: #19533d;
+      --pale: #e9efe5;
+      --sand: #f2eee2;
+      --amber: #75430d;
+      --amber-line: #b18c54;
+      --serif: Georgia, "Times New Roman", serif;
+      --mono: ui-monospace, "DejaVu Sans Mono", monospace;
+      --sans: Atkinson, system-ui, sans-serif;
+      accent-color: var(--green);
+    }
+    * {
+      box-sizing: border-box;
+    }
+    html {
+      scroll-padding-top: 1.5rem;
+    }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--text);
+      font: 1rem/1.45 var(--sans);
+    }
+    button,
+    select,
+    input,
+    textarea {
+      font: inherit;
+    }
+    button,
+    summary,
+    select {
+      cursor: pointer;
+    }
+    :focus-visible {
+      outline: 3px solid var(--green);
+      outline-offset: 3px;
+    }
+    button:disabled {
+      cursor: default;
+      color: #707a70;
+      background: #edf0e9;
+      border-color: var(--line);
+    }
+    h1,
+    h2,
+    h3,
+    h4,
+    p,
+    figure,
+    dl,
+    dt,
+    dd {
+      margin: 0;
+    }
+    h1,
+    h2,
+    h3,
+    h4 {
+      color: var(--ink);
+    }
+    a {
+      color: var(--green);
+      text-underline-offset: 0.2em;
+    }
+    pre {
+      overflow: auto;
+      max-width: 100%;
+      margin: 0.75rem 0 0;
+      padding: 1rem;
+      background: #f0f2ec;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      font: normal 0.81rem/1.5 var(--mono);
+      tab-size: 2;
+    }
+    pre.raw {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      max-height: 29rem;
+    }
+    .shell {
+      max-width: 83rem;
+      margin: auto;
+      padding-inline: clamp(1rem, 4.5vw, 4.5rem);
+    }
+    .skip {
+      position: absolute;
+      transform: translateY(-160%);
+      left: 1rem;
+      top: 0.5rem;
+      z-index: 1;
+      background: var(--white);
+      padding: 0.5rem;
+    }
+    .skip:focus {
+      transform: none;
+    }
+    .mast {
+      min-height: 4.25rem;
+      border-bottom: 1px solid var(--darkline);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .publication,
+    .nav,
+    .eyeline {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
+    .publication {
+      color: var(--ink);
+      text-decoration: none;
+      font: 700 1.17rem var(--serif);
+    }
+    .publication img {
+      width: 2.1rem;
+      height: 2.1rem;
+      object-fit: contain;
+    }
+    .publication span {
+      font: normal 0.87rem var(--sans);
+      border-left: 1px solid var(--line);
+      color: var(--muted);
+      padding-left: 0.7rem;
+    }
+    .nav {
+      gap: 1.15rem;
+    }
+    .nav a {
+      font-weight: 700;
+      font-size: 0.9rem;
+      text-decoration: none;
+      padding: 0.5rem 0;
+    }
+    .nav a:hover {
+      text-decoration: underline;
+    }
+    .intro {
+      padding-block: clamp(1.7rem, 4vw, 3.6rem) 1.65rem;
+    }
+    .eyeline {
+      font: normal 0.75rem var(--mono);
+      color: var(--green);
+      gap: 0.5rem;
+      margin-bottom: 0.85rem;
+    }
+    .eyeline span {
+      color: var(--darkline);
+    }
+    h1 {
+      font: normal clamp(2.4rem, 5vw, 4.35rem)/1.03 var(--serif);
+      letter-spacing: -0.04em;
+      max-width: 23ch;
+      text-wrap: balance;
+    }
+    .lede {
+      margin: 0.92rem 0 0;
+      max-width: 80ch;
+      color: var(--text);
+      font-size: 1.12rem;
+    }
+    h2 {
+      font: normal clamp(1.7rem, 3.5vw, 2.45rem)/1.1 var(--serif);
+      letter-spacing: -0.032em;
+    }
+    h3 {
+      font: 700 1.13rem/1.3 var(--sans);
+    }
+    .evidence {
+      border-top: 2px solid var(--green);
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.5fr);
+      padding: 1.35rem 0 1.5rem;
+      border-bottom: 1px solid var(--darkline);
+      column-gap: clamp(1rem, 4vw, 3.7rem);
+    }
+    .counts {
+      display: grid;
+      align-content: start;
+    }
+    .datum {
+      display: grid;
+      grid-template-columns: minmax(4.25rem, auto) 1fr;
+      gap: 0.8rem;
+      border-bottom: 1px solid var(--line);
+      padding: 0.58rem 0;
+      align-items: start;
+    }
+    .datum:first-child {
+      padding-top: 0;
+    }
+    .datum:last-child {
+      border: 0;
+      padding-bottom: 0;
+    }
+    .datum b {
+      font: normal 1.88rem/1.05 var(--serif);
+      color: var(--green);
+      font-variant-numeric: tabular-nums;
+    }
+    .datum .ratio {
+      display: block;
+      font: 0.72rem var(--mono);
+      color: var(--muted);
+      margin-top: 0.32rem;
+    }
+    .datum strong,
+    .row-name {
+      line-height: 1.2;
+      font-size: 0.98rem;
+    }
+    .datum p,
+    .caption,
+    .source-note {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.36;
+    }
+    .datum p {
+      margin-top: 0.22rem;
+    }
+    .chart {
+      border-inline-start: 1px solid var(--line);
+      padding-inline-start: clamp(1rem, 3.4vw, 3rem);
+      min-width: 0;
+    }
+    .chart h2 {
+      font-size: 1.62rem;
+      margin: 0 0 0.68rem;
+    }
+    .toggles {
+      display: inline-flex;
+      gap: 2px;
+      border: 1px solid var(--darkline);
+      border-radius: 4px;
+      padding: 2px;
+      background: var(--white);
+      max-width: 100%;
+      flex-wrap: wrap;
+    }
+    .toggles button {
+      background: transparent;
+      color: var(--muted);
+      border: 0;
+      border-radius: 2px;
+      font: 700 0.81rem/1.2 var(--sans);
+      min-height: 2.1rem;
+      padding: 0.3rem 0.65rem;
+      position: relative;
+    }
+    .toggles button[aria-pressed="true"] {
+      background: var(--green);
+      color: var(--white);
+    }
+    .toggles button:hover:not([aria-pressed="true"]) {
+      background: var(--pale);
+      color: var(--ink);
+    }
+    .chart .caption {
+      margin: 0.6rem 0 0.18rem;
+    }
+    .bars {
+      display: grid;
+      gap: 0.63rem;
+      margin: 0.7rem 0 0.3rem;
+    }
+    .barrow {
+      display: grid;
+      grid-template-columns: minmax(7.3rem, 1.1fr) minmax(3rem, 1.05fr) max-content;
+      align-items: center;
+      gap: 0.7rem;
+    }
+    .row-name {
+      overflow-wrap: anywhere;
+      font-weight: 700;
+    }
+    .track {
+      height: 0.61rem;
+      background: #dce4d9;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .bar {
+      height: 100%;
+      background: var(--green);
+    }
+    .measure {
+      font: 0.78rem var(--mono);
+      text-align: right;
+      color: var(--ink);
+    }
+    .detail {
+      margin-block: 0.65rem;
+    }
+    summary {
+      padding: 0.5rem 0.1rem;
+      color: var(--green);
+      width: fit-content;
+      font-size: 0.91rem;
+      font-weight: 700;
+    }
+    .table-scroll {
+      overflow: auto;
+      max-width: 100%;
+      margin: 0.5rem 0;
+    }
+    table {
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+    th,
+    td {
+      text-align: right;
+      padding: 0.42rem 0.5rem;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    th {
+      font: 700 0.78rem/1.25 var(--sans);
+      color: var(--muted);
+    }
+    th:first-child,
+    td:first-child {
+      text-align: left;
+      overflow-wrap: anywhere;
+    }
+    tbody th {
+      color: var(--ink);
+      font-size: 0.84rem;
+    }
+    td {
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .explorer {
+      margin-top: clamp(1.7rem, 3vw, 2.7rem);
+    }
+    .sectionhead {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.8rem;
+      margin-bottom: 0.9rem;
+    }
+    .sectionhead p {
+      font-size: 0.89rem;
+      color: var(--muted);
+    }
+    .cases {
+      display: grid;
+      grid-template-columns: minmax(12rem, 0.85fr) minmax(0, 2.6fr);
+      border: 1px solid var(--darkline);
+      border-radius: 4px;
+      background: var(--white);
+      overflow: clip;
+    }
+    .caselist {
+      background: var(--pale);
+      border-inline-end: 1px solid var(--line);
+      padding: 0.6rem;
+      align-self: stretch;
+      min-width: 0;
+    }
+    .casebuttons {
+      display: grid;
+      align-content: start;
+      gap: 0.18rem;
+      max-height: 31rem;
+      overflow: auto;
+      padding: 4px;
+    }
+    .case-search{display:block;margin:.25rem .25rem .5rem;color:var(--muted);font-size:.8rem;font-weight:700}
+    .case-search input{display:block;width:100%;margin-top:.2rem;border:1px solid var(--darkline);border-radius:3px;color:var(--ink);background:var(--white);padding:.42rem .55rem;min-height:2.35rem;font-size:.89rem}
+    .case-search input::placeholder{color:var(--muted);opacity:1}
+    .pick {
+      display: block;
+      appearance: none;
+      border: 1px solid transparent;
+      border-left-width: 3px;
+      background: transparent;
+      text-align: left;
+      padding: 0.58rem 0.62rem;
+      width: 100%;
+      min-height: 2.75rem;
+      line-height: 1.22;
+      border-radius: 2px;
+    }
+    .pick:hover {
+      background: #f5f7f0;
+    }
+    .pick[aria-pressed="true"] {
+      background: var(--white);
+      border-color: var(--line);
+      border-left-color: var(--green);
+    }
+    .pick strong {
+      display: block;
+      color: var(--ink);
+      font-size: 0.94rem;
+    }
+    .pick small {
+      display: block;
+      margin-top: 0.27rem;
+      color: var(--muted);
+      overflow-wrap: anywhere;
+      font-size: 0.77rem;
+    }
+    .case-select {
+      display: none;
+    }
+    .casepane {
+      min-width: 0;
+      padding: clamp(1rem, 2.65vw, 2.15rem);
+    }
+    .casehead {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.6rem;
+      align-items: start;
+    }
+    .casehead h3 {
+      font: normal 1.72rem/1.17 var(--serif);
+      letter-spacing: -0.025em;
+      overflow-wrap: anywhere;
+    }
+    .case-meta {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin: 0.23rem 0 1.05rem;
+      overflow-wrap: anywhere;
+    }
+    .count {
+      font: 0.72rem var(--mono);
+      white-space: nowrap;
+      color: var(--green);
+      background: var(--pale);
+      padding: 0.28rem 0.42rem;
+      border-radius: 2px;
+    }
+    .turn {
+      margin: 0.65rem 0 0.9rem;
+    }
+    .field-name {
+      font-weight: 700;
+      font-size: 0.77rem;
+      color: var(--muted);
+      letter-spacing: 0.02em;
+      display: block;
+      margin-bottom: 0.18rem;
+    }
+    .learner {
+      border-inline-start: 3px solid var(--darkline);
+      margin: 0.12rem 0 0;
+      padding: 0.15rem 0.78rem;
+      color: var(--ink);
+      font-size: 1.02rem;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+    .decision {
+      display: flex;
+      gap: 0.5rem;
+      align-items: baseline;
+      flex-wrap: wrap;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 0.52rem 0;
+      margin: 0.8rem 0 1rem;
+    }
+    .decision dt {
+      flex: none;
+      font-size: 0.82rem;
+      color: var(--green);
+      font-weight: 700;
+    }
+    .decision dd {
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+    .preview-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 0.5rem;
+      margin-bottom: 0.48rem;
+    }
+    .preview-title h4 {
+      font-size: 1rem;
+    }
+    .preview-title small,
+    .local-note {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    .reply {
+      overflow-wrap: anywhere;
+      max-width: 100%;
+    }
+    .reply :is(p, ol, ul, blockquote, h4, h5, pre) {
+      margin: 0 0 0.6rem;
+    }
+    .reply :is(ol, ul) {
+      padding-left: 1.4rem;
+    }
+    .reply blockquote {
+      padding-left: 0.8rem;
+      border-left: 2px solid var(--line);
+      color: var(--muted);
+    }
+    code {
+      font-size: 0.87em;
+      font-family: var(--mono);
+    }
+    .reply .activity {
+      border: 1px solid var(--darkline);
+      border-top: 3px solid var(--green);
+      border-radius: 3px;
+      background: #f9fbf6;
+      padding: 1rem;
+      margin: 0.7rem 0 1rem;
+    }
+    .activity h4 {
+      font: 700 1.08rem/1.32 var(--sans);
+      margin: 0 0 0.5rem;
+    }
+    .activity .form {
+      display: grid;
+      gap: 0.65rem;
+    }
+    .activity fieldset {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      min-width: 0;
+    }
+    .activity legend {
+      font: 700 1rem/1.32 var(--sans);
+      margin-bottom: 0.45rem;
+      padding: 0;
+    }
+    .activity label {
+      display: block;
+    }
+    .activity .choice {
+      display: flex;
+      align-items: baseline;
+      gap: 0.6rem;
+      padding: 0.44rem 0.68rem;
+      margin: 0.26rem 0;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .activity .choice:has(input:checked) {
+      background: #dcebdc;
+      border-color: var(--green);
+    }
+    .activity input[type="radio"],
+    .activity input[type="checkbox"] {
+      margin: 0;
+      flex: none;
+      align-self: center;
+    }
+    .activity :is(textarea, input[type="text"], select),
+    .case-select select {
+      border: 1px solid var(--darkline);
+      border-radius: 3px;
+      background: var(--white);
+      color: var(--ink);
+      padding: 0.5rem 0.62rem;
+      width: 100%;
+      min-height: 2.6rem;
+      margin: 0.16rem 0 0.38rem;
+    }
+    .activity textarea {
+      resize: vertical;
+      min-height: 3.25rem;
+    }
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.65rem;
+    }
+    .action {
+      background: var(--green);
+      color: white;
+      border: 1px solid var(--green);
+      border-radius: 3px;
+      min-height: 2.6rem;
+      padding: 0.4rem 0.82rem;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+    .action:hover:enabled {
+      background: #113f2d;
+    }
+    .action.quiet {
+      background: transparent;
+      color: var(--green);
+      border-color: var(--darkline);
+    }
+    .action.quiet:hover:enabled {
+      background: var(--pale);
+    }
+    .activity label.range {
+      margin: 0.62rem 0;
+    }
+    .range output {
+      font-weight: 700;
+      float: right;
+    }
+    input[type="range"] {
+      width: 100%;
+      display: block;
+      min-height: 1.9rem;
+    }
+    .readouts {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.9rem;
+      margin: 0.6rem 0;
+    }
+    .readout {
+      padding: 0.34rem 0.7rem;
+      border-left: 2px solid var(--green);
+    }
+    .readout strong {
+      display: block;
+      font: normal 1.45rem var(--serif);
+    }
+    .outcome {
+      margin-top: 0.9rem;
+      padding-top: 0.7rem;
+      border-top: 1px solid var(--line);
+    }
+    .outcome p {
+      font-size: 0.93rem;
+    }
+    .outcome strong {
+      color: var(--ink);
+    }
+    .notice {
+      border-inline-start: 3px solid var(--amber-line);
+      background: var(--sand);
+      padding: 0.65rem 0.78rem;
+      color: var(--amber);
+    }
+    .raw-details {
+      margin: 0.58rem 0 0;
+    }
+    .related {
+      border-top: 1px solid var(--line);
+      padding-top: 0.45rem;
+      margin-top: 0.75rem;
+    }
+    .related button {
+      padding: 0.35rem 0.3rem 0.35rem 0;
+      margin-right: 0.6rem;
+      border: 0;
+      background: transparent;
+      color: var(--green);
+      text-align: left;
+      text-decoration: underline;
+      text-underline-offset: 0.18rem;
+      font-size: 0.86rem;
+    }
+    .cohorts {
+      margin-top: 2rem;
+      border-top: 1px solid var(--darkline);
+      padding-top: 1.25rem;
+    }
+    .cohorts summary {
+      font: normal 1.45rem var(--serif);
+      color: var(--ink);
+    }
+    .cohorts .source-note {
+      margin: 0.5rem 0;
+    }
+    .production {
+      margin: 1.4rem 0;
+      padding-top: 1rem;
+      border-top: 1px solid var(--line);
+      max-width: 76ch;
+    }
+    .production h2 {
+      font: 700 1rem var(--sans);
+      margin-bottom: 0.28rem;
+    }
+    footer {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      color: var(--muted);
+      border-top: 1px solid var(--darkline);
+      margin-top: 1.6rem;
+      padding: 0.85rem 0 1.6rem;
+      font-size: 0.85rem;
+    }
+    footer small {
+      font: 0.7rem var(--mono);
+    }
+    .sr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      border: 0;
+      white-space: nowrap;
+    }
+    [hidden] {
+      display: none !important;
+    }
+    @media (max-width: 57rem) {
+      .shell {
+        padding-inline: 1.4rem;
+      }
+      .evidence {
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.45fr);
+        column-gap: 1.1rem;
+      }
+      .chart {
+        padding-inline-start: 1rem;
+      }
+      .barrow {
+        grid-template-columns: 1fr minmax(3rem, 0.72fr) max-content;
+        gap: 0.45rem;
+      }
+      .cases {
+        grid-template-columns: minmax(11rem, 0.85fr) minmax(0, 2.25fr);
+      }
+      .caselist {
+        padding: 0.32rem;
+      }
+    }
+    @media (max-width: 43rem) {
+      .shell {
+        padding-inline: 1rem;
+      }
+      .mast {
+        min-height: 3.5rem;
+      }
+      .publication span {
+        display: none;
+      }
+      .nav {
+        gap: 0.8rem;
+      }
+      h1 {
+        font-size: 2.55rem;
+      }
+      .lede {
+        font-size: 1.02rem;
+      }
+      .intro {
+        padding: 1.55rem 0 1.35rem;
+      }
+      .evidence {
+        grid-template-columns: 1fr;
+        gap: 1.15rem;
+      }
+      .chart {
+        border-inline-start: 0;
+        border-top: 1px solid var(--line);
+        padding: 0.95rem 0 0;
+      }
+      .datum {
+        grid-template-columns: 4.6rem 1fr;
+      }
+      .barrow {
+        grid-template-columns: minmax(6.4rem, 1fr) minmax(2.8rem, 0.85fr) max-content;
+      }
+      .sectionsmall {
+        display: none;
+      }
+      .sectionhead {
+        display: block;
+      }
+      .sectionhead p {
+        margin-top: 0.2rem;
+      }
+      .cases {
+        display: block;
+      }
+      .caselist {
+        border: 0;
+        border-bottom: 1px solid var(--line);
+        padding: 0.6rem 0.85rem;
+      }
+      .casebuttons {
+        display: none;
+      }
+      .case-select {
+        display: block;
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: var(--green);
+      }
+      .case-select select {
+        font: normal 0.94rem var(--sans);
+        width: 100%;
+        margin-bottom: 0;
+      }
+      .casepane {
+        padding: 1rem;
+      }
+      .casehead h3 {
+        font-size: 1.5rem;
+      }
+      .toggles button {
+        padding-inline: 0.54rem;
+      }
+      .preview-title {
+        flex-wrap: wrap;
+      }
+    }
+    @media (max-width: 23rem) {
+      .mast {
+        flex-wrap: wrap;
+        gap: 0 .55rem;
+        padding-block: .35rem;
+      }
+      .nav { gap: .62rem; }
+      .nav a { font-size: .8rem; }
+      .toggles {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        width: 100%;
+      }
+      .barrow {
+        grid-template-columns: 1fr max-content;
+      }
+      .track {
+        grid-row: 2;
+        grid-column: 1/-1;
+      }
+      .barrow .measure {
+        grid-column: 2;
+        grid-row: 1;
+      }
+    }
+    @media print {
+      .skip,
+      .nav,
+      .toggles,
+      .caselist,
+      .raw-details,
+      .controls,
+      .case-select,
+      .cohorts,
+      .action {
+        display: none;
+      }
+      .shell {
+        padding: 0;
+      }
+      .evidence,
+      .cases {
+        display: block;
+      }
+      .chart {
+        border: none;
+        padding: 1rem 0;
+      }
+      .cases {
+        border: none;
+      }
+      .casepane {
+        padding: 0.5rem 0;
+      }
+      .production {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="#results" class="skip">Skip to results</a>
+  <div class="shell">
+    <header class="mast">
+      <a href="#top" class="publication"><img src="@@BOT@@" width="34" height="34" alt="">Keating <span>Research</span></a>
+      <nav class="nav" aria-label="Study navigation"><a href="#results">Results</a><a href="#examples">Examples</a><a href="#evidence">Evidence</a></nav>
+    </header>
+    <main id="top">
+      <section class="intro" aria-labelledby="title">
+        <div class="eyeline"><time datetime="2026-11-18">18 Nov 2026</time><span aria-hidden="true">/</span> OpenUI response audit</div>
+        <h1 id="title">@@HEADLINE@@</h1>
+        <p class="lede">@@DEK@@</p>
+      </section>
+      <section id="results" class="evidence" aria-label="Study results">
+        <div id="counts" class="counts"></div>
+        <figure class="chart" aria-labelledby="model-heading">
+          <h2 id="model-heading">Model comparison</h2>
+          <div id="modes" class="toggles" role="group" aria-label="Measure to compare"></div>
+          <figcaption id="metric-description" class="caption"></figcaption>
+          <div id="bars" class="bars" aria-live="polite"></div>
+          <details class="detail"><summary>All model counts</summary><div class="table-scroll" id="model-counts"></div></details>
+        </figure>
+      </section>
+      <section id="examples" class="explorer" aria-labelledby="case-heading">
+        <div class="sectionhead"><h2 id="case-heading">Inside the replies</h2><p>Explore the captured responses in a local replay.</p></div>
+        <div class="cases">
+          <div class="caselist">
+            <label class="case-search">Search replies<input id="case-query" type="search" aria-controls="casebuttons picker" placeholder="Topic, model or outcome"></label>
+            <label class="case-select">Choose a reply<select id="picker"></select></label>
+            <div id="casebuttons" class="casebuttons" role="group" aria-label="Choose a reply"></div>
+          </div>
+          <article id="case" class="casepane" aria-label="Selected reply"></article>
+        </div>
+      </section>
+      <section id="evidence" aria-label="Evidence and scope">
+        <details class="cohorts" id="history"><summary>Historical benchmark</summary>
+          <p id="history-note" class="source-note">Counts from the recorded historical cohort.</p>
+          <div id="historical-table" class="table-scroll"></div>
+        </details>
+        <div class="production"><h2>Production coverage</h2><p id="production" class="source-note"></p></div>
+      </section>
+      <noscript><p>Enable JavaScript to explore the model counts and captured replies in this file.</p></noscript>
+    </main>
+    <footer><a href="#top">Back to top</a><a id="report-link" hidden>Read the final report</a><small>Keating · November 2026</small></footer>
+  </div>
+  <script type="text/plain" id="embedded-font-license">@@FONT_LICENSE@@</script>
+  <script type="application/json" id="study">@@STUDY@@</script>
+  <script>@@RUNTIME@@</script>
+  <script>
+
+    "use strict";
+    const study = JSON.parse(document.getElementById("study").textContent);
+    const tools = window.auditTools;
+    const byId = (id) => document.getElementById(id);
+    function el(tag, text = "", className = "") {
+      const element = document.createElement(tag);
+      if (text !== "") element.textContent = String(text);
+      if (className) element.className = className;
+      return element;
+    }
+    function button(text, action, className = "action") {
+      const control = el("button", text, className);
+      control.type = "button";
+      control.addEventListener("click", action);
+      return control;
+    }
+    function disclosure(label, content, className = "detail") {
+      const box = el("details", "", className);
+      box.append(el("summary", label), content);
+      return box;
+    }
+    function table(headers, rows) {
+      const body = el("tbody"),
+        head = el("thead"),
+        titles = el("tr");
+      for (const label of headers) {
+        const th = el("th", label);
+        th.scope = "col";
+        titles.append(th);
+      }
+      for (const row of rows) {
+        const line = el("tr");
+        row.forEach((value, index) => {
+          const cell = el(index === 0 ? "th" : "td", value ?? "—");
+          if (index === 0) cell.scope = "row";
+          line.append(cell);
+        });
+        body.append(line);
+      }
+      const grid = el("table");
+      head.append(titles);
+      grid.append(head, body);
+      return grid;
+    }
+    const percent = (n, d) =>
+      d > 0 && n != null
+        ? ((100 * n) / d).toLocaleString("en-US", { maximumFractionDigits: 1 }) + "%"
+        : "—";
+    const fraction = (n, d) => (n == null || d == null ? "—" : n + " / " + d);
+    function renderCounts() {
+      for (const metric of study.metrics) {
+        const row = el("div", "", "datum"),
+          number = el("div"),
+          label = el("div");
+        number.append(
+          el("b", percent(metric.n, metric.d)),
+          el("span", fraction(metric.n, metric.d), "ratio"),
+        );
+        label.append(el("strong", metric.label), el("p", metric.note));
+        row.append(number, label);
+        byId("counts").append(row);
+      }
+    }
+    const modes = [
+      {
+        key: "attempted",
+        label: "Attempted",
+        denominator: "opportunities",
+        description: "Interface opportunities where the reply attempted OpenUI.",
+      },
+      {
+        key: "valid",
+        label: "Valid",
+        denominator: "opportunities",
+        description: "Interface opportunities with a valid compiled OpenUI surface.",
+      },
+      {
+        key: "matched",
+        label: "Matched",
+        denominator: "opportunities",
+        description: "Interface opportunities with a valid surface from the expected family.",
+      },
+      {
+        key: "cleanProse",
+        label: "Prose controls",
+        denominator: "proseControlCount",
+        description: "Text-control cases where the tutor kept the response in prose.",
+      },
+    ];
+    function compare(mode) {
+      byId("metric-description").textContent = study.modeDescriptions?.[mode.key] || mode.description;
+      const bars = byId("bars");
+      bars.replaceChildren();
+      for (const model of study.models) {
+        const n = model[mode.key],
+          d = model[mode.denominator];
+        const row = el("div", "", "barrow"),
+          track = el("div", "", "track"),
+          fill = el("div", "", "bar");
+        track.setAttribute("aria-hidden", "true");
+        fill.style.width = (d > 0 ? Math.min(100, (100 * n) / d) : 0) + "%";
+        track.append(fill);
+        row.append(
+          el("span", model.name, "row-name"),
+          track,
+          el("span", percent(n, d) + " · " + fraction(n, d), "measure"),
+        );
+        bars.append(row);
+      }
+      if (!study.models.length)
+        bars.append(el("p", "No comparable model rows were recorded.", "source-note"));
+      for (const tab of byId("modes").children)
+        tab.setAttribute("aria-pressed", String(tab.dataset.key === mode.key));
+    }
+    function renderCharts() {
+      for (const mode of modes) {
+        const item = button(mode.label, () => compare(mode), "");
+        item.dataset.key = mode.key;
+        byId("modes").append(item);
+      }
+      compare(modes[2]);
+      byId("model-counts").append(
+        table(
+          ["Model", "Opportunities", "Attempted", "Valid", "Matched", "Clean prose / controls"],
+          study.models.map((m) => [
+            m.name,
+            m.opportunities,
+            m.attempted,
+            m.valid,
+            m.matched,
+            fraction(m.cleanProse, m.proseControlCount),
+          ]),
+        ),
+      );
+      if (study.historical.length)
+        byId("historical-table").append(
+          table(
+            ["Cohort", "Replies", "Attempted", "Valid", "Valid / replies"],
+            study.historical.map((h) => [h.name, h.n, h.attempted, h.valid, percent(h.valid, h.n)]),
+          ),
+        );
+      else byId("history").hidden = true;
+      byId("history-note").textContent = study.historicalNote || byId("history-note").textContent;
+      byId("production").textContent = study.production;
+      if (typeof study.reportHref === "string" && /^[\w.-]+\.(md|html)$/i.test(study.reportHref)) {
+        const link = byId("report-link");
+        link.href = study.reportHref;
+        link.hidden = false;
+      }
+    }
+    // Model-authored Markdown is data. Build only the supported presentation nodes.
+    function putTokens(parent, tokens) {
+      for (const token of tokens || []) {
+        if (token.type === "space") continue;
+        if (token.type === "hr" || token.type === "br") {
+          parent.append(el(token.type));
+          continue;
+        }
+        if (token.type === "code") {
+          const code = el("pre");
+          code.append(el("code", token.text));
+          parent.append(code);
+          continue;
+        }
+        if (token.type === "table") {
+          const wrapper = el("div", "", "table-scroll"),
+            grid = el("table");
+          for (const [index, cells] of [token.header, ...token.rows].entries()) {
+            const line = el("tr");
+            for (const source of cells) {
+              const cell = el(index ? "td" : "th");
+              putTokens(cell, source.tokens);
+              line.append(cell);
+            }
+            grid.append(line);
+          }
+          wrapper.append(grid);
+          parent.append(wrapper);
+          continue;
+        }
+        if (token.type === "list") {
+          const list = el(token.ordered ? "ol" : "ul");
+          if (token.ordered && Number.isInteger(token.start)) list.start = token.start;
+          for (const piece of token.items) {
+            const li = el("li");
+            putTokens(li, piece.tokens);
+            list.append(li);
+          }
+          parent.append(list);
+          continue;
+        }
+        if (token.type === "image") {
+          parent.append(document.createTextNode(token.text || ""));
+          continue;
+        }
+        const tags = {
+          heading: "h5",
+          paragraph: "p",
+          blockquote: "blockquote",
+          strong: "strong",
+          em: "em",
+          del: "del",
+          codespan: "code",
+          link: "span",
+        };
+        const element = tags[token.type] ? el(tags[token.type]) : document.createDocumentFragment();
+        if (token.tokens?.length) putTokens(element, token.tokens);
+        else element.append(document.createTextNode(token.text ?? token.raw ?? ""));
+        parent.append(element);
+      }
+    }
+    function prose(parent, text) {
+      if (!text || !text.trim()) return;
+      putTokens(parent, tools.marked.lexer(text));
+    }
+    let widgetSerial = 0;
+    const list = (value) => (Array.isArray(value) ? value : []);
+    function selectOptions(select, choices, prompt) {
+      if (prompt) select.append(new Option(prompt, ""));
+      for (const choice of choices) select.append(new Option(choice.label, choice.id));
+    }
+    function questionField(q, onChange) {
+      const field = el("fieldset"),
+        identity = "answer-" + ++widgetSerial;
+      field.append(el("legend", q.prompt));
+      const choices = list(q.choices),
+        items = list(q.items);
+      let read;
+      if (q.kind === "ordering" && items.length) {
+        const selectors = items.map((item, index) => {
+          const label = el("label", "Position " + (index + 1)),
+            select = el("select");
+          items.forEach((item, i) => select.append(new Option(item, String(i))));
+          select.value = String(index);
+          label.append(select);
+          field.append(label);
+          return select;
+        });
+        const order = items.map((item, index) => String(index));
+        selectors.forEach((select, index) =>
+          select.addEventListener("change", () => {
+            const previous = order.indexOf(select.value);
+            [order[index], order[previous]] = [order[previous], order[index]];
+            selectors.forEach((input, i) => {
+              input.value = order[i];
+            });
+            onChange();
+          }),
+        );
+        read = () => {
+          const sorted = order.map((i) => items[Number(i)]);
+          return { value: sorted.join(","), label: sorted.join(" → ") };
+        };
+      } else if (q.kind === "classification" || q.kind === "matching") {
+        const rows = items.map((item) => {
+          const label = el("label", item),
+            select = el("select");
+          selectOptions(select, choices, "Choose an option");
+          label.append(select);
+          field.append(label);
+          let reason;
+          if (q.requireReasons) {
+            const reasonLabel = el("label", q.reasonLabel || "Your reason");
+            reason = el("input");
+            reason.type = "text";
+            reasonLabel.append(reason);
+            field.append(reasonLabel);
+          }
+          return { item, select, reason };
+        });
+        read = () => {
+          if (!rows.length || rows.some((r) => !r.select.value || (r.reason && !r.reason.value.trim())))
+            return null;
+          if (q.uniqueMatches && new Set(rows.map((r) => r.select.value)).size !== rows.length)
+            return null;
+          const keys = rows.map((r) => r.select.value),
+            labels = rows.map(
+              (r) =>
+                r.item +
+                " → " +
+                r.select.selectedOptions[0].text +
+                (r.reason ? " (" + r.reason.value.trim() + ")" : ""),
+            );
+          return { value: keys.join(","), label: labels.join("\n") };
+        };
+      } else if (
+        (q.kind === "blanks" || q.kind === "fill_in") &&
+        (q.blanks?.length || /_{3,}|\{\{blank\}\}/.test(q.prompt))
+      ) {
+        const count = q.blanks?.length || q.prompt.match(/_{3,}|\{\{blank\}\}/g).length;
+        const fields = Array.from({ length: count }, (_, index) => {
+          const label = el("label", "Blank " + (index + 1)),
+            input = el("input");
+          input.type = "text";
+          input.placeholder = q.blanks?.[index]?.placeholder || "";
+          label.append(input);
+          field.append(label);
+          return input;
+        });
+        read = () => {
+          const values = fields.map((input) => input.value.trim());
+          return values.every(Boolean) ? { value: values.join(","), label: values.join(" · ") } : null;
+        };
+      } else if (q.kind === "dropdown" && choices.length) {
+        const label = el("label", "Your choice"),
+          select = el("select");
+        selectOptions(select, choices, "Choose an option");
+        label.append(select);
+        field.append(label);
+        read = () =>
+          select.value ? { value: select.value, label: select.selectedOptions[0].text } : null;
+      } else if (choices.length) {
+        const inputs = choices.map((choice) => {
+          const label = el("label", "", "choice"),
+            input = el("input");
+          input.type = q.multiSelect || q.kind === "multi_select" ? "checkbox" : "radio";
+          input.name = identity;
+          input.value = choice.id;
+          label.append(input, el("span", choice.label));
+          field.append(label);
+          return input;
+        });
+        let own;
+        if (q.allowText) {
+          const label = el("label", "Your own answer");
+          own = el("textarea");
+          own.rows = 2;
+          label.append(own);
+          field.append(label);
+        }
+        read = () => {
+          const checked = choices.filter((choice, index) => inputs[index].checked),
+            addition = own?.value.trim();
+          if (!checked.length && !addition) return null;
+          return {
+            value: checked.length ? checked.map((c) => c.id).join(",") : addition,
+            label: [...checked.map((c) => c.label), addition].filter(Boolean).join(" · "),
+          };
+        };
+      } else if (q.kind === "slider") {
+        const label = el("label", "Your estimate", "range"),
+          input = el("input"),
+          value = el("output");
+        input.type = "range";
+        input.min = q.min ?? 0;
+        input.max = q.max ?? 100;
+        input.step = q.step ?? 1;
+        input.value = input.min;
+        value.textContent = input.value;
+        input.addEventListener("input", () => {
+          value.textContent = input.value;
+        });
+        label.append(value, input);
+        field.append(label);
+        read = () => ({ value: input.value, label: input.value });
+      } else {
+        const label = el("label", "Your answer"),
+          input = el("textarea");
+        input.rows = 3;
+        label.append(input);
+        field.append(label);
+        read = () =>
+          input.value.trim() ? { value: input.value.trim(), label: input.value.trim() } : null;
+      }
+      if (q.hint) {
+        const hint = el("div");
+        prose(hint, q.hint);
+        field.append(disclosure("Hint", hint));
+      }
+      field.addEventListener("input", onChange);
+      field.addEventListener("change", onChange);
+      return { field, read };
+    }
+    function renderQuestions(host, node) {
+      const quiz = node.type === "quiz",
+        questions = node.type === "question" ? [node] : list(node.questions);
+      const title = node.title || (quiz ? "Quiz" : "Quick check"),
+        answers = [];
+      if (!questions.length) {
+        host.append(el("p", "This response contains no questions.", "notice"));
+        return;
+      }
+      const entries = questions.map((q) => questionField(q, update)),
+        controls = el("div", "", "controls"),
+        form = el("div", "", "form");
+      let index = 0,
+        next;
+      function update() {
+        if (next) next.disabled = !entries[index].read();
+      }
+      function show() {
+        host.replaceChildren(el("h4", title));
+        if (node.intro) prose(host, node.intro);
+        if (questions.length > 1)
+          host.append(el("p", "Question " + (index + 1) + " of " + questions.length, "local-note"));
+        form.replaceChildren(entries[index].field);
+        controls.replaceChildren();
+        if (index > 0)
+          controls.append(
+            button(
+              "Previous question",
+              () => {
+                index--;
+                show();
+              },
+              "action quiet",
+            ),
+          );
+        next = button(index === questions.length - 1 ? "Submit in preview" : "Next question", () => {
+          const answer = entries[index].read();
+          if (!answer) return;
+          answers[index] = answer;
+          if (index + 1 < questions.length) {
+            index++;
+            show();
+            entries[index].field.querySelector("input, textarea, select")?.focus();
+          } else done();
+        });
+        controls.append(next);
+        host.append(form, controls);
+        update();
+      }
+      function done() {
+        const heading = el("h4", "Your response");
+        heading.tabIndex = -1;
+        host.replaceChildren(heading);
+        questions.forEach((q, i) => {
+          const section = el("div");
+          if (questions.length > 1) section.append(el("strong", q.prompt));
+          section.append(el("p", answers[i].label));
+          if (quiz) {
+            const credit = tools.objectiveCredit(q, answers[i].value);
+            section.append(
+              el(
+                "p",
+                credit === undefined
+                  ? "This answer needs tutor review."
+                  : credit === 1
+                    ? "Matches the authored key."
+                    : "Review the authored key.",
+                "local-note",
+              ),
+            );
+            if (q.explanation) prose(section, q.explanation);
+          }
+          host.append(section);
+        });
+        host.append(
+          el("p", "Answer held in this preview.", "local-note"),
+          button(
+            "Try again",
+            () => {
+              host.replaceChildren();
+              renderQuestions(host, node);
+            },
+            "action quiet",
+          ),
+        );
+        heading.focus();
+      }
+      show();
+    }
+    function renderSimulation(host, node) {
+      host.append(el("h4", node.title));
+      prose(host, node.brief);
+      const parameters = list(node.parameters),
+        reads = list(node.readouts),
+        values = Object.fromEntries(parameters.map((p) => [p.id, p.value]));
+      const parsed = reads.map((r) =>
+        tools.parseSimulationExpression(
+          r.expr,
+          parameters.map((p) => p.id),
+        ),
+      );
+      const readouts = el("div", "", "readouts");
+      readouts.setAttribute("aria-live", "polite");
+      function update() {
+        readouts.replaceChildren();
+        reads.forEach((r, i) => {
+          const result = parsed[i].ok
+            ? tools.evaluateSimulationExpression(parsed[i].node, values)
+            : undefined;
+          const item = el("div", "", "readout"),
+            value = Number.isFinite(result)
+              ? Number(result).toFixed(r.precision ?? 2) + (r.unit ? " " + r.unit : "")
+              : "No finite value";
+          item.append(el("span", r.label), el("strong", value));
+          readouts.append(item);
+        });
+      }
+      for (const p of parameters) {
+        const label = el("label", p.label, "range"),
+          input = el("input"),
+          value = el("output");
+        input.type = "range";
+        input.min = String(p.min);
+        input.max = String(p.max);
+        input.step = String(p.step ?? 1);
+        input.value = String(p.value);
+        const set = () => {
+          values[p.id] = Number(input.value);
+          value.textContent = input.value + (p.unit ? " " + p.unit : "");
+        };
+        set();
+        input.addEventListener("input", () => {
+          set();
+          update();
+        });
+        label.append(value, input);
+        host.append(label);
+      }
+      update();
+      host.append(readouts);
+    }
+    function renderDeck(host, node) {
+      const cards = list(node.cards);
+      let index = 0,
+        revealed = false;
+      function draw() {
+        host.replaceChildren(el("h4", node.title));
+        prose(host, node.description);
+        if (!cards.length) {
+          host.append(el("p", "No cards in the captured response."));
+          return;
+        }
+        host.append(el("p", "Card " + (index + 1) + " of " + cards.length, "local-note"));
+        prose(host, cards[index].front);
+        if (revealed) prose(host, cards[index].back);
+        const controls = el("div", "", "controls");
+        controls.append(
+          button(revealed ? "Hide answer" : "Reveal answer", () => {
+            revealed = !revealed;
+            draw();
+          }),
+        );
+        if (index > 0)
+          controls.append(
+            button(
+              "Previous card",
+              () => {
+                index--;
+                revealed = false;
+                draw();
+              },
+              "action quiet",
+            ),
+          );
+        if (index + 1 < cards.length)
+          controls.append(
+            button(
+              "Next card",
+              () => {
+                index++;
+                revealed = false;
+                draw();
+              },
+              "action quiet",
+            ),
+          );
+        host.append(controls);
+      }
+      draw();
+    }
+    function renderNode(parent, node) {
+      if (node.type === "markdown") {
+        prose(parent, node.markdown);
+        return;
+      }
+      const host = el("section", "", "activity");
+      host.setAttribute("data-node-type", node.type);
+      parent.append(host);
+      if (["question", "question-group", "quiz"].includes(node.type)) {
+        renderQuestions(host, node);
+        return;
+      }
+      if (node.type === "simulation") {
+        renderSimulation(host, node);
+        return;
+      }
+      if (node.type === "deck") {
+        renderDeck(host, node);
+        return;
+      }
+      if (node.type === "callout") {
+        if (node.title) host.append(el("h4", node.title));
+        prose(host, node.markdown);
+        return;
+      }
+      if (node.type === "study-plan") {
+        host.append(el("h4", node.title || "Study plan"));
+        prose(host, node.overview || node.resource?.content);
+        function planItems(items) {
+          const ol = el("ol");
+          for (const item of list(items)) {
+            const li = el("li");
+            li.append(el("strong", item.title));
+            prose(li, item.detail);
+            if (item.outcomes?.length) li.append(el("p", item.outcomes.join(" · ")));
+            if (item.children?.length) li.append(planItems(item.children));
+            ol.append(li);
+          }
+          return ol;
+        }
+        if (node.items?.length) host.append(planItems(node.items));
+        return;
+      }
+      if (node.type === "notes") {
+        host.append(el("h4", node.title));
+        const label = el("label", "Your notes"),
+          area = el("textarea");
+        area.value = node.value || "";
+        area.placeholder = node.placeholder || "";
+        area.rows = 4;
+        label.append(area);
+        host.append(label);
+        return;
+      }
+      host.append(el("h4", node.title || node.kind || node.type));
+      if (node.type === "concept-map") {
+        host.append(el("p", "Diagram source from the reply.", "local-note"), el("pre", node.source));
+        return;
+      }
+      if (node.type === "coding-challenge") {
+        prose(host, node.prompt);
+        const language = node.language === "typescript" ? "TypeScript" : "JavaScript";
+        host.append(el("p", language + " starter · code preview", "local-note"), el("pre", node.starterCode));
+        if (node.tests?.length) {
+          const tests = el("ul");
+          node.tests.forEach((t) => {
+            const row = el("li", t.label + " ");
+            const invocation = node.entrypoint + "(" + t.args.map(arg => JSON.stringify(arg)).join(", ") + ")";
+            row.append(el("code", invocation + " → " + JSON.stringify(t.expected)));
+            tests.append(row);
+          });
+          host.append(disclosure("Authored tests", tests));
+        }
+        return;
+      }
+      if (node.type === "task") {
+        prose(host, node.brief);
+        const steps = el("ol");
+        list(node.items).forEach((i) => {
+          const li = el("li", i.title);
+          prose(li, i.detail);
+          steps.append(li);
+        });
+        if (steps.children.length) host.append(steps);
+        if (node.criteria?.length) {
+          const criteria = el("ul");
+          node.criteria.forEach((c) => criteria.append(el("li", c)));
+          host.append(disclosure("Success criteria", criteria));
+        }
+        return;
+      }
+      prose(
+        host,
+        node.description ||
+          node.brief ||
+          node.prompt ||
+          node.text ||
+          node.resource?.content ||
+          node.alt,
+      );
+      host.append(
+        el("p", "The complete authored component is available in the source below.", "local-note"),
+      );
+    }
+    function renderReply(host, example, index) {
+      const raw = example.text || "",
+        expected = list(example.nodes);
+      const segments = tools.parseOpenUIMessageSegments(raw, "audit-case-" + index);
+      let used = 0;
+      const outsideText = [];
+      for (const segment of segments) {
+        if (segment.type === "text") {
+          outsideText.push(segment.content);
+          prose(host, segment.content);
+          continue;
+        }
+        let nodes;
+        if (segment.complete) {
+          if (segment.format === "document") nodes = segment.document?.nodes;
+          else {
+            const compiled = tools.tryCompileOpenUISourceToSharedDocument(segment.program, {
+              documentId: segment.metadata.id,
+              retention: segment.metadata.lifecycle,
+            });
+            if (compiled.ok) nodes = compiled.document.nodes;
+          }
+        }
+        if (!nodes?.length || used + nodes.length > expected.length) {
+          host.append(
+            el(
+              "p",
+              segment.complete
+                ? "This OpenUI block did not produce a validated surface in the audit."
+                : "The OpenUI block ended before its closing fence.",
+              "notice",
+            ),
+          );
+          continue;
+        }
+        const batch = expected.slice(used, used + nodes.length);
+        if (batch.every((node, i) => node.type === nodes[i].type)) {
+          batch.forEach((node) => renderNode(host, node));
+          used += batch.length;
+        } else host.append(el("p", "The surface could not be matched to this block.", "notice"));
+      }
+      // Some sources export the compiled artifact separately from the surrounding reply.
+      for (const node of expected.slice(used)) renderNode(host, node);
+      return outsideText.join(" ").trim().split(/\s+/u).filter(Boolean).length;
+    }
+    let selectedIndex = 0;
+    function displayCase(index) {
+      selectedIndex = index;
+      const example = study.examples[index],
+        panel = byId("case");
+      panel.replaceChildren();
+      if (!example) {
+        panel.append(el("p", study.examples.length ? "No replies match this search." : "No captured examples are available."));
+        return;
+      }
+      const header = el("div", "", "casehead");
+      header.append(
+        el("h3", example.title),
+        el("span", index + 1 + " / " + study.examples.length, "count"),
+      );
+      const meta = el("p", [example.model, example.cohort].filter(Boolean).join(" · "), "case-meta");
+      const learner = el("div", "", "turn");
+      learner.append(el("span", "Learner", "field-name"), el("blockquote", example.prompt, "learner"));
+      const decision = el("dl", "", "decision");
+      decision.append(el("dt", "Jev decision"), el("dd", example.decision));
+      const hasContent = Boolean(example.text?.trim() || example.nodes?.length);
+      const reply = el("div", "", "reply");
+      const outsideWords = renderReply(reply, example, index);
+      const previewLabel = el("div", "", "preview-title");
+      previewLabel.append(
+        el("h4", hasContent ? (example.cohort.includes("Private draft") ? "Private tutor draft" : "Tutor reply") : "Recorded outcome"),
+        el("small", hasContent ? "Offline preview · " + outsideWords + (outsideWords === 1 ? " word" : " words") + " outside OpenUI" : "Offline preview"),
+      );
+      const result = el("div", "", "outcome");
+      result.append(el("strong", example.verdict), el("p", example.note));
+      panel.append(header, meta, learner, decision, previewLabel, reply, result);
+      if (example.text?.length) {
+        panel.append(
+          disclosure("Original model output", el("pre", example.text, "raw"), "raw-details"),
+        );
+      }
+      if (example.nodes?.length)
+        panel.append(
+          disclosure(
+            "Compiled component data",
+            el("pre", JSON.stringify(example.nodes, null, 2), "raw"),
+            "raw-details",
+          ),
+        );
+      const related = study.examples
+        .map((entry, i) => ({ entry, i }))
+        .filter(
+          (other) => other.i !== index && example.prompt && other.entry.prompt === example.prompt,
+        );
+      if (related.length) {
+        const links = el("div", "", "related");
+        links.append(el("span", "Same learner prompt", "field-name"));
+        for (const { entry, i } of related)
+          links.append(
+            button(
+              [entry.title, entry.model].join(" · "),
+              () => {
+                if (byId("case-query").value) { byId("case-query").value = ""; filterCases(); }
+                displayCase(i);
+                const newTitle = panel.querySelector("h3");
+                newTitle.tabIndex = -1;
+                newTitle.focus();
+              },
+              "",
+            ),
+          );
+        panel.append(links);
+      }
+      byId("picker").value = String(index);
+      for (const [i, control] of [...byId("casebuttons").children].entries())
+        control.setAttribute("aria-pressed", String(i === index));
+    }
+    function filterCases() {
+      const terms = byId("case-query").value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+      const options = [], shown = [];
+      for (const [i, control] of [...byId("casebuttons").children].entries()) {
+        const visible = terms.every(term => control.dataset.search.includes(term));
+        control.hidden = !visible;
+        if (visible) {
+          options.push(new Option(control.dataset.option, String(i)));
+          shown.push(i);
+        }
+      }
+      const picker = byId("picker");
+      picker.replaceChildren(...options);
+      picker.disabled = !shown.length;
+      if (!shown.includes(selectedIndex)) displayCase(shown[0] ?? -1);
+      else picker.value = String(selectedIndex);
+    }
+    function renderExplorer() {
+      study.examples.forEach((example, index) => {
+        const choice = button("", () => displayCase(index), "pick");
+        const duplicate = study.examples.some(
+          (other, i) => i !== index && other.model === example.model && other.title === example.title,
+        );
+        choice.append(
+          el("strong", example.title),
+          el(
+            "small",
+            duplicate
+              ? [example.model, example.cohort].filter(Boolean).join(" · ")
+              : example.model || example.cohort,
+          ),
+        );
+        byId("casebuttons").append(choice);
+        choice.dataset.option = [example.title, example.model, duplicate ? example.cohort : ""].filter(Boolean).join(" · ");
+        choice.dataset.search = [example.title, example.model, example.cohort, example.verdict].join(" ").toLowerCase();
+      });
+      byId("picker").addEventListener("change", (e) => displayCase(Number(e.currentTarget.value)));
+      byId("case-query").addEventListener("input", filterCases);
+      filterCases();
+      displayCase(0);
+    }
+    renderCounts();
+    renderCharts();
+    renderExplorer();
+  </script>
+</body>
+</html>

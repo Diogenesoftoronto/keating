@@ -1,0 +1,386 @@
+{
+  "id": "MiniMax-M2.7-highspeed--order",
+  "scenario": "order",
+  "model": "MiniMax-M2.7-highspeed",
+  "startedAt": "2026-11-18T12:57:29.462Z",
+  "judge": [
+    {
+      "phase": "plan",
+      "hash": "a91a3090e71e64c5b6c07a7ca103e4ce15926b8a33f4cc012c7a9a358683dcb8",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 3522,
+        "outputTokens": 674
+      },
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.84
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.28
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.25
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.78
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.25
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.96
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.12
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 1
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.45
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.31
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.21
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.62
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.12
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.1
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.15
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.1
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 0.91,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.29,
+            "1": 0.51,
+            "2": 0.19,
+            "3": 0.01
+          },
+          "confidence": 0.5
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.04,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.98,
+            "1": 0.01,
+            "2": 0.01,
+            "3": 0
+          },
+          "confidence": 0.97
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 0.85,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.57,
+            "1": 0.08,
+            "2": 0.27,
+            "3": 0.08
+          },
+          "confidence": 0.14
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "supported",
+          "probabilities": {
+            "concise": 0.43,
+            "supported": 0.57,
+            "deep": 0
+          },
+          "confidence": 0.35
+        }
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "210698be7534a2f9c8e115f239bc73bf513276818704b476a9d83324c0754fb5",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5745,
+        "outputTokens": 896
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "152a2377c1eef3d4382a5b3f0397ad7a42555b8b129449cb8717e67f55c25319",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 6016,
+        "outputTokens": 896
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "1ebfb59a78994338f1e173ea5bc7590e7b4e932bdfdd3d0b8dde8499a2b9cc70",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5737,
+        "outputTokens": 896
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha": "32c6c5425c49eb3df9a0445a4b7bc239adeea299f158e1ce502eff48aa1fa207",
+      "messagesSha": "5a27dc01848b6f20dfb9f21d7ca195ae812843f96c6cc199a67f845dcc2925ec",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "",
+        "toolNames": [
+          "remember_learner_profile"
+        ],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "toolUse",
+        "errorClass": null,
+        "usage": {
+          "input": 18390,
+          "output": 1004,
+          "cacheRead": 128,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 2,
+      "systemSha": "32c6c5425c49eb3df9a0445a4b7bc239adeea299f158e1ce502eff48aa1fa207",
+      "messagesSha": "579578e304e2b5582d1c21d76b9b22d1e3b973980b0f998dbf8425dfcddf82fa",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "Here's a quick framing, then the task itself.\n\nMaking a bar chart really has five decisions in a fixed order: **what you're showing → how the data is arranged → how the chart gets inserted → whether the axes and labels read correctly → how it's polished**. If you mix up the sequence, the usual symptom is a chart that looks wrong and you don't know whether to fix the data or the formatting. Reordering these will make the order itself stick.\n\n```openui lifecycle=ephemeral id=bar-chart-ordering\n\nroot = LearningSurface([intro, orderTask], \"Bar chart steps: put them back in order\", \"Five steps, deliberately scrambled. Restore the order you actually use.\", \"ephemeral\")\nintro = Callout(\"Drag the cards into order, or use the up and down arrows on each row. Once you submit, I'll tell you which steps you placed well and which one broke the chain.\", \"hint\", \"How to do this\")\norderTask = Question([{ header: \"Reorder\", question: \"Arrange these bar chart steps from first to last.\", type: \"ordering\", itemLabel: \"Step\", items: [\"Insert the bar chart from the Insert > Chart menu\", \"Decide what the chart will show: one bar per category, and the value each bar plots\", \"Adjust colors, fonts, and spacing so the series reads clearly\", \"Arrange the data with the categories in one column and the values in another\", \"Verify the axis titles, chart title, and any data labels\"] }], \"ephemeral\", \"Bar chart procedure\", \"Some of these look interchangeable, but only one order works. Trust the sequence of decisions, not the visual appeal of the cards.\")\n\n```\n\nTake your time — the point is to internalize the order, not to finish fast.",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 18381,
+          "output": 1149,
+          "cacheRead": 527,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 3,
+      "systemSha": "d34e06da9fe9025b5bfb151ccdc3b6d48f38cec1bcff831b56bafa1f5428f46a",
+      "messagesSha": "24937eaf816956f5fb231b7743c4f952dd17fff54c385990ae64e64aa9fadd77",
+      "toolsSha": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "response": {
+        "text": "Here are the steps scrambled for you to reorder:\n\n1. Choose the chart title.\n2. Draw and label the horizontal axis.\n3. Check that the bar heights and lengths match the data values.\n4. Select the appropriate bar chart type.\n5. Draw and label the vertical axis.\n6. Add bars for each category.\n7. Identify the data categories and values you want to show.\n8. Add a scale to the vertical axis.\n9. Add a legend if the chart includes multiple data series.\n10. Review the completed chart for accuracy and clarity.",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 8967,
+          "output": 229,
+          "cacheRead": 513,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "counterfactual": null,
+  "decision": {
+    "action": "none",
+    "families": [],
+    "features": [
+      "ordered_procedure",
+      "prediction_opportunity"
+    ],
+    "paired": false
+  },
+  "offer": null,
+  "phase": "released",
+  "selection": 3,
+  "reason": null,
+  "release": {
+    "text": "Here are the steps scrambled for you to reorder:\n\n1. Choose the chart title.\n2. Draw and label the horizontal axis.\n3. Check that the bar heights and lengths match the data values.\n4. Select the appropriate bar chart type.\n5. Draw and label the vertical axis.\n6. Add bars for each category.\n7. Identify the data categories and values you want to show.\n8. Add a scale to the vertical axis.\n9. Add a legend if the chart includes multiple data series.\n10. Review the completed chart for accuracy and clarity.",
+    "unverified": false
+  },
+  "publicText": "Here are the steps scrambled for you to reorder:\n\n1. Choose the chart title.\n2. Draw and label the horizontal axis.\n3. Check that the bar heights and lengths match the data values.\n4. Select the appropriate bar chart type.\n5. Draw and label the vertical axis.\n6. Add bars for each category.\n7. Identify the data categories and values you want to show.\n8. Add a scale to the vertical axis.\n9. Add a legend if the chart includes multiple data series.\n10. Review the completed chart for accuracy and clarity.",
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "unknown",
+      "checks": [
+        {
+          "id": "explanation_missing",
+          "status": "unknown",
+          "probability": 0.53
+        },
+        {
+          "id": "practice_missing",
+          "status": "fail",
+          "probability": 0.71
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "unknown",
+          "probability": 0.44
+        },
+        {
+          "id": "quality_progress",
+          "status": "fail",
+          "probability": 0.94
+        },
+        {
+          "id": "quality_scope",
+          "status": "fail",
+          "probability": 0.9299999999999999
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "stop_after_checkpoint",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "probability": 0.51
+        }
+      ]
+    },
+    {
+      "attempt": 3,
+      "status": "pass",
+      "checks": [
+        {
+          "id": "quality_scope",
+          "status": "unknown",
+          "probability": 0.63
+        }
+      ]
+    }
+  ],
+  "directives": [
+    "- Answer the bounded question directly; do not start a diagnostic interview.",
+    "- Provide one requested OpenUI practice activity now, without requiring a lesson first or attaching a study plan.",
+    "- A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+    "- Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+    "- Choose one useful next learning step based on demonstrated understanding, then let the learner respond."
+  ],
+  "finishedAt": "2026-11-18T12:58:08.604Z"
+}

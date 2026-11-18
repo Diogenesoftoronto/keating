@@ -7,6 +7,36 @@ import {
 } from "../components/RunnableCodeBlock";
 import { isStrudelBlock, isStrudelPattern } from "../components/labs/strudel-detect";
 import { chooseCodeExecutor } from "../keating/execution-policy";
+import { startOrRefreshCodeRun, type HostedNotebookRun } from "../notorganic-provider/notebook";
+
+describe("refreshing cloud code output", () => {
+	const input = {
+		code: "print(24)", language: "python" as const, filename: "notebook.py",
+		execution: { executor: "cloud" as const, device_class: "desktop" as const, network_class: "normal" as const, code_bytes: 9 },
+	};
+	const pause = async () => {};
+	for (const interruption of ["poll limit", "poll error"]) {
+		test(`uses the original run and source record after a ${interruption}`, async () => {
+			const requests: string[] = [];
+			let finishing = false;
+			const fetcher = (async (url, init) => {
+				requests.push(`${init?.method ?? "GET"} ${url}`);
+				if (init?.method === "POST") return Response.json({ id: "python-1", status: "queued" }, { headers: { "x-keating-pds-snapshot": "source-1" } });
+				if (!finishing && interruption === "poll error") throw Error("disconnected");
+				return Response.json({ id: "python-1", status: finishing ? "succeeded" : "running" });
+			}) as typeof fetch;
+			const updates: HostedNotebookRun[] = [];
+			const first = startOrRefreshCodeRun(input, null, run => updates.push(run), fetcher, pause);
+			if (interruption === "poll error") await expect(first).rejects.toThrow("disconnected");
+			else await first;
+			finishing = true;
+			await startOrRefreshCodeRun(input, updates.at(-1)!, run => updates.push(run), fetcher, pause);
+			expect(updates.at(-1)?.status).toBe("succeeded");
+			expect(requests.filter(row => row.startsWith("POST"))).toHaveLength(1);
+			expect(new Set(requests.slice(1))).toEqual(new Set(["GET /api/notorganic/notebook/runs/python-1?snapshot_id=source-1"]));
+		});
+	}
+});
 
 describe("RunnableCodeBlock helpers", () => {
 	test("marks JavaScript and TypeScript fences as runnable", () => {

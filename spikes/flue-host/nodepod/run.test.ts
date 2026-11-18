@@ -10,12 +10,13 @@ import { createServer } from "vite";
 import { flueBrowserRuntime } from "../../../web/scripts/flue/vite-plugin.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
-for (const fixture of ["portable", "official", "chat"] as const) {
+for (const fixture of ["portable", "official", "chat", "native-page"] as const) {
   test(
     fixture === "portable"
       ? "portable Keating state survives renders inside real NodePod"
       : fixture === "chat"
         ? "browser chat uses native Flue SDK, real quiz tools and persisted history"
+        : fixture === "native-page" ? "native page diagnostics follow a real tool, transcript save, inline frame and full-screen open"
         : "official Flue dispatch and tool state work with the NodePod SQL adapter",
     { timeout: 90_000 },
     async () => {
@@ -45,6 +46,7 @@ for (const fixture of ["portable", "official", "chat"] as const) {
             entries: [
               resolve(root, "nodepod/client.ts"),
               resolve(root, "../../web/src/test/fixtures/flue-chat.ts"),
+              resolve(root, "../../web/src/test/fixtures/flue-native-page.ts"),
             ],
           },
           server: {
@@ -123,6 +125,42 @@ for (const fixture of ["portable", "official", "chat"] as const) {
           );
           await page.evaluate(() => (window as any).flueChatContinue());
         }
+        if (fixture === "native-page") {
+          const host = page.locator('[data-native-page-status="ready"]');
+          await page.waitForFunction(async () => {
+            const api = (window as any).nativePageFixture;
+            const native = api && (await api.getRows())[0]?.nativePage;
+            return !!(window as any).finishNativePageFixture && native?.saved && native.ready && native.visible === false && native.opened === false;
+          }, {}, {timeout:60_000});
+          await host.scrollIntoViewIfNeeded();
+          await page.waitForFunction(async () => (await (window as any).nativePageFixture.getRows())[0]?.nativePage.visible === true);
+          const frame = page.frameLocator('iframe[title="Bus seats"]');
+          assert.equal(await host.locator("iframe").getAttribute("sandbox"),"allow-scripts");
+          assert.equal(await frame.locator("output").textContent(),"320");
+          const slider = frame.getByRole("slider");
+          await slider.focus();
+          for (let i = 0; i < 8; i++) await slider.press("ArrowRight");
+          assert.equal(await frame.locator("output").textContent(),"640");
+          await host.getByRole("button",{name:"Open full screen"}).click();
+          await page.waitForFunction(async () => (await (window as any).nativePageFixture.getRows())[0]?.nativePage.opened === true);
+          await host.getByRole("button",{name:"Exit full screen"}).click();
+          const count = await page.evaluate(() => (window as any).nativePageFixture.revisions());
+          await page.evaluate(() => (window as any).nativePageFixture.remount());
+          await host.waitFor();
+          assert.equal(await page.evaluate(() => (window as any).nativePageFixture.revisions()),count);
+          await page.evaluate(() => (window as any).nativePageFixture.brokenPage());
+          await page.waitForSelector('[data-native-page-status="crashed"]');
+          await page.waitForFunction(async () => {
+            const second = (await (window as any).nativePageFixture.getRows())[1]?.nativePage;
+            return second?.saved && second.frameFailed === true;
+          });
+          await page.evaluate(() => (window as any).nativePageFixture.codeReply());
+          await page.getByRole("button",{name:"Edit",exact:true}).click();
+          const editor = page.getByRole("textbox",{name:"Editable code"});
+          assert.match(await editor.inputValue(),/print\(i \+ 1\)/);
+          await editor.fill("for i in range(3):\n    print(i)");
+          await page.evaluate(() => (window as any).finishNativePageFixture());
+        }
         await page.waitForFunction(
           () =>
             ["done", "failed"].includes((window as any).flueNodepodTest?.stage),
@@ -166,6 +204,17 @@ for (const fixture of ["portable", "official", "chat"] as const) {
             0,
             errors.join("\n"),
           );
+        } else if (fixture === "native-page") {
+          assert.equal(evidence.result?.rows.length,3);
+          assert.deepEqual(evidence.result.rows[0].nativePage,
+            {succeeded:true,failed:false,attached:true,saved:true,mounted:true,ready:true,visible:true,opened:true,frameFailed:false});
+          assert.deepEqual(evidence.result.rows[0].selected,[]);
+          assert.deepEqual(evidence.result.rows[1].nativePage,
+            {succeeded:true,failed:false,attached:true,saved:true,mounted:true,ready:false,visible:false,opened:false,frameFailed:true});
+          assert.deepEqual(evidence.result.rows[2].editableCode,["python"]);
+          assert.deepEqual(evidence.result.rows[2].cue,{kind:"implicit-action",targets:["editable-code"],codeLanguage:"python"});
+          assert.deepEqual(evidence.result.rows[2].selected,[]);
+          assert.deepEqual(errors.filter(error => error !== "Expected local frame error"),[]);
         } else {
           assert.equal(
             evidence.result?.exitCode,

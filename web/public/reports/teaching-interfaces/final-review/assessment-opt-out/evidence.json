@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "claim": "Each of the four released irrigation replies has a slider. The learner declined a quiz. Both unguided replies told the learner to predict inside the simulation instructions. Neither guided reply did.",
+  "method": "bun docs/benchmarks/openui-audit-2026-11-18/final-review/assessment-opt-out/compute.ts",
+  "inputs": {
+    "study/receipts/irrigation--flash--none.json": "017f8c433e0137c8d5d4f61d558622db9a8dd3f19690c5ecff0b6088844a7b1c",
+    "study/receipts/irrigation--minimax--none.json": "25976e7bcbc66d029ae124538d07d3aea08178c6ad47bbd3dc26e6d0ea5ac8ae",
+    "study/receipts/irrigation--minimax--google.json": "3bbcf2332921c0224abe54d7257c68f217f811fd7bab9daa520112db5d2edb35",
+    "study/receipts/irrigation--minimax--jev.json": "aca62776c00cd1a5fca3367f8d3b642ebb483ca4987be7ba96c788d642b90df6",
+    "study/receipts/irrigation--flash--google.json": "19ff8b7fb85f6d21d69610857bf3a40511720a5527ca6719db251d5d02a72ea4",
+    "study/receipts/irrigation--flash--jev.json": "6361fb82970e4947b3de2aea2071b3dbc338aa5e2f46e90543b7fa3e1def1c7e",
+    "turns.json": "d84e48bf2a69259f3eab891ef4dcb12a38e9253afdb150742deaed52348ad189"
+  },
+  "perTurn": [
+    {
+      "id": "irrigation--flash--none",
+      "model": "gemini-3.1-flash-lite",
+      "mode": "baseline",
+      "selected": [
+        "simulation"
+      ],
+      "optOut": true,
+      "checkpoints": [
+        "simulation-brief"
+      ]
+    },
+    {
+      "id": "irrigation--minimax--none",
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "baseline",
+      "selected": [
+        "simulation"
+      ],
+      "optOut": true,
+      "checkpoints": [
+        "simulation-brief"
+      ]
+    },
+    {
+      "id": "irrigation--minimax--google",
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "selected": [
+        "simulation"
+      ],
+      "optOut": true,
+      "checkpoints": []
+    },
+    {
+      "id": "irrigation--minimax--jev",
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "selected": [
+        "simulation"
+      ],
+      "optOut": true,
+      "checkpoints": []
+    }
+  ],
+  "notReleased": [
+    {
+      "id": "irrigation--flash--google",
+      "reply": "error",
+      "optOut": true,
+      "checkpoints": null
+    },
+    {
+      "id": "irrigation--flash--jev",
+      "reply": "error",
+      "optOut": true,
+      "checkpoints": null
+    }
+  ],
+  "summary": {
+    "observedTurns": 4,
+    "unobservedTurns": 0,
+    "optOuts": 4,
+    "notReleased": 0,
+    "checkpointAfterOptOut": {
+      "numerator": 2,
+      "denominator": 4,
+      "unknown": 0,
+      "rate": 0.5
+    },
+    "signals": [
+      {
+        "signal": "simulation-brief",
+        "turns": 2
+      },
+      {
+        "signal": "question-interface",
+        "turns": 0
+      },
+      {
+        "signal": "reply-text",
+        "turns": 0
+      }
+    ],
+    "checkpointWithoutOptOut": {
+      "numerator": 0,
+      "denominator": 0,
+      "unknown": 0,
+      "rate": null
+    }
+  },
+  "query": {
+    "view": "assessment-opt-out",
+    "matchingTurns": 2,
+    "observedOptOuts": 4,
+    "unknownOptOuts": 0,
+    "turnIds": [
+      "irrigation--flash--none",
+      "irrigation--minimax--none"
+    ]
+  },
+  "knownMisses": [
+    "The unguided MiniMax reply also closes its prose by asking the learner to report settings back so the tutor can see how they are thinking. That request sits mid-sentence after a conditional clause. The rule reads only an instruction that opens a sentence, so reply-text is not signalled for that turn. The turn is still flagged through its simulation instructions."
+  ],
+  "limits": [
+    "The opt-out rule recognises explicit English wording. False means no recognised decline, not consent to be tested.",
+    "A reply with no signal is not shown to be a good fit. A signal is not shown to be harmful.",
+    "Four synthetic replies to one prompt. No rate for real learners follows from them."
+  ],
+  "output": {
+    "turns.json": "77820d684ff3f82503651b588aa6de9d4880ba48bc30bfcb419c896a7aa11c1d"
+  }
+}

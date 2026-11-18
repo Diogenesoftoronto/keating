@@ -1,4 +1,5 @@
 import { questionResponse as responseForQuestion } from "@keating/learner-contracts";
+import { openUiDiagnosticComponentForNode } from "../../../../packages/learner-contracts/src/openui-diagnostic-turn";
 import { useQuizPerformance } from "../../components/QuizPerformanceEstimate";
 import { ResponseCapture } from "../../components/ResponseCapture";
 import { LessonPlanJudgementReview } from "../../components/LessonPlanJudgementReview";
@@ -59,7 +60,8 @@ export function SharedUiDocumentRenderer({ document, receipts = [], onAction }: 
 	const supported = document.supportedSurfaces.includes("web");
 	const interactive = document.lifecycle === "ready" && supported;
 	const retryable = supported && (document.lifecycle === "failed" || document.lifecycle === "cancelled");
-	return <section className={panel} data-shared-openui-document={document.id} data-openui-revision={document.revision}>
+	return <section className={panel} data-shared-openui-document={document.id} data-openui-revision={document.revision}
+		data-openui-diagnostic-nodes={document.nodes.map(openUiDiagnosticComponentForNode).join(" ")}>
 		{document.title ? <h3 className={css({ fontSize: "1rem", fontWeight: 700 })}>{document.title}</h3> : null}
 		{document.description ? <p className={css({ color: "var(--muted-foreground)", fontSize: "0.8125rem" })}>{document.description}</p> : null}
 		{!interactive ? <div role="status" className={css({ border: "1px solid var(--border)", borderRadius: "0.5rem", padding: "0.75rem", color: "var(--muted-foreground)" })}>

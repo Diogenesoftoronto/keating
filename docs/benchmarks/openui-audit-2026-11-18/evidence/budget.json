@@ -1,0 +1,954 @@
+[
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--transfer",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00014813400000000002,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--transfer",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00014813400000000002,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--transfer draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.00477,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--transfer draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.12,
+    "measured": false
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--transfer draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.012609,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--transfer",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024099600000000002,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--transfer",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.0002436,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147882,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--prediction",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147882,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--prediction draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.004841,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--prediction draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0126678,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--prediction",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024284400000000004,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--prediction offer removed",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.004803,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000245532,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--prediction draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0126054,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024519600000000004,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--prediction draft 3",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0061308,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00023717400000000002,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--prediction offer removed",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0119574,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--recall",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00014805000000000002,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--recall",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00014805000000000002,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--recall draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.011973,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--recall draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.004753,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--recall",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024024000000000002,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--recall draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.12,
+    "measured": false
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--recall offer removed",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.00551125,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--recall",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000243096,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--recall draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.013225200000000001,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--recall",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024939600000000004,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--recall draft 3",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0059813999999999996,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--recall",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000236586,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--recall offer removed",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0147108,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--variable",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147966,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--variable",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147966,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--variable draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.00576425,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--variable draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.012570599999999998,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--variable",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000268128,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--variable draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.004997,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--variable",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000245532,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--variable offer removed",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0054505,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--variable",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00025116,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--variable draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.014406,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--variable",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00025893,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--variable offer removed",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0155778,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--structure",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00014817600000000003,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--structure",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00014817600000000003,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--structure draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.014846399999999997,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--structure draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.005946,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--structure",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000273168,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--structure draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.00527125,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--structure",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000253974,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--structure offer removed",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0056745,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--structure",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00026518799999999997,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--structure draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0187374,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--structure",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00027216,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--structure draft 3",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.010548,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--structure",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000263466,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--structure offer removed",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.014529599999999998,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--code",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147882,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--code",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147882,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--code draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0052205,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--code draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0185628,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--code",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00023570400000000002,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--code draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.00554875,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--code",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000243138,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--code draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0135564,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--code",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000237846,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--code draft 3",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.006634799999999999,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--code",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00022713600000000002,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--code offer removed",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0185418,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--choice",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00014763,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--choice",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00014763,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--choice draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.015153599999999998,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--choice draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.00479525,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--choice",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024145800000000003,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--choice draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.00481775,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--choice",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024124800000000003,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--choice",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000305214,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--choice draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0124668,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--choice",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024750600000000004,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--order",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00014792400000000002,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--order",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00014792400000000002,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--order draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0135204,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--order draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.00493575,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--order",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024536400000000003,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--order draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.00488225,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--order",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024297000000000004,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--order",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024129000000000002,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--order draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0141024,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--order",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000252672,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--order draft 3",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0062376,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--order",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000240954,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--fact",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147252,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--fact",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147252,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--fact draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.011349,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--fact draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0046165,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--fact",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00023541000000000002,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--fact offer removed",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0046085,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--fact",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00023616600000000003,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--fact offer removed",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.011158199999999998,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--brief",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147588,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--brief",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147588,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--brief draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0046415,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--brief draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0112224,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--brief",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000236418,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--brief",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000236586,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--brief offer removed",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0046335,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--brief offer removed",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.011292,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-1",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147882,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--prediction--repeat-1",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147882,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-1 draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.012576599999999999,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--prediction--repeat-1 draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.004841,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--prediction--repeat-1",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024284400000000004,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-1",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000247758,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-1 draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.012613200000000001,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-1",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024620400000000003,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-1 draft 3",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.006223799999999999,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-1",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000237972,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-2",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147882,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--prediction--repeat-2",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147882,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-2 draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0122832,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--prediction--repeat-2 draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0048355,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--prediction--repeat-2",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024280200000000002,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-2",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000247422,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-2 draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0129468,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-2",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024813600000000004,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-3",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147882,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--prediction--repeat-3",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000147882,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-3 draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.012762599999999999,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "gemini-3.1-flash-lite--prediction--repeat-3 draft 1",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.004841,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "gemini-3.1-flash-lite--prediction--repeat-3",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00024284400000000004,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-3",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000249228,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-3 draft 2",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0126366,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-3",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.000253134,
+    "measured": true
+  },
+  {
+    "kind": "actor",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-3 draft 3",
+    "reservedUsd": 0.12,
+    "accountedUsd": 0.0060246,
+    "measured": true
+  },
+  {
+    "kind": "jev",
+    "label": "MiniMax-M2.7-highspeed--prediction--repeat-3",
+    "reservedUsd": 0.012,
+    "accountedUsd": 0.00023767800000000004,
+    "measured": true
+  }
+]

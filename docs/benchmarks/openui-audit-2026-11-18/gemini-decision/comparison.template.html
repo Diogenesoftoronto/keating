@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jev and Gemini Decision 1 · Keating</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --ink: var(--foreground, light-dark(#242824, #e3e9e4));
+        --soft: var(--muted-foreground, light-dark(#4f6256, #acbdb1));
+        --line: var(--border, light-dark(#c5d1c7, #425048));
+        --panel: var(--card, light-dark(#f5f7f3, #222923));
+        --brand: var(--primary, light-dark(#225e45, #93d1ae));
+        --r: var(--radius, 9px);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        color: var(--ink);
+        font: 15px/1.48 var(--font-sans, system-ui, sans-serif);
+      }
+      main {
+        max-width: 54rem;
+        margin-inline: auto;
+      }
+      button,
+      select {
+        font: inherit;
+        color: inherit;
+      }
+      button,
+      select,
+      summary {
+        cursor: pointer;
+      }
+      button:focus-visible,
+      select:focus-visible,
+      summary:focus-visible {
+        outline: 2px solid var(--ring, var(--brand));
+        outline-offset: 2px;
+      }
+      .switch {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        margin: 0 0 1rem;
+      }
+      .switch button {
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: var(--r);
+        padding: 0.32rem 0.72rem;
+      }
+      .switch [aria-pressed="true"] {
+        background: var(--ink);
+        color: var(--background, light-dark(white, #182019));
+        border-color: var(--ink);
+      }
+      h1,
+      h2,
+      h3,
+      p,
+      blockquote {
+        margin: 0;
+      }
+      h2 {
+        font-size: 1.16rem;
+        letter-spacing: -0.02em;
+      }
+      h3 {
+        font-size: 1.03rem;
+      }
+      .note,
+      small,
+      dt {
+        color: var(--soft);
+      }
+      .note {
+        margin: 0.35rem 0 0.75rem;
+        font-size: 0.89rem;
+      }
+      .scores {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin: 1rem 0 0.5rem;
+      }
+      .score {
+        padding-block: 0.1rem;
+      }
+      .score strong {
+        display: block;
+        font-size: 1.6rem;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.04em;
+      }
+      .score small {
+        display: block;
+      }
+      .score span {
+        font-weight: 600;
+      }
+      .bars {
+        display: flex;
+        gap: 3px;
+        height: 8px;
+        margin: 0.4rem 0;
+        color: var(--chart-1, var(--brand));
+      }
+      .score + .score .bars {
+        color: var(--chart-2, var(--brand));
+      }
+      .bars i {
+        flex: 1;
+        background: var(--line);
+        border-radius: 2px;
+      }
+      .bars .met {
+        background: currentColor;
+      }
+      .bars .missing {
+        background: repeating-linear-gradient(
+          135deg,
+          transparent 0 2px,
+          var(--line) 2px 4px
+        );
+      }
+      .gauge {
+        height: 8px;
+        position: relative;
+        border-radius: 2px;
+        background: var(--line);
+        margin: 0.4rem 0;
+      }
+      .gauge i {
+        display: block;
+        height: 8px;
+        background: var(--chart-1, var(--brand));
+        border-radius: 2px;
+      }
+      .score + .score .gauge i {
+        background: var(--chart-2, var(--brand));
+      }
+      .gauge::after {
+        content: "";
+        position: absolute;
+        left: 60%;
+        top: -3px;
+        bottom: -3px;
+        border-left: 2px solid var(--ink);
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem 1rem;
+        margin: 1rem 0 0.6rem;
+      }
+      label {
+        display: grid;
+        gap: 0.2rem;
+        flex: 1 1 9rem;
+        font-size: 0.83rem;
+        color: var(--soft);
+        font-weight: 600;
+      }
+      select {
+        width: 100%;
+        padding: 0.42rem 0.5rem;
+        border: 1px solid var(--line);
+        border-radius: var(--r);
+        color: var(--ink);
+        background: var(--panel);
+        font-weight: 500;
+      }
+      blockquote {
+        border-inline-start: 3px solid var(--line);
+        padding-inline-start: 0.7rem;
+        margin: 0.8rem 0;
+        font-style: italic;
+      }
+      .cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+      }
+      .col {
+        min-width: 0;
+        padding: 16px;
+        background: var(--panel);
+        border-radius: var(--r);
+      }
+      .col h3 {
+        color: var(--brand);
+      }
+      dl {
+        margin: 0.65rem 0 0;
+      }
+      dt {
+        font-size: 0.76rem;
+        margin-top: 0.38rem;
+      }
+      dd {
+        margin: 0;
+        overflow-wrap: anywhere;
+      }
+      summary {
+        margin: 0.55rem 0 0.25rem;
+        color: var(--brand);
+        font-weight: 600;
+      }
+      details > p {
+        font-size: 0.88rem;
+        margin: 0.38rem 0;
+      }
+      details ul {
+        font-size: 0.88rem;
+        padding-inline-start: 1.3rem;
+      }
+      .raw {
+        font: 0.78rem/1.45 var(--font-mono, monospace);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        max-height: 22rem;
+        overflow: auto;
+      }
+      code {
+        overflow-wrap: anywhere;
+      }
+      @media (max-width: 500px) {
+        .cols {
+          grid-template-columns: 1fr;
+        }
+        .controls label {
+          flex-basis: 100%;
+        }
+        .switch button {
+          font-size: 0.86rem;
+        }
+        .scores {
+          gap: 0.6rem;
+        }
+      }
+      .col h3 {
+        color: var(--ink);
+      }
+      dl {
+        display: grid;
+        grid-template-columns: minmax(7rem, 1fr) minmax(0, 1.1fr);
+        gap: 0.3rem 0.5rem;
+        align-items: baseline;
+      }
+      dt {
+        margin: 0;
+      }
+      dd {
+        font-size: 0.9rem;
+      }
+      .col details > p {
+        font-size: 0.9rem;
+      }
+      .shared {
+        margin-block: 0.65rem;
+      }
+      .controls label[hidden] {
+        display: none;
+      }
+      .try {
+        color: var(--brand);
+        display: inline-block;
+        margin-top: 0.55rem;
+      }
+      .try:focus-visible {
+        outline: 2px solid var(--ring, var(--brand));
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="switch" aria-label="Evidence" role="group">
+        <button data-view="fresh" aria-pressed="true">Tutor replies</button>
+        <button data-view="plan" aria-pressed="false">Planner choices</button>
+        <button data-view="review" aria-pressed="false">Draft reviews</button>
+        <button data-view="direct" aria-pressed="false">
+          Why “16.” was held
+        </button>
+      </div>
+      <h2 id="heading"></h2>
+      <p class="note" id="description"></p>
+      <div class="scores" id="scores"></div>
+      <div class="controls">
+        <label id="tutor-label"
+          >Tutor<select id="tutor" aria-label="Tutor"></select
+        ></label>
+        <label
+          >Inspect a case<select id="case" aria-label="Inspect a case"></select
+        ></label>
+      </div>
+      <blockquote id="learner"></blockquote>
+      <div id="details" class="cols"></div>
+      <div id="shared" class="shared"></div>
+    </main>
+    <noscript>Enable JavaScript to inspect the recorded cases.</noscript>
+    <script>
+      const data = /* RECORDED_DATA */ null;
+      const judges = { jev: "Jev 1.14.0", gemini: "Gemini Decision 1" };
+      const titles = {
+        spinner: "Predict a spinner result",
+        bus: "Change the bus frequency",
+        perimeter: "Give the perimeter",
+      };
+      const copy = {
+        fresh: [
+          "Did the tutor pick up the learner’s cue?",
+          "The learner asked to predict a spin or vary a bus schedule. Each rate counts completed tutor turns that delivered the implied interface. The perimeter case checks a request for text.",
+        ],
+        plan: [
+          "Which interface did the planner offer?",
+          "Both judges read the same six learner inputs. A match means the application’s offer met the predeclared expectation, including when the learner wanted to pause assessment.",
+        ],
+        review: [
+          "Which identical drafts did the gate release?",
+          "Nine repairable MiniMax drafts were submitted to both judges. The rates use only pairs with two observed decisions. The same gate applied both judges’ answers.",
+        ],
+        direct: [
+          "Does a correct direct answer give away a checkpoint?",
+          "A follow-up to the perimeter failure. Each judge scored the same literal reply, learner context and 44 review questions. The application marks a leak score of 0.60 or more as a failure.",
+        ],
+      };
+      const get = (id) => document.getElementById(id);
+      function el(tag, text, cls) {
+        const x = document.createElement(tag);
+        if (text != null) x.textContent = String(text);
+        if (cls) x.className = cls;
+        return x;
+      }
+      function list(items) {
+        return items == null
+          ? "Unobserved"
+          : items.length
+            ? items.join(", ")
+            : "None";
+      }
+      function status(value) {
+        return value === true
+          ? "Met"
+          : value === false
+            ? "Missed"
+            : "Unobserved";
+      }
+      function field(dl, name, value) {
+        dl.append(el("dt", name), el("dd", value));
+      }
+      function option(select, value, label) {
+        const o = el("option", label);
+        o.value = value;
+        select.add(o);
+      }
+      function disclosure(name, content) {
+        const d = el("details");
+        d.append(el("summary", name), content);
+        return d;
+      }
+      function addReleasedReply(panel, r) {
+        if (!r.selectedText) return;
+        const body = el("div");
+        if (r.selectedOutsideText) body.append(el("p", r.selectedOutsideText));
+        for (const n of r.nodes) {
+          const questions = Array.isArray(n.questions)
+            ? n.questions
+            : n.type === "question"
+              ? [n]
+              : [];
+          for (const q of questions) {
+            body.append(el("p", q.prompt || q.header));
+            if (q.choices?.length) {
+              const choices = el("ul");
+              for (const c of q.choices) choices.append(el("li", c.label));
+              body.append(choices);
+            }
+          }
+          if (n.type === "simulation") {
+            body.append(el("p", n.title));
+            if (n.brief) body.append(el("p", n.brief));
+          }
+        }
+        if (r.selectedText !== r.selectedOutsideText)
+          body.append(
+            disclosure(
+              "Original tutor output",
+              el("pre", r.selectedText, "raw"),
+            ),
+          );
+        panel.append(disclosure("Read the released reply", body));
+      }
+      let view = "fresh";
+      const tutor = get("tutor"),
+        pick = get("case");
+      const tutors = [...new Set(data.fresh.map((r) => r.tutor))];
+      const tutorName = (t) =>
+        t.startsWith("MiniMax")
+          ? "MiniMax M2.7 Highspeed"
+          : "Gemini 3.1 Flash-Lite";
+      option(tutor, "all", "Both tutors");
+      for (const t of tutors) option(tutor, t, tutorName(t));
+      function visible() {
+        if (view === "direct") return [data.directAnswerCheck];
+        if (view !== "fresh")
+          return data.frozen.cases.filter((c) => c.stage === view);
+        return data.fresh.filter(
+          (c) => tutor.value === "all" || tutor.value === c.tutor,
+        );
+      }
+      function drawCase() {
+        const c = visible()[Number(pick.value)];
+        if (!c) return;
+        get("learner").textContent = c.prompt || c.learner || c.learnerPrompt;
+        const details = get("details");
+        details.replaceChildren();
+        const shared = get("shared");
+        shared.replaceChildren();
+        if (view === "review")
+          shared.append(
+            disclosure(
+              "Read the identical tutor draft",
+              el("pre", c.draft, "raw"),
+            ),
+          );
+        for (const [key, label] of Object.entries(judges)) {
+          const panel = el("section", null, "col"),
+            dl = el("dl");
+          panel.append(el("h3", label), dl);
+          details.append(panel);
+          const r = c[key];
+          if (!r) {
+            field(dl, "Observation", "Unobserved");
+            if (c.observation?.error) field(dl, "Reason", c.observation.error);
+            continue;
+          }
+          if (view === "fresh") {
+            field(dl, "Planner offered", list(r.offered));
+            field(dl, "Compiled in a draft", list(r.compiled));
+            let outcome =
+              r.reply === "released"
+                ? r.selected?.length
+                  ? list(r.selected)
+                  : r.nativePageRequested
+                    ? "Native page proposed"
+                    : "Text only"
+                : "Withheld";
+            if (r.completedCandidates === 0)
+              outcome = "No completed tutor reply";
+            field(dl, "Final reply", outcome);
+            field(dl, "Learner rubric", status(r.fit));
+            if (r.selectedAttempt != null)
+              field(dl, "Released attempt", r.selectedAttempt);
+            if (r.outsideWords != null)
+              field(dl, "Words outside OpenUI", r.outsideWords);
+            addReleasedReply(panel, r);
+            if (r.note)
+              panel.append(disclosure("Assessment notes", el("p", r.note)));
+            if (
+              (location.protocol === "file:" ||
+                location.pathname.endsWith(
+                  "/gemini-decision/comparison.html",
+                )) &&
+              r.selected?.length &&
+              c.tutor === "MiniMax-M2.7-highspeed" &&
+              ["spinner", "bus"].includes(c.caseId)
+            ) {
+              const link = el(
+                "a",
+                c.caseId === "spinner"
+                  ? "Try the recorded Question"
+                  : "Try the recorded Simulation",
+                "try",
+              );
+              link.href =
+                (key === "jev" ? "../policy-holdout/preview/" : "preview/") +
+                "minimax-interfaces.html#" +
+                c.caseId;
+              panel.append(link);
+            }
+            if (r.directDrafts.length) {
+              const attempted = el("ul");
+              for (const d of r.directDrafts) {
+                const leak = d.findings.find(
+                  (f) => f.id === "checkpoint_answer_leaked",
+                );
+                attempted.append(
+                  el(
+                    "li",
+                    d.text +
+                      (leak
+                        ? " · leak score " + leak.probability.toFixed(3)
+                        : ""),
+                  ),
+                );
+              }
+              panel.append(
+                disclosure("Inspect the withheld drafts", attempted),
+              );
+            }
+          } else if (view === "direct") {
+            field(dl, "Exact tutor reply", c.answer);
+            field(dl, "Leak check", r.leak.status);
+            field(dl, "Gate disposition", r.gate);
+          } else if (view === "plan") {
+            field(
+              dl,
+              "Assessment declined",
+              r.declined == null ? "Uncertain" : r.declined ? "Yes" : "No",
+            );
+            field(dl, "Planner offered", list(r.offered));
+            field(dl, "Expected offer", status(r.offerMatches));
+          } else {
+            field(dl, "Gate disposition", r.gate);
+            field(dl, "Attempt review", r.attempt);
+            field(
+              dl,
+              "Blocking review checks",
+              r.blockers.length
+                ? r.blockers
+                    .map(
+                      (b) =>
+                        b.id + " (" + b.status + ", " + b.probability + ")",
+                    )
+                    .join(", ")
+                : "None",
+            );
+          }
+        }
+      }
+      function draw() {
+        const rows = visible();
+        const [title, description] = copy[view];
+        get("heading").textContent = title;
+        get("description").textContent = description;
+        get("tutor-label").style.display = view === "fresh" ? "" : "none";
+        pick.replaceChildren();
+        pick.parentElement.style.display = view === "direct" ? "none" : "";
+        rows.forEach((c, i) =>
+          option(
+            pick,
+            i,
+            view === "direct"
+              ? "Identical direct answer"
+              : view === "fresh"
+                ? (tutor.value === "all" ? tutorName(c.tutor) + " · " : "") +
+                  titles[c.caseId]
+                : c.id
+                    .replace("MiniMax-M2.7-highspeed--", "")
+                    .replaceAll("--", " · ")
+                    .replaceAll("-", " "),
+          ),
+        );
+        const scores = get("scores");
+        scores.replaceChildren();
+        for (const [key, label] of Object.entries(judges)) {
+          if (view === "direct") {
+            const block = el("div", null, "score"),
+              r = rows[0][key],
+              gauge = el("div", null, "gauge"),
+              fill = el("i");
+            fill.style.width = r.leak.probability * 100 + "%";
+            gauge.setAttribute("aria-hidden", "true");
+            gauge.append(fill);
+            block.append(
+              el("span", label),
+              el("strong", r.leak.probability.toFixed(3)),
+              gauge,
+              el("small", "leak score · rejection threshold 0.60"),
+            );
+            scores.append(block);
+            continue;
+          }
+          const eligible =
+            view === "fresh"
+              ? rows.filter((c) => c.cue.kind === "implicit-action")
+              : rows;
+          const results = eligible.map((c) =>
+            !c[key] || (view !== "fresh" && (!c.jev || !c.gemini))
+              ? null
+              : view === "fresh"
+                ? c[key].opportunityMatchOnCompleted
+                : view === "plan"
+                  ? c[key].offerMatches
+                  : c[key].gate === "released",
+          );
+          const known = results.filter((v) => v != null),
+            passed = known.filter(Boolean).length;
+          const metric =
+            view === "fresh"
+              ? "matched the implied interface"
+              : view === "plan"
+                ? "matched the expected offer"
+                : "drafts released";
+          const block = el("div", null, "score"),
+            bars = el("div", null, "bars");
+          bars.setAttribute("aria-hidden", "true");
+          for (const value of results)
+            bars.append(
+              el("i", null, value == null ? "missing" : value ? "met" : ""),
+            );
+          block.append(
+            el("span", label),
+            el("strong", passed + " / " + known.length),
+            bars,
+            el(
+              "small",
+              metric + " · " + (results.length - known.length) + " unobserved",
+            ),
+          );
+          scores.append(block);
+        }
+        drawCase();
+      }
+      document.querySelectorAll("[data-view]").forEach(
+        (button) =>
+          (button.onclick = () => {
+            view = button.dataset.view;
+            document
+              .querySelectorAll("[data-view]")
+              .forEach((b) =>
+                b.setAttribute("aria-pressed", String(b === button)),
+              );
+            draw();
+          }),
+      );
+      tutor.onchange = draw;
+      pick.onchange = drawCase;
+      draw();
+    </script>
+  </body>
+</html>

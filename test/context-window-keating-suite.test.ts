@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { buildKeatingTrials, keatingScenarios } from "../scripts/context-window/keating-suite.js";
-import { teachingPolicyAdherenceRequest, teachingPolicyDecisionRequest } from "../packages/learner-contracts/src/judgement/teaching-policy.js";
+import { TEACHING_POLICY_RULES, teachingPolicyAdherenceRequest, teachingPolicyDecisionRequest } from "../packages/learner-contracts/src/judgement/teaching-policy.js";
 import { digest, type Trial } from "../scripts/context-window/cases.js";
 import { summarize, type Receipt } from "../scripts/context-window/benchmark.js";
 import { htmlReport, markdownReport, reportData } from "../scripts/context-window/report.js";
@@ -36,11 +36,15 @@ test("fifty production batches retain natural state and keep gold and rationale 
       expect(Object.keys(trial.request.questions).length).toBeGreaterThan(Object.keys(trial.expected).length);
     }
     if (trial.stage === "adherence") {
-      const production = teachingPolicyAdherenceRequest(scenario.turn, scenario.reply!, undefined, { researchRequired: true })!;
+      // This capture explicitly requests the entire applicable rubric, including rules
+      // that ordinary classroom turns request only when their conditions are met.
+      const ruleIds = TEACHING_POLICY_RULES.filter(rule => !rule.domain || scenario.turn.domain === "unknown" || rule.domain === scenario.turn.domain).map(rule => rule.id);
+      const production = teachingPolicyAdherenceRequest(scenario.turn, scenario.reply!, ruleIds, { researchRequired: true })!;
       expect(trial.request.state).toEqual(production.state);
       for (const [key, question] of Object.entries(production.questions)) expect(trial.request.questions[key]).toEqual(question);
       expect(Object.keys(trial.request.questions).sort()).toEqual([...Object.keys(production.questions), "quality_progress", "quality_scope"].sort());
       expect(trial.request.questions).toHaveProperty("research_skipped");
+      expect(trial.request.questions).toHaveProperty("declined_assessment_imposed");
     }
     if (trial.stage === "grading") expect(trial.request).toEqual(scenario.request!);
   }

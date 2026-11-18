@@ -1,0 +1,910 @@
+{
+  "version": 1,
+  "primary": {
+    "schedule": 24,
+    "observed": 20,
+    "missing": 4,
+    "knownAction": {
+      "pass": 12,
+      "observed": 15,
+      "unknown": 3,
+      "scheduled": 18
+    },
+    "authoredOpenUi": {
+      "pass": 8,
+      "observed": 20,
+      "unknown": 4,
+      "scheduled": 24
+    },
+    "publishedOpenUi": {
+      "pass": 7,
+      "observed": 20,
+      "unknown": 4,
+      "scheduled": 24
+    },
+    "publishedTypes": {
+      "question-group": 3,
+      "simulation": 4
+    },
+    "editableCode": {
+      "python": 5
+    },
+    "wordsOutsideControls": {
+      "count": 12,
+      "min": 0,
+      "median": 55,
+      "p90": 167,
+      "max": 240
+    },
+    "grouped": [
+      {
+        "arm": "jev",
+        "firstFit": {
+          "pass": 5,
+          "observed": 6,
+          "unknown": 2,
+          "scheduled": 8
+        },
+        "finalFit": {
+          "pass": 4,
+          "observed": 6,
+          "unknown": 2,
+          "scheduled": 8
+        },
+        "finalAction": {
+          "pass": 4,
+          "observed": 5,
+          "unknown": 1,
+          "scheduled": 6
+        },
+        "firstOfferUsed": {
+          "pass": 3,
+          "observed": 3,
+          "unknown": 1,
+          "scheduled": 4
+        },
+        "lastOfferUsed": {
+          "pass": 2,
+          "observed": 3,
+          "unknown": 1,
+          "scheduled": 4
+        }
+      },
+      {
+        "arm": "google",
+        "firstFit": {
+          "pass": 5,
+          "observed": 6,
+          "unknown": 2,
+          "scheduled": 8
+        },
+        "finalFit": {
+          "pass": 5,
+          "observed": 6,
+          "unknown": 2,
+          "scheduled": 8
+        },
+        "finalAction": {
+          "pass": 3,
+          "observed": 4,
+          "unknown": 2,
+          "scheduled": 6
+        },
+        "firstOfferUsed": {
+          "pass": 2,
+          "observed": 4,
+          "unknown": 2,
+          "scheduled": 6
+        },
+        "lastOfferUsed": {
+          "pass": 2,
+          "observed": 4,
+          "unknown": 2,
+          "scheduled": 6
+        }
+      },
+      {
+        "arm": "none",
+        "firstFit": {
+          "pass": 4,
+          "observed": 8,
+          "unknown": 0,
+          "scheduled": 8
+        },
+        "finalFit": {
+          "pass": 4,
+          "observed": 8,
+          "unknown": 0,
+          "scheduled": 8
+        },
+        "finalAction": {
+          "pass": 5,
+          "observed": 6,
+          "unknown": 0,
+          "scheduled": 6
+        },
+        "firstOfferUsed": {
+          "pass": 0,
+          "observed": 0,
+          "unknown": 0,
+          "scheduled": 0
+        },
+        "lastOfferUsed": {
+          "pass": 0,
+          "observed": 0,
+          "unknown": 0,
+          "scheduled": 0
+        }
+      }
+    ]
+  },
+  "matchedFirstDrafts": [
+    {
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": "gemini-decision-1",
+      "matchedPairs": 4,
+      "ineligibleGuidance": 0,
+      "fit": {
+        "pairs": 2,
+        "unknown": 2,
+        "both": 1,
+        "guidedOnly": 0,
+        "controlOnly": 0,
+        "neither": 1,
+        "guidedRate": 0.5,
+        "controlRate": 0.5,
+        "difference": 0
+      }
+    },
+    {
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": "jev-1.14.0",
+      "matchedPairs": 4,
+      "ineligibleGuidance": 0,
+      "fit": {
+        "pairs": 2,
+        "unknown": 2,
+        "both": 0,
+        "guidedOnly": 2,
+        "controlOnly": 0,
+        "neither": 0,
+        "guidedRate": 1,
+        "controlRate": 0,
+        "difference": 1
+      }
+    },
+    {
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "gemini-decision-1",
+      "matchedPairs": 4,
+      "ineligibleGuidance": 0,
+      "fit": {
+        "pairs": 4,
+        "unknown": 0,
+        "both": 3,
+        "guidedOnly": 1,
+        "controlOnly": 0,
+        "neither": 0,
+        "guidedRate": 1,
+        "controlRate": 0.75,
+        "difference": 0.25
+      }
+    },
+    {
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "jev-1.14.0",
+      "matchedPairs": 4,
+      "ineligibleGuidance": 0,
+      "fit": {
+        "pairs": 4,
+        "unknown": 0,
+        "both": 2,
+        "guidedOnly": 1,
+        "controlOnly": 1,
+        "neither": 0,
+        "guidedRate": 0.75,
+        "controlRate": 0.75,
+        "difference": 0
+      }
+    }
+  ],
+  "followup": {
+    "scheduled": 6,
+    "physical": 6,
+    "n": 6,
+    "first": {
+      "pass": 4,
+      "observed": 5,
+      "unknown": 1,
+      "scheduled": 6
+    },
+    "final": {
+      "pass": 2,
+      "observed": 5,
+      "unknown": 1,
+      "scheduled": 6
+    },
+    "firstFenced": {
+      "pass": 0,
+      "observed": 6,
+      "unknown": 0,
+      "scheduled": 6
+    },
+    "finalFenced": {
+      "pass": 0,
+      "observed": 6,
+      "unknown": 0,
+      "scheduled": 6
+    },
+    "firstAction": {
+      "pass": 0,
+      "observed": 0,
+      "unknown": 0,
+      "scheduled": 0
+    },
+    "finalAction": {
+      "pass": 0,
+      "observed": 0,
+      "unknown": 0,
+      "scheduled": 0
+    },
+    "firstOfferUsed": {
+      "pass": 0,
+      "observed": 3,
+      "unknown": 0,
+      "scheduled": 3
+    },
+    "finalOfferUsed": {
+      "pass": 0,
+      "observed": 3,
+      "unknown": 0,
+      "scheduled": 3
+    },
+    "draftedThenLost": {
+      "pass": 2,
+      "observed": 2,
+      "unknown": 0,
+      "scheduled": 2
+    },
+    "types": {},
+    "edits": {},
+    "nativeProposals": 0,
+    "wordsOutsidePublishedControl": {
+      "count": 0,
+      "min": null,
+      "median": null,
+      "p90": null,
+      "max": null
+    },
+    "dispositions": {
+      "released": 1,
+      "ungated": 2,
+      "withheld": 3
+    },
+    "notices": {
+      "withheld": 3
+    },
+    "ineligible": []
+  },
+  "additional": [
+    {
+      "id": "js-largest--minimax--jev",
+      "phase": "study/supplement/coding",
+      "policy": "keating-teaching-policy/v2.3.4",
+      "tutor": "minimax",
+      "decision": "jev",
+      "caseId": "js-largest",
+      "disposition": "released",
+      "missing": null,
+      "notice": null,
+      "completedDrafts": 1,
+      "selectedAttempt": 1,
+      "selectionRule": null,
+      "publicComponents": [
+        "coding-challenge"
+      ],
+      "publicEditors": [],
+      "publicTools": [],
+      "selectedControlLanguages": [
+        "javascript"
+      ],
+      "recordedParent": null,
+      "receipt": "study/supplement/coding/receipts/js-largest--minimax--jev.json",
+      "receiptSha256": "91b75de0b3dfb4f4dd87a407f8544e64a10117ab3fc10802d5abdfbb02d5d7ff"
+    },
+    {
+      "id": "odd-filter--minimax--google",
+      "phase": "study/supplement/coding",
+      "policy": "keating-teaching-policy/v2.3.4",
+      "tutor": "minimax",
+      "decision": "google",
+      "caseId": "odd-filter",
+      "disposition": "released",
+      "missing": null,
+      "notice": null,
+      "completedDrafts": 1,
+      "selectedAttempt": 1,
+      "selectionRule": null,
+      "publicComponents": [],
+      "publicEditors": [
+        "python"
+      ],
+      "publicTools": [],
+      "selectedControlLanguages": [],
+      "recordedParent": null,
+      "receipt": "study/supplement/coding/receipts/odd-filter--minimax--google.json",
+      "receiptSha256": "65f07e95e29fbcaeeff4398dd8752fdf94b8cbbbb4239dd52afe32db32768514"
+    },
+    {
+      "id": "js-largest--minimax--google",
+      "phase": "study/supplement/coding",
+      "policy": "keating-teaching-policy/v2.3.4",
+      "tutor": "minimax",
+      "decision": "google",
+      "caseId": "js-largest",
+      "disposition": "released",
+      "missing": null,
+      "notice": null,
+      "completedDrafts": 1,
+      "selectedAttempt": 1,
+      "selectionRule": null,
+      "publicComponents": [
+        "coding-challenge"
+      ],
+      "publicEditors": [],
+      "publicTools": [],
+      "selectedControlLanguages": [
+        "javascript"
+      ],
+      "recordedParent": null,
+      "receipt": "study/supplement/coding/receipts/js-largest--minimax--google.json",
+      "receiptSha256": "9a4e6fd2f53159b8cefb7669653c24227bd6ebf67dd5194dcfb22f08052e45d2"
+    },
+    {
+      "id": "odd-filter--minimax--jev",
+      "phase": "study/supplement/coding",
+      "policy": "keating-teaching-policy/v2.3.4",
+      "tutor": "minimax",
+      "decision": "jev",
+      "caseId": "odd-filter",
+      "disposition": "withheld",
+      "missing": "no-approved-draft",
+      "notice": "withheld",
+      "completedDrafts": 3,
+      "selectedAttempt": null,
+      "selectionRule": null,
+      "publicComponents": null,
+      "publicEditors": null,
+      "publicTools": null,
+      "selectedControlLanguages": null,
+      "recordedParent": null,
+      "receipt": "study/supplement/coding/receipts/odd-filter--minimax--jev.json",
+      "receiptSha256": "585c7e50d341f52f0017f3130511c9510c1b21c44866e8c56f8ff902945376fc"
+    },
+    {
+      "id": "tile-bag--minimax--jev",
+      "phase": "study/supplement/prediction",
+      "policy": "keating-teaching-policy/v2.3.5",
+      "tutor": "minimax",
+      "decision": "jev",
+      "caseId": "tile-bag",
+      "disposition": "released",
+      "missing": null,
+      "notice": null,
+      "completedDrafts": 1,
+      "selectedAttempt": 1,
+      "selectionRule": "none",
+      "publicComponents": [
+        "question-group"
+      ],
+      "publicEditors": [],
+      "publicTools": [],
+      "selectedControlLanguages": [],
+      "recordedParent": null,
+      "receipt": "study/supplement/prediction/receipts/tile-bag--minimax--jev.json",
+      "receiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015"
+    },
+    {
+      "id": "multiples-loop--minimax--jev",
+      "phase": "study/supplement/addendum",
+      "policy": "keating-teaching-policy/v2.3.5",
+      "tutor": "minimax",
+      "decision": "jev",
+      "caseId": "multiples-loop",
+      "disposition": "released",
+      "missing": null,
+      "notice": null,
+      "completedDrafts": 1,
+      "selectedAttempt": 1,
+      "selectionRule": "none",
+      "publicComponents": [],
+      "publicEditors": [
+        "python"
+      ],
+      "publicTools": [],
+      "selectedControlLanguages": [],
+      "recordedParent": null,
+      "receipt": "study/supplement/addendum/receipts/multiples-loop--minimax--jev.json",
+      "receiptSha256": "10696fd73d163fe40a97daa91b174f128521d84d5874a3a0b579f14030357943"
+    },
+    {
+      "id": "tile-bag-confirm--minimax--jev",
+      "phase": "study/supplement/addendum",
+      "policy": "keating-teaching-policy/v2.3.5",
+      "tutor": "minimax",
+      "decision": "jev",
+      "caseId": "tile-bag-confirm",
+      "disposition": "withheld",
+      "missing": "no-approved-draft",
+      "notice": "withheld",
+      "completedDrafts": 3,
+      "selectedAttempt": null,
+      "selectionRule": null,
+      "publicComponents": null,
+      "publicEditors": null,
+      "publicTools": null,
+      "selectedControlLanguages": null,
+      "recordedParent": "tile-bag--minimax--jev",
+      "receipt": "study/supplement/addendum/receipts/tile-bag-confirm--minimax--jev.json",
+      "receiptSha256": "4f17f82ba12d94c8b4bab79362c43ba38020026d8093023014291df52e42d7f1"
+    }
+  ],
+  "feedback": {
+    "source": "study/feedback-v2.3.6/summary.json",
+    "pairedReviews": [
+      {
+        "id": "review--authentic-confirmation--jev",
+        "caseId": "authentic-confirmation",
+        "decision": "jev",
+        "policy": "keating-teaching-policy/v2.3.6",
+        "disposition": "released",
+        "missing": null,
+        "notice": null,
+        "selectedAttempt": 1,
+        "selectionRule": "none",
+        "completedDrafts": 1,
+        "receipt": "study/feedback-v2.3.6/receipts/review--authentic-confirmation--jev.json",
+        "receiptSha256": "af65811bc98b3eb64ffcfabb9880f9af07c4c38d8560d49c650c7d79d97a011a",
+        "candidateSha256": "8d3d4489373c5aa779f345b11dc9aec64421f3382ebd9fddbf1eefe31a072a72",
+        "reviewRequestSha256": "a54df9e863059e3343def542f3dc261e69fe1577257aa6da8befbcbb29e6ce12"
+      },
+      {
+        "id": "review--authentic-confirmation--google",
+        "caseId": "authentic-confirmation",
+        "decision": "google",
+        "policy": "keating-teaching-policy/v2.3.6",
+        "disposition": "withheld",
+        "missing": "response-malformed",
+        "notice": "withheld",
+        "selectedAttempt": null,
+        "selectionRule": null,
+        "completedDrafts": 1,
+        "receipt": "study/feedback-v2.3.6/receipts/review--authentic-confirmation--google.json",
+        "receiptSha256": "eabb3693ea1d0f88a4ba0f6cb03779bb58d29a491e2c85c42c71aa7d114a6b78",
+        "candidateSha256": "8d3d4489373c5aa779f345b11dc9aec64421f3382ebd9fddbf1eefe31a072a72",
+        "reviewRequestSha256": "a54df9e863059e3343def542f3dc261e69fe1577257aa6da8befbcbb29e6ce12"
+      },
+      {
+        "id": "review--wrong-affirmed--google",
+        "caseId": "wrong-affirmed",
+        "decision": "google",
+        "policy": "keating-teaching-policy/v2.3.6",
+        "disposition": "withheld",
+        "missing": "response-malformed",
+        "notice": "withheld",
+        "selectedAttempt": null,
+        "selectionRule": null,
+        "completedDrafts": 1,
+        "receipt": "study/feedback-v2.3.6/receipts/review--wrong-affirmed--google.json",
+        "receiptSha256": "951a8f3ed23ee7cba43630cbe94ee95d5f09c44cc5e6f5ee8fc774a62ccd614c",
+        "candidateSha256": "e9460567399b0afbaa348072d7d3fa022d3b3968b33bf9a80aae8e61739bf4d4",
+        "reviewRequestSha256": "9423eb3f3dde0fa67ffea96ee847000c44b4c4ede7d28ca18c3161d7475e5ba8"
+      },
+      {
+        "id": "review--wrong-affirmed--jev",
+        "caseId": "wrong-affirmed",
+        "decision": "jev",
+        "policy": "keating-teaching-policy/v2.3.6",
+        "disposition": "withheld",
+        "missing": "no-approved-draft",
+        "notice": "withheld",
+        "selectedAttempt": null,
+        "selectionRule": null,
+        "completedDrafts": 1,
+        "receipt": "study/feedback-v2.3.6/receipts/review--wrong-affirmed--jev.json",
+        "receiptSha256": "2802a888cf969311c85d5fc96f200d3e2fd7ad5bd563ed8d98faa0ae419eae23",
+        "candidateSha256": "e9460567399b0afbaa348072d7d3fa022d3b3968b33bf9a80aae8e61739bf4d4",
+        "reviewRequestSha256": "9423eb3f3dde0fa67ffea96ee847000c44b4c4ede7d28ca18c3161d7475e5ba8"
+      },
+      {
+        "id": "review--new-question-leaked--jev",
+        "caseId": "new-question-leaked",
+        "decision": "jev",
+        "policy": "keating-teaching-policy/v2.3.6",
+        "disposition": "withheld",
+        "missing": "no-approved-draft",
+        "notice": "withheld",
+        "selectedAttempt": null,
+        "selectionRule": null,
+        "completedDrafts": 1,
+        "receipt": "study/feedback-v2.3.6/receipts/review--new-question-leaked--jev.json",
+        "receiptSha256": "4f1f1ba207e176ab0f582545fa5ec79a2ca1e07ef102336cdf18af06b4b213a2",
+        "candidateSha256": "a708dc7103bebc372bc4edfdaf2a3f1e376f91a3961bce32e58dac9febfd6179",
+        "reviewRequestSha256": "906cf86733d6f80bea3035f208bc12de861976e6b51c83dde1e30b8662ff4e32"
+      },
+      {
+        "id": "review--new-question-leaked--google",
+        "caseId": "new-question-leaked",
+        "decision": "google",
+        "policy": "keating-teaching-policy/v2.3.6",
+        "disposition": "withheld",
+        "missing": "response-malformed",
+        "notice": "withheld",
+        "selectedAttempt": null,
+        "selectionRule": null,
+        "completedDrafts": 1,
+        "receipt": "study/feedback-v2.3.6/receipts/review--new-question-leaked--google.json",
+        "receiptSha256": "cfa40819044c514036cc950f13353a5397cbdf2d9948a704ec61c0c649281503",
+        "candidateSha256": "a708dc7103bebc372bc4edfdaf2a3f1e376f91a3961bce32e58dac9febfd6179",
+        "reviewRequestSha256": "906cf86733d6f80bea3035f208bc12de861976e6b51c83dde1e30b8662ff4e32"
+      },
+      {
+        "id": "review--wrong-corrected--google",
+        "caseId": "wrong-corrected",
+        "decision": "google",
+        "policy": "keating-teaching-policy/v2.3.6",
+        "disposition": "withheld",
+        "missing": "response-malformed",
+        "notice": "withheld",
+        "selectedAttempt": null,
+        "selectionRule": null,
+        "completedDrafts": 1,
+        "receipt": "study/feedback-v2.3.6/receipts/review--wrong-corrected--google.json",
+        "receiptSha256": "2f4116248adb6c88d9c8eb5c319f84f529f70a0f815a7d937b20ed9a32e2b945",
+        "candidateSha256": "26ca30a066237b121970e5cdf8bbeca03f6adc8e1c0a23675497639678c3700a",
+        "reviewRequestSha256": "22c940b1e5a244f1699de918ecb65a7cbafa62a7e1027b5bf1443c00c3d68478"
+      },
+      {
+        "id": "review--wrong-corrected--jev",
+        "caseId": "wrong-corrected",
+        "decision": "jev",
+        "policy": "keating-teaching-policy/v2.3.6",
+        "disposition": "withheld",
+        "missing": "no-approved-draft",
+        "notice": "withheld",
+        "selectedAttempt": null,
+        "selectionRule": null,
+        "completedDrafts": 1,
+        "receipt": "study/feedback-v2.3.6/receipts/review--wrong-corrected--jev.json",
+        "receiptSha256": "24db06c88cc4dbee66e3d892e4ba164fc6555716b78887321b1cd0d59808573e",
+        "candidateSha256": "26ca30a066237b121970e5cdf8bbeca03f6adc8e1c0a23675497639678c3700a",
+        "reviewRequestSha256": "22c940b1e5a244f1699de918ecb65a7cbafa62a7e1027b5bf1443c00c3d68478"
+      }
+    ],
+    "generated": [
+      {
+        "id": "fresh--confirmation--jev",
+        "caseId": "authentic-confirmation",
+        "decision": "jev",
+        "policy": "keating-teaching-policy/v2.3.6",
+        "disposition": "released",
+        "missing": null,
+        "notice": null,
+        "selectedAttempt": 3,
+        "selectionRule": "none",
+        "completedDrafts": 3,
+        "receipt": "study/feedback-v2.3.6/receipts/fresh--confirmation--jev.json",
+        "receiptSha256": "20b4beeb5cdbb077dfe353f3e2d2ba07bf677c88194e3c4ba6aed3601f7dbeda"
+      },
+      {
+        "id": "fresh--confirmation--google",
+        "caseId": "authentic-confirmation",
+        "decision": "google",
+        "policy": "keating-teaching-policy/v2.3.6",
+        "disposition": "released",
+        "missing": null,
+        "notice": null,
+        "selectedAttempt": 1,
+        "selectionRule": "none",
+        "completedDrafts": 1,
+        "receipt": "study/feedback-v2.3.6/receipts/fresh--confirmation--google.json",
+        "receiptSha256": "9405780da0db403aeceec6fa18534bd7b345ddf41e302730ed592f02b560c5e4"
+      }
+    ],
+    "mounted": {
+      "id": "classroom-tile-confirm--minimax--jev",
+      "caseId": "classroom-confirmation",
+      "decision": "jev",
+      "policy": "keating-teaching-policy/v2.3.7",
+      "disposition": "withheld",
+      "notice": "withheld",
+      "selectedAttempt": null,
+      "selectionRule": null,
+      "learner": "My guess is round, because three of the four tiles are round.",
+      "receipt": "study/classroom-v2.3.7/receipts/classroom-tile-confirm--minimax--jev.json",
+      "receiptSha256": "43137d6bcc3cdd31b5b136bfc77e00dd41074f679d649d198acf0f31d3883aa4",
+      "source": "study/classroom-v2.3.7/summary.json",
+      "stage": "study/classroom-v2.3.7/stage.json"
+    },
+    "postCorrection": {
+      "id": "classroom-tile-linked-feedback--minimax--jev",
+      "caseId": "classroom-confirmation",
+      "decision": "jev",
+      "policy": "keating-teaching-policy/v2.3.8",
+      "disposition": "withheld",
+      "notice": "withheld",
+      "selectedAttempt": null,
+      "selectionRule": null,
+      "learner": "My guess is round, because three of the four tiles are round.",
+      "receipt": "study/classroom-v2.3.8/receipts/classroom-tile-linked-feedback--minimax--jev.json",
+      "receiptSha256": "9638349b2d44f32d4d6c0a876b772a8a25bb37bac4fa213935bfbb2bdacba413",
+      "source": "study/classroom-v2.3.8/summary.json",
+      "stage": "study/classroom-v2.3.8/stage.json"
+    },
+    "reviewStage": {
+      "path": "study/feedback-v2.3.6/review-stage.json",
+      "sha256": "236ab922910a71d6f8d8e8ff699d1be500f0a342c4586fa66e0885f402d80743",
+      "matchedExpected": 6,
+      "observed": 8
+    }
+  },
+  "cueChecks": [
+    {
+      "version": "v2.3.5",
+      "positiveCorrect": 3,
+      "positives": 10,
+      "falsePositives": 0,
+      "negativeControls": 6,
+      "path": "cue-transfer/v2.3.5.json",
+      "sha256": "0275bd459b0b70d82d95cd33b4c7fc96ca5a368e53072a147a2607809d5ee5e5"
+    },
+    {
+      "version": "v2.3.6",
+      "positiveCorrect": 8,
+      "positives": 10,
+      "falsePositives": 0,
+      "negativeControls": 6,
+      "path": "cue-transfer/v2.3.6.json",
+      "sha256": "dd64bafc3366afcd181ec49445e3859f88a0fb21c3eceac78b587686e8c9afd1"
+    }
+  ],
+  "assessmentOptOut": {
+    "path": "assessment-opt-out/evidence.json",
+    "sha256": "17eac482d4ccb147daf7c4cee598bf719b584b5a0c88163c3bf44fe44e821b8e",
+    "observedTurns": 4,
+    "unobservedTurns": 0,
+    "optOuts": 4,
+    "notReleased": 0,
+    "checkpointAfterOptOut": {
+      "numerator": 2,
+      "denominator": 4,
+      "unknown": 0,
+      "rate": 0.5
+    },
+    "signals": [
+      {
+        "signal": "simulation-brief",
+        "turns": 2
+      },
+      {
+        "signal": "question-interface",
+        "turns": 0
+      },
+      {
+        "signal": "reply-text",
+        "turns": 0
+      }
+    ],
+    "checkpointWithoutOptOut": {
+      "numerator": 0,
+      "denominator": 0,
+      "unknown": 0,
+      "rate": null
+    }
+  },
+  "phases": [
+    {
+      "directory": "study",
+      "source": "study/summary.json",
+      "sha256": "b9858b46d39d02955363dfdfddd00958612e3b64e8523ee4fe962100e781a5b1",
+      "policy": "keating-teaching-policy/v2.3.3",
+      "sealed": 31,
+      "requests": 84,
+      "missingUsage": 4,
+      "previousBoundUsd": 1.91711828,
+      "additionalBoundUsd": 0.621396594,
+      "cumulativeBoundUsd": 2.538514874
+    },
+    {
+      "directory": "study/supplement/coding",
+      "source": "study/supplement/coding/summary.json",
+      "sha256": "8d341117fd6e6b28d6d17737b57cf85aed2c6a1fd16d5b9c6f676b18e67eb5f7",
+      "policy": "keating-teaching-policy/v2.3.4",
+      "sealed": 4,
+      "requests": 16,
+      "missingUsage": 0,
+      "previousBoundUsd": 2.538514874,
+      "additionalBoundUsd": 0.074873548,
+      "cumulativeBoundUsd": 2.613388422
+    },
+    {
+      "directory": "study/supplement/prediction",
+      "source": "study/supplement/prediction/summary.json",
+      "sha256": "ff583f769fa650b0001294177fe6e14ec6a91ff915271be66e668a33e1d1752e",
+      "policy": "keating-teaching-policy/v2.3.5",
+      "sealed": 1,
+      "requests": 3,
+      "missingUsage": 0,
+      "previousBoundUsd": 2.613388422,
+      "additionalBoundUsd": 0.012524328,
+      "cumulativeBoundUsd": 2.62591275
+    },
+    {
+      "directory": "study/supplement/addendum",
+      "source": "study/supplement/addendum/summary.json",
+      "sha256": "5f39d3f4c35a0c1dce053349946f1c715d2ae06ffb3ff221fca3d711edd0d058",
+      "policy": "keating-teaching-policy/v2.3.5",
+      "sealed": 2,
+      "requests": 10,
+      "missingUsage": 0,
+      "previousBoundUsd": 2.62591275,
+      "additionalBoundUsd": 0.04520211,
+      "cumulativeBoundUsd": 2.67111486
+    },
+    {
+      "directory": "study/feedback-v2.3.6",
+      "source": "study/feedback-v2.3.6/summary.json",
+      "sha256": "e0c4bf7c2ada24962011d8f96792841ba3d24c6cc2bcc0ade71b07016636be6c",
+      "policy": "keating-teaching-policy/v2.3.6",
+      "sealed": 10,
+      "requests": 19,
+      "missingUsage": 0,
+      "previousBoundUsd": 2.67111486,
+      "additionalBoundUsd": 0.055469602,
+      "cumulativeBoundUsd": 2.726584462
+    },
+    {
+      "directory": "study/classroom-v2.3.7",
+      "source": "study/classroom-v2.3.7/summary.json",
+      "sha256": "b9428865541e6fbd52c57db28e929219ee8948f63cc892daf2ed859328f53537",
+      "policy": "keating-teaching-policy/v2.3.7",
+      "sealed": 1,
+      "requests": 2,
+      "missingUsage": 0,
+      "previousBoundUsd": 2.726584462,
+      "additionalBoundUsd": 0.016951248,
+      "cumulativeBoundUsd": 2.74353571
+    },
+    {
+      "directory": "study/classroom-v2.3.8",
+      "source": "study/classroom-v2.3.8/summary.json",
+      "sha256": "234d4c932f3f531c366c76114ef6734fccac3c819672a16c0be0d3ff3c6c2b2a",
+      "policy": "keating-teaching-policy/v2.3.8",
+      "sealed": 1,
+      "requests": 7,
+      "missingUsage": 0,
+      "previousBoundUsd": 2.74353571,
+      "additionalBoundUsd": 0.02966397,
+      "cumulativeBoundUsd": 2.77319968
+    }
+  ],
+  "budget": {
+    "previousStudiesBoundUsd": 1.91711828,
+    "newStudyBoundUsd": 0.8560814,
+    "totalBoundUsd": 2.77319968,
+    "capUsd": 10,
+    "invoiceUsd": null
+  },
+  "classroom": {
+    "live": 3,
+    "replays": 4,
+    "evidence": [
+      {
+        "source": "live-classroom",
+        "path": "classroom/live-stage-light/evidence.json",
+        "id": "classroom-stage-light--minimax--jev",
+        "receiptSha256": "26772369560034462be0a63a98e7ecc10cdd703b842331faf1f7243a1b02fca2",
+        "browserActions": [
+          "change-slider"
+        ],
+        "pageErrors": 0
+      },
+      {
+        "source": "released-message-replay",
+        "path": "classroom/recorded-question/evidence.json",
+        "id": "paper-fold--flash--jev",
+        "receiptSha256": "066ca8aa33ca006e09dd6dd020ea41bef46d275f205ea72b19a11127f1b34258",
+        "browserActions": [
+          "select",
+          "submit"
+        ],
+        "pageErrors": 0
+      },
+      {
+        "source": "released-message-replay",
+        "path": "classroom/recorded-python/evidence.json",
+        "id": "python-sum--flash--jev",
+        "receiptSha256": "0e9c78d40a027bb7604c751247ed03525eba5bf9ff91793b66685f03f09a74ea",
+        "browserActions": [
+          "edit-python"
+        ],
+        "pageErrors": 0
+      },
+      {
+        "source": "released-message-replay",
+        "path": "classroom/final-prediction/evidence.json",
+        "id": "tile-bag--minimax--jev",
+        "receiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+        "browserActions": [
+          "select",
+          "submit",
+          "read-saved-answer"
+        ],
+        "pageErrors": 0
+      },
+      {
+        "source": "released-message-replay",
+        "path": "classroom/final-python/evidence.json",
+        "id": "multiples-loop--minimax--jev",
+        "receiptSha256": "10696fd73d163fe40a97daa91b174f128521d84d5874a3a0b579f14030357943",
+        "browserActions": [
+          "edit-python"
+        ],
+        "pageErrors": 0
+      },
+      {
+        "source": "live-typed-classroom-followup",
+        "path": "classroom/live-tile-confirm/evidence.json",
+        "id": "classroom-tile-confirm--minimax--jev",
+        "receiptSha256": "43137d6bcc3cdd31b5b136bfc77e00dd41074f679d649d198acf0f31d3883aa4",
+        "browserActions": [
+          "type-answer-in-chat"
+        ],
+        "pageErrors": 0,
+        "publicDisposition": "withheld"
+      },
+      {
+        "source": "live-typed-classroom-followup",
+        "path": "classroom/linked-tile-confirm/evidence.json",
+        "id": "classroom-tile-linked-feedback--minimax--jev",
+        "receiptSha256": "9638349b2d44f32d4d6c0a876b772a8a25bb37bac4fa213935bfbb2bdacba413",
+        "browserActions": [
+          "type-answer-in-chat"
+        ],
+        "pageErrors": 0,
+        "publicDisposition": "withheld"
+      }
+    ],
+    "summary": "classroom/README.md"
+  },
+  "production": {
+    "project": 473463,
+    "hosts": [
+      "keating.help",
+      "chat.keating.help"
+    ],
+    "appVersion": "4.2.0",
+    "fromUtc": "2026-11-11T00:00:00Z",
+    "untilExclusiveUtc": "2026-11-18T18:30:00Z",
+    "source": "PostHog execute-sql with existing Keating observation keys",
+    "query": "SELECT count() AS captured_events, uniqExact(tuple(JSONExtractString(properties, 'conversation_id'), JSONExtractString(properties, 'turn_id'))) AS distinct_turns FROM events WHERE event = 'openui_turn_observed' AND JSONExtractString(properties, '$host') IN ('keating.help', 'chat.keating.help') AND JSONExtractString(properties, 'app_version') = '4.2.0' AND timestamp >= toDateTime('2026-11-11 00:00:00', 'UTC') AND timestamp < toDateTime('2026-11-18 18:30:00', 'UTC')",
+    "columns": [
+      "captured_events",
+      "distinct_turns"
+    ],
+    "results": [
+      [
+        0,
+        0
+      ]
+    ],
+    "taxonomy": "openui_turn_observed absent",
+    "productionInterfaceRate": null,
+    "buildReceipt": "production-build.json"
+  },
+  "blindedReview": {
+    "uniqueBodies": 25,
+    "sha256": "11ad877e01b8676409e65e5a1f8613620221cbe35dd0f93e397bc5b14dc94772",
+    "source": "ratings.json"
+  }
+}

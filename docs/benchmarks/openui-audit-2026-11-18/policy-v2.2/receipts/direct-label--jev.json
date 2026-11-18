@@ -1,0 +1,65 @@
+{
+  "id": "direct-label--jev",
+  "caseId": "direct-label",
+  "provider": "jev",
+  "decisionModel": "jev-1.14.0",
+  "kind": "live",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "73d71114e68099397ccabaab74948b85606184a883cc26df27a7a7e9e6bfdbb1",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "errorCode": null
+    },
+    {
+      "phase": "review",
+      "requestSha256": "55b94e24b733c28b4c5263acf0595c3f8f9d9a82a62e7a8aa79a448657e518f0",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "none",
+    "offered": [],
+    "reason": "plain-reply",
+    "directives": [
+      "Answer the bounded question directly; do not start a diagnostic interview.",
+      "Honor the requested plain reply. Give the answer in the requested form and stop.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it."
+    ]
+  },
+  "drafts": [
+    {
+      "label": "direct-label--jev/tutor/1",
+      "kind": "live",
+      "systemSha256": "e72ccd874cf7a776aeb8cc06fa3e1356b0bce8fe780785e766595099dc0b9d50",
+      "text": "24 centimetres.",
+      "attempted": false,
+      "components": [],
+      "outsideWords": 2,
+      "guidanceDelivered": true,
+      "tools": [],
+      "stop": "stop"
+    }
+  ],
+  "status": "released",
+  "public": {
+    "text": "24 centimetres.",
+    "attempted": false,
+    "components": [],
+    "outsideWords": 2,
+    "tools": []
+  },
+  "notice": null,
+  "selectedAttempt": 1,
+  "findings": [
+    {
+      "attempt": 1,
+      "status": "pass",
+      "checks": []
+    }
+  ]
+}

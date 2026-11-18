@@ -1,0 +1,362 @@
+{
+  "id": "gemini-3.1-flash-lite--structure",
+  "scenario": "structure",
+  "model": "gemini-3.1-flash-lite",
+  "startedAt": "2026-11-18T12:54:33.678Z",
+  "judge": [
+    {
+      "phase": "plan",
+      "hash": "936c130b9c369a526fe1f0da6e28ad7d823b11dd7c789f6ac801ee7a150ae14d",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 3528,
+        "outputTokens": 674
+      },
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.72
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.31
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.11
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.08
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.1
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.95
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 0.99
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.52
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.35
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.39
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.93
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.29
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.81
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.1
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.65
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.14
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 1.32,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.06,
+            "1": 0.57,
+            "2": 0.35,
+            "3": 0.02
+          },
+          "confidence": 0.55
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.5,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.71,
+            "1": 0.09,
+            "2": 0.2,
+            "3": 0
+          },
+          "confidence": 0.51
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 0.84,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.52,
+            "1": 0.18,
+            "2": 0.24,
+            "3": 0.06
+          },
+          "confidence": 0.16
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "supported",
+          "probabilities": {
+            "concise": 0.43,
+            "supported": 0.51,
+            "deep": 0.06
+          },
+          "confidence": 0.26
+        }
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "6710a1582c6080d64f6851923b07890e04a6abffc1b7c6ddad906d65ba128cad",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 6504,
+        "outputTokens": 896
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "077084eb532dabd580e34edda82fcb52a054407ee619e03c3071a700a105ed38",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 6047,
+        "outputTokens": 896
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha": "5c95a2a9f25d8d5b9ae02616756fbc39419dab5730d2c1ea1aa3714a66f3237b",
+      "messagesSha": "4180b1b69d7c89b9139240a57362dfcb5ae874a34924673435349b1175b409e7",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "",
+        "toolNames": [
+          "animate"
+        ],
+        "requestedModel": "gemini-3.1-flash-lite",
+        "responseModel": null,
+        "stop": "toolUse",
+        "errorClass": null,
+        "usage": {
+          "input": 10353,
+          "output": 881,
+          "cacheRead": 8145,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 2,
+      "systemSha": "5c95a2a9f25d8d5b9ae02616756fbc39419dab5730d2c1ea1aa3714a66f3237b",
+      "messagesSha": "d9ddd39aa3216b1f6c2d8c9f8791361a7c389be3ce19a8ae7c22c9548f157b2c",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "",
+        "toolNames": [
+          "interactive_page"
+        ],
+        "requestedModel": "gemini-3.1-flash-lite",
+        "responseModel": null,
+        "stop": "toolUse",
+        "errorClass": null,
+        "usage": {
+          "input": 2327,
+          "output": 411,
+          "cacheRead": 16292,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "counterfactual": {
+    "systemSha": "ada9c657d656d626fee7e1a434843f307004ccfcb45ce1957bc2a670169e4a56",
+    "messagesSha": "4180b1b69d7c89b9139240a57362dfcb5ae874a34924673435349b1175b409e7",
+    "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+    "response": {
+      "text": "",
+      "toolNames": [
+        "animate"
+      ],
+      "requestedModel": "gemini-3.1-flash-lite",
+      "responseModel": null,
+      "stop": "toolUse",
+      "errorClass": null,
+      "usage": {
+        "input": 10299,
+        "output": 709,
+        "cacheRead": 8145,
+        "cacheWrite": 0
+      }
+    }
+  },
+  "decision": {
+    "action": "create",
+    "families": [
+      {
+        "family": "question",
+        "components": [
+          "Question"
+        ]
+      },
+      {
+        "family": "workspace",
+        "components": [
+          "ConceptMap",
+          "LearningImage"
+        ]
+      }
+    ],
+    "features": [
+      "structure_relations",
+      "prediction_opportunity",
+      "visual_reference"
+    ],
+    "lead": "answer-first",
+    "paired": false
+  },
+  "offer": "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; or ConceptMap or LearningImage to lay out how the concepts relate; show the visual the explanation depends on. Prose is acceptable when it serves the learner better.",
+  "phase": "released",
+  "selection": 2,
+  "reason": null,
+  "release": null,
+  "publicText": "",
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "unsolicited_animation",
+          "status": "fail",
+          "probability": 0.87
+        },
+        {
+          "id": "quality_scope",
+          "status": "unknown",
+          "probability": 0.65
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "status": "pass",
+      "checks": [
+        {
+          "id": "quality_scope",
+          "status": "unknown",
+          "probability": 0.56
+        }
+      ]
+    }
+  ],
+  "directives": [
+    "- Answer the bounded question directly; do not start a diagnostic interview.",
+    "- A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+    "- Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+    "- Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+    "- Answer the learner's request first; any activity comes after the answer.",
+    "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; or ConceptMap or LearningImage to lay out how the concepts relate; show the visual the explanation depends on. Prose is acceptable when it serves the learner better.",
+    "- If you pose a question or quiz, stop and wait for the learner's answer. Do not answer it yourself."
+  ],
+  "finishedAt": "2026-11-18T12:54:43.002Z"
+}

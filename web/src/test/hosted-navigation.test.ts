@@ -6,6 +6,12 @@ const originalWindow = globalThis.window;
 afterEach(() => { globalThis.window = originalWindow; });
 
 describe("hosted site and application navigation", () => {
+  it("opens the teaching-interface report on the site from the chat host and packaged app, and locally in development", () => {
+    const path = "/reports/teaching-interfaces/index.html";
+    expect(hostedNavigationHref(path, "chat.keating.help", false)).toBe("https://keating.help" + path);
+    expect(hostedNavigationHref(path, "localhost", true)).toBe("https://keating.help" + path);
+    expect(hostedNavigationHref(path, "localhost", false)).toBe(path);
+  });
   it("keeps the website root on the website", () => {
     expect(hostedNavigationHref("/", "keating.help", false)).toBe("/");
     expect(applicationRootHref("keating.help", false)).toBe("https://chat.keating.help/");

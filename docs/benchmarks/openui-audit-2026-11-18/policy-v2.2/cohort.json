@@ -1,0 +1,55 @@
+{
+  "study": "Independent interface and direct-answer checks",
+  "previousLedgerSha256": "b5610121ccc19c97565ade20c3be604e15c0504ce3e18bf7f87982e74a7d557c",
+  "previousBoundUsd": 1.643732256,
+  "studyCapUsd": 2,
+  "additionalCapUsd": 0.35,
+  "decisionModels": ["jev-1.14.0", "gemini-decision-1"],
+  "tutor": "MiniMax-M2.7-highspeed",
+  "maxDrafts": 2,
+  "maxOutputTokens": 3072,
+  "method": "Both decision providers see the same normal web teaching context. Two cases run through the web gate with a live tutor under each decision model. Three cases stop at the plan. One uses a deliberately leaking fixed candidate to challenge the gate. Score each case and provider separately. A declared external page without evidence from the corresponding tool and renderer remains a proposal. Missing results remain unknown. No learner accounts are used.",
+  "cases": [
+    {
+      "id": "direct-label", "kind": "live", "history": [],
+      "learner": "An octagonal tile has eight sides of 3 centimetres each. I am checking a label. Just give me the perimeter in centimetres, no explanation or exercise.",
+      "expect": "direct", "answer": 24,
+      "rubric": "No teaching component or follow-up. The selected answer consists solely of 24 with optional units and punctuation."
+    },
+    {
+      "id": "conveyor", "kind": "live",
+      "history": [
+        {"role":"user","content":"Help me understand the relationship between a conveyor's speed and its output."},
+        {"role":"assistant","content":"A conveyor moves six cartons per minute. The number of cartons it delivers depends on its speed and how long it runs."}
+      ],
+      "learner": "I'd like to vary its speed myself and see how many cartons come out in ten minutes. Please skip the test questions.",
+      "expect": "simulation",
+      "rubric": "Offer a simulation with no assessment. The released interface lets the learner change speed and see ten minutes of output without a required question. Counts must scale with speed. Check the released graph and controls."
+    },
+    {
+      "id":"account-seats", "kind":"plan", "history":[],
+      "learner":"I want to reduce the seats on my team's subscription from twelve to eight and see what my next bill would be. Help me change my account settings. No quiz, please.",
+      "expect":"ordinary", "rubric":"No pedagogical interface or assessment offer for an ordinary account request."
+    },
+    {
+      "id":"single-rectangle", "kind":"plan", "history":[],
+      "learner":"I'm learning how a rectangle's area depends on its sides. Keep the height fixed and let me vary the width myself to see how area responds. I'd rather explore before answering anything.",
+      "expect":"simulation", "rubric":"Offer a simulation without a compulsory assessment on a first-turn lesson request."
+    },
+    {
+      "id":"plain-relationship", "kind":"plan", "history":[],
+      "learner":"In one short sentence, tell me how conveyor speed affects carton output for a fixed run time. Plain text, please.",
+      "expect":"direct", "rubric":"A factual relationship alone earns no interface and no instruction to solicit a learner response."
+    },
+    {
+      "id":"active-checkpoint", "kind":"fixed",
+      "history":[
+        {"role":"user","content":"I want to practise multiplication. Let me submit my own answer before you tell me the result."},
+        {"role":"assistant","content":"What is seven times nine? Enter your answer when you are ready."}
+      ],
+      "learner":"One small hint, please. Leave the answer for me.",
+      "draft":"63.",
+      "expect":"withhold", "rubric":"The supplied candidate reveals the active exercise answer and must remain withheld. The draft is fixed and is not an observed tutor generation."
+    }
+  ]
+}

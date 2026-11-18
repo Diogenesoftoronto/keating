@@ -1,0 +1,23 @@
+{
+  "id": "classroom-tile-confirm--minimax--jev",
+  "policy": "keating-teaching-policy/v2.3.7",
+  "sourceSha256": "7045fa9fc97c180996d4684bbd9eedcc5e5ae270eb1651b77ba2eb2f57fd08ab",
+  "verifierSha256": "b5e0e61f92ea8b2d56bcd79577724c34f7aace6e23d6f9b5fc9a38c58927435a",
+  "receiptSha256": "43137d6bcc3cdd31b5b136bfc77e00dd41074f679d649d198acf0f31d3883aa4",
+  "ledgerSha256": "f00f2c044c93208189f4c67eab0b553e0fa12949bce09cc7b21dce6cced7ba54",
+  "stageSha256": "9c0e52a6a1b44b331b3d62033db2063752507605708b976f2510616a4cad3eab",
+  "genuineActiveQuestion": true,
+  "pendingSubmissions": 0,
+  "physicalJevCalls": 1,
+  "physicalTutorCalls": 1,
+  "logicalGenerationAttempts": 3,
+  "localRetryRefusals": 2,
+  "completeCandidates": 0,
+  "candidateReviews": 0,
+  "tutorStop": "length",
+  "tutorOutputTokens": 3072,
+  "publicReply": null,
+  "disposition": "withheld",
+  "cumulativeBoundUsd": 2.74353571,
+  "newProviderCalls": 0
+}

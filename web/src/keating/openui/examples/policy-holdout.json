@@ -1,0 +1,230 @@
+{
+  "schemaVersion": 1,
+  "turns": [
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.1-prospective-3/gemini-3.1-flash-lite--spinner",
+      "turnId": "gemini-3.1-flash-lite--spinner",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "question-group"
+        ]
+      },
+      "reply": "withheld",
+      "attempted": null,
+      "nativePageRequested": null,
+      "compiled": null,
+      "selected": [],
+      "rendered": null,
+      "outsideWords": null,
+      "guidance": {
+        "source": "jev",
+        "action": "create",
+        "delivered": null,
+        "targets": [
+          "question",
+          "simulation"
+        ]
+      },
+      "decisionModel": "jev-1.14.0",
+      "draftAttempts": 3,
+      "gateIssues": [],
+      "fit": {
+        "source": "v21-prospective-case-rubric",
+        "passed": null
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.1-prospective-3/MiniMax-M2.7-highspeed--spinner",
+      "turnId": "MiniMax-M2.7-highspeed--spinner",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "question-group"
+        ]
+      },
+      "reply": "released",
+      "attempted": true,
+      "nativePageRequested": false,
+      "compiled": [
+        "question-group"
+      ],
+      "selected": [
+        "question-group"
+      ],
+      "rendered": null,
+      "outsideWords": 26,
+      "guidance": {
+        "source": "jev",
+        "action": "create",
+        "delivered": true,
+        "targets": [
+          "question",
+          "simulation"
+        ]
+      },
+      "decisionModel": "jev-1.14.0",
+      "draftAttempts": 1,
+      "gateIssues": [],
+      "fit": {
+        "source": "v21-prospective-case-rubric",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.1-prospective-3/gemini-3.1-flash-lite--bus",
+      "turnId": "gemini-3.1-flash-lite--bus",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "released",
+      "attempted": false,
+      "nativePageRequested": true,
+      "compiled": [],
+      "selected": [],
+      "rendered": null,
+      "outsideWords": null,
+      "guidance": {
+        "source": "jev",
+        "action": "create",
+        "delivered": true,
+        "targets": [
+          "concept-map",
+          "simulation"
+        ]
+      },
+      "decisionModel": "jev-1.14.0",
+      "draftAttempts": 1,
+      "gateIssues": [],
+      "fit": {
+        "source": "v21-prospective-case-rubric",
+        "passed": false
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.1-prospective-3/MiniMax-M2.7-highspeed--bus",
+      "turnId": "MiniMax-M2.7-highspeed--bus",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "released",
+      "attempted": true,
+      "nativePageRequested": false,
+      "compiled": [
+        "simulation"
+      ],
+      "selected": [
+        "simulation"
+      ],
+      "rendered": null,
+      "outsideWords": 98,
+      "guidance": {
+        "source": "jev",
+        "action": "create",
+        "delivered": true,
+        "targets": [
+          "concept-map",
+          "simulation"
+        ]
+      },
+      "decisionModel": "jev-1.14.0",
+      "draftAttempts": 1,
+      "gateIssues": [
+        "checkpoint_not_interactive",
+        "checkpoint_repeated"
+      ],
+      "fit": {
+        "source": "v21-prospective-case-rubric",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.1-prospective-3/gemini-3.1-flash-lite--perimeter",
+      "turnId": "gemini-3.1-flash-lite--perimeter",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "mode": "guided",
+      "cue": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "reply": "withheld",
+      "attempted": null,
+      "nativePageRequested": null,
+      "compiled": null,
+      "selected": [],
+      "rendered": null,
+      "outsideWords": null,
+      "guidance": {
+        "source": "jev",
+        "action": "none",
+        "delivered": null,
+        "targets": []
+      },
+      "decisionModel": "jev-1.14.0",
+      "draftAttempts": 3,
+      "gateIssues": [],
+      "fit": {
+        "source": "v21-prospective-case-rubric",
+        "passed": null
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.1-prospective-3/MiniMax-M2.7-highspeed--perimeter",
+      "turnId": "MiniMax-M2.7-highspeed--perimeter",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "cue": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "reply": "released",
+      "attempted": false,
+      "nativePageRequested": false,
+      "compiled": [],
+      "selected": [],
+      "rendered": null,
+      "outsideWords": 1,
+      "guidance": {
+        "source": "jev",
+        "action": "none",
+        "delivered": true,
+        "targets": []
+      },
+      "decisionModel": "jev-1.14.0",
+      "draftAttempts": 1,
+      "gateIssues": [],
+      "fit": {
+        "source": "v21-prospective-case-rubric",
+        "passed": true
+      }
+    }
+  ]
+}

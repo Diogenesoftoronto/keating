@@ -1,0 +1,200 @@
+{
+  "id": "gemini-3.1-flash-lite--spinner",
+  "caseId": "spinner",
+  "configuredModel": "gemini-3.1-flash-lite",
+  "provider": "google",
+  "endpoint": "https://generativelanguage.googleapis.com/v1beta",
+  "cohortSha256": "d3393c08ee1903f9e4a426d37cab65add70f5e2d5157cd09a085ddfac174afe8",
+  "status": "complete",
+  "startedAt": "2026-11-18T14:17:35.023Z",
+  "judgments": [
+    {
+      "phase": "plan",
+      "hash": "55d247c2b02959fc8c1edb1feeb670af43715dc8c541e91006d31099c845a489",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 4013,
+        "outputTokens": 748
+      },
+      "answers": {
+        "direct_answer_requested": 0.29,
+        "explanation_requested": 0.52,
+        "learner_stuck": 0.02,
+        "attempt_present": 0.49,
+        "misconception_visible": 0.14,
+        "independent_success": 0.01,
+        "practice_requested": 0.05,
+        "plain_reply_requested": 0.28,
+        "assessment_declined": 0.04,
+        "fresh_sources_needed": 0.07,
+        "explicit_feedback": 0.02,
+        "explicit_profile_preference": 0.6,
+        "observed_profile_pattern": 0.01,
+        "motion_requested": 0.03,
+        "improvement_requested": 0.01,
+        "improvement_hypothesis_supported": 0.01,
+        "settled_sessions_accumulated": 0.01,
+        "project_goal_requested": 0.58,
+        "progression_requested": 0.3,
+        "learning_task": 0.98,
+        "variable_relationship": 0.73,
+        "ordered_procedure": 0.18,
+        "discrete_recall": 0.23,
+        "structure_relations": 0.41,
+        "category_distinction": 0.37,
+        "prediction_opportunity": 0.88,
+        "learner_response_due": 0.94,
+        "hands_on_requested": 0.44,
+        "executable_code": 0.06,
+        "performed_skill": 0.08,
+        "language_learning": 0.1,
+        "visual_reference": 0.15,
+        "extended_production": 0.02,
+        "outside_observation": 0.25,
+        "untested_coverage": 0.31,
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 0.87,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.34,
+            "1": 0.45,
+            "2": 0.2,
+            "3": 0.01
+          },
+          "confidence": 0.44
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.1,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.92,
+            "1": 0.07,
+            "2": 0.01,
+            "3": 0
+          },
+          "confidence": 0.91
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 2.03,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.14,
+            "1": 0.06,
+            "2": 0.43,
+            "3": 0.37
+          },
+          "confidence": 0.29
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "concise",
+          "probabilities": {
+            "concise": 0.59,
+            "supported": 0.35,
+            "deep": 0.06
+          },
+          "confidence": 0.38
+        }
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha256": "73fffbbc00aa041507ec59a63872f63a74bbad304f0ae290419f50bf32a97e8d",
+      "messagesSha256": "4dc1ef5cf0b1b56ff2c316057a9a03fe29238ceb80166bf8336c9bf1d232aaa8",
+      "toolsSha256": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "payloadSha256": "c9a8c8f06eb07d8ed0e5b786a3dc12967f6f36fa66dbb941b149146c82a4c959",
+      "delivered": true,
+      "hasUsableTools": true,
+      "status": "provider",
+      "response": {
+        "text": "",
+        "nativeTools": [],
+        "provider": "google",
+        "model": "gemini-3.1-flash-lite",
+        "responseModel": null,
+        "stop": "error",
+        "usage": null
+      }
+    }
+  ],
+  "decision": {
+    "model": "jev-1.14.0",
+    "action": "create",
+    "targets": [
+      "Question",
+      "Simulation"
+    ],
+    "interactionDirectives": [
+      "At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; collect the learner's choice or independent answer before proceeding; or Simulation to let the learner change a variable and observe the outcome. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself."
+    ],
+    "planDirectives": [
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+      "At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; collect the learner's choice or independent answer before proceeding; or Simulation to let the learner change a variable and observe the outcome. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself."
+    ],
+    "signals": {
+      "learner_response_due": 0.94,
+      "hands_on_requested": 0.44,
+      "plain_reply_requested": 0.28,
+      "assessment_declined": 0.04,
+      "prediction_opportunity": 0.88,
+      "variable_relationship": 0.73
+    }
+  },
+  "phase": "withheld",
+  "selection": null,
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "generation-error",
+      "variant": "default",
+      "trimmedCheckpointSuffix": false,
+      "findings": []
+    },
+    {
+      "attempt": 2,
+      "status": "generation-error",
+      "variant": "default",
+      "trimmedCheckpointSuffix": false,
+      "findings": []
+    },
+    {
+      "attempt": 3,
+      "status": "generation-error",
+      "variant": "default",
+      "trimmedCheckpointSuffix": false,
+      "findings": []
+    }
+  ],
+  "public": {
+    "text": "The reply model failed before producing a complete draft. Try again or check the reply model and connection in Settings.\n\nFailure: generation-unavailable. Draft attempts: 3; completed drafts: 0.",
+    "notice": "withheld",
+    "stop": "stop",
+    "tools": []
+  },
+  "reason": "generation-unavailable",
+  "finishedAt": "2026-11-18T14:17:54.346Z"
+}

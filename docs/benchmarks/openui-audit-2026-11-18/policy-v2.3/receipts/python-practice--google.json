@@ -1,0 +1,50 @@
+{
+  "id": "python-practice--google",
+  "caseId": "python-practice",
+  "provider": "google",
+  "decisionModel": "gemini-decision-1",
+  "kind": "live",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "2f30a96055683294919a753b724f045768e75c98f062ab96bcb3a3a074e645dd",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "create",
+    "offered": [
+      "Question"
+    ],
+    "reason": null,
+    "codeLanguage": "python",
+    "directives": [
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+      "Give the learner an editable fenced python code block for their exercise. Keep the starter and any examples in Python. Running Python requires an available hosted executor and network access.",
+      "At most one OpenUI activity may help this turn: Question to collect the learner's choice or independent answer before proceeding. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself."
+    ]
+  },
+  "drafts": [],
+  "status": "withheld",
+  "public": null,
+  "notice": "withheld",
+  "selectedAttempt": null,
+  "findings": [
+    {
+      "attempt": 1,
+      "status": "generation-error",
+      "adjustments": [],
+      "checks": []
+    },
+    {
+      "attempt": 2,
+      "status": "generation-error",
+      "adjustments": [],
+      "checks": []
+    }
+  ]
+}

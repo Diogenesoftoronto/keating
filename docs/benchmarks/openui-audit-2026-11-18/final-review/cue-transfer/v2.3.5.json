@@ -1,0 +1,182 @@
+{
+  "phase": "v2.3.5",
+  "caseSha256": "f1b8122f675c9797d02553ca4e7bb496fa49d8828dd85911d55cff64e2754816",
+  "classifierSha256": "2239097c312295b624d09eeba9cacfc53260e1738fdb92f5e44e88e030e7003c",
+  "positiveCorrect": 3,
+  "positives": 10,
+  "falsePositives": 0,
+  "negativeControls": 6,
+  "rows": [
+    {
+      "id": "paint",
+      "expectedTarget": "question",
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "none",
+        "targets": []
+      },
+      "correct": false
+    },
+    {
+      "id": "coin",
+      "expectedTarget": "question",
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "none",
+        "targets": []
+      },
+      "correct": false
+    },
+    {
+      "id": "sequence",
+      "expectedTarget": "question",
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "none",
+        "targets": []
+      },
+      "correct": false
+    },
+    {
+      "id": "chord",
+      "expectedTarget": "question",
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "correct": true
+    },
+    {
+      "id": "graph",
+      "expectedTarget": "question",
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "quiz"
+        ]
+      },
+      "correct": true
+    },
+    {
+      "id": "python-loop",
+      "expectedTarget": "editable-code",
+      "expectedLanguage": "python",
+      "predicted": {
+        "kind": "implicit-action",
+        "targets": [
+          "coding-challenge"
+        ]
+      },
+      "correct": false
+    },
+    {
+      "id": "javascript-loop",
+      "expectedTarget": "editable-code",
+      "expectedLanguage": "javascript",
+      "predicted": {
+        "kind": "none",
+        "targets": []
+      },
+      "correct": false
+    },
+    {
+      "id": "python-scope",
+      "expectedTarget": "editable-code",
+      "expectedLanguage": "python",
+      "predicted": {
+        "kind": "implicit-action",
+        "targets": [
+          "editable-code"
+        ],
+        "codeLanguage": "python"
+      },
+      "correct": true
+    },
+    {
+      "id": "type-loop",
+      "expectedTarget": "editable-code",
+      "expectedLanguage": "typescript",
+      "predicted": {
+        "kind": "none",
+        "targets": []
+      },
+      "correct": false
+    },
+    {
+      "id": "switch-language",
+      "expectedTarget": "editable-code",
+      "expectedLanguage": "javascript",
+      "predicted": {
+        "kind": "none",
+        "targets": []
+      },
+      "correct": false
+    },
+    {
+      "id": "describe-prediction",
+      "expectedTarget": null,
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "none",
+        "targets": []
+      },
+      "correct": true
+    },
+    {
+      "id": "guess-declined",
+      "expectedTarget": null,
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "correct": true
+    },
+    {
+      "id": "quotation",
+      "expectedTarget": null,
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "none",
+        "targets": []
+      },
+      "correct": true
+    },
+    {
+      "id": "explain-own-loop",
+      "expectedTarget": null,
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "correct": true
+    },
+    {
+      "id": "no-exercise",
+      "expectedTarget": null,
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "correct": true
+    },
+    {
+      "id": "declarative",
+      "expectedTarget": null,
+      "expectedLanguage": null,
+      "predicted": {
+        "kind": "none",
+        "targets": []
+      },
+      "correct": true
+    }
+  ]
+}

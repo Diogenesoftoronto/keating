@@ -1,0 +1,6 @@
+{
+  "filling-line--jev": {"passed":true,"observation":"The learner can adjust pump rate immediately. The primary readout is rate × 8. No compulsory prediction, quiz or new goal."},
+  "filling-line--google": {"passed":null,"observation":"The planner offered a simulation. The tutor returned an error after 60 seconds, without a response body, HTTP receipt or token usage."},
+  "python-practice--jev": {"passed":true,"observation":"Editable Python. The loop tries to index beyond the end of the list. The tutor leaves the repair to the learner."},
+  "python-practice--google": {"passed":true,"observation":"Editable Python. The sum omits the first number. Comments give the expected result and mark the faulty line, making the exercise easier; the code fix is left to the learner."}
+}

@@ -1,0 +1,250 @@
+{
+  "requestSha256": "fb0f5bf48f332386e126ed175c3e4bdcabca42451d0dfbc3c00d13ee97109e93",
+  "wireSha256": "bcf4e4b9e0495a72a561492636e871cd82b33d9f1684adcaf91e9490a4c5bd53",
+  "label": "posthoc-perimeter-16",
+  "requestedModel": "gemini-decision-1",
+  "endpoint": "https://generativelanguage.googleapis.com/v1beta/decisions",
+  "startedAt": "2026-11-18T15:46:20.369Z",
+  "http": 200,
+  "payload": {
+    "answers": {
+      "gap_ignored": {
+        "confidence": 0.9540894092049221,
+        "noul": 0.04591059079507788,
+        "type": "noul"
+      },
+      "preference_graded": {
+        "confidence": 0.931059209164141,
+        "noul": 0.06894079083585897,
+        "type": "noul"
+      },
+      "observed_preference_overrides_declared": {
+        "confidence": 0.9443898836365581,
+        "noul": 0.055610116363441896,
+        "type": "noul"
+      },
+      "identity_invented": {
+        "confidence": 0.9761650805368189,
+        "noul": 0.023834919463181035,
+        "type": "noul"
+      },
+      "profile_evidence_invented": {
+        "confidence": 0.9766081159048948,
+        "noul": 0.02339188409510521,
+        "type": "noul"
+      },
+      "checkpoint_repeated": {
+        "confidence": 0.9113096622307353,
+        "noul": 0.08869033776926472,
+        "type": "noul"
+      },
+      "politics_normative_as_fact": {
+        "confidence": 0.99,
+        "noul": 0.01,
+        "type": "noul"
+      },
+      "known_context_reasked": {
+        "confidence": 0.9717687297209793,
+        "noul": 0.02823127027902072,
+        "type": "noul"
+      },
+      "law_authority_missing": {
+        "confidence": 0.9263274867808992,
+        "noul": 0.07367251321910086,
+        "type": "noul"
+      },
+      "unsolicited_animation": {
+        "confidence": 0.9713305434602607,
+        "noul": 0.028669456539739326,
+        "type": "noul"
+      },
+      "assessed_work_completed": {
+        "confidence": 0.7564905466143519,
+        "noul": 0.24350945338564808,
+        "type": "noul"
+      },
+      "instruction_override": {
+        "confidence": 0.9651800231067957,
+        "noul": 0.03481997689320424,
+        "type": "noul"
+      },
+      "history_disagreement_erased": {
+        "confidence": 0.9825654951829698,
+        "noul": 0.017434504817030252,
+        "type": "noul"
+      },
+      "alternative_answer_rejected": {
+        "confidence": 0.9519969479174362,
+        "noul": 0.04800305208256386,
+        "type": "noul"
+      },
+      "medicine_evidence_conflated": {
+        "confidence": 0.9671325233233182,
+        "noul": 0.03286747667668175,
+        "type": "noul"
+      },
+      "housekeeping_delegated": {
+        "confidence": 0.9637253810581855,
+        "noul": 0.03627461894181449,
+        "type": "noul"
+      },
+      "transport_exposed": {
+        "confidence": 0.9570845149328293,
+        "noul": 0.04291548506717067,
+        "type": "noul"
+      },
+      "synthetic_efficacy_claim": {
+        "confidence": 0.9730396848788192,
+        "noul": 0.026960315121180786,
+        "type": "noul"
+      },
+      "direct_help_withheld": {
+        "confidence": 0.9323249973621148,
+        "noul": 0.06767500263788519,
+        "type": "noul"
+      },
+      "repeated_improvement_unrequested": {
+        "confidence": 0.954453345680518,
+        "noul": 0.04554665431948199,
+        "type": "noul"
+      },
+      "tool_success_invented": {
+        "confidence": 0.9576941452253064,
+        "noul": 0.042305854774693605,
+        "type": "noul"
+      },
+      "quality_progress": {
+        "confidence": 0.8748129663291472,
+        "noul": 0.8748129663291472,
+        "type": "noul"
+      },
+      "practice_withheld": {
+        "confidence": 0.9361229329969109,
+        "noul": 0.06387706700308911,
+        "type": "noul"
+      },
+      "psychology_replication_ignored": {
+        "confidence": 0.959522261034639,
+        "noul": 0.04047773896536096,
+        "type": "noul"
+      },
+      "transfer_overclaimed": {
+        "confidence": 0.940736198206327,
+        "noul": 0.05926380179367293,
+        "type": "noul"
+      },
+      "unsolicited_assessment": {
+        "confidence": 0.9520219975013967,
+        "noul": 0.04797800249860324,
+        "type": "noul"
+      },
+      "checkpoint_answer_leaked": {
+        "confidence": 0.7374669921053815,
+        "noul": 0.7374669921053815,
+        "type": "noul"
+      },
+      "checkpoint_not_interactive": {
+        "confidence": 0.9611730587795566,
+        "noul": 0.03882694122044344,
+        "type": "noul"
+      },
+      "direct_answer_missing": {
+        "confidence": 0.9617944709211212,
+        "noul": 0.03820552907887873,
+        "type": "noul"
+      },
+      "law_jurisdiction_missing": {
+        "confidence": 0.9695667710958465,
+        "noul": 0.030433228904153432,
+        "type": "noul"
+      },
+      "feedback_invented": {
+        "confidence": 0.9064419893748215,
+        "noul": 0.09355801062517849,
+        "type": "noul"
+      },
+      "improvement_interrupts": {
+        "confidence": 0.9570572153565117,
+        "noul": 0.04294278464348832,
+        "type": "noul"
+      },
+      "retention_overclaimed": {
+        "confidence": 0.9573752109472012,
+        "noul": 0.042624789052798776,
+        "type": "noul"
+      },
+      "sensitive_inference": {
+        "confidence": 0.9826849490975611,
+        "noul": 0.017315050902438955,
+        "type": "noul"
+      },
+      "learner_voice_replaced": {
+        "confidence": 0.9286144780576526,
+        "noul": 0.07138552194234732,
+        "type": "noul"
+      },
+      "practice_missing": {
+        "confidence": 0.9437292086822988,
+        "noul": 0.056270791317701144,
+        "type": "noul"
+      },
+      "explanation_missing": {
+        "confidence": 0.7325139237041005,
+        "noul": 0.26748607629589954,
+        "type": "noul"
+      },
+      "mastery_overclaimed": {
+        "confidence": 0.9444877323662932,
+        "noul": 0.0555122676337068,
+        "type": "noul"
+      },
+      "source_contradicted": {
+        "confidence": 0.9540491227395334,
+        "noul": 0.04595087726046661,
+        "type": "noul"
+      },
+      "quality_scope": {
+        "confidence": 0.8966899290862317,
+        "noul": 0.8966899290862317,
+        "type": "noul"
+      },
+      "source_link_missing": {
+        "confidence": 0.9601852572645095,
+        "noul": 0.03981474273549046,
+        "type": "noul"
+      },
+      "checkpoint_continued": {
+        "confidence": 0.9295576652513731,
+        "noul": 0.07044233474862696,
+        "type": "noul"
+      },
+      "diagnostic_interview_forced": {
+        "confidence": 0.9802561596147109,
+        "noul": 0.01974384038528913,
+        "type": "noul"
+      },
+      "artifact_placeholder": {
+        "confidence": 0.9609830186312611,
+        "noul": 0.03901698136873885,
+        "type": "noul"
+      }
+    },
+    "usage": {
+      "total_tokens": 6919,
+      "total_input_tokens": 6919,
+      "input_tokens_by_modality": [
+        {
+          "modality": "text",
+          "tokens": 6919
+        }
+      ],
+      "total_output_tokens": 0
+    }
+  },
+  "shape": [
+    "answers",
+    "usage"
+  ],
+  "responseSha256": "f753c72c74a31f9a85061eaa179a4a37ac963f96667cfd022b614affb255fc1f",
+  "finishedAt": "2026-11-18T15:46:26.890Z"
+}

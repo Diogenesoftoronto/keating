@@ -1,0 +1,241 @@
+{
+  "inputsHash": "c90603983befcfd629331c18f2c03175766560e73bcdfe76d94cc9dd0831bf77",
+  "model": "jev-1.14.0",
+  "endpoint": "https://api.typesafe.ai/v1/systemone",
+  "priceSource": "https://docs.typesafe.ai/models",
+  "pricePerMillionInput": 0.042,
+  "outputPriceUsd": 0,
+  "defaultContext": "64k",
+  "reservedPerCallUsd": 0.003,
+  "followupLimitUsd": 0.25,
+  "studyLimitUsd": 2,
+  "priorAccountedUsd": 0.8314054280000001,
+  "priorUpperUsd": 0.8315,
+  "entries": [
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction/1",
+      "requestSha256": "b54df070d56c4763a00a6b0e405e5e34791f99db95970e7dae7445fc2c4a926c",
+      "startedAt": "2026-11-18T13:41:52.694Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00024578400000000003,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 5852,
+        "outputTokens": 896
+      },
+      "finishedAt": "2026-11-18T13:41:52.863Z"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction/2",
+      "requestSha256": "a629689f76e4e52de182a4fe893eb99d4346a76d956452ed59b3c400ab28abd9",
+      "startedAt": "2026-11-18T13:41:52.903Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000246372,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 5866,
+        "outputTokens": 896
+      },
+      "finishedAt": "2026-11-18T13:41:53.025Z"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--order/2",
+      "requestSha256": "2edb62c9e43f1bc927b4db6126d86f9b8f252315fd3075a40b75244bf178198c",
+      "startedAt": "2026-11-18T13:41:53.074Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00025347000000000005,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 6035,
+        "outputTokens": 896
+      },
+      "finishedAt": "2026-11-18T13:41:53.201Z"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--recall/2",
+      "requestSha256": "5185ba08bb39e2570c0e3b84e42079d275d9254e93e95fd91da5d531bd20505b",
+      "startedAt": "2026-11-18T13:41:53.254Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000249858,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 5949,
+        "outputTokens": 896
+      },
+      "finishedAt": "2026-11-18T13:41:53.366Z"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--code/2",
+      "requestSha256": "b6838d8a5706f884b3fd973c344f66b08e39a87686578075b88ceb9dcaaa3f4d",
+      "startedAt": "2026-11-18T13:41:53.412Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00023801400000000002,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 5667,
+        "outputTokens": 800
+      },
+      "finishedAt": "2026-11-18T13:41:53.515Z"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction--repeat-1/1",
+      "requestSha256": "c098a90ea523fd309ae0515bf4e2afdf62056080b6a1698c13e703459540b1d7",
+      "startedAt": "2026-11-18T13:41:53.600Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00024801,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 5905,
+        "outputTokens": 896
+      },
+      "finishedAt": "2026-11-18T13:41:53.718Z"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction--repeat-1/2",
+      "requestSha256": "9e9b525dbc9578321d4d8cd81a18bdcaca1b713cffcb45f15a1c7d4f0935041a",
+      "startedAt": "2026-11-18T13:41:53.767Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000246792,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 5876,
+        "outputTokens": 896
+      },
+      "finishedAt": "2026-11-18T13:41:53.897Z"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction--repeat-3/1",
+      "requestSha256": "0ab75662a551628e6870f7372d8776a22e0d62b905a4dd88a71beb12add400bf",
+      "startedAt": "2026-11-18T13:41:53.950Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000249564,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 5942,
+        "outputTokens": 896
+      },
+      "finishedAt": "2026-11-18T13:41:54.063Z"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction--repeat-3/2",
+      "requestSha256": "738ea62a59911b5107110022b4507414aee1733d5b77e40c6a22814308925125",
+      "startedAt": "2026-11-18T13:41:54.091Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00025284,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 6020,
+        "outputTokens": 896
+      },
+      "finishedAt": "2026-11-18T13:41:54.200Z"
+    },
+    {
+      "id": "openui-question-two-viable",
+      "requestSha256": "c69043d90ef208ec36550c930890ff03771c95d2687c3cdb483d155fbf0ab349",
+      "startedAt": "2026-11-18T13:41:54.226Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00016707600000000002,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 3978,
+        "outputTokens": 729
+      },
+      "finishedAt": "2026-11-18T13:41:54.477Z"
+    },
+    {
+      "id": "openui-simulation-break-even",
+      "requestSha256": "3a64e9f2ad67ceabcd17a857ea651fc82ef0ab115cad84497f510ff14aefc42c",
+      "startedAt": "2026-11-18T13:41:54.481Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00016770600000000002,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 3993,
+        "outputTokens": 730
+      },
+      "finishedAt": "2026-11-18T13:41:54.596Z"
+    },
+    {
+      "id": "interaction-mitosis-order",
+      "requestSha256": "b0d5a6eca7527333a53660eb029c7dfcbbe60d244f477204dd7f304340b0cb15",
+      "startedAt": "2026-11-18T13:41:54.601Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00016325400000000002,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 3887,
+        "outputTokens": 729
+      },
+      "finishedAt": "2026-11-18T13:41:54.702Z"
+    },
+    {
+      "id": "interaction-moonrise",
+      "requestSha256": "6acf457fb099638e53c89a4cd58295b144ff5bbed63fbb1a87a651de95452ddb",
+      "startedAt": "2026-11-18T13:41:54.704Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000163632,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 3896,
+        "outputTokens": 730
+      },
+      "finishedAt": "2026-11-18T13:41:54.843Z"
+    },
+    {
+      "id": "direct-derivative-help",
+      "requestSha256": "f706ce4b610ce7e18bb9f152dfdca8228010ebc75621e903bb580c5c25dcbdcd",
+      "startedAt": "2026-11-18T13:41:54.845Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000165438,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 3939,
+        "outputTokens": 730
+      },
+      "finishedAt": "2026-11-18T13:41:54.969Z"
+    },
+    {
+      "id": "worked-equation-negative",
+      "requestSha256": "cd15d48e6c479dde8722eed1e558ef8b20ef5d0191b2208b0ca197d789e68c52",
+      "startedAt": "2026-11-18T13:41:54.972Z",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000167664,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 3992,
+        "outputTokens": 729
+      },
+      "finishedAt": "2026-11-18T13:41:55.086Z"
+    }
+  ]
+}

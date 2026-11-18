@@ -1,0 +1,1563 @@
+{
+  "schemaVersion": 1,
+  "policy": "keating-teaching-policy/v2.1",
+  "judges": {
+    "jev": "jev-1.14.0",
+    "gemini": "gemini-decision-1"
+  },
+  "fresh": [
+    {
+      "tutor": "MiniMax-M2.7-highspeed",
+      "caseId": "spinner",
+      "prompt": "A blue spinner landed on the same wedge three times. Let me predict the next spin before you explain what I should expect.",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "question-group"
+        ]
+      },
+      "rubric": "The released response contains a valid Question or grouped Question that lets the learner predict the next spin before receiving the answer. It may invite reasoning. Giving away the prediction, or only asking in prose, fails this case.",
+      "jev": {
+        "source": "../policy-holdout/MiniMax-M2.7-highspeed--spinner.json",
+        "decisionModel": "jev-1.14.0",
+        "offered": [
+          "question",
+          "simulation"
+        ],
+        "action": "create",
+        "guidanceDelivered": true,
+        "compiled": [
+          "question-group"
+        ],
+        "selected": [
+          "question-group"
+        ],
+        "rendered": null,
+        "reply": "released",
+        "eligibility": "released-content",
+        "completedCandidates": 1,
+        "selectedAttempt": 1,
+        "opportunityMatch": true,
+        "opportunityMatchOnCompleted": true,
+        "followedOffer": true,
+        "fit": true,
+        "note": "A learner can predict before seeing an explanation, in the actual Question with preset choices and a write-in answer. The tutor changes the observation from the same wedge to the colour blue. The four numerical choices are underdetermined because the spinner layout is unspecified. A write-in response can explain that ambiguity. The release omits the sentence that followed the checkpoint in the submitted candidate.",
+        "outsideWords": 26,
+        "nativePageRequested": false,
+        "selectedText": "Before I explain anything, let's lock in your prediction — this is exactly the kind of thing your gut gets better at when you commit first.\n\n```openui lifecycle=ephemeral id=spinner-prediction\n\nroot = LearningSurface([predict], \"Your prediction first\", \"Commit to an answer before the explanation arrives.\", \"ephemeral\")\npredict = Question([\n  { header: \"Next spin\", question: \"A spinner is divided into equal wedges, and one colour (blue) covers some of them. The spinner just landed on a blue wedge three times in a row. What's the chance the next spin is blue?\", type: \"choice\", choices: [\"1 in 3\", \"1 in 4\", \"1 in 6\", \"1 in 8\"], allowText: true, hint: \"Write your own answer if the spinner's wedge count is something else — include how many wedges you think there are, and whether the last three spins change anything.\" }\n], \"ephemeral\", \"Probability and independence\", \"Pick or write your prediction, then say why.\")\n```",
+        "selectedOutsideText": "Before I explain anything, let's lock in your prediction — this is exactly the kind of thing your gut gets better at when you commit first.",
+        "nodes": [
+          {
+            "type": "question-group",
+            "id": "predict",
+            "topic": "Probability and independence",
+            "intro": "Pick or write your prediction, then say why.",
+            "questions": [
+              {
+                "id": "predict-question-1",
+                "prompt": "A spinner is divided into equal wedges, and one colour (blue) covers some of them. The spinner just landed on a blue wedge three times in a row. What's the chance the next spin is blue?",
+                "kind": "choice",
+                "header": "Next spin",
+                "choices": [
+                  {
+                    "id": "predict-question-1-choice-1",
+                    "label": "1 in 3"
+                  },
+                  {
+                    "id": "predict-question-1-choice-2",
+                    "label": "1 in 4"
+                  },
+                  {
+                    "id": "predict-question-1-choice-3",
+                    "label": "1 in 6"
+                  },
+                  {
+                    "id": "predict-question-1-choice-4",
+                    "label": "1 in 8"
+                  }
+                ],
+                "hint": "Write your own answer if the spinner's wedge count is something else — include how many wedges you think there are, and whether the last three spins change anything.",
+                "allowText": true
+              }
+            ]
+          }
+        ],
+        "simulationSamples": [],
+        "reviewIssues": [],
+        "directDrafts": []
+      },
+      "gemini": {
+        "source": "./turn-receipts/MiniMax-M2.7-highspeed--spinner.json",
+        "decisionModel": "gemini-decision-1",
+        "offered": [
+          "question"
+        ],
+        "action": "create",
+        "guidanceDelivered": true,
+        "compiled": [
+          "question-group"
+        ],
+        "selected": [
+          "question-group"
+        ],
+        "rendered": null,
+        "reply": "released",
+        "eligibility": "released-content",
+        "completedCandidates": 1,
+        "selectedAttempt": 2,
+        "opportunityMatch": true,
+        "opportunityMatchOnCompleted": true,
+        "followedOffer": true,
+        "fit": true,
+        "note": "The grouped Question gives the learner a choice or write-in prediction before the explanation. A second prompt asks about spinner geometry without revealing the result. The tutor changes 'same wedge' to 'same blue wedge' and invites the learner to guess the missing counts. Fourteen outside words precede the checkpoint.",
+        "outsideWords": 14,
+        "nativePageRequested": false,
+        "selectedText": "Good — prediction first. Before I explain anything, here's what I want to know.\n\n```openui lifecycle=ephemeral id=spinner-prediction\n\nroot = LearningSurface([predict], \"Before I explain\", \"Give me your prediction and your reasoning. I won't judge either until you commit.\", \"ephemeral\")\npredict = Question([\n  { header: \"Prediction\", question: \"The blue spinner has landed on the same blue wedge three times in a row. What do you predict for the next spin?\", type: \"choice\", choices: [\"Blue again\", \"Not blue\", \"Not sure — I'd want to see the spinner first\"], allowText: true, hint: \"Pick a side, and add your reasoning in the text box.\" },\n  { header: \"The setup\", question: \"Roughly how many wedges does the spinner have, and how many of them are blue?\", type: \"text\", hint: \"For example: '6 wedges, 2 blue'. A guess is fine.\" }\n], \"ephemeral\", \"Spinner prediction\", \"Two quick prompts, then I'll explain what the evidence does and doesn't tell you.\")\n```",
+        "selectedOutsideText": "Good — prediction first. Before I explain anything, here's what I want to know.",
+        "nodes": [
+          {
+            "type": "question-group",
+            "id": "predict",
+            "topic": "Spinner prediction",
+            "intro": "Two quick prompts, then I'll explain what the evidence does and doesn't tell you.",
+            "questions": [
+              {
+                "id": "predict-question-1",
+                "prompt": "The blue spinner has landed on the same blue wedge three times in a row. What do you predict for the next spin?",
+                "kind": "choice",
+                "header": "Prediction",
+                "choices": [
+                  {
+                    "id": "predict-question-1-choice-1",
+                    "label": "Blue again"
+                  },
+                  {
+                    "id": "predict-question-1-choice-2",
+                    "label": "Not blue"
+                  },
+                  {
+                    "id": "predict-question-1-choice-3",
+                    "label": "Not sure — I'd want to see the spinner first"
+                  }
+                ],
+                "hint": "Pick a side, and add your reasoning in the text box.",
+                "allowText": true
+              },
+              {
+                "id": "predict-question-2",
+                "prompt": "Roughly how many wedges does the spinner have, and how many of them are blue?",
+                "kind": "text",
+                "header": "The setup",
+                "hint": "For example: '6 wedges, 2 blue'. A guess is fine."
+              }
+            ]
+          }
+        ],
+        "simulationSamples": [],
+        "reviewIssues": [
+          "direct_help_withheld",
+          "explanation_missing"
+        ],
+        "directDrafts": []
+      }
+    },
+    {
+      "tutor": "MiniMax-M2.7-highspeed",
+      "caseId": "bus",
+      "prompt": "I want to change the hourly bus frequency and watch what happens to the seats available per hour. Please skip the quiz for now.",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "rubric": "The released response contains a valid Simulation with an adjustable bus-frequency input and an observable seats-per-hour readout that changes correctly with frequency and an explicit or recoverable vehicle capacity. No assessed checkpoint or quiz accompanies it.",
+      "jev": {
+        "source": "../policy-holdout/segment-two--MiniMax-M2.7-highspeed--bus.json",
+        "decisionModel": "jev-1.14.0",
+        "offered": [
+          "concept-map",
+          "simulation"
+        ],
+        "action": "create",
+        "guidanceDelivered": true,
+        "compiled": [
+          "simulation"
+        ],
+        "selected": [
+          "simulation"
+        ],
+        "rendered": null,
+        "reply": "released",
+        "eligibility": "released-content",
+        "completedCandidates": 1,
+        "selectedAttempt": 1,
+        "opportunityMatch": true,
+        "opportunityMatchOnCompleted": true,
+        "followedOffer": true,
+        "fit": true,
+        "note": "A valid Simulation exposes buses per hour and seats per bus. At the authored defaults, changing 8 buses/hour to 16 changes offered capacity from 320 to 640 and spare seats from −44 to 212 using the declared demand model. The brief invites a prediction; it never asks the learner to submit one for assessment. The extra demand model and surrounding prose make this more elaborate than the learner requested.",
+        "outsideWords": 98,
+        "nativePageRequested": false,
+        "selectedText": "Nice — that's a hands-on way to see it. Here's a live model you can drive yourself: change buses per hour (and the other assumptions) and watch seats available per hour update instantly.\n\n```openui lifecycle=ephemeral id=bus-frequency-seats\nroot = LearningSurface([model], \"Bus frequency → seats available per hour\", \"Move the sliders; the seats-available number updates as you go.\", \"ephemeral\")\nmodel = Simulation(\"bus-seats-model\", \"Hourly seats vs. hourly demand\", [\n  { id: \"busesPerHour\", label: \"Buses per hour\", unit: \"buses\", min: 1, max: 30, step: 1, value: 8 },\n  { id: \"seatsPerBus\", label: \"Seats per bus\", unit: \"seats\", min: 20, max: 80, step: 2, value: 40 },\n  { id: \"baseRiders\", label: \"Riders who ride regardless of frequency\", unit: \"riders\", min: 0, max: 600, step: 10, value: 300 },\n  { id: \"extraRidersPerBus\", label: \"Extra riders attracted per added bus\", unit: \"riders\", min: 0, max: 40, step: 1, value: 8 }\n], [\n  { id: \"capacity\", label: \"Seats offered per hour\", unit: \"seats\", expr: \"busesPerHour * seatsPerBus\", precision: 0 },\n  { id: \"riders\", label: \"Riders per hour\", unit: \"riders\", expr: \"baseRiders + extraRidersPerBus * busesPerHour\", precision: 0 },\n  { id: \"available\", label: \"Seats available per hour\", unit: \"seats\", expr: \"busesPerHour * seatsPerBus - baseRiders - extraRidersPerBus * busesPerHour\", precision: 0, emphasis: true },\n  { id: \"loadFactor\", label: \"Load factor\", unit: \"%\", expr: \"(baseRiders + extraRidersPerBus * busesPerHour) / (busesPerHour * seatsPerBus) * 100\", precision: 1 }\n], \"ephemeral\", \"First predict: if you double buses per hour from 8 to 16, will seats available per hour double too? Then move the slider and compare. Note the 'extra riders attracted per added bus' slider — if riders grow as fast as capacity, spare seats can vanish even as service improves. A negative 'seats available' means a shortfall (turn-aways).\")\n```\n\nA couple of things worth trying once you've played with it: set *extra riders per added bus* to a high value to see how demand can cancel out a service increase, and then set it to 0 to see the pure capacity effect.\n\nTell me what you find and where the number stops improving — that point is usually where the interesting policy conversation lives.",
+        "selectedOutsideText": "Nice — that's a hands-on way to see it. Here's a live model you can drive yourself: change buses per hour (and the other assumptions) and watch seats available per hour update instantly.\n\n\n\nA couple of things worth trying once you've played with it: set *extra riders per added bus* to a high value to see how demand can cancel out a service increase, and then set it to 0 to see the pure capacity effect.\n\nTell me what you find and where the number stops improving — that point is usually where the interesting policy conversation lives.",
+        "nodes": [
+          {
+            "type": "simulation",
+            "id": "bus-seats-model",
+            "title": "Hourly seats vs. hourly demand",
+            "brief": "First predict: if you double buses per hour from 8 to 16, will seats available per hour double too? Then move the slider and compare. Note the 'extra riders attracted per added bus' slider — if riders grow as fast as capacity, spare seats can vanish even as service improves. A negative 'seats available' means a shortfall (turn-aways).",
+            "parameters": [
+              {
+                "id": "busesPerHour",
+                "label": "Buses per hour",
+                "unit": "buses",
+                "min": 1,
+                "max": 30,
+                "step": 1,
+                "value": 8
+              },
+              {
+                "id": "seatsPerBus",
+                "label": "Seats per bus",
+                "unit": "seats",
+                "min": 20,
+                "max": 80,
+                "step": 2,
+                "value": 40
+              },
+              {
+                "id": "baseRiders",
+                "label": "Riders who ride regardless of frequency",
+                "unit": "riders",
+                "min": 0,
+                "max": 600,
+                "step": 10,
+                "value": 300
+              },
+              {
+                "id": "extraRidersPerBus",
+                "label": "Extra riders attracted per added bus",
+                "unit": "riders",
+                "min": 0,
+                "max": 40,
+                "step": 1,
+                "value": 8
+              }
+            ],
+            "readouts": [
+              {
+                "id": "capacity",
+                "label": "Seats offered per hour",
+                "unit": "seats",
+                "expr": "busesPerHour * seatsPerBus",
+                "precision": 0
+              },
+              {
+                "id": "riders",
+                "label": "Riders per hour",
+                "unit": "riders",
+                "expr": "baseRiders + extraRidersPerBus * busesPerHour",
+                "precision": 0
+              },
+              {
+                "id": "available",
+                "label": "Seats available per hour",
+                "unit": "seats",
+                "expr": "busesPerHour * seatsPerBus - baseRiders - extraRidersPerBus * busesPerHour",
+                "precision": 0,
+                "emphasis": true
+              },
+              {
+                "id": "loadFactor",
+                "label": "Load factor",
+                "unit": "%",
+                "expr": "(baseRiders + extraRidersPerBus * busesPerHour) / (busesPerHour * seatsPerBus) * 100",
+                "precision": 1
+              }
+            ]
+          }
+        ],
+        "simulationSamples": [
+          {
+            "id": "bus-seats-model",
+            "samples": [
+              {
+                "inputs": {
+                  "busesPerHour": 8,
+                  "seatsPerBus": 40,
+                  "baseRiders": 300,
+                  "extraRidersPerBus": 8
+                },
+                "readouts": {
+                  "capacity": 320,
+                  "riders": 364,
+                  "available": -44,
+                  "loadFactor": 113.75
+                }
+              },
+              {
+                "inputs": {
+                  "busesPerHour": 16,
+                  "seatsPerBus": 40,
+                  "baseRiders": 300,
+                  "extraRidersPerBus": 8
+                },
+                "readouts": {
+                  "capacity": 640,
+                  "riders": 428,
+                  "available": 212,
+                  "loadFactor": 66.875
+                }
+              }
+            ]
+          }
+        ],
+        "reviewIssues": [
+          "checkpoint_not_interactive",
+          "checkpoint_repeated"
+        ],
+        "directDrafts": []
+      },
+      "gemini": {
+        "source": "./turn-receipts/MiniMax-M2.7-highspeed--bus.json",
+        "decisionModel": "gemini-decision-1",
+        "offered": [
+          "concept-map",
+          "simulation"
+        ],
+        "action": "create",
+        "guidanceDelivered": true,
+        "compiled": [
+          "simulation"
+        ],
+        "selected": [
+          "simulation"
+        ],
+        "rendered": null,
+        "reply": "released",
+        "eligibility": "released-content",
+        "completedCandidates": 2,
+        "selectedAttempt": 2,
+        "opportunityMatch": true,
+        "opportunityMatchOnCompleted": true,
+        "followedOffer": true,
+        "fit": true,
+        "note": "A valid Simulation varies frequency, bus capacity and load factor. At 40 seats per bus and 70% load, moving from the default 6 to 12 buses/hour raises offered capacity from 240 to 480 and free seats from 72 to 144. The prediction is optional exploration within the Simulation. There is no assessed checkpoint. Ninety-seven outside words add substantial prose, and the closing 'tradeoff' describes two names for capacity.",
+        "outsideWords": 97,
+        "nativePageRequested": false,
+        "selectedText": "Here's a live model you can drive yourself — move the buses-per-hour slider and the seat numbers recompute instantly.\n\n```openui lifecycle=workspace id=bus-frequency-seats\nroot = LearningSurface([sim], \"Bus frequency and seats per hour\", \"Change the hourly frequency and watch seat supply.\", \"workspace\")\nsim = Simulation(\"bus-sim\", \"Hourly bus frequency vs. seats per hour\", [\n  { id: \"freq\", label: \"Buses per hour\", unit: \"buses\", min: 1, max: 30, step: 1, value: 6 },\n  { id: \"seats\", label: \"Seats per bus\", unit: \"seats\", min: 10, max: 60, step: 2, value: 40 },\n  { id: \"load\", label: \"Average load factor\", unit: \"%\", min: 0, max: 100, step: 5, value: 70 }\n], [\n  { id: \"capacity\", label: \"Seats offered per hour\", unit: \"seats\", expr: \"freq * seats\", precision: 0 },\n  { id: \"occupied\", label: \"Occupied seats per hour\", unit: \"seats\", expr: \"freq * seats * load / 100\", precision: 0 },\n  { id: \"available\", label: \"Seats available per hour (unoccupied)\", unit: \"seats\", expr: \"freq * seats * (100 - load) / 100\", precision: 0, emphasis: true }\n], \"workspace\", \"Predict first: if you double the buses per hour, what do you expect the emphasized readout (seats available per hour) to do — and why? Then move the frequency slider and compare. Note there are two readings of 'seats available': seats offered per hour (capacity) and seats actually free once the load factor is applied. Watch both, and try raising the load factor while you hold frequency steady to see what happens to free seats.\")\n```\n\nTwo things worth trying once it's live: raise the load factor at a fixed frequency (free seats shrink without any schedule change), and then restore the load and push frequency up (seats offered rise, but so does total capacity — which is the tradeoff behind frequency decisions). Press **Share what I found** when you've got settings you want me to look at, and tell me what you predicted first so I can check the model against your reasoning.",
+        "selectedOutsideText": "Here's a live model you can drive yourself — move the buses-per-hour slider and the seat numbers recompute instantly.\n\n\n\nTwo things worth trying once it's live: raise the load factor at a fixed frequency (free seats shrink without any schedule change), and then restore the load and push frequency up (seats offered rise, but so does total capacity — which is the tradeoff behind frequency decisions). Press **Share what I found** when you've got settings you want me to look at, and tell me what you predicted first so I can check the model against your reasoning.",
+        "nodes": [
+          {
+            "type": "simulation",
+            "id": "bus-sim",
+            "title": "Hourly bus frequency vs. seats per hour",
+            "brief": "Predict first: if you double the buses per hour, what do you expect the emphasized readout (seats available per hour) to do — and why? Then move the frequency slider and compare. Note there are two readings of 'seats available': seats offered per hour (capacity) and seats actually free once the load factor is applied. Watch both, and try raising the load factor while you hold frequency steady to see what happens to free seats.",
+            "parameters": [
+              {
+                "id": "freq",
+                "label": "Buses per hour",
+                "unit": "buses",
+                "min": 1,
+                "max": 30,
+                "step": 1,
+                "value": 6
+              },
+              {
+                "id": "seats",
+                "label": "Seats per bus",
+                "unit": "seats",
+                "min": 10,
+                "max": 60,
+                "step": 2,
+                "value": 40
+              },
+              {
+                "id": "load",
+                "label": "Average load factor",
+                "unit": "%",
+                "min": 0,
+                "max": 100,
+                "step": 5,
+                "value": 70
+              }
+            ],
+            "readouts": [
+              {
+                "id": "capacity",
+                "label": "Seats offered per hour",
+                "unit": "seats",
+                "expr": "freq * seats",
+                "precision": 0
+              },
+              {
+                "id": "occupied",
+                "label": "Occupied seats per hour",
+                "unit": "seats",
+                "expr": "freq * seats * load / 100",
+                "precision": 0
+              },
+              {
+                "id": "available",
+                "label": "Seats available per hour (unoccupied)",
+                "unit": "seats",
+                "expr": "freq * seats * (100 - load) / 100",
+                "precision": 0,
+                "emphasis": true
+              }
+            ]
+          }
+        ],
+        "simulationSamples": [
+          {
+            "id": "bus-sim",
+            "samples": [
+              {
+                "inputs": {
+                  "freq": 6,
+                  "seats": 40,
+                  "load": 70
+                },
+                "readouts": {
+                  "capacity": 240,
+                  "occupied": 168,
+                  "available": 72
+                }
+              },
+              {
+                "inputs": {
+                  "freq": 12,
+                  "seats": 40,
+                  "load": 70
+                },
+                "readouts": {
+                  "capacity": 480,
+                  "occupied": 336,
+                  "available": 144
+                }
+              }
+            ]
+          }
+        ],
+        "reviewIssues": [
+          "activity_without_plan",
+          "checkpoint_last_node",
+          "checkpoint_repeated",
+          "one_activity",
+          "one_checkpoint",
+          "openui_valid",
+          "stop_after_checkpoint"
+        ],
+        "directDrafts": []
+      }
+    },
+    {
+      "tutor": "MiniMax-M2.7-highspeed",
+      "caseId": "perimeter",
+      "prompt": "In one short sentence, what is the perimeter of a square with side length four? Just the answer, please.",
+      "cue": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "rubric": "The released response gives the correct perimeter, 16 (units optional), in at most one short sentence (at most 15 outside words). It contains no interface, exercise or follow-up question. A standalone answer is sufficient.",
+      "jev": {
+        "source": "../policy-holdout/segment-two--MiniMax-M2.7-highspeed--perimeter.json",
+        "decisionModel": "jev-1.14.0",
+        "offered": [],
+        "action": "none",
+        "guidanceDelivered": true,
+        "compiled": [],
+        "selected": [],
+        "rendered": null,
+        "reply": "released",
+        "eligibility": "released-content",
+        "completedCandidates": 1,
+        "selectedAttempt": 1,
+        "opportunityMatch": null,
+        "opportunityMatchOnCompleted": null,
+        "followedOffer": null,
+        "fit": true,
+        "note": "The complete selected answer is “16.” It is one word, has the correct perimeter, and contains no interface, follow-up question or exercise.",
+        "outsideWords": 1,
+        "nativePageRequested": false,
+        "selectedText": "16.",
+        "selectedOutsideText": "16.",
+        "nodes": [],
+        "simulationSamples": [],
+        "reviewIssues": [],
+        "directDrafts": []
+      },
+      "gemini": {
+        "source": "./turn-receipts/MiniMax-M2.7-highspeed--perimeter.json",
+        "decisionModel": "gemini-decision-1",
+        "offered": [],
+        "action": "none",
+        "guidanceDelivered": true,
+        "compiled": [],
+        "selected": [],
+        "rendered": null,
+        "reply": "withheld",
+        "eligibility": "review-withheld",
+        "completedCandidates": 3,
+        "selectedAttempt": null,
+        "opportunityMatch": null,
+        "opportunityMatchOnCompleted": null,
+        "followedOffer": null,
+        "fit": false,
+        "note": "The tutor supplied the correct direct answer in every completed candidate. The planner requested no activity. The decision model marked giving the answer as checkpoint leakage and the gate withheld the turn.",
+        "outsideWords": null,
+        "nativePageRequested": false,
+        "selectedText": null,
+        "selectedOutsideText": null,
+        "nodes": [],
+        "simulationSamples": [],
+        "reviewIssues": [
+          "checkpoint_answer_leaked"
+        ],
+        "directDrafts": [
+          {
+            "attempt": 1,
+            "text": "16",
+            "findings": [
+              {
+                "id": "checkpoint_answer_leaked",
+                "status": "fail",
+                "probability": 0.6753913515153026
+              }
+            ]
+          },
+          {
+            "attempt": 2,
+            "text": "16",
+            "findings": [
+              {
+                "id": "checkpoint_answer_leaked",
+                "status": "fail",
+                "probability": 0.6753913515153026
+              }
+            ]
+          },
+          {
+            "attempt": 3,
+            "text": "16 units.",
+            "findings": [
+              {
+                "id": "checkpoint_answer_leaked",
+                "status": "fail",
+                "probability": 0.7914999451611975
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "tutor": "gemini-3.1-flash-lite",
+      "caseId": "spinner",
+      "prompt": "A blue spinner landed on the same wedge three times. Let me predict the next spin before you explain what I should expect.",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "question",
+          "question-group"
+        ]
+      },
+      "rubric": "The released response contains a valid Question or grouped Question that lets the learner predict the next spin before receiving the answer. It may invite reasoning. Giving away the prediction, or only asking in prose, fails this case.",
+      "jev": {
+        "source": "../policy-holdout/gemini-3.1-flash-lite--spinner.json",
+        "decisionModel": "jev-1.14.0",
+        "offered": [
+          "question",
+          "simulation"
+        ],
+        "action": "create",
+        "guidanceDelivered": null,
+        "compiled": null,
+        "selected": [],
+        "rendered": null,
+        "reply": "withheld",
+        "eligibility": "provider-failure",
+        "completedCandidates": 0,
+        "selectedAttempt": null,
+        "opportunityMatch": false,
+        "opportunityMatchOnCompleted": null,
+        "followedOffer": null,
+        "fit": null,
+        "note": "The tutor endpoint returned 503. No complete candidate or learner-fit rating is available. The gate issued a withheld notice.",
+        "outsideWords": null,
+        "nativePageRequested": null,
+        "selectedText": null,
+        "selectedOutsideText": null,
+        "nodes": [],
+        "simulationSamples": [],
+        "reviewIssues": [],
+        "directDrafts": []
+      },
+      "gemini": {
+        "source": "./turn-receipts/gemini-3.1-flash-lite--spinner.json",
+        "decisionModel": "gemini-decision-1",
+        "offered": [
+          "question"
+        ],
+        "action": "create",
+        "guidanceDelivered": null,
+        "compiled": null,
+        "selected": [],
+        "rendered": null,
+        "reply": "withheld",
+        "eligibility": "provider-failure",
+        "completedCandidates": 0,
+        "selectedAttempt": null,
+        "opportunityMatch": false,
+        "opportunityMatchOnCompleted": null,
+        "followedOffer": null,
+        "fit": null,
+        "note": "The tutor endpoint returned 503 before a complete candidate was available. The gate issued a withheld notice. Learner fit is unknown.",
+        "outsideWords": null,
+        "nativePageRequested": null,
+        "selectedText": null,
+        "selectedOutsideText": null,
+        "nodes": [],
+        "simulationSamples": [],
+        "reviewIssues": [],
+        "directDrafts": []
+      }
+    },
+    {
+      "tutor": "gemini-3.1-flash-lite",
+      "caseId": "bus",
+      "prompt": "I want to change the hourly bus frequency and watch what happens to the seats available per hour. Please skip the quiz for now.",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "rubric": "The released response contains a valid Simulation with an adjustable bus-frequency input and an observable seats-per-hour readout that changes correctly with frequency and an explicit or recoverable vehicle capacity. No assessed checkpoint or quiz accompanies it.",
+      "jev": {
+        "source": "../policy-holdout/segment-two--gemini-3.1-flash-lite--bus.json",
+        "decisionModel": "jev-1.14.0",
+        "offered": [
+          "concept-map",
+          "simulation"
+        ],
+        "action": "create",
+        "guidanceDelivered": true,
+        "compiled": [],
+        "selected": [],
+        "rendered": null,
+        "reply": "released",
+        "eligibility": "released-native-proposal",
+        "completedCandidates": 1,
+        "selectedAttempt": 1,
+        "opportunityMatch": false,
+        "opportunityMatchOnCompleted": false,
+        "followedOffer": false,
+        "fit": false,
+        "note": "Gemini proposed the native interactive_page tool. The gate released that proposal with zero text and zero compiled OpenUI nodes. The study never executes native tools, so it cannot establish which page a later tool round might have created.",
+        "outsideWords": null,
+        "nativePageRequested": true,
+        "selectedText": "",
+        "selectedOutsideText": "",
+        "nodes": [],
+        "simulationSamples": [],
+        "reviewIssues": [],
+        "directDrafts": []
+      },
+      "gemini": {
+        "source": "./turn-receipts/gemini-3.1-flash-lite--bus.json",
+        "decisionModel": "gemini-decision-1",
+        "offered": [
+          "concept-map",
+          "simulation"
+        ],
+        "action": "create",
+        "guidanceDelivered": true,
+        "compiled": [],
+        "selected": [],
+        "rendered": null,
+        "reply": "released",
+        "eligibility": "released-native-proposal",
+        "completedCandidates": 1,
+        "selectedAttempt": 1,
+        "opportunityMatch": false,
+        "opportunityMatchOnCompleted": false,
+        "followedOffer": false,
+        "fit": false,
+        "note": "The public response is an interactive_page tool proposal with zero text and no compiled Simulation. The study never executes native tools, so a subsequent page and its behavior are unobserved.",
+        "outsideWords": null,
+        "nativePageRequested": true,
+        "selectedText": "",
+        "selectedOutsideText": "",
+        "nodes": [],
+        "simulationSamples": [],
+        "reviewIssues": [],
+        "directDrafts": []
+      }
+    },
+    {
+      "tutor": "gemini-3.1-flash-lite",
+      "caseId": "perimeter",
+      "prompt": "In one short sentence, what is the perimeter of a square with side length four? Just the answer, please.",
+      "cue": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "rubric": "The released response gives the correct perimeter, 16 (units optional), in at most one short sentence (at most 15 outside words). It contains no interface, exercise or follow-up question. A standalone answer is sufficient.",
+      "jev": {
+        "source": "../policy-holdout/segment-two--gemini-3.1-flash-lite--perimeter.json",
+        "decisionModel": "jev-1.14.0",
+        "offered": [],
+        "action": "none",
+        "guidanceDelivered": null,
+        "compiled": null,
+        "selected": [],
+        "rendered": null,
+        "reply": "withheld",
+        "eligibility": "provider-failure",
+        "completedCandidates": 0,
+        "selectedAttempt": null,
+        "opportunityMatch": null,
+        "opportunityMatchOnCompleted": null,
+        "followedOffer": null,
+        "fit": null,
+        "note": "The tutor endpoint returned 503. No complete candidate or learner-fit rating is available. The gate issued a withheld notice.",
+        "outsideWords": null,
+        "nativePageRequested": null,
+        "selectedText": null,
+        "selectedOutsideText": null,
+        "nodes": [],
+        "simulationSamples": [],
+        "reviewIssues": [],
+        "directDrafts": []
+      },
+      "gemini": {
+        "source": "./turn-receipts/gemini-3.1-flash-lite--perimeter.json",
+        "decisionModel": "gemini-decision-1",
+        "offered": [],
+        "action": "none",
+        "guidanceDelivered": true,
+        "compiled": [],
+        "selected": [],
+        "rendered": null,
+        "reply": "withheld",
+        "eligibility": "provider-failure",
+        "completedCandidates": 2,
+        "selectedAttempt": null,
+        "opportunityMatch": null,
+        "opportunityMatchOnCompleted": null,
+        "followedOffer": null,
+        "fit": null,
+        "note": "The gate reviewed 2 completed candidates before a later tutor request returned 503. The earlier candidates answered correctly and were blocked for checkpoint leakage. The gate issued a withheld notice. Final learner fit is unknown under the interruption rubric.",
+        "outsideWords": null,
+        "nativePageRequested": null,
+        "selectedText": null,
+        "selectedOutsideText": null,
+        "nodes": [],
+        "simulationSamples": [],
+        "reviewIssues": [
+          "checkpoint_answer_leaked"
+        ],
+        "directDrafts": [
+          {
+            "attempt": 1,
+            "text": "The perimeter of a square with side length four is 16.",
+            "findings": [
+              {
+                "id": "checkpoint_answer_leaked",
+                "status": "fail",
+                "probability": 0.6609923818364991
+              }
+            ]
+          },
+          {
+            "attempt": 2,
+            "text": "The perimeter of a square with side length four is 16.",
+            "findings": [
+              {
+                "id": "checkpoint_answer_leaked",
+                "status": "fail",
+                "probability": 0.6609923818364991
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "matched": {
+    "fit": {
+      "scheduled": 6,
+      "bothObserved": 4,
+      "bothPass": 2,
+      "bothFail": 1,
+      "jevOnlyPass": 1,
+      "geminiOnlyPass": 0,
+      "unknown": 2
+    },
+    "implicitInterfaceOnCompleted": {
+      "scheduled": 4,
+      "bothObserved": 3,
+      "bothPass": 2,
+      "bothFail": 1,
+      "jevOnlyPass": 0,
+      "geminiOnlyPass": 0,
+      "unknown": 1
+    },
+    "directTextFit": {
+      "scheduled": 2,
+      "bothObserved": 1,
+      "bothPass": 0,
+      "bothFail": 0,
+      "jevOnlyPass": 1,
+      "geminiOnlyPass": 0,
+      "unknown": 1
+    }
+  },
+  "frozen": {
+    "version": 1,
+    "policy": "keating-teaching-policy/v2.1",
+    "models": {
+      "jev": "jev-1.14.0",
+      "gemini": "gemini-decision-1"
+    },
+    "manifestFileSha256": "edf4d646df846810090b8f2961c75ae027e0bc2c87417968b2970299c5941eb0",
+    "googleFileSha256": "babdfaad37bba4252ead1e841ac08f11ffd09054042f2cafdeb8078844da863c",
+    "planning": {
+      "scheduled": 6,
+      "measured": 6,
+      "unavailable": 0,
+      "notObserved": 0,
+      "assessmentPreference": {
+        "jev": {
+          "numerator": 6,
+          "denominator": 6,
+          "unknown": 0,
+          "rate": 1
+        },
+        "gemini": {
+          "numerator": 5,
+          "denominator": 6,
+          "unknown": 0,
+          "rate": 0.8333333333333334
+        },
+        "paired": {
+          "measured": 6,
+          "unknown": 0,
+          "both": 5,
+          "jevOnly": 1,
+          "geminiOnly": 0,
+          "neither": 0
+        }
+      },
+      "offerFit": {
+        "jev": {
+          "numerator": 6,
+          "denominator": 6,
+          "unknown": 0,
+          "rate": 1
+        },
+        "gemini": {
+          "numerator": 5,
+          "denominator": 6,
+          "unknown": 0,
+          "rate": 0.8333333333333334
+        },
+        "paired": {
+          "measured": 6,
+          "unknown": 0,
+          "both": 5,
+          "jevOnly": 1,
+          "geminiOnly": 0,
+          "neither": 0
+        }
+      },
+      "exactPreferenceAgreement": {
+        "numerator": 5,
+        "denominator": 6,
+        "unknown": 0,
+        "rate": 0.8333333333333334
+      },
+      "actionAndOfferedTypesAgreement": {
+        "numerator": 3,
+        "denominator": 6,
+        "unknown": 0,
+        "rate": 0.5
+      }
+    },
+    "review": {
+      "scheduled": 9,
+      "measured": 9,
+      "unavailable": 0,
+      "notObserved": 0,
+      "released": {
+        "jev": {
+          "numerator": 6,
+          "denominator": 9,
+          "unknown": 0,
+          "rate": 0.6666666666666666
+        },
+        "gemini": {
+          "numerator": 8,
+          "denominator": 9,
+          "unknown": 0,
+          "rate": 0.8888888888888888
+        },
+        "paired": {
+          "measured": 9,
+          "unknown": 0,
+          "both": 6,
+          "jevOnly": 0,
+          "geminiOnly": 2,
+          "neither": 1
+        }
+      },
+      "dispositionAgreement": {
+        "numerator": 7,
+        "denominator": 9,
+        "unknown": 0,
+        "rate": 0.7777777777777778
+      },
+      "sameBlockingRules": {
+        "numerator": 7,
+        "denominator": 9,
+        "unknown": 0,
+        "rate": 0.7777777777777778
+      }
+    },
+    "cases": [
+      {
+        "id": "pause-after-questioning",
+        "stage": "plan",
+        "requestSha256": "acf2cd3445a86e908757d349693d658645306dccabce508b2b0459495ea8bfbf",
+        "jevWireSha256": "0201c826a39ca8b515769b6aeef67ae3febb5851c83ba0a124efb31fe5e98927",
+        "expected": {
+          "declined": true,
+          "mode": "no-assessment"
+        },
+        "jev": {
+          "action": "none",
+          "offered": [],
+          "declined": true,
+          "offerMatches": true,
+          "decisionMatches": true
+        },
+        "gemini": {
+          "action": "none",
+          "offered": [],
+          "declined": true,
+          "offerMatches": true,
+          "decisionMatches": true
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/acf2cd3445a86e908757d349693d658645306dccabce508b2b0459495ea8bfbf.json",
+          "wireSha256": "a0f7bc377a4b5dd1ca2505e353ec4ec35ab01b30e987e571766fd2b7c6394718",
+          "responseSha256": "d151f7e231a728f60b446647422858643e4e0a498884c23acfa1d9b2fb356cb7",
+          "usage": {
+            "inputTokens": 4905,
+            "outputTokens": 0
+          }
+        },
+        "learner": "I have no idea. These questions are making this feel like pulling teeth. Please show one worked counter example first and explain what survives after the outer function returns. No more questions yet."
+      },
+      {
+        "id": "brief-explanation",
+        "stage": "plan",
+        "requestSha256": "a7ee1413b18ea6137bf29edfbdb0bd6c7776d9ab839cd1a44605f08491ecdc2c",
+        "jevWireSha256": "d406da5b7fe0da8d81510db672a634ad2d61398293f281909d9f0723bbf0f6af",
+        "expected": {
+          "declined": true,
+          "mode": "none"
+        },
+        "jev": {
+          "action": "none",
+          "offered": [],
+          "declined": true,
+          "offerMatches": true,
+          "decisionMatches": true
+        },
+        "gemini": {
+          "action": "none",
+          "offered": [],
+          "declined": true,
+          "offerMatches": true,
+          "decisionMatches": true
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/a7ee1413b18ea6137bf29edfbdb0bd6c7776d9ab839cd1a44605f08491ecdc2c.json",
+          "wireSha256": "4ddde71e927362108b79eeee3131eb29f818fe1996b71112ada65d7f9390b1b0",
+          "responseSha256": "05654662c0e5dfcf1ac30877be2cbf666be12f9c53e8fb9d9ca6f9b9441745db",
+          "usage": {
+            "inputTokens": 4772,
+            "outputTokens": 0
+          }
+        },
+        "learner": "In JavaScript, why does const tags = []; tags.push(\"red\") work? Please explain directly in two or three sentences. I do not want a quiz right now."
+      },
+      {
+        "id": "debug-without-quiz",
+        "stage": "plan",
+        "requestSha256": "347460a4e7591ba7b3067330215b0788857577f171c5b8d8b663cf3408d670a6",
+        "jevWireSha256": "b1c7853cd394a8519aefbbd061da85d307cfc0aeb5c6e7ee3559e7d3a9b08270",
+        "expected": {
+          "declined": true,
+          "mode": "no-assessment"
+        },
+        "jev": {
+          "action": "none",
+          "offered": [],
+          "declined": true,
+          "offerMatches": true,
+          "decisionMatches": true
+        },
+        "gemini": {
+          "action": "none",
+          "offered": [],
+          "declined": true,
+          "offerMatches": true,
+          "decisionMatches": true
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/347460a4e7591ba7b3067330215b0788857577f171c5b8d8b663cf3408d670a6.json",
+          "wireSha256": "0470eb5750b9368a1bf73245a2f2a7a2cced7150b72166156e2bf62dbf277c04",
+          "responseSha256": "763b6b8ff87126f2b6a21de5e241bb4daf208c7838459a8eb414e85990da740e",
+          "usage": {
+            "inputTokens": 5072,
+            "outputTokens": 0
+          }
+        },
+        "learner": "That makes sense. Do not edit code or make me a quiz. Explain why this new version still logs zero: let score = 0; function award() { score = 5; } console.log(score);"
+      },
+      {
+        "id": "simulation-without-test",
+        "stage": "plan",
+        "requestSha256": "cfa3995f36ef1cf11919cee4285026bc5a1abd63c4f372e43ae7a33685f30708",
+        "jevWireSha256": "accee95bc4c8bf2845f0b37ce90540ca892a896c7495b9acb6530935f93f4e5a",
+        "expected": {
+          "declined": true,
+          "mode": "visual-without-assessment",
+          "component": "Simulation"
+        },
+        "jev": {
+          "action": "create",
+          "offered": [
+            "Simulation"
+          ],
+          "declined": true,
+          "offerMatches": true,
+          "decisionMatches": true
+        },
+        "gemini": {
+          "action": "none",
+          "offered": [],
+          "declined": null,
+          "offerMatches": false,
+          "decisionMatches": false
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/cfa3995f36ef1cf11919cee4285026bc5a1abd63c4f372e43ae7a33685f30708.json",
+          "wireSha256": "8d6721dbf461cb83704794d4201c3f322b305654bd3c02f26b9c03568cf0b084",
+          "responseSha256": "0915c59844527ba2d7098eb2054c429198685321a926d75fe2f36059bc03fae1",
+          "usage": {
+            "inputTokens": 4806,
+            "outputTokens": 0
+          }
+        },
+        "learner": "Make a small interactive OpenUI simulation for this fictional club: membership costs 12 credits plus 3 credits for each class attended. Let me vary classes from 0 to 12 in steps of 1, starting at 2, and show the total credits. Keep it as a workspace artifact I can revisit. No more questions yet."
+      },
+      {
+        "id": "simulation-with-prediction",
+        "stage": "plan",
+        "requestSha256": "49a593a8cbd03234f998be756872565d19ccd6b93f54d5b56e95289cfc0ed817",
+        "jevWireSha256": "5c4372d63b422e908f6a127aa3ab38f14729b4419ad17f69faa4bf5916aba9b2",
+        "expected": {
+          "declined": false,
+          "mode": "includes",
+          "component": "Simulation"
+        },
+        "jev": {
+          "action": "create",
+          "offered": [
+            "Simulation"
+          ],
+          "declined": false,
+          "offerMatches": true,
+          "decisionMatches": true
+        },
+        "gemini": {
+          "action": "create",
+          "offered": [
+            "Simulation",
+            "CodingChallenge"
+          ],
+          "declined": false,
+          "offerMatches": true,
+          "decisionMatches": true
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/49a593a8cbd03234f998be756872565d19ccd6b93f54d5b56e95289cfc0ed817.json",
+          "wireSha256": "66f25a488ba15160885cd5bccc92ea57284af665ab0d17656e10dbbe96bd87cd",
+          "responseSha256": "23432db36e543b78ccfb3892972d4f0fb0160903545c3a761f670ff4c8bc3b25",
+          "usage": {
+            "inputTokens": 4811,
+            "outputTokens": 0
+          }
+        },
+        "learner": "Make a small interactive OpenUI simulation for this fictional club: membership costs 12 credits plus 3 credits for each class attended. Let me vary classes from 0 to 12 in steps of 1, starting at 2, and show the total credits. Keep it as a workspace artifact I can revisit. Invite me to predict what one extra class changes."
+      },
+      {
+        "id": "independent-choice",
+        "stage": "plan",
+        "requestSha256": "818c66ccf80f831ee6f579bce6bf15d809298bbd5d477cf8151be303e2155728",
+        "jevWireSha256": "233e53ac2da38d12e14835a81fdd521c5066dbeab0f04664a0e2554943c16f38",
+        "expected": {
+          "declined": false,
+          "mode": "includes",
+          "component": "Question"
+        },
+        "jev": {
+          "action": "create",
+          "offered": [
+            "Question",
+            "Quiz",
+            "Flashcards"
+          ],
+          "declined": false,
+          "offerMatches": true,
+          "decisionMatches": true
+        },
+        "gemini": {
+          "action": "create",
+          "offered": [
+            "Question"
+          ],
+          "declined": false,
+          "offerMatches": true,
+          "decisionMatches": true
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/818c66ccf80f831ee6f579bce6bf15d809298bbd5d477cf8151be303e2155728.json",
+          "wireSha256": "2c6b469cbdc798e41ad5fdc410b7d09375802f26ef8eef87f9dc6529b07805b7",
+          "responseSha256": "ef087d1f288e3f325a62cfa44eea6ade1c39f5e420d554aa68a3b148b2a08ddd",
+          "usage": {
+            "inputTokens": 4873,
+            "outputTokens": 0
+          }
+        },
+        "learner": "Let me reason this through with an actual application. Give me a small choice between two indexing strategies for a busy event log, with enough facts to justify a choice. Let me answer first."
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction/1",
+        "stage": "review",
+        "requestSha256": "f45e93e3e9221c041dbaada8afe9fe718b3b0e93c07f7b58f318d4ccced8463d",
+        "jevWireSha256": "b54df070d56c4763a00a6b0e405e5e34791f99db95970e7dae7445fc2c4a926c",
+        "expected": null,
+        "jev": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "gemini": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/f45e93e3e9221c041dbaada8afe9fe718b3b0e93c07f7b58f318d4ccced8463d.json",
+          "wireSha256": "529df061d720cf59db886e75d10d036d7d71ff76ecabb78ac1a7a8409eb7dd6f",
+          "responseSha256": "1c1fa77e53ea9453888607148ec4170e4aee0922e236f07dba86935b0c33bda7",
+          "usage": {
+            "inputTokens": 7117,
+            "outputTokens": 0
+          }
+        },
+        "learner": "A fair coin just landed heads four times. I think tails must be due. Let me make a prediction about the next flip before you explain.",
+        "draft": "Good instinct to commit to a prediction first — let's do that.\n\n```openui lifecycle=ephemeral id=coin-prediction-check\n\nroot = LearningSurface([predict], \"Commit to a prediction\", \"Say what you expect next, and why — we'll check it against the mathematics afterward.\", \"ephemeral\")\npredict = Question([{ header: \"Next flip\", question: \"A fair coin just landed heads four times in a row. What do you predict for the very next flip?\", type: \"choice\", choices: [\"Heads\", \"Tails\", \"Neither is more likely — they're equally likely\"], allowText: true, requireReasons: true, reasonLabel: \"Your reasoning\", hint: \"Pick an option or write your own prediction.\" }], \"ephemeral\", \"Coin toss probability\", \"Make the call before the explanation.\")\n```"
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction/2",
+        "stage": "review",
+        "requestSha256": "f01b739d7093b3f7269504f773548ace379e26f7da572955288e5be74b8c9fd7",
+        "jevWireSha256": "a629689f76e4e52de182a4fe893eb99d4346a76d956452ed59b3c400ab28abd9",
+        "expected": null,
+        "jev": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "gemini": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/f01b739d7093b3f7269504f773548ace379e26f7da572955288e5be74b8c9fd7.json",
+          "wireSha256": "895108fcbfb62e0d6c1b87113e290a602301813c526db2ebe91a0f4e4cadd69a",
+          "responseSha256": "690c35a701b3631b116c89f61c40668f883a6038f7e200f74480cc97fafcdca1",
+          "usage": {
+            "inputTokens": 7136,
+            "outputTokens": 0
+          }
+        },
+        "learner": "A fair coin just landed heads four times. I think tails must be due. Let me make a prediction about the next flip before you explain.",
+        "draft": "Good move — committing to a prediction first is what makes the explanation stick. Here's your checkpoint.\n\n```openui lifecycle=ephemeral id=coin-prediction-check\n\nroot = LearningSurface([predict], \"Prediction checkpoint\", \"Lock in your bet before I explain anything.\", \"ephemeral\")\npredict = Question([{ header: \"Next flip\", question: \"What is the probability the fifth flip is heads?\", type: \"choice\", choices: [\"0% — heads can't happen again\", \"25% — heads are 'used up'\", \"50% — a fair coin stays balanced\", \"75% — heads are more likely after four in a row\", \"100% — heads are due\"], allowText: true, hint: \"Pick a number, or write your own — and add a one-line reason for it.\" }], \"ephemeral\", \"Independent events\", \"Give me your number and your reason.\")\n```"
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--order/2",
+        "stage": "review",
+        "requestSha256": "d58984b16ed724626babc4fd7dcb6af41d11b93e9b68f11fd9e4b1dbd5d8794e",
+        "jevWireSha256": "2edb62c9e43f1bc927b4db6126d86f9b8f252315fd3075a40b75244bf178198c",
+        "expected": null,
+        "jev": {
+          "gate": "withheld",
+          "attempt": "unknown",
+          "blockers": [
+            {
+              "id": "checkpoint_answer_leaked",
+              "status": "unknown",
+              "probability": 0.51
+            }
+          ]
+        },
+        "gemini": {
+          "gate": "withheld",
+          "attempt": "unknown",
+          "blockers": [
+            {
+              "id": "checkpoint_answer_leaked",
+              "status": "unknown",
+              "probability": 0.47230069556621984
+            }
+          ]
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/d58984b16ed724626babc4fd7dcb6af41d11b93e9b68f11fd9e4b1dbd5d8794e.json",
+          "wireSha256": "0174ae93cf904061fe594a70656a0064ad00c5b8af7b07ccf046c25bbd0f7c1f",
+          "responseSha256": "79e12294731cf675e85240205118ea50e8956a00a704d3910a5098bb401f73b2",
+          "usage": {
+            "inputTokens": 7306,
+            "outputTokens": 0
+          }
+        },
+        "learner": "I know the steps for making a bar chart but I mix up the sequence. Give me the steps scrambled so I can put them back in order.",
+        "draft": "Here's a quick framing, then the task itself.\n\nMaking a bar chart really has five decisions in a fixed order: **what you're showing → how the data is arranged → how the chart gets inserted → whether the axes and labels read correctly → how it's polished**. If you mix up the sequence, the usual symptom is a chart that looks wrong and you don't know whether to fix the data or the formatting. Reordering these will make the order itself stick.\n\n```openui lifecycle=ephemeral id=bar-chart-ordering\n\nroot = LearningSurface([intro, orderTask], \"Bar chart steps: put them back in order\", \"Five steps, deliberately scrambled. Restore the order you actually use.\", \"ephemeral\")\nintro = Callout(\"Drag the cards into order, or use the up and down arrows on each row. Once you submit, I'll tell you which steps you placed well and which one broke the chain.\", \"hint\", \"How to do this\")\norderTask = Question([{ header: \"Reorder\", question: \"Arrange these bar chart steps from first to last.\", type: \"ordering\", itemLabel: \"Step\", items: [\"Insert the bar chart from the Insert > Chart menu\", \"Decide what the chart will show: one bar per category, and the value each bar plots\", \"Adjust colors, fonts, and spacing so the series reads clearly\", \"Arrange the data with the categories in one column and the values in another\", \"Verify the axis titles, chart title, and any data labels\"] }], \"ephemeral\", \"Bar chart procedure\", \"Some of these look interchangeable, but only one order works. Trust the sequence of decisions, not the visual appeal of the cards.\")\n\n```"
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--recall/2",
+        "stage": "review",
+        "requestSha256": "eaf4ddc0cd2484bf6b27de4a3d6169e0aa70d03022853a37bc1ac998f429e933",
+        "jevWireSha256": "5185ba08bb39e2570c0e3b84e42079d275d9254e93e95fd91da5d531bd20505b",
+        "expected": null,
+        "jev": {
+          "gate": "withheld",
+          "attempt": "fail",
+          "blockers": [
+            {
+              "id": "checkpoint_repeated",
+              "status": "fail",
+              "probability": 0.64
+            }
+          ]
+        },
+        "gemini": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/eaf4ddc0cd2484bf6b27de4a3d6169e0aa70d03022853a37bc1ac998f429e933.quota-recovery.json",
+          "wireSha256": "037411dc4d91184219f6feb79c9187241cdbe80970b752cfe684b70e204ae7b5",
+          "responseSha256": "ae61e781acbc822458f10d7b3710e3197354784818e4ad5d08702385e5a469a1",
+          "usage": {
+            "inputTokens": 7236,
+            "outputTokens": 0
+          }
+        },
+        "learner": "I've studied the French words for red, blue and green. See which ones I can recall, one at a time. Don't give me the translations yet.",
+        "draft": "Three cards, one at a time — answer out loud or in your head *before* you flip, so the recall attempt is yours.\n\n```openui lifecycle=resumable id=french-color-recall\nroot = LearningSurface([intro, deck], \"French colour recall\", \"Three cards, one at a time.\", \"resumable\")\nintro = Explanation(\"Each card shows an English colour and asks for its French word. Try to produce the answer out loud or in writing *first*, then flip to check. I won't give you the translations up front — the recall is the whole point. If a card trips you up, say which one and we'll work on that one specifically.\", \"How this works\")\ndeck = Flashcards(\"french-colours\", \"French vocabulary: colours\", \"French colour words\", [\n  { id: \"c-red\", front: \"red → ?\", back: \"rouge\", tags: [\"colour\", \"vocabulary\"] },\n  { id: \"c-blue\", front: \"blue → ?\", back: \"bleu\", tags: [\"colour\", \"vocabulary\"] },\n  { id: \"c-green\", front: \"green → ?\", back: \"vert\", tags: [\"colour\", \"vocabulary\"] }\n], \"resumable\", \"Recall the French word for each colour, one card at a time.\")\n```"
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--code/2",
+        "stage": "review",
+        "requestSha256": "6ef613c2b6b97b24557185dca051e1b9ac74773e8338fc23e8d362d1444c03a4",
+        "jevWireSha256": "b6838d8a5706f884b3fd973c344f66b08e39a87686578075b88ceb9dcaaa3f4d",
+        "expected": null,
+        "jev": {
+          "gate": "withheld",
+          "attempt": "fail",
+          "blockers": [
+            {
+              "id": "checkpoint_answer_leaked",
+              "status": "fail",
+              "probability": 0.74
+            }
+          ]
+        },
+        "gemini": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/6ef613c2b6b97b24557185dca051e1b9ac74773e8338fc23e8d362d1444c03a4.quota-recovery.json",
+          "wireSha256": "98dfd2c70f25fc462b5cca4235667a46490a1c4a07cef2b59f401ff8582f082b",
+          "responseSha256": "d1417e4f944f306624f3e04e7f521c1825c7134d00c00f2527bc4f0f3c3fd310",
+          "usage": {
+            "inputTokens": 6855,
+            "outputTokens": 0
+          }
+        },
+        "learner": "My Python loop skips the last item nearly every time. Give me a tiny broken loop I can fix and try against a couple of example inputs.",
+        "draft": "Here you go — one tiny file, two inputs to run against it.\n\n```python\ndef show(items):\n    for i in range(len(items) - 1):\n        print(items[i])\n\n\n# Example input 1\nshow([\"a\", \"b\", \"c\"])\n\n# Example input 2\nshow([\"x\"])\n```\n\nThe intent is obviously \"print every item in `items`\". Run it and see what actually comes out — and notice that input 2 is where it goes quiet.\n\nTwo things to keep in mind while you fix it:\n\n- `range(len(items) - 1)` produces the indices `0 .. len(items)-2`, so the **last** index is never in the loop at all.\n- The reason it fails \"nearly every time\" rather than always: on a one-element list `len(items) - 1` is `0`, so the loop body never runs and the output is empty — the same bug wearing a different mask.\n\nCheck your fix against both examples, plus a third: `show([])` should also print nothing, without raising.\n\nBefore you change anything, let's make sure your mental model of the current behaviour is right:\n\n```openui lifecycle=ephemeral id=loop-off-by-one-check\n\nroot = LearningSurface([check], \"One prediction first\", \"Answer this before editing the loop — it tells us whether you're hunting the right bug.\", \"ephemeral\")\ncheck = Question([\n  { header: \"Predict\", question: \"With the loop exactly as written, what does show([\\\"x\\\", \\\"y\\\"]) actually print?\", type: \"choice\", choices: [\"\\\"x\\\"\", \"\\\"x\\\" then \\\"y\\\"\", \"nothing at all\", \"\\\"y\\\" then \\\"x\\\"\"], hint: \"Count the numbers range(len(items) - 1) actually produces.\" }\n], \"ephemeral\", \"Python loop bounds\", \"Predict, then fix and run both examples.\")\n```"
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction--repeat-1/1",
+        "stage": "review",
+        "requestSha256": "c81e5091904728d42e54027064539cb9262ed5b0cea9e5c6b70b38114e6a406f",
+        "jevWireSha256": "c098a90ea523fd309ae0515bf4e2afdf62056080b6a1698c13e703459540b1d7",
+        "expected": null,
+        "jev": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "gemini": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/c81e5091904728d42e54027064539cb9262ed5b0cea9e5c6b70b38114e6a406f.quota-recovery.json",
+          "wireSha256": "67627edbd4acca58dab75e316c5058b606c94325aa8da9ef51c53b33192bcc4e",
+          "responseSha256": "70a1e62d7c2afaa0795b68c11f424a6734a61df00cfe7b7dfcc1f89f4642d0e9",
+          "usage": {
+            "inputTokens": 7177,
+            "outputTokens": 0
+          }
+        },
+        "learner": "A fair coin just landed heads four times. I think tails must be due. Let me make a prediction about the next flip before you explain.",
+        "draft": "Good instinct to commit to a prediction first — let's make it explicit so we can check it against the model.\n\n```openui lifecycle=ephemeral id=gamblers-fallacy-prediction\n\nroot = LearningSurface([predict], \"Predict the next flip\", \"Say what you expect before we explain why.\", \"ephemeral\")\npredict = Question([\n  { header: \"Prediction\", question: \"What is the probability that the next flip is heads?\", type: \"choice\", choices: [\"50%\", \"More than 50% — heads are due\", \"Less than 50% — tails are due\", \"25%\"], allowText: true, hint: \"Pick a number, and you can write your own if you like.\" },\n  { header: \"Reasoning\", question: \"Why? What does the four heads in a row tell you about the next flip?\", type: \"text\", hint: \"One or two sentences is plenty.\" }\n], \"ephemeral\", \"Independence of coin flips\", \"Commit to a number and a reason, then we'll test it against the mathematics.\")\n```"
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction--repeat-1/2",
+        "stage": "review",
+        "requestSha256": "ef1d5b923eb550654c1745ce1f9fd726b68b0b8f8c951885303ac23e28524d79",
+        "jevWireSha256": "9e9b525dbc9578321d4d8cd81a18bdcaca1b713cffcb45f15a1c7d4f0935041a",
+        "expected": null,
+        "jev": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "gemini": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/ef1d5b923eb550654c1745ce1f9fd726b68b0b8f8c951885303ac23e28524d79.quota-recovery.json",
+          "wireSha256": "18dcbbd8f91d50c898b5f9490de54572a4547ee40b768d0058a8ced5a238cdb3",
+          "responseSha256": "5a3436553b22223469a788920fd11ca80d09c318af5910a2ff7fcc9b578a0b31",
+          "usage": {
+            "inputTokens": 7142,
+            "outputTokens": 0
+          }
+        },
+        "learner": "A fair coin just landed heads four times. I think tails must be due. Let me make a prediction about the next flip before you explain.",
+        "draft": "Makes sense to commit to a number first — a prediction you can check against reality teaches more than a rule handed to you up front. I won't touch the reasoning here; just record what you expect.\n\n```openui lifecycle=ephemeral id=coin-gamblers-fallacy-prediction\n\nroot = LearningSurface([prediction], \"Next-flip prediction\", \"Commit to an answer before we look at why.\", \"ephemeral\")\nprediction = Question([{ header: \"Your prediction\", question: \"A fair coin has just landed heads four times in a row. What do you predict for the next flip?\", type: \"choice\", choices: [\"Tails is more likely than heads (tails is 'due')\", \"Heads and tails are equally likely\", \"Heads is more likely than tails\"], allowText: true, hint: \"Pick the closest one, or write your own reasoning.\" }], \"ephemeral\", \"Independent coin flips\", \"State your expectation before the explanation.\")\n```"
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction--repeat-3/1",
+        "stage": "review",
+        "requestSha256": "df3ecbabc333c74f0a73ed856ee4898da4755c83198782e89f4a0ba219f49e20",
+        "jevWireSha256": "0ab75662a551628e6870f7372d8776a22e0d62b905a4dd88a71beb12add400bf",
+        "expected": null,
+        "jev": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "gemini": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/df3ecbabc333c74f0a73ed856ee4898da4755c83198782e89f4a0ba219f49e20.quota-recovery.json",
+          "wireSha256": "110a51ff4e035df8f1255c76fc27667d15745e6e7cb32b6b26d7cf76140f6235",
+          "responseSha256": "5cdc9dcec361d7553de2bc664a6f02249764e88d08eb0cab35aec9f2192c9254",
+          "usage": {
+            "inputTokens": 7216,
+            "outputTokens": 0
+          }
+        },
+        "learner": "A fair coin just landed heads four times. I think tails must be due. Let me make a prediction about the next flip before you explain.",
+        "draft": "Good instinct to commit to a prediction first — that makes the explanation land somewhere real. Let's capture your guess before I say anything about coin flips.\n\n```openui lifecycle=ephemeral id=coin-gamblers-fallacy-prediction\n\nroot = LearningSurface([prediction], \"Your prediction\", \"Commit to a guess before we look at the math. There is no wrong answer here — only your current model.\", \"ephemeral\")\nprediction = Question([\n  { header: \"Prediction\", question: \"The coin has landed heads four times in a row. What do you predict for the next flip?\", type: \"choice\", choices: [\"Heads\", \"Tails\", \"It is a coin flip — heads and tails are equally likely\"], allowText: true, hint: \"Pick the outcome you actually expect, and add your own if none of these fit.\" },\n  { header: \"Your reasoning\", question: \"Why did you pick that? Write it as a claim you could be shown to be wrong — for example, \\\"tails is more likely now because...\\\"\", type: \"text\", hint: \"A sentence or two. I want your actual reason, not a polished one.\" }\n], \"ephemeral\", \"Gambler's fallacy\", \"Predict first, then we'll test it.\")\n```"
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction--repeat-3/2",
+        "stage": "review",
+        "requestSha256": "bb5861cf35980e78701bdb2a978eae79e8e0b2097d95402e388e2e5eee731810",
+        "jevWireSha256": "738ea62a59911b5107110022b4507414aee1733d5b77e40c6a22814308925125",
+        "expected": null,
+        "jev": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "gemini": {
+          "gate": "released",
+          "attempt": "pass",
+          "blockers": []
+        },
+        "observation": {
+          "status": "measured",
+          "error": null,
+          "http": 200,
+          "reportedModel": null,
+          "cacheFile": "decision-cache/bb5861cf35980e78701bdb2a978eae79e8e0b2097d95402e388e2e5eee731810.quota-recovery.json",
+          "wireSha256": "174fd5d29fc8d63ee487a610d60d0714fbb79ecb1091583547fe0d109bbbec29",
+          "responseSha256": "ad469ebc7e77101f0bf5d7269d8cae5d3c351444d4dfe74b931b9e56e5297423",
+          "usage": {
+            "inputTokens": 7294,
+            "outputTokens": 0
+          }
+        },
+        "learner": "A fair coin just landed heads four times. I think tails must be due. Let me make a prediction about the next flip before you explain.",
+        "draft": "Good instinct to commit to a prediction before I explain anything — let's do it properly. One note for your own record: \"tails is due\" is a *claim* worth testing, and the way to test it is to state your prediction in a way that could come out wrong. You don't have to believe it, just make it falsifiable.\n\nWhat's your prediction for the next flip?\n\n```openui lifecycle=ephemeral id=coin-prediction-checkpoint\n\nroot = LearningSurface([predict], \"Commit to a prediction\", \"State your expectation for the next flip before any explanation.\", \"ephemeral\")\npredict = Question([\n  { header: \"Your prediction\", question: \"A fair coin has just landed heads four times in a row. What is the probability that the next flip is heads?\", type: \"choice\", choices: [\"About 50% — heads and tails are still equally likely\", \"Less than 50% — tails is 'due' after four heads\", \"More than 50% — heads is on a run and will continue\"], allowText: true, hint: \"Pick a number, or write your own reasoning and estimate. Commit before we talk about why.\" },\n  { header: \"Your reasoning\", question: \"In one or two sentences, why do you predict that? Try to state it as a rule you could check against later flips, not just a feeling.\", type: \"text\", hint: \"If it helps: what would have to be true about this coin for your answer to be right?\" }\n], \"ephemeral\", \"Coin flips and probability\", \"Commit first — we will examine it together afterwards.\")\n```"
+      }
+    ]
+  },
+  "directAnswerCheck": {
+    "version": 1,
+    "design": "Post-hoc fixed-input check selected after a separate end-to-end run withheld correct direct answers. Excluded from all 15 preregistered denominators.",
+    "caseId": "posthoc-perimeter-16",
+    "learnerPrompt": "In one short sentence, what is the perimeter of a square with side length four? Just the answer, please.",
+    "answer": "16.",
+    "rubric": "The released response gives the correct perimeter, 16 (units optional), in at most one short sentence (at most 15 outside words). It contains no interface, exercise or follow-up question. A standalone answer is sufficient.",
+    "policy": "keating-teaching-policy/v2.1",
+    "tutor": "MiniMax-M2.7-highspeed",
+    "planning": {
+      "model": "jev-1.14.0",
+      "requestSha256": "7c7c470bd8602e388e79e2694697a14006ae730be38f680ad4893c2e7caba4bf",
+      "action": "none",
+      "targets": []
+    },
+    "sourceReceipt": "segment-two--MiniMax-M2.7-highspeed--perimeter.json",
+    "sourceReceiptSha256": "28fb9b06ed2ac8defea9c9c2e4d5a72073bde26c9eb20e57d3e0f8cad2fec6fb",
+    "requestSha256": "fb0f5bf48f332386e126ed175c3e4bdcabca42451d0dfbc3c00d13ee97109e93",
+    "jevWireSha256": "4ad3425a3651868e3e68f7f229f24c78ba72d2a6b62a9ab04911057761052905",
+    "wireProvenance": "The prior run retained the shared application-request hash. The TypeSafe wire hash was reconstructed using the original model and encoder.",
+    "models": {
+      "jev": "jev-1.14.0",
+      "gemini": "gemini-decision-1"
+    },
+    "jev": {
+      "gate": "released",
+      "attempt": "pass",
+      "reason": null,
+      "selectedAttempt": 1,
+      "leak": {
+        "probability": 0.35,
+        "status": "pass"
+      },
+      "blockers": []
+    },
+    "gemini": {
+      "gate": "withheld",
+      "attempt": "fail",
+      "reason": "no-approved-draft",
+      "selectedAttempt": null,
+      "leak": {
+        "probability": 0.7374669921053815,
+        "status": "fail"
+      },
+      "blockers": [
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "probability": 0.7374669921053815
+        }
+      ]
+    },
+    "observation": {
+      "status": "measured",
+      "error": null,
+      "http": 200,
+      "reportedModel": null,
+      "cacheFile": "decision-cache/fb0f5bf48f332386e126ed175c3e4bdcabca42451d0dfbc3c00d13ee97109e93.json",
+      "wireSha256": "bcf4e4b9e0495a72a561492636e871cd82b33d9f1684adcaf91e9490a4c5bd53",
+      "responseSha256": "f753c72c74a31f9a85061eaa179a4a37ac963f96667cfd022b614affb255fc1f",
+      "usage": {
+        "inputTokens": 6919,
+        "outputTokens": 0
+      }
+    },
+    "googleOutcomeSha256": "6ff34ffdab46f5b211509f78306b93a8be0e9a5724776055093215e1afd7c114"
+  },
+  "sources": {
+    "jevTurns": "../policy-holdout/turns.json",
+    "geminiTurns": "turns.json",
+    "frozen": "frozen/comparison.json",
+    "directAnswer": "frozen/perimeter-check.json",
+    "ledger": "ledger.json"
+  }
+}

@@ -1,0 +1,1180 @@
+{
+  "schema_version": 1,
+  "source_files": {
+    "web/public/reports/learning-to-teach/benchmark-v3-results.json": "7851527cd9589c7051db096dc64e65110d2c2b2f2b3e7ced878ea2b64d442dc9",
+    "web/public/reports/learning-to-teach/report-data.json": "2090c64089477cc565562d3c78435e9f92d817ae68286234527dcaf98e750bb6",
+    "web/public/reports/learning-to-teach/openui-preview.js": "43bc1250a87d8dc6ebded47de6b9201cf7a43247bb392a8dc4ed02a18b7f4b22"
+  },
+  "cli": {
+    "benchmark": "keating-teaching-v3-profiles",
+    "version": "3.2.0",
+    "exported_at": "2026-09-07T13:30:22.794166+00:00",
+    "cases": 23,
+    "planned_episodes": 184,
+    "scope": "Real frozen headless Pi/CLI with authored learner messages. One result per model and case. Only whole episodes with completed delivery are included. The source exporter replaces only eligible failed attempts.",
+    "unit": "One completed learner-message step. Multiple assistant calls or documents in a step count once.",
+    "definitions": {
+      "recognized": "At least one model-authored canonical keating-ui source block reached the terminal adapter.",
+      "valid": "At least one source block passed the shared contract and received a terminal presentation. The receipt measures generation and validation. Browser display, clicks and tutoring continuations were unmeasured.",
+      "rejected_only": "Every recognized document on the turn failed the adapter.",
+      "question": "A valid document has a top-level question node.",
+      "question_group": "A valid document has a top-level question-group node.",
+      "practice": "The authored message exactly matches one of the three next-practice utterances listed below."
+    },
+    "practice_inputs": [
+      "Can we do one more?",
+      "Oh, half of that is 3/8 litre. Two equal parts. Can I try another?",
+      "Okay, try me with water draining out instead."
+    ],
+    "practice_cases": [
+      {
+        "case_id": "fraction-whole-repair",
+        "step_index": 2,
+        "learner": "Oh, half of that is 3/8 litre. Two equal parts. Can I try another?"
+      },
+      {
+        "case_id": "tank-rate-quantity",
+        "step_index": 3,
+        "learner": "Okay, try me with water draining out instead."
+      },
+      {
+        "case_id": "context-fractions-fragile",
+        "step_index": 4,
+        "learner": "Can we do one more?"
+      },
+      {
+        "case_id": "context-fractions-fluent",
+        "step_index": 4,
+        "learner": "Can we do one more?"
+      },
+      {
+        "case_id": "context-loopbounds-fragile",
+        "step_index": 4,
+        "learner": "Can we do one more?"
+      },
+      {
+        "case_id": "context-loopbounds-fluent",
+        "step_index": 4,
+        "learner": "Can we do one more?"
+      }
+    ],
+    "models": [
+      {
+        "id": "deepseek-v4-flash",
+        "model": "DeepSeek V4 Flash",
+        "episodes": 23,
+        "output_limited_episodes": 0,
+        "failed_episodes": 0,
+        "turns": 120,
+        "nonblank_turns": 120,
+        "recognized": 106,
+        "valid": 73,
+        "rejected_only": 33,
+        "question": 73,
+        "question_group": 0,
+        "practice": 6,
+        "practice_recognized": 5,
+        "practice_valid": 1,
+        "practice_question": 1
+      },
+      {
+        "id": "gemma-4-31b",
+        "model": "Gemma 4 31B",
+        "episodes": 23,
+        "output_limited_episodes": 0,
+        "failed_episodes": 0,
+        "turns": 120,
+        "nonblank_turns": 120,
+        "recognized": 103,
+        "valid": 63,
+        "rejected_only": 40,
+        "question": 63,
+        "question_group": 0,
+        "practice": 6,
+        "practice_recognized": 4,
+        "practice_valid": 2,
+        "practice_question": 2
+      },
+      {
+        "id": "glm-5.3",
+        "model": "GLM 5.3",
+        "episodes": 1,
+        "output_limited_episodes": 22,
+        "failed_episodes": 0,
+        "turns": 5,
+        "nonblank_turns": 5,
+        "recognized": 0,
+        "valid": 0,
+        "rejected_only": 0,
+        "question": 0,
+        "question_group": 0,
+        "practice": 1,
+        "practice_recognized": 0,
+        "practice_valid": 0,
+        "practice_question": 0
+      },
+      {
+        "id": "kimi-k3",
+        "model": "Kimi K3",
+        "episodes": 17,
+        "output_limited_episodes": 6,
+        "failed_episodes": 0,
+        "turns": 89,
+        "nonblank_turns": 89,
+        "recognized": 83,
+        "valid": 54,
+        "rejected_only": 29,
+        "question": 51,
+        "question_group": 3,
+        "practice": 5,
+        "practice_recognized": 5,
+        "practice_valid": 3,
+        "practice_question": 3
+      },
+      {
+        "id": "qwen3.6-35b",
+        "model": "Qwen3.6 35B",
+        "episodes": 22,
+        "output_limited_episodes": 1,
+        "failed_episodes": 0,
+        "turns": 115,
+        "nonblank_turns": 115,
+        "recognized": 0,
+        "valid": 0,
+        "rejected_only": 0,
+        "question": 0,
+        "question_group": 0,
+        "practice": 5,
+        "practice_recognized": 0,
+        "practice_valid": 0,
+        "practice_question": 0
+      },
+      {
+        "id": "inkling-small-base",
+        "model": "Inkling Small",
+        "episodes": 23,
+        "output_limited_episodes": 0,
+        "failed_episodes": 0,
+        "turns": 120,
+        "nonblank_turns": 120,
+        "recognized": 0,
+        "valid": 0,
+        "rejected_only": 0,
+        "question": 0,
+        "question_group": 0,
+        "practice": 6,
+        "practice_recognized": 0,
+        "practice_valid": 0,
+        "practice_question": 0
+      },
+      {
+        "id": "nemotron-lightning",
+        "model": "Nemotron 3.5 Lightning",
+        "episodes": 22,
+        "output_limited_episodes": 0,
+        "failed_episodes": 1,
+        "turns": 115,
+        "nonblank_turns": 114,
+        "recognized": 0,
+        "valid": 0,
+        "rejected_only": 0,
+        "question": 0,
+        "question_group": 0,
+        "practice": 5,
+        "practice_recognized": 0,
+        "practice_valid": 0,
+        "practice_question": 0
+      },
+      {
+        "id": "qwen3-8-27b",
+        "model": "Qwen 3.8 27B",
+        "episodes": 23,
+        "output_limited_episodes": 0,
+        "failed_episodes": 0,
+        "turns": 120,
+        "nonblank_turns": 120,
+        "recognized": 52,
+        "valid": 14,
+        "rejected_only": 38,
+        "question": 14,
+        "question_group": 0,
+        "practice": 6,
+        "practice_recognized": 0,
+        "practice_valid": 0,
+        "practice_question": 0
+      }
+    ],
+    "totals": {
+      "episodes": 154,
+      "output_limited_episodes": 29,
+      "failed_episodes": 1,
+      "turns": 804,
+      "nonblank_turns": 803,
+      "recognized": 344,
+      "valid": 204,
+      "rejected_only": 140,
+      "question": 201,
+      "question_group": 3,
+      "practice": 40,
+      "practice_recognized": 14,
+      "practice_valid": 6,
+      "practice_question": 6
+    },
+    "valid_turns_by_node_type": {
+      "markdown": 2,
+      "question": 201,
+      "question-group": 3
+    },
+    "rejection_replay": {
+      "counts": {
+        "documents": 346,
+        "rejected": 142,
+        "invalid_json": 18,
+        "markdown_field_mismatch": 69,
+        "valid_after_field_rename": 41
+      },
+      "repaired_examples": [
+        "fraction-rejected"
+      ],
+      "adapter_revision": "1f1c518ca72f96e3897264c03df2a6455deee9ef",
+      "unit": "Individual extracted documents from eligible message steps. Original validity matched every archived receipt. For rejected JSON, replay an in-memory copy after renaming content, text, or body to markdown on top-level Markdown nodes."
+    },
+    "unfenced_text_length": {
+      "definition": "Nonblank assistant text on turns with no recognized document or literal OpenUI fence. Count whitespace-delimited words across visible assistant text, including any Markdown and code. These cutoffs describe length and carry no quality judgement.",
+      "turns": 455,
+      "median_words": 141,
+      "at_most_75": 161,
+      "at_least_200": 151
+    },
+    "uncertainty": "Descriptive census of a fixed development suite. Turns repeat within cases and several cases share a family. Model case coverage varies with exclusions. Traffic weights and the proportion of UI-appropriate turns are unknown."
+  },
+  "explicit_tasks": {
+    "benchmark": "keating-teaching-v2",
+    "version": 2,
+    "created_at": "2026-09-07T09:07:19.497612+00:00",
+    "case_ids": [
+      "predict-python-alias",
+      "predict-ice-equilibrium",
+      "transfer-cache-policy",
+      "transfer-sampling-design",
+      "transfer-retention-policy",
+      "long-ratio-fade-scaffold",
+      "long-privacy-note-revision",
+      "openui-quiz-mixtures",
+      "openui-deck-logic",
+      "openui-exam-data-twenty",
+      "openui-two-checks-evidence",
+      "openui-simulation-break-even",
+      "openui-notes-authorship",
+      "openui-plan-feasible",
+      "openui-combined-review",
+      "openui-repair-decimal-deck",
+      "openui-quiz-graph-rates",
+      "openui-question-two-viable",
+      "openui-exam-reading-twenty"
+    ],
+    "selection": "All frozen cases requiring an OpenUI document in expect.openui, including cases outside the OpenUI category.",
+    "unit": "One authored model-case episode, with at most three assistant turns and isolated real tool execution.",
+    "definitions": {
+      "recognized": "The actual message parser counted at least one surface, including when the learner requested exactly one and the model supplied two.",
+      "compiled": "Every recognized surface compiled according to the frozen openui.compile check.",
+      "full_contract": "All case-specific objective checks passed, including requested structure, counts and applicable actions."
+    },
+    "totals": {
+      "planned": 285,
+      "measured": 283,
+      "recognized": 243,
+      "compiled": 194,
+      "full_contract": 142,
+      "unavailable": 2
+    },
+    "by_requested_activity": {
+      "question": {
+        "planned": 120,
+        "measured": 120,
+        "unavailable": 0,
+        "recognized": 96,
+        "compiled": 86,
+        "full_contract": 62
+      },
+      "notes": {
+        "planned": 30,
+        "measured": 30,
+        "unavailable": 0,
+        "recognized": 27,
+        "compiled": 24,
+        "full_contract": 15
+      },
+      "quiz": {
+        "planned": 30,
+        "measured": 30,
+        "unavailable": 0,
+        "recognized": 27,
+        "compiled": 15,
+        "full_contract": 12
+      },
+      "deck": {
+        "planned": 30,
+        "measured": 30,
+        "unavailable": 0,
+        "recognized": 28,
+        "compiled": 26,
+        "full_contract": 21
+      },
+      "exam": {
+        "planned": 30,
+        "measured": 28,
+        "unavailable": 2,
+        "recognized": 22,
+        "compiled": 10,
+        "full_contract": 7
+      },
+      "simulation": {
+        "planned": 15,
+        "measured": 15,
+        "unavailable": 0,
+        "recognized": 14,
+        "compiled": 13,
+        "full_contract": 11
+      },
+      "study-plan": {
+        "planned": 15,
+        "measured": 15,
+        "unavailable": 0,
+        "recognized": 15,
+        "compiled": 13,
+        "full_contract": 9
+      },
+      "quiz + deck": {
+        "planned": 15,
+        "measured": 15,
+        "unavailable": 0,
+        "recognized": 14,
+        "compiled": 7,
+        "full_contract": 5
+      }
+    },
+    "models": [
+      {
+        "id": "gpt-5-6-luna",
+        "model": "GPT-5.6 Luna",
+        "planned": 19,
+        "measured": 19,
+        "recognized": 19,
+        "compiled": 14,
+        "full_contract": 14,
+        "unavailable": 0,
+        "stop_reasons": {
+          "final_response": 19
+        }
+      },
+      {
+        "id": "deepseek-v4-flash",
+        "model": "DeepSeek V4 Flash",
+        "planned": 19,
+        "measured": 19,
+        "recognized": 18,
+        "compiled": 16,
+        "full_contract": 13,
+        "unavailable": 0,
+        "stop_reasons": {
+          "final_response": 18,
+          "turn_limit": 1
+        }
+      },
+      {
+        "id": "gpt-5-6-terra",
+        "model": "GPT-5.6 Terra",
+        "planned": 19,
+        "measured": 19,
+        "recognized": 19,
+        "compiled": 15,
+        "full_contract": 14,
+        "unavailable": 0,
+        "stop_reasons": {
+          "final_response": 19
+        }
+      },
+      {
+        "id": "gemma-4-31b",
+        "model": "Gemma 4 31B",
+        "planned": 19,
+        "measured": 19,
+        "recognized": 19,
+        "compiled": 13,
+        "full_contract": 7,
+        "unavailable": 0,
+        "stop_reasons": {
+          "final_response": 19
+        }
+      },
+      {
+        "id": "gpt-5-6-sol",
+        "model": "GPT-5.6 Sol",
+        "planned": 19,
+        "measured": 19,
+        "recognized": 19,
+        "compiled": 16,
+        "full_contract": 15,
+        "unavailable": 0,
+        "stop_reasons": {
+          "final_response": 19
+        }
+      },
+      {
+        "id": "qwen3-6-35b",
+        "model": "Qwen3.6 35B",
+        "planned": 19,
+        "measured": 19,
+        "recognized": 15,
+        "compiled": 14,
+        "full_contract": 9,
+        "unavailable": 0,
+        "stop_reasons": {
+          "final_response": 15,
+          "turn_limit": 4
+        }
+      },
+      {
+        "id": "gpt-6-astra",
+        "model": "GPT-6 Astra",
+        "planned": 19,
+        "measured": 18,
+        "recognized": 18,
+        "compiled": 14,
+        "full_contract": 12,
+        "unavailable": 1,
+        "stop_reasons": {
+          "final_response": 18,
+          "provider_error": 1
+        }
+      },
+      {
+        "id": "kimi-k3",
+        "model": "Kimi K3",
+        "planned": 19,
+        "measured": 19,
+        "recognized": 19,
+        "compiled": 19,
+        "full_contract": 17,
+        "unavailable": 0,
+        "stop_reasons": {
+          "final_response": 19
+        }
+      },
+      {
+        "id": "glm-5-3",
+        "model": "GLM 5.3",
+        "planned": 19,
+        "measured": 19,
+        "recognized": 19,
+        "compiled": 19,
+        "full_contract": 16,
+        "unavailable": 0,
+        "stop_reasons": {
+          "final_response": 19
+        }
+      },
+      {
+        "id": "inkling-small-base",
+        "model": "Inkling Small (base)",
+        "planned": 19,
+        "measured": 19,
+        "recognized": 12,
+        "compiled": 7,
+        "full_contract": 2,
+        "unavailable": 0,
+        "stop_reasons": {
+          "final_response": 19
+        }
+      },
+      {
+        "id": "inkling-small-identity-sft",
+        "model": "Inkling Small + identity SFT",
+        "planned": 19,
+        "measured": 19,
+        "recognized": 12,
+        "compiled": 8,
+        "full_contract": 3,
+        "unavailable": 0,
+        "stop_reasons": {
+          "final_response": 19
+        }
+      },
+      {
+        "id": "inkling-small-openui-sft",
+        "model": "Inkling Small + OpenUI SFT",
+        "planned": 19,
+        "measured": 18,
+        "recognized": 18,
+        "compiled": 13,
+        "full_contract": 7,
+        "unavailable": 1,
+        "stop_reasons": {
+          "final_response": 17,
+          "provider_error": 1,
+          "truncated": 1
+        }
+      },
+      {
+        "id": "inkling-small-openui-sft-sdpo",
+        "model": "Inkling Small + OpenUI SFT + SDPO",
+        "planned": 19,
+        "measured": 19,
+        "recognized": 19,
+        "compiled": 12,
+        "full_contract": 7,
+        "unavailable": 0,
+        "stop_reasons": {
+          "final_response": 19
+        }
+      },
+      {
+        "id": "nemotron-3-5-lightning",
+        "model": "Nemotron 3.5 Lightning",
+        "planned": 19,
+        "measured": 19,
+        "recognized": 5,
+        "compiled": 2,
+        "full_contract": 0,
+        "unavailable": 0,
+        "stop_reasons": {
+          "truncated": 1,
+          "final_response": 8,
+          "turn_limit": 10
+        }
+      },
+      {
+        "id": "qwen-3-8-27b",
+        "model": "Qwen 3.8 27B",
+        "planned": 19,
+        "measured": 19,
+        "recognized": 12,
+        "compiled": 12,
+        "full_contract": 6,
+        "unavailable": 0,
+        "stop_reasons": {
+          "final_response": 13,
+          "turn_limit": 5,
+          "truncated": 1
+        }
+      }
+    ],
+    "worked_explanation_control": {
+      "case_ids": [
+        "direct-derivative-help",
+        "fluent-conservation-mass",
+        "long-python-nested-copy",
+        "long-reading-interpretation",
+        "long-sql-null-recovery",
+        "long-stats-switch-support",
+        "long-units-change-preference",
+        "worked-equation-negative",
+        "worked-probability-tree"
+      ],
+      "checks": {
+        "not_applicable": 127,
+        "fail": 3,
+        "pass": 5
+      },
+      "selection": "Nine learner messages explicitly declined a quiz, test, prediction, guess or follow-up, or asked to see the worked solution. An explanatory interface could still fit. These counts do not score unwanted assessments."
+    },
+    "uncertainty": "A known, fixed public benchmark. A compiled surface may have the wrong component, counts or educational content. Some tasks explicitly name the component and some specify the interaction. No live browser, Jev or human outcome was observed."
+  },
+  "checkpoints": {
+    "benchmark": "Inkling OpenUI interaction evaluation",
+    "date": "2026-09-06",
+    "system_prompt_sha256": "e5911fd61b1cc33975421edd780e091dff501bfcca64501148d06e20d4caa88f",
+    "unit": "One predeclared, evaluation-only scenario for one checkpoint. All five activity prompts name OpenUI and the component.",
+    "definitions": {
+      "fenced": "First assistant output contains a line opening an OpenUI fence.",
+      "created": "Original creation and component checks succeeded.",
+      "full": "All task checks passed, including pending-answer grading or simulated interaction when required.",
+      "unfenced_controls": "Identity or multiplication response had no OpenUI fence."
+    },
+    "models": [
+      {
+        "id": "before",
+        "model": "Inkling Small + identity SFT",
+        "requested": 5,
+        "fenced": 1,
+        "created": 0,
+        "full": 0,
+        "controls": 2,
+        "unfenced_controls": 2,
+        "cases": [
+          {
+            "case_id": "test-temperature-quiz",
+            "requested_component": "Quiz",
+            "fenced": false,
+            "created": false,
+            "grading": null,
+            "passed": false
+          },
+          {
+            "case_id": "test-speed-cards",
+            "requested_component": "Flashcards",
+            "fenced": false,
+            "created": false,
+            "grading": null,
+            "passed": false
+          },
+          {
+            "case_id": "test-probability-check",
+            "requested_component": "Question",
+            "fenced": false,
+            "created": false,
+            "grading": null,
+            "passed": false
+          },
+          {
+            "case_id": "test-fare-simulation",
+            "requested_component": "Simulation",
+            "fenced": true,
+            "created": false,
+            "grading": null,
+            "passed": false
+          },
+          {
+            "case_id": "test-time-exam",
+            "requested_component": "Exam",
+            "fenced": false,
+            "created": false,
+            "grading": null,
+            "passed": false
+          },
+          {
+            "case_id": "test-identity",
+            "requested_component": null,
+            "fenced": false,
+            "created": null,
+            "grading": null,
+            "passed": true
+          },
+          {
+            "case_id": "test-arithmetic",
+            "requested_component": null,
+            "fenced": false,
+            "created": null,
+            "grading": null,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "after",
+        "model": "Inkling Small + OpenUI SFT",
+        "requested": 5,
+        "fenced": 5,
+        "created": 4,
+        "full": 3,
+        "controls": 2,
+        "unfenced_controls": 2,
+        "cases": [
+          {
+            "case_id": "test-temperature-quiz",
+            "requested_component": "Quiz",
+            "fenced": true,
+            "created": true,
+            "grading": true,
+            "passed": true
+          },
+          {
+            "case_id": "test-speed-cards",
+            "requested_component": "Flashcards",
+            "fenced": true,
+            "created": true,
+            "grading": null,
+            "passed": true
+          },
+          {
+            "case_id": "test-probability-check",
+            "requested_component": "Question",
+            "fenced": true,
+            "created": true,
+            "grading": false,
+            "passed": false
+          },
+          {
+            "case_id": "test-fare-simulation",
+            "requested_component": "Simulation",
+            "fenced": true,
+            "created": true,
+            "grading": null,
+            "passed": true
+          },
+          {
+            "case_id": "test-time-exam",
+            "requested_component": "Exam",
+            "fenced": true,
+            "created": false,
+            "grading": null,
+            "passed": false
+          },
+          {
+            "case_id": "test-identity",
+            "requested_component": null,
+            "fenced": false,
+            "created": null,
+            "grading": null,
+            "passed": true
+          },
+          {
+            "case_id": "test-arithmetic",
+            "requested_component": null,
+            "fenced": false,
+            "created": null,
+            "grading": null,
+            "passed": true
+          }
+        ]
+      },
+      {
+        "id": "sdpo",
+        "model": "Inkling Small + OpenUI SFT + SDPO",
+        "requested": 5,
+        "fenced": 5,
+        "created": 4,
+        "full": 4,
+        "controls": 2,
+        "unfenced_controls": 2,
+        "cases": [
+          {
+            "case_id": "test-temperature-quiz",
+            "requested_component": "Quiz",
+            "fenced": true,
+            "created": true,
+            "grading": true,
+            "passed": true
+          },
+          {
+            "case_id": "test-speed-cards",
+            "requested_component": "Flashcards",
+            "fenced": true,
+            "created": true,
+            "grading": null,
+            "passed": true
+          },
+          {
+            "case_id": "test-probability-check",
+            "requested_component": "Question",
+            "fenced": true,
+            "created": true,
+            "grading": true,
+            "passed": true
+          },
+          {
+            "case_id": "test-fare-simulation",
+            "requested_component": "Simulation",
+            "fenced": true,
+            "created": true,
+            "grading": null,
+            "passed": true
+          },
+          {
+            "case_id": "test-time-exam",
+            "requested_component": "Exam",
+            "fenced": true,
+            "created": false,
+            "grading": null,
+            "passed": false
+          },
+          {
+            "case_id": "test-identity",
+            "requested_component": null,
+            "fenced": false,
+            "created": null,
+            "grading": null,
+            "passed": true
+          },
+          {
+            "case_id": "test-arithmetic",
+            "requested_component": null,
+            "fenced": false,
+            "created": null,
+            "grading": null,
+            "passed": true
+          }
+        ]
+      }
+    ],
+    "uncertainty": "The five named activity tasks are one per family. Success on them measures instructed capability. The two text controls are small regression checks. No learner chose these tasks or supplied the synthetic answers."
+  },
+  "examples": [
+    {
+      "id": "coin-graded",
+      "cohort": "checkpoints",
+      "model": "Inkling Small + OpenUI SFT + SDPO",
+      "case_id": "test-probability-check",
+      "step_index": 0,
+      "learner": "A fair coin landed heads three times. I think tails must be more likely next. Check my understanding with one OpenUI text Question and wait for my reasoning.",
+      "reply": "```openui lifecycle=ephemeral id=coin-fairness-check revision=0\nroot = LearningSurface([check], \"Check your reasoning\", \"\", \"ephemeral\")\ncheck = Question([{\"header\":\"Your reasoning\",\"question\":\"Why might a fair coin still land heads again?\",\"type\":\"text\"}],\"ephemeral\",\"Coin fairness\",\"Explain your reasoning.\")\n```",
+      "learner_sha256": "c6d81832e7e2dd159b849668341671ff30f9b93153000daf37f6cfa36f38ad96",
+      "reply_sha256": "7a43d528eb00a1b69bab92fafa4b473475dc6389b2c3105652ced4b1ee728da7",
+      "outcome": "passed",
+      "components": [
+        "question-group"
+      ],
+      "document": {
+        "schemaVersion": 1,
+        "id": "openui-1b2sqbw-coin-fairness-check",
+        "revision": 0,
+        "lifecycle": "ready",
+        "retention": "ephemeral",
+        "supportedSurfaces": [
+          "web",
+          "desktop",
+          "mobile",
+          "terminal"
+        ],
+        "title": "Check your reasoning",
+        "nodes": [
+          {
+            "type": "question-group",
+            "id": "check",
+            "topic": "Coin fairness",
+            "intro": "Explain your reasoning.",
+            "questions": [
+              {
+                "id": "check-question-1",
+                "prompt": "Why might a fair coin still land heads again?",
+                "kind": "text",
+                "header": "Your reasoning"
+              }
+            ]
+          }
+        ],
+        "createdAt": "2026-09-06T20:00:00.000Z",
+        "updatedAt": "2026-09-06T20:00:00.000Z"
+      },
+      "feedback": "The grading call matched the actual submitted IDs, graded only pending work, and executed successfully in isolated memory.",
+      "creation_feedback": "The requested activity compiled through Keating’s current contract.",
+      "grading": true,
+      "document_provenance": "Recompiled original reply with the hash-pinned public report compiler",
+      "source_file": "web/public/reports/learning-to-teach/report-data.json",
+      "source_pointer": "interaction_round.sdpo[scenario.id=test-probability-check].messages"
+    },
+    {
+      "id": "coin-grading-failed",
+      "cohort": "checkpoints",
+      "model": "Inkling Small + OpenUI SFT",
+      "case_id": "test-probability-check",
+      "step_index": 0,
+      "learner": "A fair coin landed heads three times. I think tails must be more likely next. Check my understanding with one OpenUI text Question and wait for my reasoning.",
+      "reply": "```openui lifecycle=ephemeral id=coin-fairness-check revision=0\nroot = LearningSurface([check], \"Think it through\", \"\", \"ephemeral\")\ncheck = Question([{\"header\":\"Your reasoning\",\"question\":\"Why might a fair coin still land heads again?\",\"type\":\"text\"}],\"ephemeral\",\"Coin fairness\",\"Explain your reasoning.\")\n```",
+      "learner_sha256": "c6d81832e7e2dd159b849668341671ff30f9b93153000daf37f6cfa36f38ad96",
+      "reply_sha256": "cc0c3eaefdc865348edbc9c7d08eed37fb3684f1f9a3732b8b5c7ccbf7abce87",
+      "outcome": "grading_failed",
+      "components": [
+        "question-group"
+      ],
+      "document": {
+        "schemaVersion": 1,
+        "id": "openui-1b2sqbw-coin-fairness-check",
+        "revision": 0,
+        "lifecycle": "ready",
+        "retention": "ephemeral",
+        "supportedSurfaces": [
+          "web",
+          "desktop",
+          "mobile",
+          "terminal"
+        ],
+        "title": "Think it through",
+        "nodes": [
+          {
+            "type": "question-group",
+            "id": "check",
+            "topic": "Coin fairness",
+            "intro": "Explain your reasoning.",
+            "questions": [
+              {
+                "id": "check-question-1",
+                "prompt": "Why might a fair coin still land heads again?",
+                "kind": "text",
+                "header": "Your reasoning"
+              }
+            ]
+          }
+        ],
+        "createdAt": "2026-09-06T20:00:00.000Z",
+        "updatedAt": "2026-09-06T20:00:00.000Z"
+      },
+      "feedback": "The submitted activity requires exactly one grade_question_checks call. Do not grade unsubmitted work or create a replacement activity.",
+      "creation_feedback": "The requested activity compiled through Keating’s current contract.",
+      "grading": false,
+      "document_provenance": "Recompiled original reply with the hash-pinned public report compiler",
+      "source_file": "web/public/reports/learning-to-teach/report-data.json",
+      "source_pointer": "interaction_round.after[scenario.id=test-probability-check].messages"
+    },
+    {
+      "id": "coin-text",
+      "cohort": "checkpoints",
+      "model": "Inkling Small + identity SFT",
+      "case_id": "test-probability-check",
+      "step_index": 0,
+      "learner": "A fair coin landed heads three times. I think tails must be more likely next. Check my understanding with one OpenUI text Question and wait for my reasoning.",
+      "reply": "The coin has no memory. A past run of heads doesn't change the next flip's probability.",
+      "learner_sha256": "c6d81832e7e2dd159b849668341671ff30f9b93153000daf37f6cfa36f38ad96",
+      "reply_sha256": "a2703e5579b7e53b73d4821aafb9c2ae6b2eb062d173a9003b7ace1d382789bd",
+      "outcome": "creation_failed",
+      "components": [],
+      "document": null,
+      "feedback": "Return one complete OpenUI surface containing Question; the current response contains 0 recognized surfaces.",
+      "creation_feedback": "Return one complete OpenUI surface containing Question; the current response contains 0 recognized surfaces.",
+      "grading": null,
+      "document_provenance": null,
+      "source_file": "web/public/reports/learning-to-teach/report-data.json",
+      "source_pointer": "interaction_round.before[scenario.id=test-probability-check].messages"
+    },
+    {
+      "id": "fraction-brief",
+      "cohort": "cli",
+      "model": "Qwen3.6 35B",
+      "case_id": "fraction-whole-repair",
+      "step_index": 2,
+      "learner": "Oh, half of that is 3/8 litre. Two equal parts. Can I try another?",
+      "reply": "\n\nTry this one: If you have **2 litres** of milk and you drink *half* of it, how much is left?",
+      "learner_sha256": "2caf6dcf4cf7ab8896c0c0b4592c5942c5c2a591de9bae71af50a4928e8081dd",
+      "reply_sha256": "867931b9cd77450b20ff95858d2c425edcb26800e70ea079653447eba9322d39",
+      "prior_learner": "Wait, why? What if the bottle has 3/4 litre in it?",
+      "outcome": "no_recognized_surface",
+      "components": [],
+      "document": null,
+      "feedback": null,
+      "source_file": "web/public/reports/learning-to-teach/benchmark-v3-results.json",
+      "episode_sha256": "9aaf8416217c97b3786b224b36627e8491348b063319a82cad1dfa3f02a01a7e",
+      "document_provenance": null
+    },
+    {
+      "id": "fraction-question",
+      "cohort": "cli",
+      "model": "Kimi K3",
+      "case_id": "context-fractions-fragile",
+      "step_index": 4,
+      "learner": "Can we do one more?",
+      "reply": "Absolutely — and this one's the boss level, because you've now got both skills in your toolbox: *same-size scoops*, and *make the pieces the same size before counting*.\n\nHere it is:\n\n```keating-ui\n{\"schemaVersion\":1,\"id\":\"unlike-scoop-challenge\",\"revision\":0,\"lifecycle\":\"ready\",\"retention\":\"ephemeral\",\"supportedSurfaces\":[\"web\",\"desktop\",\"mobile\",\"terminal\"],\"nodes\":[{\"type\":\"question\",\"id\":\"half-plus-quarter\",\"prompt\":\"Final recipe line: one ½-cup scoop of flour, then one ¼-cup scoop. Total flour? Show your chain if you like: the half-cup holds ___ quarter-scoops, so together that's ___ quarters = ___/4.\",\"kind\":\"choice\",\"choices\":[{\"id\":\"three-quarters\",\"label\":\"3/4 cup\"},{\"id\":\"two-sixths\",\"label\":\"2/6 cup\"},{\"id\":\"one-third\",\"label\":\"1/3 cup\"}],\"allowText\":true,\"hint\":\"The scoops are different sizes this time — but the half-cup measure fits a whole number of quarter-scoops. Fill in the blank first, then count.\"}],\"createdAt\":\"2026-09-07T13:06:00.000Z\",\"updatedAt\":\"2026-09-07T13:06:00.000Z\"}\n```",
+      "learner_sha256": "a3698efd86290deca6b0b6ee739bb60c8c1ad1fd2c434e0db02f89d7c332150d",
+      "reply_sha256": "85f04c616bf54541ad91f07d3ac7507060799929fd37ae030d6c006688532b2e",
+      "prior_learner": "I put in two quarter-cup scoops. I wrote 2/8 cup because there are two fours.",
+      "outcome": "rendered",
+      "components": [
+        "question"
+      ],
+      "document": {
+        "schemaVersion": 1,
+        "id": "unlike-scoop-challenge",
+        "revision": 0,
+        "lifecycle": "ready",
+        "retention": "ephemeral",
+        "supportedSurfaces": [
+          "web",
+          "desktop",
+          "mobile",
+          "terminal"
+        ],
+        "nodes": [
+          {
+            "type": "question",
+            "id": "half-plus-quarter",
+            "prompt": "Final recipe line: one ½-cup scoop of flour, then one ¼-cup scoop. Total flour? Show your chain if you like: the half-cup holds ___ quarter-scoops, so together that's ___ quarters = ___/4.",
+            "kind": "choice",
+            "choices": [
+              {
+                "id": "three-quarters",
+                "label": "3/4 cup"
+              },
+              {
+                "id": "two-sixths",
+                "label": "2/6 cup"
+              },
+              {
+                "id": "one-third",
+                "label": "1/3 cup"
+              }
+            ],
+            "allowText": true,
+            "hint": "The scoops are different sizes this time — but the half-cup measure fits a whole number of quarter-scoops. Fill in the blank first, then count."
+          }
+        ],
+        "createdAt": "2026-09-07T13:06:00.000Z",
+        "updatedAt": "2026-09-07T13:06:00.000Z"
+      },
+      "feedback": null,
+      "source_file": "web/public/reports/learning-to-teach/benchmark-v3-results.json",
+      "episode_sha256": "981419905f0119dd13698ee02b841e7f110a24eddb348895875557736ed138d5",
+      "document_provenance": "Archived terminal adapter receipt"
+    },
+    {
+      "id": "fraction-rejected",
+      "cohort": "cli",
+      "model": "Gemma 4 31B",
+      "case_id": "context-fractions-fragile",
+      "step_index": 4,
+      "learner": "Can we do one more?",
+      "reply": "```keating-ui\n{\"schemaVersion\":1,\"id\":\"fraction-challenge\",\"revision\":0,\"lifecycle\":\"ready\",\"retention\":\"ephemeral\",\"supportedSurfaces\":[\"web\",\"desktop\",\"mobile\",\"terminal\"],\"nodes\":[{\"type\":\"markdown\",\"id\":\"challenge-intro\",\"content\":\"Let's test your intuition. Imagine you have one **quarter-cup** (1/4) and you want to add another **quarter-cup** (1/4) to it.\"},{\"type\":\"question\",\"id\":\"final-check\",\"prompt\":\"Based on what we just talked about with the scoops, what is the total?\",\"kind\":\"choice\",\"choices\":[{\"id\":\"two-eighths\",\"label\":\"2/8 cup\"},{\"id\":\"two-quarters\",\"label\":\"2/4 cup\"},{\"id\":\"one-eighth\",\"label\":\"1/8 cup\"}],\"allowText\":true,\"hint\":\"Remember: The bottom number tells you the SIZE of the scoop. The top number tells you HOW MANY scoops you have.\"}],\"createdAt\":\"2026-09-07T12:28:00.000Z\",\"updatedAt\":\"2026-09-07T12:28:00.000Z\"}\n```",
+      "learner_sha256": "a3698efd86290deca6b0b6ee739bb60c8c1ad1fd2c434e0db02f89d7c332150d",
+      "reply_sha256": "1ededd6318915cfc8053fbd89a51b2ba3af05507f5e356225ed2f0bfcdfe26f5",
+      "prior_learner": "I put in two quarter-cup scoops. I wrote 2/8 cup because there are two fours.",
+      "outcome": "rejected",
+      "components": [],
+      "document": null,
+      "feedback": "The UI document does not satisfy the shared contract. Nothing was executed; correct it and retry.",
+      "source_file": "web/public/reports/learning-to-teach/benchmark-v3-results.json",
+      "episode_sha256": "65ab5e4ccc64c51251d0dcf50fe0bb129d39eda8a49fe6bc713e5056be69bb22",
+      "document_provenance": null
+    },
+    {
+      "id": "fraction-text",
+      "cohort": "cli",
+      "model": "Inkling Small",
+      "case_id": "context-fractions-fragile",
+      "step_index": 4,
+      "learner": "Can we do one more?",
+      "reply": "Sure — what's the problem? Give me the fractions or measurement, and we'll trace it together (predict, check, repair). Which one are you checking?",
+      "learner_sha256": "a3698efd86290deca6b0b6ee739bb60c8c1ad1fd2c434e0db02f89d7c332150d",
+      "reply_sha256": "244a4e0c193c31595cebf1e18bbbc5cd0fa511c03ae10e20fd4ec7dd5fe80e9f",
+      "prior_learner": "I put in two quarter-cup scoops. I wrote 2/8 cup because there are two fours.",
+      "outcome": "no_recognized_surface",
+      "components": [],
+      "document": null,
+      "feedback": null,
+      "source_file": "web/public/reports/learning-to-teach/benchmark-v3-results.json",
+      "episode_sha256": "68c578d5eeb0a0692f8b42f527477ff1df9fa1deecba62e205874c7c1cdf1e5f",
+      "document_provenance": null
+    },
+    {
+      "id": "speed-flashcards",
+      "cohort": "checkpoints",
+      "model": "Inkling Small + OpenUI SFT",
+      "case_id": "test-speed-cards",
+      "step_index": 0,
+      "learner": "We finished learning speed = distance / time, consistent units, and the difference between average and instantaneous speed. Make four resumable OpenUI Flashcards with concrete recall prompts, including 100 km in 2 hours and a stopped car.",
+      "reply": "```openui lifecycle=resumable id=flashcards-speed-basics revision=0\nroot = LearningSurface([activity], \"Speed: recall and apply\", \"\", \"resumable\")\nactivity = Flashcards(\"speed-basics\", \"Speed: recall and apply\", \"Recall the idea before turning over each card.\", [{\"front\":\"What is the definition of speed?\",\"back\":\"Speed is distance travelled per unit of time.\"},{\"front\":\"Calculate the speed: 100 km in 2 hours.\",\"back\":\"50 km/h.\"},{\"front\":\"A car is stopped. What is its speed?\",\"back\":\"0 km/h.\"},{\"front\":\"Why must units be consistent in a speed calculation?\",\"back\":\"Mixed units give a meaningless number; convert them before dividing.\"}], \"resumable\")\n```",
+      "learner_sha256": "70873b41d8204b64035aefa999d7fcf4f2cab73dd61ba2e5ca5f30f59b0d9007",
+      "reply_sha256": "e5d60975e92a4bbb17de6be984a8ca2c28beb708bbc5e598c1d8e64087bdb6c4",
+      "outcome": "passed",
+      "components": [
+        "deck"
+      ],
+      "document": {
+        "schemaVersion": 1,
+        "id": "openui-slrqrv-flashcards-speed-basics",
+        "revision": 0,
+        "lifecycle": "ready",
+        "retention": "resumable",
+        "supportedSurfaces": [
+          "web",
+          "desktop",
+          "mobile",
+          "terminal"
+        ],
+        "title": "Speed: recall and apply",
+        "nodes": [
+          {
+            "type": "deck",
+            "id": "speed-basics",
+            "title": "Recall the idea before turning over each card.",
+            "topic": "Speed: recall and apply",
+            "cards": [
+              {
+                "id": "activity-card-1",
+                "front": "What is the definition of speed?",
+                "back": "Speed is distance travelled per unit of time."
+              },
+              {
+                "id": "activity-card-2",
+                "front": "Calculate the speed: 100 km in 2 hours.",
+                "back": "50 km/h."
+              },
+              {
+                "id": "activity-card-3",
+                "front": "A car is stopped. What is its speed?",
+                "back": "0 km/h."
+              },
+              {
+                "id": "activity-card-4",
+                "front": "Why must units be consistent in a speed calculation?",
+                "back": "Mixed units give a meaningless number; convert them before dividing."
+              }
+            ]
+          }
+        ],
+        "createdAt": "2026-09-06T20:00:00.000Z",
+        "updatedAt": "2026-09-06T20:00:00.000Z"
+      },
+      "feedback": "The requested activity compiled through Keating’s current contract.",
+      "creation_feedback": "The requested activity compiled through Keating’s current contract.",
+      "grading": null,
+      "document_provenance": "Recompiled original reply with the hash-pinned public report compiler",
+      "source_file": "web/public/reports/learning-to-teach/report-data.json",
+      "source_pointer": "interaction_round.after[scenario.id=test-speed-cards].messages"
+    },
+    {
+      "id": "taxi-simulation",
+      "cohort": "checkpoints",
+      "model": "Inkling Small + OpenUI SFT + SDPO",
+      "case_id": "test-fare-simulation",
+      "step_index": 0,
+      "learner": "Build an OpenUI Simulation for a taxi charging a $5 starting fee plus $2 per kilometre. Give me one distance slider from 0 to 20 kilometres and a calculated total fare readout. Use a workspace lifecycle.",
+      "reply": "```openui lifecycle=workspace id=taxi-fare-simulation\nroot = LearningSurface([sim], \"Taxi fare simulation\", \"\", \"workspace\")\nsim = Simulation(\"taxi-fare\", \"Taxi fare\", [{ id: \"distance\", label: \"Distance\", unit: \"km\", min: 0, max: 20, step: 1, value: 5 }], [{ id: \"fare\", label: \"Total fare\", unit: \"$\", expr: \"5 + 2 * distance\", precision: 2 }], \"workspace\")\n```",
+      "learner_sha256": "42a825a99fa027d93dff720783a79f2ba8bda18e61a500577972a7b5c59bb11a",
+      "reply_sha256": "fa2e9134109634389924e1257c0abbc395ec4a5700bb28a8595ab9f81aeff9e6",
+      "outcome": "passed",
+      "components": [
+        "simulation"
+      ],
+      "document": {
+        "schemaVersion": 1,
+        "id": "openui-1ygrcci-taxi-fare-simulation",
+        "revision": 0,
+        "lifecycle": "ready",
+        "retention": "workspace",
+        "supportedSurfaces": [
+          "web",
+          "desktop",
+          "mobile",
+          "terminal"
+        ],
+        "title": "Taxi fare simulation",
+        "nodes": [
+          {
+            "type": "simulation",
+            "id": "taxi-fare",
+            "title": "Taxi fare",
+            "parameters": [
+              {
+                "id": "distance",
+                "label": "Distance",
+                "unit": "km",
+                "min": 0,
+                "max": 20,
+                "step": 1,
+                "value": 5
+              }
+            ],
+            "readouts": [
+              {
+                "id": "fare",
+                "label": "Total fare",
+                "unit": "$",
+                "expr": "5 + 2 * distance",
+                "precision": 2
+              }
+            ]
+          }
+        ],
+        "createdAt": "2026-09-06T20:00:00.000Z",
+        "updatedAt": "2026-09-06T20:00:00.000Z"
+      },
+      "feedback": "The requested activity compiled through Keating’s current contract.",
+      "creation_feedback": "The requested activity compiled through Keating’s current contract.",
+      "grading": null,
+      "document_provenance": "Recompiled original reply with the hash-pinned public report compiler",
+      "source_file": "web/public/reports/learning-to-teach/report-data.json",
+      "source_pointer": "interaction_round.sdpo[scenario.id=test-fare-simulation].messages"
+    }
+  ],
+  "jev_decision_utilization": null,
+  "jev_coverage": "These three tutor evaluations have no paired record of a Jev decision being shown to the tutor. No model-following rate or production traffic estimate can be calculated from them."
+}

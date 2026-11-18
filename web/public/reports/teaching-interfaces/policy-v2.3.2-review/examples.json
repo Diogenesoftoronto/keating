@@ -1,0 +1,22 @@
+{
+  "python-practice--jev--1": {
+    "debug_example_witness": "masked",
+    "debug_solution_visibility": "solution_given",
+    "reason": "All even numbers are collected because the skipped 3 is odd. The native page description, shown while loading or on fallback, names the exact faulty index. The ready HTML does not show that diagnosis."
+  },
+  "python-practice--jev--2": {
+    "debug_example_witness": "observable",
+    "debug_solution_visibility": "independent",
+    "reason": "The supplied list prints and then raises IndexError. The instruction gives the intended result and leaves the diagnosis to the learner."
+  },
+  "python-practice--google--1": {
+    "debug_example_witness": "observable",
+    "debug_solution_visibility": "independent",
+    "reason": "The supplied words produce two instead of the stipulated three. Naming the expected result does not identify the line."
+  },
+  "python-practice--google--2": {
+    "debug_example_witness": "observable",
+    "debug_solution_visibility": "location_clue",
+    "reason": "The supplied numbers sum to 9 instead of 13. A second comment on the faulty slice identifies the line and intended coverage without giving a corrected expression."
+  }
+}

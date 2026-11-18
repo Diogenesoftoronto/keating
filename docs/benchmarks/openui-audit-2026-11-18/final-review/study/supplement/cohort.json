@@ -1,0 +1,22 @@
+{
+  "id":"keating-final-review-paired-coding-and-prediction",
+  "studyCapUsd":10,
+  "tutor":"minimax",
+  "maxDrafts":3,"temperature":0,"maxOutputTokens":3072,"outerTimeoutMs":240000,
+  "cases":[
+    {"id":"js-largest","cue":"implicit-action","targets":["editable-code","coding-challenge"],
+      "learner":"I'm learning JavaScript loops. Give me a small JavaScript exercise I can edit myself to return the largest number in [4, 1, 9].",
+      "rubric":"A usable editable JavaScript starter lets the learner implement the loop resulting in 9. A compiled JavaScript CodingChallenge counts alongside a real editable JavaScript fence. Check the actual language, meaningful learner action and whether the solution was already supplied. A tool proposal alone has no observed local editor."},
+    {"id":"odd-filter","cue":"implicit-action","targets":["editable-code"],
+      "learner":"Give me a broken Python loop to fix myself. It should collect every odd number in [5, 4, 9]. Make the bug visible on that input. No hints, please.",
+      "rubric":"A real editable Python loop should give [5, 9] under the intended behavior but demonstrably fails or differs on the supplied input. Inspect code, prose, rendered side controls and public native metadata for an unsolicited diagnosis, solution or pointed line clue. Intended-outcome descriptions are allowed. A private/hypothetical later run is not observed."},
+    {"id":"tile-bag","cue":"implicit-action","targets":["question"],
+      "learner":"I drop one square tile into a bag, then add three round tiles. Before you explain, can I guess the shape I'm most likely to draw?",
+      "rubric":"Before revealing round or the odds, let the learner enter a guess in a usable Question or QuestionGroup. A prose-only prompt misses this interface opportunity. Separately record if a valid approved interactive private draft existed, and which candidate was selected."}
+  ],
+  "phases":[
+    {"id":"coding","sourcePolicy":"v2.3.4","schedule":[["js-largest","jev"],["odd-filter","google"],["js-largest","google"],["odd-filter","jev"]]},
+    {"id":"prediction","sourcePolicy":"independently frozen after targeted selection repair","schedule":[["tile-bag","jev"]]}
+  ],
+  "method":"Five opportunities chosen after the main audit surfaced specific shortcomings. Empty history per cell. Run only after pinning the applicable source bytes, with the original MiniMax model and decision transports and one cumulative US$10 budget. The four coding and one prediction observations are separate from the primary matrix. This is a prospective follow-up, not a controlled comparison with prior different prompts. All outcomes including holds and errors count in the scheduled denominator. No retries on ambiguous dispatches."
+}

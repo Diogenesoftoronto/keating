@@ -1,0 +1,232 @@
+{
+  "scope": "Original wire and unchanged deterministic grading check with a counterfactual comparison of advertised schemas. No model generation or new release.",
+  "learner": "My guess is four layers, because the second fold doubles the two layers. Did I get that right?",
+  "cells": [
+    {
+      "id": "paper-followup--flash--jev",
+      "receiptSha256": "7ef2a4fc47c11fcc157a3566f7622cfc19b3e88974d94dccd46342f26c9d1995",
+      "typedAttempt": true,
+      "anotherLearnerResponseDue": true,
+      "offered": [
+        "Question",
+        "Simulation"
+      ],
+      "priorPublicComponent": [
+        "question-group"
+      ],
+      "observedDisposition": "withheld",
+      "selectedAttempt": null,
+      "pendingRecords": 0,
+      "drafts": [
+        {
+          "attempt": 1,
+          "providerSchemaCount": 18,
+          "providerGradingSchemas": [
+            "grade_quiz",
+            "grade_question_checks"
+          ],
+          "gradingSchemasWithRecordFilter": [],
+          "gradingCalls": [],
+          "recordGradeCheck": "pass",
+          "observedReview": "fail",
+          "failedChecks": [
+            "mastery_overclaimed",
+            "transfer_overclaimed",
+            "checkpoint_answer_leaked",
+            "checkpoint_not_interactive"
+          ],
+          "uncertainCheckpoint": false
+        },
+        {
+          "attempt": 2,
+          "providerSchemaCount": 18,
+          "providerGradingSchemas": [
+            "grade_quiz",
+            "grade_question_checks"
+          ],
+          "gradingSchemasWithRecordFilter": [],
+          "gradingCalls": [],
+          "recordGradeCheck": "pass",
+          "observedReview": "fail",
+          "failedChecks": [
+            "mastery_overclaimed"
+          ],
+          "uncertainCheckpoint": false
+        },
+        {
+          "attempt": 3,
+          "providerSchemaCount": 0,
+          "providerGradingSchemas": [],
+          "gradingSchemasWithRecordFilter": [],
+          "gradingCalls": [],
+          "recordGradeCheck": "pass",
+          "observedReview": "fail",
+          "failedChecks": [
+            "checkpoint_answer_leaked",
+            "checkpoint_not_interactive"
+          ],
+          "uncertainCheckpoint": false
+        }
+      ]
+    },
+    {
+      "id": "paper-followup--flash--google",
+      "receiptSha256": "720e0b5cf5b084d95815ece07858c89231fb58879647e144b193d3e3a31c116c",
+      "typedAttempt": true,
+      "anotherLearnerResponseDue": true,
+      "offered": [
+        "Question",
+        "Simulation"
+      ],
+      "priorPublicComponent": [],
+      "observedDisposition": "released",
+      "selectedAttempt": 1,
+      "pendingRecords": 0,
+      "drafts": [
+        {
+          "attempt": 1,
+          "providerSchemaCount": 18,
+          "providerGradingSchemas": [
+            "grade_quiz",
+            "grade_question_checks"
+          ],
+          "gradingSchemasWithRecordFilter": [],
+          "gradingCalls": [],
+          "recordGradeCheck": "pass",
+          "observedReview": "pass",
+          "failedChecks": [],
+          "uncertainCheckpoint": false
+        }
+      ]
+    },
+    {
+      "id": "paper-followup--minimax--jev",
+      "receiptSha256": "2c6383b3f512638081b8dc48dd66f8bfafabafadebcbeb1427a4d7efffbd7063",
+      "typedAttempt": true,
+      "anotherLearnerResponseDue": true,
+      "offered": [
+        "Question",
+        "Simulation"
+      ],
+      "priorPublicComponent": [],
+      "observedDisposition": "withheld",
+      "selectedAttempt": null,
+      "pendingRecords": 0,
+      "drafts": [
+        {
+          "attempt": 1,
+          "providerSchemaCount": 18,
+          "providerGradingSchemas": [
+            "grade_quiz",
+            "grade_question_checks"
+          ],
+          "gradingSchemasWithRecordFilter": [],
+          "gradingCalls": [
+            "grade_question_checks"
+          ],
+          "recordGradeCheck": "fail",
+          "observedReview": "fail",
+          "failedChecks": [
+            "grading_requires_submission",
+            "checkpoint_answer_leaked",
+            "checkpoint_not_interactive"
+          ],
+          "uncertainCheckpoint": false
+        },
+        {
+          "attempt": 2,
+          "providerSchemaCount": 18,
+          "providerGradingSchemas": [
+            "grade_quiz",
+            "grade_question_checks"
+          ],
+          "gradingSchemasWithRecordFilter": [],
+          "gradingCalls": [],
+          "recordGradeCheck": "pass",
+          "observedReview": "unknown",
+          "failedChecks": [],
+          "uncertainCheckpoint": false
+        },
+        {
+          "attempt": 3,
+          "providerSchemaCount": 0,
+          "providerGradingSchemas": [],
+          "gradingSchemasWithRecordFilter": [],
+          "gradingCalls": [],
+          "recordGradeCheck": "pass",
+          "observedReview": "fail",
+          "failedChecks": [
+            "checkpoint_answer_leaked"
+          ],
+          "uncertainCheckpoint": false
+        }
+      ]
+    },
+    {
+      "id": "paper-followup--minimax--google",
+      "receiptSha256": "45572baacadbb159da05dd27b1b8e58d08c82caa29338ba270944bf904cf41fb",
+      "typedAttempt": true,
+      "anotherLearnerResponseDue": true,
+      "offered": [],
+      "priorPublicComponent": [
+        "question-group"
+      ],
+      "observedDisposition": "withheld",
+      "selectedAttempt": null,
+      "pendingRecords": 0,
+      "drafts": [
+        {
+          "attempt": 1,
+          "providerSchemaCount": 18,
+          "providerGradingSchemas": [
+            "grade_quiz",
+            "grade_question_checks"
+          ],
+          "gradingSchemasWithRecordFilter": [],
+          "gradingCalls": [
+            "grade_question_checks"
+          ],
+          "recordGradeCheck": "fail",
+          "observedReview": "fail",
+          "failedChecks": [
+            "grading_requires_submission",
+            "quality_scope"
+          ],
+          "uncertainCheckpoint": false
+        },
+        {
+          "attempt": 2,
+          "providerSchemaCount": 18,
+          "providerGradingSchemas": [
+            "grade_quiz",
+            "grade_question_checks"
+          ],
+          "gradingSchemasWithRecordFilter": [],
+          "gradingCalls": [
+            "grade_question_checks"
+          ],
+          "recordGradeCheck": "fail",
+          "observedReview": "fail",
+          "failedChecks": [
+            "grading_requires_submission",
+            "quality_scope"
+          ],
+          "uncertainCheckpoint": false
+        },
+        {
+          "attempt": 3,
+          "providerSchemaCount": 0,
+          "providerGradingSchemas": [],
+          "gradingSchemasWithRecordFilter": [],
+          "gradingCalls": [],
+          "recordGradeCheck": "pass",
+          "observedReview": "unknown",
+          "failedChecks": [
+            "quality_scope"
+          ],
+          "uncertainCheckpoint": true
+        }
+      ]
+    }
+  ]
+}

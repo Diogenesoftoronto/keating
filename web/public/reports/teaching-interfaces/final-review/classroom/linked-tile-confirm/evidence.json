@@ -1,0 +1,179 @@
+{
+  "schemaVersion": 1,
+  "cell": "classroom-tile-linked-feedback--minimax--jev",
+  "policy": "keating-teaching-policy/v2.3.8",
+  "source": "live-typed-classroom-followup",
+  "parentStage": "released-message-replay",
+  "parentReceiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+  "parentPublicTextSha256": "65eecea1789dffb357f65748832beaceaea4d5a144da07fcb1b00a96485265de",
+  "stageSha256": "c82bc39d8356f055ff5c84678983065b42f00f3ac473ee93bc8362c8373baa89",
+  "receipt": "../../study/classroom-v2.3.8/receipts/classroom-tile-linked-feedback--minimax--jev.json",
+  "receiptSha256": "9638349b2d44f32d4d6c0a876b772a8a25bb37bac4fa213935bfbb2bdacba413",
+  "sourcePublicTextMatches": true,
+  "sentAt": "2026-11-18T19:28:53.173Z",
+  "completedAt": "2026-11-18T19:29:22.242Z",
+  "typedLearner": "My guess is round, because three of the four tiles are round.",
+  "publicText": "<!--keating:review=withheld-->\nKeating couldn't verify a reply after reviewing the drafts: the drafts failed the teaching or evidence checks. Retry or choose a different reply model in Settings. Blocking checks: checkpoint_answer_leaked, checkpoint_continued, unsolicited_assessment, mastery_overclaimed, unsolicited_animation.\n\nFailure: no-approved-draft. Draft attempts: 3; completed drafts: 3.",
+  "publicTextSha256": "150fb17a3d72d2c6ef097ffb0e623d38c03de96151f8811dcc2faf41c83581b5",
+  "plannedFollowup": {
+    "previousQuestionPresentation": {
+      "assistantTurnIndex": 1,
+      "documentId": "openui-g18a19-tile-draw-prediction",
+      "nodeId": "guess"
+    },
+    "openInteractions": [
+      {
+        "documentId": "openui-g18a19-tile-draw-prediction",
+        "nodeId": "guess",
+        "component": "question-group",
+        "presentedAt": 1795030133097,
+        "itemId": null,
+        "state": "awaiting"
+      }
+    ],
+    "pendingSubmissions": 0,
+    "conversationTurns": 2,
+    "previousRole": "assistant"
+  },
+  "actualTutor": {
+    "provider": "minimax",
+    "model": "MiniMax-M2.7-highspeed",
+    "responseModel": null
+  },
+  "visibleAssistant": {
+    "text": "Couldn't produce a reply",
+    "alertLabels": [
+      "Couldn't produce a reply. Keating couldn't verify a reply after reviewing the drafts: the drafts failed the teaching or evidence checks. Retry or choose a different reply model in Settings."
+    ]
+  },
+  "finalQuestionState": {
+    "open": [
+      {
+        "documentId": "openui-g18a19-tile-draw-prediction",
+        "nodeId": "guess",
+        "component": "question-group",
+        "presentedAt": 1795030133097,
+        "itemId": null,
+        "state": "awaiting"
+      }
+    ],
+    "pending": 0
+  },
+  "gatePhases": [
+    "planning",
+    "drafting",
+    "checking",
+    "revising",
+    "checking",
+    "revising",
+    "checking",
+    "withheld"
+  ],
+  "disposition": "withheld",
+  "sourceSelectionRule": null,
+  "sourceSelectedAttempt": null,
+  "measuredTurn": {
+    "schemaVersion": 1,
+    "conversationId": "ccbc1dff-3dd9-4803-b06d-92d914c5ef44",
+    "turnId": "learner-1",
+    "turnIndex": 1,
+    "model": "minimax/MiniMax-M2.7-highspeed",
+    "mode": "guided",
+    "cue": {
+      "kind": "none",
+      "targets": []
+    },
+    "reply": "withheld",
+    "replyElapsedMs": 28807,
+    "attempted": true,
+    "compiled": [
+      "question-group"
+    ],
+    "selected": [],
+    "rendered": [],
+    "guidance": {
+      "source": "jev",
+      "action": "continue",
+      "delivered": true,
+      "targets": [
+        "question",
+        "simulation"
+      ]
+    },
+    "outsideWords": null,
+    "nativePageRequested": null,
+    "draftAttempts": 3,
+    "gateIssues": [
+      "checkpoint_answer_leaked",
+      "checkpoint_continued",
+      "checkpoint_not_interactive",
+      "checkpoint_repeated",
+      "mastery_overclaimed",
+      "unsolicited_animation",
+      "unsolicited_assessment"
+    ],
+    "decisionModel": "jev-1.14.0",
+    "nativePage": {
+      "succeeded": null,
+      "failed": null,
+      "attached": null,
+      "saved": null,
+      "mounted": null,
+      "ready": null,
+      "visible": null,
+      "opened": null,
+      "frameFailed": null
+    }
+  },
+  "localQuestionSubmits": 0,
+  "transport": [
+    {
+      "kind": "recorded-public-message",
+      "status": 200
+    },
+    {
+      "kind": "decision",
+      "status": 200
+    },
+    {
+      "kind": "tutor",
+      "status": 200
+    },
+    {
+      "kind": "decision",
+      "status": 200
+    },
+    {
+      "kind": "tutor",
+      "status": 200
+    },
+    {
+      "kind": "decision",
+      "status": 200
+    },
+    {
+      "kind": "tutor",
+      "status": 200
+    },
+    {
+      "kind": "decision",
+      "status": 200
+    }
+  ],
+  "blockedExternalOrigins": [
+    "https://cdn.jsdelivr.net"
+  ],
+  "mobile": {
+    "viewport": 390,
+    "body": 390
+  },
+  "pageErrors": [],
+  "settingsExportRows": 2,
+  "locallyRegisteredWebMcpMatchesCli": true,
+  "screenshots": [
+    "staged-question.png",
+    "classroom-desktop.png",
+    "classroom-mobile.png",
+    "settings-inspector.png"
+  ]
+}

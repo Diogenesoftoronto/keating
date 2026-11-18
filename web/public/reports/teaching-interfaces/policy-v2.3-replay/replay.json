@@ -1,0 +1,235 @@
+{
+  "version": 1,
+  "policy": "keating-teaching-policy/v2.3",
+  "historicalPolicy": "keating-teaching-policy/v2.2",
+  "networkRequests": 0,
+  "newProviderReviews": 0,
+  "newTutorGenerations": 0,
+  "incrementalUsd": 0,
+  "planning": [
+    {
+      "id": "conveyor--jev",
+      "receiptSha256": "f88822e5c2e501b79566a9eb1ad0d2971eedb38a8aa9ba1cb2194b4c249cf514",
+      "planRequestSha256": "3454a661b440b3f90f0c2656c8771f9f0472ac3c7b30f7dd2d3ed4acc0fbe2ee",
+      "wireSha256": "7c567a1ae94d0457fd11b3a09052bd144efb6c0625658af9b7318d722afb1e54",
+      "providerModel": "jev-1.14.0",
+      "goalProbability": 0.93,
+      "offered": [
+        "Simulation",
+        "ConceptMap"
+      ],
+      "before": {
+        "goalDirective": true,
+        "pacingDirective": true
+      },
+      "after": {
+        "goalDirective": false,
+        "pacingDirective": false,
+        "goalToolPermitted": false
+      }
+    },
+    {
+      "id": "conveyor--google",
+      "receiptSha256": "6f167c9be4b5c086275f316452b1afe4cc145de4df7fd3446d8b52b9d66c8542",
+      "planRequestSha256": "3454a661b440b3f90f0c2656c8771f9f0472ac3c7b30f7dd2d3ed4acc0fbe2ee",
+      "wireSha256": "918b8423f4fb52d35175d1a76b18c0bbc2117a9468af4d4c0f6a09e9e8a44057",
+      "providerModel": "gemini-decision-1",
+      "goalProbability": 0.6163822122823911,
+      "offered": [
+        "Simulation",
+        "ConceptMap"
+      ],
+      "before": {
+        "goalDirective": true,
+        "pacingDirective": true
+      },
+      "after": {
+        "goalDirective": false,
+        "pacingDirective": false,
+        "goalToolPermitted": false
+      }
+    },
+    {
+      "id": "direct-label--jev",
+      "receiptSha256": "6d40b62cd75813acf44c52191b3f96154f41d862e8b01900073ffe48bd6237df",
+      "planRequestSha256": "73d71114e68099397ccabaab74948b85606184a883cc26df27a7a7e9e6bfdbb1",
+      "wireSha256": "be2ebf7cf867ebaece3a372b769e0b5a7c80c09a5f8fdec8fc3507b691d87a12",
+      "providerModel": "jev-1.14.0",
+      "goalProbability": 0.97,
+      "offered": [],
+      "before": {
+        "goalDirective": true,
+        "pacingDirective": false
+      },
+      "after": {
+        "goalDirective": false,
+        "pacingDirective": false,
+        "goalToolPermitted": false
+      }
+    },
+    {
+      "id": "direct-label--google",
+      "receiptSha256": "5e825d6eb3cf8ab84be9abf05accd738469fd922973a5ecc1a5211ee59a0814f",
+      "planRequestSha256": "73d71114e68099397ccabaab74948b85606184a883cc26df27a7a7e9e6bfdbb1",
+      "wireSha256": "f3285f0cd043f0715925a60fd5e75bb8c065e796bfb3999f106fe289c79715ff",
+      "providerModel": "gemini-decision-1",
+      "goalProbability": 0.6237522584436266,
+      "offered": [],
+      "before": {
+        "goalDirective": true,
+        "pacingDirective": false
+      },
+      "after": {
+        "goalDirective": false,
+        "pacingDirective": false,
+        "goalToolPermitted": false
+      }
+    },
+    {
+      "id": "account-seats--jev",
+      "receiptSha256": "b92520e9bef0736408f67428905bbf7267deaae8d48e14083e5170960bd8f5ef",
+      "planRequestSha256": "685930bc4f2ec818dc252007bbbd3cee28449cbb325a9ef7e3e0b5d15027719e",
+      "wireSha256": "9ecb54b61908aba2c10967c9e440082ddd4df4873aaa33b80843a382aceb3709",
+      "providerModel": "jev-1.14.0",
+      "goalProbability": 0.97,
+      "offered": [],
+      "before": {
+        "goalDirective": true,
+        "pacingDirective": false
+      },
+      "after": {
+        "goalDirective": false,
+        "pacingDirective": false,
+        "goalToolPermitted": false
+      }
+    },
+    {
+      "id": "account-seats--google",
+      "receiptSha256": "bac2ecdf3f44beb1f53ac17fae031598265757c7eccd6738ad92c0d80986b1f1",
+      "planRequestSha256": "685930bc4f2ec818dc252007bbbd3cee28449cbb325a9ef7e3e0b5d15027719e",
+      "wireSha256": "0e9c1f86acdaf661aa36b8c6be37f51d4cb77a4cbd27e88aedaae243eca41092",
+      "providerModel": "gemini-decision-1",
+      "goalProbability": 0.6826716142892748,
+      "offered": [],
+      "before": {
+        "goalDirective": true,
+        "pacingDirective": false
+      },
+      "after": {
+        "goalDirective": false,
+        "pacingDirective": false,
+        "goalToolPermitted": false
+      }
+    }
+  ],
+  "conveyor": {
+    "caseId": "conveyor--google",
+    "historicalStatus": "released",
+    "historicalSelectedAttempt": 2,
+    "originalTutor": "MiniMax-M2.7-highspeed",
+    "originalReviewer": "gemini-decision-1",
+    "sourceSha256": "4f860c74d6737e8e3b3d6ab7b61b8cd49c2c1daa5e2f9cc1fad5c210dc640e3e",
+    "candidateSha256": "3cb0461b0e46e55362ea15c79d63fe8b49db2346b9bba57e1e94f0560a007ab0",
+    "outsideWords": 143,
+    "outsideByteIdentical": true,
+    "controlsByteIdentical": true,
+    "control": {
+      "type": "simulation",
+      "id": "conveyor-sim",
+      "title": "Conveyor output model",
+      "parameters": [
+        {
+          "id": "speed",
+          "label": "Belt speed",
+          "unit": "m/min",
+          "min": 0,
+          "max": 120,
+          "step": 5,
+          "value": 60
+        },
+        {
+          "id": "spacing",
+          "label": "Carton spacing",
+          "unit": "m",
+          "min": 2,
+          "max": 20,
+          "step": 1,
+          "value": 10
+        }
+      ],
+      "readouts": [
+        {
+          "id": "total",
+          "label": "Cartons in 10 minutes",
+          "unit": "cartons",
+          "expr": "speed/spacing*10",
+          "precision": 0,
+          "emphasis": true
+        },
+        {
+          "id": "rate",
+          "label": "Cartons per minute",
+          "unit": "cartons/min",
+          "expr": "speed/spacing",
+          "precision": 1
+        }
+      ]
+    },
+    "beforeBrief": "Before you touch anything, predict: if you raise the belt speed from 60 to 90 m/min and leave the spacing at 10 m, how many cartons should come out in ten minutes? Then move the speed slider and check. After that, try raising the speed AND halving the spacing to see whether the two changes add up.",
+    "afterBrief": "Then move the speed slider and check. After that, try raising the speed AND halving the spacing to see whether the two changes add up.",
+    "proposedReply": "Here's the relationship in one line: **output rate = belt speed ÷ carton spacing** (with cartons evenly spaced and nothing falling off or being rejected). So at the standard setting of 60 m/min with cartons every 10 m, you get 6 cartons/min — and 60 cartons in ten minutes.\n\nTwo consequences worth noticing: with spacing fixed, the relationship is *linear* (double the speed, double the output), and speed and spacing are interchangeable — halving the spacing has the same effect on output as doubling the speed, because what matters is cartons per metre.\n\nMove the sliders to test that.\n\n```openui lifecycle=ephemeral id=conveyor-speed-output\n\nroot = LearningSurface([sim], \"Conveyor speed and output\", \"Vary the belt speed and carton spacing; read the output each time.\", \"ephemeral\")\nsim = Simulation(\"conveyor-sim\", \"Conveyor output model\", [\n  { id: \"speed\", label: \"Belt speed\", unit: \"m/min\", min: 0, max: 120, step: 5, value: 60 },\n  { id: \"spacing\", label: \"Carton spacing\", unit: \"m\", min: 2, max: 20, step: 1, value: 10 }\n], [\n  { id: \"total\", label: \"Cartons in 10 minutes\", unit: \"cartons\", expr: \"speed/spacing*10\", precision: 0, emphasis: true },\n  { id: \"rate\", label: \"Cartons per minute\", unit: \"cartons/min\", expr: \"speed/spacing\", precision: 1 }\n], \"ephemeral\", \"Then move the speed slider and check. After that, try raising the speed AND halving the spacing to see whether the two changes add up.\")\n```\n\nThe model assumes a steady belt, evenly spaced cartons, and no losses — that's why spacing is the only thing standing between speed and output. When you press **Share what I found**, I'll read your actual numbers and we'll see whether your prediction held.",
+    "freshProviderRelease": null,
+    "realHostRuns": [
+      {
+        "reviewSource": "no-review-available",
+        "status": "withheld",
+        "fixedDraftAttempts": 1,
+        "reviewedSha256": "3cb0461b0e46e55362ea15c79d63fe8b49db2346b9bba57e1e94f0560a007ab0",
+        "reviewRequestSha256": "24c73e59920dab87e51e73475304eb944a72fa46da5e69829c48383f2a81d020",
+        "selectedSha256": null,
+        "repairedAssessmentBrief": true,
+        "preferenceChecks": [
+          {
+            "id": "declined_assessment_imposed",
+            "status": "unknown",
+            "source": "jev",
+            "severity": "major",
+            "probability": null
+          },
+          {
+            "id": "declined_assessment_structure",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          }
+        ]
+      },
+      {
+        "reviewSource": "passing-test-double",
+        "status": "released",
+        "fixedDraftAttempts": 1,
+        "reviewedSha256": "3cb0461b0e46e55362ea15c79d63fe8b49db2346b9bba57e1e94f0560a007ab0",
+        "reviewRequestSha256": "24c73e59920dab87e51e73475304eb944a72fa46da5e69829c48383f2a81d020",
+        "selectedSha256": "3cb0461b0e46e55362ea15c79d63fe8b49db2346b9bba57e1e94f0560a007ab0",
+        "repairedAssessmentBrief": true,
+        "preferenceChecks": [
+          {
+            "id": "declined_assessment_imposed",
+            "status": "pass",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.01
+          },
+          {
+            "id": "declined_assessment_structure",
+            "source": "deterministic",
+            "severity": "major",
+            "status": "pass",
+            "probability": 0
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "study": "policy-v2.1-prospective-3",
+  "policy": "keating-teaching-policy/v2.1",
+  "releasePromptSource": "feb14a770371032619839271cfb3d1a4fe5079ff",
+  "systemSha256": "5ec2384dc7524c0afa4e7de5498ff8868a933e5089eeccaac216b296841da66c",
+  "toolSchemasSha256": "c03ca9351998a17512996805bae6b65df19787a03f0d91aef9afa51d609cb13e",
+  "models": [
+    {"provider":"google","id":"gemini-3.1-flash-lite","endpoint":"https://generativelanguage.googleapis.com/v1beta","inputPerMillionUsd":0.25,"outputPerMillionUsd":1.5,"priceSource":"https://aistudio.google.com/docs/pricing#gemini-3.1-flash-lite"},
+    {"provider":"minimax","id":"MiniMax-M2.7-highspeed","endpoint":"https://api.minimax.io/anthropic","inputPerMillionUsd":0.6,"outputPerMillionUsd":2.4,"priceSource":"https://platform.minimax.io/subscribe/token-plan?tab=api-enterprise"}
+  ],
+  "judge":{"model":"jev-1.14.0","endpoint":"https://api.typesafe.ai/v1/systemone","inputPerMillionUsd":0.042,"outputPerMillionUsd":0,"priceSource":"https://docs.typesafe.ai/models"},
+  "protocol":{"maxDrafts":3,"turnTimeoutMs":90000,"tutorTimeoutMs":60000,"maxOutputTokens":3072,"temperature":0,"retryAttempts":0,"history":"empty","review":"ordinary","priorStudyAccountedUsd":0.831405428,"priorFollowupAccountedUsd":0.004273626,"followupLimitUsd":0.25,"studyLimitUsd":2,"tutorReserveUsd":0.12,"judgeReserveUsd":0.003},
+  "cases":[
+    {"id":"spinner","prompt":"A blue spinner landed on the same wedge three times. Let me predict the next spin before you explain what I should expect.","cue":{"kind":"implicit-action","targets":["question","question-group"]},"rubric":"The released response contains a valid Question or grouped Question that lets the learner predict the next spin before receiving the answer. It may invite reasoning. Giving away the prediction, or only asking in prose, fails this case."},
+    {"id":"bus","prompt":"I want to change the hourly bus frequency and watch what happens to the seats available per hour. Please skip the quiz for now.","cue":{"kind":"implicit-action","targets":["simulation"]},"rubric":"The released response contains a valid Simulation with an adjustable bus-frequency input and an observable seats-per-hour readout that changes correctly with frequency and an explicit or recoverable vehicle capacity. No assessed checkpoint or quiz accompanies it."},
+    {"id":"perimeter","prompt":"In one short sentence, what is the perimeter of a square with side length four? Just the answer, please.","cue":{"kind":"direct-text","targets":[]},"rubric":"The released response gives the correct perimeter, 16 (units optional), in at most one short sentence (at most 15 outside words). It contains no interface, exercise or follow-up question. A standalone answer is sufficient."}
+  ],
+  "missingEvidence":"A release with known text is scored under the predeclared rubric; native/tool-only, invalid or missing requested interfaces fail that learner-fit criterion. A transport or accounting interruption leaves fit unknown. A completely reviewed withholding is a delivery failure. No rendered outcome is observed."
+}

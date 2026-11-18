@@ -1,0 +1,638 @@
+{
+  "id": "irrigation--minimax--jev",
+  "caseId": "irrigation",
+  "kind": "primary",
+  "tutor": "minimax",
+  "arm": "jev",
+  "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks.",
+  "originalHistory": [],
+  "plan": {
+    "status": "guided",
+    "action": "create",
+    "offered": [
+      "Simulation"
+    ],
+    "families": [
+      {
+        "family": "manipulable",
+        "components": [
+          "Simulation"
+        ],
+        "features": [
+          "variable_relationship",
+          "hands_on_requested"
+        ]
+      }
+    ],
+    "reason": null,
+    "codePracticeLanguage": null,
+    "features": {
+      "variable_relationship": true,
+      "ordered_procedure": false,
+      "discrete_recall": false,
+      "structure_relations": false,
+      "category_distinction": false,
+      "prediction_opportunity": true,
+      "learner_response_due": false,
+      "hands_on_requested": true,
+      "executable_code": false,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "decisions": {
+      "direct_answer_requested": true,
+      "explanation_requested": true,
+      "learner_stuck": false,
+      "attempt_present": null,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": false,
+      "plain_reply_requested": false,
+      "assessment_declined": true,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": true,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": true,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "directives": [
+      "Answer the bounded question directly; do not start a diagnostic interview.",
+      "Give the requested explanation or worked example openly before inviting an attempt.",
+      "Give the requested help and any visual demonstration. Let the learner operate controls immediately. Keep test questions and predictions out of both surrounding prose and component instructions unless the learner specifically asks to make that prediction.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Answer the learner's request first; any activity comes after the answer.",
+      "At most one OpenUI activity may help this turn: Simulation to let the learner change a variable and observe the outcome; let the learner carry out the requested action themselves. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested."
+    ]
+  },
+  "refs": [
+    {
+      "label": "irrigation--minimax--jev/plan",
+      "entryId": "irrigation--flash--jev/plan",
+      "source": "wire-cache",
+      "requestSha256": "1b50c39379d8aa5908ec8f8eb2a926f83222d77120e46e38e1952eea74cb4779",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    },
+    {
+      "label": "irrigation--minimax--jev/review/1",
+      "entryId": "irrigation--minimax--jev/review/1",
+      "source": "live",
+      "requestSha256": "16f7b2b9b24816b03c2971fb8513aff72eb9f09c4f1385671f8ab747f80bb234",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    }
+  ],
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 18372,
+          "output": 542,
+          "cacheRead": 513,
+          "cacheWrite": 0,
+          "totalTokens": 19427,
+          "cost": {
+            "input": 0.0110232,
+            "output": 0.0013008,
+            "cacheRead": 0.00003078,
+            "cacheWrite": 0,
+            "total": 0.01235478
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 226
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Here's a model you can move yourself: set the drip flow, and the 6-minute total recomputes instantly.\n\n```openui lifecycle=ephemeral id=drip-irrigation-volume\n\nroot = LearningSurface([sim], \"Drip irrigation: 6-minute bucket total\", \"Adjust the flow rate and watch the volume that lands in the bucket.\", \"ephemeral\")\nsim = Simulation(\"drip-vol\", \"Drip flow and bucket total\", [\n  { id: \"flow\", label: \"Flow rate\", unit: \"L/min\", min: 0, max: 30, step: 0.5, value: 2 }\n], [\n  { id: \"total\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Same flow sustained\", unit: \"L/h\", expr: \"flow * 60\", precision: 0 },\n  { id: \"perdrop\", label: \"Per-second rate\", unit: \"mL/s\", expr: \"flow * 1000 / 60\", precision: 1 }\n], \"ephemeral\", \"Start at 2 L/min and move the slider. The emphasised readout is the bucket total after 6 minutes.\")\n```\n\nTry raising it to 10 L/min and watch the first number move — it's a straight multiply by 6, so the readout is the thing doing the accounting for you."
+          }
+        ]
+      },
+      "text": "Here's a model you can move yourself: set the drip flow, and the 6-minute total recomputes instantly.\n\n```openui lifecycle=ephemeral id=drip-irrigation-volume\n\nroot = LearningSurface([sim], \"Drip irrigation: 6-minute bucket total\", \"Adjust the flow rate and watch the volume that lands in the bucket.\", \"ephemeral\")\nsim = Simulation(\"drip-vol\", \"Drip flow and bucket total\", [\n  { id: \"flow\", label: \"Flow rate\", unit: \"L/min\", min: 0, max: 30, step: 0.5, value: 2 }\n], [\n  { id: \"total\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Same flow sustained\", unit: \"L/h\", expr: \"flow * 60\", precision: 0 },\n  { id: \"perdrop\", label: \"Per-second rate\", unit: \"mL/s\", expr: \"flow * 1000 / 60\", precision: 1 }\n], \"ephemeral\", \"Start at 2 L/min and move the slider. The emphasised readout is the bucket total after 6 minutes.\")\n```\n\nTry raising it to 10 L/min and watch the first number move — it's a straight multiply by 6, so the readout is the thing doing the accounting for you.",
+      "toolCalls": [],
+      "attempted": true,
+      "components": [
+        "simulation"
+      ],
+      "outsideWords": 47,
+      "entryId": "irrigation--minimax--jev/tutor/1",
+      "completed": true,
+      "providedDirectives": true,
+      "systemSha256": "cbbe3ac88f96443192b77e9889f14884f2ca88bdf969294ec15e4c996c46ebb4"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "reasoning": "off",
+      "standard": "supported",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.13
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.05
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.08
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.04
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.13
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.09
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.22
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.47
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.15
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "declined_assessment_imposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.27
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.12
+        },
+        {
+          "id": "law_authority_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "law_jurisdiction_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "medicine_evidence_conflated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "history_disagreement_erased",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "psychology_replication_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "politics_normative_as_fact",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "declined_assessment_structure",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06000000000000005,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.51,
+          "status": "unknown"
+        }
+      ],
+      "variant": "default"
+    }
+  ],
+  "selectedAttempt": 1,
+  "disposition": "released",
+  "missing": null,
+  "public": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 18372,
+        "output": 542,
+        "cacheRead": 513,
+        "cacheWrite": 0,
+        "totalTokens": 19427,
+        "cost": {
+          "input": 0.0110232,
+          "output": 0.0013008,
+          "cacheRead": 0.00003078,
+          "cacheWrite": 0,
+          "total": 0.01235478
+        },
+        "reasoning": 226,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Here's a model you can move yourself: set the drip flow, and the 6-minute total recomputes instantly.\n\n```openui lifecycle=ephemeral id=drip-irrigation-volume\n\nroot = LearningSurface([sim], \"Drip irrigation: 6-minute bucket total\", \"Adjust the flow rate and watch the volume that lands in the bucket.\", \"ephemeral\")\nsim = Simulation(\"drip-vol\", \"Drip flow and bucket total\", [\n  { id: \"flow\", label: \"Flow rate\", unit: \"L/min\", min: 0, max: 30, step: 0.5, value: 2 }\n], [\n  { id: \"total\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Same flow sustained\", unit: \"L/h\", expr: \"flow * 60\", precision: 0 },\n  { id: \"perdrop\", label: \"Per-second rate\", unit: \"mL/s\", expr: \"flow * 1000 / 60\", precision: 1 }\n], \"ephemeral\", \"Start at 2 L/min and move the slider. The emphasised readout is the bucket total after 6 minutes.\")\n```\n\nTry raising it to 10 L/min and watch the first number move — it's a straight multiply by 6, so the readout is the thing doing the accounting for you."
+        }
+      ]
+    },
+    "text": "Here's a model you can move yourself: set the drip flow, and the 6-minute total recomputes instantly.\n\n```openui lifecycle=ephemeral id=drip-irrigation-volume\n\nroot = LearningSurface([sim], \"Drip irrigation: 6-minute bucket total\", \"Adjust the flow rate and watch the volume that lands in the bucket.\", \"ephemeral\")\nsim = Simulation(\"drip-vol\", \"Drip flow and bucket total\", [\n  { id: \"flow\", label: \"Flow rate\", unit: \"L/min\", min: 0, max: 30, step: 0.5, value: 2 }\n], [\n  { id: \"total\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Same flow sustained\", unit: \"L/h\", expr: \"flow * 60\", precision: 0 },\n  { id: \"perdrop\", label: \"Per-second rate\", unit: \"mL/s\", expr: \"flow * 1000 / 60\", precision: 1 }\n], \"ephemeral\", \"Start at 2 L/min and move the slider. The emphasised readout is the bucket total after 6 minutes.\")\n```\n\nTry raising it to 10 L/min and watch the first number move — it's a straight multiply by 6, so the readout is the thing doing the accounting for you.",
+    "toolCalls": [],
+    "attempted": true,
+    "components": [
+      "simulation"
+    ],
+    "outsideWords": 47
+  },
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 18372,
+        "output": 542,
+        "cacheRead": 513,
+        "cacheWrite": 0,
+        "totalTokens": 19427,
+        "cost": {
+          "input": 0.0110232,
+          "output": 0.0013008,
+          "cacheRead": 0.00003078,
+          "cacheWrite": 0,
+          "total": 0.01235478
+        },
+        "reasoning": 226,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Here's a model you can move yourself: set the drip flow, and the 6-minute total recomputes instantly.\n\n```openui lifecycle=ephemeral id=drip-irrigation-volume\n\nroot = LearningSurface([sim], \"Drip irrigation: 6-minute bucket total\", \"Adjust the flow rate and watch the volume that lands in the bucket.\", \"ephemeral\")\nsim = Simulation(\"drip-vol\", \"Drip flow and bucket total\", [\n  { id: \"flow\", label: \"Flow rate\", unit: \"L/min\", min: 0, max: 30, step: 0.5, value: 2 }\n], [\n  { id: \"total\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Same flow sustained\", unit: \"L/h\", expr: \"flow * 60\", precision: 0 },\n  { id: \"perdrop\", label: \"Per-second rate\", unit: \"mL/s\", expr: \"flow * 1000 / 60\", precision: 1 }\n], \"ephemeral\", \"Start at 2 L/min and move the slider. The emphasised readout is the bucket total after 6 minutes.\")\n```\n\nTry raising it to 10 L/min and watch the first number move — it's a straight multiply by 6, so the readout is the thing doing the accounting for you."
+        }
+      ]
+    },
+    "text": "Here's a model you can move yourself: set the drip flow, and the 6-minute total recomputes instantly.\n\n```openui lifecycle=ephemeral id=drip-irrigation-volume\n\nroot = LearningSurface([sim], \"Drip irrigation: 6-minute bucket total\", \"Adjust the flow rate and watch the volume that lands in the bucket.\", \"ephemeral\")\nsim = Simulation(\"drip-vol\", \"Drip flow and bucket total\", [\n  { id: \"flow\", label: \"Flow rate\", unit: \"L/min\", min: 0, max: 30, step: 0.5, value: 2 }\n], [\n  { id: \"total\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Same flow sustained\", unit: \"L/h\", expr: \"flow * 60\", precision: 0 },\n  { id: \"perdrop\", label: \"Per-second rate\", unit: \"mL/s\", expr: \"flow * 1000 / 60\", precision: 1 }\n], \"ephemeral\", \"Start at 2 L/min and move the slider. The emphasised readout is the bucket total after 6 minutes.\")\n```\n\nTry raising it to 10 L/min and watch the first number move — it's a straight multiply by 6, so the readout is the thing doing the accounting for you.",
+    "toolCalls": []
+  },
+  "notice": null,
+  "elapsedMs": 5413
+}

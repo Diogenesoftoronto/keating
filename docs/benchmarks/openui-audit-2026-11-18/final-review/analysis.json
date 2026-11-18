@@ -1,0 +1,2712 @@
+{
+  "schemaVersion": 1,
+  "policy": "keating-teaching-policy/v2.3.3",
+  "cohortSha256": "a47fb2591170bec94758ca7fe1e8cab50193f8eed43dbaa9140d087b8e030c22",
+  "ratingsSha256": "11ad877e01b8676409e65e5a1f8613620221cbe35dd0f93e397bc5b14dc94772",
+  "counts": [
+    {
+      "arm": "jev",
+      "n": 8,
+      "first": {
+        "pass": 5,
+        "observed": 6,
+        "unknown": 2,
+        "scheduled": 8
+      },
+      "final": {
+        "pass": 4,
+        "observed": 6,
+        "unknown": 2,
+        "scheduled": 8
+      },
+      "firstFenced": {
+        "pass": 3,
+        "observed": 6,
+        "unknown": 2,
+        "scheduled": 8
+      },
+      "finalFenced": {
+        "pass": 2,
+        "observed": 6,
+        "unknown": 2,
+        "scheduled": 8
+      },
+      "firstAction": {
+        "pass": 5,
+        "observed": 5,
+        "unknown": 1,
+        "scheduled": 6
+      },
+      "finalAction": {
+        "pass": 4,
+        "observed": 5,
+        "unknown": 1,
+        "scheduled": 6
+      },
+      "firstOfferUsed": {
+        "pass": 3,
+        "observed": 3,
+        "unknown": 1,
+        "scheduled": 4
+      },
+      "finalOfferUsed": {
+        "pass": 2,
+        "observed": 3,
+        "unknown": 1,
+        "scheduled": 4
+      },
+      "draftedThenLost": {
+        "pass": 1,
+        "observed": 3,
+        "unknown": 0,
+        "scheduled": 3
+      },
+      "types": {
+        "question-group": 1,
+        "simulation": 1
+      },
+      "edits": {
+        "python": 2
+      },
+      "nativeProposals": 0,
+      "wordsOutsidePublishedControl": {
+        "count": 4,
+        "min": 0,
+        "median": 47.5,
+        "p90": 167,
+        "max": 167
+      },
+      "dispositions": {
+        "provider-error": 2,
+        "released": 6
+      },
+      "notices": {
+        "unverified": 1,
+        "withheld": 2
+      }
+    },
+    {
+      "arm": "google",
+      "n": 8,
+      "first": {
+        "pass": 5,
+        "observed": 6,
+        "unknown": 2,
+        "scheduled": 8
+      },
+      "final": {
+        "pass": 5,
+        "observed": 6,
+        "unknown": 2,
+        "scheduled": 8
+      },
+      "firstFenced": {
+        "pass": 2,
+        "observed": 6,
+        "unknown": 2,
+        "scheduled": 8
+      },
+      "finalFenced": {
+        "pass": 2,
+        "observed": 6,
+        "unknown": 2,
+        "scheduled": 8
+      },
+      "firstAction": {
+        "pass": 3,
+        "observed": 4,
+        "unknown": 2,
+        "scheduled": 6
+      },
+      "finalAction": {
+        "pass": 3,
+        "observed": 4,
+        "unknown": 2,
+        "scheduled": 6
+      },
+      "firstOfferUsed": {
+        "pass": 2,
+        "observed": 4,
+        "unknown": 2,
+        "scheduled": 6
+      },
+      "finalOfferUsed": {
+        "pass": 2,
+        "observed": 4,
+        "unknown": 2,
+        "scheduled": 6
+      },
+      "draftedThenLost": {
+        "pass": 1,
+        "observed": 3,
+        "unknown": 0,
+        "scheduled": 3
+      },
+      "types": {
+        "question-group": 1,
+        "simulation": 1
+      },
+      "edits": {
+        "python": 1
+      },
+      "nativeProposals": 0,
+      "wordsOutsidePublishedControl": {
+        "count": 3,
+        "min": 27,
+        "median": 36,
+        "p90": 64,
+        "max": 64
+      },
+      "dispositions": {
+        "provider-error": 2,
+        "released": 6
+      },
+      "notices": {
+        "withheld": 2
+      }
+    },
+    {
+      "arm": "none",
+      "n": 8,
+      "first": {
+        "pass": 4,
+        "observed": 8,
+        "unknown": 0,
+        "scheduled": 8
+      },
+      "final": {
+        "pass": 4,
+        "observed": 8,
+        "unknown": 0,
+        "scheduled": 8
+      },
+      "firstFenced": {
+        "pass": 3,
+        "observed": 8,
+        "unknown": 0,
+        "scheduled": 8
+      },
+      "finalFenced": {
+        "pass": 3,
+        "observed": 8,
+        "unknown": 0,
+        "scheduled": 8
+      },
+      "firstAction": {
+        "pass": 5,
+        "observed": 6,
+        "unknown": 0,
+        "scheduled": 6
+      },
+      "finalAction": {
+        "pass": 5,
+        "observed": 6,
+        "unknown": 0,
+        "scheduled": 6
+      },
+      "firstOfferUsed": {
+        "pass": 0,
+        "observed": 0,
+        "unknown": 0,
+        "scheduled": 0
+      },
+      "finalOfferUsed": {
+        "pass": 0,
+        "observed": 0,
+        "unknown": 0,
+        "scheduled": 0
+      },
+      "draftedThenLost": {
+        "pass": 0,
+        "observed": 3,
+        "unknown": 0,
+        "scheduled": 3
+      },
+      "types": {
+        "question-group": 1,
+        "simulation": 2
+      },
+      "edits": {
+        "python": 2
+      },
+      "nativeProposals": 0,
+      "wordsOutsidePublishedControl": {
+        "count": 5,
+        "min": 0,
+        "median": 62,
+        "p90": 240,
+        "max": 240
+      },
+      "dispositions": {
+        "ungated": 8
+      },
+      "notices": {}
+    }
+  ],
+  "tutors": [
+    {
+      "tutor": "minimax",
+      "arm": "jev",
+      "n": 4,
+      "first": {
+        "pass": 3,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "final": {
+        "pass": 2,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "firstFenced": {
+        "pass": 2,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "finalFenced": {
+        "pass": 1,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "firstAction": {
+        "pass": 3,
+        "observed": 3,
+        "unknown": 0,
+        "scheduled": 3
+      },
+      "finalAction": {
+        "pass": 2,
+        "observed": 3,
+        "unknown": 0,
+        "scheduled": 3
+      },
+      "firstOfferUsed": {
+        "pass": 2,
+        "observed": 2,
+        "unknown": 0,
+        "scheduled": 2
+      },
+      "finalOfferUsed": {
+        "pass": 1,
+        "observed": 2,
+        "unknown": 0,
+        "scheduled": 2
+      },
+      "draftedThenLost": {
+        "pass": 1,
+        "observed": 2,
+        "unknown": 0,
+        "scheduled": 2
+      },
+      "types": {
+        "simulation": 1
+      },
+      "edits": {
+        "python": 1
+      },
+      "nativeProposals": 0,
+      "wordsOutsidePublishedControl": {
+        "count": 2,
+        "min": 47,
+        "median": 107,
+        "p90": 167,
+        "max": 167
+      },
+      "dispositions": {
+        "released": 4
+      },
+      "notices": {
+        "unverified": 1
+      }
+    },
+    {
+      "tutor": "minimax",
+      "arm": "google",
+      "n": 4,
+      "first": {
+        "pass": 4,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "final": {
+        "pass": 4,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "firstFenced": {
+        "pass": 2,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "finalFenced": {
+        "pass": 2,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "firstAction": {
+        "pass": 3,
+        "observed": 3,
+        "unknown": 0,
+        "scheduled": 3
+      },
+      "finalAction": {
+        "pass": 3,
+        "observed": 3,
+        "unknown": 0,
+        "scheduled": 3
+      },
+      "firstOfferUsed": {
+        "pass": 2,
+        "observed": 3,
+        "unknown": 0,
+        "scheduled": 3
+      },
+      "finalOfferUsed": {
+        "pass": 2,
+        "observed": 3,
+        "unknown": 0,
+        "scheduled": 3
+      },
+      "draftedThenLost": {
+        "pass": 0,
+        "observed": 2,
+        "unknown": 0,
+        "scheduled": 2
+      },
+      "types": {
+        "question-group": 1,
+        "simulation": 1
+      },
+      "edits": {
+        "python": 1
+      },
+      "nativeProposals": 0,
+      "wordsOutsidePublishedControl": {
+        "count": 3,
+        "min": 27,
+        "median": 36,
+        "p90": 64,
+        "max": 64
+      },
+      "dispositions": {
+        "released": 4
+      },
+      "notices": {}
+    },
+    {
+      "tutor": "minimax",
+      "arm": "none",
+      "n": 4,
+      "first": {
+        "pass": 3,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "final": {
+        "pass": 3,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "firstFenced": {
+        "pass": 2,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "finalFenced": {
+        "pass": 2,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "firstAction": {
+        "pass": 3,
+        "observed": 3,
+        "unknown": 0,
+        "scheduled": 3
+      },
+      "finalAction": {
+        "pass": 3,
+        "observed": 3,
+        "unknown": 0,
+        "scheduled": 3
+      },
+      "firstOfferUsed": {
+        "pass": 0,
+        "observed": 0,
+        "unknown": 0,
+        "scheduled": 0
+      },
+      "finalOfferUsed": {
+        "pass": 0,
+        "observed": 0,
+        "unknown": 0,
+        "scheduled": 0
+      },
+      "draftedThenLost": {
+        "pass": 0,
+        "observed": 2,
+        "unknown": 0,
+        "scheduled": 2
+      },
+      "types": {
+        "question-group": 1,
+        "simulation": 1
+      },
+      "edits": {
+        "python": 1
+      },
+      "nativeProposals": 0,
+      "wordsOutsidePublishedControl": {
+        "count": 3,
+        "min": 62,
+        "median": 62,
+        "p90": 240,
+        "max": 240
+      },
+      "dispositions": {
+        "ungated": 4
+      },
+      "notices": {}
+    },
+    {
+      "tutor": "flash",
+      "arm": "jev",
+      "n": 4,
+      "first": {
+        "pass": 2,
+        "observed": 2,
+        "unknown": 2,
+        "scheduled": 4
+      },
+      "final": {
+        "pass": 2,
+        "observed": 2,
+        "unknown": 2,
+        "scheduled": 4
+      },
+      "firstFenced": {
+        "pass": 1,
+        "observed": 2,
+        "unknown": 2,
+        "scheduled": 4
+      },
+      "finalFenced": {
+        "pass": 1,
+        "observed": 2,
+        "unknown": 2,
+        "scheduled": 4
+      },
+      "firstAction": {
+        "pass": 2,
+        "observed": 2,
+        "unknown": 1,
+        "scheduled": 3
+      },
+      "finalAction": {
+        "pass": 2,
+        "observed": 2,
+        "unknown": 1,
+        "scheduled": 3
+      },
+      "firstOfferUsed": {
+        "pass": 1,
+        "observed": 1,
+        "unknown": 1,
+        "scheduled": 2
+      },
+      "finalOfferUsed": {
+        "pass": 1,
+        "observed": 1,
+        "unknown": 1,
+        "scheduled": 2
+      },
+      "draftedThenLost": {
+        "pass": 0,
+        "observed": 1,
+        "unknown": 0,
+        "scheduled": 1
+      },
+      "types": {
+        "question-group": 1
+      },
+      "edits": {
+        "python": 1
+      },
+      "nativeProposals": 0,
+      "wordsOutsidePublishedControl": {
+        "count": 2,
+        "min": 0,
+        "median": 24,
+        "p90": 48,
+        "max": 48
+      },
+      "dispositions": {
+        "provider-error": 2,
+        "released": 2
+      },
+      "notices": {
+        "withheld": 2
+      }
+    },
+    {
+      "tutor": "flash",
+      "arm": "google",
+      "n": 4,
+      "first": {
+        "pass": 1,
+        "observed": 2,
+        "unknown": 2,
+        "scheduled": 4
+      },
+      "final": {
+        "pass": 1,
+        "observed": 2,
+        "unknown": 2,
+        "scheduled": 4
+      },
+      "firstFenced": {
+        "pass": 0,
+        "observed": 2,
+        "unknown": 2,
+        "scheduled": 4
+      },
+      "finalFenced": {
+        "pass": 0,
+        "observed": 2,
+        "unknown": 2,
+        "scheduled": 4
+      },
+      "firstAction": {
+        "pass": 0,
+        "observed": 1,
+        "unknown": 2,
+        "scheduled": 3
+      },
+      "finalAction": {
+        "pass": 0,
+        "observed": 1,
+        "unknown": 2,
+        "scheduled": 3
+      },
+      "firstOfferUsed": {
+        "pass": 0,
+        "observed": 1,
+        "unknown": 2,
+        "scheduled": 3
+      },
+      "finalOfferUsed": {
+        "pass": 0,
+        "observed": 1,
+        "unknown": 2,
+        "scheduled": 3
+      },
+      "draftedThenLost": {
+        "pass": 1,
+        "observed": 1,
+        "unknown": 0,
+        "scheduled": 1
+      },
+      "types": {},
+      "edits": {},
+      "nativeProposals": 0,
+      "wordsOutsidePublishedControl": {
+        "count": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "dispositions": {
+        "provider-error": 2,
+        "released": 2
+      },
+      "notices": {
+        "withheld": 2
+      }
+    },
+    {
+      "tutor": "flash",
+      "arm": "none",
+      "n": 4,
+      "first": {
+        "pass": 1,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "final": {
+        "pass": 1,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "firstFenced": {
+        "pass": 1,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "finalFenced": {
+        "pass": 1,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "firstAction": {
+        "pass": 2,
+        "observed": 3,
+        "unknown": 0,
+        "scheduled": 3
+      },
+      "finalAction": {
+        "pass": 2,
+        "observed": 3,
+        "unknown": 0,
+        "scheduled": 3
+      },
+      "firstOfferUsed": {
+        "pass": 0,
+        "observed": 0,
+        "unknown": 0,
+        "scheduled": 0
+      },
+      "finalOfferUsed": {
+        "pass": 0,
+        "observed": 0,
+        "unknown": 0,
+        "scheduled": 0
+      },
+      "draftedThenLost": {
+        "pass": 0,
+        "observed": 1,
+        "unknown": 0,
+        "scheduled": 1
+      },
+      "types": {
+        "simulation": 1
+      },
+      "edits": {
+        "python": 1
+      },
+      "nativeProposals": 0,
+      "wordsOutsidePublishedControl": {
+        "count": 2,
+        "min": 0,
+        "median": 34.5,
+        "p90": 69,
+        "max": 69
+      },
+      "dispositions": {
+        "ungated": 4
+      },
+      "notices": {}
+    }
+  ],
+  "caseResults": [
+    {
+      "caseId": "paper-fold",
+      "n": 6,
+      "first": {
+        "pass": 4,
+        "observed": 6,
+        "unknown": 0,
+        "scheduled": 6
+      },
+      "final": {
+        "pass": 3,
+        "observed": 6,
+        "unknown": 0,
+        "scheduled": 6
+      },
+      "firstFenced": {
+        "pass": 4,
+        "observed": 6,
+        "unknown": 0,
+        "scheduled": 6
+      },
+      "finalFenced": {
+        "pass": 3,
+        "observed": 6,
+        "unknown": 0,
+        "scheduled": 6
+      },
+      "firstAction": {
+        "pass": 4,
+        "observed": 6,
+        "unknown": 0,
+        "scheduled": 6
+      },
+      "finalAction": {
+        "pass": 3,
+        "observed": 6,
+        "unknown": 0,
+        "scheduled": 6
+      },
+      "firstOfferUsed": {
+        "pass": 3,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "finalOfferUsed": {
+        "pass": 2,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "draftedThenLost": {
+        "pass": 2,
+        "observed": 5,
+        "unknown": 0,
+        "scheduled": 5
+      },
+      "types": {
+        "question-group": 3
+      },
+      "edits": {},
+      "nativeProposals": 0,
+      "wordsOutsidePublishedControl": {
+        "count": 3,
+        "min": 0,
+        "median": 27,
+        "p90": 62,
+        "max": 62
+      },
+      "dispositions": {
+        "released": 4,
+        "ungated": 2
+      },
+      "notices": {
+        "unverified": 1
+      }
+    },
+    {
+      "caseId": "irrigation",
+      "n": 6,
+      "first": {
+        "pass": 2,
+        "observed": 4,
+        "unknown": 2,
+        "scheduled": 6
+      },
+      "final": {
+        "pass": 2,
+        "observed": 4,
+        "unknown": 2,
+        "scheduled": 6
+      },
+      "firstFenced": {
+        "pass": 4,
+        "observed": 4,
+        "unknown": 2,
+        "scheduled": 6
+      },
+      "finalFenced": {
+        "pass": 4,
+        "observed": 4,
+        "unknown": 2,
+        "scheduled": 6
+      },
+      "firstAction": {
+        "pass": 4,
+        "observed": 4,
+        "unknown": 2,
+        "scheduled": 6
+      },
+      "finalAction": {
+        "pass": 4,
+        "observed": 4,
+        "unknown": 2,
+        "scheduled": 6
+      },
+      "firstOfferUsed": {
+        "pass": 2,
+        "observed": 2,
+        "unknown": 2,
+        "scheduled": 4
+      },
+      "finalOfferUsed": {
+        "pass": 2,
+        "observed": 2,
+        "unknown": 2,
+        "scheduled": 4
+      },
+      "draftedThenLost": {
+        "pass": 0,
+        "observed": 4,
+        "unknown": 0,
+        "scheduled": 4
+      },
+      "types": {
+        "simulation": 4
+      },
+      "edits": {},
+      "nativeProposals": 0,
+      "wordsOutsidePublishedControl": {
+        "count": 4,
+        "min": 0,
+        "median": 41.5,
+        "p90": 240,
+        "max": 240
+      },
+      "dispositions": {
+        "provider-error": 2,
+        "released": 2,
+        "ungated": 2
+      },
+      "notices": {
+        "withheld": 2
+      }
+    },
+    {
+      "caseId": "python-sum",
+      "n": 6,
+      "first": {
+        "pass": 3,
+        "observed": 5,
+        "unknown": 1,
+        "scheduled": 6
+      },
+      "final": {
+        "pass": 3,
+        "observed": 5,
+        "unknown": 1,
+        "scheduled": 6
+      },
+      "firstFenced": {
+        "pass": 0,
+        "observed": 5,
+        "unknown": 1,
+        "scheduled": 6
+      },
+      "finalFenced": {
+        "pass": 0,
+        "observed": 5,
+        "unknown": 1,
+        "scheduled": 6
+      },
+      "firstAction": {
+        "pass": 5,
+        "observed": 5,
+        "unknown": 1,
+        "scheduled": 6
+      },
+      "finalAction": {
+        "pass": 5,
+        "observed": 5,
+        "unknown": 1,
+        "scheduled": 6
+      },
+      "firstOfferUsed": {
+        "pass": 0,
+        "observed": 1,
+        "unknown": 1,
+        "scheduled": 2
+      },
+      "finalOfferUsed": {
+        "pass": 0,
+        "observed": 1,
+        "unknown": 1,
+        "scheduled": 2
+      },
+      "draftedThenLost": {
+        "pass": 0,
+        "observed": 0,
+        "unknown": 0,
+        "scheduled": 0
+      },
+      "types": {},
+      "edits": {
+        "python": 5
+      },
+      "nativeProposals": 0,
+      "wordsOutsidePublishedControl": {
+        "count": 5,
+        "min": 48,
+        "median": 64,
+        "p90": 167,
+        "max": 167
+      },
+      "dispositions": {
+        "provider-error": 1,
+        "released": 3,
+        "ungated": 2
+      },
+      "notices": {
+        "withheld": 1
+      }
+    },
+    {
+      "caseId": "copper",
+      "n": 6,
+      "first": {
+        "pass": 5,
+        "observed": 5,
+        "unknown": 1,
+        "scheduled": 6
+      },
+      "final": {
+        "pass": 5,
+        "observed": 5,
+        "unknown": 1,
+        "scheduled": 6
+      },
+      "firstFenced": {
+        "pass": 0,
+        "observed": 5,
+        "unknown": 1,
+        "scheduled": 6
+      },
+      "finalFenced": {
+        "pass": 0,
+        "observed": 5,
+        "unknown": 1,
+        "scheduled": 6
+      },
+      "firstAction": {
+        "pass": 0,
+        "observed": 0,
+        "unknown": 0,
+        "scheduled": 0
+      },
+      "finalAction": {
+        "pass": 0,
+        "observed": 0,
+        "unknown": 0,
+        "scheduled": 0
+      },
+      "firstOfferUsed": {
+        "pass": 0,
+        "observed": 0,
+        "unknown": 0,
+        "scheduled": 0
+      },
+      "finalOfferUsed": {
+        "pass": 0,
+        "observed": 0,
+        "unknown": 0,
+        "scheduled": 0
+      },
+      "draftedThenLost": {
+        "pass": 0,
+        "observed": 0,
+        "unknown": 0,
+        "scheduled": 0
+      },
+      "types": {},
+      "edits": {},
+      "nativeProposals": 0,
+      "wordsOutsidePublishedControl": {
+        "count": 0,
+        "min": null,
+        "median": null,
+        "p90": null,
+        "max": null
+      },
+      "dispositions": {
+        "provider-error": 1,
+        "released": 3,
+        "ungated": 2
+      },
+      "notices": {
+        "withheld": 1
+      }
+    }
+  ],
+  "primary": {
+    "n": 24,
+    "first": {
+      "pass": 14,
+      "observed": 20,
+      "unknown": 4,
+      "scheduled": 24
+    },
+    "final": {
+      "pass": 13,
+      "observed": 20,
+      "unknown": 4,
+      "scheduled": 24
+    },
+    "firstFenced": {
+      "pass": 8,
+      "observed": 20,
+      "unknown": 4,
+      "scheduled": 24
+    },
+    "finalFenced": {
+      "pass": 7,
+      "observed": 20,
+      "unknown": 4,
+      "scheduled": 24
+    },
+    "firstAction": {
+      "pass": 13,
+      "observed": 15,
+      "unknown": 3,
+      "scheduled": 18
+    },
+    "finalAction": {
+      "pass": 12,
+      "observed": 15,
+      "unknown": 3,
+      "scheduled": 18
+    },
+    "firstOfferUsed": {
+      "pass": 5,
+      "observed": 7,
+      "unknown": 3,
+      "scheduled": 10
+    },
+    "finalOfferUsed": {
+      "pass": 4,
+      "observed": 7,
+      "unknown": 3,
+      "scheduled": 10
+    },
+    "draftedThenLost": {
+      "pass": 2,
+      "observed": 9,
+      "unknown": 0,
+      "scheduled": 9
+    },
+    "types": {
+      "question-group": 3,
+      "simulation": 4
+    },
+    "edits": {
+      "python": 5
+    },
+    "nativeProposals": 0,
+    "wordsOutsidePublishedControl": {
+      "count": 12,
+      "min": 0,
+      "median": 55,
+      "p90": 167,
+      "max": 240
+    },
+    "dispositions": {
+      "provider-error": 4,
+      "released": 12,
+      "ungated": 8
+    },
+    "notices": {
+      "unverified": 1,
+      "withheld": 4
+    }
+  },
+  "guided": {
+    "n": 16,
+    "first": {
+      "pass": 10,
+      "observed": 12,
+      "unknown": 4,
+      "scheduled": 16
+    },
+    "final": {
+      "pass": 9,
+      "observed": 12,
+      "unknown": 4,
+      "scheduled": 16
+    },
+    "firstFenced": {
+      "pass": 5,
+      "observed": 12,
+      "unknown": 4,
+      "scheduled": 16
+    },
+    "finalFenced": {
+      "pass": 4,
+      "observed": 12,
+      "unknown": 4,
+      "scheduled": 16
+    },
+    "firstAction": {
+      "pass": 8,
+      "observed": 9,
+      "unknown": 3,
+      "scheduled": 12
+    },
+    "finalAction": {
+      "pass": 7,
+      "observed": 9,
+      "unknown": 3,
+      "scheduled": 12
+    },
+    "firstOfferUsed": {
+      "pass": 5,
+      "observed": 7,
+      "unknown": 3,
+      "scheduled": 10
+    },
+    "finalOfferUsed": {
+      "pass": 4,
+      "observed": 7,
+      "unknown": 3,
+      "scheduled": 10
+    },
+    "draftedThenLost": {
+      "pass": 2,
+      "observed": 6,
+      "unknown": 0,
+      "scheduled": 6
+    },
+    "types": {
+      "question-group": 2,
+      "simulation": 2
+    },
+    "edits": {
+      "python": 3
+    },
+    "nativeProposals": 0,
+    "wordsOutsidePublishedControl": {
+      "count": 7,
+      "min": 0,
+      "median": 47,
+      "p90": 167,
+      "max": 167
+    },
+    "dispositions": {
+      "provider-error": 4,
+      "released": 12
+    },
+    "notices": {
+      "unverified": 1,
+      "withheld": 4
+    }
+  },
+  "pairedFirstFit": [
+    {
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": "gemini-decision-1",
+      "matchedPairs": 4,
+      "ineligibleGuidance": 0,
+      "fit": {
+        "pairs": 2,
+        "unknown": 2,
+        "both": 1,
+        "guidedOnly": 0,
+        "controlOnly": 0,
+        "neither": 1,
+        "guidedRate": 0.5,
+        "controlRate": 0.5,
+        "difference": 0
+      }
+    },
+    {
+      "model": "gemini-3.1-flash-lite",
+      "decisionModel": "jev-1.14.0",
+      "matchedPairs": 4,
+      "ineligibleGuidance": 0,
+      "fit": {
+        "pairs": 2,
+        "unknown": 2,
+        "both": 0,
+        "guidedOnly": 2,
+        "controlOnly": 0,
+        "neither": 0,
+        "guidedRate": 1,
+        "controlRate": 0,
+        "difference": 1
+      }
+    },
+    {
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "gemini-decision-1",
+      "matchedPairs": 4,
+      "ineligibleGuidance": 0,
+      "fit": {
+        "pairs": 4,
+        "unknown": 0,
+        "both": 3,
+        "guidedOnly": 1,
+        "controlOnly": 0,
+        "neither": 0,
+        "guidedRate": 1,
+        "controlRate": 0.75,
+        "difference": 0.25
+      }
+    },
+    {
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "jev-1.14.0",
+      "matchedPairs": 4,
+      "ineligibleGuidance": 0,
+      "fit": {
+        "pairs": 4,
+        "unknown": 0,
+        "both": 2,
+        "guidedOnly": 1,
+        "controlOnly": 1,
+        "neither": 0,
+        "guidedRate": 0.75,
+        "controlRate": 0.75,
+        "difference": 0
+      }
+    }
+  ],
+  "followups": {
+    "scheduled": 6,
+    "physical": 6,
+    "n": 6,
+    "first": {
+      "pass": 4,
+      "observed": 5,
+      "unknown": 1,
+      "scheduled": 6
+    },
+    "final": {
+      "pass": 2,
+      "observed": 5,
+      "unknown": 1,
+      "scheduled": 6
+    },
+    "firstFenced": {
+      "pass": 0,
+      "observed": 6,
+      "unknown": 0,
+      "scheduled": 6
+    },
+    "finalFenced": {
+      "pass": 0,
+      "observed": 6,
+      "unknown": 0,
+      "scheduled": 6
+    },
+    "firstAction": {
+      "pass": 0,
+      "observed": 0,
+      "unknown": 0,
+      "scheduled": 0
+    },
+    "finalAction": {
+      "pass": 0,
+      "observed": 0,
+      "unknown": 0,
+      "scheduled": 0
+    },
+    "firstOfferUsed": {
+      "pass": 0,
+      "observed": 3,
+      "unknown": 0,
+      "scheduled": 3
+    },
+    "finalOfferUsed": {
+      "pass": 0,
+      "observed": 3,
+      "unknown": 0,
+      "scheduled": 3
+    },
+    "draftedThenLost": {
+      "pass": 2,
+      "observed": 2,
+      "unknown": 0,
+      "scheduled": 2
+    },
+    "types": {},
+    "edits": {},
+    "nativeProposals": 0,
+    "wordsOutsidePublishedControl": {
+      "count": 0,
+      "min": null,
+      "median": null,
+      "p90": null,
+      "max": null
+    },
+    "dispositions": {
+      "released": 1,
+      "ungated": 2,
+      "withheld": 3
+    },
+    "notices": {
+      "withheld": 3
+    },
+    "ineligible": []
+  },
+  "guidedLearnerActionDelay": {
+    "opportunities": 12,
+    "reminders": 0,
+    "firstResponse": 7,
+    "later": 0,
+    "unknown": 3,
+    "unresolved": 0,
+    "superseded": 2,
+    "byResponse": [
+      {
+        "responseNumber": 1,
+        "count": 7
+      }
+    ],
+    "medianResponseNumber": 1
+  },
+  "studyTotalBoundUsd": 2.538514874,
+  "cells": [
+    {
+      "id": "paper-fold--minimax--jev",
+      "caseId": "paper-fold",
+      "tutor": "minimax",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has.",
+      "allComponents": [
+        "question-group"
+      ],
+      "offered": [
+        "question",
+        "simulation"
+      ],
+      "gateIssues": [
+        "checkpoint_not_interactive",
+        "checkpoint_repeated",
+        "direct_answer_missing",
+        "profile_evidence_invented",
+        "quality_progress",
+        "quality_scope"
+      ],
+      "planKnown": true,
+      "attempts": 3,
+      "planStatus": "guided",
+      "action": "create",
+      "provided": true,
+      "selectedAttempt": 3,
+      "selection": {
+        "attempt": 3,
+        "review": "best-effort"
+      },
+      "notice": "unverified",
+      "status": "released",
+      "missing": null,
+      "receiptSha256": "c17061fc3d1b69579db1120cebdb7dc4c3be8d21002010f5ddf60888d285d533",
+      "firstFit": true,
+      "finalFit": false,
+      "firstFenced": true,
+      "finalFenced": false,
+      "firstAction": true,
+      "finalAction": false,
+      "firstOfferUsed": true,
+      "finalOfferUsed": false,
+      "attempted": true,
+      "guidanceReason": null,
+      "codePracticeLanguage": null,
+      "firstResponse": "a1b3424d222b659c2e91",
+      "finalResponse": "22a6f62e1939670e0e5a",
+      "firstComponents": [
+        "question-group"
+      ],
+      "finalComponents": [],
+      "finalEditableCode": [],
+      "firstVerdict": "pass",
+      "finalVerdict": "partial"
+    },
+    {
+      "id": "irrigation--flash--google",
+      "caseId": "irrigation",
+      "tutor": "flash",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks.",
+      "allComponents": null,
+      "offered": [
+        "simulation"
+      ],
+      "gateIssues": [],
+      "planKnown": true,
+      "attempts": 0,
+      "planStatus": "guided",
+      "action": "create",
+      "provided": true,
+      "selectedAttempt": null,
+      "notice": "withheld",
+      "status": "provider-error",
+      "missing": "tutor-503-error",
+      "receiptSha256": "19ff8b7fb85f6d21d69610857bf3a40511720a5527ca6719db251d5d02a72ea4",
+      "firstFit": null,
+      "finalFit": null,
+      "firstFenced": null,
+      "finalFenced": null,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": null,
+      "guidanceReason": null,
+      "codePracticeLanguage": null,
+      "firstResponse": null,
+      "finalResponse": null,
+      "firstComponents": null,
+      "finalComponents": null,
+      "finalEditableCode": null,
+      "firstVerdict": null,
+      "finalVerdict": null
+    },
+    {
+      "id": "python-sum--minimax--none",
+      "caseId": "python-sum",
+      "tutor": "minimax",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "Give me a short buggy Python loop that is supposed to add the numbers in [6, 9, 2]. I want to edit it and find the fault myself. Leave me a case where I can actually see the wrong result, without giving away the fix.",
+      "allComponents": [],
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": false,
+      "attempts": 1,
+      "planStatus": null,
+      "action": null,
+      "provided": null,
+      "selectedAttempt": 1,
+      "notice": null,
+      "status": "ungated",
+      "missing": null,
+      "receiptSha256": "9ec4b6a98dfa106b45f467f1aaee49c8e7d2f55fab3f7460f9093cf017fb2846",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": true,
+      "finalAction": true,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": false,
+      "firstResponse": "133373d69b7d2a43834d",
+      "finalResponse": "133373d69b7d2a43834d",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [
+        "python"
+      ],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "copper--flash--jev",
+      "caseId": "copper",
+      "tutor": "flash",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "What is the chemical symbol for copper? Just the symbol, please.",
+      "allComponents": null,
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": true,
+      "attempts": 0,
+      "planStatus": "guided",
+      "action": "none",
+      "provided": true,
+      "selectedAttempt": null,
+      "notice": "withheld",
+      "status": "provider-error",
+      "missing": "tutor-503-error",
+      "receiptSha256": "9b3a19b7151e983bca9c0559220d0512e4333ea4ba3f78b729ec2b4b575eadb9",
+      "firstFit": null,
+      "finalFit": null,
+      "firstFenced": null,
+      "finalFenced": null,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": null,
+      "guidanceReason": "plain-reply",
+      "codePracticeLanguage": null,
+      "firstResponse": null,
+      "finalResponse": null,
+      "firstComponents": null,
+      "finalComponents": null,
+      "finalEditableCode": null,
+      "firstVerdict": null,
+      "finalVerdict": null
+    },
+    {
+      "id": "irrigation--minimax--none",
+      "caseId": "irrigation",
+      "tutor": "minimax",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks.",
+      "allComponents": [
+        "simulation"
+      ],
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": false,
+      "attempts": 1,
+      "planStatus": null,
+      "action": null,
+      "provided": null,
+      "selectedAttempt": 1,
+      "notice": null,
+      "status": "ungated",
+      "missing": null,
+      "receiptSha256": "25976e7bcbc66d029ae124538d07d3aea08178c6ad47bbd3dc26e6d0ea5ac8ae",
+      "firstFit": false,
+      "finalFit": false,
+      "firstFenced": true,
+      "finalFenced": true,
+      "firstAction": true,
+      "finalAction": true,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": true,
+      "firstResponse": "8e25cb465e578a7431c0",
+      "finalResponse": "8e25cb465e578a7431c0",
+      "firstComponents": [
+        "simulation"
+      ],
+      "finalComponents": [
+        "simulation"
+      ],
+      "finalEditableCode": [],
+      "firstVerdict": "fail",
+      "finalVerdict": "fail"
+    },
+    {
+      "id": "python-sum--flash--jev",
+      "caseId": "python-sum",
+      "tutor": "flash",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "Give me a short buggy Python loop that is supposed to add the numbers in [6, 9, 2]. I want to edit it and find the fault myself. Leave me a case where I can actually see the wrong result, without giving away the fix.",
+      "allComponents": [],
+      "offered": [],
+      "gateIssues": [
+        "checkpoint_answer_leaked",
+        "checkpoint_not_interactive",
+        "code_trace_missing"
+      ],
+      "planKnown": true,
+      "attempts": 2,
+      "planStatus": "guided",
+      "action": "none",
+      "provided": true,
+      "selectedAttempt": 2,
+      "selection": {
+        "attempt": 2,
+        "review": "verified"
+      },
+      "notice": null,
+      "status": "released",
+      "missing": null,
+      "receiptSha256": "0e9c78d40a027bb7604c751247ed03525eba5bf9ff91793b66685f03f09a74ea",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": true,
+      "finalAction": true,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": false,
+      "guidanceReason": null,
+      "codePracticeLanguage": "python",
+      "firstResponse": "9a58e032ac2cc24b4ccc",
+      "finalResponse": "a0a817192eaa1546cca6",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [
+        "python"
+      ],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "copper--minimax--google",
+      "caseId": "copper",
+      "tutor": "minimax",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "What is the chemical symbol for copper? Just the symbol, please.",
+      "allComponents": [],
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": true,
+      "attempts": 1,
+      "planStatus": "guided",
+      "action": "none",
+      "provided": true,
+      "selectedAttempt": 1,
+      "selection": {
+        "attempt": 1,
+        "review": "verified"
+      },
+      "notice": null,
+      "status": "released",
+      "missing": null,
+      "receiptSha256": "39dc18801b420c5fb2561387a4aae5b5219bfe3ab01796ec2ae2d9f991f5df81",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": false,
+      "guidanceReason": "plain-reply",
+      "codePracticeLanguage": null,
+      "firstResponse": "7062c9f2d6e48fd4efe1",
+      "finalResponse": "7062c9f2d6e48fd4efe1",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "paper-fold--flash--google",
+      "caseId": "paper-fold",
+      "tutor": "flash",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has.",
+      "allComponents": [
+        "question-group"
+      ],
+      "offered": [
+        "question",
+        "simulation"
+      ],
+      "gateIssues": [
+        "checkpoint_not_interactive"
+      ],
+      "planKnown": true,
+      "attempts": 2,
+      "planStatus": "guided",
+      "action": "create",
+      "provided": true,
+      "selectedAttempt": 1,
+      "selection": {
+        "attempt": 1,
+        "review": "verified"
+      },
+      "notice": null,
+      "status": "released",
+      "missing": null,
+      "receiptSha256": "cf755bf27fa9f2fe3e5cff2761a92ca1e4ccefc2386f589c7141ff9a049465f8",
+      "firstFit": false,
+      "finalFit": false,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": false,
+      "finalAction": false,
+      "firstOfferUsed": false,
+      "finalOfferUsed": false,
+      "attempted": true,
+      "guidanceReason": null,
+      "codePracticeLanguage": null,
+      "firstResponse": "61bc2b242f3dcf816230",
+      "finalResponse": "61bc2b242f3dcf816230",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [],
+      "firstVerdict": "partial",
+      "finalVerdict": "partial"
+    },
+    {
+      "id": "python-sum--minimax--google",
+      "caseId": "python-sum",
+      "tutor": "minimax",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "Give me a short buggy Python loop that is supposed to add the numbers in [6, 9, 2]. I want to edit it and find the fault myself. Leave me a case where I can actually see the wrong result, without giving away the fix.",
+      "allComponents": [],
+      "offered": [
+        "question"
+      ],
+      "gateIssues": [],
+      "planKnown": true,
+      "attempts": 1,
+      "planStatus": "guided",
+      "action": "create",
+      "provided": true,
+      "selectedAttempt": 1,
+      "selection": {
+        "attempt": 1,
+        "review": "verified"
+      },
+      "notice": null,
+      "status": "released",
+      "missing": null,
+      "receiptSha256": "8d8237c7b6a31519dfb693861cb7889753665055cc5a0ea3bd60c2fd849163df",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": true,
+      "finalAction": true,
+      "firstOfferUsed": false,
+      "finalOfferUsed": false,
+      "attempted": false,
+      "guidanceReason": null,
+      "codePracticeLanguage": "python",
+      "firstResponse": "d8b06398e2961389cd17",
+      "finalResponse": "d8b06398e2961389cd17",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [
+        "python"
+      ],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "copper--flash--none",
+      "caseId": "copper",
+      "tutor": "flash",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "What is the chemical symbol for copper? Just the symbol, please.",
+      "allComponents": [],
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": false,
+      "attempts": 1,
+      "planStatus": null,
+      "action": null,
+      "provided": null,
+      "selectedAttempt": 1,
+      "notice": null,
+      "status": "ungated",
+      "missing": null,
+      "receiptSha256": "7d670f74335d9fed2bf987858d21473f587f1c1662742c4e4952e3be0a46b52c",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": false,
+      "firstResponse": "7062c9f2d6e48fd4efe1",
+      "finalResponse": "7062c9f2d6e48fd4efe1",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "paper-fold--minimax--none",
+      "caseId": "paper-fold",
+      "tutor": "minimax",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has.",
+      "allComponents": [
+        "question-group"
+      ],
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": false,
+      "attempts": 1,
+      "planStatus": null,
+      "action": null,
+      "provided": null,
+      "selectedAttempt": 1,
+      "notice": null,
+      "status": "ungated",
+      "missing": null,
+      "receiptSha256": "5e4239e8c431192c19397d1047683917d0c5d58ed085e5a1a8709db869f537cf",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": true,
+      "finalFenced": true,
+      "firstAction": true,
+      "finalAction": true,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": true,
+      "firstResponse": "837463481a3ac5b103db",
+      "finalResponse": "837463481a3ac5b103db",
+      "firstComponents": [
+        "question-group"
+      ],
+      "finalComponents": [
+        "question-group"
+      ],
+      "finalEditableCode": [],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "irrigation--flash--jev",
+      "caseId": "irrigation",
+      "tutor": "flash",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks.",
+      "allComponents": null,
+      "offered": [
+        "simulation"
+      ],
+      "gateIssues": [],
+      "planKnown": true,
+      "attempts": 0,
+      "planStatus": "guided",
+      "action": "create",
+      "provided": true,
+      "selectedAttempt": null,
+      "notice": "withheld",
+      "status": "provider-error",
+      "missing": "tutor-503-error",
+      "receiptSha256": "6361fb82970e4947b3de2aea2071b3dbc338aa5e2f46e90543b7fa3e1def1c7e",
+      "firstFit": null,
+      "finalFit": null,
+      "firstFenced": null,
+      "finalFenced": null,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": null,
+      "guidanceReason": null,
+      "codePracticeLanguage": null,
+      "firstResponse": null,
+      "finalResponse": null,
+      "firstComponents": null,
+      "finalComponents": null,
+      "finalEditableCode": null,
+      "firstVerdict": null,
+      "finalVerdict": null
+    },
+    {
+      "id": "copper--minimax--jev",
+      "caseId": "copper",
+      "tutor": "minimax",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "What is the chemical symbol for copper? Just the symbol, please.",
+      "allComponents": [],
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": true,
+      "attempts": 1,
+      "planStatus": "guided",
+      "action": "none",
+      "provided": true,
+      "selectedAttempt": 1,
+      "selection": {
+        "attempt": 1,
+        "review": "verified"
+      },
+      "notice": null,
+      "status": "released",
+      "missing": null,
+      "receiptSha256": "2c5b96cb48375e91f5c14d7849c54d3956be56d0c184cb4094927debe260828b",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": false,
+      "guidanceReason": "plain-reply",
+      "codePracticeLanguage": null,
+      "firstResponse": "7062c9f2d6e48fd4efe1",
+      "finalResponse": "7062c9f2d6e48fd4efe1",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "paper-fold--flash--jev",
+      "caseId": "paper-fold",
+      "tutor": "flash",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has.",
+      "allComponents": [
+        "question-group"
+      ],
+      "offered": [
+        "question",
+        "simulation"
+      ],
+      "gateIssues": [
+        "direct_answer_missing",
+        "transport_exposed"
+      ],
+      "planKnown": true,
+      "attempts": 1,
+      "planStatus": "guided",
+      "action": "create",
+      "provided": true,
+      "selectedAttempt": 1,
+      "selection": {
+        "attempt": 1,
+        "review": "verified"
+      },
+      "notice": null,
+      "status": "released",
+      "missing": null,
+      "receiptSha256": "066ca8aa33ca006e09dd6dd020ea41bef46d275f205ea72b19a11127f1b34258",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": true,
+      "finalFenced": true,
+      "firstAction": true,
+      "finalAction": true,
+      "firstOfferUsed": true,
+      "finalOfferUsed": true,
+      "attempted": true,
+      "guidanceReason": null,
+      "codePracticeLanguage": null,
+      "firstResponse": "7eedbb75aa5fc5736ed5",
+      "finalResponse": "7eedbb75aa5fc5736ed5",
+      "firstComponents": [
+        "question-group"
+      ],
+      "finalComponents": [
+        "question-group"
+      ],
+      "finalEditableCode": [],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "irrigation--minimax--google",
+      "caseId": "irrigation",
+      "tutor": "minimax",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks.",
+      "allComponents": [
+        "simulation"
+      ],
+      "offered": [
+        "simulation"
+      ],
+      "gateIssues": [],
+      "planKnown": true,
+      "attempts": 1,
+      "planStatus": "guided",
+      "action": "create",
+      "provided": true,
+      "selectedAttempt": 1,
+      "selection": {
+        "attempt": 1,
+        "review": "verified"
+      },
+      "notice": null,
+      "status": "released",
+      "missing": null,
+      "receiptSha256": "3bbcf2332921c0224abe54d7257c68f217f811fd7bab9daa520112db5d2edb35",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": true,
+      "finalFenced": true,
+      "firstAction": true,
+      "finalAction": true,
+      "firstOfferUsed": true,
+      "finalOfferUsed": true,
+      "attempted": true,
+      "guidanceReason": null,
+      "codePracticeLanguage": null,
+      "firstResponse": "ae1f4a0317f4af8a4525",
+      "finalResponse": "ae1f4a0317f4af8a4525",
+      "firstComponents": [
+        "simulation"
+      ],
+      "finalComponents": [
+        "simulation"
+      ],
+      "finalEditableCode": [],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "python-sum--flash--none",
+      "caseId": "python-sum",
+      "tutor": "flash",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "Give me a short buggy Python loop that is supposed to add the numbers in [6, 9, 2]. I want to edit it and find the fault myself. Leave me a case where I can actually see the wrong result, without giving away the fix.",
+      "allComponents": [],
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": false,
+      "attempts": 1,
+      "planStatus": null,
+      "action": null,
+      "provided": null,
+      "selectedAttempt": 1,
+      "notice": null,
+      "status": "ungated",
+      "missing": null,
+      "receiptSha256": "0b41891a544ca3cef3cbcf22f492828eae08a76e273b4facc387d7d8ca7b09e7",
+      "firstFit": false,
+      "finalFit": false,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": true,
+      "finalAction": true,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": false,
+      "firstResponse": "a9ddfc9e09a8787581da",
+      "finalResponse": "a9ddfc9e09a8787581da",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [
+        "python"
+      ],
+      "firstVerdict": "partial",
+      "finalVerdict": "partial"
+    },
+    {
+      "id": "paper-fold--minimax--google",
+      "caseId": "paper-fold",
+      "tutor": "minimax",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has.",
+      "allComponents": [
+        "question-group"
+      ],
+      "offered": [
+        "question",
+        "simulation"
+      ],
+      "gateIssues": [
+        "direct_answer_missing",
+        "explanation_missing",
+        "quality_scope"
+      ],
+      "planKnown": true,
+      "attempts": 1,
+      "planStatus": "guided",
+      "action": "create",
+      "provided": true,
+      "selectedAttempt": 1,
+      "selection": {
+        "attempt": 1,
+        "review": "verified"
+      },
+      "notice": null,
+      "status": "released",
+      "missing": null,
+      "receiptSha256": "140abff24d14b52515646e6fd336beef4717b864103f33dd9c99bab6e37859f1",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": true,
+      "finalFenced": true,
+      "firstAction": true,
+      "finalAction": true,
+      "firstOfferUsed": true,
+      "finalOfferUsed": true,
+      "attempted": true,
+      "guidanceReason": null,
+      "codePracticeLanguage": null,
+      "firstResponse": "fc3aa2da06fc2d138568",
+      "finalResponse": "fc3aa2da06fc2d138568",
+      "firstComponents": [
+        "question-group"
+      ],
+      "finalComponents": [
+        "question-group"
+      ],
+      "finalEditableCode": [],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "irrigation--flash--none",
+      "caseId": "irrigation",
+      "tutor": "flash",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks.",
+      "allComponents": [
+        "simulation"
+      ],
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": false,
+      "attempts": 1,
+      "planStatus": null,
+      "action": null,
+      "provided": null,
+      "selectedAttempt": 1,
+      "notice": null,
+      "status": "ungated",
+      "missing": null,
+      "receiptSha256": "017f8c433e0137c8d5d4f61d558622db9a8dd3f19690c5ecff0b6088844a7b1c",
+      "firstFit": false,
+      "finalFit": false,
+      "firstFenced": true,
+      "finalFenced": true,
+      "firstAction": true,
+      "finalAction": true,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": true,
+      "firstResponse": "7ae37c82750ce32e33a9",
+      "finalResponse": "7ae37c82750ce32e33a9",
+      "firstComponents": [
+        "simulation"
+      ],
+      "finalComponents": [
+        "simulation"
+      ],
+      "finalEditableCode": [],
+      "firstVerdict": "partial",
+      "finalVerdict": "partial"
+    },
+    {
+      "id": "python-sum--minimax--jev",
+      "caseId": "python-sum",
+      "tutor": "minimax",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "Give me a short buggy Python loop that is supposed to add the numbers in [6, 9, 2]. I want to edit it and find the fault myself. Leave me a case where I can actually see the wrong result, without giving away the fix.",
+      "allComponents": [],
+      "offered": [],
+      "gateIssues": [
+        "checkpoint_answer_leaked",
+        "checkpoint_not_interactive",
+        "code_trace_missing"
+      ],
+      "planKnown": true,
+      "attempts": 2,
+      "planStatus": "guided",
+      "action": "none",
+      "provided": true,
+      "selectedAttempt": 2,
+      "selection": {
+        "attempt": 2,
+        "review": "verified"
+      },
+      "notice": null,
+      "status": "released",
+      "missing": null,
+      "receiptSha256": "66013714de14be596f8c8414b5c9ed3033de6adec050a40d675639caf716867c",
+      "firstFit": false,
+      "finalFit": false,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": true,
+      "finalAction": true,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": false,
+      "guidanceReason": null,
+      "codePracticeLanguage": "python",
+      "firstResponse": "4a7c0ab9a2ff3c3371df",
+      "finalResponse": "a8d10b29021554fbdc28",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [
+        "python"
+      ],
+      "firstVerdict": "partial",
+      "finalVerdict": "partial"
+    },
+    {
+      "id": "copper--flash--google",
+      "caseId": "copper",
+      "tutor": "flash",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "What is the chemical symbol for copper? Just the symbol, please.",
+      "allComponents": [],
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": true,
+      "attempts": 1,
+      "planStatus": "guided",
+      "action": "none",
+      "provided": true,
+      "selectedAttempt": 1,
+      "selection": {
+        "attempt": 1,
+        "review": "verified"
+      },
+      "notice": null,
+      "status": "released",
+      "missing": null,
+      "receiptSha256": "b0b7798ab187762bfd6f79658fd1c0cc1810006cf638148a4fe37ae32e567a12",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": false,
+      "guidanceReason": "plain-reply",
+      "codePracticeLanguage": null,
+      "firstResponse": "7062c9f2d6e48fd4efe1",
+      "finalResponse": "7062c9f2d6e48fd4efe1",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "irrigation--minimax--jev",
+      "caseId": "irrigation",
+      "tutor": "minimax",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks.",
+      "allComponents": [
+        "simulation"
+      ],
+      "offered": [
+        "simulation"
+      ],
+      "gateIssues": [
+        "checkpoint_repeated",
+        "quality_scope"
+      ],
+      "planKnown": true,
+      "attempts": 1,
+      "planStatus": "guided",
+      "action": "create",
+      "provided": true,
+      "selectedAttempt": 1,
+      "selection": {
+        "attempt": 1,
+        "review": "verified"
+      },
+      "notice": null,
+      "status": "released",
+      "missing": null,
+      "receiptSha256": "aca62776c00cd1a5fca3367f8d3b642ebb483ca4987be7ba96c788d642b90df6",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": true,
+      "finalFenced": true,
+      "firstAction": true,
+      "finalAction": true,
+      "firstOfferUsed": true,
+      "finalOfferUsed": true,
+      "attempted": true,
+      "guidanceReason": null,
+      "codePracticeLanguage": null,
+      "firstResponse": "ee44792f379791b87dfa",
+      "finalResponse": "ee44792f379791b87dfa",
+      "firstComponents": [
+        "simulation"
+      ],
+      "finalComponents": [
+        "simulation"
+      ],
+      "finalEditableCode": [],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "python-sum--flash--google",
+      "caseId": "python-sum",
+      "tutor": "flash",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "Give me a short buggy Python loop that is supposed to add the numbers in [6, 9, 2]. I want to edit it and find the fault myself. Leave me a case where I can actually see the wrong result, without giving away the fix.",
+      "allComponents": null,
+      "offered": [
+        "question"
+      ],
+      "gateIssues": [],
+      "planKnown": true,
+      "attempts": 0,
+      "planStatus": "guided",
+      "action": "create",
+      "provided": true,
+      "selectedAttempt": null,
+      "notice": "withheld",
+      "status": "provider-error",
+      "missing": "tutor-503-error",
+      "receiptSha256": "66de832cf9e2cb2b5abef27dfeaf537ff518fd182cc8a6f3cfb3a41b5569ae11",
+      "firstFit": null,
+      "finalFit": null,
+      "firstFenced": null,
+      "finalFenced": null,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": null,
+      "guidanceReason": null,
+      "codePracticeLanguage": "python",
+      "firstResponse": null,
+      "finalResponse": null,
+      "firstComponents": null,
+      "finalComponents": null,
+      "finalEditableCode": null,
+      "firstVerdict": null,
+      "finalVerdict": null
+    },
+    {
+      "id": "copper--minimax--none",
+      "caseId": "copper",
+      "tutor": "minimax",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "What is the chemical symbol for copper? Just the symbol, please.",
+      "allComponents": [],
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": false,
+      "attempts": 1,
+      "planStatus": null,
+      "action": null,
+      "provided": null,
+      "selectedAttempt": 1,
+      "notice": null,
+      "status": "ungated",
+      "missing": null,
+      "receiptSha256": "8a8ac855839e49af39d6c45b8cc86d36e525215673afd4781dd1d271019e5141",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": false,
+      "firstResponse": "7062c9f2d6e48fd4efe1",
+      "finalResponse": "7062c9f2d6e48fd4efe1",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "paper-fold--flash--none",
+      "caseId": "paper-fold",
+      "tutor": "flash",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has.",
+      "allComponents": [],
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": false,
+      "attempts": 1,
+      "planStatus": null,
+      "action": null,
+      "provided": null,
+      "selectedAttempt": 1,
+      "notice": null,
+      "status": "ungated",
+      "missing": null,
+      "receiptSha256": "e763d6cee67be4249253a742b1ee91d3f5f4960b2c1cf7ee4dd8dc6de26913ee",
+      "firstFit": false,
+      "finalFit": false,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": false,
+      "finalAction": false,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": false,
+      "firstResponse": "5433b7baa98dcc80f68e",
+      "finalResponse": "5433b7baa98dcc80f68e",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [],
+      "firstVerdict": "partial",
+      "finalVerdict": "partial"
+    },
+    {
+      "id": "paper-followup--flash--none",
+      "caseId": "paper-followup",
+      "tutor": "flash",
+      "arm": "none",
+      "kind": "followup",
+      "prompt": "My guess is four layers, because the second fold doubles the two layers. Did I get that right?",
+      "parent": "paper-fold--flash--none",
+      "allComponents": [],
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": false,
+      "attempts": 1,
+      "planStatus": null,
+      "action": null,
+      "provided": null,
+      "selectedAttempt": 1,
+      "notice": null,
+      "status": "ungated",
+      "missing": null,
+      "receiptSha256": "98f323701e5240a847e4a9c49eb480ed3f0182914a92e577aaa2d20126b8d1f0",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": false,
+      "firstResponse": "9d0266aba243a417e99a",
+      "finalResponse": "9d0266aba243a417e99a",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "paper-followup--minimax--google",
+      "caseId": "paper-followup",
+      "tutor": "minimax",
+      "arm": "google",
+      "kind": "followup",
+      "prompt": "My guess is four layers, because the second fold doubles the two layers. Did I get that right?",
+      "parent": "paper-fold--minimax--google",
+      "allComponents": [],
+      "offered": [],
+      "gateIssues": [
+        "checkpoint_answer_leaked",
+        "explanation_missing",
+        "grading_requires_submission",
+        "quality_progress",
+        "quality_scope"
+      ],
+      "planKnown": true,
+      "attempts": 3,
+      "planStatus": "guided",
+      "action": "none",
+      "provided": true,
+      "selectedAttempt": null,
+      "notice": "withheld",
+      "status": "withheld",
+      "missing": "no-approved-draft",
+      "receiptSha256": "45572baacadbb159da05dd27b1b8e58d08c82caa29338ba270944bf904cf41fb",
+      "firstFit": false,
+      "finalFit": false,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": false,
+      "guidanceReason": "plain-reply",
+      "codePracticeLanguage": null,
+      "firstResponse": "05dcb98cd40880c607de",
+      "finalResponse": null,
+      "firstComponents": [],
+      "finalComponents": null,
+      "finalEditableCode": null,
+      "firstVerdict": "partial",
+      "finalVerdict": null
+    },
+    {
+      "id": "paper-followup--flash--jev",
+      "caseId": "paper-followup",
+      "tutor": "flash",
+      "arm": "jev",
+      "kind": "followup",
+      "prompt": "My guess is four layers, because the second fold doubles the two layers. Did I get that right?",
+      "parent": "paper-fold--flash--jev",
+      "allComponents": [
+        "question-group"
+      ],
+      "offered": [
+        "question",
+        "simulation"
+      ],
+      "gateIssues": [
+        "checkpoint_answer_leaked",
+        "checkpoint_not_interactive",
+        "checkpoint_repeated",
+        "mastery_overclaimed",
+        "transfer_overclaimed",
+        "unsolicited_assessment"
+      ],
+      "planKnown": true,
+      "attempts": 3,
+      "planStatus": "guided",
+      "action": "create",
+      "provided": true,
+      "selectedAttempt": null,
+      "notice": "withheld",
+      "status": "withheld",
+      "missing": "no-approved-draft",
+      "receiptSha256": "7ef2a4fc47c11fcc157a3566f7622cfc19b3e88974d94dccd46342f26c9d1995",
+      "firstFit": true,
+      "finalFit": false,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": false,
+      "finalOfferUsed": false,
+      "attempted": true,
+      "guidanceReason": null,
+      "codePracticeLanguage": null,
+      "firstResponse": "8bb94c26132841333eea",
+      "finalResponse": null,
+      "firstComponents": [],
+      "finalComponents": null,
+      "finalEditableCode": null,
+      "firstVerdict": "pass",
+      "finalVerdict": null
+    },
+    {
+      "id": "paper-followup--minimax--none",
+      "caseId": "paper-followup",
+      "tutor": "minimax",
+      "arm": "none",
+      "kind": "followup",
+      "prompt": "My guess is four layers, because the second fold doubles the two layers. Did I get that right?",
+      "parent": "paper-fold--minimax--none",
+      "allComponents": [],
+      "offered": [],
+      "gateIssues": [],
+      "planKnown": false,
+      "attempts": 1,
+      "planStatus": null,
+      "action": null,
+      "provided": null,
+      "selectedAttempt": 1,
+      "notice": null,
+      "status": "ungated",
+      "missing": null,
+      "receiptSha256": "67315b665a033a55c9ef302081b4593dcb1b87c299f9a88c5008ce956b8decf2",
+      "firstFit": null,
+      "finalFit": null,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": null,
+      "finalOfferUsed": null,
+      "attempted": false,
+      "firstResponse": "536f44e88a35c884707d",
+      "finalResponse": "536f44e88a35c884707d",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [],
+      "firstVerdict": "unknown",
+      "finalVerdict": "unknown"
+    },
+    {
+      "id": "paper-followup--flash--google",
+      "caseId": "paper-followup",
+      "tutor": "flash",
+      "arm": "google",
+      "kind": "followup",
+      "prompt": "My guess is four layers, because the second fold doubles the two layers. Did I get that right?",
+      "parent": "paper-fold--flash--google",
+      "allComponents": [],
+      "offered": [
+        "question",
+        "simulation"
+      ],
+      "gateIssues": [
+        "quality_scope"
+      ],
+      "planKnown": true,
+      "attempts": 1,
+      "planStatus": "guided",
+      "action": "create",
+      "provided": true,
+      "selectedAttempt": 1,
+      "selection": {
+        "attempt": 1,
+        "review": "verified"
+      },
+      "notice": null,
+      "status": "released",
+      "missing": null,
+      "receiptSha256": "720e0b5cf5b084d95815ece07858c89231fb58879647e144b193d3e3a31c116c",
+      "firstFit": true,
+      "finalFit": true,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": false,
+      "finalOfferUsed": false,
+      "attempted": false,
+      "guidanceReason": null,
+      "codePracticeLanguage": null,
+      "firstResponse": "94a1f01b0676c7984a0e",
+      "finalResponse": "94a1f01b0676c7984a0e",
+      "firstComponents": [],
+      "finalComponents": [],
+      "finalEditableCode": [],
+      "firstVerdict": "pass",
+      "finalVerdict": "pass"
+    },
+    {
+      "id": "paper-followup--minimax--jev",
+      "caseId": "paper-followup",
+      "tutor": "minimax",
+      "arm": "jev",
+      "kind": "followup",
+      "prompt": "My guess is four layers, because the second fold doubles the two layers. Did I get that right?",
+      "parent": "paper-fold--minimax--jev",
+      "allComponents": [
+        "question-group"
+      ],
+      "offered": [
+        "question",
+        "simulation"
+      ],
+      "gateIssues": [
+        "checkpoint_answer_leaked",
+        "checkpoint_not_interactive",
+        "grading_requires_submission",
+        "sensitive_inference",
+        "transport_exposed",
+        "unsolicited_assessment"
+      ],
+      "planKnown": true,
+      "attempts": 3,
+      "planStatus": "guided",
+      "action": "create",
+      "provided": true,
+      "selectedAttempt": null,
+      "notice": "withheld",
+      "status": "withheld",
+      "missing": "no-approved-draft",
+      "receiptSha256": "2c6383b3f512638081b8dc48dd66f8bfafabafadebcbeb1427a4d7efffbd7063",
+      "firstFit": true,
+      "finalFit": false,
+      "firstFenced": false,
+      "finalFenced": false,
+      "firstAction": null,
+      "finalAction": null,
+      "firstOfferUsed": false,
+      "finalOfferUsed": false,
+      "attempted": true,
+      "guidanceReason": null,
+      "codePracticeLanguage": null,
+      "firstResponse": "d4668c96e14a71eac612",
+      "finalResponse": null,
+      "firstComponents": [],
+      "finalComponents": null,
+      "finalEditableCode": null,
+      "firstVerdict": "pass",
+      "finalVerdict": null
+    }
+  ],
+  "classroom": {
+    "id": "classroom-stage-light--minimax--jev",
+    "receiptSha256": "26772369560034462be0a63a98e7ecc10cdd703b842331faf1f7243a1b02fca2",
+    "correctReadout": true
+  }
+}

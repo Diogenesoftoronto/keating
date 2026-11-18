@@ -1,0 +1,127 @@
+[
+  {
+    "id": "05dcb98cd40880c607de",
+    "verdict": "partial",
+    "reason": "The reply has no visible text and only proposes a grading record, which also marks a fold-direction question correct although the learner never answered it."
+  },
+  {
+    "id": "133373d69b7d2a43834d",
+    "verdict": "pass",
+    "reason": "The loop starts at index 1 so it prints 11 beside an expected 17, and the prose names no faulty line and gives no fix."
+  },
+  {
+    "id": "22a6f62e1939670e0e5a",
+    "verdict": "partial",
+    "reason": "It asks for the guess without revealing four, but only as a plain sentence with no Question control."
+  },
+  {
+    "id": "4a7c0ab9a2ff3c3371df",
+    "verdict": "partial",
+    "reason": "The code genuinely prints 4 instead of 17, but the prose says the list and loop are right and the fault is in the accumulator, which hands over the location the learner asked to find."
+  },
+  {
+    "id": "536f44e88a35c884707d",
+    "verdict": "unknown",
+    "reason": "The reply has no visible text and only proposes a grading record marking the answer correct, so nothing shows that the learner would see a confirmation."
+  },
+  {
+    "id": "5433b7baa98dcc80f68e",
+    "verdict": "partial",
+    "reason": "It invites the guess and reasoning without revealing four, but only in prose with no Question control."
+  },
+  {
+    "id": "61bc2b242f3dcf816230",
+    "verdict": "partial",
+    "reason": "It invites the guess without revealing four, but only in prose with no Question control."
+  },
+  {
+    "id": "7062c9f2d6e48fd4efe1",
+    "verdict": "pass",
+    "reason": "The reply is Cu and nothing else."
+  },
+  {
+    "id": "7ae37c82750ce32e33a9",
+    "verdict": "partial",
+    "reason": "The slider computes flow times 6 in litres from L/min, but the control's own prompt tells the learner to predict the result first after they declined a quiz."
+  },
+  {
+    "id": "7eedbb75aa5fc5736ed5",
+    "verdict": "pass",
+    "reason": "A Question control offers five layer counts plus free text, and neither the hint nor the surrounding text reveals four."
+  },
+  {
+    "id": "837463481a3ac5b103db",
+    "verdict": "pass",
+    "reason": "A Question control collects the guess before any reveal, though the prose wrongly suggests the fold direction could change the count."
+  },
+  {
+    "id": "8bb94c26132841333eea",
+    "verdict": "pass",
+    "reason": "It confirms four, shows the doubling step by step, endorses the learner's reasoning and ends with an optional offer instead of a test."
+  },
+  {
+    "id": "8e25cb465e578a7431c0",
+    "verdict": "fail",
+    "reason": "The control asks for a prediction and the closing prose asks the learner to report numbers so their thinking can be checked, despite the no-quiz request, and a second dripper slider complicates the single relationship they asked for."
+  },
+  {
+    "id": "94a1f01b0676c7984a0e",
+    "verdict": "pass",
+    "reason": "It confirms the answer and lays out the doubling from one to two to four layers, then adds an unrequested third-fold question."
+  },
+  {
+    "id": "9a58e032ac2cc24b4ccc",
+    "verdict": "pass",
+    "reason": "The total starts at 10 so the program prints 27 instead of 17, and the prose gives neither the location nor the fix."
+  },
+  {
+    "id": "9d0266aba243a417e99a",
+    "verdict": "pass",
+    "reason": "It confirms the guess and explains why each fold doubles the layers, then adds an unrequested third-fold question."
+  },
+  {
+    "id": "a0a817192eaa1546cca6",
+    "verdict": "pass",
+    "reason": "The loop overwrites the total and reads one index too far, so it visibly crashes with an index error on the given list, and the prose gives no clue or fix."
+  },
+  {
+    "id": "a1b3424d222b659c2e91",
+    "verdict": "pass",
+    "reason": "A Question control offers four layer counts plus free text and the reply promises the explanation only after the learner commits."
+  },
+  {
+    "id": "a8d10b29021554fbdc28",
+    "verdict": "partial",
+    "reason": "The code genuinely prints 2 instead of 17, but the prose says exactly one statement inside the loop is wrong, and the loop has only one statement."
+  },
+  {
+    "id": "a9ddfc9e09a8787581da",
+    "verdict": "partial",
+    "reason": "The code genuinely prints 108 instead of 17, but the prose steers the learner to the loop logic and to what happens to the total on each pass."
+  },
+  {
+    "id": "ae1f4a0317f4af8a4525",
+    "verdict": "pass",
+    "reason": "One L/min slider drives a bucket readout of flow times 6 in litres, with no prediction or question anywhere in the reply."
+  },
+  {
+    "id": "d4668c96e14a71eac612",
+    "verdict": "pass",
+    "reason": "It opens by confirming four and the doubling reasoning, though it then adds a debatable aside about creases, a third-fold question and an unrequested profile note."
+  },
+  {
+    "id": "d8b06398e2961389cd17",
+    "verdict": "pass",
+    "reason": "The loop stops one item early so it prints 15 against the stated 17, and the prose names no line and gives no fix."
+  },
+  {
+    "id": "ee44792f379791b87dfa",
+    "verdict": "pass",
+    "reason": "One L/min slider drives a bucket readout of flow times 6 in litres, and the extra hourly and per-second readouts are correct and ask nothing of the learner."
+  },
+  {
+    "id": "fc3aa2da06fc2d138568",
+    "verdict": "pass",
+    "reason": "A grouped Question control collects the guess, fold direction and reasoning before any reveal of four."
+  }
+]

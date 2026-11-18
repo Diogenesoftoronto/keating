@@ -1,0 +1,272 @@
+{
+  "id": "gemini-3.1-flash-lite--transfer",
+  "scenario": "transfer",
+  "model": "gemini-3.1-flash-lite",
+  "startedAt": "2026-11-18T12:52:22.341Z",
+  "judge": [
+    {
+      "phase": "plan",
+      "hash": "8a424c5e6c2d6b2d67494de67ed3959470d104f9ef09df983ba736b88e7cdf68",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 3527,
+        "outputTokens": 675
+      },
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.65
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.82
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.78
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.88
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.63
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 0.99
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.62
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.13
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.24
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.23
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.49
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.07
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 0.9,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.16,
+            "1": 0.78,
+            "2": 0.06,
+            "3": 0
+          },
+          "confidence": 0.78
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.03,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.98,
+            "1": 0.02,
+            "2": 0,
+            "3": 0
+          },
+          "confidence": 0.98
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 0.39,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.65,
+            "1": 0.32,
+            "2": 0.02,
+            "3": 0.01
+          },
+          "confidence": 0.61
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "concise",
+          "probabilities": {
+            "concise": 0.98,
+            "supported": 0.02,
+            "deep": 0
+          },
+          "confidence": 0.97
+        }
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "5b33e192eaeb0daf5deadebcb102c4407917dfab543533f35094bb742582d06f",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5738,
+        "outputTokens": 896
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha": "e7c80b67ad6e1f7ed53ed1d8921ce4fef5f1d9d800e8687853a2633c9d0e8594",
+      "messagesSha": "ae9367bae9c3b31a0e46c064e714492ed6434513a7776678bbd3f532569da934",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "```openui lifecycle=ephemeral id=algebra-check\n\nroot = LearningSurface([check], \"Check your understanding\", \"Your answer helps me see how you're thinking about this.\", \"ephemeral\")\ncheck = Question([{ question: \"Solve for x: 3x + 2 = 11\", type: \"text\", hint: \"Show your steps if you'd like.\" }], \"ephemeral\", \"Algebra practice\", \"Solve the equation and explain your steps.\")\n```",
+        "toolNames": [],
+        "requestedModel": "gemini-3.1-flash-lite",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 18462,
+          "output": 103,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "counterfactual": null,
+  "decision": {
+    "action": "none",
+    "families": [],
+    "features": [
+      "variable_relationship"
+    ],
+    "paired": false
+  },
+  "offer": null,
+  "phase": "released",
+  "selection": 1,
+  "reason": null,
+  "release": {
+    "text": "```openui lifecycle=ephemeral id=algebra-check\n\nroot = LearningSurface([check], \"Check your understanding\", \"Your answer helps me see how you're thinking about this.\", \"ephemeral\")\ncheck = Question([{ question: \"Solve for x: 3x + 2 = 11\", type: \"text\", hint: \"Show your steps if you'd like.\" }], \"ephemeral\", \"Algebra practice\", \"Solve the equation and explain your steps.\")\n```",
+    "unverified": false
+  },
+  "publicText": "```openui lifecycle=ephemeral id=algebra-check\n\nroot = LearningSurface([check], \"Check your understanding\", \"Your answer helps me see how you're thinking about this.\", \"ephemeral\")\ncheck = Question([{ question: \"Solve for x: 3x + 2 = 11\", type: \"text\", hint: \"Show your steps if you'd like.\" }], \"ephemeral\", \"Algebra practice\", \"Solve the equation and explain your steps.\")\n```",
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "pass",
+      "checks": []
+    }
+  ],
+  "directives": [
+    "- Answer the bounded question directly; do not start a diagnostic interview.",
+    "- Respond to the learner's actual reasoning before choosing the next step.",
+    "- Provide one requested OpenUI practice activity now, without requiring a lesson first or attaching a study plan.",
+    "- A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+    "- Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+    "- Address the learner's pacing request against the active plan; propose any plan change and let the learner decide.",
+    "- Choose one useful next learning step based on demonstrated understanding, then let the learner respond."
+  ],
+  "finishedAt": "2026-11-18T12:52:26.695Z"
+}

@@ -1,0 +1,36 @@
+{
+  "id": "single-rectangle--google",
+  "caseId": "single-rectangle",
+  "provider": "google",
+  "decisionModel": "gemini-decision-1",
+  "kind": "plan",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "250c78b9d0f6e758db888bd81852d2dcf4ca563a3f26693cd6111898023a330e",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "create",
+    "offered": [
+      "Simulation",
+      "ConceptMap"
+    ],
+    "reason": null,
+    "directives": [
+      "Give the requested help without asking the learner to complete a checkpoint or exercise. Include a requested visual explanation or demonstration.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "At most one OpenUI activity may help this turn: Simulation to let the learner change a variable and observe the outcome; let the learner carry out the requested action themselves; or ConceptMap to lay out how the concepts relate; let the learner carry out the requested action themselves. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested."
+    ]
+  },
+  "drafts": [],
+  "status": "plan-only",
+  "public": null,
+  "notice": null,
+  "selectedAttempt": null,
+  "findings": []
+}

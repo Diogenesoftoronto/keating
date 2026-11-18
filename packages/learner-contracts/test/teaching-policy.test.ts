@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { assessTeachingPolicyAdherence, buildCompactTeachingPrompt, projectTeachingPolicyDecision, teachingPolicyAdherenceRequest,
-  teachingPolicyDecisionRequest, teachingPolicyDeterministicChecks, TEACHING_POLICY_RULES, TEACHING_POLICY_DECISIONS, TEACHING_INTERACTION_FEATURES,
+  teachingPolicyDecisionRequest, teachingPolicyDeterministicChecks, trimTrailingCheckpointProse, TEACHING_POLICY_RULES, TEACHING_POLICY_DECISIONS, TEACHING_INTERACTION_FEATURES,
   type TeachingPolicyTurn, type TeachingPolicyReply } from "../src/judgement/teaching-policy.js";
 import { judgementRequestProblem, type JudgementOutcome, type JudgementRequest } from "../src/judgement/contracts.js";
 
@@ -157,6 +157,28 @@ describe("deterministic adherence", () => {
     expect(failed(`${document([question])}\nThe next lesson is...`)).toContain("stop_after_checkpoint");
     expect(failed(document([question, { type: "markdown", id: "answer", markdown: "The answer is 3." }]))).toContain("checkpoint_last_node");
     expect(failed(document([question, { ...question, id: "q2" }]))).toContain("one_checkpoint");
+  });
+
+  test("only a complete terminal checkpoint with one trailing prose paragraph is a repair candidate", () => {
+    const ui = document([question]);
+    const text = "Work this one independently.\n\n" + ui;
+    const suffix = "\n\nTell me when you are ready.";
+    expect(trimTrailingCheckpointProse({ text: text + suffix, toolCalls: [] })?.text).toBe(text);
+    const codeThenQuestion = "```python\nprint(2 + 3)\n```\n\n" + text;
+    expect(trimTrailingCheckpointProse({ text: codeThenQuestion + suffix, toolCalls: [] })?.text).toBe(codeThenQuestion);
+    expect(trimTrailingCheckpointProse({ text: (text + suffix).replaceAll("\n", "\r\n"), toolCalls: [] })?.text)
+      .toBe(text.replaceAll("\n", "\r\n"));
+    for (const candidate of [text, text + "\n\n", ui.replaceAll("```", "~~~") + suffix,
+      text + "\n\n> Another section", text + "\n\nRead https://example.org first.",
+      text + suffix + "\n\nA separate lesson.", text + suffix + "\n\n" + ui, text + "\n```python\nrun()\n```",
+      ui.replace("```keating-ui", "> ```keating-ui") + suffix,
+      document([question, { ...question, id: "other" }]) + suffix,
+      document([question, { type: "markdown", id: "answer", markdown: "The solution follows." }]) + suffix,
+      document([{ type: "markdown", id: "note", markdown: "A complete note." }]) + suffix,
+      "```keating-ui\n{}\n```" + suffix]) {
+      expect(trimTrailingCheckpointProse({ text: candidate, toolCalls: [] })).toBeNull();
+    }
+    expect(trimTrailingCheckpointProse({ text: text + suffix, toolCalls: [{ name: "grade_quiz", arguments: {} }] })).toBeNull();
   });
 
   test("invalid/unfinished UI is failed; quoted UI examples in an outer fence stay inert", () => {

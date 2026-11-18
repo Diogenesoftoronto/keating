@@ -1,0 +1,233 @@
+{
+  "schemaVersion": 1,
+  "turns": [
+    {
+      "schemaVersion": 1,
+      "conversationId": "irrigation--flash--none",
+      "turnId": "irrigation--flash--none",
+      "turnIndex": 0,
+      "model": "gemini-3.1-flash-lite",
+      "mode": "baseline",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "released",
+      "attempted": true,
+      "compiled": [
+        "simulation"
+      ],
+      "selected": [
+        "simulation"
+      ],
+      "rendered": null,
+      "nativePageRequested": false,
+      "nativePage": {
+        "succeeded": false,
+        "failed": false,
+        "attached": false,
+        "saved": false,
+        "mounted": false,
+        "ready": false,
+        "visible": false,
+        "opened": false,
+        "frameFailed": false
+      },
+      "guidance": null,
+      "outsideWords": 0,
+      "editableCode": [],
+      "codingChallengeLanguages": [],
+      "editorOutsideWords": null,
+      "assessment": {
+        "optOut": true,
+        "checkpoints": [
+          "simulation-brief"
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "irrigation--minimax--none",
+      "turnId": "irrigation--minimax--none",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "baseline",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "released",
+      "attempted": true,
+      "compiled": [
+        "simulation"
+      ],
+      "selected": [
+        "simulation"
+      ],
+      "rendered": null,
+      "nativePageRequested": false,
+      "nativePage": {
+        "succeeded": false,
+        "failed": false,
+        "attached": false,
+        "saved": false,
+        "mounted": false,
+        "ready": false,
+        "visible": false,
+        "opened": false,
+        "frameFailed": false
+      },
+      "guidance": null,
+      "outsideWords": 240,
+      "editableCode": [],
+      "codingChallengeLanguages": [],
+      "editorOutsideWords": null,
+      "assessment": {
+        "optOut": true,
+        "checkpoints": [
+          "simulation-brief"
+        ]
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "irrigation--minimax--google",
+      "turnId": "irrigation--minimax--google",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "gemini-decision-1",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "released",
+      "attempted": true,
+      "compiled": [
+        "simulation"
+      ],
+      "selected": [
+        "simulation"
+      ],
+      "rendered": null,
+      "nativePageRequested": false,
+      "nativePage": {
+        "succeeded": false,
+        "failed": false,
+        "attached": false,
+        "saved": false,
+        "mounted": false,
+        "ready": false,
+        "visible": false,
+        "opened": false,
+        "frameFailed": false
+      },
+      "guidance": {
+        "source": "other",
+        "action": "create",
+        "targets": [
+          "simulation"
+        ],
+        "delivered": true
+      },
+      "draftAttempts": 1,
+      "selection": {
+        "attempt": 1,
+        "review": "verified"
+      },
+      "outsideWords": 36,
+      "editableCode": [],
+      "codingChallengeLanguages": [],
+      "editorOutsideWords": null,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-output",
+        "caseId": "irrigation",
+        "pairId": "minimax-irrigation"
+      },
+      "gateIssues": [],
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      },
+      "assessment": {
+        "optOut": true,
+        "checkpoints": []
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "irrigation--minimax--jev",
+      "turnId": "irrigation--minimax--jev",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "decisionModel": "jev-1.14.0",
+      "mode": "guided",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "released",
+      "attempted": true,
+      "compiled": [
+        "simulation"
+      ],
+      "selected": [
+        "simulation"
+      ],
+      "rendered": null,
+      "nativePageRequested": false,
+      "nativePage": {
+        "succeeded": false,
+        "failed": false,
+        "attached": false,
+        "saved": false,
+        "mounted": false,
+        "ready": false,
+        "visible": false,
+        "opened": false,
+        "frameFailed": false
+      },
+      "guidance": {
+        "source": "jev",
+        "action": "create",
+        "targets": [
+          "simulation"
+        ],
+        "delivered": true
+      },
+      "draftAttempts": 1,
+      "selection": {
+        "attempt": 1,
+        "review": "verified"
+      },
+      "outsideWords": 47,
+      "editableCode": [],
+      "codingChallengeLanguages": [],
+      "editorOutsideWords": null,
+      "experiment": {
+        "experimentId": "keating-final-review-2026-11-18-output",
+        "caseId": "irrigation",
+        "pairId": "minimax-irrigation"
+      },
+      "gateIssues": [
+        "checkpoint_repeated"
+      ],
+      "fit": {
+        "source": "fable-blind-task-fit-v1",
+        "passed": true
+      },
+      "assessment": {
+        "optOut": true,
+        "checkpoints": []
+      }
+    }
+  ]
+}

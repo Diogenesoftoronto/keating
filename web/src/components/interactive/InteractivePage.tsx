@@ -229,7 +229,7 @@ export function InteractivePage({ pageId, title, html, description, libraries, d
 	const frameHeight = Math.min(INTERACTIVE_PAGE_LIMITS.maxInlineHeight, Math.max(INTERACTIVE_PAGE_LIMITS.minHeight, Math.ceil(contentHeight)));
 
 	return (
-		<section ref={rootRef} role={fullscreen ? "dialog" : undefined} aria-modal={fullscreen ? true : undefined} aria-labelledby={titleId} className={cx(rootClass, fullscreen && fullscreenClass, className)} data-interactive-page={pageId}>
+		<section ref={rootRef} role={fullscreen ? "dialog" : undefined} aria-modal={fullscreen ? true : undefined} aria-labelledby={titleId} className={cx(rootClass, fullscreen && fullscreenClass, className)} data-interactive-page={pageId} data-native-page-status={status}>
 			<header className={headerClass}>
 				<span id={titleId} className={titleClass}>{title}</span>
 				<span className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>

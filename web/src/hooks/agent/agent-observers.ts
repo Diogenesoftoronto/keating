@@ -8,6 +8,8 @@ import type { PostHog } from "posthog-js";
 import type { FlueConversation } from "../../keating/flue/conversation";
 import { createReplyJudgementObserver } from "../../keating/judgement/reply-review";
 import { beginTurn, finishTurn, noteTurnReplyReview } from "../../keating/judgement/turn-ledger";
+import { loadJudgementModelSettings } from "../../keating/judgement-model";
+import { observeOpenUITurns } from "../../keating/openui/turn-observer";
 
 /** Turn records are diagnostics; they must never interrupt persistence or the reply. */
 function recordTurn(work: () => void) {
@@ -141,6 +143,11 @@ export function observeConversationPersistence({
   onIdle: () => Promise<void>;
 }): { persistSnapshot: () => Promise<void>; dispose: () => void } {
   const { agent, adjustment, recall, memory, intelligence } = conversation;
+  const uiTurns = observeOpenUITurns({
+    sessionId, messages: () => agent.context.messages,
+    mode: () => loadJudgementModelSettings().backend === "off" ? "baseline" : "unknown",
+    capture: (event, fields) => posthog.capture(event, fields),
+  });
   const scheduler = createSnapshotScheduler(save);
   const { persistSnapshot } = scheduler;
   persistCurrentSnapshotRef.current = persistSnapshot;
@@ -163,6 +170,7 @@ export function observeConversationPersistence({
     },
   });
   const unsubscribePersistence = agent.observeExecution((ev) => {
+    recordTurn(() => uiTurns.observe(ev));
     if (ev.type === "agent_start") {
       intelligence.cancel();
       adjustment.startRun(agent.context.messages);
@@ -220,6 +228,7 @@ export function observeConversationPersistence({
     }
   });
   const dispose = () => {
+    uiTurns.dispose();
     judgementObserver.dispose();
     adjustment.dispose();
     recall.dispose();

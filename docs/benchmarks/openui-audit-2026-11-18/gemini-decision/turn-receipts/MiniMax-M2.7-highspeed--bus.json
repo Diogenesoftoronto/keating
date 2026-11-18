@@ -1,0 +1,1385 @@
+{
+  "id": "MiniMax-M2.7-highspeed--bus",
+  "caseId": "bus",
+  "configuredModel": "MiniMax-M2.7-highspeed",
+  "provider": "minimax",
+  "endpoint": "https://api.minimax.io/anthropic",
+  "startedAt": "2026-11-18T15:40:01.057Z",
+  "status": "complete",
+  "judgments": [
+    {
+      "caseId": "MiniMax-M2.7-highspeed--bus/judge-1",
+      "requestSha256": "679b354c85a0859f8e5e8c97775cbdf4e5af5d588a82198cefa53192b9f078df",
+      "cacheFile": "decision-cache/679b354c85a0859f8e5e8c97775cbdf4e5af5d588a82198cefa53192b9f078df.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 4762,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 4762,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.01692464776337165
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.02351671427644761
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.018548473435819116
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.04421178861330878
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.020243927340662077
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.07929300164075999
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.9551529632159445
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.0340608533893151
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.012488073436366619
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.4144829221439001
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.4554341132129442
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.04551947542590391
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.024255058726613373
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.8825578784001616
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.3699572192455855
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.8620316853633839
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.9463492382212435
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.11165214951907554
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.07743125247547325
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.6881442295380686
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.0360661002566322
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.630880269672763
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.10898852634549669
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.8888645861541077
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.24588926243224174
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.026539386369789246
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.03236391695041518
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.1880698067273968
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.07553079796203768
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.24283733029308832
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.06010167835033225
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 0.5955986986178152,
+              "confidence": 0.597580389792665,
+              "probabilities": {
+                "0": 0.597580389792665,
+                "1": 0.25907639503149127,
+                "2": 0.0935073419412067,
+                "3": 0.049835873234636875
+              },
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              }
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0.6115660788294226,
+              "confidence": 0.557921116604689,
+              "probabilities": {
+                "0": 0.557921116604689,
+                "1": 0.30259274532799607,
+                "2": 0.10948508070051809,
+                "3": 0.030001057366796785
+              },
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              }
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 1.217597555308179,
+              "confidence": 0.3180979107559131,
+              "probabilities": {
+                "0": 0.3180979107559131,
+                "1": 0.2930768297944134,
+                "2": 0.24195505283525495,
+                "3": 0.14687020661441855
+              },
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              }
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.7192117454460835,
+                "supported": 0.19062195069020602,
+                "deep": 0.09016630386371051
+              },
+              "confidence": 0.7192117454460835
+            }
+          },
+          "usage": {
+            "inputTokens": 4762,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "phase": "plan",
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.01692464776337165
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.02351671427644761
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.018548473435819116
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.04421178861330878
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.020243927340662077
+        },
+        "plain_reply_requested": {
+          "type": "noul",
+          "noul": 0.07929300164075999
+        },
+        "assessment_declined": {
+          "type": "noul",
+          "noul": 0.9551529632159445
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.0340608533893151
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.012488073436366619
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.4144829221439001
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.4554341132129442
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.04551947542590391
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.024255058726613373
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.8825578784001616
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.3699572192455855
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 0.8620316853633839
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.9463492382212435
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.11165214951907554
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.07743125247547325
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.6881442295380686
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.0360661002566322
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.630880269672763
+        },
+        "learner_response_due": {
+          "type": "noul",
+          "noul": 0.10898852634549669
+        },
+        "hands_on_requested": {
+          "type": "noul",
+          "noul": 0.8888645861541077
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.24588926243224174
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.026539386369789246
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.03236391695041518
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.1880698067273968
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.07553079796203768
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.24283733029308832
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.06010167835033225
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 0.5955986986178152,
+          "confidence": 0.597580389792665,
+          "probabilities": {
+            "0": 0.597580389792665,
+            "1": 0.25907639503149127,
+            "2": 0.0935073419412067,
+            "3": 0.049835873234636875
+          },
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          }
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.6115660788294226,
+          "confidence": 0.557921116604689,
+          "probabilities": {
+            "0": 0.557921116604689,
+            "1": 0.30259274532799607,
+            "2": 0.10948508070051809,
+            "3": 0.030001057366796785
+          },
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          }
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 1.217597555308179,
+          "confidence": 0.3180979107559131,
+          "probabilities": {
+            "0": 0.3180979107559131,
+            "1": 0.2930768297944134,
+            "2": 0.24195505283525495,
+            "3": 0.14687020661441855
+          },
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          }
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "concise",
+          "probabilities": {
+            "concise": 0.7192117454460835,
+            "supported": 0.19062195069020602,
+            "deep": 0.09016630386371051
+          },
+          "confidence": 0.7192117454460835
+        }
+      }
+    },
+    {
+      "caseId": "MiniMax-M2.7-highspeed--bus/judge-2",
+      "requestSha256": "25d89e0a63a0cae20116ad0f26db49982ad3ec5a37a88364f00510aa4e77b410",
+      "cacheFile": "decision-cache/25d89e0a63a0cae20116ad0f26db49982ad3ec5a37a88364f00510aa4e77b410.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 7770,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 7770,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "identity_invented": {
+              "type": "noul",
+              "noul": 0.049928057817329397
+            },
+            "instruction_override": {
+              "type": "noul",
+              "noul": 0.027027061668719918
+            },
+            "tool_success_invented": {
+              "type": "noul",
+              "noul": 0.05300506169369337
+            },
+            "sensitive_inference": {
+              "type": "noul",
+              "noul": 0.020277841055920447
+            },
+            "mastery_overclaimed": {
+              "type": "noul",
+              "noul": 0.021416760947094507
+            },
+            "retention_overclaimed": {
+              "type": "noul",
+              "noul": 0.016180583459800668
+            },
+            "transfer_overclaimed": {
+              "type": "noul",
+              "noul": 0.029026436591056
+            },
+            "synthetic_efficacy_claim": {
+              "type": "noul",
+              "noul": 0.018331468501191408
+            },
+            "explanation_missing": {
+              "type": "noul",
+              "noul": 0.1071266227307153
+            },
+            "direct_answer_missing": {
+              "type": "noul",
+              "noul": 0.03156277386123224
+            },
+            "practice_missing": {
+              "type": "noul",
+              "noul": 0.06288238919654453
+            },
+            "direct_help_withheld": {
+              "type": "noul",
+              "noul": 0.19286358720633534
+            },
+            "diagnostic_interview_forced": {
+              "type": "noul",
+              "noul": 0.03457331584447639
+            },
+            "known_context_reasked": {
+              "type": "noul",
+              "noul": 0.020354971338467837
+            },
+            "gap_ignored": {
+              "type": "noul",
+              "noul": 0.024152425015779713
+            },
+            "learner_voice_replaced": {
+              "type": "noul",
+              "noul": 0.015339585488389674
+            },
+            "checkpoint_answer_leaked": {
+              "type": "noul",
+              "noul": 0.24964257834696138
+            },
+            "checkpoint_repeated": {
+              "type": "noul",
+              "noul": 0.21173848952330168
+            },
+            "checkpoint_continued": {
+              "type": "noul",
+              "noul": 0.05404057958680261
+            },
+            "checkpoint_not_interactive": {
+              "type": "noul",
+              "noul": 0.10016901939248102
+            },
+            "practice_withheld": {
+              "type": "noul",
+              "noul": 0.062019815387351435
+            },
+            "unsolicited_assessment": {
+              "type": "noul",
+              "noul": 0.031920691244439414
+            },
+            "unsolicited_animation": {
+              "type": "noul",
+              "noul": 0.051189242506882005
+            },
+            "feedback_invented": {
+              "type": "noul",
+              "noul": 0.041245509474180084
+            },
+            "profile_evidence_invented": {
+              "type": "noul",
+              "noul": 0.04081330903902631
+            },
+            "preference_graded": {
+              "type": "noul",
+              "noul": 0.03831979597778624
+            },
+            "alternative_answer_rejected": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "observed_preference_overrides_declared": {
+              "type": "noul",
+              "noul": 0.03866360852832298
+            },
+            "housekeeping_delegated": {
+              "type": "noul",
+              "noul": 0.03826576507144047
+            },
+            "assessed_work_completed": {
+              "type": "noul",
+              "noul": 0.020235699441020535
+            },
+            "source_link_missing": {
+              "type": "noul",
+              "noul": 0.012807534684015355
+            },
+            "source_contradicted": {
+              "type": "noul",
+              "noul": 0.029664120282127705
+            },
+            "improvement_interrupts": {
+              "type": "noul",
+              "noul": 0.02724831982922779
+            },
+            "repeated_improvement_unrequested": {
+              "type": "noul",
+              "noul": 0.0752314718710564
+            },
+            "artifact_placeholder": {
+              "type": "noul",
+              "noul": 0.02395452404020868
+            },
+            "transport_exposed": {
+              "type": "noul",
+              "noul": 0.021812276250269932
+            },
+            "law_authority_missing": {
+              "type": "noul",
+              "noul": 0.016245979145651557
+            },
+            "law_jurisdiction_missing": {
+              "type": "noul",
+              "noul": 0.019400362864376082
+            },
+            "medicine_evidence_conflated": {
+              "type": "noul",
+              "noul": 0.026633215808207315
+            },
+            "history_disagreement_erased": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "psychology_replication_ignored": {
+              "type": "noul",
+              "noul": 0.021327548625496476
+            },
+            "politics_normative_as_fact": {
+              "type": "noul",
+              "noul": 0.015148353155454033
+            },
+            "quality_progress": {
+              "type": "noul",
+              "noul": 0.9623126475208762
+            },
+            "quality_scope": {
+              "type": "noul",
+              "noul": 0.6706364735377294
+            }
+          },
+          "usage": {
+            "inputTokens": 7770,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "phase": "review",
+      "answers": {
+        "identity_invented": {
+          "type": "noul",
+          "noul": 0.049928057817329397
+        },
+        "instruction_override": {
+          "type": "noul",
+          "noul": 0.027027061668719918
+        },
+        "tool_success_invented": {
+          "type": "noul",
+          "noul": 0.05300506169369337
+        },
+        "sensitive_inference": {
+          "type": "noul",
+          "noul": 0.020277841055920447
+        },
+        "mastery_overclaimed": {
+          "type": "noul",
+          "noul": 0.021416760947094507
+        },
+        "retention_overclaimed": {
+          "type": "noul",
+          "noul": 0.016180583459800668
+        },
+        "transfer_overclaimed": {
+          "type": "noul",
+          "noul": 0.029026436591056
+        },
+        "synthetic_efficacy_claim": {
+          "type": "noul",
+          "noul": 0.018331468501191408
+        },
+        "explanation_missing": {
+          "type": "noul",
+          "noul": 0.1071266227307153
+        },
+        "direct_answer_missing": {
+          "type": "noul",
+          "noul": 0.03156277386123224
+        },
+        "practice_missing": {
+          "type": "noul",
+          "noul": 0.06288238919654453
+        },
+        "direct_help_withheld": {
+          "type": "noul",
+          "noul": 0.19286358720633534
+        },
+        "diagnostic_interview_forced": {
+          "type": "noul",
+          "noul": 0.03457331584447639
+        },
+        "known_context_reasked": {
+          "type": "noul",
+          "noul": 0.020354971338467837
+        },
+        "gap_ignored": {
+          "type": "noul",
+          "noul": 0.024152425015779713
+        },
+        "learner_voice_replaced": {
+          "type": "noul",
+          "noul": 0.015339585488389674
+        },
+        "checkpoint_answer_leaked": {
+          "type": "noul",
+          "noul": 0.24964257834696138
+        },
+        "checkpoint_repeated": {
+          "type": "noul",
+          "noul": 0.21173848952330168
+        },
+        "checkpoint_continued": {
+          "type": "noul",
+          "noul": 0.05404057958680261
+        },
+        "checkpoint_not_interactive": {
+          "type": "noul",
+          "noul": 0.10016901939248102
+        },
+        "practice_withheld": {
+          "type": "noul",
+          "noul": 0.062019815387351435
+        },
+        "unsolicited_assessment": {
+          "type": "noul",
+          "noul": 0.031920691244439414
+        },
+        "unsolicited_animation": {
+          "type": "noul",
+          "noul": 0.051189242506882005
+        },
+        "feedback_invented": {
+          "type": "noul",
+          "noul": 0.041245509474180084
+        },
+        "profile_evidence_invented": {
+          "type": "noul",
+          "noul": 0.04081330903902631
+        },
+        "preference_graded": {
+          "type": "noul",
+          "noul": 0.03831979597778624
+        },
+        "alternative_answer_rejected": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "observed_preference_overrides_declared": {
+          "type": "noul",
+          "noul": 0.03866360852832298
+        },
+        "housekeeping_delegated": {
+          "type": "noul",
+          "noul": 0.03826576507144047
+        },
+        "assessed_work_completed": {
+          "type": "noul",
+          "noul": 0.020235699441020535
+        },
+        "source_link_missing": {
+          "type": "noul",
+          "noul": 0.012807534684015355
+        },
+        "source_contradicted": {
+          "type": "noul",
+          "noul": 0.029664120282127705
+        },
+        "improvement_interrupts": {
+          "type": "noul",
+          "noul": 0.02724831982922779
+        },
+        "repeated_improvement_unrequested": {
+          "type": "noul",
+          "noul": 0.0752314718710564
+        },
+        "artifact_placeholder": {
+          "type": "noul",
+          "noul": 0.02395452404020868
+        },
+        "transport_exposed": {
+          "type": "noul",
+          "noul": 0.021812276250269932
+        },
+        "law_authority_missing": {
+          "type": "noul",
+          "noul": 0.016245979145651557
+        },
+        "law_jurisdiction_missing": {
+          "type": "noul",
+          "noul": 0.019400362864376082
+        },
+        "medicine_evidence_conflated": {
+          "type": "noul",
+          "noul": 0.026633215808207315
+        },
+        "history_disagreement_erased": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "psychology_replication_ignored": {
+          "type": "noul",
+          "noul": 0.021327548625496476
+        },
+        "politics_normative_as_fact": {
+          "type": "noul",
+          "noul": 0.015148353155454033
+        },
+        "quality_progress": {
+          "type": "noul",
+          "noul": 0.9623126475208762
+        },
+        "quality_scope": {
+          "type": "noul",
+          "noul": 0.6706364735377294
+        }
+      }
+    },
+    {
+      "caseId": "MiniMax-M2.7-highspeed--bus/judge-3",
+      "requestSha256": "4805ea9b99a97ba90df332d11a8b4dbe27fc9992e3a318d0719f7b0ffe13faac",
+      "cacheFile": "decision-cache/4805ea9b99a97ba90df332d11a8b4dbe27fc9992e3a318d0719f7b0ffe13faac.json",
+      "source": "live",
+      "reportedModel": null,
+      "usage": {
+        "inputTokens": 7472,
+        "outputTokens": 0
+      },
+      "receipt": {
+        "provider": "google",
+        "requestedModel": "gemini-decision-1",
+        "reportedModel": null,
+        "modelProvenance": "documented-request-model",
+        "httpStatus": 200,
+        "usage": {
+          "inputTokens": 7472,
+          "outputTokens": 0
+        },
+        "errorCode": null
+      },
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "identity_invented": {
+              "type": "noul",
+              "noul": 0.030487618192084946
+            },
+            "instruction_override": {
+              "type": "noul",
+              "noul": 0.03016276566800921
+            },
+            "tool_success_invented": {
+              "type": "noul",
+              "noul": 0.05371130982431495
+            },
+            "sensitive_inference": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "mastery_overclaimed": {
+              "type": "noul",
+              "noul": 0.02533366975273737
+            },
+            "retention_overclaimed": {
+              "type": "noul",
+              "noul": 0.032405983273327776
+            },
+            "transfer_overclaimed": {
+              "type": "noul",
+              "noul": 0.060061352118128734
+            },
+            "synthetic_efficacy_claim": {
+              "type": "noul",
+              "noul": 0.019000496599349687
+            },
+            "explanation_missing": {
+              "type": "noul",
+              "noul": 0.20272730982994083
+            },
+            "direct_answer_missing": {
+              "type": "noul",
+              "noul": 0.09176268716667274
+            },
+            "practice_missing": {
+              "type": "noul",
+              "noul": 0.052792846860547214
+            },
+            "direct_help_withheld": {
+              "type": "noul",
+              "noul": 0.13297053849804685
+            },
+            "diagnostic_interview_forced": {
+              "type": "noul",
+              "noul": 0.03798680513869673
+            },
+            "known_context_reasked": {
+              "type": "noul",
+              "noul": 0.029857091302854313
+            },
+            "gap_ignored": {
+              "type": "noul",
+              "noul": 0.024922425996056832
+            },
+            "learner_voice_replaced": {
+              "type": "noul",
+              "noul": 0.030308150112166046
+            },
+            "checkpoint_answer_leaked": {
+              "type": "noul",
+              "noul": 0.174784364478499
+            },
+            "checkpoint_repeated": {
+              "type": "noul",
+              "noul": 0.46852676135424054
+            },
+            "checkpoint_continued": {
+              "type": "noul",
+              "noul": 0.06387579899550488
+            },
+            "checkpoint_not_interactive": {
+              "type": "noul",
+              "noul": 0.17753578570312742
+            },
+            "practice_withheld": {
+              "type": "noul",
+              "noul": 0.14032015023350577
+            },
+            "unsolicited_assessment": {
+              "type": "noul",
+              "noul": 0.07185923008933867
+            },
+            "unsolicited_animation": {
+              "type": "noul",
+              "noul": 0.09327273458487972
+            },
+            "feedback_invented": {
+              "type": "noul",
+              "noul": 0.07262195198054996
+            },
+            "profile_evidence_invented": {
+              "type": "noul",
+              "noul": 0.030702117441531597
+            },
+            "preference_graded": {
+              "type": "noul",
+              "noul": 0.035635217762220464
+            },
+            "alternative_answer_rejected": {
+              "type": "noul",
+              "noul": 0.023649755548358794
+            },
+            "observed_preference_overrides_declared": {
+              "type": "noul",
+              "noul": 0.104217141664371
+            },
+            "housekeeping_delegated": {
+              "type": "noul",
+              "noul": 0.06455386879462259
+            },
+            "assessed_work_completed": {
+              "type": "noul",
+              "noul": 0.03680422337798999
+            },
+            "source_link_missing": {
+              "type": "noul",
+              "noul": 0.029667777259362774
+            },
+            "source_contradicted": {
+              "type": "noul",
+              "noul": 0.015613302192870401
+            },
+            "improvement_interrupts": {
+              "type": "noul",
+              "noul": 0.03434215214962227
+            },
+            "repeated_improvement_unrequested": {
+              "type": "noul",
+              "noul": 0.043741113570076595
+            },
+            "artifact_placeholder": {
+              "type": "noul",
+              "noul": 0.021133945287628485
+            },
+            "transport_exposed": {
+              "type": "noul",
+              "noul": 0.03404613385158454
+            },
+            "law_authority_missing": {
+              "type": "noul",
+              "noul": 0.05232910056013114
+            },
+            "law_jurisdiction_missing": {
+              "type": "noul",
+              "noul": 0.026560871059269173
+            },
+            "medicine_evidence_conflated": {
+              "type": "noul",
+              "noul": 0.02268745030955116
+            },
+            "history_disagreement_erased": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "psychology_replication_ignored": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "politics_normative_as_fact": {
+              "type": "noul",
+              "noul": 0.019669951822771804
+            },
+            "quality_progress": {
+              "type": "noul",
+              "noul": 0.9238641544160283
+            },
+            "quality_scope": {
+              "type": "noul",
+              "noul": 0.26842297531278664
+            }
+          },
+          "usage": {
+            "inputTokens": 7472,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "phase": "review",
+      "answers": {
+        "identity_invented": {
+          "type": "noul",
+          "noul": 0.030487618192084946
+        },
+        "instruction_override": {
+          "type": "noul",
+          "noul": 0.03016276566800921
+        },
+        "tool_success_invented": {
+          "type": "noul",
+          "noul": 0.05371130982431495
+        },
+        "sensitive_inference": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "mastery_overclaimed": {
+          "type": "noul",
+          "noul": 0.02533366975273737
+        },
+        "retention_overclaimed": {
+          "type": "noul",
+          "noul": 0.032405983273327776
+        },
+        "transfer_overclaimed": {
+          "type": "noul",
+          "noul": 0.060061352118128734
+        },
+        "synthetic_efficacy_claim": {
+          "type": "noul",
+          "noul": 0.019000496599349687
+        },
+        "explanation_missing": {
+          "type": "noul",
+          "noul": 0.20272730982994083
+        },
+        "direct_answer_missing": {
+          "type": "noul",
+          "noul": 0.09176268716667274
+        },
+        "practice_missing": {
+          "type": "noul",
+          "noul": 0.052792846860547214
+        },
+        "direct_help_withheld": {
+          "type": "noul",
+          "noul": 0.13297053849804685
+        },
+        "diagnostic_interview_forced": {
+          "type": "noul",
+          "noul": 0.03798680513869673
+        },
+        "known_context_reasked": {
+          "type": "noul",
+          "noul": 0.029857091302854313
+        },
+        "gap_ignored": {
+          "type": "noul",
+          "noul": 0.024922425996056832
+        },
+        "learner_voice_replaced": {
+          "type": "noul",
+          "noul": 0.030308150112166046
+        },
+        "checkpoint_answer_leaked": {
+          "type": "noul",
+          "noul": 0.174784364478499
+        },
+        "checkpoint_repeated": {
+          "type": "noul",
+          "noul": 0.46852676135424054
+        },
+        "checkpoint_continued": {
+          "type": "noul",
+          "noul": 0.06387579899550488
+        },
+        "checkpoint_not_interactive": {
+          "type": "noul",
+          "noul": 0.17753578570312742
+        },
+        "practice_withheld": {
+          "type": "noul",
+          "noul": 0.14032015023350577
+        },
+        "unsolicited_assessment": {
+          "type": "noul",
+          "noul": 0.07185923008933867
+        },
+        "unsolicited_animation": {
+          "type": "noul",
+          "noul": 0.09327273458487972
+        },
+        "feedback_invented": {
+          "type": "noul",
+          "noul": 0.07262195198054996
+        },
+        "profile_evidence_invented": {
+          "type": "noul",
+          "noul": 0.030702117441531597
+        },
+        "preference_graded": {
+          "type": "noul",
+          "noul": 0.035635217762220464
+        },
+        "alternative_answer_rejected": {
+          "type": "noul",
+          "noul": 0.023649755548358794
+        },
+        "observed_preference_overrides_declared": {
+          "type": "noul",
+          "noul": 0.104217141664371
+        },
+        "housekeeping_delegated": {
+          "type": "noul",
+          "noul": 0.06455386879462259
+        },
+        "assessed_work_completed": {
+          "type": "noul",
+          "noul": 0.03680422337798999
+        },
+        "source_link_missing": {
+          "type": "noul",
+          "noul": 0.029667777259362774
+        },
+        "source_contradicted": {
+          "type": "noul",
+          "noul": 0.015613302192870401
+        },
+        "improvement_interrupts": {
+          "type": "noul",
+          "noul": 0.03434215214962227
+        },
+        "repeated_improvement_unrequested": {
+          "type": "noul",
+          "noul": 0.043741113570076595
+        },
+        "artifact_placeholder": {
+          "type": "noul",
+          "noul": 0.021133945287628485
+        },
+        "transport_exposed": {
+          "type": "noul",
+          "noul": 0.03404613385158454
+        },
+        "law_authority_missing": {
+          "type": "noul",
+          "noul": 0.05232910056013114
+        },
+        "law_jurisdiction_missing": {
+          "type": "noul",
+          "noul": 0.026560871059269173
+        },
+        "medicine_evidence_conflated": {
+          "type": "noul",
+          "noul": 0.02268745030955116
+        },
+        "history_disagreement_erased": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "psychology_replication_ignored": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "politics_normative_as_fact": {
+          "type": "noul",
+          "noul": 0.019669951822771804
+        },
+        "quality_progress": {
+          "type": "noul",
+          "noul": 0.9238641544160283
+        },
+        "quality_scope": {
+          "type": "noul",
+          "noul": 0.26842297531278664
+        }
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "delivered": true,
+      "systemSha256": "f547298307319606034738ef9fcf2232daae7133cffd4f389118fa31f0095d45",
+      "messagesSha256": "e5ea51d4648138fa461f70221cd342fd2a12e48d7de95bf0a7e938465a159058",
+      "toolsSha256": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "payloadSha256": "2d2693bece00488f64b762ba1600f28730e0596b71bfd2bc556de8f64b4394b1",
+      "status": "stop",
+      "response": {
+        "text": "Good — here's a live model you can drive yourself. Drag the frequency slider and every readout recomputes instantly.\n\n**The model in one line:** seats offered per hour = buses per hour × seats per bus. Seats *available* (surplus) = offered − passengers per hour.\n\n```openui lifecycle=ephemeral id=bus-frequency-seats\n\nroot = LearningSurface([expl, sim], \"Bus frequency vs. seats available per hour\", \"Change the frequency and watch capacity recompute.\", \"ephemeral\")\nexpl = Explanation(\"Three numbers drive everything:\\n\\n- **Buses per hour** — the frequency you control\\n- **Seats per bus** — the capacity of one vehicle\\n- **Passengers per hour** — the demand you must serve\\n\\n**Seats offered per hour** = buses/hour × seats/bus\\n**Seats available (surplus)** = seats offered − passengers/hour\\n**Capacity used** = passengers/hour ÷ seats offered\\n\\nIf surplus turns negative, some passengers are left standing: frequency is below what the demand needs.\", \"How the readouts are computed\")\nbuses = { id: \"busesPerHour\", label: \"Buses per hour\", unit: \"buses\", min: 1, max: 60, step: 1, value: 10 }\nseats = { id: \"seatsPerBus\", label: \"Seats per bus\", unit: \"seats\", min: 10, max: 90, step: 1, value: 40 }\nriders = { id: \"passengersPerHour\", label: \"Passengers per hour\", unit: \"people\", min: 0, max: 3000, step: 50, value: 600 }\nparams = [buses, seats, riders]\noffered = { id: \"seatsOffered\", label: \"Seats offered per hour\", unit: \"seats\", expr: \"busesPerHour * seatsPerBus\", precision: 0 }\nsurplus = { id: \"seatsAvailable\", label: \"Seats available per hour (surplus)\", unit: \"seats\", expr: \"busesPerHour * seatsPerBus - passengersPerHour\", precision: 0, emphasis: true }\nutil = { id: \"capacityUsed\", label: \"Capacity used\", unit: \"%\", expr: \"passengersPerHour / (busesPerHour * seatsPerBus) * 100\", precision: 1 }\nspare = { id: \"sparesPerBus\", label: \"Spares per bus (avg)\", unit: \"seats\", expr: \"seatsPerBus - passengersPerHour / busesPerHour\", precision: 1 }\nneed = { id: \"busesToServe\", label: \"Buses needed if each runs full\", unit: \"buses\", expr: \"passengersPerHour / seatsPerBus\", precision: 1 }\nreadouts = [offered, surplus, util, spare, need]\nsim = Simulation(\"bus-freq-seats\", \"Bus frequency vs. seats available per hour\", params, readouts, \"ephemeral\", \"Before you move anything: what do you predict the surplus to be if you double the frequency from 10 to 20 buses per hour? Then drag the frequency slider and check. Try a second move that pushes the surplus negative, and watch capacity used climb past 100%. When you're done, press 'Share what I found' so I can see your settings and readouts.\")\n\n```\n\nTwo things worth exploring once you start moving it: whether doubling frequency doubles the surplus (it doesn't — surplus only doubles if demand is zero), and where the break-even point sits, where surplus hits exactly zero.\n\nWhen you've played with it, hit **Share what I found** and I'll work through your actual numbers with you.",
+        "nativeTools": [],
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "usage": {
+          "input": 18372,
+          "output": 1987,
+          "cacheRead": 188,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 2,
+      "delivered": true,
+      "systemSha256": "f547298307319606034738ef9fcf2232daae7133cffd4f389118fa31f0095d45",
+      "messagesSha256": "76c5f976e72b7dbb38feb8cf7129c42d772010a9bd1e39165af50e7040cf8afd",
+      "toolsSha256": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "payloadSha256": "0c7f4dbf8d3319ce8c0083dca73d7b05c809fdff4982591fe9b1049648ba2510",
+      "status": "stop",
+      "response": {
+        "text": "Here's a live model you can drive yourself — move the buses-per-hour slider and the seat numbers recompute instantly.\n\n```openui lifecycle=workspace id=bus-frequency-seats\nroot = LearningSurface([sim], \"Bus frequency and seats per hour\", \"Change the hourly frequency and watch seat supply.\", \"workspace\")\nsim = Simulation(\"bus-sim\", \"Hourly bus frequency vs. seats per hour\", [\n  { id: \"freq\", label: \"Buses per hour\", unit: \"buses\", min: 1, max: 30, step: 1, value: 6 },\n  { id: \"seats\", label: \"Seats per bus\", unit: \"seats\", min: 10, max: 60, step: 2, value: 40 },\n  { id: \"load\", label: \"Average load factor\", unit: \"%\", min: 0, max: 100, step: 5, value: 70 }\n], [\n  { id: \"capacity\", label: \"Seats offered per hour\", unit: \"seats\", expr: \"freq * seats\", precision: 0 },\n  { id: \"occupied\", label: \"Occupied seats per hour\", unit: \"seats\", expr: \"freq * seats * load / 100\", precision: 0 },\n  { id: \"available\", label: \"Seats available per hour (unoccupied)\", unit: \"seats\", expr: \"freq * seats * (100 - load) / 100\", precision: 0, emphasis: true }\n], \"workspace\", \"Predict first: if you double the buses per hour, what do you expect the emphasized readout (seats available per hour) to do — and why? Then move the frequency slider and compare. Note there are two readings of 'seats available': seats offered per hour (capacity) and seats actually free once the load factor is applied. Watch both, and try raising the load factor while you hold frequency steady to see what happens to free seats.\")\n```\n\nTwo things worth trying once it's live: raise the load factor at a fixed frequency (free seats shrink without any schedule change), and then restore the load and push frequency up (seats offered rise, but so does total capacity — which is the tradeoff behind frequency decisions). Press **Share what I found** when you've got settings you want me to look at, and tell me what you predicted first so I can check the model against your reasoning.",
+        "nativeTools": [],
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "usage": {
+          "input": 18792,
+          "output": 1092,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "decision": {
+    "model": "gemini-decision-1",
+    "source": "google",
+    "action": "create",
+    "targets": [
+      "Simulation",
+      "ConceptMap"
+    ],
+    "signals": {
+      "learner_response_due": 0.10898852634549669,
+      "hands_on_requested": 0.8888645861541077,
+      "plain_reply_requested": 0.07929300164075999,
+      "assessment_declined": 0.9551529632159445,
+      "prediction_opportunity": 0.630880269672763,
+      "variable_relationship": 0.9463492382212435
+    },
+    "interactionDirectives": [
+      "At most one OpenUI activity may help this turn: Simulation to let the learner change a variable and observe the outcome; let the learner carry out the requested action themselves; or ConceptMap to lay out how the concepts relate; let the learner carry out the requested action themselves. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better."
+    ],
+    "planDirectives": [
+      "Give the requested help without asking the learner to complete a checkpoint or exercise. Include a requested visual explanation or demonstration.",
+      "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+      "At most one OpenUI activity may help this turn: Simulation to let the learner change a variable and observe the outcome; let the learner carry out the requested action themselves; or ConceptMap to lay out how the concepts relate; let the learner carry out the requested action themselves. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better."
+    ]
+  },
+  "phase": "released",
+  "reason": null,
+  "selection": 2,
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "fail",
+      "variant": "default",
+      "trimmedCheckpointSuffix": false,
+      "findings": [
+        {
+          "id": "openui_valid",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "one_activity",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "activity_without_plan",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "one_checkpoint",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "checkpoint_last_node",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "status": "unknown",
+          "probability": null
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "status": "pass",
+      "variant": "default",
+      "trimmedCheckpointSuffix": false,
+      "findings": [
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "probability": 0.46852676135424054
+        },
+        {
+          "id": "quality_scope",
+          "status": "unknown",
+          "probability": 0.7315770246872133
+        }
+      ]
+    }
+  ],
+  "public": {
+    "text": "Here's a live model you can drive yourself — move the buses-per-hour slider and the seat numbers recompute instantly.\n\n```openui lifecycle=workspace id=bus-frequency-seats\nroot = LearningSurface([sim], \"Bus frequency and seats per hour\", \"Change the hourly frequency and watch seat supply.\", \"workspace\")\nsim = Simulation(\"bus-sim\", \"Hourly bus frequency vs. seats per hour\", [\n  { id: \"freq\", label: \"Buses per hour\", unit: \"buses\", min: 1, max: 30, step: 1, value: 6 },\n  { id: \"seats\", label: \"Seats per bus\", unit: \"seats\", min: 10, max: 60, step: 2, value: 40 },\n  { id: \"load\", label: \"Average load factor\", unit: \"%\", min: 0, max: 100, step: 5, value: 70 }\n], [\n  { id: \"capacity\", label: \"Seats offered per hour\", unit: \"seats\", expr: \"freq * seats\", precision: 0 },\n  { id: \"occupied\", label: \"Occupied seats per hour\", unit: \"seats\", expr: \"freq * seats * load / 100\", precision: 0 },\n  { id: \"available\", label: \"Seats available per hour (unoccupied)\", unit: \"seats\", expr: \"freq * seats * (100 - load) / 100\", precision: 0, emphasis: true }\n], \"workspace\", \"Predict first: if you double the buses per hour, what do you expect the emphasized readout (seats available per hour) to do — and why? Then move the frequency slider and compare. Note there are two readings of 'seats available': seats offered per hour (capacity) and seats actually free once the load factor is applied. Watch both, and try raising the load factor while you hold frequency steady to see what happens to free seats.\")\n```\n\nTwo things worth trying once it's live: raise the load factor at a fixed frequency (free seats shrink without any schedule change), and then restore the load and push frequency up (seats offered rise, but so does total capacity — which is the tradeoff behind frequency decisions). Press **Share what I found** when you've got settings you want me to look at, and tell me what you predicted first so I can check the model against your reasoning.",
+    "notice": null,
+    "stop": "stop",
+    "tools": []
+  },
+  "finishedAt": "2026-11-18T15:40:34.827Z"
+}

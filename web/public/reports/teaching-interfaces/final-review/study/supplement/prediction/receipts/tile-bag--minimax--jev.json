@@ -1,0 +1,632 @@
+{
+  "id": "tile-bag--minimax--jev",
+  "caseId": "tile-bag",
+  "tutor": "minimax",
+  "arm": "jev",
+  "kind": "prospective-supplement",
+  "policy": "keating-teaching-policy/v2.3.5",
+  "prompt": "I drop one square tile into a bag, then add three round tiles. Before you explain, can I guess the shape I'm most likely to draw?",
+  "originalHistory": [],
+  "plan": {
+    "status": "guided",
+    "action": "create",
+    "offered": [
+      "Question",
+      "Simulation"
+    ],
+    "features": {
+      "variable_relationship": true,
+      "ordered_procedure": null,
+      "discrete_recall": false,
+      "structure_relations": false,
+      "category_distinction": null,
+      "prediction_opportunity": true,
+      "learner_response_due": true,
+      "hands_on_requested": false,
+      "executable_code": false,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "decisions": {
+      "direct_answer_requested": true,
+      "explanation_requested": false,
+      "learner_stuck": false,
+      "attempt_present": false,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": false,
+      "plain_reply_requested": null,
+      "assessment_declined": false,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": true,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": null,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "directives": [
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+      "At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; collect the learner's choice or independent answer before proceeding; or Simulation to let the learner change a variable and observe the outcome. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested.",
+      "If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself."
+    ],
+    "codePracticeLanguage": null,
+    "reason": null
+  },
+  "refs": [
+    {
+      "label": "tile-bag--minimax--jev/plan",
+      "entryId": "tile-bag--minimax--jev/plan",
+      "source": "live",
+      "requestSha256": "19ebb874c9472c285dcf895ef4e86d14efbf4569569822e8a49aadbd443bfc50",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    },
+    {
+      "label": "tile-bag--minimax--jev/review/1",
+      "entryId": "tile-bag--minimax--jev/review/1",
+      "source": "live",
+      "requestSha256": "706671e1039cb183b7e5d49b4b33ab3ec582e98a3edd646d5505a302cc00df10",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    }
+  ],
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 17955,
+          "output": 510,
+          "cacheRead": 187,
+          "cacheWrite": 0,
+          "totalTokens": 18652,
+          "cost": {
+            "input": 0.010773,
+            "output": 0.001224,
+            "cacheRead": 0.00001122,
+            "cacheWrite": 0,
+            "total": 0.012008219999999998
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 306
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Good instinct to predict first — let's commit to an answer before I explain anything.\n\n```openui lifecycle=ephemeral id=tile-draw-prediction\n\nroot = LearningSurface([guess], \"Before the explanation\", \"Make a prediction, then I'll show why.\", \"ephemeral\")\nguess = Question([{ header: \"Your prediction\", question: \"The bag holds 4 tiles: 1 square and 3 round. You reach in and draw one tile at random. Which shape are you most likely to draw?\", type: \"choice\", choices: [\"Square\", \"Round\", \"Both are equally likely\", \"There isn't enough information to say\"], allowText: true, hint: \"Think about how many of each shape are in the bag, not about the order they went in.\" }], \"ephemeral\", \"Probability of a random draw\", \"Pick the shape you think is most likely — or write your own reasoning.\")\n\n```\n\nOnce you've committed, I'll explain the reasoning behind it."
+          }
+        ]
+      },
+      "text": "Good instinct to predict first — let's commit to an answer before I explain anything.\n\n```openui lifecycle=ephemeral id=tile-draw-prediction\n\nroot = LearningSurface([guess], \"Before the explanation\", \"Make a prediction, then I'll show why.\", \"ephemeral\")\nguess = Question([{ header: \"Your prediction\", question: \"The bag holds 4 tiles: 1 square and 3 round. You reach in and draw one tile at random. Which shape are you most likely to draw?\", type: \"choice\", choices: [\"Square\", \"Round\", \"Both are equally likely\", \"There isn't enough information to say\"], allowText: true, hint: \"Think about how many of each shape are in the bag, not about the order they went in.\" }], \"ephemeral\", \"Probability of a random draw\", \"Pick the shape you think is most likely — or write your own reasoning.\")\n\n```\n\nOnce you've committed, I'll explain the reasoning behind it.",
+      "toolCalls": [],
+      "attempted": true,
+      "components": [
+        "question-group"
+      ],
+      "outsideWords": 24,
+      "entryId": "tile-bag--minimax--jev/tutor/1",
+      "completed": true,
+      "availableToolNames": [
+        "animate",
+        "interactive_page",
+        "course_list",
+        "course_inspect",
+        "course_create",
+        "course_update",
+        "room_list",
+        "room_invite",
+        "generate_image",
+        "feedback",
+        "remember_learner_profile",
+        "set_learner_goal",
+        "update_goal_step",
+        "revise_study_plan",
+        "evaluate_teaching",
+        "request_teaching_improvement"
+      ],
+      "providedDirectives": true,
+      "systemSha256": "d3c7cd7ac56822a34a375ecc28c49a1d23682960bb6822d1a22050612b6c8cbf"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.04
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.04
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.47
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.32
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.12
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.17
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.48
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.19
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.08
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.16
+        },
+        {
+          "id": "law_authority_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "law_jurisdiction_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "medicine_evidence_conflated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "history_disagreement_erased",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "psychology_replication_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "politics_normative_as_fact",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.08999999999999997,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.18000000000000005,
+          "status": "pass"
+        }
+      ],
+      "variant": "default",
+      "trimmedCheckpointSuffix": true
+    }
+  ],
+  "selectedAttempt": 1,
+  "selectionRule": "none",
+  "releaseReason": null,
+  "disposition": "released",
+  "missing": null,
+  "public": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 17955,
+        "output": 510,
+        "cacheRead": 187,
+        "cacheWrite": 0,
+        "totalTokens": 18652,
+        "cost": {
+          "input": 0.010773,
+          "output": 0.001224,
+          "cacheRead": 0.00001122,
+          "cacheWrite": 0,
+          "total": 0.012008219999999998
+        },
+        "reasoning": 306,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Good instinct to predict first — let's commit to an answer before I explain anything.\n\n```openui lifecycle=ephemeral id=tile-draw-prediction\n\nroot = LearningSurface([guess], \"Before the explanation\", \"Make a prediction, then I'll show why.\", \"ephemeral\")\nguess = Question([{ header: \"Your prediction\", question: \"The bag holds 4 tiles: 1 square and 3 round. You reach in and draw one tile at random. Which shape are you most likely to draw?\", type: \"choice\", choices: [\"Square\", \"Round\", \"Both are equally likely\", \"There isn't enough information to say\"], allowText: true, hint: \"Think about how many of each shape are in the bag, not about the order they went in.\" }], \"ephemeral\", \"Probability of a random draw\", \"Pick the shape you think is most likely — or write your own reasoning.\")\n\n```"
+        }
+      ]
+    },
+    "text": "Good instinct to predict first — let's commit to an answer before I explain anything.\n\n```openui lifecycle=ephemeral id=tile-draw-prediction\n\nroot = LearningSurface([guess], \"Before the explanation\", \"Make a prediction, then I'll show why.\", \"ephemeral\")\nguess = Question([{ header: \"Your prediction\", question: \"The bag holds 4 tiles: 1 square and 3 round. You reach in and draw one tile at random. Which shape are you most likely to draw?\", type: \"choice\", choices: [\"Square\", \"Round\", \"Both are equally likely\", \"There isn't enough information to say\"], allowText: true, hint: \"Think about how many of each shape are in the bag, not about the order they went in.\" }], \"ephemeral\", \"Probability of a random draw\", \"Pick the shape you think is most likely — or write your own reasoning.\")\n\n```",
+    "toolCalls": [],
+    "attempted": true,
+    "components": [
+      "question-group"
+    ],
+    "outsideWords": 15
+  },
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 17955,
+        "output": 510,
+        "cacheRead": 187,
+        "cacheWrite": 0,
+        "totalTokens": 18652,
+        "cost": {
+          "input": 0.010773,
+          "output": 0.001224,
+          "cacheRead": 0.00001122,
+          "cacheWrite": 0,
+          "total": 0.012008219999999998
+        },
+        "reasoning": 306,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Good instinct to predict first — let's commit to an answer before I explain anything.\n\n```openui lifecycle=ephemeral id=tile-draw-prediction\n\nroot = LearningSurface([guess], \"Before the explanation\", \"Make a prediction, then I'll show why.\", \"ephemeral\")\nguess = Question([{ header: \"Your prediction\", question: \"The bag holds 4 tiles: 1 square and 3 round. You reach in and draw one tile at random. Which shape are you most likely to draw?\", type: \"choice\", choices: [\"Square\", \"Round\", \"Both are equally likely\", \"There isn't enough information to say\"], allowText: true, hint: \"Think about how many of each shape are in the bag, not about the order they went in.\" }], \"ephemeral\", \"Probability of a random draw\", \"Pick the shape you think is most likely — or write your own reasoning.\")\n\n```"
+        }
+      ]
+    },
+    "text": "Good instinct to predict first — let's commit to an answer before I explain anything.\n\n```openui lifecycle=ephemeral id=tile-draw-prediction\n\nroot = LearningSurface([guess], \"Before the explanation\", \"Make a prediction, then I'll show why.\", \"ephemeral\")\nguess = Question([{ header: \"Your prediction\", question: \"The bag holds 4 tiles: 1 square and 3 round. You reach in and draw one tile at random. Which shape are you most likely to draw?\", type: \"choice\", choices: [\"Square\", \"Round\", \"Both are equally likely\", \"There isn't enough information to say\"], allowText: true, hint: \"Think about how many of each shape are in the bag, not about the order they went in.\" }], \"ephemeral\", \"Probability of a random draw\", \"Pick the shape you think is most likely — or write your own reasoning.\")\n\n```",
+    "toolCalls": []
+  },
+  "notice": null
+}

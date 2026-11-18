@@ -1,0 +1,11 @@
+{
+  "source": "scripts/training/benchmarks/teaching-v1/cases.json",
+  "cases": [
+    {"id":"pause-after-questioning","fixture":"stuck-closure","expected":{"declined":true,"mode":"no-assessment"}},
+    {"id":"brief-explanation","fixture":"direct-const","expected":{"declined":true,"mode":"none"}},
+    {"id":"debug-without-quiz","fixture":"long-debug-context","expected":{"declined":true,"mode":"no-assessment"}},
+    {"id":"simulation-without-test","fixture":"openui-simulation-classes","replace":{"before":"Invite me to predict what one extra class changes.","after":"No more questions yet.","afterSource":"stuck-closure"},"expected":{"declined":true,"mode":"visual-without-assessment","component":"Simulation"}},
+    {"id":"simulation-with-prediction","fixture":"openui-simulation-classes","expected":{"declined":false,"mode":"includes","component":"Simulation"}},
+    {"id":"independent-choice","fixture":"transfer-index","expected":{"declined":false,"mode":"includes","component":"Question"}}
+  ]
+}

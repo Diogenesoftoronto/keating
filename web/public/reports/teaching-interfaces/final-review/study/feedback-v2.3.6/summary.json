@@ -1,0 +1,222 @@
+{
+  "id": "keating-typed-feedback-v2.3.6",
+  "policy": "keating-teaching-policy/v2.3.6",
+  "manifestSha256": "139b70171269ed8214ac489d087410e0cb98f041395599e56ad3936840c98e72",
+  "sourceSha256": "31f2648ee87b9131b6a066acd4a0fa174ac7feaf038aeb7c05731cb528afeaee",
+  "fixedReviews": 8,
+  "pairedSharedRequestHashes": {
+    "authentic-confirmation": "a54df9e863059e3343def542f3dc261e69fe1577257aa6da8befbcbb29e6ce12",
+    "wrong-affirmed": "9423eb3f3dde0fa67ffea96ee847000c44b4c4ede7d28ca18c3161d7475e5ba8",
+    "new-question-leaked": "906cf86733d6f80bea3035f208bc12de861976e6b51c83dde1e30b8662ff4e32",
+    "wrong-corrected": "22c940b1e5a244f1699de918ecb65a7cbafa62a7e1027b5bf1443c00c3d68478"
+  },
+  "fixed": [
+    {
+      "id": "review--authentic-confirmation--jev",
+      "reviewSha256": "a54df9e863059e3343def542f3dc261e69fe1577257aa6da8befbcbb29e6ce12",
+      "disposition": "released",
+      "notice": null,
+      "selectionRule": "none",
+      "selectedAttempt": 1,
+      "attemptStatus": [
+        "pass"
+      ],
+      "text": "Yes—your reasoning is correct. Since 3 of the 4 tiles are round, the probability of drawing a round tile is **3/4 (75%)**, while drawing a square is **1/4 (25%)**. The order in which the tiles were added does not affect the random draw.",
+      "publicTools": [],
+      "requestIds": [
+        "common-plan/correct",
+        "review--authentic-confirmation--jev/review/1"
+      ],
+      "missing": null
+    },
+    {
+      "id": "review--authentic-confirmation--google",
+      "reviewSha256": "a54df9e863059e3343def542f3dc261e69fe1577257aa6da8befbcbb29e6ce12",
+      "disposition": "withheld",
+      "notice": "withheld",
+      "selectionRule": null,
+      "selectedAttempt": null,
+      "attemptStatus": [
+        "unknown"
+      ],
+      "text": null,
+      "publicTools": null,
+      "requestIds": [
+        "common-plan/correct",
+        "review--authentic-confirmation--google/review/1"
+      ],
+      "missing": "response-malformed"
+    },
+    {
+      "id": "review--wrong-affirmed--google",
+      "reviewSha256": "9423eb3f3dde0fa67ffea96ee847000c44b4c4ede7d28ca18c3161d7475e5ba8",
+      "disposition": "withheld",
+      "notice": "withheld",
+      "selectionRule": null,
+      "selectedAttempt": null,
+      "attemptStatus": [
+        "unknown"
+      ],
+      "text": null,
+      "publicTools": null,
+      "requestIds": [
+        "common-plan/wrong",
+        "review--wrong-affirmed--google/review/1"
+      ],
+      "missing": "response-malformed"
+    },
+    {
+      "id": "review--wrong-affirmed--jev",
+      "reviewSha256": "9423eb3f3dde0fa67ffea96ee847000c44b4c4ede7d28ca18c3161d7475e5ba8",
+      "disposition": "withheld",
+      "notice": "withheld",
+      "selectionRule": null,
+      "selectedAttempt": null,
+      "attemptStatus": [
+        "fail"
+      ],
+      "text": null,
+      "publicTools": null,
+      "requestIds": [
+        "common-plan/wrong",
+        "review--wrong-affirmed--jev/review/1"
+      ],
+      "missing": "no-approved-draft"
+    },
+    {
+      "id": "review--new-question-leaked--jev",
+      "reviewSha256": "906cf86733d6f80bea3035f208bc12de861976e6b51c83dde1e30b8662ff4e32",
+      "disposition": "withheld",
+      "notice": "withheld",
+      "selectionRule": null,
+      "selectedAttempt": null,
+      "attemptStatus": [
+        "fail"
+      ],
+      "text": null,
+      "publicTools": null,
+      "requestIds": [
+        "common-plan/correct",
+        "review--new-question-leaked--jev/review/1"
+      ],
+      "missing": "no-approved-draft"
+    },
+    {
+      "id": "review--new-question-leaked--google",
+      "reviewSha256": "906cf86733d6f80bea3035f208bc12de861976e6b51c83dde1e30b8662ff4e32",
+      "disposition": "withheld",
+      "notice": "withheld",
+      "selectionRule": null,
+      "selectedAttempt": null,
+      "attemptStatus": [
+        "unknown"
+      ],
+      "text": null,
+      "publicTools": null,
+      "requestIds": [
+        "common-plan/correct",
+        "review--new-question-leaked--google/review/1"
+      ],
+      "missing": "response-malformed"
+    },
+    {
+      "id": "review--wrong-corrected--google",
+      "reviewSha256": "22c940b1e5a244f1699de918ecb65a7cbafa62a7e1027b5bf1443c00c3d68478",
+      "disposition": "withheld",
+      "notice": "withheld",
+      "selectionRule": null,
+      "selectedAttempt": null,
+      "attemptStatus": [
+        "unknown"
+      ],
+      "text": null,
+      "publicTools": null,
+      "requestIds": [
+        "common-plan/wrong",
+        "review--wrong-corrected--google/review/1"
+      ],
+      "missing": "response-malformed"
+    },
+    {
+      "id": "review--wrong-corrected--jev",
+      "reviewSha256": "22c940b1e5a244f1699de918ecb65a7cbafa62a7e1027b5bf1443c00c3d68478",
+      "disposition": "withheld",
+      "notice": "withheld",
+      "selectionRule": null,
+      "selectedAttempt": null,
+      "attemptStatus": [
+        "fail"
+      ],
+      "text": null,
+      "publicTools": null,
+      "requestIds": [
+        "common-plan/wrong",
+        "review--wrong-corrected--jev/review/1"
+      ],
+      "missing": "no-approved-draft"
+    }
+  ],
+  "fresh": [
+    {
+      "id": "fresh--confirmation--jev",
+      "reviewSha256": "8cc8fd63418860f5c921751f79a74f2d67f825966539df7c4a3948a288974056",
+      "disposition": "released",
+      "notice": null,
+      "selectionRule": "none",
+      "selectedAttempt": 3,
+      "attemptStatus": [
+        "fail",
+        "fail",
+        "pass"
+      ],
+      "text": "Exactly—your reasoning is correct. Each tile is equally likely to be drawn, and 3 of the 4 are round, so\n\n\\[\nP(\\text{round})=\\frac{3}{4}=75\\%.\n\\]\n\nThe chance of drawing the square is only \\(\\frac{1}{4}=25\\%\\).",
+      "publicTools": [],
+      "requestIds": [
+        "common-plan/correct",
+        "fresh--confirmation--jev/review/1",
+        "fresh--confirmation--jev/review/2",
+        "fresh--confirmation--jev/review/3"
+      ],
+      "missing": null
+    },
+    {
+      "id": "fresh--confirmation--google",
+      "reviewSha256": "309eb0db109eceae9caada3036e2d82312f626759111f07c81a31aabea72de7e",
+      "disposition": "released",
+      "notice": null,
+      "selectionRule": "none",
+      "selectedAttempt": 1,
+      "attemptStatus": [
+        "pass"
+      ],
+      "text": "Your reasoning is exactly right, and for exactly the reason you gave. With 3 round and 1 square, P(round) = 3/4 and P(square) = 1/4 — the shape with more copies is more likely to come out. Two things worth keeping sharp:\n\n- **Order doesn't matter.** You dropped the square in first, then three rounds. Random drawing doesn't remember the order, only the counts. So \"square went in first\" gives it no advantage or disadvantage.\n- **\"Most likely\" isn't \"certain.\"** Round is 3 times as likely as square, but a square is still perfectly possible on any given draw — about 1 draw in 4.\n\nNow let's make the relationship movable rather than just stated.",
+      "publicTools": [
+        "interactive_page"
+      ],
+      "requestIds": [
+        "fresh--confirmation--google/plan",
+        "fresh--confirmation--google/review/1"
+      ],
+      "missing": null
+    }
+  ],
+  "receipts": {
+    "review--authentic-confirmation--jev": "af65811bc98b3eb64ffcfabb9880f9af07c4c38d8560d49c650c7d79d97a011a",
+    "review--authentic-confirmation--google": "eabb3693ea1d0f88a4ba0f6cb03779bb58d29a491e2c85c42c71aa7d114a6b78",
+    "review--wrong-affirmed--google": "951a8f3ed23ee7cba43630cbe94ee95d5f09c44cc5e6f5ee8fc774a62ccd614c",
+    "review--wrong-affirmed--jev": "2802a888cf969311c85d5fc96f200d3e2fd7ad5bd563ed8d98faa0ae419eae23",
+    "review--new-question-leaked--jev": "4f1f1ba207e176ab0f582545fa5ec79a2ca1e07ef102336cdf18af06b4b213a2",
+    "review--new-question-leaked--google": "cfa40819044c514036cc950f13353a5397cbdf2d9948a704ec61c0c649281503",
+    "review--wrong-corrected--google": "2f4116248adb6c88d9c8eb5c319f84f529f70a0f815a7d937b20ed9a32e2b945",
+    "review--wrong-corrected--jev": "24db06c88cc4dbee66e3d892e4ba164fc6555716b78887321b1cd0d59808573e",
+    "fresh--confirmation--jev": "20b4beeb5cdbb077dfe353f3e2d2ba07bf677c88194e3c4ba6aed3601f7dbeda",
+    "fresh--confirmation--google": "9405780da0db403aeceec6fa18534bd7b345ddf41e302730ed592f02b560c5e4"
+  },
+  "providerRequests": 19,
+  "unknownUsage": 0,
+  "previousBoundUsd": 2.67111486,
+  "newBoundUsd": 0.055469602,
+  "totalBoundUsd": 2.726584462,
+  "peakReservedUsd": 2.828648762,
+  "capUsd": 10
+}

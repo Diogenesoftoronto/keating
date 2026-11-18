@@ -1,7 +1,8 @@
 export const WEBSITE_ORIGIN = "https://keating.help";
 export const APP_ORIGIN = "https://chat.keating.help";
+export const TEACHING_INTERFACES_REPORT_PATH = "/reports/teaching-interfaces/index.html";
 
-const PUBLIC_PATHS = new Set(["/", "/download", "/pricing", "/paper", "/terms", "/privacy"]);
+const PUBLIC_PATHS = new Set(["/", "/download", "/pricing", "/paper", "/terms", "/privacy", TEACHING_INTERFACES_REPORT_PATH]);
 const APP_PATHS = new Set(["/chat", "/usage", "/bench", "/courses", "/coming-up", "/live", "/training-data", "/review", "/s", "/u", "/l", "/learn", "/join"]);
 
 export function isApplicationPath(path: string): boolean {

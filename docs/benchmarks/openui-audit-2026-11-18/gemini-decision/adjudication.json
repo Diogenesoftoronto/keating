@@ -1,0 +1,17 @@
+{
+  "MiniMax-M2.7-highspeed--spinner": {
+    "publicTextSha256":"55ed6b7a993b725063fee3f284a23fa97716b30c8978bcb6627a8f65506e6cba",
+    "passed":true,
+    "note":"The grouped Question gives the learner a choice or write-in prediction before the explanation. A second prompt asks about spinner geometry without revealing the result. The tutor changes 'same wedge' to 'same blue wedge' and invites the learner to guess the missing counts. Fourteen outside words precede the checkpoint."
+  },
+  "MiniMax-M2.7-highspeed--bus": {
+    "publicTextSha256":"20546cc7902d1855d42c6007d46570a41b3fd20b3537c2fa627d49c999b731fb",
+    "passed":true,
+    "note":"A valid Simulation varies frequency, bus capacity and load factor. At 40 seats per bus and 70% load, moving from the default 6 to 12 buses/hour raises offered capacity from 240 to 480 and free seats from 72 to 144. The prediction is optional exploration within the Simulation. There is no assessed checkpoint. Ninety-seven outside words add substantial prose, and the closing 'tradeoff' describes two names for capacity."
+  },
+  "gemini-3.1-flash-lite--bus": {
+    "publicTextSha256":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "passed":false,
+    "note":"The public response is an interactive_page tool proposal with zero text and no compiled Simulation. The study never executes native tools, so a subsequent page and its behavior are unobserved."
+  }
+}

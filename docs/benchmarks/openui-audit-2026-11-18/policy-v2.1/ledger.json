@@ -1,0 +1,105 @@
+{
+  "model": "jev-1.14.0",
+  "endpoint": "https://api.typesafe.ai/v1/systemone",
+  "manifestSha256": "c19b82104c42411bb9ed63604f44ece2e4583bc6770830c8a90ceb50f2e37aec",
+  "priorStudy": 0.8314054280000001,
+  "priorFollowup": 0.0032254739999999994,
+  "priceSource": "https://docs.typesafe.ai/models",
+  "pricePerMillionInput": 0.042,
+  "outputPriceUsd": 0,
+  "reserveUsd": 0.003,
+  "followupCap": 0.25,
+  "studyCap": 2,
+  "entries": [
+    {
+      "id": "pause-after-questioning",
+      "startedAt": "2026-11-18T13:58:03.669Z",
+      "requestSha256": "0201c826a39ca8b515769b6aeef67ae3febb5851c83ba0a124efb31fe5e98927",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000176358,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 4199,
+        "outputTokens": 747
+      },
+      "finishedAt": "2026-11-18T13:58:03.849Z"
+    },
+    {
+      "id": "brief-explanation",
+      "startedAt": "2026-11-18T13:58:03.851Z",
+      "requestSha256": "d406da5b7fe0da8d81510db672a634ad2d61398293f281909d9f0723bbf0f6af",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000169092,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 4026,
+        "outputTokens": 748
+      },
+      "finishedAt": "2026-11-18T13:58:03.983Z"
+    },
+    {
+      "id": "debug-without-quiz",
+      "startedAt": "2026-11-18T13:58:03.985Z",
+      "requestSha256": "b1c7853cd394a8519aefbbd061da85d307cfc0aeb5c6e7ee3559e7d3a9b08270",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00018660600000000002,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 4443,
+        "outputTokens": 748
+      },
+      "finishedAt": "2026-11-18T13:58:04.080Z"
+    },
+    {
+      "id": "simulation-without-test",
+      "startedAt": "2026-11-18T13:58:04.082Z",
+      "requestSha256": "accee95bc4c8bf2845f0b37ce90540ca892a896c7495b9acb6530935f93f4e5a",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000170478,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 4059,
+        "outputTokens": 748
+      },
+      "finishedAt": "2026-11-18T13:58:04.199Z"
+    },
+    {
+      "id": "simulation-with-prediction",
+      "startedAt": "2026-11-18T13:58:04.201Z",
+      "requestSha256": "5c4372d63b422e908f6a127aa3ab38f14729b4419ad17f69faa4bf5916aba9b2",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00017068800000000003,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 4064,
+        "outputTokens": 748
+      },
+      "finishedAt": "2026-11-18T13:58:04.357Z"
+    },
+    {
+      "id": "independent-choice",
+      "startedAt": "2026-11-18T13:58:04.360Z",
+      "requestSha256": "233e53ac2da38d12e14835a81fdd521c5066dbeab0f04664a0e2554943c16f38",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00017493,
+      "measured": true,
+      "status": "complete",
+      "http": 200,
+      "usage": {
+        "inputTokens": 4165,
+        "outputTokens": 747
+      },
+      "finishedAt": "2026-11-18T13:58:04.518Z"
+    }
+  ]
+}

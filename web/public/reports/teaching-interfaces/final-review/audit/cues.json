@@ -1,0 +1,191 @@
+{
+  "frozen": {
+    "primaryMatches": 2,
+    "scheduledPrimary": 4,
+    "rows": [
+      {
+        "id": "paper-fold",
+        "declared": {
+          "kind": "implicit-action",
+          "targets": [
+            "question"
+          ]
+        },
+        "automatic": {
+          "kind": "implicit-action",
+          "targets": [
+            "question",
+            "quiz"
+          ]
+        },
+        "matchesDeclaredCategoryAndAnAcceptedTarget": true
+      },
+      {
+        "id": "irrigation",
+        "declared": {
+          "kind": "implicit-action",
+          "targets": [
+            "simulation"
+          ]
+        },
+        "automatic": {
+          "kind": "implicit-action",
+          "targets": [
+            "simulation"
+          ]
+        },
+        "matchesDeclaredCategoryAndAnAcceptedTarget": true
+      },
+      {
+        "id": "python-sum",
+        "declared": {
+          "kind": "implicit-action",
+          "targets": [
+            "editable-code"
+          ]
+        },
+        "automatic": {
+          "kind": "none",
+          "targets": []
+        },
+        "matchesDeclaredCategoryAndAnAcceptedTarget": false
+      },
+      {
+        "id": "copper",
+        "declared": {
+          "kind": "direct-text",
+          "targets": []
+        },
+        "automatic": {
+          "kind": "none",
+          "targets": []
+        },
+        "matchesDeclaredCategoryAndAnAcceptedTarget": false
+      },
+      {
+        "id": "paper-followup",
+        "declared": {
+          "kind": "direct-text",
+          "targets": []
+        },
+        "automatic": {
+          "kind": "none",
+          "targets": []
+        },
+        "matchesDeclaredCategoryAndAnAcceptedTarget": false
+      },
+      {
+        "id": "classroom-stage-light--minimax--jev",
+        "declared": {
+          "kind": "implicit-action",
+          "targets": [
+            "simulation"
+          ]
+        },
+        "automatic": {
+          "kind": "implicit-action",
+          "targets": [
+            "simulation"
+          ]
+        },
+        "matchesDeclaredCategoryAndAnAcceptedTarget": true
+      }
+    ]
+  },
+  "current": {
+    "primaryMatches": 4,
+    "scheduledPrimary": 4,
+    "rows": [
+      {
+        "id": "paper-fold",
+        "declared": {
+          "kind": "implicit-action",
+          "targets": [
+            "question"
+          ]
+        },
+        "automatic": {
+          "kind": "implicit-action",
+          "targets": [
+            "question",
+            "quiz"
+          ]
+        },
+        "matchesDeclaredCategoryAndAnAcceptedTarget": true
+      },
+      {
+        "id": "irrigation",
+        "declared": {
+          "kind": "implicit-action",
+          "targets": [
+            "simulation"
+          ]
+        },
+        "automatic": {
+          "kind": "implicit-action",
+          "targets": [
+            "simulation"
+          ]
+        },
+        "matchesDeclaredCategoryAndAnAcceptedTarget": true
+      },
+      {
+        "id": "python-sum",
+        "declared": {
+          "kind": "implicit-action",
+          "targets": [
+            "editable-code"
+          ]
+        },
+        "automatic": {
+          "kind": "implicit-action",
+          "targets": [
+            "editable-code"
+          ],
+          "codeLanguage": "python"
+        },
+        "matchesDeclaredCategoryAndAnAcceptedTarget": true
+      },
+      {
+        "id": "copper",
+        "declared": {
+          "kind": "direct-text",
+          "targets": []
+        },
+        "automatic": {
+          "kind": "direct-text",
+          "targets": []
+        },
+        "matchesDeclaredCategoryAndAnAcceptedTarget": true
+      },
+      {
+        "id": "paper-followup",
+        "declared": {
+          "kind": "direct-text",
+          "targets": []
+        },
+        "automatic": {
+          "kind": "none",
+          "targets": []
+        },
+        "matchesDeclaredCategoryAndAnAcceptedTarget": false
+      },
+      {
+        "id": "classroom-stage-light--minimax--jev",
+        "declared": {
+          "kind": "implicit-action",
+          "targets": [
+            "simulation"
+          ]
+        },
+        "automatic": {
+          "kind": "implicit-action",
+          "targets": [
+            "simulation"
+          ]
+        },
+        "matchesDeclaredCategoryAndAnAcceptedTarget": true
+      }
+    ]
+  }
+}

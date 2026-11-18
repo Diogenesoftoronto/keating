@@ -1,0 +1,645 @@
+{
+  "id": "python-sum--minimax--google",
+  "caseId": "python-sum",
+  "kind": "primary",
+  "tutor": "minimax",
+  "arm": "google",
+  "prompt": "Give me a short buggy Python loop that is supposed to add the numbers in [6, 9, 2]. I want to edit it and find the fault myself. Leave me a case where I can actually see the wrong result, without giving away the fix.",
+  "originalHistory": [],
+  "plan": {
+    "status": "guided",
+    "action": "create",
+    "offered": [
+      "Question"
+    ],
+    "families": [
+      {
+        "family": "question",
+        "components": [
+          "Question"
+        ],
+        "features": [
+          "learner_response_due"
+        ]
+      }
+    ],
+    "reason": null,
+    "codePracticeLanguage": "python",
+    "features": {
+      "variable_relationship": true,
+      "ordered_procedure": null,
+      "discrete_recall": false,
+      "structure_relations": false,
+      "category_distinction": false,
+      "prediction_opportunity": false,
+      "learner_response_due": true,
+      "hands_on_requested": true,
+      "executable_code": true,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "decisions": {
+      "direct_answer_requested": null,
+      "explanation_requested": false,
+      "learner_stuck": false,
+      "attempt_present": false,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": true,
+      "plain_reply_requested": false,
+      "assessment_declined": false,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": true,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": true,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "directives": [
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+      "Give the learner an editable fenced python code block for their exercise. Keep the starter and any examples in Python. Running Python requires an available hosted executor and network access.",
+      "If the learner requests a new bug to find independently, choose a concrete input on which the starter visibly fails or produces the wrong result. State the intended behavior or expected output. Leave locating and repairing the fault to the learner. Keep ordinary documentation and expected-output comments. Withhold unrequested hints and the fix from prose, code comments and controls, including interactive page titles and descriptions shown while loading or on fallback.",
+      "At most one OpenUI activity may help this turn: Question to collect the learner's choice or independent answer before proceeding. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself."
+    ]
+  },
+  "refs": [
+    {
+      "label": "python-sum--minimax--google/plan",
+      "entryId": "python-sum--minimax--google/plan",
+      "source": "live",
+      "requestSha256": "a0a0d2a38a8937929aad2d9f3f8f04fbd0dca21c2e8e291e3e12537bcf79051d",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "error": null,
+      "provenance": "documented-request-model"
+    },
+    {
+      "label": "python-sum--minimax--google/review/1",
+      "entryId": "python-sum--minimax--google/review/1",
+      "source": "live",
+      "requestSha256": "7a7242bafbabf5efb1252a6f43ba5558c5ac4fb3d238e56ecc8d43f7ce8aacf7",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "error": null,
+      "provenance": "documented-request-model"
+    }
+  ],
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 18409,
+          "output": 497,
+          "cacheRead": 513,
+          "cacheWrite": 0,
+          "totalTokens": 19419,
+          "cost": {
+            "input": 0.0110454,
+            "output": 0.0011928,
+            "cacheRead": 0.00003078,
+            "cacheWrite": 0,
+            "total": 0.01226898
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 376
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Here's a loop meant to sum the list. Run it as-is: it should print **17**, but it won't. Find and fix the fault yourself, then tell me what you changed.\n\n```python\nnumbers = [6, 9, 2]\n\ntotal = 0\nfor i in range(len(numbers) - 1):\n    total += numbers[i]\n\nprint(\"Sum:\", total)\n```\n\nWork in the block above — it's editable. Once you've found the fault, paste your fixed version or describe the change in one line, and I'll check it against the expected output of 17."
+          }
+        ]
+      },
+      "text": "Here's a loop meant to sum the list. Run it as-is: it should print **17**, but it won't. Find and fix the fault yourself, then tell me what you changed.\n\n```python\nnumbers = [6, 9, 2]\n\ntotal = 0\nfor i in range(len(numbers) - 1):\n    total += numbers[i]\n\nprint(\"Sum:\", total)\n```\n\nWork in the block above — it's editable. Once you've found the fault, paste your fixed version or describe the change in one line, and I'll check it against the expected output of 17.",
+      "toolCalls": [],
+      "attempted": false,
+      "components": [],
+      "outsideWords": 85,
+      "entryId": "python-sum--minimax--google/tutor/1",
+      "completed": true,
+      "providedDirectives": true,
+      "systemSha256": "51933488b9d289777c7bd1b767d7fa79fd740b3c6ff79568e1758e2e650ab1a0"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "exercise_language_preserved",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.06061593993497083
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02796063096429363
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02053732320126589
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.05903138106896676
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.05980768712197457
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.053847771191104704
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02620118914052206
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.09809974889508474
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.17253761298899242
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.10605728970213396
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06964672191464388
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07054336744698808
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.022896453434056697
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.050180421653765725
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06242299729206238
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05775100825929283
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.24247664961319051
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.0608952172019817
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.38739186149989785
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05684916797236389
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.11306709520160928
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.043687909605165554
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.09886457749488611
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.044437473680617096
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.047236093858447285
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04618994591559336
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.038880679499943456
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.08241496551393197
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.06288852788350026
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.0673038468878438
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.06256443324730303
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.08119038253865478
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06441463757234193
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03534839093925734
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.026507525679761515
+        },
+        {
+          "id": "code_example_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.10603413002494515
+        },
+        {
+          "id": "code_trace_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.22153712385902816
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05106269348711262,
+          "status": "pass"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03145830252751914,
+          "status": "pass"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.06898267797686622,
+          "status": "pass"
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06789254228670727,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.23411750530873499,
+          "status": "pass"
+        }
+      ],
+      "variant": "default",
+      "debuggingExercise": {
+        "example": {
+          "type": "choice",
+          "choice": "observable",
+          "probabilities": {
+            "observable": 0.899710251467678,
+            "masked": 0.05106269348711262,
+            "uncertain": 0.0415589921415454,
+            "outside": 0.007668062903664065
+          },
+          "confidence": 0.899710251467678
+        },
+        "disclosure": {
+          "type": "choice",
+          "choice": "independent",
+          "probabilities": {
+            "independent": 0.8680189956606993,
+            "location_clue": 0.06898267797686622,
+            "solution_given": 0.03145830252751914,
+            "uncertain": 0.02061669726109555,
+            "outside": 0.010923326573819937
+          },
+          "confidence": 0.8680189956606993
+        }
+      }
+    }
+  ],
+  "selectedAttempt": 1,
+  "disposition": "released",
+  "missing": null,
+  "public": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 18409,
+        "output": 497,
+        "cacheRead": 513,
+        "cacheWrite": 0,
+        "totalTokens": 19419,
+        "cost": {
+          "input": 0.0110454,
+          "output": 0.0011928,
+          "cacheRead": 0.00003078,
+          "cacheWrite": 0,
+          "total": 0.01226898
+        },
+        "reasoning": 376,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Here's a loop meant to sum the list. Run it as-is: it should print **17**, but it won't. Find and fix the fault yourself, then tell me what you changed.\n\n```python\nnumbers = [6, 9, 2]\n\ntotal = 0\nfor i in range(len(numbers) - 1):\n    total += numbers[i]\n\nprint(\"Sum:\", total)\n```\n\nWork in the block above — it's editable. Once you've found the fault, paste your fixed version or describe the change in one line, and I'll check it against the expected output of 17."
+        }
+      ]
+    },
+    "text": "Here's a loop meant to sum the list. Run it as-is: it should print **17**, but it won't. Find and fix the fault yourself, then tell me what you changed.\n\n```python\nnumbers = [6, 9, 2]\n\ntotal = 0\nfor i in range(len(numbers) - 1):\n    total += numbers[i]\n\nprint(\"Sum:\", total)\n```\n\nWork in the block above — it's editable. Once you've found the fault, paste your fixed version or describe the change in one line, and I'll check it against the expected output of 17.",
+    "toolCalls": [],
+    "attempted": false,
+    "components": [],
+    "outsideWords": 85
+  },
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 18409,
+        "output": 497,
+        "cacheRead": 513,
+        "cacheWrite": 0,
+        "totalTokens": 19419,
+        "cost": {
+          "input": 0.0110454,
+          "output": 0.0011928,
+          "cacheRead": 0.00003078,
+          "cacheWrite": 0,
+          "total": 0.01226898
+        },
+        "reasoning": 376,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Here's a loop meant to sum the list. Run it as-is: it should print **17**, but it won't. Find and fix the fault yourself, then tell me what you changed.\n\n```python\nnumbers = [6, 9, 2]\n\ntotal = 0\nfor i in range(len(numbers) - 1):\n    total += numbers[i]\n\nprint(\"Sum:\", total)\n```\n\nWork in the block above — it's editable. Once you've found the fault, paste your fixed version or describe the change in one line, and I'll check it against the expected output of 17."
+        }
+      ]
+    },
+    "text": "Here's a loop meant to sum the list. Run it as-is: it should print **17**, but it won't. Find and fix the fault yourself, then tell me what you changed.\n\n```python\nnumbers = [6, 9, 2]\n\ntotal = 0\nfor i in range(len(numbers) - 1):\n    total += numbers[i]\n\nprint(\"Sum:\", total)\n```\n\nWork in the block above — it's editable. Once you've found the fault, paste your fixed version or describe the change in one line, and I'll check it against the expected output of 17.",
+    "toolCalls": []
+  },
+  "notice": null,
+  "elapsedMs": 27931
+}

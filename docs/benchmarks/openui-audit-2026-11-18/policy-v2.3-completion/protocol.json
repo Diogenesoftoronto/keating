@@ -1,0 +1,15 @@
+{
+  "originalLedger": "229b670e4d90a91b436d1110150236c600c048f8e083c96b370b3331f66be932",
+  "runnerSha256": "7f058f9b23808fe5483003744e2bea8ecb15e20554cd2095334e4e48c833eb26",
+  "originalBoundUsd": 1.867477158,
+  "allStudyCapUsd": 2,
+  "allowedCases": [
+    "python-practice--jev",
+    "python-practice--google"
+  ],
+  "maxTutorPayloadBytes": 130000,
+  "maxCompletionTokens": 3072,
+  "tutorReserveUsd": 0.09,
+  "tutorTimeoutMs": 90000,
+  "accounting": "This ledger starts with the seven original entries. Count them once. The previous timeout retains its full reservation."
+}

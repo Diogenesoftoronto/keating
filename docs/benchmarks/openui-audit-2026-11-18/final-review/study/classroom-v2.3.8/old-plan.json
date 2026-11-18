@@ -1,0 +1,54 @@
+{
+  "planRequestSha256": "0bdf4738bffd87d835c8c05f4e3dcb17185e627b3b49caaa812d50f0beb3b004",
+  "planWireSha256": "b678b8e2c40c6449bf5a52b40d3cd59e1a2aaadfc59e6b0b1d1765fe45fbf1b8",
+  "oldTutorWireSha256": "23e450bf0841c706f3e572d54eb7238b973edfc74d5572cdbe4b963e2acda005",
+  "learnerResponseDue": false,
+  "rawJevAnswer": {
+    "type": "noul",
+    "noul": 0.18
+  },
+  "earlierFalseDirective": "The learner has not yet answered the open question-group guess for the current focus. Refer back to it instead of posing a new one, unless the learner has moved on.",
+  "activePresentation": {
+    "assistantTurnIndex": 1,
+    "documentId": "openui-1qwjlss-tile-draw-prediction",
+    "nodeId": "guess"
+  },
+  "versions": [
+    {
+      "policy": "keating-teaching-policy/v2.3.7",
+      "sourceSha256": "7045fa9fc97c180996d4684bbd9eedcc5e5ae270eb1651b77ba2eb2f57fd08ab",
+      "directives": [
+        "Respond to the learner's actual reasoning before choosing the next step.",
+        "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+        "The learner has not yet answered the open question-group guess for the current focus. Refer back to it instead of posing a new one, unless the learner has moved on."
+      ],
+      "action": "continue",
+      "offered": [
+        "Question",
+        "Simulation"
+      ],
+      "actualPolicyPromptSha256": "5ae3dcd81038328caca99557dde363e2fb079ec9b5c5c1655d6797169105b78a",
+      "sentOnEarlierTutorWire": true,
+      "containsFalseDirective": true
+    },
+    {
+      "policy": "keating-teaching-policy/v2.3.8",
+      "sourceSha256": "aeebc83dbbb3b9322ced2974a140995dcb0e303f6d31a431d47ebe108feb2bd6",
+      "directives": [
+        "The learner typed an attempt while the preceding question-group guess still awaits a form submission. Read their answer against that item. Give concise feedback confirming what is correct or explaining the correction, then stop unless the learner explicitly requested another action. If their answer is incomplete or concerns something else, address what they actually wrote and leave the unanswered item open."
+      ],
+      "action": "continue",
+      "offered": [
+        "Question",
+        "Simulation"
+      ],
+      "actualPolicyPromptSha256": "4336295de37cc1b7fe2d8d30d0326207e5af6a47903b8a8c9bf3371023c85989",
+      "sentOnEarlierTutorWire": false,
+      "containsFalseDirective": false
+    }
+  ],
+  "correctedOnSameInput": true,
+  "currentSourceSha256": "aeebc83dbbb3b9322ced2974a140995dcb0e303f6d31a431d47ebe108feb2bd6",
+  "verifierSha256": "88bf3fa459b936936b744eedd1e37dada62eb72c914cae4ae8dbd482f48f139a",
+  "newProviderCalls": 0
+}

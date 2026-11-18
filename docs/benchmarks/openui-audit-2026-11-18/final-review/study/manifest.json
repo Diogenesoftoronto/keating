@@ -1,0 +1,275 @@
+{
+  "version": 1,
+  "createdAt": "2026-11-18T18:19:20.817Z",
+  "cohortSha256": "a47fb2591170bec94758ca7fe1e8cab50193f8eed43dbaa9140d087b8e030c22",
+  "policy": "keating-teaching-policy/v2.3.3",
+  "sourceArchiveSha256": "e7e75735b4d16491a133ff2ef46fef59c5189044b0d2e1ed28fa7bd3810b42aa",
+  "sourceDescriptorSha256": "9b41ebc700d6101f9427440737402f2533b3ac0b7e3d8c860a8960fb86d3bae1",
+  "sourceCount": 1805,
+  "code": {
+    "run.mjs": "97da38f21b53b703e3428c58633187e7410e5d60feae678f82f19d971b1b65ad",
+    "transport.mjs": "52fd04074a7bec220e806108720f5b0a78b9ac0f7d8ad4c41d386dc468f0e560",
+    "bridge.mjs": "2fb0afd10fdced896e3804100f0582ce0599b772606a235a7262bfe6ee984d9a",
+    "common.mjs": "5f27a8782f3420fdd0c5b9a6021b4827d28be20d6e2c43e76fd43862641e4f87",
+    "source.py": "55bc320b11fc3a53691670e8ebba1f0a2b5abe6b0abdbb999308ec81c3889938"
+  },
+  "bundleSha256": "0528c8b452693eb54fa25b5203d2ef685ab0c9eb5cf7465ebb6c6e172fd3f60d",
+  "baseSha256": "6ca875ed75e4c0ecb5f45ead6f26b9d3d8fbb54f7013cb8017160ccafd60c9ba",
+  "systemSha256": "14beee2f30e73e37d241777b470a8be299af6114a285a0f82962e02ce9f28d2d",
+  "toolsSha256": "20e43e6f369fb4eafbf6a0665b3aa9001a436fcafe3786b55e0b222d95959f25",
+  "toolCount": 18,
+  "previousToolsSha256": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+  "toolChangesSinceV23": [
+    "interactive_page.description"
+  ],
+  "schedule": [
+    {
+      "id": "paper-fold--minimax--jev",
+      "caseId": "paper-fold",
+      "tutor": "minimax",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has."
+    },
+    {
+      "id": "irrigation--flash--google",
+      "caseId": "irrigation",
+      "tutor": "flash",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks."
+    },
+    {
+      "id": "python-sum--minimax--none",
+      "caseId": "python-sum",
+      "tutor": "minimax",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "Give me a short buggy Python loop that is supposed to add the numbers in [6, 9, 2]. I want to edit it and find the fault myself. Leave me a case where I can actually see the wrong result, without giving away the fix."
+    },
+    {
+      "id": "copper--flash--jev",
+      "caseId": "copper",
+      "tutor": "flash",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "What is the chemical symbol for copper? Just the symbol, please."
+    },
+    {
+      "id": "irrigation--minimax--none",
+      "caseId": "irrigation",
+      "tutor": "minimax",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks."
+    },
+    {
+      "id": "python-sum--flash--jev",
+      "caseId": "python-sum",
+      "tutor": "flash",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "Give me a short buggy Python loop that is supposed to add the numbers in [6, 9, 2]. I want to edit it and find the fault myself. Leave me a case where I can actually see the wrong result, without giving away the fix."
+    },
+    {
+      "id": "copper--minimax--google",
+      "caseId": "copper",
+      "tutor": "minimax",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "What is the chemical symbol for copper? Just the symbol, please."
+    },
+    {
+      "id": "paper-fold--flash--google",
+      "caseId": "paper-fold",
+      "tutor": "flash",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has."
+    },
+    {
+      "id": "python-sum--minimax--google",
+      "caseId": "python-sum",
+      "tutor": "minimax",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "Give me a short buggy Python loop that is supposed to add the numbers in [6, 9, 2]. I want to edit it and find the fault myself. Leave me a case where I can actually see the wrong result, without giving away the fix."
+    },
+    {
+      "id": "copper--flash--none",
+      "caseId": "copper",
+      "tutor": "flash",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "What is the chemical symbol for copper? Just the symbol, please."
+    },
+    {
+      "id": "paper-fold--minimax--none",
+      "caseId": "paper-fold",
+      "tutor": "minimax",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has."
+    },
+    {
+      "id": "irrigation--flash--jev",
+      "caseId": "irrigation",
+      "tutor": "flash",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks."
+    },
+    {
+      "id": "copper--minimax--jev",
+      "caseId": "copper",
+      "tutor": "minimax",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "What is the chemical symbol for copper? Just the symbol, please."
+    },
+    {
+      "id": "paper-fold--flash--jev",
+      "caseId": "paper-fold",
+      "tutor": "flash",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has."
+    },
+    {
+      "id": "irrigation--minimax--google",
+      "caseId": "irrigation",
+      "tutor": "minimax",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks."
+    },
+    {
+      "id": "python-sum--flash--none",
+      "caseId": "python-sum",
+      "tutor": "flash",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "Give me a short buggy Python loop that is supposed to add the numbers in [6, 9, 2]. I want to edit it and find the fault myself. Leave me a case where I can actually see the wrong result, without giving away the fix."
+    },
+    {
+      "id": "paper-fold--minimax--google",
+      "caseId": "paper-fold",
+      "tutor": "minimax",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has."
+    },
+    {
+      "id": "irrigation--flash--none",
+      "caseId": "irrigation",
+      "tutor": "flash",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks."
+    },
+    {
+      "id": "python-sum--minimax--jev",
+      "caseId": "python-sum",
+      "tutor": "minimax",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "Give me a short buggy Python loop that is supposed to add the numbers in [6, 9, 2]. I want to edit it and find the fault myself. Leave me a case where I can actually see the wrong result, without giving away the fix."
+    },
+    {
+      "id": "copper--flash--google",
+      "caseId": "copper",
+      "tutor": "flash",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "What is the chemical symbol for copper? Just the symbol, please."
+    },
+    {
+      "id": "irrigation--minimax--jev",
+      "caseId": "irrigation",
+      "tutor": "minimax",
+      "arm": "jev",
+      "kind": "primary",
+      "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks."
+    },
+    {
+      "id": "python-sum--flash--google",
+      "caseId": "python-sum",
+      "tutor": "flash",
+      "arm": "google",
+      "kind": "primary",
+      "prompt": "Give me a short buggy Python loop that is supposed to add the numbers in [6, 9, 2]. I want to edit it and find the fault myself. Leave me a case where I can actually see the wrong result, without giving away the fix."
+    },
+    {
+      "id": "copper--minimax--none",
+      "caseId": "copper",
+      "tutor": "minimax",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "What is the chemical symbol for copper? Just the symbol, please."
+    },
+    {
+      "id": "paper-fold--flash--none",
+      "caseId": "paper-fold",
+      "tutor": "flash",
+      "arm": "none",
+      "kind": "primary",
+      "prompt": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has."
+    },
+    {
+      "id": "paper-followup--flash--none",
+      "caseId": "paper-followup",
+      "tutor": "flash",
+      "arm": "none",
+      "kind": "followup",
+      "prompt": "My guess is four layers, because the second fold doubles the two layers. Did I get that right?",
+      "parent": "paper-fold--flash--none"
+    },
+    {
+      "id": "paper-followup--minimax--google",
+      "caseId": "paper-followup",
+      "tutor": "minimax",
+      "arm": "google",
+      "kind": "followup",
+      "prompt": "My guess is four layers, because the second fold doubles the two layers. Did I get that right?",
+      "parent": "paper-fold--minimax--google"
+    },
+    {
+      "id": "paper-followup--flash--jev",
+      "caseId": "paper-followup",
+      "tutor": "flash",
+      "arm": "jev",
+      "kind": "followup",
+      "prompt": "My guess is four layers, because the second fold doubles the two layers. Did I get that right?",
+      "parent": "paper-fold--flash--jev"
+    },
+    {
+      "id": "paper-followup--minimax--none",
+      "caseId": "paper-followup",
+      "tutor": "minimax",
+      "arm": "none",
+      "kind": "followup",
+      "prompt": "My guess is four layers, because the second fold doubles the two layers. Did I get that right?",
+      "parent": "paper-fold--minimax--none"
+    },
+    {
+      "id": "paper-followup--flash--google",
+      "caseId": "paper-followup",
+      "tutor": "flash",
+      "arm": "google",
+      "kind": "followup",
+      "prompt": "My guess is four layers, because the second fold doubles the two layers. Did I get that right?",
+      "parent": "paper-fold--flash--google"
+    },
+    {
+      "id": "paper-followup--minimax--jev",
+      "caseId": "paper-followup",
+      "tutor": "minimax",
+      "arm": "jev",
+      "kind": "followup",
+      "prompt": "My guess is four layers, because the second fold doubles the two layers. Did I get that right?",
+      "parent": "paper-fold--minimax--jev"
+    }
+  ],
+  "priorBoundUsd": 1.91711828,
+  "priorLedgerSha256": "b7de2d03ab9f47928f534747cbd7fe3203d109474da65baf87fc89ba4af6ed9a"
+}

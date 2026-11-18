@@ -1,0 +1,176 @@
+{
+  "schemaVersion": 1,
+  "id": "tile-bag--minimax--jev",
+  "caseId": "tile-bag",
+  "source": "released-message-replay",
+  "receipt": "../../study/supplement/prediction/receipts/tile-bag--minimax--jev.json",
+  "receiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+  "sourceDisposition": "released",
+  "sourceDecision": {
+    "status": "guided",
+    "action": "create",
+    "offered": [
+      "Question",
+      "Simulation"
+    ],
+    "features": {
+      "variable_relationship": true,
+      "ordered_procedure": null,
+      "discrete_recall": false,
+      "structure_relations": false,
+      "category_distinction": null,
+      "prediction_opportunity": true,
+      "learner_response_due": true,
+      "hands_on_requested": false,
+      "executable_code": false,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "decisions": {
+      "direct_answer_requested": true,
+      "explanation_requested": false,
+      "learner_stuck": false,
+      "attempt_present": false,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": false,
+      "plain_reply_requested": null,
+      "assessment_declined": false,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": true,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": null,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "directives": [
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+      "At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; collect the learner's choice or independent answer before proceeding; or Simulation to let the learner change a variable and observe the outcome. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested.",
+      "If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself."
+    ],
+    "codePracticeLanguage": null,
+    "reason": null
+  },
+  "sourceSelectedAttempt": 1,
+  "sourcePolicy": "keating-teaching-policy/v2.3.5",
+  "sourceSelectionRule": "none",
+  "sourceReview": "pass",
+  "sourceDecisionModel": "jev-1.14.0",
+  "submittedAt": "2026-11-18T18:52:47.580Z",
+  "completedAt": "2026-11-18T18:52:50.261Z",
+  "rawSessionId": "429ead98-d6df-4479-bd01-c129b38006ad",
+  "measuredTurn": {
+    "schemaVersion": 1,
+    "conversationId": "429ead98-d6df-4479-bd01-c129b38006ad",
+    "turnId": "learner-0",
+    "turnIndex": 0,
+    "model": "minimax/MiniMax-M2.7-highspeed",
+    "mode": "unknown",
+    "cue": {
+      "kind": "none",
+      "targets": []
+    },
+    "reply": "released",
+    "replyElapsedMs": 2422,
+    "attempted": true,
+    "compiled": [
+      "question-group"
+    ],
+    "selected": [
+      "question-group"
+    ],
+    "rendered": [
+      "question-group"
+    ],
+    "guidance": null,
+    "outsideWords": 15,
+    "nativePageRequested": false,
+    "codingChallengeLanguages": [],
+    "editableCode": [],
+    "editorOutsideWords": null,
+    "nativePage": {
+      "succeeded": false,
+      "failed": false,
+      "attached": false,
+      "saved": false,
+      "mounted": false,
+      "ready": false,
+      "visible": false,
+      "opened": false,
+      "frameFailed": false
+    }
+  },
+  "originatingLearner": "I drop one square tile into a bag, then add three round tiles. Before you explain, can I guess the shape I'm most likely to draw?",
+  "publicTextSha256": "65eecea1789dffb357f65748832beaceaea4d5a144da07fcb1b00a96485265de",
+  "sourcePublicTextMatches": true,
+  "actualTutor": {
+    "provider": "minimax",
+    "model": "MiniMax-M2.7-highspeed",
+    "responseModel": null
+  },
+  "gatePhases": [],
+  "transport": [
+    {
+      "kind": "recorded-public-message",
+      "status": 200
+    }
+  ],
+  "rendererNodeMarkers": [
+    "question-group"
+  ],
+  "actions": [
+    {
+      "step": "select",
+      "prompt": "The bag holds 4 tiles: 1 square and 3 round. You reach in and draw one tile at random. Which shape are you most likely to draw?",
+      "choice": "B\nRound"
+    },
+    {
+      "step": "submit",
+      "receipt": {
+        "type": "submit-question-group",
+        "nodeId": "guess",
+        "status": "completed",
+        "result": "completed"
+      }
+    },
+    {
+      "step": "read-saved-answer",
+      "answer": "Round",
+      "question": "The bag holds 4 tiles: 1 square and 3 round. You reach in and draw one tile at random. Which shape are you most likely to draw?",
+      "grading": "pending",
+      "score": null
+    }
+  ],
+  "mobile": {
+    "viewport": 390,
+    "body": 390,
+    "overflow": 0
+  },
+  "blockedExternalOrigins": [
+    "https://cdn.jsdelivr.net"
+  ],
+  "transcriptPersisted": true,
+  "originalOrdinal": 0,
+  "savedLearnerCount": 2,
+  "preventedModelFollowups": 1,
+  "settingsExportMatches": true,
+  "locallyRegisteredWebMcpMatchesCli": true,
+  "pageErrors": [],
+  "screenshots": [
+    "classroom-desktop.png",
+    "classroom-mobile.png",
+    "settings-inspector.png",
+    "classroom-after-action.png"
+  ]
+}

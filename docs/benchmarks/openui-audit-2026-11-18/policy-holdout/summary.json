@@ -1,0 +1,859 @@
+{
+  "version": 1,
+  "study": "policy-v2.1-prospective-3",
+  "policy": "keating-teaching-policy/v2.1",
+  "releaseSystemAndTools": "feb14a770371032619839271cfb3d1a4fe5079ff",
+  "cohortSha256": "d3393c08ee1903f9e4a426d37cab65add70f5e2d5157cd09a085ddfac174afe8",
+  "total": {
+    "scheduled": 6,
+    "tutorDispatched": 6,
+    "completedCandidates": 4,
+    "released": 4,
+    "withholdNotices": 2,
+    "providerFailures": 2,
+    "nativeOnly": 1,
+    "knownFit": {
+      "n": 3,
+      "d": 4
+    },
+    "missingFit": 2,
+    "authoredInterfaceAmongObserved": {
+      "n": 2,
+      "d": 4
+    },
+    "requestedInterfacesScheduled": 4,
+    "knownRequestedInterfaceFit": {
+      "n": 2,
+      "d": 3
+    },
+    "controlsScheduled": 2,
+    "knownTextControlFit": {
+      "n": 1,
+      "d": 1
+    }
+  },
+  "byModel": {
+    "gemini-3.1-flash-lite": {
+      "scheduled": 3,
+      "tutorDispatched": 3,
+      "completedCandidates": 1,
+      "released": 1,
+      "withholdNotices": 2,
+      "providerFailures": 2,
+      "nativeOnly": 1,
+      "knownFit": {
+        "n": 0,
+        "d": 1
+      },
+      "missingFit": 2,
+      "authoredInterfaceAmongObserved": {
+        "n": 0,
+        "d": 1
+      },
+      "requestedInterfacesScheduled": 2,
+      "knownRequestedInterfaceFit": {
+        "n": 0,
+        "d": 1
+      },
+      "controlsScheduled": 1,
+      "knownTextControlFit": {
+        "n": 0,
+        "d": 0
+      }
+    },
+    "MiniMax-M2.7-highspeed": {
+      "scheduled": 3,
+      "tutorDispatched": 3,
+      "completedCandidates": 3,
+      "released": 3,
+      "withholdNotices": 0,
+      "providerFailures": 0,
+      "nativeOnly": 0,
+      "knownFit": {
+        "n": 3,
+        "d": 3
+      },
+      "missingFit": 0,
+      "authoredInterfaceAmongObserved": {
+        "n": 2,
+        "d": 3
+      },
+      "requestedInterfacesScheduled": 2,
+      "knownRequestedInterfaceFit": {
+        "n": 2,
+        "d": 2
+      },
+      "controlsScheduled": 1,
+      "knownTextControlFit": {
+        "n": 1,
+        "d": 1
+      }
+    }
+  },
+  "byCase": {
+    "spinner": {
+      "scheduled": 2,
+      "tutorDispatched": 2,
+      "completedCandidates": 1,
+      "released": 1,
+      "withholdNotices": 1,
+      "providerFailures": 1,
+      "nativeOnly": 0,
+      "knownFit": {
+        "n": 1,
+        "d": 1
+      },
+      "missingFit": 1,
+      "authoredInterfaceAmongObserved": {
+        "n": 1,
+        "d": 1
+      },
+      "requestedInterfacesScheduled": 2,
+      "knownRequestedInterfaceFit": {
+        "n": 1,
+        "d": 1
+      },
+      "controlsScheduled": 0,
+      "knownTextControlFit": {
+        "n": 0,
+        "d": 0
+      }
+    },
+    "bus": {
+      "scheduled": 2,
+      "tutorDispatched": 2,
+      "completedCandidates": 2,
+      "released": 2,
+      "withholdNotices": 0,
+      "providerFailures": 0,
+      "nativeOnly": 1,
+      "knownFit": {
+        "n": 1,
+        "d": 2
+      },
+      "missingFit": 0,
+      "authoredInterfaceAmongObserved": {
+        "n": 1,
+        "d": 2
+      },
+      "requestedInterfacesScheduled": 2,
+      "knownRequestedInterfaceFit": {
+        "n": 1,
+        "d": 2
+      },
+      "controlsScheduled": 0,
+      "knownTextControlFit": {
+        "n": 0,
+        "d": 0
+      }
+    },
+    "perimeter": {
+      "scheduled": 2,
+      "tutorDispatched": 2,
+      "completedCandidates": 1,
+      "released": 1,
+      "withholdNotices": 1,
+      "providerFailures": 1,
+      "nativeOnly": 0,
+      "knownFit": {
+        "n": 1,
+        "d": 1
+      },
+      "missingFit": 1,
+      "authoredInterfaceAmongObserved": {
+        "n": 0,
+        "d": 1
+      },
+      "requestedInterfacesScheduled": 0,
+      "knownRequestedInterfaceFit": {
+        "n": 0,
+        "d": 0
+      },
+      "controlsScheduled": 2,
+      "knownTextControlFit": {
+        "n": 1,
+        "d": 1
+      }
+    }
+  },
+  "accounting": {
+    "currency": "USD",
+    "paidTutorDispatches": 6,
+    "paidJevDispatches": 8,
+    "missingUsage": 2,
+    "knownUsageListPriceUpper": 0.045513344,
+    "heldForMissingUsage": 0.24,
+    "segmentOneBound": 0.133147818,
+    "segmentTwoBound": 0.152365526,
+    "holdoutBound": 0.285513344,
+    "priorStudyAndFollowupBound": 0.835679054,
+    "allStudyBound": 1.121192398,
+    "userCap": 2,
+    "note": "Measured token counts use published list prices, conservatively charging cached input at the full input rate. An HTTP 503 without token usage retains its full US$0.12 tutor reservation. This is a cost upper bound, not a provider invoice."
+  },
+  "records": [
+    {
+      "id": "gemini-3.1-flash-lite--spinner",
+      "model": "gemini-3.1-flash-lite",
+      "provider": "google",
+      "caseId": "spinner",
+      "source": "gemini-3.1-flash-lite--spinner.json",
+      "eligibility": "provider-failure",
+      "prompt": "A blue spinner landed on the same wedge three times. Let me predict the next spin before you explain what I should expect.",
+      "rubric": "The released response contains a valid Question or grouped Question that lets the learner predict the next spin before receiving the answer. It may invite reasoning. Giving away the prediction, or only asking in prose, fails this case.",
+      "reply": "withheld",
+      "selectedAttempt": null,
+      "gateReason": "generation-unavailable",
+      "tutorRequests": 1,
+      "gateDraftAttempts": 3,
+      "completedCandidates": 0,
+      "authoredValidInterface": null,
+      "offered": [
+        "question",
+        "simulation"
+      ],
+      "guidanceDelivered": null,
+      "planProvenance": [
+        {
+          "requestSha256": "55d247c2b02959fc8c1edb1feeb670af43715dc8c541e91006d31099c845a489",
+          "model": "jev-1.14.0",
+          "reusedFrom": null
+        }
+      ],
+      "selectedComponents": [],
+      "selectedNodes": null,
+      "selectedOutsideWords": null,
+      "selectedOutsideText": null,
+      "selectedText": null,
+      "selectedNativeTools": null,
+      "nativeOnly": null,
+      "verdict": null,
+      "note": "The tutor endpoint returned 503. No complete candidate or learner-fit rating is available. The gate issued a withheld notice.",
+      "simulationSamples": [],
+      "drafts": [
+        {
+          "attempt": 1,
+          "submitted": true,
+          "http": 503,
+          "transport": "provider",
+          "completed": false,
+          "stop": "error",
+          "responseModel": null,
+          "providerModel": "gemini-3.1-flash-lite",
+          "provider": "google",
+          "attempted": null,
+          "compiled": null,
+          "nodes": null,
+          "outsideWords": null,
+          "issues": null,
+          "nativeTools": null,
+          "promptIncludedGuidance": true,
+          "payloadSha256": "c9a8c8f06eb07d8ed0e5b786a3dc12967f6f36fa66dbb941b149146c82a4c959",
+          "systemSha256": "73fffbbc00aa041507ec59a63872f63a74bbad304f0ae290419f50bf32a97e8d",
+          "gate": "generation-error",
+          "trimmedCheckpointSuffix": false,
+          "findings": [],
+          "authoredTextSha256": null
+        }
+      ]
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--spinner",
+      "model": "MiniMax-M2.7-highspeed",
+      "provider": "minimax",
+      "caseId": "spinner",
+      "source": "MiniMax-M2.7-highspeed--spinner.json",
+      "eligibility": "released-content",
+      "prompt": "A blue spinner landed on the same wedge three times. Let me predict the next spin before you explain what I should expect.",
+      "rubric": "The released response contains a valid Question or grouped Question that lets the learner predict the next spin before receiving the answer. It may invite reasoning. Giving away the prediction, or only asking in prose, fails this case.",
+      "reply": "released",
+      "selectedAttempt": 1,
+      "gateReason": null,
+      "tutorRequests": 1,
+      "gateDraftAttempts": 1,
+      "completedCandidates": 1,
+      "authoredValidInterface": true,
+      "offered": [
+        "question",
+        "simulation"
+      ],
+      "guidanceDelivered": true,
+      "planProvenance": [
+        {
+          "requestSha256": "55d247c2b02959fc8c1edb1feeb670af43715dc8c541e91006d31099c845a489",
+          "model": "jev-1.14.0",
+          "reusedFrom": null
+        }
+      ],
+      "selectedComponents": [
+        "question-group"
+      ],
+      "selectedNodes": [
+        {
+          "type": "question-group",
+          "id": "predict",
+          "topic": "Probability and independence",
+          "intro": "Pick or write your prediction, then say why.",
+          "questions": [
+            {
+              "id": "predict-question-1",
+              "prompt": "A spinner is divided into equal wedges, and one colour (blue) covers some of them. The spinner just landed on a blue wedge three times in a row. What's the chance the next spin is blue?",
+              "kind": "choice",
+              "header": "Next spin",
+              "choices": [
+                {
+                  "id": "predict-question-1-choice-1",
+                  "label": "1 in 3"
+                },
+                {
+                  "id": "predict-question-1-choice-2",
+                  "label": "1 in 4"
+                },
+                {
+                  "id": "predict-question-1-choice-3",
+                  "label": "1 in 6"
+                },
+                {
+                  "id": "predict-question-1-choice-4",
+                  "label": "1 in 8"
+                }
+              ],
+              "hint": "Write your own answer if the spinner's wedge count is something else — include how many wedges you think there are, and whether the last three spins change anything.",
+              "allowText": true
+            }
+          ]
+        }
+      ],
+      "selectedOutsideWords": 26,
+      "selectedOutsideText": "Before I explain anything, let's lock in your prediction — this is exactly the kind of thing your gut gets better at when you commit first.",
+      "selectedText": "Before I explain anything, let's lock in your prediction — this is exactly the kind of thing your gut gets better at when you commit first.\n\n```openui lifecycle=ephemeral id=spinner-prediction\n\nroot = LearningSurface([predict], \"Your prediction first\", \"Commit to an answer before the explanation arrives.\", \"ephemeral\")\npredict = Question([\n  { header: \"Next spin\", question: \"A spinner is divided into equal wedges, and one colour (blue) covers some of them. The spinner just landed on a blue wedge three times in a row. What's the chance the next spin is blue?\", type: \"choice\", choices: [\"1 in 3\", \"1 in 4\", \"1 in 6\", \"1 in 8\"], allowText: true, hint: \"Write your own answer if the spinner's wedge count is something else — include how many wedges you think there are, and whether the last three spins change anything.\" }\n], \"ephemeral\", \"Probability and independence\", \"Pick or write your prediction, then say why.\")\n```",
+      "selectedNativeTools": [],
+      "nativeOnly": false,
+      "verdict": true,
+      "note": "A learner can predict before seeing an explanation, in the actual Question with preset choices and a write-in answer. The tutor changes the observation from the same wedge to the colour blue. The four numerical choices are underdetermined because the spinner layout is unspecified. A write-in response can explain that ambiguity. The release omits the sentence that followed the checkpoint in the submitted candidate.",
+      "simulationSamples": [],
+      "drafts": [
+        {
+          "attempt": 1,
+          "submitted": true,
+          "http": 200,
+          "transport": "stop",
+          "completed": true,
+          "stop": "stop",
+          "responseModel": null,
+          "providerModel": "MiniMax-M2.7-highspeed",
+          "provider": "minimax",
+          "attempted": true,
+          "compiled": [
+            "question-group"
+          ],
+          "nodes": [
+            {
+              "type": "question-group",
+              "id": "predict",
+              "topic": "Probability and independence",
+              "intro": "Pick or write your prediction, then say why.",
+              "questions": [
+                {
+                  "id": "predict-question-1",
+                  "prompt": "A spinner is divided into equal wedges, and one colour (blue) covers some of them. The spinner just landed on a blue wedge three times in a row. What's the chance the next spin is blue?",
+                  "kind": "choice",
+                  "header": "Next spin",
+                  "choices": [
+                    {
+                      "id": "predict-question-1-choice-1",
+                      "label": "1 in 3"
+                    },
+                    {
+                      "id": "predict-question-1-choice-2",
+                      "label": "1 in 4"
+                    },
+                    {
+                      "id": "predict-question-1-choice-3",
+                      "label": "1 in 6"
+                    },
+                    {
+                      "id": "predict-question-1-choice-4",
+                      "label": "1 in 8"
+                    }
+                  ],
+                  "hint": "Write your own answer if the spinner's wedge count is something else — include how many wedges you think there are, and whether the last three spins change anything.",
+                  "allowText": true
+                }
+              ]
+            }
+          ],
+          "outsideWords": 49,
+          "issues": [],
+          "nativeTools": [],
+          "promptIncludedGuidance": true,
+          "payloadSha256": "cef226d5df080d77cd1eba8207bc883447b581b9e82d817c823e7e0294f2f6e4",
+          "systemSha256": "73fffbbc00aa041507ec59a63872f63a74bbad304f0ae290419f50bf32a97e8d",
+          "gate": "pass",
+          "trimmedCheckpointSuffix": true,
+          "findings": [],
+          "authoredTextSha256": "23b5ac0af22a7a08f42a4773cd31b1736bac35834875fc920fdb487bc7c0ebfa"
+        }
+      ]
+    },
+    {
+      "id": "gemini-3.1-flash-lite--bus",
+      "model": "gemini-3.1-flash-lite",
+      "provider": "google",
+      "caseId": "bus",
+      "source": "segment-two--gemini-3.1-flash-lite--bus.json",
+      "eligibility": "released-native-proposal",
+      "prompt": "I want to change the hourly bus frequency and watch what happens to the seats available per hour. Please skip the quiz for now.",
+      "rubric": "The released response contains a valid Simulation with an adjustable bus-frequency input and an observable seats-per-hour readout that changes correctly with frequency and an explicit or recoverable vehicle capacity. No assessed checkpoint or quiz accompanies it.",
+      "reply": "released",
+      "selectedAttempt": 1,
+      "gateReason": null,
+      "tutorRequests": 1,
+      "gateDraftAttempts": 1,
+      "completedCandidates": 1,
+      "authoredValidInterface": false,
+      "offered": [
+        "concept-map",
+        "simulation"
+      ],
+      "guidanceDelivered": true,
+      "planProvenance": [
+        {
+          "requestSha256": "679b354c85a0859f8e5e8c97775cbdf4e5af5d588a82198cefa53192b9f078df",
+          "model": "jev-1.14.0",
+          "reusedFrom": "gemini-3.1-flash-lite--bus.json#judge-1"
+        }
+      ],
+      "selectedComponents": [],
+      "selectedNodes": [],
+      "selectedOutsideWords": 0,
+      "selectedOutsideText": "",
+      "selectedText": "",
+      "selectedNativeTools": [
+        "interactive_page"
+      ],
+      "nativeOnly": true,
+      "verdict": false,
+      "note": "Gemini proposed the native interactive_page tool. The gate released that proposal with zero text and zero compiled OpenUI nodes. The study never executes native tools, so it cannot establish which page a later tool round might have created.",
+      "simulationSamples": [],
+      "drafts": [
+        {
+          "attempt": 1,
+          "submitted": true,
+          "http": 200,
+          "transport": "toolUse",
+          "completed": true,
+          "stop": "toolUse",
+          "responseModel": null,
+          "providerModel": "gemini-3.1-flash-lite",
+          "provider": "google",
+          "attempted": false,
+          "compiled": [],
+          "nodes": [],
+          "outsideWords": 0,
+          "issues": [],
+          "nativeTools": [
+            "interactive_page"
+          ],
+          "promptIncludedGuidance": true,
+          "payloadSha256": "2b5be1b93ad32a989c5faf73a9567b5a1e16d6cb85ee0c8ae2a2cd7ee2a8e0d1",
+          "systemSha256": "1a3303c205e8f57fd047e4d1b6fe49d2da3a662b9829782b4f6183c47b88f917",
+          "gate": "pass",
+          "trimmedCheckpointSuffix": false,
+          "findings": [],
+          "authoredTextSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--bus",
+      "model": "MiniMax-M2.7-highspeed",
+      "provider": "minimax",
+      "caseId": "bus",
+      "source": "segment-two--MiniMax-M2.7-highspeed--bus.json",
+      "eligibility": "released-content",
+      "prompt": "I want to change the hourly bus frequency and watch what happens to the seats available per hour. Please skip the quiz for now.",
+      "rubric": "The released response contains a valid Simulation with an adjustable bus-frequency input and an observable seats-per-hour readout that changes correctly with frequency and an explicit or recoverable vehicle capacity. No assessed checkpoint or quiz accompanies it.",
+      "reply": "released",
+      "selectedAttempt": 1,
+      "gateReason": null,
+      "tutorRequests": 1,
+      "gateDraftAttempts": 1,
+      "completedCandidates": 1,
+      "authoredValidInterface": true,
+      "offered": [
+        "concept-map",
+        "simulation"
+      ],
+      "guidanceDelivered": true,
+      "planProvenance": [
+        {
+          "requestSha256": "679b354c85a0859f8e5e8c97775cbdf4e5af5d588a82198cefa53192b9f078df",
+          "model": "jev-1.14.0",
+          "reusedFrom": "gemini-3.1-flash-lite--bus.json#judge-1"
+        }
+      ],
+      "selectedComponents": [
+        "simulation"
+      ],
+      "selectedNodes": [
+        {
+          "type": "simulation",
+          "id": "bus-seats-model",
+          "title": "Hourly seats vs. hourly demand",
+          "brief": "First predict: if you double buses per hour from 8 to 16, will seats available per hour double too? Then move the slider and compare. Note the 'extra riders attracted per added bus' slider — if riders grow as fast as capacity, spare seats can vanish even as service improves. A negative 'seats available' means a shortfall (turn-aways).",
+          "parameters": [
+            {
+              "id": "busesPerHour",
+              "label": "Buses per hour",
+              "unit": "buses",
+              "min": 1,
+              "max": 30,
+              "step": 1,
+              "value": 8
+            },
+            {
+              "id": "seatsPerBus",
+              "label": "Seats per bus",
+              "unit": "seats",
+              "min": 20,
+              "max": 80,
+              "step": 2,
+              "value": 40
+            },
+            {
+              "id": "baseRiders",
+              "label": "Riders who ride regardless of frequency",
+              "unit": "riders",
+              "min": 0,
+              "max": 600,
+              "step": 10,
+              "value": 300
+            },
+            {
+              "id": "extraRidersPerBus",
+              "label": "Extra riders attracted per added bus",
+              "unit": "riders",
+              "min": 0,
+              "max": 40,
+              "step": 1,
+              "value": 8
+            }
+          ],
+          "readouts": [
+            {
+              "id": "capacity",
+              "label": "Seats offered per hour",
+              "unit": "seats",
+              "expr": "busesPerHour * seatsPerBus",
+              "precision": 0
+            },
+            {
+              "id": "riders",
+              "label": "Riders per hour",
+              "unit": "riders",
+              "expr": "baseRiders + extraRidersPerBus * busesPerHour",
+              "precision": 0
+            },
+            {
+              "id": "available",
+              "label": "Seats available per hour",
+              "unit": "seats",
+              "expr": "busesPerHour * seatsPerBus - baseRiders - extraRidersPerBus * busesPerHour",
+              "precision": 0,
+              "emphasis": true
+            },
+            {
+              "id": "loadFactor",
+              "label": "Load factor",
+              "unit": "%",
+              "expr": "(baseRiders + extraRidersPerBus * busesPerHour) / (busesPerHour * seatsPerBus) * 100",
+              "precision": 1
+            }
+          ]
+        }
+      ],
+      "selectedOutsideWords": 98,
+      "selectedOutsideText": "Nice — that's a hands-on way to see it. Here's a live model you can drive yourself: change buses per hour (and the other assumptions) and watch seats available per hour update instantly.\n\n\n\nA couple of things worth trying once you've played with it: set *extra riders per added bus* to a high value to see how demand can cancel out a service increase, and then set it to 0 to see the pure capacity effect.\n\nTell me what you find and where the number stops improving — that point is usually where the interesting policy conversation lives.",
+      "selectedText": "Nice — that's a hands-on way to see it. Here's a live model you can drive yourself: change buses per hour (and the other assumptions) and watch seats available per hour update instantly.\n\n```openui lifecycle=ephemeral id=bus-frequency-seats\nroot = LearningSurface([model], \"Bus frequency → seats available per hour\", \"Move the sliders; the seats-available number updates as you go.\", \"ephemeral\")\nmodel = Simulation(\"bus-seats-model\", \"Hourly seats vs. hourly demand\", [\n  { id: \"busesPerHour\", label: \"Buses per hour\", unit: \"buses\", min: 1, max: 30, step: 1, value: 8 },\n  { id: \"seatsPerBus\", label: \"Seats per bus\", unit: \"seats\", min: 20, max: 80, step: 2, value: 40 },\n  { id: \"baseRiders\", label: \"Riders who ride regardless of frequency\", unit: \"riders\", min: 0, max: 600, step: 10, value: 300 },\n  { id: \"extraRidersPerBus\", label: \"Extra riders attracted per added bus\", unit: \"riders\", min: 0, max: 40, step: 1, value: 8 }\n], [\n  { id: \"capacity\", label: \"Seats offered per hour\", unit: \"seats\", expr: \"busesPerHour * seatsPerBus\", precision: 0 },\n  { id: \"riders\", label: \"Riders per hour\", unit: \"riders\", expr: \"baseRiders + extraRidersPerBus * busesPerHour\", precision: 0 },\n  { id: \"available\", label: \"Seats available per hour\", unit: \"seats\", expr: \"busesPerHour * seatsPerBus - baseRiders - extraRidersPerBus * busesPerHour\", precision: 0, emphasis: true },\n  { id: \"loadFactor\", label: \"Load factor\", unit: \"%\", expr: \"(baseRiders + extraRidersPerBus * busesPerHour) / (busesPerHour * seatsPerBus) * 100\", precision: 1 }\n], \"ephemeral\", \"First predict: if you double buses per hour from 8 to 16, will seats available per hour double too? Then move the slider and compare. Note the 'extra riders attracted per added bus' slider — if riders grow as fast as capacity, spare seats can vanish even as service improves. A negative 'seats available' means a shortfall (turn-aways).\")\n```\n\nA couple of things worth trying once you've played with it: set *extra riders per added bus* to a high value to see how demand can cancel out a service increase, and then set it to 0 to see the pure capacity effect.\n\nTell me what you find and where the number stops improving — that point is usually where the interesting policy conversation lives.",
+      "selectedNativeTools": [],
+      "nativeOnly": false,
+      "verdict": true,
+      "note": "A valid Simulation exposes buses per hour and seats per bus. At the authored defaults, changing 8 buses/hour to 16 changes offered capacity from 320 to 640 and spare seats from −44 to 212 using the declared demand model. The brief invites a prediction; it never asks the learner to submit one for assessment. The extra demand model and surrounding prose make this more elaborate than the learner requested.",
+      "simulationSamples": [
+        {
+          "id": "bus-seats-model",
+          "samples": [
+            {
+              "inputs": {
+                "busesPerHour": 8,
+                "seatsPerBus": 40,
+                "baseRiders": 300,
+                "extraRidersPerBus": 8
+              },
+              "readouts": {
+                "capacity": 320,
+                "riders": 364,
+                "available": -44,
+                "loadFactor": 113.75
+              }
+            },
+            {
+              "inputs": {
+                "busesPerHour": 16,
+                "seatsPerBus": 40,
+                "baseRiders": 300,
+                "extraRidersPerBus": 8
+              },
+              "readouts": {
+                "capacity": 640,
+                "riders": 428,
+                "available": 212,
+                "loadFactor": 66.875
+              }
+            }
+          ]
+        }
+      ],
+      "drafts": [
+        {
+          "attempt": 1,
+          "submitted": true,
+          "http": 200,
+          "transport": "stop",
+          "completed": true,
+          "stop": "stop",
+          "responseModel": null,
+          "providerModel": "MiniMax-M2.7-highspeed",
+          "provider": "minimax",
+          "attempted": true,
+          "compiled": [
+            "simulation"
+          ],
+          "nodes": [
+            {
+              "type": "simulation",
+              "id": "bus-seats-model",
+              "title": "Hourly seats vs. hourly demand",
+              "brief": "First predict: if you double buses per hour from 8 to 16, will seats available per hour double too? Then move the slider and compare. Note the 'extra riders attracted per added bus' slider — if riders grow as fast as capacity, spare seats can vanish even as service improves. A negative 'seats available' means a shortfall (turn-aways).",
+              "parameters": [
+                {
+                  "id": "busesPerHour",
+                  "label": "Buses per hour",
+                  "unit": "buses",
+                  "min": 1,
+                  "max": 30,
+                  "step": 1,
+                  "value": 8
+                },
+                {
+                  "id": "seatsPerBus",
+                  "label": "Seats per bus",
+                  "unit": "seats",
+                  "min": 20,
+                  "max": 80,
+                  "step": 2,
+                  "value": 40
+                },
+                {
+                  "id": "baseRiders",
+                  "label": "Riders who ride regardless of frequency",
+                  "unit": "riders",
+                  "min": 0,
+                  "max": 600,
+                  "step": 10,
+                  "value": 300
+                },
+                {
+                  "id": "extraRidersPerBus",
+                  "label": "Extra riders attracted per added bus",
+                  "unit": "riders",
+                  "min": 0,
+                  "max": 40,
+                  "step": 1,
+                  "value": 8
+                }
+              ],
+              "readouts": [
+                {
+                  "id": "capacity",
+                  "label": "Seats offered per hour",
+                  "unit": "seats",
+                  "expr": "busesPerHour * seatsPerBus",
+                  "precision": 0
+                },
+                {
+                  "id": "riders",
+                  "label": "Riders per hour",
+                  "unit": "riders",
+                  "expr": "baseRiders + extraRidersPerBus * busesPerHour",
+                  "precision": 0
+                },
+                {
+                  "id": "available",
+                  "label": "Seats available per hour",
+                  "unit": "seats",
+                  "expr": "busesPerHour * seatsPerBus - baseRiders - extraRidersPerBus * busesPerHour",
+                  "precision": 0,
+                  "emphasis": true
+                },
+                {
+                  "id": "loadFactor",
+                  "label": "Load factor",
+                  "unit": "%",
+                  "expr": "(baseRiders + extraRidersPerBus * busesPerHour) / (busesPerHour * seatsPerBus) * 100",
+                  "precision": 1
+                }
+              ]
+            }
+          ],
+          "outsideWords": 98,
+          "issues": [],
+          "nativeTools": [],
+          "promptIncludedGuidance": true,
+          "payloadSha256": "7a059acc5754f126d75e6ab278518a86179e73bfa5da4458aafa96942486202b",
+          "systemSha256": "1a3303c205e8f57fd047e4d1b6fe49d2da3a662b9829782b4f6183c47b88f917",
+          "gate": "pass",
+          "trimmedCheckpointSuffix": false,
+          "findings": [
+            {
+              "id": "checkpoint_repeated",
+              "status": "unknown",
+              "probability": 0.47
+            },
+            {
+              "id": "checkpoint_not_interactive",
+              "status": "unknown",
+              "probability": 0.41
+            }
+          ],
+          "authoredTextSha256": "6c435829ab004a31a081a68f053f74c5fe70982980b8a17f4a8d58ed8a72f59e"
+        }
+      ]
+    },
+    {
+      "id": "gemini-3.1-flash-lite--perimeter",
+      "model": "gemini-3.1-flash-lite",
+      "provider": "google",
+      "caseId": "perimeter",
+      "source": "segment-two--gemini-3.1-flash-lite--perimeter.json",
+      "eligibility": "provider-failure",
+      "prompt": "In one short sentence, what is the perimeter of a square with side length four? Just the answer, please.",
+      "rubric": "The released response gives the correct perimeter, 16 (units optional), in at most one short sentence (at most 15 outside words). It contains no interface, exercise or follow-up question. A standalone answer is sufficient.",
+      "reply": "withheld",
+      "selectedAttempt": null,
+      "gateReason": "generation-unavailable",
+      "tutorRequests": 1,
+      "gateDraftAttempts": 3,
+      "completedCandidates": 0,
+      "authoredValidInterface": null,
+      "offered": [],
+      "guidanceDelivered": null,
+      "planProvenance": [
+        {
+          "requestSha256": "7c7c470bd8602e388e79e2694697a14006ae730be38f680ad4893c2e7caba4bf",
+          "model": "jev-1.14.0",
+          "reusedFrom": null
+        }
+      ],
+      "selectedComponents": [],
+      "selectedNodes": null,
+      "selectedOutsideWords": null,
+      "selectedOutsideText": null,
+      "selectedText": null,
+      "selectedNativeTools": null,
+      "nativeOnly": null,
+      "verdict": null,
+      "note": "The tutor endpoint returned 503. No complete candidate or learner-fit rating is available. The gate issued a withheld notice.",
+      "simulationSamples": [],
+      "drafts": [
+        {
+          "attempt": 1,
+          "submitted": true,
+          "http": 503,
+          "transport": "provider",
+          "completed": false,
+          "stop": "error",
+          "responseModel": null,
+          "providerModel": "gemini-3.1-flash-lite",
+          "provider": "google",
+          "attempted": null,
+          "compiled": null,
+          "nodes": null,
+          "outsideWords": null,
+          "issues": null,
+          "nativeTools": null,
+          "promptIncludedGuidance": true,
+          "payloadSha256": "fafb7ddd9bbe10745239b554c2c35fa751bb87c060ea5ce48d38f285c8dba328",
+          "systemSha256": "8193e79e47da293f8aaf4f342c6ee6d880a8b673fc15245496d51efe0ed72326",
+          "gate": "generation-error",
+          "trimmedCheckpointSuffix": false,
+          "findings": [],
+          "authoredTextSha256": null
+        }
+      ]
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--perimeter",
+      "model": "MiniMax-M2.7-highspeed",
+      "provider": "minimax",
+      "caseId": "perimeter",
+      "source": "segment-two--MiniMax-M2.7-highspeed--perimeter.json",
+      "eligibility": "released-content",
+      "prompt": "In one short sentence, what is the perimeter of a square with side length four? Just the answer, please.",
+      "rubric": "The released response gives the correct perimeter, 16 (units optional), in at most one short sentence (at most 15 outside words). It contains no interface, exercise or follow-up question. A standalone answer is sufficient.",
+      "reply": "released",
+      "selectedAttempt": 1,
+      "gateReason": null,
+      "tutorRequests": 1,
+      "gateDraftAttempts": 1,
+      "completedCandidates": 1,
+      "authoredValidInterface": false,
+      "offered": [],
+      "guidanceDelivered": true,
+      "planProvenance": [
+        {
+          "requestSha256": "7c7c470bd8602e388e79e2694697a14006ae730be38f680ad4893c2e7caba4bf",
+          "model": "jev-1.14.0",
+          "reusedFrom": "segment-two--gemini-3.1-flash-lite--perimeter.json#judge-1"
+        }
+      ],
+      "selectedComponents": [],
+      "selectedNodes": [],
+      "selectedOutsideWords": 1,
+      "selectedOutsideText": "16.",
+      "selectedText": "16.",
+      "selectedNativeTools": [],
+      "nativeOnly": false,
+      "verdict": true,
+      "note": "The complete selected answer is “16.” It is one word, has the correct perimeter, and contains no interface, follow-up question or exercise.",
+      "simulationSamples": [],
+      "drafts": [
+        {
+          "attempt": 1,
+          "submitted": true,
+          "http": 200,
+          "transport": "stop",
+          "completed": true,
+          "stop": "stop",
+          "responseModel": null,
+          "providerModel": "MiniMax-M2.7-highspeed",
+          "provider": "minimax",
+          "attempted": false,
+          "compiled": [],
+          "nodes": [],
+          "outsideWords": 1,
+          "issues": [],
+          "nativeTools": [],
+          "promptIncludedGuidance": true,
+          "payloadSha256": "2a17146148a7b5b90a134707e84c2dea045352be8faf5e60c9e52f692bd7f186",
+          "systemSha256": "8193e79e47da293f8aaf4f342c6ee6d880a8b673fc15245496d51efe0ed72326",
+          "gate": "pass",
+          "trimmedCheckpointSuffix": false,
+          "findings": [],
+          "authoredTextSha256": "3ec1d1e80d46e73bc4cdd8ffbefd465585ac8d88692825c5572babb285e8c436"
+        }
+      ]
+    }
+  ]
+}

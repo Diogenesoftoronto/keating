@@ -1,8 +1,12 @@
 import type { ActiveWork } from "./active-work.js";
+import type { CodePracticeLanguage } from "./code-practice-language.js";
 import { TEACHING_INTERACTION_FEATURES } from "./teaching-policy-catalog.js";
 import type { TeachingPolicyTurn } from "./teaching-policy-types.js";
 
 export type InteractionFamily = "question" | "retrieval" | "manipulable" | "workspace" | "away" | "perform";
+
+export const INTERACTION_REASONS = ["requested-variable-exploration", "not-learning", "learning-uncertain", "plain-reply", "assessment-declined", "no-supported-family"] as const;
+export type InteractionReason = typeof INTERACTION_REASONS[number];
 
 export interface InteractionFamilyRecommendation {
   readonly family: InteractionFamily;
@@ -14,8 +18,12 @@ export interface InteractionFamilyRecommendation {
 
 export interface InteractionRecommendation {
   readonly action: "none" | "create" | "continue" | "grade-first";
+  /** Content-free explanation for a suppressed offer or a recovered variable exploration. */
+  readonly reason?: InteractionReason;
+  /** Explicit language for a new coding exercise. A Python fence is editable outside OpenUI. */
+  readonly codePracticeLanguage?: CodePracticeLanguage;
   readonly families: readonly InteractionFamilyRecommendation[];
-  readonly continueInteraction?: { readonly documentId: string; readonly nodeId: string; readonly component: string };
+  readonly continueInteraction?: { readonly documentId: string; readonly nodeId: string; readonly component: string; readonly typedAttempt?: true };
   readonly lead?: "answer-first";
 }
 
@@ -24,6 +32,8 @@ interface AffordanceRow {
   readonly components: readonly string[];
   /** Every listed feature must be true. */
   readonly features: readonly string[];
+  /** During practice some surfaces need evidence the learner wants to operate them. */
+  readonly practice?: true | "hands_on_requested";
   readonly note?: string;
 }
 
@@ -32,19 +42,20 @@ interface AffordanceRow {
  * decides what is true of the material; this table decides what to offer.
  */
 export const INTERACTION_AFFORDANCES: readonly AffordanceRow[] = [
-  { family: "question", components: ["Question"], features: ["prediction_opportunity"] },
-  { family: "question", components: ["Question"], features: ["category_distinction"] },
-  { family: "question", components: ["Question"], features: ["ordered_procedure"], note: "an ordering question" },
-  { family: "retrieval", components: ["Quiz", "Flashcards"], features: ["discrete_recall", "untested_coverage"] },
-  { family: "retrieval", components: ["LanguagePractice"], features: ["language_learning"] },
-  { family: "manipulable", components: ["Simulation"], features: ["variable_relationship"] },
-  { family: "manipulable", components: ["CodingChallenge"], features: ["executable_code"] },
-  { family: "perform", components: ["AudioResponse", "VideoResponse", "MusicLab"], features: ["performed_skill"] },
-  { family: "workspace", components: ["ConceptMap"], features: ["structure_relations"] },
-  { family: "manipulable", components: ["Diagram"], features: ["structure_relations", "extended_production"] },
+  { family: "question", components: ["Question"], features: ["prediction_opportunity"], practice: true },
+  { family: "question", components: ["Question"], features: ["category_distinction"], practice: true },
+  { family: "question", components: ["Question"], features: ["ordered_procedure"], note: "an ordering question", practice: true },
+  { family: "question", components: ["Question"], features: ["learner_response_due"], practice: true },
+  { family: "retrieval", components: ["Quiz", "Flashcards"], features: ["discrete_recall", "untested_coverage"], practice: true },
+  { family: "retrieval", components: ["LanguagePractice"], features: ["language_learning"], practice: true },
+  { family: "manipulable", components: ["Simulation"], features: ["variable_relationship"], practice: "hands_on_requested" },
+  { family: "manipulable", components: ["CodingChallenge"], features: ["executable_code"], practice: true },
+  { family: "perform", components: ["AudioResponse", "VideoResponse", "MusicLab"], features: ["performed_skill"], practice: "hands_on_requested" },
+  { family: "workspace", components: ["ConceptMap"], features: ["structure_relations"], practice: "hands_on_requested" },
+  { family: "manipulable", components: ["Diagram"], features: ["structure_relations", "extended_production"], practice: true },
   { family: "workspace", components: ["LearningImage"], features: ["visual_reference"] },
-  { family: "away", components: ["Assignment", "Draft"], features: ["extended_production"] },
-  { family: "away", components: ["Fieldwork"], features: ["outside_observation"] },
+  { family: "away", components: ["Assignment", "Draft"], features: ["extended_production"], practice: "hands_on_requested" },
+  { family: "away", components: ["Fieldwork"], features: ["outside_observation"], practice: "hands_on_requested" },
 ];
 
 /** UI node types that can be continued, by the family that would create them. */
@@ -57,36 +68,70 @@ type Flags = Readonly<Record<string, boolean | null>>;
 export interface InteractionContext {
   readonly activeWork?: ActiveWork | null;
   readonly pendingSubmissions?: TeachingPolicyTurn["pendingSubmissions"];
+  readonly domain?: TeachingPolicyTurn["domain"];
+  readonly followsTutorTurn?: boolean;
+  readonly codePracticeLanguage?: CodePracticeLanguage | null;
+  readonly assessment?: TeachingPolicyTurn["assessment"];
 }
 
-const NONE: InteractionRecommendation = { action: "none", families: [] };
+const explanationComponents = new Set(["Simulation", "ConceptMap", "LearningImage", "Diagram"]);
+
+function requestedVariableExploration(features: Flags, decisions: Flags, context: InteractionContext): boolean {
+  if (features.hands_on_requested !== true || features.variable_relationship !== true) return false;
+  // A setting or purchase can involve two changing quantities. Require evidence
+  // that the learner is working with subject matter on this turn as well.
+  const subjectMaterial = features.structure_relations === true || features.prediction_opportunity === true;
+  const teachingReference = decisions.assessment_declined === true || decisions.attempt_present === true;
+  const knownSubject = Boolean(context.activeWork?.focus) || (context.domain !== undefined && context.domain !== "unknown" && context.domain !== "general");
+  return knownSubject ? teachingReference || subjectMaterial : context.followsTutorTurn === true && teachingReference && subjectMaterial;
+}
 
 /**
- * Null (uncertain) counts as false throughout: an unsure judge never
- * earns the learner an activity.
+ * Each offered family needs positive material evidence. A specific request to
+ * explore a subject variable can support that one family despite a broad negative.
  */
 export function recommendInteraction(features: Flags, decisions: Flags, context: InteractionContext = {}): InteractionRecommendation {
-  if (decisions.learning_task !== true && decisions.practice_requested !== true) return NONE;
-  if ((context.pendingSubmissions?.length ?? 0) > 0 || (context.activeWork?.focus?.evidence.pendingGrade ?? 0) > 0) {
+  const pausedExploration = decisions.learning_task === null && decisions.assessment_declined === true && features.hands_on_requested === true;
+  const inScope = decisions.learning_task === true || decisions.practice_requested === true || pausedExploration;
+  const simulationOnly = !inScope && requestedVariableExploration(features, decisions, context);
+  const pendingGrade = (context.pendingSubmissions?.length ?? 0) > 0 || (context.activeWork?.focus?.evidence.pendingGrade ?? 0) > 0;
+  if ((inScope || simulationOnly) && pendingGrade) {
     return { action: "grade-first", families: [] };
   }
+  if (decisions.plain_reply_requested === true) return { action: "none", families: [], reason: "plain-reply" };
+  if (!inScope && !simulationOnly) return { action: "none", families: [], reason: decisions.learning_task === false ? "not-learning" : "learning-uncertain" };
   const byFamily = new Map<InteractionFamily, { components: string[]; features: string[] }>();
+  let assessmentSuppressed = false;
   for (const row of INTERACTION_AFFORDANCES) {
+    if (simulationOnly && !row.components.includes("Simulation")) continue;
     if (!row.features.every((id) => features[id] === true)) continue;
+    if (decisions.assessment_declined === true && !row.components.some(component => explanationComponents.has(component))) {
+      assessmentSuppressed = true;
+      continue;
+    }
+    const practiceFeature = typeof row.practice === "string" && features[row.practice] === true ? row.practice : null;
+    if (decisions.practice_requested === true && decisions.assessment_declined !== true && row.practice !== true && !practiceFeature) continue;
     const entry = byFamily.get(row.family) ?? { components: [], features: [] };
     for (const component of row.components) if (!entry.components.includes(component)) entry.components.push(component);
     for (const id of row.features) if (!entry.features.includes(id)) entry.features.push(id);
+    if (practiceFeature && !entry.features.includes(practiceFeature)) entry.features.push(practiceFeature);
     byFamily.set(row.family, entry);
   }
   if (decisions.learner_stuck === true) byFamily.delete("away");
-  if (decisions.practice_requested === true) for (const [family, entry] of byFamily) {
-    if (family === "retrieval") continue;
-    if (family === "manipulable" && entry.components.includes("Diagram")) entry.components = ["Diagram"];
-    else byFamily.delete(family);
+  if (features.hands_on_requested === true && features.learner_response_due !== true
+    && [...byFamily.values()].some(({ features: matched, components }) => matched.includes("hands_on_requested")
+      || components.includes("CodingChallenge") || components.includes("Diagram"))) {
+    byFamily.delete("question");
   }
   const families = FAMILY_ORDER.filter((family) => byFamily.has(family)).map((family) => ({ family, ...byFamily.get(family)! }));
-  if (families.length === 0) return NONE;
-  const lead = decisions.direct_answer_requested === true || decisions.explanation_requested === true ? { lead: "answer-first" as const } : {};
+  // A requested Python editor is useful on its own. It does not require the signal for a runnable OpenUI challenge.
+  const independentPython = context.codePracticeLanguage === "python" && decisions.learning_task === true
+    && decisions.practice_requested === true && features.hands_on_requested === true
+    && decisions.assessment_declined !== true && context.assessment !== "assessed";
+  if (!families.length && !independentPython) return { action: "none", families, reason: assessmentSuppressed ? "assessment-declined" : "no-supported-family" };
+  const answerFirst = (features.learner_response_due !== true || decisions.assessment_declined === true) && (decisions.explanation_requested === true
+    || decisions.direct_answer_requested === true && decisions.practice_requested !== true);
+  const lead = answerFirst ? { lead: "answer-first" as const } : {};
   const work = context.activeWork;
   const focusItem = work?.focus?.itemId ?? null;
   const open = work?.openInteractions.find((interaction) => interaction.state === "awaiting"
@@ -95,7 +140,13 @@ export function recommendInteraction(features: Flags, decisions: Flags, context:
   if (open) {
     return { action: "continue", families, continueInteraction: { documentId: open.documentId, nodeId: open.nodeId, component: open.component }, ...lead };
   }
-  return { action: "create", families, ...lead };
+  const coding = independentPython || families.some(f => f.components.includes("CodingChallenge")) ? context.codePracticeLanguage : null;
+  if (coding === "python") {
+    const submission = features.learner_response_due === true ? families.filter(f => f.family === "question") : [];
+    return { action: submission.length ? "create" : "none", families: submission, codePracticeLanguage: coding };
+  }
+  return { action: "create", families, ...lead, ...(coding ? { codePracticeLanguage: coding } : {}),
+    ...(simulationOnly ? { reason: "requested-variable-exploration" as const } : {}) };
 }
 
 const purposes = new Map(TEACHING_INTERACTION_FEATURES.map(({ id, purpose }) => [id, purpose]));
@@ -111,6 +162,10 @@ export function interactionDirectives(recommendation: InteractionRecommendation,
     return ["The learner has submitted work that still needs grading. Grade it before offering any new activity."];
   }
   const directives: string[] = [];
+  if (recommendation.action === "continue" && recommendation.continueInteraction?.typedAttempt) {
+    const { component, nodeId } = recommendation.continueInteraction;
+    return [`The learner typed an attempt while the preceding ${component} ${nodeId} still awaits a form submission. Read their answer against that item. Give concise feedback confirming what is correct or explaining the correction, then stop unless the learner explicitly requested another action. If their answer is incomplete or concerns something else, address what they actually wrote and leave the unanswered item open.`];
+  }
   if (recommendation.lead === "answer-first") directives.push("Answer the learner's request first; any activity comes after the answer.");
   if (recommendation.action === "continue" && recommendation.continueInteraction) {
     const { component, nodeId } = recommendation.continueInteraction;
@@ -124,9 +179,15 @@ export function interactionDirectives(recommendation: InteractionRecommendation,
   });
   directives.push(mode === "require"
     ? `Include exactly one OpenUI activity this turn: ${options.join("; or ")}.`
-    : `At most one OpenUI activity may help this turn: ${options.join("; or ")}. Prose is acceptable when it serves the learner better.`);
+    : `At most one OpenUI activity may help this turn: ${options.join("; or ")}. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.`);
+  if (recommendation.families.some(({ components }) => components.includes("CodingChallenge"))) {
+    directives.push("CodingChallenge runs JavaScript or TypeScript. Preserve the requested language. For another language, a short code sample and a Question can collect the learner's fix without claiming to run it.");
+  }
+  if (recommendation.families.some(({ family }) => family === "manipulable" || family === "workspace" || family === "perform")) {
+    directives.push("If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested.");
+  }
   if (recommendation.families.some(({ family }) => WAITS.has(family))) {
-    directives.push("If you pose a question or quiz, stop and wait for the learner's answer. Do not answer it yourself.");
+    directives.push("If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself.");
   }
   return directives;
 }

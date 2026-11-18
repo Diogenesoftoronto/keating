@@ -46,6 +46,7 @@ import { launchOpenTui } from "../tui/opentui-host.js";
 import { shellHandoffArgs } from "../tui/shell-handoff.js";
 import { serveWeb, type ServeWebOptions, type WebAgentRuntimeMode } from "./web.js";
 import { webHelpText } from "./web-help.js";
+import { runOpenUiDiagnosticCommand } from "./openui-diagnostics.js";
 import { serveWebMcp } from "../mcp/server.js";
 import { color, bold, cliCommands } from "../core/theme.js";
 import { printAsciiHeader } from "../core/terminal.js";
@@ -992,6 +993,10 @@ async function runSelectedCommand(rawArgs: string[]): Promise<void> {
       const result = await benchPolicyArtifact(cwd, topic);
       console.log(`${result.overallScore.toFixed(2)} ${relative(cwd, result.reportPath)}`);
       if (result.tracePath) console.log(relative(cwd, result.tracePath));
+      return;
+    }
+    case "openui-diagnostics": {
+      runOpenUiDiagnosticCommand(args);
       return;
     }
     case "teaching-bench": {

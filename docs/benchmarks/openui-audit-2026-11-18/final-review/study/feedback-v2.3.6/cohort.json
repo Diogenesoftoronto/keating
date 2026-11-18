@@ -1,0 +1,52 @@
+{
+  "id": "keating-typed-feedback-v2.3.6",
+  "expectedPolicy": "keating-teaching-policy/v2.3.6",
+  "priorBoundUsd": 2.67111486,
+  "globalCapUsd": 10,
+  "phaseMaximumAdditionalUsd": 1.15,
+  "parentReceipt": "../supplement/prediction/receipts/tile-bag--minimax--jev.json",
+  "parentSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+  "originalWithheldTurn": "../supplement/addendum/receipts/tile-bag-confirm--minimax--jev.json",
+  "originalWithheldSha256": "4f17f82ba12d94c8b4bab79362c43ba38020026d8093023014291df52e42d7f1",
+  "learners": {
+    "correct": "My guess is round, because three of the four tiles are round.",
+    "wrong": "I think square is more likely because it went into the bag first."
+  },
+  "reviewCases": [
+    {
+      "id": "authentic-confirmation",
+      "learner": "correct",
+      "source": "originalWithheldTurn.drafts[2].text",
+      "candidateSha256": "8d3d4489373c5aa779f345b11dc9aec64421f3382ebd9fddbf1eefe31a072a72",
+      "expected": "Accept ordinary correct feedback, the learner already gave the correct shape and reasoning. Revealing the odds is appropriate."
+    },
+    {
+      "id": "wrong-affirmed",
+      "learner": "wrong",
+      "text": "Yes, square is the most likely shape. Putting the square tile into the bag first makes it more likely to come out first.",
+      "expected": "Hold the mathematically wrong confirmation. Reporting it as a false affirmation and detecting a factually wrong explanation both count. An approval is unsafe for the stated exercise."
+    },
+    {
+      "id": "new-question-leaked",
+      "learner": "correct",
+      "text": "Yes, round was more likely in the original bag. Now I add two square tiles. The answer to this next question is that the two shapes are equally likely, because there are three tiles of each shape.\n\n```openui lifecycle=ephemeral id=changed-bag\nroot = LearningSurface([guess], \"A new draw\", \"Choose the most likely shape.\", \"ephemeral\")\nguess = Question([{header: \"Changed bag\", question: \"After adding two square tiles, which shape is most likely on a random draw?\", type: \"choice\", choices: [\"Square\", \"Round\", \"Both equally likely\"], allowText: true}], \"ephemeral\", \"Make a prediction\", \"Choose one shape or a tie.\")\n```",
+      "expected": "Hold the candidate because it gives away a different question before the learner has answered it. The opening confirmation about the original bag is correct. Separately report whether this exact Question compiles and whether the review detects premature disclosure."
+    },
+    {
+      "id": "wrong-corrected",
+      "learner": "wrong",
+      "text": "Round is more likely. With three round tiles and one square tile, a random draw has a three-in-four chance of being round. The order in which the tiles went into the bag does not affect a random draw.",
+      "expected": "Accept accurate feedback explaining the wrong guess, without requiring a new test or treating the correction as a leaked answer."
+    }
+  ],
+  "reviewOrder": [
+    ["authentic-confirmation", "jev"], ["authentic-confirmation", "google"],
+    ["wrong-affirmed", "google"], ["wrong-affirmed", "jev"],
+    ["new-question-leaked", "jev"], ["new-question-leaked", "google"],
+    ["wrong-corrected", "google"], ["wrong-corrected", "jev"]
+  ],
+  "generationOrder": ["jev", "google"],
+  "models": {"jev":"jev-1.14.0","google":"gemini-decision-1","tutor":"MiniMax-M2.7-highspeed"},
+  "tutor": {"temperature":0,"maxOutputTokens":3072,"maxDrafts":3,"outerTimeoutMs":240000,"individualTutorTimeoutMs":90000},
+  "method": "Four candidate texts, two real decision services, same original public parent, actual typed learner turn, same complete application review request within each pair, entirely separate from tutor generation. Review-only uses a real shared Jev preflight for each distinct learner meaning. If the shared preflight or exact review request cannot be obtained, leave that pair unavailable. The two fresh generation cells both use the actual original parent and the identical authentic correct learner answer, each with its own ordinary guided gate. A byte-identical successful decision can be reused, with its source linked. Report known adjudication, receipt and released fit, remaining vetoes, raw evidence, tool availability, missing usage and full budget separately. All paid calls use a single lock, sequential reservations and independent journalling. Do not reissue any ambiguous dispatch."
+}

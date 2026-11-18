@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AlertCircle, Check, Copy, Pencil, Play, RotateCcw, Terminal } from "lucide-react";
 import { css, cx } from "../../styled-system/css";
 import { Spinner } from "./Spinner";
@@ -11,29 +11,22 @@ import {
 	type ShellSession,
 } from "../keating/nodepod-runtime";
 import {
-	createHostedCodeRun,
-	getHostedNotebookRun,
+	isPendingNotebookRun,
+	startOrRefreshCodeRun,
 	type HostedNotebookRun,
 } from "../notorganic-provider/notebook";
 import { browserExecutionSignals, chooseCodeExecutor } from "../keating/execution-policy";
 import { isStrudelBlock } from "./labs/strudel-detect";
+import { editableCodeLanguage } from "../keating/editable-code-language";
 import { MusicLab } from "./MusicLab";
 import type { UiMusicLabNode } from "@keating/learner-contracts";
-
-const RUNNABLE_LANGUAGES = new Set([
-	"js",
-	"javascript",
-	"mjs",
-	"cjs",
-]);
-const SUPPORTED_LANGUAGES = new Set([...RUNNABLE_LANGUAGES, "ts", "typescript", "py", "python"]);
 
 function normalizeLanguage(language: string): string {
 	return language.trim().toLowerCase();
 }
 
 export function isRunnableCodeLanguage(language: string): boolean {
-	return SUPPORTED_LANGUAGES.has(normalizeLanguage(language));
+	return editableCodeLanguage(language) !== null;
 }
 
 export async function prepareRunnableCode(code: string, language: string): Promise<{ code: string; filename: string }> {
@@ -88,10 +81,6 @@ function hostedOutput(run: HostedNotebookRun): string {
 	return chunks.join("\n\n") || "(no output)";
 }
 
-function hostedTerminal(run: HostedNotebookRun): boolean {
-	return run.status === "succeeded" || run.status === "failed" || run.status === "cancelled";
-}
-
 export function RunnableCodeBlock({
 	children,
 	code,
@@ -106,7 +95,11 @@ export function RunnableCodeBlock({
 	const [editing, setEditing] = useState(false);
 	const [running, setRunning] = useState(false);
 	const [result, setResult] = useState<ShellSession | null>(null);
-	const [hostedResult, setHostedResult] = useState<HostedNotebookRun | null>(null);
+	const [hostedAttempt, setHostedAttempt] = useState<{ code: string; language: string; run: HostedNotebookRun } | null>(null);
+	const hostedResult = hostedAttempt?.run ?? null;
+	const pending = hostedAttempt?.code === editableCode && hostedAttempt.language === language && isPendingNotebookRun(hostedAttempt.run)
+		? hostedAttempt.run : null;
+	const inFlight = useRef(false);
 	const [error, setError] = useState("");
 	const [connectionVersion, setConnectionVersion] = useState(0);
 	const executor = useMemo(() =>
@@ -156,7 +149,7 @@ export function RunnableCodeBlock({
 		if (streaming) return "writing…";
 		if (strudel) return "Runs in the Strudel sandbox";
 		if (running) return hosted ? "Running in Cloudflare" : "Running on this device";
-		if (error) return "Run failed";
+		if (error) return pending ? "Could not refresh" : "Run failed";
 		if (hostedResult) return hostedResult.status === "succeeded" ? "Finished" : hostedResult.status;
 		if (result) return result.ok ? "Finished" : `Exit ${result.exitCode ?? "unknown"}`;
 		if (executor === "unavailable" && isRunnableCodeLanguage(language)) {
@@ -167,20 +160,21 @@ export function RunnableCodeBlock({
 				: "Hosted runs unavailable";
 		}
 		return runnable ? (hosted ? "Runs in Cloudflare" : "Runs on this device") : "Not runnable";
-	}, [error, executor, hosted, hostedResult, language, result, runnable, running, streaming, strudel]);
+	}, [error, executor, hosted, hostedResult, language, pending, result, runnable, running, streaming, strudel]);
 
 	const run = useCallback(async () => {
-		if (!runnable || running) return;
+		if (!runnable || inFlight.current) return;
+		inFlight.current = true;
 		setRunning(true);
 		setError("");
 		setResult(null);
-		setHostedResult(null);
+		if (!pending) setHostedAttempt(null);
 		try {
-			if (hosted) {
+			if (hosted || pending) {
 				const normalized = normalizeLanguage(language);
 				const hostedLanguage = normalized === "py" || normalized === "python" ? "python" : "typescript";
 				const signals = browserExecutionSignals();
-				let cloudRun = await createHostedCodeRun({
+				await startOrRefreshCodeRun({
 					code: editableCode,
 					language: hostedLanguage,
 					filename: hostedLanguage === "python" ? "notebook.py" : "notebook.ts",
@@ -190,14 +184,7 @@ export function RunnableCodeBlock({
 						network_class: signals.networkClass,
 						code_bytes: new TextEncoder().encode(editableCode).byteLength,
 					},
-				});
-				setHostedResult(cloudRun);
-				for (let attempt = 0; !hostedTerminal(cloudRun) && attempt < 18; attempt += 1) {
-					await new Promise((resolve) => window.setTimeout(resolve, 1_000));
-					cloudRun = await getHostedNotebookRun(cloudRun.id, cloudRun.pds_snapshot_id);
-					setHostedResult(cloudRun);
-				}
-				if (!hostedTerminal(cloudRun)) throw new Error("Cloud run is still running. Try Run again to refresh its output.");
+				}, pending, run => setHostedAttempt({ code: editableCode, language, run }));
 				return;
 			}
 			if (!isNodePodActive()) {
@@ -210,9 +197,10 @@ export function RunnableCodeBlock({
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
 		} finally {
+			inFlight.current = false;
 			setRunning(false);
 		}
-	}, [editableCode, hosted, language, runnable, running]);
+	}, [editableCode, hosted, language, pending, runnable]);
 
 	const copyCode = useCallback(async () => {
 		try {
@@ -265,11 +253,11 @@ export function RunnableCodeBlock({
 							type="button"
 							onClick={run}
 							disabled={!runnable || running || streaming}
-							title={runnable ? (hosted ? "Run in the Cloudflare CPU sandbox" : "Run code on this device") : isRunnableCodeLanguage(language) ? "This language needs a network connection" : "Only JavaScript, TypeScript, and Python blocks can run here"}
+							title={pending ? "Check the existing cloud run for output" : runnable ? (hosted ? "Run in the Cloudflare CPU sandbox" : "Run code on this device") : isRunnableCodeLanguage(language) ? "This language needs a network connection" : "Only JavaScript, TypeScript, and Python blocks can run here"}
 							className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid var(--primary)", backgroundColor: "var(--primary)", paddingInline: "0.5rem", paddingBlock: "0.25rem", fontSize: "11px", fontWeight: 500, color: "var(--primary-foreground)", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, black)" }, _disabled: { cursor: "not-allowed", borderColor: "var(--border)", backgroundColor: "var(--muted)", color: "var(--muted-foreground)" } })}
 						>
 							{running ? <Spinner size={11} /> : <Play size={11} />}
-							Run
+							{pending ? "Refresh output" : "Run"}
 						</button>
 					)}
 				</div>
@@ -291,7 +279,7 @@ export function RunnableCodeBlock({
 								onClick={() => {
 								setEditableCode(code);
 								setResult(null);
-								setHostedResult(null);
+								setHostedAttempt(current => current?.code === code && current.language === language && isPendingNotebookRun(current.run) ? current : null);
 									setError("");
 								}}
 								className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, white 15%, transparent)", paddingInline: "0.5rem", paddingBlock: "0.25rem", fontSize: "11px", fontWeight: 500, color: "#c9d1d9", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { backgroundColor: "color-mix(in srgb, white 10%, transparent)" } })}
@@ -319,7 +307,7 @@ export function RunnableCodeBlock({
 			{(result || hostedResult || error) && (
 				<div className={css({ display: "grid", gap: "0.375rem", borderTop: "1px solid var(--border)", paddingTop: "0.5rem" })}>
 					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)" })}>
-						{error || result?.ok === false || (hostedResult && hostedResult.status !== "succeeded") ? <AlertCircle size={12} className={css({ color: "var(--destructive)" })} /> : <Check size={12} />}
+						{error || result?.ok === false || hostedResult?.status === "failed" || hostedResult?.status === "cancelled" ? <AlertCircle size={12} className={css({ color: "var(--destructive)" })} /> : hostedResult && isPendingNotebookRun(hostedResult) ? <Terminal size={12} /> : <Check size={12} />}
 						Output
 					</div>
 					<pre className={css({ maxHeight: "16rem", overflow: "auto", whiteSpace: "pre-wrap", fontFamily: "var(--mono-display)", fontSize: "0.75rem", lineHeight: "1.625" })}>
