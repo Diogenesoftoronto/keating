@@ -3,8 +3,8 @@
  * Uncertain or failed semantic checks stay honest in receipts; valid prose can
  * still release as best effort. Tool calls require completed mandatory approval.
  * Recovery requests text only when nothing usable exists. Cancellation never
- * publishes late private output. Ordinary repair stops early; the unusable-output
- * recovery tail and explicit extended refinement remain capped at ten attempts.
+ * publishes late private output. A Jev-guided turn compares four private
+ * candidates in two parallel pairs. Other judges keep the ordinary repair loop.
  */
 import { TeachingDraftSession } from "./teaching-drafts/session.js";
 import type { JudgementCaller, JudgementUsage } from "./contracts.js";
@@ -19,6 +19,9 @@ import type { ActivitySelectionReceipt } from "./activity-learning.js";
 import type { ActivitySelection, ActivitySelectionInput, ReleasedActivitySelection } from "./activity-observations.js";
 import type { StateComposition } from "./state-metrics.js";
 import type { TeachingDraftSelectionRule } from "./teaching-selection.js";
+import type { TeachingDraftPairReview } from "./teaching-drafts/pair-review.js";
+
+export type { TeachingDraftPairReview } from "./teaching-drafts/pair-review.js";
 
 export type TeachingDraftReasoning = "off" | "low" | "medium" | "high";
 export type TeachingDraftStandard = "concise" | "supported" | "deep";
@@ -33,6 +36,10 @@ export interface TeachingDraftFeedback {
   readonly instruction: string;
 }
 export interface TeachingDraftAttempt {
+  /** This candidate was explicitly written as a visible reply to the existing ungraded question. */
+  readonly feedbackOnly?: true;
+  /** This candidate was asked to collect the learner's next answer in one OpenUI Question. */
+  readonly predictionQuestionOnly?: true;
   /** Content-free provenance; the merged response receives its own full review. */
   readonly synthesisSourceAttempts?: readonly number[];
   /** Only the text ending at the checkpoint was reviewed for publication. */
@@ -85,7 +92,19 @@ export interface TeachingWindowSlide {
   readonly before: StateComposition;
   readonly after: StateComposition | null;
 }
+/** The final judge's observed preference between the two eligible pair nominees. */
+export interface TeachingDraftFinalComparison {
+  readonly candidateAttempts: readonly [number, number];
+  readonly preferredAttempt: number;
+  readonly probabilities: Readonly<Record<string, number>>;
+  readonly confidence?: number;
+  readonly model: string;
+}
 export interface TeachingDraftSnapshot {
+  /** Only present on release after a valid two-nominee vote. The published winner is selectedAttempt. */
+  readonly finalComparison?: TeachingDraftFinalComparison;
+  /** Present on Jev's paired path. Includes only attempt IDs, judgements and timing. */
+  readonly pairReviews?: readonly TeachingDraftPairReview[];
   readonly synthesisSourceAttempts?: readonly number[];
   /** Preference from a policy captured before this turn; no background job is awaited. */
   readonly backgroundActivity?: BackgroundActivityGuidance;
@@ -124,6 +143,10 @@ export interface TeachingDraftReceipt extends TeachingDraftSnapshot {
 export interface TeachingDraftGenerationInput {
   /** The prompt variant actually sent for this attempt. */
   readonly variant?: TeachingDraftVariant;
+  /** One independent reply to the current ungraded question. Hosts omit tool schemas for this candidate. */
+  readonly feedbackOnly?: true;
+  /** One new, ungraded OpenUI Question. Hosts keep the OpenUI grammar and omit tools for this candidate. */
+  readonly predictionQuestionOnly?: true;
   /** Last-budget recovery when no usable response exists; hosts must disable tool dispatch. */
   readonly textOnlyRecovery?: true;
   /** Private, untrusted source material. Never publish or copy into diagnostics. */

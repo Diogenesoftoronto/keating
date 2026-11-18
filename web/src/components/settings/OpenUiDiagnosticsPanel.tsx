@@ -9,6 +9,10 @@ import { OPENUI_TURN_VIEWS, OpenUiUsageView, type ObservationStage, type OpenUiT
 import "./openui-diagnostics.css";
 
 const recordings = {
+  "jev-pairs-review": { label: "Jev pair reviews · reconstructed final decisions", stage: "rendered", load: () => import("../../keating/openui/examples/jev-pairs-review.json") },
+  "jev-pairs-prediction": { label: "Jev pair reviews · two predictions", stage: "rendered", load: () => import("../../keating/openui/examples/jev-pairs-prediction.json") },
+  "jev-pairs": { label: "Jev pair reviews · five classroom turns", stage: "rendered", load: () => import("../../keating/openui/examples/jev-pairs.json") },
+  "jev-pairs-first": { label: "Jev pair reviews · first classroom check", stage: "rendered", load: () => import("../../keating/openui/examples/jev-pairs-first.json") },
   review: { label: "Final review · selected tutor replies", stage: "selected", load: () => import("../../keating/openui/examples/final-review.json") },
   "assessment-opt-out": { label: "When the learner declined a quiz", stage: "selected", load: () => import("../../keating/openui/examples/assessment-opt-out.json") },
   "review-first": { label: "Final review · original drafts with two decision models", stage: "compiled", load: () => import("../../keating/openui/examples/final-review-first.json") },
@@ -44,6 +48,10 @@ export async function loadOpenUiRecordingLink(params: URLSearchParams, fallback?
   };
 }
 const descriptions: Record<Source, string> = {
+  "jev-pairs-review": "The paper and sock classroom turns with each draft’s review issues and the final Jev scores reconstructed from their saved provider records. The original browser exports are available under Two predictions.",
+  "jev-pairs-prediction": "Two learners wanted to guess before hearing the explanation. Open a turn to see which drafts used the Question prompt and which answer reached the classroom.",
+  "jev-pairs": "Two learners got feedback on the open tile question. Another used a train-speed slider. Inspect which alternatives reached the classroom and why the paper-fold prediction was withheld.",
+  "jev-pairs-first": "Two MiniMax classroom replies with four private drafts per turn. The copper answer was published. All four drafts on the tile question failed their individual checks.",
   "assessment-opt-out": "Four released simulations for a learner who asked to change the flow and declined a quiz. Inspect which replies still asked for a prediction.",
   review: "Guided replies and eligible follow-ups in the final synthetic comparison. Switch to original drafts to compare either decision model with the same unguided tutor.",
   "review-first": "The first response to each of 24 assigned tutor and prompt combinations. Includes a blind assessment and matched unguided controls. Private draft and classroom delivery are measured separately.",

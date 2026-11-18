@@ -1,0 +1,49 @@
+{
+  "study": "paired-feedback",
+  "setting": "Local release-worktree Chromium classroom with live Jev and MiniMax",
+  "cohort": [
+    {
+      "case": "typed-tile-answer",
+      "learner": "My guess is round, because three of the four tiles are round.",
+      "opportunity": "Confirm that round is more likely because three of four tiles are round. Do not replace the open Question or grade an unsubmitted form.",
+      "historicalReceipt": "docs/benchmarks/jev-parallel-pairs-2026-11-18/typed-tile-answer.json",
+      "historicalReceiptSha256": "96e4b483744c75a7591ae8bfeadec324470a81adc466d75f56fd96b2e74a18c0",
+      "parentQuestionReceiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015"
+    },
+    {
+      "case": "copper-symbol",
+      "learner": "What is the chemical symbol for copper? Just the symbol, please.",
+      "opportunity": "Give the symbol Cu. The learner expressly wants only the symbol.",
+      "historicalReceipt": "docs/benchmarks/jev-parallel-pairs-2026-11-18/copper-symbol.json",
+      "historicalReceiptSha256": "9034064e1aff409adef8c6d67ba202286695e8fc1062cf1873128d13ad73567b",
+      "parentQuestionReceiptSha256": null
+    },
+    {
+      "case": "wrong-tile-answer",
+      "learner": "I think square is more likely, because it was dropped in first. Is that right?",
+      "opportunity": "Explain that the first tile dropped in does not determine a random draw and that round has three chances in four. Leave the existing Question available.",
+      "historicalReceipt": null,
+      "historicalReceiptSha256": null,
+      "parentQuestionReceiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015"
+    },
+    {
+      "case": "toy-train",
+      "learner": "I’m testing a toy train on a straight track for 8 seconds. I’d like to change its speed in metres per second and see straight away how far it travels. No quiz, please.",
+      "opportunity": "The learner expects to vary speed and immediately see distance change over eight seconds. Look for a usable control and a correctly updating distance without an assessment.",
+      "historicalReceipt": null,
+      "historicalReceiptSha256": null,
+      "parentQuestionReceiptSha256": null
+    },
+    {
+      "case": "paper-fold",
+      "learner": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has.",
+      "opportunity": "Provide a usable question or grouped question before revealing four layers. A native page can qualify separately only with evidence of an actual usable control. A prose question alone misses the interface target.",
+      "historicalReceipt": "docs/benchmarks/openui-audit-2026-11-18/final-review/study/receipts/paper-fold--minimax--jev.json",
+      "historicalReceiptSha256": "c17061fc3d1b69579db1120cebdb7dc4c3be8d21002010f5ddf60888d285d533",
+      "parentQuestionReceiptSha256": null
+    }
+  ],
+  "questionAction": "On a released paper-fold Question, select four layers or type the answer and attempt one local submission. Further inference is closed.",
+  "simulationAction": "On a released toy-train slider, change the speed one step and record the rendered input and readouts.",
+  "signal": "Four fresh tutor requests, two independently observed overlapping Jev comparisons, public text, selected/rendered controls and budget are recorded for each scheduled turn."
+}

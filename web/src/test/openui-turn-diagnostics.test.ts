@@ -112,7 +112,12 @@ describe("durable content-free OpenUI turn observation", () => {
       decisionModel: "jev-1.fixture", reply: "released", attempted: true, compiled: ["question-group"], selected: ["question-group"], rendered: null,
       selection: { attempt: 1, review: "verified", rule: "none" },
       guidance: { source: "jev", action: "create", delivered: true, targets: ["question"] } });
-    expect(observed?.draftAttempts).toBeGreaterThanOrEqual(1);
+    expect(observed?.draftAttempts).toBe(4);
+    expect(observed?.pairReviews?.map(({pair, candidateAttempts}) => [pair, candidateAttempts])).toEqual([[1,[1,2]], [2,[3,4]]]);
+    expect(events.at(-1)?.draft_pair_reviews).toEqual(observed?.pairReviews);
+    expect(observed?.pairReviews?.[0]?.candidateIssueIds).toBeDefined();
+    expect(observed?.finalComparison).toMatchObject({ candidateAttempts: [1,3], preferredAttempt: 1, model: "jev-1.fixture" });
+    expect(events.at(-1)?.draft_final_comparison).toEqual(observed?.finalComparison);
     expect(events.map(item => item.reply_outcome)).toEqual(["pending", "released"]);
     expect(events[0]?.cue_kind).toBe("implicit-action");
     const session = diagnosticConversationId(sessionId);
@@ -295,6 +300,8 @@ describe("durable content-free OpenUI turn observation", () => {
         checks: [
           { id: "checkpoint_not_interactive", status: "fail", severity: "minor", source: "jev", probability: 1 },
           { id: "PRIVATE dynamic content", status: "fail", severity: "minor", source: "jev", probability: 1 },
+          { id: "prediction_question_format", status: "fail", severity: "major", source: "deterministic", probability: null },
+          { id: "question_feedback_format", status: "fail", severity: "major", source: "deterministic", probability: null },
           { id: "checkpoint_answer_leaked", status: "fail", severity: "major", source: "jev", probability: .74, applicability: "standalone-direct-answer" },
         ] }] };
     for (const finalModel of ["fixture-tutor", "second-tutor"]) {
@@ -320,7 +327,9 @@ describe("durable content-free OpenUI turn observation", () => {
     ]);
     for (const turn of store.getRows()) {
       expect(turn.selection).toBeUndefined(); // A selected private tool round cannot identify the later public answer's winner.
-      expect(turn).toMatchObject({ draftAttempts: 2, gateIssues: ["checkpoint_not_interactive"], decisionModel: "fixture-local-planner",
+      expect(turn.pairReviews).toBeUndefined();
+      expect(turn.finalComparison).toBeUndefined();
+      expect(turn).toMatchObject({ draftAttempts: 2, gateIssues: ["checkpoint_not_interactive", "prediction_question_format", "question_feedback_format"], decisionModel: "fixture-local-planner",
         guidance: { source: "other", action: "none", targets: [], delivered: true } });
     }
     obs.dispose();

@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import {
-  NATIVE_PAGE_STAGES, OPENUI_DIAGNOSTIC_CUES, OPENUI_DIAGNOSTIC_MODES, findUnmetOpenUiCues, isOpenUiDiagnosticInterface, matchesLearnerInterface, matchesSelectedLearnerAction, openUiCheckpointAfterOptOut, openUiDiagnosticLoss, summarizeOpenUiDiagnostics,
+  NATIVE_PAGE_STAGES, OPENUI_DIAGNOSTIC_CUES, OPENUI_DIAGNOSTIC_MODES, findUnmetOpenUiCues, isOpenUiDiagnosticInterface, matchesLearnerInterface, matchesSelectedLearnerAction, openUiCheckpointAfterOptOut, openUiDiagnosticLoss, queryOpenUiDiagnosticTurns, summarizeOpenUiDiagnostics,
   type OpenUiDiagnosticFilter, type OpenUiDiagnosticRate, type OpenUiDiagnosticSummary, type OpenUiDiagnosticTurn,
 } from "@keating/learner-contracts";
 import { downloadTextFile } from "../../lib/browser-download";
+import { PairReviewDetails } from "../PairReviewDetails";
 
 export type ObservationStage = "compiled" | "selected" | "rendered";
-export const OPENUI_TURN_VIEWS = ["all", "unmet", "combined-unmet", "action-unmet", "native", "editable-code", "selection", "render", "withheld", "assessment-opt-out"] as const;
+export const OPENUI_TURN_VIEWS = ["all", "unmet", "combined-unmet", "action-unmet", "native", "editable-code", "selection", "render", "withheld", "assessment-opt-out", "pair-reviews"] as const;
 export type OpenUiTurnView = typeof OPENUI_TURN_VIEWS[number];
 const STAGES: Record<ObservationStage, string> = { compiled: "In a draft", selected: "In the final reply", rendered: "Shown in chat" };
 const CUES = { "implicit-action": "Implicit learning cue", "explicit-interface": "Explicit interface request", "direct-text": "Direct text request", none: "No detected cue", unknown: "Unknown cue" };
@@ -155,9 +156,10 @@ function TurnDetails({ row, unmet }: {row: OpenUiDiagnosticTurn; unmet: boolean}
     {row.guidance?.reason && <><dt>Decision reason</dt><dd>{row.guidance.reason}</dd></>}
     {row.guidance?.codeLanguage && <><dt>Offered code language</dt><dd>{row.guidance.codeLanguage}</dd></>}
     <dt>Private drafts</dt><dd>{row.draftAttempts ?? "Unobserved"}</dd>
+    {row.pairReviews && <><dt>Jev pair reviews</dt><dd><PairReviewDetails reviews={row.pairReviews} finalComparison={row.finalComparison} /></dd></>}
     <dt>Released draft</dt><dd>{row.selection
       ? `Attempt ${row.selection.attempt} · ${row.selection.review === "verified" ? "Passed review" : "Best effort, unverified"}`
-      : "Unobserved"}</dd>
+      : row.reply === "withheld" ? "None · reply withheld" : "Unobserved"}</dd>
     {row.selection && <><dt>Prediction selection rule</dt><dd>{row.selection.rule === "requested-prediction-over-prose"
       ? "The requested answer field took precedence over a prose question."
       : row.selection.rule === "presentation-only-checkpoint-retained" ? "The answer field was retained after a presentation-only review finding."
@@ -177,7 +179,11 @@ function TurnDetails({ row, unmet }: {row: OpenUiDiagnosticTurn; unmet: boolean}
     {row.assessment && <><dt>Learner declined assessment</dt><dd>{row.assessment.optOut ? "Yes, explicitly" : "No explicit opt-out recognised"}</dd>
       <dt>Checkpoint signals in reply</dt><dd>{row.assessment.checkpoints === null ? "Unobserved" : row.assessment.checkpoints.length
         ? row.assessment.checkpoints.map(signal => CHECKPOINTS[signal]).join(", ") : "None"}</dd></>}
-    {row.gateIssues && <><dt>Review issues</dt><dd>{types(row.gateIssues)}</dd></>}
+    {row.gateIssues && <><dt>Review issues across all drafts</dt><dd>{row.gateIssues.length ? row.gateIssues.map(issue => {
+      if (issue === "question_feedback_format") return "The feedback draft lacked a standalone text reply (" + issue + ")";
+      if (issue === "prediction_question_format") return "The prediction draft lacked one standalone Question without hints or an answer key (" + issue + ")";
+      return issue;
+    }).join(", ") : "None"}</dd></>}
     {row.fit && <><dt>Assessment</dt><dd>{row.fit.passed === null ? "Unknown" : row.fit.passed ? "Passed" : "Failed"} · {row.fit.source}</dd></>}
     <dt>Conversation</dt><dd><code>{row.conversationId}</code></dd><dt>Turn ID</dt><dd><code>{row.turnId}</code></dd>
   </dl></details>;
@@ -214,8 +220,14 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
   const componentRates = summary.components.filter(c => isOpenUiDiagnosticInterface(c.key) && c[stage].numerator)
     .sort((a, b) => b[stage].numerator - a[stage].numerator);
   const unmet = useMemo(() => loss === "unmet" ? findUnmetOpenUiCues(turns, filter) : null, [loss, turns, filter]);
+  const pairs = useMemo(() => {
+    if (loss !== "pair-reviews") return null;
+    const result = queryOpenUiDiagnosticTurns(turns, { ...filter, view: loss, limit: 1 });
+    return "comparedPairs" in result ? result : null;
+  }, [loss, turns, filter]);
   const drillRows = unmet?.turns ?? (loss === "all" ? visible : visible.filter(row => {
     if (loss === "native") return row.nativePageRequested === true || NATIVE_PAGE_STAGES.some(key => row.nativePage?.[key] === true);
+    if (loss === "pair-reviews") return row.pairReviews !== undefined;
     if (loss === "editable-code") return !!row.editableCode?.length;
     if (loss === "assessment-opt-out") return openUiCheckpointAfterOptOut(row) === true;
     if (loss === "combined-unmet" || loss === "action-unmet") return (row.cue.kind === "explicit-interface" || row.cue.kind === "implicit-action")
@@ -294,6 +306,7 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
         <option value="editable-code">Final reply with editable code</option>
         <option value="action-unmet">Missed learner action</option>
         <option value="withheld">Reply withheld</option>
+        <option value="pair-reviews">Jev pair reviews</option>
         <option value="assessment-opt-out">Checkpoint after an assessment opt-out</option>
         <option value="selection">Interface compiled, then dropped</option>
         <option value="render">Interface selected, then missing at presentation</option>
@@ -301,7 +314,16 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
       {unmet ? <p className="ou-muted">{describeUnmetCoverage(unmet)}
         {unmet.matchingTurns > 0 && " Later matches appear under “Replies until a matching interface”."}</p>
         : loss === "action-unmet" ? <p className="ou-muted">{drillRows.length} missed on this turn out of {summary.overall.learnerActionSelected.denominator} with a known outcome · {summary.overall.learnerActionSelected.unknown} unknown.</p>
-        : <p className="ou-muted">{drillRows.length} matching {drillRows.length === 1 ? "turn" : "turns"}</p>}
+        : pairs ? <div className="ou-muted" aria-label="Pair review coverage">
+          <p>Compared pairs · {pairs.comparedPairs}. Concurrent reviews · {pairs.turnsWithConcurrentReviews} of {pairs.turnsWithMeasuredOverlap} timed turns.</p>
+          {Boolean(pairs.incompletePairs || pairs.unavailablePairs || pairs.unrecordedPairs || pairs.turnsWithoutPairRecords) &&
+            <p>{[
+              pairs.incompletePairs && `Incomplete pairs · ${pairs.incompletePairs}`,
+              pairs.unavailablePairs && `Unavailable comparisons · ${pairs.unavailablePairs}`,
+              pairs.unrecordedPairs && `Missing pair results · ${pairs.unrecordedPairs}`,
+              pairs.turnsWithoutPairRecords && `Turns without pair records · ${pairs.turnsWithoutPairRecords}`,
+            ].filter(Boolean).join(". ")}.</p>}
+        </div> : <p className="ou-muted">{drillRows.length} matching {drillRows.length === 1 ? "turn" : "turns"}</p>}
       {drillRows.slice(0, limit).map(r => <TurnDetails key={JSON.stringify([r.conversationId, r.turnId])} row={r} unmet={unmet !== null} />)}
       {limit < drillRows.length && <button type="button" onClick={() => setLimit(n => n + 25)}>Show more turns</button>}
     </details>

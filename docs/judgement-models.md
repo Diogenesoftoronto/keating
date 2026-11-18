@@ -13,6 +13,14 @@ The judgement model reviews work independently of the tutor model. Changing your
 
 If account access is unavailable in this app configuration, model selection cannot enable it. Use a build configured for Not Organic or the desktop local option. If authorization expires, reconnect. If a review still fails, check account access and available funds before retrying.
 
+## How Jev reviews a teaching turn
+
+On a Jev-guided classroom turn, the tutor produces four private alternatives. Jev reviews each and compares the first two and the last two concurrently. Each pair can nominate one eligible reply. If both pairs have a finalist, Keating compares them for publication. A preference alone cannot release a reply that failed its individual checks. When a comparison is unavailable, Keating can still nominate a member that passed the individual checks. An explicit draft limit in a research runner can reduce the number generated.
+
+When the learner answers an open Question, one draft in each pair can focus on confirming or correcting that answer. When the learner wants to predict something before hearing the explanation, one draft in each pair can offer a single Question and wait for the response. The other two drafts follow the full teaching plan.
+
+In **Settings → Diagnostics → Interface use**, choose **Jev pair reviews** to inspect the comparisons, eligibility, prompt assignments, policy version and timing. The final reply identifies the selected draft. [Inspect a recorded classroom turn](https://keating.help/reports/teaching-interfaces/diagnostics.html?source=jev-pairs&view=pair-reviews)
+
 ## Your TypeSafe API key
 
 Choose **Jev · your TypeSafe API key** in **Settings → Providers & Models → Judgement**. Enter your TypeSafe model ID (default `jev-latest`), paste your API key, and choose **Save API key**. You can replace or remove it there later. This reviewer is independent of your tutor and does not require Not Organic authorization or credit.

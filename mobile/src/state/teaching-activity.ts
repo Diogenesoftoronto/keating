@@ -134,7 +134,7 @@ export async function prepareActivityRound(env: ActivityEnv, turn: TurnIdentity,
   round.privateRound = createMobileTeachingDraftRound({ judge: judgement.call, current, sessionId,
     activityLearningMode: activityMode, backgroundActivityPolicy,
     learnerContext: env.learnerContextRef.current,
-    activeDocument,
+    activeDocument, questionJournal: id => repository.uiActions.getJournal(id),
     evidence: async () => {
       await drainRepositoryWrites(env.repo.writeTail);
       const snapshot = await repository.records.snapshot();

@@ -249,6 +249,27 @@ function parseReply(text: string): ParsedReply {
   return { valid, documents, codeLanguages };
 }
 
+/** A feedback-only alternative must reach the learner in the message itself. Use the same UI grammar as adherence. */
+export function isVisibleQuestionFeedback(reply: TeachingPolicyReply): boolean {
+  if (!reply.text.trim() || reply.toolCalls.length) return false;
+  const parsed = parseReply(reply.text);
+  return parsed.valid && parsed.documents.length === 0;
+}
+
+/** Inspect the normal compiled document. Answer disclosure in the actual wording still needs semantic review. */
+export function isStandaloneCheckpointQuestion(reply: TeachingPolicyReply): boolean {
+  if (reply.toolCalls.length || !/^\s*```(?:openui|openui-lang|keating-ui)(?:[ \t][^\n]*)?\r?\n/u.test(reply.text)) return false;
+  const parsed = parseReply(reply.text);
+  const entry = parsed.documents[0];
+  if (!parsed.valid || parsed.documents.length !== 1 || !entry || reply.text.slice(entry.end).trim()) return false;
+  const node = entry.document.nodes[0];
+  if (entry.document.nodes.length !== 1 || node?.type !== "question-group" || node.questions.length !== 1) return false;
+  const item = node.questions[0]!;
+  return (item.kind === "text" || item.kind === "choice" && (item.choices?.length ?? 0) >= 2)
+    && Boolean(item.prompt.trim()) && item.prompt !== "Question" && !item.hint && !item.explanation && !item.rubric
+    && !item.mathProblem && !item.correctAnswer && !item.correctAnswers?.length && !item.correctMatches?.length;
+}
+
 const checkpointKinds = new Set(["question", "question-group", "quiz", "deck", "exam"]);
 
 export interface AssessmentOptOutDraft {

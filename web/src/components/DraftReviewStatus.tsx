@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { DraftContentInspection } from "./DraftContentInspection";
+import { PairReviewDetails } from "./PairReviewDetails";
 import { JudgementStateInspector } from "./JudgementStateInspector";
 import { DraftAttentionList, DraftCheckGrid, DraftStageStepper, DraftTimeBar, DraftTimeline, useDraftElapsed } from "./DraftProgress";
 import { diagnoseDraft } from "../keating/judgement/draft-progress";
@@ -60,7 +61,9 @@ export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = fa
         : describeReviewCause(snapshot.reason ?? "") ?? (snapshot.attempts.length ? "The drafts did not pass all checks. Try a more focused request or another model."
         : "The reviewer is unavailable. Check the judgement model in Settings → Providers & Models, then retry.")
       : combining ? "Combining the completed drafts into one coherent response. The merged response still awaits its own review."
-      : descriptions[snapshot.phase];
+      : snapshot.pairReviews && (snapshot.phase === "drafting" || snapshot.phase === "checking")
+        ? "Candidate replies are generated and checked independently."
+        : descriptions[snapshot.phase];
   if (!showDeveloperDetails) return null;
   const feedback = (kind: TeachingDraftFeedbackKind) => recordTeachingDraftFeedback(sessionId, status.id, kind);
   const copy = async () => {
@@ -73,7 +76,7 @@ export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = fa
     <div role="status" aria-live="polite" aria-atomic="true" className={css({ display: "grid", gap: ".375rem" })}>
       <div className={css({ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" })}>
         <span className={css({ fontSize: ".875rem", fontWeight: 600, marginRight: "auto" })}>{bestEffort ? "Best available response" : combining ? "Combining completed drafts" : titles[snapshot.phase]}</span>
-        {active && snapshot.attempt > 0 && <span className={chip}>Attempt {snapshot.attempt} of {snapshot.maxAttempts}</span>}
+        {active && snapshot.attempt > 0 && <span className={chip}>{snapshot.pairReviews ? `${snapshot.attempts.length} of ${snapshot.maxAttempts} drafts finished` : `Attempt ${snapshot.attempt} of ${snapshot.maxAttempts}`}</span>}
         <span className={chip}>{snapshot.judgeModel ?? "no reviewer"}</span>
         <span className={chip}>{snapshot.reasoning} reasoning · {snapshot.standard}</span>
       </div>
@@ -101,6 +104,7 @@ export function DraftReviewStatus({ sessionId, status, showDeveloperDetails = fa
     <details>
         <summary className={detail}>Developer diagnostics</summary>
         <JudgementStateInspector snapshot={snapshot} />
+        {snapshot.pairReviews && <PairReviewDetails reviews={snapshot.pairReviews} finalComparison={snapshot.finalComparison} />}
         <p className={muted}>Uncalibrated probability estimates. Evidence and runtime checks determine eligibility; quality and teaching style guide revision and selection.</p>
         {snapshot.reason && <p className={muted}>Outcome: {snapshot.reason}</p>}
         {snapshot.synthesisSourceAttempts?.length ? <p className={muted}>Source attempts: {snapshot.synthesisSourceAttempts.join(", ")}</p> : null}

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.2
+
+- On each Jev-guided classroom turn, the tutor writes four private replies. Jev checks each reply and compares drafts 1–2 and 3–4 concurrently. Keating publishes one eligible answer and executes only its tools.
+- A learner answering an open Question can receive feedback in chat. A learner who wants to guess before hearing the explanation can get a Question field. In each case, one draft per pair focuses on that action while the others retain the usual teaching tools.
+- Settings, the CLI and WebMCP now expose which drafts Jev preferred, which passed their individual checks and which reached the final comparison. Each recorded pair has timing information. [Inspect the classroom recordings](https://keating.help/reports/teaching-interfaces/diagnostics.html?source=jev-pairs&view=pair-reviews)
+
 ## 4.2.1
 
 - When a learner wants to try a prediction, Keating can keep a working Question from an eligible tutor draft. A learner who answers the open Question in chat can receive feedback on that attempt.

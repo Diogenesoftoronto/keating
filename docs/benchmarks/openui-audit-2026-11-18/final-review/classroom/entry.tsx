@@ -114,7 +114,8 @@ function Classroom() {
     };
     const gated = options.live || options.followup ? withTeachingDraftGate(options.followup && !options.live
       ? async () => { throw Error("Offline planning probe has no tutor transport"); } : transport, {
-      sessionId, basePrompt:() => KEATING_SYSTEM_PROMPT, maxAttempts:options.followup && !options.live ? 1 : 3, timeoutMs:180_000,
+      sessionId, basePrompt:() => KEATING_SYSTEM_PROMPT,
+      ...(options.useGateDefaults ? {} : {maxAttempts:options.followup && !options.live ? 1 : 3, timeoutMs:180_000}),
       judgementModel:{id:"jev-1.14.0", requestTokens:64000, stateQuestionTokens:32000},
       ...(options.followup ? {evidence:async()=>({
         ...teachingDraftEvidence(await loadCompleteLearnerStartupContext(keatingStorage)),

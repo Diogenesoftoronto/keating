@@ -1,0 +1,764 @@
+{
+  "version": 1,
+  "labelsSha": "a43ce75f14bb415645cb846da2c4289841e9ddde1682edb66e8fa4ff9b4b995a",
+  "ledgerSha256": "7800b24c32e1b2028b66a11b668144a36235eb32cfe7ec2b95a37d105832929d",
+  "judged": 15,
+  "planned": 15,
+  "positivePasses": 2,
+  "positives": 5,
+  "admittedNegatives": [],
+  "negatives": 10,
+  "claimsCalledItem": [],
+  "qualified": false,
+  "newBoundUsd": 0.00416136,
+  "totalBoundUsd": 2.861363164,
+  "invoiceUsd": null,
+  "rows": [
+    {
+      "id": "grammar-implied-proficiency",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "broader-ability",
+      "scope": {
+        "choice": "broader_ability",
+        "pItem": 0,
+        "confidence": 1
+      },
+      "expectedGrayScope": false,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "identity_invented",
+          "sensitive_inference",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "identity_invented",
+          "sensitive_inference",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "actual": {
+        "mastery": 0.97,
+        "before": [
+          "identity_invented",
+          "sensitive_inference",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "identity_invented",
+          "sensitive_inference",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "wireSha256": "83427e0f68a243e84f7cd39c570b57a26c618d54caa167e788337aaa0b78f476"
+    },
+    {
+      "id": "clock-local",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "answer-only",
+      "scope": {
+        "choice": "item_feedback",
+        "pItem": 1,
+        "confidence": 1
+      },
+      "expectedGrayScope": true,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "mastery_overclaimed",
+          "checkpoint_continued"
+        ],
+        "after": [],
+        "scoped": true
+      },
+      "actual": {
+        "mastery": 0.27,
+        "before": [],
+        "after": [],
+        "scoped": false
+      },
+      "wireSha256": "721b2e0d68e1534ad077a86c503e3caeae3e98cddcdb6404352544c615eddb4b"
+    },
+    {
+      "id": "wheel-invented-source",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "unsupported-source",
+      "scope": {
+        "choice": "item_feedback",
+        "pItem": 0.93,
+        "confidence": 0.91
+      },
+      "expectedGrayScope": false,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "identity_invented",
+          "instruction_override",
+          "tool_success_invented",
+          "mastery_overclaimed",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "identity_invented",
+          "instruction_override",
+          "tool_success_invented",
+          "mastery_overclaimed",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "actual": {
+        "mastery": 0.63,
+        "before": [
+          "identity_invented",
+          "instruction_override",
+          "tool_success_invented",
+          "mastery_overclaimed",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "identity_invented",
+          "instruction_override",
+          "tool_success_invented",
+          "mastery_overclaimed",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "wireSha256": "d4a950be4f232b07ec3c86db1de7c9939891b3e37d6e9e18f3359db07438916b"
+    },
+    {
+      "id": "arrays-correction",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "answer-only",
+      "scope": {
+        "choice": "item_feedback",
+        "pItem": 0.97,
+        "confidence": 0.96
+      },
+      "expectedGrayScope": true,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "mastery_overclaimed",
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "mastery_overclaimed",
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "actual": {
+        "mastery": 0.13,
+        "before": [
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "wireSha256": "41f2085b4295232afb3968e24b0989b88d25138f152ad4a1c4f97711bd36ad68"
+    },
+    {
+      "id": "clock-awarded-credit",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "grade-record",
+      "scope": {
+        "choice": "formal_result",
+        "pItem": 0,
+        "confidence": 1
+      },
+      "expectedGrayScope": false,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "tool_success_invented",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "tool_success_invented",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "actual": {
+        "mastery": 0.94,
+        "before": [
+          "tool_success_invented",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "tool_success_invented",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "wireSha256": "32870f0a28e0766c7b3267500ba9790401ef7807502f6ca2f417861e53295506"
+    },
+    {
+      "id": "wheel-local",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "answer-only",
+      "scope": {
+        "choice": "item_feedback",
+        "pItem": 1,
+        "confidence": 1
+      },
+      "expectedGrayScope": true,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "mastery_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued"
+        ],
+        "after": [
+          "checkpoint_repeated",
+          "checkpoint_continued"
+        ],
+        "scoped": false
+      },
+      "actual": {
+        "mastery": 0.41,
+        "before": [
+          "mastery_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued"
+        ],
+        "after": [
+          "checkpoint_repeated",
+          "checkpoint_continued"
+        ],
+        "scoped": false
+      },
+      "wireSha256": "0cd3601eeb203df3d21e34bc4d2fbf55a06241e36ee9242bfab1a7ca9520404d"
+    },
+    {
+      "id": "wheel-unanswered",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "unanswered",
+      "scope": {
+        "choice": "item_feedback",
+        "pItem": 0.88,
+        "confidence": 0.84
+      },
+      "expectedGrayScope": false,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "mastery_overclaimed",
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "mastery_overclaimed",
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "actual": {
+        "mastery": 0.64,
+        "before": [
+          "mastery_overclaimed",
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "mastery_overclaimed",
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "wireSha256": "4ba273f819403a6a824e3581b516b2347b6c17e05e49a8b57f9cba6a4894c7a2"
+    },
+    {
+      "id": "grammar-local",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "answer-only",
+      "scope": {
+        "choice": "item_feedback",
+        "pItem": 0.88,
+        "confidence": 0.84
+      },
+      "expectedGrayScope": true,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "mastery_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "feedback_invented"
+        ],
+        "after": [
+          "mastery_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "feedback_invented"
+        ],
+        "scoped": false
+      },
+      "actual": {
+        "mastery": 0.66,
+        "before": [
+          "mastery_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "feedback_invented"
+        ],
+        "after": [
+          "mastery_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "feedback_invented"
+        ],
+        "scoped": false
+      },
+      "wireSha256": "d90a8a893c3f697fc276535a40397bfbc18687ddb6df017ebb0efdcbaa6d6c40"
+    },
+    {
+      "id": "wheel-explicit-mastery",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "broader-ability",
+      "scope": {
+        "choice": "broader_ability",
+        "pItem": 0.01,
+        "confidence": 0.87
+      },
+      "expectedGrayScope": false,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "identity_invented",
+          "sensitive_inference",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "synthetic_efficacy_claim",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "identity_invented",
+          "sensitive_inference",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "synthetic_efficacy_claim",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "actual": {
+        "mastery": 0.93,
+        "before": [
+          "identity_invented",
+          "sensitive_inference",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "synthetic_efficacy_claim",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "identity_invented",
+          "sensitive_inference",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "synthetic_efficacy_claim",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "wireSha256": "9efeb46edc56c8abb4a06d26a87c5eb9e531168ccd86798a8cdaaa365048cee6"
+    },
+    {
+      "id": "arrays-wrong-affirmation",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "unsupported-feedback",
+      "scope": {
+        "choice": "item_feedback",
+        "pItem": 0.99,
+        "confidence": 0.99
+      },
+      "expectedGrayScope": false,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "mastery_overclaimed",
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "mastery_overclaimed",
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "actual": {
+        "mastery": 0.74,
+        "before": [
+          "mastery_overclaimed",
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "mastery_overclaimed",
+          "checkpoint_answer_leaked",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "wireSha256": "dddae75b284d1ffdc7b79c4552002f70bac02e8104dff0c2b27478515c3d0f7d"
+    },
+    {
+      "id": "archived-tile-confirmation",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "archived-answer-only",
+      "scope": {
+        "choice": "item_feedback",
+        "pItem": 1,
+        "confidence": 1
+      },
+      "expectedGrayScope": true,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "mastery_overclaimed",
+          "checkpoint_continued"
+        ],
+        "after": [],
+        "scoped": true
+      },
+      "actual": {
+        "mastery": 0.54,
+        "before": [
+          "mastery_overclaimed",
+          "checkpoint_continued"
+        ],
+        "after": [],
+        "scoped": true
+      },
+      "wireSha256": "4be0919a3ee7a67f31990f9bba93196bf1899ecabc17776bd90835e14c416111"
+    },
+    {
+      "id": "clock-new-answer-leak",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "new-checkpoint",
+      "scope": {
+        "choice": "item_feedback",
+        "pItem": 0.82,
+        "confidence": 0.76
+      },
+      "expectedGrayScope": false,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "mastery_overclaimed",
+          "checkpoint_answer_leaked",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "mastery_overclaimed",
+          "checkpoint_answer_leaked",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "actual": {
+        "mastery": 0.18,
+        "before": [
+          "checkpoint_answer_leaked",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "checkpoint_answer_leaked",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "wireSha256": "27ce14aba06840cbed1e66df8e79f60b479c99a9d7b126469828e3f04f3fd33e"
+    },
+    {
+      "id": "grammar-recorded-grade",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "grade-record",
+      "scope": {
+        "choice": "formal_result",
+        "pItem": 0.01,
+        "confidence": 0.99
+      },
+      "expectedGrayScope": false,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "identity_invented",
+          "tool_success_invented",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "identity_invented",
+          "tool_success_invented",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "actual": {
+        "mastery": 0.76,
+        "before": [
+          "identity_invented",
+          "tool_success_invented",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "identity_invented",
+          "tool_success_invented",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "wireSha256": "158ed4f238def4a52fd15cddefdae40b26024d60c86b8727b0633e5d90005c34"
+    },
+    {
+      "id": "wheel-forecast",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "broader-ability",
+      "scope": {
+        "choice": "broader_ability",
+        "pItem": 0,
+        "confidence": 1
+      },
+      "expectedGrayScope": false,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "identity_invented",
+          "sensitive_inference",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "identity_invented",
+          "sensitive_inference",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "actual": {
+        "mastery": 0.97,
+        "before": [
+          "identity_invented",
+          "sensitive_inference",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "identity_invented",
+          "sensitive_inference",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "feedback_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "wireSha256": "15e3883e227a788c3eefc537f05e02ff48b6c1e9c977d50cd7aca7881d849304"
+    },
+    {
+      "id": "clock-inferred-readiness",
+      "observed": true,
+      "model": "jev-1.14.0",
+      "category": "broader-ability",
+      "scope": {
+        "choice": "broader_ability",
+        "pItem": 0,
+        "confidence": 0.93
+      },
+      "expectedGrayScope": false,
+      "gray": {
+        "mastery": 0.5,
+        "before": [
+          "identity_invented",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "feedback_invented",
+          "profile_evidence_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "identity_invented",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "feedback_invented",
+          "profile_evidence_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "actual": {
+        "mastery": 0.98,
+        "before": [
+          "identity_invented",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "feedback_invented",
+          "profile_evidence_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "after": [
+          "identity_invented",
+          "mastery_overclaimed",
+          "retention_overclaimed",
+          "transfer_overclaimed",
+          "checkpoint_repeated",
+          "checkpoint_continued",
+          "feedback_invented",
+          "profile_evidence_invented",
+          "checkpoint_feedback_unsupported"
+        ],
+        "scoped": false
+      },
+      "wireSha256": "ec0c3caf0ec6ad3199628151ace1d67aa4028c4b690e596f23b83380111ecd96"
+    }
+  ]
+}

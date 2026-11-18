@@ -1,0 +1,161 @@
+{
+  "sourceSha256": "6db05d79d6e3c38d233faa751c7446d48d9e32802dfdf9abb2765e92480c0bbc",
+  "archive": "jev-paired-feedback-2026-11-18",
+  "expectedDecisionRouting": true,
+  "newProviderRequests": 0,
+  "cases": [
+    {
+      "case": "typed-tile-answer",
+      "planWireSha256": "df377dcd7d8a4dcd6131be9a3b97a56b6d93ec04eb2c429630bf97d80d4e9451",
+      "generations": [
+        {
+          "strategy": "reply-to-question",
+          "toolCount": 0
+        },
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        },
+        {
+          "strategy": "respond-to-reasoning",
+          "toolCount": 0
+        },
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        }
+      ],
+      "fixturePairOverlapMs": 40,
+      "review": "Archived matching candidate answers; local pair-choice double",
+      "exportedPairs": 2,
+      "replayedDisposition": "released",
+      "replayedRendered": []
+    },
+    {
+      "case": "copper-symbol",
+      "planWireSha256": "8a8029e56763831ee7a99a35c8e01d50b944f8ce8dca2e5573449b4003bfd1aa",
+      "generations": [
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        },
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        },
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        },
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        }
+      ],
+      "fixturePairOverlapMs": 40,
+      "review": "Archived matching candidate answers; local pair-choice double",
+      "exportedPairs": 2,
+      "replayedDisposition": "released",
+      "replayedRendered": []
+    },
+    {
+      "case": "wrong-tile-answer",
+      "planWireSha256": "ade7e825a20d77e8b3de012be1e9138d6a9670cc44901698dbe96860e065f2b9",
+      "generations": [
+        {
+          "strategy": "reply-to-question",
+          "toolCount": 0
+        },
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        },
+        {
+          "strategy": "respond-to-reasoning",
+          "toolCount": 0
+        },
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        }
+      ],
+      "fixturePairOverlapMs": 40,
+      "review": "Archived matching candidate answers; local pair-choice double",
+      "exportedPairs": 2,
+      "replayedDisposition": "released",
+      "replayedRendered": []
+    },
+    {
+      "case": "toy-train",
+      "planWireSha256": "21282c2b8945fc86c8b1653083563dfd9dfb0b1ee2863f14ee39008dfb25f586",
+      "generations": [
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        },
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        },
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        },
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        }
+      ],
+      "fixturePairOverlapMs": 39,
+      "review": "Archived matching candidate answers; local pair-choice double",
+      "exportedPairs": 2,
+      "replayedDisposition": "released",
+      "replayedRendered": [
+        "simulation"
+      ]
+    },
+    {
+      "case": "paper-fold",
+      "planWireSha256": "2afd82b41e48792af59bb9138fc604667beedf22c82eea3031fa486ebd9988d6",
+      "generations": [
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        },
+        {
+          "strategy": "collect-prediction",
+          "toolCount": 0
+        },
+        {
+          "strategy": "ordinary",
+          "toolCount": 10
+        },
+        {
+          "strategy": "collect-prediction",
+          "toolCount": 0
+        }
+      ],
+      "fixturePairOverlapMs": 40,
+      "review": "Archived matching candidate answers; local pair-choice double",
+      "exportedPairs": 2,
+      "replayedDisposition": "withheld",
+      "replayedRendered": []
+    }
+  ],
+  "locallySubmittedForms": [
+    {
+      "case": "paper-fold",
+      "source": "Earlier saved Flash/Jev Question",
+      "answer": "4",
+      "grading": "pending",
+      "score": null
+    },
+    {
+      "case": "sock-draw",
+      "source": "Explicit synthetic free-text Question",
+      "answer": "Blue, because two of the three socks are blue.",
+      "grading": "pending",
+      "score": null
+    }
+  ]
+}

@@ -26,6 +26,16 @@ describe("draft stages", () => {
 });
 
 describe("learner guidance", () => {
+  test("distinguishes concurrent alternatives from rewrites and total work from elapsed time", () => {
+    const writing = snapshot({ pairReviews: [], attempt: 4, maxAttempts: 4 });
+    expect(draftStages(writing)[1]?.label).toBe("Write");
+    expect(learnerDraftGuidance(writing, 1000).headline).toBe("Writing candidate replies");
+    const checks = [{...check("mastery_overclaimed","unknown"), probability:0.5}];
+    const findings = diagnoseDraft({...writing, elapsedMs:75000, attempts:[attempt(1,checks),attempt(2,checks)]});
+    expect(findings.map(item=>item.title)).toContain("1 check was inconclusive");
+    expect(findings.find(item=>item.title.includes("budget"))?.detail).toContain("combined");
+    expect(findings.map(item=>item.title)).not.toContain("1 check returned no verdict");
+  });
   test("says what is happening without review jargon", () => {
     expect(learnerDraftGuidance(snapshot({ phase: "checking" }), 3_000)).toMatchObject({ headline: "Checking the reply", slow: false });
   });

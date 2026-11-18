@@ -2,6 +2,7 @@ import {
   ASSESSMENT_CHECKPOINT_SIGNALS, EDITABLE_CODE_LANGUAGES, NATIVE_PAGE_STAGES, OPENUI_DIAGNOSTIC_CUES, OPENUI_DIAGNOSTIC_MODES, isOpenUiDiagnosticInterface, openUiMatchesTargets, parseOpenUiDiagnosticExport,
   type NativePageStage, type OpenUiDiagnosticCueKind, type OpenUiDiagnosticMode, type OpenUiDiagnosticTurn,
 } from "./openui-diagnostic-turn.js";
+import { pairReviewOverlapMs } from "./openui-pair-reviews.js";
 
 export * from "./openui-diagnostic-turn.js";
 
@@ -482,8 +483,8 @@ export const openUiDiagnosticQuerySchema = {
     decisionModel: { type: "string", description: "Exact decision model ID from byDecisionModel, or unknown when unrecorded." },
     cue: { type: "string", enum: OPENUI_DIAGNOSTIC_CUES },
     mode: { type: "string", enum: OPENUI_DIAGNOSTIC_MODES },
-    view: { type: "string", enum: ["summary", "unmet", "combined-unmet", "action-unmet", "native", "editable-code", "draft-loss", "render-loss", "withheld", "released-drafts", "assessment-opt-out"], default: "summary",
-      description: "Assessment-opt-out lists released replies with a checkpoint signal after the learner explicitly declined assessment. Unmet finds same-turn fenced OpenUI misses. Combined-unmet includes native pages. Action-unmet also checks requested editable code languages. Native lists page proposals and stages. Editable-code lists replies with supported editor fences. Released-drafts lists recorded winners, review disposition and selection rule." },
+    view: { type: "string", enum: ["summary", "unmet", "combined-unmet", "action-unmet", "native", "editable-code", "draft-loss", "render-loss", "withheld", "released-drafts", "assessment-opt-out", "pair-reviews"], default: "summary",
+      description: "Pair-reviews lists recorded candidate pairs, preferences, finalists and review overlap. Assessment-opt-out lists released replies with a checkpoint signal after the learner explicitly declined assessment. Unmet finds same-turn fenced OpenUI misses. Combined-unmet includes native pages. Action-unmet also checks requested editable code languages. Native lists page proposals and stages. Editable-code lists replies with supported editor fences. Released-drafts lists recorded winners, review disposition and selection rule." },
     limit: { type: "integer", minimum: 1, maximum: 50, default: 10, description: "Maximum returned turn examples." },
   },
   additionalProperties: false,
@@ -516,6 +517,19 @@ export function queryOpenUiDiagnosticTurns(rows: readonly OpenUiDiagnosticTurn[]
     const releases = selectRows(uniqueTurns(parseOpenUiDiagnosticExport(rows)), filter).filter(row => row.reply === "released");
     const observed = releases.filter(row => row.selection !== undefined);
     return { schemaVersion: 1 as const, view, matchingTurns: observed.length, unknownSelections: releases.length - observed.length,
+      turns: observed.slice(0, limit) };
+  }
+  if (view === "pair-reviews") {
+    const scoped = selectRows(uniqueTurns(parseOpenUiDiagnosticExport(rows)), filter);
+    const observed = scoped.filter(row => row.pairReviews !== undefined);
+    const reviews = observed.flatMap(row => row.pairReviews!);
+    const intervals = observed.map(row => pairReviewOverlapMs(row.pairReviews!)).filter(ms => ms !== null);
+    return { schemaVersion: 1 as const, view, matchingTurns: observed.length, turnsWithoutPairRecords: scoped.length - observed.length,
+      comparedPairs: reviews.filter(pair => pair.status === "compared").length,
+      incompletePairs: reviews.filter(pair => pair.status === "incomplete").length,
+      unavailablePairs: reviews.filter(pair => pair.status === "unavailable").length,
+      unrecordedPairs: 2 * observed.length - reviews.length,
+      turnsWithMeasuredOverlap: intervals.length, turnsWithConcurrentReviews: intervals.filter(ms => ms > 0).length,
       turns: observed.slice(0, limit) };
   }
   if (view === "assessment-opt-out") {

@@ -1,0 +1,24 @@
+{
+  "study": "paired-prediction",
+  "setting": "Local release-worktree Chromium classroom with live Jev and MiniMax",
+  "cohort": [
+    {
+      "case": "paper-fold",
+      "learner": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has.",
+      "opportunity": "Provide a usable question or grouped question before revealing four layers. A native page can qualify separately only with evidence of an actual usable control. A prose question alone misses the interface target.",
+      "historicalReceipt": "docs/benchmarks/jev-paired-feedback-2026-11-18/paper-fold.json",
+      "historicalReceiptSha256": "a15332e7cbb342ddfdad4047b1ee38b477e09b69ffe234f793881e330b76841e",
+      "parentQuestionReceiptSha256": null
+    },
+    {
+      "case": "sock-draw",
+      "learner": "There are two blue socks and one yellow sock in a drawer. I’m going to draw one at random without looking. I’d like to guess which colour I’m more likely to pick before you explain.",
+      "opportunity": "Invite a guess about the more likely colour without revealing blue. Provide a visible learner-operable Question or equivalent native input. The known answer is blue because two of the three socks are blue.",
+      "historicalReceipt": null,
+      "historicalReceiptSha256": null,
+      "parentQuestionReceiptSha256": null
+    }
+  ],
+  "questionAction": "On each released Question, select four layers for paper or blue for the sock draw. If the authored control takes text, enter the answer and its reason. Inspect the actual locally saved submission and grading state. Further inference is closed.",
+  "signal": "Four fresh tutor requests, two independently observed overlapping Jev comparisons, public text, selected/rendered controls and budget are recorded for each scheduled turn."
+}

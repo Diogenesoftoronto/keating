@@ -11,7 +11,7 @@ export const cohort = JSON.parse(await readFile(join(study, "cohort.json"), "utf
 
 // A release-only replay gets one authentic public message. Full transport
 // integration is reserved for a single predeclared classroom turn.
-export async function startHost({ product, sample, bridge, exhibit }) {
+export async function startHost({ product, sample, bridge, exhibit, useGateDefaults = false }) {
   const fixture = await mkdtemp(join(tmpdir(), "keating-classroom-"));
   const cookie = randomBytes(24).toString("hex");
   const source = await realpath(product);
@@ -24,7 +24,7 @@ export async function startHost({ product, sample, bridge, exhibit }) {
   await writeFile(join(fixture,"index.html"), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Keating classroom</title><style>html,body,#app{margin:0;height:100%;min-height:0}body{background:var(--background);color:var(--foreground)}[data-inspector]{max-width:70rem;margin:auto;padding:1rem}</style></head><body><main id="app"></main><script type="module" src="/entry.tsx"></script></body></html>');
   let replaySent = false;
   const traffic = [];
-  const config = {live:!!bridge, followup:!!sample.followup, readOnly:!!exhibit, gradeDemo:!!sample.gradeDemo, provider:sample.provider, model:sample.model};
+  const config = {live:!!bridge, followup:!!sample.followup, readOnly:!!exhibit, gradeDemo:!!sample.gradeDemo, provider:sample.provider, model:sample.model, useGateDefaults};
   const handlers = {
     name:"isolated-classroom-transport",
     configureServer(vite) {
@@ -88,7 +88,8 @@ export async function startHost({ product, sample, bridge, exhibit }) {
   };
   const server = await createServer({root:fixture,configFile:false,cacheDir:join(fixture,"vite-cache"),
     publicDir:false, logLevel:"error", resolve:{dedupe:["react","react-dom"],
-      alias:{"classroom-src":join(source,"web/src"),"classroom-styles":join(source,"web/styled-system"),"@":join(source,"web/src")}},
+      alias:{"classroom-src":join(source,"web/src"),"classroom-styles":join(source,"web/styled-system"),"@":join(source,"web/src"),
+        ...(useGateDefaults ? {"@keating/learner-contracts":join(source,"packages/learner-contracts/src/index.ts")} : {})}},
     optimizeDeps:{entries:[join(fixture,"entry.tsx")]},
     server:{host:"127.0.0.1",port:0,hmr:false,watch:null,fs:{allow:[fixture,source,repo,dependencyRoot]},
       headers:{"Cross-Origin-Opener-Policy":"same-origin","Cross-Origin-Embedder-Policy":"credentialless",

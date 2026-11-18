@@ -164,4 +164,17 @@ describe("recorded sources in the interface diagnostics panel", () => {
     const [template] = parseOpenUiDiagnosticExport(audit);
     expect(renderToStaticMarkup(<OpenUiUsageView turns={[template!]} />)).not.toContain("Assessment opt-outs");
   });
+  test("shows the observed overlaps and finalists from the original paired classroom run", async () => {
+    const recording = await import("../keating/openui/examples/jev-pairs-first.json");
+    const rows = parseOpenUiDiagnosticExport(recording.default);
+    const html = renderToStaticMarkup(<OpenUiUsageView turns={rows} initialView="pair-reviews" />);
+    expect(html).toContain("Compared pairs · 4.");
+    expect(html).toContain("Concurrent reviews · 2 of 2 timed turns.");
+    expect(html).toContain("Neither draft was eligible for release.");
+    expect(html).toContain("None · reply withheld");
+    expect(html).toContain("Draft 3 advanced.");
+    const rejected = renderToStaticMarkup(<OpenUiUsageView turns={[{ ...rows[0]!, gateIssues: ["question_feedback_format", "prediction_question_format"] }]} initialView="pair-reviews" />);
+    expect(rejected).toContain("standalone text reply (question_feedback_format)");
+    expect(rejected).toContain("one standalone Question without hints or an answer key (prediction_question_format)");
+  });
 });

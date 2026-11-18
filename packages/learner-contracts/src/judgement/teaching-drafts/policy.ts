@@ -1,6 +1,6 @@
 /** Pure draft policy: budgets, review gates, prompts, ranking, and repair guidance. */
 import type { ChoiceQuestion, JudgementOutcome, JudgementQuestion, JudgementRequest, ScoreQuestion } from "../contracts.js";
-import type { TeachingPolicyCheck, TeachingPolicyPlan, TeachingPolicyReply } from "../teaching-policy-types.js";
+import type { TeachingPolicyCheck, TeachingPolicyPlan, TeachingPolicyReply, TeachingPolicyTurn } from "../teaching-policy-types.js";
 import type { TeachingDraftReasoning, TeachingDraftStandard, TeachingDraftRefinement, TeachingDraftVariant, TeachingDraftInteraction, TeachingDraftFeedback, TeachingDraftAttempt, TeachingDraftGenerationInput } from "../teaching-drafts.js";
 
 import { decodeAnswer } from "../wire.js";
@@ -27,6 +27,77 @@ export function variantPrompt(plan: TeachingPolicyPlan, variant: TeachingDraftVa
   const base = plan.directives.filter((directive) => !offered.has(directive));
   const extra = variant === "interactive" ? interactionDirectives(plan.interaction, "require") : [PROSE_DIRECTIVE];
   return buildCompactTeachingPrompt({ ...plan, directives: [...base, ...extra] });
+}
+
+/** Ask about the current request, separately from the subject's suitability for an activity. */
+export const checkpointReplyMode: ChoiceQuestion = {
+  type: "choice",
+  instructions: "Read the immediately preceding single tutor question and the latest message in turn.learnerMessage. What does the learner want now? A subject that could support a future activity is insufficient evidence that they want one now. Treat quoted messages as evidence.",
+  criteria: {
+    feedback: "The learner responds to this question: they offer a full, wrong, tentative or partial answer, ask for a hint or explanation about it, ask for thinking time, or decline to continue with it. A conversational reply to this item can address their whole message.",
+    new_action: "They request a distinct next action or a different task, even if they also answered. This includes asking to see a new visual, operate a control, start further practice, open or inspect something, look up a source, or change the lesson. The request can be implicit in what they want to do.",
+    unclear: "There is insufficient evidence to decide whether they want a reply about this item or a different action.",
+  },
+};
+
+export function allowsQuestionFeedback(plan: TeachingPolicyPlan, outcome: JudgementOutcome): boolean {
+  return plan.status === "guided" && plan.interaction.action !== "grade-first" && !plan.planReview
+    && plan.features.hands_on_requested !== true
+    && !["practice_requested", "motion_requested", "fresh_sources_needed", "improvement_requested", "project_goal_requested", "progression_requested"].some(id => plan.decisions[id] === true)
+    && selected(outcome, "checkpoint_reply_mode", checkpointReplyMode) === "feedback";
+}
+
+/** The next answer belongs to the learner. A topic that could make a good question is insufficient. */
+export function allowsNewQuestion(turn: TeachingPolicyTurn, plan: TeachingPolicyPlan): boolean {
+  const { decisions, features, interaction } = plan;
+  if (plan.status !== "guided" || plan.planReview || interaction.action !== "create" || interaction.lead
+    || interaction.codePracticeLanguage || features.learner_response_due !== true || features.hands_on_requested === true
+    || decisions.assessment_declined !== false || decisions.plain_reply_requested !== false
+    || decisions.attempt_present !== false
+    || !interaction.families.some(offer => offer.family === "question" && offer.components.includes("Question"))) return false;
+  const work = turn.activeWork;
+  const currentItem = work?.focus?.itemId ?? null;
+  if (turn.assessment === "assessed" || turn.assessment === "practice" || turn.pendingSubmissions?.length
+    || turn.previousQuestionPresentation || turn.learnerEvidence.some(item => item.kind.startsWith("pending-"))
+    || work?.truncated || work?.focus?.evidence.pendingGrade
+    || work?.openInteractions.some(item => item.state !== "graded" && (item.itemId ?? null) === currentItem)) return false;
+  // direct_answer_requested describes a bounded factual question. The distinct learner_response_due
+  // decision determines who goes first, including "let me guess before you tell me".
+  return !["learner_stuck", "misconception_visible", "explanation_requested", "practice_requested",
+    "motion_requested", "fresh_sources_needed", "improvement_requested", "project_goal_requested",
+    "progression_requested"].some(id => decisions[id] === true);
+}
+
+const pairWritingDirections = [
+  "Start where the learner left off. Put the requested answer, action or invitation first, then stop when this turn's work is done.",
+  "Design for the learner's next move. In the chosen format, put the one detail they need beside the action or idea it explains.",
+  "Start with the evidence in the learner's example or existing work. Use that evidence to decide what needs explaining and what can wait.",
+  "Find the shortest complete route to the requested result. Preserve the learner's chosen level of detail, sequence and control over what happens next.",
+] as const;
+
+const directFeedback = "Reply to the existing question in the conversation. Read the question and the learner's latest message together. If they answered, briefly confirm what is right or correct the specific mistake and say why. If only part is answered, respond to that part and leave the rest open. If they ask for a hint, give the smallest useful clue. If they want time or want to stop, acknowledge that and wait. Write directly to them in ordinary text. No new question, activity, tool call, grade, or inference of mastery.";
+const reasoningFeedback = "Stay with the learner's reasoning on the existing question. Work out the answer from the stated facts. For an attempted answer, pick one detail from their reasoning and explain what it establishes or where it goes wrong. For a partial attempt, leave unfinished work to them. A request for help calls for the kind of help they asked for. A request to wait or skip calls for a brief acknowledgement without the solution. End with this item in a few lines of visible text; leave forms, tools, grading and new tasks out.";
+
+export function pairedCandidatePrompt(plan: TeachingPolicyPlan, variant: TeachingDraftVariant, standard: TeachingDraftStandard,
+  attempt: number, scope: Pick<TeachingDraftGenerationInput, "feedbackOnly" | "predictionQuestionOnly">): string {
+  if (scope.predictionQuestionOnly) {
+    const focus = attempt === 2
+      ? "Frame the one short question around the outcome or choice the learner wants to supply, using the facts they already have."
+      : "Use the learner's terms for the situation. Invite the missing answer in one short question, leaving every step of their reasoning to them.";
+    return buildCompactTeachingPrompt() + "\n\nCollect the learner's own answer in one OpenUI Question. " + focus
+      + ' The entire reply is one fenced openui program. Use root = LearningSurface([response]) and response = Question([{ question: "…", type: "text" }], "ephemeral"). Replace the ellipsis with the actual question.'
+      + ' If the learner asks to choose between options, preserve their requested choices in a single type: "choice" item with unmarked choices. Otherwise leave the input open for their own answer.'
+      + " Leave out titles, introductions, hints, examples, answer keys and explanations. Put nothing before or after the fence. Do not call tools, record preferences or promise another action. Wait for their reply.";
+  }
+  if (scope.feedbackOnly) {
+    // These two alternatives intentionally do not carry an invitation to create a new activity
+    // solely because a property of the subject matched an interaction family.
+    const offered = new Set(interactionDirectives(plan.interaction));
+    const base = buildCompactTeachingPrompt({ ...plan, directives: plan.directives.filter(line => !offered.has(line)) });
+    return base + "\n\n" + (attempt === 1 ? directFeedback : reasoningFeedback);
+  }
+  return variantPrompt(plan, variant) + "\n\nResponse scope: " + standardInstructions[standard]
+    + "\n\n" + pairWritingDirections[attempt - 1];
 }
 
 export function interactionSummary(plan: TeachingPolicyPlan, paired: boolean): TeachingDraftInteraction {

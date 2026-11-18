@@ -9,6 +9,8 @@ import { initializeRepositorySchema, LearnerRecordStore, UiActionStore, type Asy
 import { createMobileTeachingDraftRound } from "../src/lib/judgement/teaching-drafts";
 import { mobileActivityBoundaries, mobileActivityOutcomes, mobileUnansweredActivityDocument } from "../src/lib/judgement/activity-learning";
 import { applyLocalUiAction } from "../src/lib/ui-action-mutations";
+import { settingsForProvider } from "../src/lib/provider-config";
+import { scopeUiDocument } from "../src/lib/ui-document-wire";
 import { runMobileToolLoop } from "../src/lib/provider-tool-loop";
 import { MOBILE_TOOL_DEFINITIONS } from "../src/lib/mobile-tools";
 import { TEACHING_POLICY_RULES } from "../../packages/learner-contracts/src/judgement/teaching-policy-catalog";
@@ -50,6 +52,120 @@ test("ordinary native replies repair an uncertain checkpoint before best-effort 
   const result = await request({ provider: "openai", model: "fixture", customBaseUrl: "" }, "key", [{ id: "user", role: "user", content: "Explain division", createdAt: time }]);
   expect(generated).toBe(2);
   expect(result.text).toBe("Division splits a quantity into equal groups.");
+});
+
+test("the Jev-guided native round privately generates four replies and delivers one", async () => {
+  const baseJudge = judge();
+  const pairs: string[][] = [], visible: string[] = [];
+  let generated = 0, published = 0;
+  const request = createMobileTeachingDraftRound({
+    current: () => true, evidence: async () => empty(), onReleased: () => { published++; },
+    judge: async (request, signal) => {
+      const outcome = await baseJudge(request, signal);
+      if (!outcome.ok) return outcome;
+      const choice = request.questions.draft_pair_choice;
+      if (choice?.type === "choice") pairs.push(Object.keys(choice.criteria));
+      return { ok: true, response: { ...outcome.response, backend: { backend: "system-one", model: "jev-1.14.0", calibrationSha256: null } } };
+    },
+    request: async (_settings, _key, _messages, options) => {
+      expect(options?.onTextDelta).toBeUndefined();
+      return { text: `Candidate ${++generated}`, calls: [], assistantTurn: null, usage: null };
+    },
+  });
+  const reply = await request({provider:"openai", model:"fixture", customBaseUrl:""}, "key",
+    [{id:"learner",role:"user",content:"Explain division",createdAt:time}], { onTextDelta: text => visible.push(text) });
+  expect(generated).toBe(4);
+  expect(pairs).toEqual([["draft_1", "draft_2"], ["draft_3","draft_4"]]);
+  expect(reply.text).toBe("Candidate 1");
+  expect(visible).toEqual([]);
+  expect(published).toBe(1);
+});
+
+test("native feedback uses the released Question, its original text and an untouched action journal", async () => {
+  const stamp = new Date(time).toISOString();
+  const prompt = "Which color is more likely in a bag with seven red tiles and one blue tile?";
+  const document: UiDocument = {schemaVersion:1,id:"tiles",revision:0,lifecycle:"ready",supportedSurfaces:["mobile"],
+    createdAt:stamp,updatedAt:stamp,nodes:[{id:"guess",type:"question",kind:"text",prompt}]};
+  const published = scopeUiDocument(document,"session:shown:0");
+  const source = "Make one prediction.\n\n```ui-document\n"+JSON.stringify(document)+"\n```";
+  for (const state of ["bound","other-session","no-journal","prior-attempt","changed-source","journal-changed-during-review"]) {
+    const data = empty();
+    if (state === "prior-attempt") data.questionChecks.push({id:"already",sessionId:"session",topic:"A bag",question:prompt,
+      answer:"Red.",grading:"pending",createdAt:stamp});
+    const messages: ChatMessage[] = [
+      {id:"start",role:"user",content:"Let me predict.",createdAt:time},
+      {id:"shown",role:"assistant",content:"Make one prediction.",createdAt:time+1,agentEvents:[
+        {type:"text-delta",id:"wire",turnId:"turn",sequence:0,occurredAt:stamp,text:source},
+        {type:"ui-document",id:"card",turnId:"turn",sequence:1,occurredAt:stamp,document: state === "changed-source"
+          ? {...published,nodes:[{...document.nodes[0]!,id:"another"}]} : published},
+        {type:"completed",id:"complete",turnId:"turn",sequence:2,occurredAt:stamp}]},
+      {id:"answer",role:"user",content:"I think blue because it is rarer.",createdAt:time+2},
+    ];
+    const tools: string[][]=[], histories: string[]=[];
+    const before = structuredClone(messages);
+    let planned = false, reads=0, publishedCount=0;
+    const native = createMobileTeachingDraftRound({current:()=>true,evidence:async()=>data,
+      sessionId:state==="other-session"?"other":"session",onReleased:()=>{publishedCount++},
+      ...(state==="no-journal" ? {} : {questionJournal: async (id:string)=>{
+        const changed = state==="journal-changed-during-review" && reads++>0;
+        return {kind:"keating-ui-action-journal" as const,schemaVersion:1 as const,documentId:changed?"other":id,receipts:[]};
+      }}),
+      judge:async (request,signal)=>{
+        const result = await judge()(request,signal);
+        if (!result.ok) return result;
+        if (request.questions.checkpoint_reply_mode) {
+          planned=true;
+          const turn = (request.state as {turn:TeachingPolicyTurn}).turn;
+          expect(turn.previousQuestionPresentation).toEqual({assistantTurnIndex:1,nodeId:"guess",documentId:published.id});
+          expect(turn.conversation[1]!.content).toBe(source);
+        }
+        const answers={...result.response.answers,learning_task:{type:"noul" as const,noul:.95}};
+        return {ok:true,response:{...result.response,backend:{backend:"system-one",model:"jev-1.14.0",calibrationSha256:null},answers}};
+      }});
+    const outcome = native(settingsForProvider("openai"),"fixture-key",messages,{tools:[MOBILE_TOOL_DEFINITIONS[0]!],
+      fetchImpl:async (_url,init)=>{
+        const wire = JSON.parse(String(init?.body)) as {tools?:{name:string}[];input:{content:string}[]};
+        tools.push(wire.tools?.map(tool=>tool.name) ?? []);
+        histories.push(wire.input[1]!.content);
+        return Response.json({id:"fixture-response",status:"completed",output_text:"There are seven red tiles and one blue tile."});
+      }});
+    const focus = state==="bound" || state==="journal-changed-during-review";
+    if (state==="journal-changed-during-review") await expect(outcome).rejects.toThrow("learner responded");
+    else await outcome;
+    const full=[MOBILE_TOOL_DEFINITIONS[0]!.name];
+    expect(planned).toBe(focus);
+    expect(tools).toEqual(focus?[[],full,[],full]:[full,full,full,full]);
+    expect(histories).toEqual(Array(4).fill(focus?source:"Make one prediction."));
+    expect(publishedCount).toBe(state==="journal-changed-during-review"?0:1);
+    expect(messages).toEqual(before);
+  }
+});
+
+test("native predictor candidates can author a Question with no tool schemas on the OpenAI wire", async () => {
+  const marker = "Collect the learner's own answer in one OpenUI Question.";
+  const wires: {instructions:string;tools?:{name:string}[]}[]=[];
+  const native = createMobileTeachingDraftRound({current:()=>true,evidence:async()=>empty(),onReleased:()=>{},
+    judge:async (request,signal)=>{
+      const result = await judge()(request,signal);
+      if (!result.ok) return result;
+      const answers={...result.response.answers};
+      if (request.questions.draft_standard) Object.assign(answers,{
+        learning_task:{type:"noul",noul:.99},learner_response_due:{type:"noul",noul:.99},prediction_opportunity:{type:"noul",noul:.99}});
+      return {ok:true,response:{...result.response,backend:{backend:"system-one",model:"jev-1.14.0",calibrationSha256:null},answers}};
+    }});
+  const messages: ChatMessage[]=[{id:"learner",role:"user",content:"Let me predict which sock will come out before you tell me.",
+    createdAt:time}];
+  const full=[MOBILE_TOOL_DEFINITIONS[0]!];
+  await native(settingsForProvider("openai"),"fixture-key",messages,{tools:full,fetchImpl:async (_url,init)=>{
+    const wire=JSON.parse(String(init?.body));wires.push(wire);
+    const output = wire.instructions.includes(marker)
+      ? '```openui\nroot = LearningSurface([response])\nresponse = Question([{ question: "Which sock do you predict?", type: "text" }])\n```'
+      : "You can make a prediction.";
+    return Response.json({id:"fixture-response",status:"completed",output_text:output});
+  }});
+  expect(wires).toHaveLength(4);
+  expect(wires.map(wire=>wire.instructions.includes(marker))).toEqual([false,true,false,true]);
+  expect(wires.map(wire=>wire.tools?.map(tool=>tool.name))).toEqual([[full[0]!.name],undefined,[full[0]!.name],undefined]);
 });
 
 test("ordinary native semantic failures release best effort after one repair", async () => {
