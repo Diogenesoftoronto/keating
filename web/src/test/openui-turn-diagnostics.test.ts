@@ -4,8 +4,12 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createAssistantMessageEventStream, type Api, type AssistantMessage, type Model } from "@earendil-works/pi-ai";
 import { streamSimple } from "@earendil-works/pi-ai/compat";
-import { TUTOR_RATE_LIMIT_MESSAGE, TUTOR_RATE_LIMIT_REASON } from "@keating/learner-contracts";
+import { queryOpenUiDiagnosticTurns, summarizeOpenUiDiagnostics, TUTOR_RATE_LIMIT_MESSAGE, TUTOR_RATE_LIMIT_REASON } from "@keating/learner-contracts";
 import { ReviewNoticeCard } from "../components/ReviewNoticeCard";
+import { OpenUiUsageView } from "../components/settings/OpenUiUsageView";
+import { createCustomJudgementBackend, CUSTOM_JUDGEMENT_ENDPOINT } from "../keating/judgement/custom-backend";
+import { diagnoseDraft } from "../keating/judgement/draft-progress";
+import { DEFAULT_JUDGEMENT_MODEL_SETTINGS } from "../keating/judgement-model";
 import { projectTeachingDraftSnapshot } from "../keating/judgement/draft-status";
 import type { TeachingDraftSnapshot } from "@keating/learner-contracts";
 import type { OpenUiDiagnosticTurn } from "../../../packages/learner-contracts/src/openui-diagnostic-turn";
@@ -16,7 +20,7 @@ import { createOpenUIDiagnosticStore, diagnosticConversationId, diagnosticSource
 import { activeOpenUIDiagnosticTurn, observeOpenUITurns } from "../keating/openui/turn-observer";
 import { KeatingOpenUIRenderer } from "../keating/openui/renderer";
 import { createOpenUIActionLearnerResponse, serializeLearnerResponse } from "../keating/learner-response";
-import { withTeachingDraftGate } from "../keating/judgement/draft-gate";
+import { createDraftGateJudgementCaller, withTeachingDraftGate } from "../keating/judgement/draft-gate";
 import { parseReviewNotice, withheldSummary, withReviewNotice } from "../keating/judgement/review-notice";
 import { answerDraftGateReview } from "./helpers/teaching-draft-judge";
 
@@ -46,12 +50,18 @@ describe("durable content-free OpenUI turn observation", () => {
     observer.observe({type:"agent_start"});
     const turn = activeOpenUIDiagnosticTurn(sessionId)!;
     const first = turn.beginRound();
+    const previous: TeachingDraftSnapshot = {phase:"withheld", attempts:[], attempt:0, maxAttempts:4, elapsedMs:10,
+      judgeModel:null, selectedAttempt:null, reasoning:"off",standard:"supported",reason:"backend-unavailable",
+      decisionFailure:{stage:"planning",reason:"backend-unavailable",configuredModel:"old-judge"}};
+    first.plan(previous,null);
     first.generationRequested("minimax/old-tutor");
     turn.beginRound().generationRequested("minimax/current-tutor");
     first.generationRequested("minimax/stale-tutor");
+    first.plan(previous,null);
     observer.observe({type:"agent_end"});
     await store.settled();
     expect(store.getRows()[0]).toMatchObject({requestedModel:"minimax/current-tutor", model:null});
+    expect(store.getRows()[0]?.decisionFailure).toBeUndefined();
     observer.dispose();
   });
   test("four HTTP 429s from the tutor reach the classroom and diagnostic export without fabricating a Jev rejection", async () => {
@@ -93,7 +103,78 @@ describe("durable content-free OpenUI turn observation", () => {
         Array.from({length: 4}, () => ["generation-error", TUTOR_RATE_LIMIT_REASON, []]));
       expect(receipt.pairReviews?.map(p => [p.status, p.preferredAttempt])).toEqual([["incomplete", null], ["incomplete", null]]);
       expect(store.getRows()[0]).toMatchObject({ reply: "withheld", model: null, gateIssues: [TUTOR_RATE_LIMIT_REASON] });
+      expect(store.getRows()[0]?.decisionFailure).toBeUndefined();
       expect(JSON.stringify([reply, receipt, store.getRows()])).not.toContain("PRIVATE provider detail");
+    } finally { observer.dispose(); }
+  });
+
+  test.each([true, false])("planning HTTP 403 reaches the classroom, Settings and machine diagnostics (marked first-party origin denial: %s)", async marked => {
+    const configuredModel = "jev-latest";
+    const failure = { stage: "planning", reason: "backend-unauthorized", configuredModel,
+      ...(marked ? { detail: "relay-origin-denied" } : {}) };
+    let tutorRequests = 0;
+    const http: string[] = [];
+    const tier = createCustomJudgementBackend({
+      model: configuredModel, apiKey: "PRIVATE local fixture",
+      fetch: async (url, init) => {
+        http.push(url);
+        expect(init.redirect).toBe("error");
+        expect(JSON.parse(String(init.body)).model).toBe(configuredModel);
+        return Response.json({ private: "PRIVATE upstream error with relay-origin-denied" }, { status: 403,
+          headers: marked ? { "X-Keating-Judgement-Error": "relay-origin-denied" } : {} });
+      },
+    })!;
+    const store = createOpenUIDiagnosticStore(() => undefined);
+    const sessionId = "planning-failed-" + marked;
+    const messages: Array<AssistantMessage | ReturnType<typeof learner>> = [learner("PRIVATE learner prompt")];
+    const observer = observeOpenUITurns({sessionId, store, messages:() => messages, mode:() => "unknown", capture() {}});
+    observer.observe({type:"agent_start"});
+    const snapshots: TeachingDraftSnapshot[] = [];
+    const judgementModel = { id: configuredModel, requestTokens: null, stateQuestionTokens: null };
+    const gate = withTeachingDraftGate(() => { tutorRequests++; throw Error("Tutor must not run"); }, {
+      sessionId, basePrompt:() => "Tutor", judgementModel, onProgress: snapshot => snapshots.push(snapshot),
+      makeCaller: () => createDraftGateJudgementCaller({settings: {...DEFAULT_JUDGEMENT_MODEL_SETTINGS, backend: "hosted"},
+        policy: {tiers:[tier], calibration: {entries:{}}}, judgementModel}),
+    });
+    try {
+      const reply = await (await gate(model, {systemPrompt:"Tutor", messages})).result();
+      messages.push(reply);
+      observer.observe({type:"agent_end"});
+      await store.settled();
+      const notice = parseReviewNotice(reply.content.find(p => p.type === "text")?.text ?? "");
+      expect(notice?.kind).toBe("withheld");
+      expect(notice?.text).toContain(marked ? "relay rejected the page’s origin" : "decision request was denied access");
+      const badge = renderToStaticMarkup(createElement(ReviewNoticeCard, {kind:notice!.kind, reason:withheldSummary(notice!.text)}));
+      expect(badge).toContain('<span aria-hidden="true">Decision planning failed</span>');
+      expect(http).toEqual([CUSTOM_JUDGEMENT_ENDPOINT]);
+      expect(tutorRequests).toBe(0);
+      const receipt = projectTeachingDraftSnapshot(snapshots.at(-1)!);
+      expect(receipt).toMatchObject({ phase:"withheld", reason:"backend-unauthorized", decisionFailure: failure, attempts:[], judgeModel:null });
+      expect(diagnoseDraft(receipt).map(finding => finding.title)).toEqual(["Decision planning failed"]);
+      const rows = store.getRows();
+      const failed = rows[0]!;
+      expect(failed).toMatchObject({ decisionFailure: failure, decisionModel:null, reply:"withheld", guidance:null, model:null,
+        draftAttempts:0, gateIssues:[], attempted:null, compiled:null, selected:[] });
+      expect([failed.requestedModel, failed.pairReviews, failed.selection]).toEqual([undefined,undefined,undefined]);
+      const event = openUIDiagnosticEvent(failed, 1);
+      expect(event.decision_failure).toEqual(failure);
+      const summary = summarizeOpenUiDiagnostics(rows, {decisionModel:configuredModel});
+      expect(summary.decisionPlanningFailures).toEqual({turns:1,groups:[{reason:"backend-unauthorized",configuredModel,turns:1,
+        ...(marked ? { detail:"relay-origin-denied" } : {})}]});
+      expect(summary.byDecisionModel.map(group => group.key)).toEqual(["unknown"]);
+      expect(queryOpenUiDiagnosticTurns(rows, {view:"withheld",decisionModel:configuredModel})).toMatchObject({matchingTurns:1,turns:[{decisionFailure:failure}]});
+      expect(queryOpenUiDiagnosticTurns(rows, {view:"withheld",decisionModel:"other"})).toMatchObject({matchingTurns:0});
+      const html = renderToStaticMarkup(createElement(OpenUiUsageView, {turns:rows, initialView:"withheld"}));
+      const selected = renderToStaticMarkup(createElement(OpenUiUsageView, {turns:rows, initialStage:"selected"}));
+      const drafted = renderToStaticMarkup(createElement(OpenUiUsageView, {turns:rows, initialStage:"compiled"}));
+      expect(html).toContain("Learner turns with OpenUI");
+      expect(selected).toContain('Learner turns with OpenUI</dt><dd>0%</dd><dd class="ou-count">0 / 1 observed');
+      expect(drafted).toContain("No tutor draft content was measured. Authoring attempts unobserved on 1 turn.");
+      expect(html).toContain("Configured decision model");
+      expect(html).toContain("backend-unauthorized");
+      if (marked) expect(html).toContain("relay-origin-denied");
+      else expect(failed.decisionFailure?.detail).toBeUndefined();
+      expect(JSON.stringify([notice, receipt, rows, event, summary, html])).not.toMatch(/PRIVATE|Tutor must not run/);
     } finally { observer.dispose(); }
   });
 

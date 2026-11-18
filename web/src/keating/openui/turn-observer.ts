@@ -1,4 +1,4 @@
-import { INTERACTION_REASONS, TUTOR_RATE_LIMIT_REASON, type TeachingDraftSnapshot } from "@keating/learner-contracts";
+import { INTERACTION_REASONS, TUTOR_RATE_LIMIT_REASON, isDecisionPlanningFailure, type TeachingDraftSnapshot } from "@keating/learner-contracts";
 import {
   classifyOpenUiCue, isOpenUiDiagnosticGateIssue, normalizeOpenUiComponent, observeAssessmentOptOut, projectOpenUiPairReviews, projectOpenUiFinalComparison, projectTeachingDraftSelection, type OpenUiDiagnosticTurn,
 } from "../../../../packages/learner-contracts/src/openui-diagnostic-turn";
@@ -83,6 +83,7 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
       const token = ++round;
       finalSelection = undefined;
       delete row.requestedModel;
+      delete row.decisionFailure;
       delete row.pairReviews;
       delete row.finalComparison;
       const attemptTutors = new Map<number, string>();
@@ -104,6 +105,7 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
         },
         plan(snapshot: TeachingDraftSnapshot, reviewer: Reviewer | null) {
           if (ended || token !== round) return;
+          if (isDecisionPlanningFailure(snapshot.decisionFailure)) row.decisionFailure = { ...snapshot.decisionFailure };
           const pairReviews = projectOpenUiPairReviews(snapshot.pairReviews);
           if (pairReviews) row.pairReviews = pairReviews;
           const finalComparison = projectOpenUiFinalComparison(snapshot.finalComparison);

@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { lstat, mkdir, mkdtemp, readFile, rm, writeFile, chmod } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
+import { probeDecisionRelay } from "./openui-diagnostics/probe-decision-relay.js";
 
 import { STAGING_PROJECT, STAGING_SERVICE, STAGING_ENVIRONMENT, PROMOTION_SERVICE, PRODUCTION_ENVIRONMENT, STAGING_URL } from "./ops/config.js";
 export { STAGING_PROJECT, STAGING_SERVICE, STAGING_ENVIRONMENT } from "./ops/config.js";
@@ -87,6 +88,13 @@ export async function liveReceipt(url: string): Promise<any> {
 }
 
 async function publishCandidate(root: string, snapshot: string, receipt: Awaited<ReturnType<typeof makeStagingSnapshot>> & { deploymentId: string; url: string }) {
+  if (receipt.promotionEligible) {
+    const relay = await probeDecisionRelay(receipt.url);
+    if (!relay.reachedKeyCheck) {
+      throw new Error(`Staging Jev relay returned HTTP ${relay.status} to a same-origin request without a key. Expected HTTP 401 before publishing the promotion candidate.`);
+    }
+    console.log("Staging Jev relay reached the API key check (HTTP 401).");
+  }
   await mkdir(join(root, ".keating"), { recursive: true });
   const receiptPath = join(root, ".keating/staging-last.json");
   let previous;

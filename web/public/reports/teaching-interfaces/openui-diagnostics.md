@@ -6,6 +6,18 @@ Follow a learner’s request from the tutor’s first draft through selection an
 
 ## Inspect an incident
 
+If a learner saw no reply, choose **Inspect turns → Show turns → Reply withheld** in Settings. A fresh `decisionFailure` record identifies a planning request that stopped before the tutor could write. Its `configuredModel` names the intended reviewer. `decisionModel` records a reviewer that actually returned a decision. The first-party detail `relay-origin-denied` identifies Keating’s own origin check. Provider and historical access errors without that detail stay generic.
+
+Machines can use `{"view":"withheld","decisionModel":"jev-1.14.0"}` in WebMCP or `rtk bun src/cli/main.ts openui-diagnostics classroom.json --view withheld --decision-model jev-1.14.0`. The summary groups observed planning failures by configured model, reason and detail. A failed planning turn counts toward the learner’s end-to-end wait. With zero tutor generations it supplies no evidence about a tutor’s choice of interface. [See the hosted incident](jev-pairs/index.html#production-relay)
+
+To check a running classroom from its first message through a reload, run this command with its URL and the repository’s Playwright Chromium installation.
+
+```sh
+rtk bun scripts/openui-diagnostics/probe-classroom-observer.mjs http://localhost:5173
+```
+
+The command opens a fresh anonymous browser, saves dummy keys, and injects a planning denial for one synthetic learner message. It checks the classroom notice, the withheld turn in WebMCP after reload, and the matching Settings export. It blocks provider requests, including background model calls. A pass verifies the classroom observer and local persistence. Run the decision relay probe separately to check the actual server origin policy.
+
 Choose **Jev pair reviews** to see which replies advanced from drafts 1–2 and 3–4. A pair can prefer a reply that failed an individual check. A pair with no eligible reply has no finalist. The inspector shows how long both comparisons were in progress at the same time. A feedback-only flag identifies a draft asked to answer the learner’s current item without tools. Older recordings can omit both kinds of evidence. [Inspect the first classroom check](diagnostics.html?source=jev-pairs-first&view=pair-reviews)
 
 Expand a pair to see the observed checks for each candidate. A scored uncertainty can appear on an eligible reply. **Review issues across all drafts** collects flags from the whole turn, including drafts the learner never saw. Where two finalists received a valid final comparison, the record includes both choice probabilities, the preferred draft and the reviewer’s reported confidence. **Released draft** identifies the actual published reply. [Inspect the reconstructed paper and sock reviews](diagnostics.html?source=jev-pairs-review&view=pair-reviews)

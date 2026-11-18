@@ -3,6 +3,7 @@ import { mkdir, open, rename, rm } from "node:fs/promises";
 import { isAbsolute, join } from "node:path";
 import { inflateRawSync } from "node:zlib";
 import { CanonicalTrainingRecordSchema, TrainingManifestSchema } from "../../src/keating/training-schema";
+import { publicRequestOrigin } from "./public-request-origin";
 
 export const TRAINING_DATASET_CONSENT = "global-improvement-v1";
 export const MAX_TRAINING_DATASET_BYTES = 25 * 1024 * 1024;
@@ -133,7 +134,7 @@ export async function receiveTrainingDataset(request: Request, dependencies: {
  storageDir?: string;
 }): Promise<TrainingDatasetReceipt> {
  const origin = request.headers.get("origin");
- if (origin && origin !== new URL(request.url).origin) throw new TrainingDatasetError(403, "Cross-origin uploads are not allowed.");
+ if (origin && origin !== publicRequestOrigin(request)) throw new TrainingDatasetError(403, "Cross-origin uploads are not allowed.");
  if (request.method !== "POST") throw new TrainingDatasetError(405, "Use POST to share a dataset.");
  if (request.headers.get("x-keating-training-consent") !== TRAINING_DATASET_CONSENT) throw new TrainingDatasetError(400, "Explicit global-improvement consent is required.");
  const accountId = await dependencies.resolveAccount();

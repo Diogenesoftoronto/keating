@@ -1,4 +1,4 @@
-import { INTERACTION_AFFORDANCES, INTERACTION_REASONS, TEACHING_INTERACTION_FEATURES, TUTOR_RATE_LIMIT_REASON, isOpenUiDiagnosticGateIssue, type PlanReview, type TeachingDraftInteraction, type TeachingDraftSnapshot } from "@keating/learner-contracts";
+import { INTERACTION_AFFORDANCES, INTERACTION_REASONS, TEACHING_INTERACTION_FEATURES, TUTOR_RATE_LIMIT_REASON, isDecisionPlanningFailure, isOpenUiDiagnosticGateIssue, type PlanReview, type TeachingDraftInteraction, type TeachingDraftSnapshot } from "@keating/learner-contracts";
 import { recordDiagnostic } from "../../lib/diagnostics";
 import { recordedCodePracticeLanguage } from "../editable-code-language";
 import { STATE_SECTION_KEYS, type StateComposition, type TeachingDraftPhase } from "@keating/learner-contracts";
@@ -114,6 +114,7 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     phase: snapshot.phase, attempt: snapshot.attempt, maxAttempts: snapshot.maxAttempts,
     reasoning: snapshot.reasoning, standard: snapshot.standard, elapsedMs: snapshot.elapsedMs,
     judgeModel: snapshot.judgeModel, selectedAttempt: snapshot.selectedAttempt, reason: snapshot.reason,
+    ...(isDecisionPlanningFailure(snapshot.decisionFailure) ? { decisionFailure: { ...snapshot.decisionFailure } } : {}),
     ...(selectionRule ? { selectionRule } : {}),
     ...(pairReviews ? { pairReviews } : {}),
     ...(finalComparison ? { finalComparison } : {}),

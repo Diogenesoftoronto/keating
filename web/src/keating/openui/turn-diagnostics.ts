@@ -1,4 +1,4 @@
-import { learningSourceHash } from "@keating/learner-contracts";
+import { isDecisionPlanningFailure, learningSourceHash } from "@keating/learner-contracts";
 import { NATIVE_PAGE_STAGES, parseOpenUiDiagnosticExport, type NativePageEvidence, type OpenUiDiagnosticTurn } from "../../../../packages/learner-contracts/src/openui-diagnostic-turn";
 import { createSessionId } from "../../hooks/session-metadata";
 
@@ -57,6 +57,7 @@ export function openUIDiagnosticEvent(row: OpenUiDiagnosticTurn, revision: numbe
     guidance_source: row.guidance?.source ?? null, guidance_action: row.guidance?.action ?? null,
     guidance_delivered: row.guidance?.delivered ?? null, guidance_targets: row.guidance?.targets ?? null,
     draft_attempts: row.draftAttempts ?? null, gate_issues: row.gateIssues ?? null, decision_model: row.decisionModel ?? null,
+    decision_failure: isDecisionPlanningFailure(row.decisionFailure) ? { ...row.decisionFailure } : null,
     draft_selection: row.selection ?? null,
     draft_pair_reviews: row.pairReviews ?? null,
     draft_final_comparison: row.finalComparison ?? null,

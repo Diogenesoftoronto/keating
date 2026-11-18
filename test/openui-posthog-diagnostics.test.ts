@@ -85,23 +85,26 @@ describe("read-only Keating fleet diagnostics", () => {
   test("preserves measured zero and withheld duration, and reads both old events and saved pre-timing query results", () => {
     const observed = query([snapshot(row(0, { replyElapsedMs: 0 }), 2), snapshot(row(1, { reply: "withheld", model:null, requestedModel:"minimax/requested-tutor", replyElapsedMs: 1234 }), 4),
       snapshot(row(2), 1, { properties: { reply_elapsed_ms: undefined } })]);
-    expect(observed.columns).toHaveLength(42);
+    expect(observed.columns).toHaveLength(43);
     const rows = openUiFleetExport(observed, scope).turns;
     expect(rows[1]).toMatchObject({model:null, requestedModel:"minimax/requested-tutor"});
     expect(rows.map(r => r.replyElapsedMs)).toEqual([0, 1234, null]);
     expect(summarizeOpenUiDiagnostics(rows).overall.replyElapsedMs).toEqual({ observed: 2, unknown: 1, median: 617, p90: 1234 });
     const omit = (...fields: string[]) => ({ columns: observed.columns.filter(key => !fields.includes(key)),
       results: observed.results.map(r => r.filter((_, i) => !fields.includes(observed.columns[i]!))) });
-    const beforeRequestedModel = omit("requested_model");
+    const beforeDecisionFailure = omit("decision_failure");
+    expect(beforeDecisionFailure.columns).toHaveLength(42);
+    expect(openUiFleetExport(beforeDecisionFailure, scope).turns.every(r => r.decisionFailure === undefined)).toBe(true);
+    const beforeRequestedModel = omit("decision_failure", "requested_model");
     expect(beforeRequestedModel.columns).toHaveLength(41);
     expect(openUiFleetExport(beforeRequestedModel, scope).turns.every(r => r.requestedModel === undefined)).toBe(true);
-    const pairsOnly = omit("requested_model", "draft_final_comparison");
+    const pairsOnly = omit("decision_failure", "requested_model", "draft_final_comparison");
     expect(pairsOnly.columns).toHaveLength(40);
     expect(openUiFleetExport(pairsOnly, scope).turns.every(r => r.finalComparison === undefined)).toBe(true);
-    const beforePairs = omit("requested_model", "draft_pair_reviews", "draft_final_comparison");
+    const beforePairs = omit("decision_failure", "requested_model", "draft_pair_reviews", "draft_final_comparison");
     expect(beforePairs.columns).toHaveLength(39);
     expect(openUiFleetExport(beforePairs, scope).turns.every(r => r.pairReviews === undefined)).toBe(true);
-    const assessment = ["requested_model", "draft_final_comparison", "draft_pair_reviews", "assessment_opt_out", "assessment_checkpoints"];
+    const assessment = ["decision_failure", "requested_model", "draft_final_comparison", "draft_pair_reviews", "assessment_opt_out", "assessment_checkpoints"];
     const beforeAssessment = omit(...assessment);
     expect(beforeAssessment.columns).toHaveLength(37);
     expect(openUiFleetExport(beforeAssessment, scope).turns.every(r => r.assessment === undefined)).toBe(true);
@@ -124,6 +127,19 @@ describe("read-only Keating fleet diagnostics", () => {
     const legacy = omit(...code, "native_page", "guidance_reason", "reply_elapsed_ms");
     expect(legacy.columns).toHaveLength(28);
     expect(openUiFleetExport(legacy, scope).turns.map(r => r.replyElapsedMs)).toEqual([null, null, null]);
+  });
+  test("fleet preserves a planning denial separately from reviewer identity and rejects unrecognized details", () => {
+    const failure = { stage: "planning", reason: "backend-unauthorized", configuredModel: "jev-test", detail: "relay-origin-denied" } as const;
+    const original = row(0, { decisionFailure: failure, reply: "withheld", mode: "unknown", guidance: null,
+      draftAttempts: 0, model: null, decisionModel: null, attempted: null, compiled: null, selected: [], gateIssues: [] });
+    expect(openUiFleetExport(query([snapshot(original, 1)]), scope).turns[0]).toMatchObject({
+      decisionFailure: failure, decisionModel: null, model: null, draftAttempts: 0, gateIssues: [],
+    });
+    for (const bad of [{ ...failure, detail: "PRIVATE denial" }, { ...failure, reason: "backend-timeout" }, { ...failure, upstream: "PRIVATE" },
+      { ...failure, configuredModel: "https://example.test/private" }]) {
+      expect(openUIDiagnosticEvent({...original, decisionFailure: bad} as OpenUiDiagnosticTurn, 1).decision_failure).toBeNull();
+      expect(() => openUiFleetExport(query([snapshot(original, 1, {properties: { decision_failure: bad }})]), scope)).toThrow();
+    }
   });
   test("retains native execution, mixed presentation evidence and a plan reason with no offered targets", () => {
     const native = row(0, { nativePageRequested: true, selected: [], rendered: [], cue: {kind:"implicit-action", targets:["question"], repeat:false}, nativePage: {

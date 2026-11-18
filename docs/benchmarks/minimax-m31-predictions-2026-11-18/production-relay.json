@@ -1,0 +1,119 @@
+{
+  "study": "Hosted Jev planning relay diagnosis",
+  "release": {
+    "version": "4.2.2",
+    "sha": "261d27c9a615459911779694872dd8947479ee0c",
+    "productionDeployment": "4a51418f-bb60-4168-8fd7-c73912d84321",
+    "stagingDeployment": "5ec26b2d-5061-4d67-8409-15fd7cf38b83"
+  },
+  "hostedTurn": {
+    "promptCase": "sock-draw",
+    "synthetic": true,
+    "requestedTutor": "MiniMax-M3.1-Flash",
+    "requestedReviewer": "jev-1.14.0",
+    "relayPlanningRequests": 1,
+    "relayStatus": 403,
+    "tutorCandidatesDispatched": 0,
+    "completedCandidates": 0,
+    "pairRequests": 0,
+    "renderedQuestions": 0,
+    "publicNotice": "Couldn't produce a reply",
+    "capturedTerminalPairRow": false,
+    "offStudyCallsBlocked": true,
+    "railwayRequest": {
+      "timestamp": "2026-11-18T23:17:43.348923467Z",
+      "host": "chat.keating.help",
+      "path": "/api/judgement/typesafe",
+      "httpStatus": 403,
+      "requestId": "tkYiaUclQPGG74fxaP71AA",
+      "upstreamProtocol": "HTTP/1.1",
+      "durationMs": 17
+    }
+  },
+  "browserProbes": {
+    "method": "POST",
+    "path": "/api/judgement/typesafe",
+    "origin": "same as the opened classroom",
+    "authorization": false,
+    "credentials": "omit",
+    "body": {},
+    "expectedStatusAtCredentialCheck": 401,
+    "observations": [
+      {
+        "timestamp": "2026-11-18T23:19:14.610119613Z",
+        "host": "chat.keating.help",
+        "status": 403,
+        "message": "Cross-origin review requests are not allowed.",
+        "requestId": "aiPiwFRCTa6XRUU5FFmdQQ"
+      },
+      {
+        "timestamp": "2026-11-18T23:19:15.785609929Z",
+        "host": "keating-staging.up.railway.app",
+        "status": 403,
+        "message": "Cross-origin review requests are not allowed.",
+        "requestId": "bDkrNCZbSESAptHtezItjw"
+      }
+    ]
+  },
+  "scope": "Synthetic hosted release verification. The empty requests were rejected by Keating before the credential check. Tutor preferences, Jev judgements and population interface rates cannot be measured from this failure.",
+  "receipt": {
+    "file": "production-before.json",
+    "sha256": "4ac625425cf09a57008ca5674f4952669e53089e495616948b5dc806137035b3"
+  },
+  "accounting": {
+    "priorBoundUsd": 3.787884632,
+    "additionalReserveUsd": 0.003,
+    "cumulativeBoundUsd": 3.790884632,
+    "invoiceUsd": null
+  },
+  "retainedRelayWindow": {
+    "fromUtc": "2026-11-11T00:00:00Z",
+    "untilUtc": "2026-11-18T22:45:00Z",
+    "filter": "@path:/api/judgement/typesafe AND @method:POST AND (@host:chat.keating.help OR @host:keating.help)",
+    "source": "Railway HTTP log query for the production deployments covering this window",
+    "deployments": [
+      {
+        "id": "a0860e07-9156-4320-85e3-417aa5a4e012",
+        "retainedMatchingRequests": 0
+      },
+      {
+        "id": "fec2239a-52f4-4cda-b8a4-a41ec62fae9d",
+        "retainedMatchingRequests": 0
+      },
+      {
+        "id": "efac4a4d-cbd3-4b26-86b1-3dcbb2f17d95",
+        "retainedMatchingRequests": 0
+      },
+      {
+        "id": "491d80e4-7c3e-4d58-bb04-5d55425eaa2c",
+        "retainedMatchingRequests": 0
+      },
+      {
+        "id": "154133f2-2688-4a20-8c5c-63a77268830c",
+        "retainedMatchingRequests": 0
+      }
+    ],
+    "distinctRetainedMatchingRequests": 0,
+    "statusCounts": {},
+    "scope": "Retained HTTP requests to the BYOK decision relay. These logs do not identify learner turns, decision choices or interface renders.",
+    "positiveControl": {
+      "fromUtc": "2026-11-18T23:17:40Z",
+      "untilUtc": "2026-11-18T23:20:56Z",
+      "deployment": "4a51418f-bb60-4168-8fd7-c73912d84321",
+      "expectedSyntheticRequests": 2,
+      "matchedSyntheticRequests": 2
+    }
+  },
+  "sourceHistory": {
+    "sameOriginCheckIntroduced": "b7af1fa0",
+    "commitDate": "2026-10-01",
+    "historicalIncidence": null
+  },
+  "postRepairOfflineVerification": {
+    "inputSource": "Paired M3.1 Flash paper and sock Jev request ledger",
+    "verifiedRequestDigests": 9,
+    "byteIdenticalUpstreamRequestBodies": 9,
+    "provider": "stubbed fetch",
+    "realProviderRequests": 0
+  }
+}

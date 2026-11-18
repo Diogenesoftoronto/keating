@@ -25,11 +25,6 @@ export function createCustomJudgementBackend(options: CustomJudgementBackendOpti
   const timeoutMs = Number.isFinite(options.timeoutMs) && (options.timeoutMs ?? 0) > 0
     ? options.timeoutMs! : 30_000;
   const key = Object.freeze({ backend: "system-one" as const, model, calibrationSha256: null });
-  const systemOne = createSystemOneCaller({ endpoint: CUSTOM_JUDGEMENT_ENDPOINT, model, apiKey,
-    requireResolvedModel: true, calibrationSha256: null,
-    retry: { maxAttempts: 1, initialDelayMs: 0, maxDelayMs: 0 },
-    fetch: (url, init) => fetchRequest(url, { ...init, redirect: "error", credentials: "omit" }),
-  });
   return {
     key, isAvailable: () => true,
     call: async (request, signal) => {
@@ -37,6 +32,17 @@ export function createCustomJudgementBackend(options: CustomJudgementBackendOpti
       catch { return failed("request-invalid"); }
       if (signal?.aborted) return failed("cancelled");
       const controller = new AbortController();
+      // Each concurrent request owns its origin-denial observation. The relay strips upstream headers.
+      let originDenied = false;
+      const systemOne = createSystemOneCaller({ endpoint: CUSTOM_JUDGEMENT_ENDPOINT, model, apiKey,
+        requireResolvedModel: true, calibrationSha256: null, retry: { maxAttempts: 1, initialDelayMs: 0, maxDelayMs: 0 },
+        fetch: async (url, init) => {
+          const response = await fetchRequest(url, { ...init, redirect: "error", credentials: "omit" });
+          originDenied = url === CUSTOM_JUDGEMENT_ENDPOINT && response.status === 403
+            && response.headers?.get("X-Keating-Judgement-Error") === "relay-origin-denied";
+          return response;
+        },
+      });
       let timer: ReturnType<typeof setTimeout> | undefined;
       let cancel = () => {};
       const stopped = new Promise<JudgementOutcome>((resolve) => {
@@ -45,9 +51,11 @@ export function createCustomJudgementBackend(options: CustomJudgementBackendOpti
         timer = setTimeout(() => { controller.abort(); resolve(failed("backend-timeout")); }, timeoutMs);
       });
       try {
-        return await Promise.race([
+        const outcome = await Promise.race([
           systemOne(request, controller.signal).catch(() => failed("backend-unavailable")), stopped,
         ]);
+        return originDenied && !outcome.ok && outcome.error.code === "backend-unauthorized"
+          ? { ok: false, error: { ...outcome.error, detail: "relay-origin-denied" } } : outcome;
       } finally {
         clearTimeout(timer);
         signal?.removeEventListener("abort", cancel);

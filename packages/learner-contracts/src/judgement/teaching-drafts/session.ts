@@ -32,6 +32,7 @@ import { scopeDebuggingExpectedOutput } from "../debugging-expected-output.js";
 import { proveDebuggingExample, provenDebuggingFailures } from "../debugging-example-proof.js";
 import { nominateTeachingDraftPairs, observedPairCandidateIssues, reviewTeachingDraftPair, type TeachingDraftPair, type TeachingDraftPairReview } from "./pair-review.js";
 import { isTutorRateLimit, TUTOR_RATE_LIMIT_REASON } from "./generation-failure.js";
+import { makeDecisionPlanningFailure, type DecisionPlanningFailure } from "./planning-failure.js";
 
 interface DraftContext<T> {
   backgroundPolicy: BackgroundActivityPolicy | null;
@@ -170,6 +171,7 @@ export class TeachingDraftSession<T> {
   private readonly context: DraftContext<T>;
   private removedProseForPrediction = false;
   private pairReviews?: TeachingDraftPairReview[];
+  private decisionFailure?: DecisionPlanningFailure;
   private finalComparison?: TeachingDraftFinalComparison;
   constructor(private readonly options: TeachingDraftOptions<T>) { this.context = createDraftContext(options); }
 
@@ -186,6 +188,7 @@ export class TeachingDraftSession<T> {
 
   private snapshot(): TeachingDraftSnapshot { return { phase: this.context.phase, attempt: this.context.attempt, maxAttempts: this.context.maxAttempts, reasoning: this.context.reasoning, standard: this.context.standard, elapsedMs: Math.max(0, this.context.now() - this.context.start), attempts: structuredClone(this.context.attempts).sort((a,b) => a.attempt - b.attempt), judgeModel: this.context.judgeModel, selectedAttempt: this.context.selectedAttempt, reason: this.context.reason,
     ...(this.pairReviews ? { pairReviews: structuredClone(this.pairReviews) } : {}),
+    ...(this.decisionFailure ? { decisionFailure: { ...this.decisionFailure } } : {}),
     ...(this.context.phase === "released" && this.context.reason === null && this.finalComparison ? { finalComparison: structuredClone(this.finalComparison) } : {}),
     ...(this.context.phase === "released" && this.context.selectedAttempt !== null ? { selectionRule: this.selectedRule() } : {}),
     ...(this.context.synthesisSourceAttempts ? { synthesisSourceAttempts: [...this.context.synthesisSourceAttempts] } : {}),
@@ -301,9 +304,15 @@ export class TeachingDraftSession<T> {
           ? { checkpoint_reply_mode: checkpointReplyMode } : {}),
         draft_standard: standardQuestion } };
     });
-    const decision = await this.judge(decisionRequest!);
+    const decision = decisionRequest ? await this.judge(decisionRequest)
+      : { ok: false as const, error: { code: "request-invalid" as const, retryable: false } };
     this.context.planningMs = this.context.now() - planningStarted;
-    if (!decision.ok) { this.context.reason = decision.error.code; return null; }
+    if (!decision.ok) {
+      const model = this.options.configuredDecisionModel === undefined ? this.options.judgementModel?.id : this.options.configuredDecisionModel;
+      this.decisionFailure = makeDecisionPlanningFailure(decision.error, model);
+      this.context.reason = this.decisionFailure.reason;
+      return null;
+    }
     const chosenEffort = selectedReasoning(decision);
     const chosenStandard = selected(decision, "draft_standard", standardQuestion);
     if (chosenEffort) this.context.reasoning = effort[Math.min(this.context.ceiling, effort.indexOf(chosenEffort as TeachingDraftReasoning))]!;

@@ -126,6 +126,7 @@
 
   <nav aria-label="Evidence">
     <ul>
+      <li><a href="#production-relay">Hosted planning failure</a></li>
       <li><a href="../diagnostics.html?source=jev-pairs&amp;view=pair-reviews">Inspect the five turns</a></li>
       <li><a href="../diagnostics.html?source=jev-pairs-prediction&amp;view=pair-reviews">Inspect the two predictions</a></li>
       <li><a href="summary.json">Download results</a></li>
@@ -133,6 +134,44 @@
       <li><a href="../final-review/report.html">Earlier report</a></li>
     </ul>
   </nav>
+
+  <section class="gap" aria-labelledby="production-relay">
+    <span class="label">Production classroom · 18 November 2026, 23:17 UTC</span>
+    <h2 id="production-relay" style="margin-top:.35rem">On the live site, the turn stopped before any draft was written</h2>
+    <p>The sock prompt was typed once into <code>https://chat.keating.help</code> on release 4.2.2, with the built-in MiniMax M3.1 Flash tutor and Jev 1.14.0. The browser’s planning request came back with HTTP 403 after 183 ms. No teaching draft went to MiniMax. There were zero drafts, zero pair comparisons and zero Questions. The learner saw “Couldn’t produce a reply”. The verifier blocked background model calls. Its budget retained US$0.003 for the planning request, with billing unconfirmed. <a href="minimax-flash/production-relay.json">Production evidence</a> · <a href="minimax-flash/production-before.json">Browser receipt</a></p>
+    <p>Two further Chromium probes, carrying no key and no learner text, posted to the same address from the site’s own pages on staging and on production. Both received “Cross-origin review requests are not allowed.” That refusal comes from Keating’s own relay, ahead of its key check, so nothing was forwarded to Jev. In the 4.2.2 source the relay compares the browser’s <code>https</code> origin with the address the server sees for itself. Railway ends TLS before the request reaches that server, and this handler does not read the forwarded scheme, as the upload handler beside it does.</p>
+    <p><strong>The empty requests locate the failure before Jev.</strong> The origin check entered the source on October 1. A search across five production deployments found zero retained matching relay requests in the November 11–18 window before this experiment. It found both known requests in a later control window. We can date the code and reproduce the failure, but the records cannot tell us how often it affected earlier learners.</p>
+
+    <h3>Four ways a learner ends up with no Question</h3>
+    <p>The three failures looked alike in these recordings. Every scheduled prediction counts when asking whether learners saw a Question. The stage that failed tells you which part of the application could have changed that outcome.</p>
+    <div class="wide">
+      <table>
+        <caption>Where to look when a Question never appears</caption>
+        <thead><tr><th scope="col">Cause</th><th scope="col">What the record holds</th><th scope="col">What it measures</th><th scope="col">Seen here</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">The tutor chose prose</th><td>Four completed drafts, a released draft, no Question under Compiled</td><td>How often the tutor offers an interface</td><td>Copper’s symbol: “Cu”</td></tr>
+          <tr><th scope="row">A draft was withheld</th><td>Drafts exist, some with a Question. “Eligible for release” reads neither</td><td>How strict the review is. Not the tutor’s choice</td><td>Paper guess, before</td></tr>
+          <tr><th scope="row">The tutor’s provider refused</th><td>Planning succeeded. Four tutor requests, each HTTP 429, no usage. Pair rows read “Neither draft completed”</td><td>Provider availability only</td><td>M3.1 Flash sock turn, local</td></tr>
+          <tr><th scope="row">Planning never arrived</th><td class="flag">One planning request, HTTP 403. Zero tutor requests. No pair row at all</td><td class="flag">Whether the deployment works. Nothing about the tutor or Jev</td><td>M3.1 Flash sock turn, production</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>This production check delivered a Question on <strong>0 of 1 scheduled turns</strong>. Zero turns reached the tutor, so there was no model output to score for interface choice. The matched release-worktree study below measured a separate pair of M3.1 Flash turns.</p>
+
+    <h3>Checking a turn like this one</h3>
+    <ol>
+      <li><strong>Count the requests before reading any score.</strong> In the browser’s network panel, find the POST to <code>/api/judgement/typesafe</code> and then count the tutor requests after it. Zero tutor requests means the tutor was never asked.</li>
+      <li><strong>Read the 403’s body.</strong> A refusal by Keating’s relay carries the sentence quoted above. An error passed on from Jev’s service has the shape <code>{"error":{"code":…}}</code>. The status alone cannot separate them, since the relay passes the upstream status through.</li>
+      <li><strong>Treat an empty Settings list as unknown.</strong> In 4.2.2 this turn left no row under <strong>Jev pair reviews</strong> and none under withheld replies. A missing row there is absence of a record, and it must not be read as “the tutor chose prose”.</li>
+      <li><strong>Check where access was denied.</strong> Release 4.2.2 grouped HTTP 401 and 403 under <code>backend-unauthorized</code>. Either a relay refusal or a rejected key could produce that code.</li>
+    </ol>
+    <p>From a Keating checkout, run the same check with an empty request. HTTP 401 is the expected result when the relay reaches the API key check. Staging runs it before publishing a clean promotion candidate.</p>
+    <pre><code>rtk bun scripts/openui-diagnostics/probe-decision-relay.ts https://chat.keating.help</code></pre>
+    <p>In 4.2.3, fresh planning-failure records show the stage, the reason and the configured decision model in Settings and in the machine-readable withheld view. The detail <code>relay-origin-denied</code> identifies a refusal by Keating itself. A reviewer that returned no decision stays unobserved. Older exports retain the evidence available at the time.</p>
+    <p>A second failure explained how a turn could disappear from Settings. On a fresh classroom’s first turn, a screen update disconnected the listeners that save turn diagnostics. We injected the same planning refusal into two otherwise identical local browser runs. Before the repair, the app saved the teaching receipt and the message, but zero listeners received the turn events and Settings exported zero rows. After the repair, three listeners stayed attached. One withheld turn survived reload. The Settings download and the WebMCP query agreed on the configured reviewer, zero tutor attempts and the reason access was denied. Neither run called a provider.</p>
+    <p>The hosted Jev relay also preserves the structured state that the tutor study used. All nine recorded MiniMax M3.1 plan and review requests produced the same upstream bytes in an offline replay through the repaired relay.</p>
+    <p>The model setup had a timing issue of its own. In a fresh Settings panel, returning an older, empty key lookup erased a newly typed MiniMax key before the field saved it. With the same lookup deliberately delayed in 4.2.3, the typed key survived and saved. Jev planning started on the very next turn, both with and without reloading the classroom. The browser check used dummy credentials and intercepted the planning request.</p>
+  </section>
 
   <section aria-labelledby="result">
     <h2 id="result">What reached the learner</h2>

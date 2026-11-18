@@ -3,6 +3,7 @@ import { INTERACTION_REASONS, type InteractionReason } from "./judgement/interac
 import { requestedCodePracticeLanguage, type CodePracticeLanguage } from "./judgement/code-practice-language.js";
 import { asksForNamedPrediction, contextualExerciseLanguage, learnerCueProse } from "./openui-cue-context.js";
 import { inspectSimulationBrief } from "./judgement/assessment-opt-out.js";
+import { DECISION_PLANNING_FAILURE_SCHEMA, isDecisionPlanningFailure, type DecisionPlanningFailure } from "./judgement/teaching-drafts/planning-failure.js";
 import { OPENUI_DIAGNOSTIC_GATE_ISSUES, isOpenUiDiagnosticGateIssue } from "./openui-diagnostic-issues.js";
 export { isOpenUiDiagnosticGateIssue } from "./openui-diagnostic-issues.js";
 import { TEACHING_DRAFT_SELECTION_RULES, isTeachingDraftSelection, type TeachingDraftSelection } from "./judgement/teaching-selection.js";
@@ -84,6 +85,8 @@ export interface OpenUiDiagnosticTurn {
   finalComparison?: OpenUiFinalComparison;
   gateIssues?: string[];
   decisionModel?: string | null;
+  /** A failed decision from the final round before tutor generation. A missing field is unmeasured. */
+  decisionFailure?: DecisionPlanningFailure;
   /** Explicit assessment opt-out and checkpoint signals. Neither value measures educational fit. */
   assessment?: OpenUiAssessmentObservation;
 }
@@ -255,7 +258,7 @@ export function openUiMatchesTargets(components: readonly string[], targets: rea
 }
 
 const ROW_KEYS = ["schemaVersion", "conversationId", "turnId", "turnIndex", "model", "requestedModel", "mode", "cue", "reply",
-  "attempted", "compiled", "selected", "rendered", "guidance", "experiment", "fit", "draftAttempts", "selection", "pairReviews", "finalComparison", "gateIssues", "decisionModel", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"];
+  "attempted", "compiled", "selected", "rendered", "guidance", "experiment", "fit", "draftAttempts", "selection", "pairReviews", "finalComparison", "gateIssues", "decisionModel", "decisionFailure", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"];
 type RecordValue = Record<string, unknown>;
 function fields(value: unknown, allowed: readonly string[]): value is RecordValue {
   return value !== null && typeof value === "object" && !Array.isArray(value) && Object.keys(value).every(key => allowed.includes(key));
@@ -339,6 +342,7 @@ export function isOpenUiDiagnosticTurn(value: unknown): value is OpenUiDiagnosti
     && (value.finalComparison === undefined || validOpenUiFinalComparison(value.finalComparison, value.pairReviews))
     && (value.draftAttempts === undefined || (Number.isSafeInteger(value.draftAttempts) && (value.draftAttempts as number) >= 0))
     && (value.decisionModel === undefined || value.decisionModel === null || identifier(value.decisionModel))
+    && (value.decisionFailure === undefined || isDecisionPlanningFailure(value.decisionFailure))
     && (value.requestedModel === undefined || identifier(value.requestedModel))
     && (value.assessment === undefined || validAssessment(value.assessment, value.reply, value.selected))
     && (value.gateIssues === undefined || (Array.isArray(value.gateIssues) && value.gateIssues.length <= OPENUI_DIAGNOSTIC_GATE_ISSUES.length
@@ -364,7 +368,7 @@ const targetsSchema = stringList([...COMPONENTS, "any"]);
 const measuredComponents = { anyOf: [stringList(COMPONENTS), { type: "null" }] };
 const recordSchema = (properties: Record<string, unknown>, required: string[] = Object.keys(properties)) =>
   ({ type: "object", additionalProperties: false, required, properties });
-const requiredTurnKeys = ROW_KEYS.filter(k => !["fit", "experiment", "requestedModel", "decisionModel", "draftAttempts", "selection", "pairReviews", "finalComparison", "gateIssues", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"].includes(k));
+const requiredTurnKeys = ROW_KEYS.filter(k => !["fit", "experiment", "requestedModel", "decisionModel", "decisionFailure", "draftAttempts", "selection", "pairReviews", "finalComparison", "gateIssues", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"].includes(k));
 const cueSchema = {
   ...recordSchema({ kind: { enum: OPENUI_DIAGNOSTIC_CUES }, targets: stringList([...COMPONENTS, "any", "editable-code"]),
     repeat: { type: "boolean" }, codeLanguage: { enum: EDITABLE_CODE_LANGUAGES } }, ["kind", "targets"]),
@@ -393,6 +397,7 @@ const turnSchema = recordSchema({
     allOf: [{ if: { properties: { review: { const: "verified" } } }, then: { properties: { rule: { enum: ["none", "requested-prediction-over-prose"] } } },
       else: { properties: { rule: { enum: ["none", "presentation-only-checkpoint-retained"] } } } }] },
   decisionModel: { anyOf: [identifierSchema, { type: "null" }] },
+  decisionFailure: DECISION_PLANNING_FAILURE_SCHEMA,
   outsideWords: { type: ["integer", "null"], minimum: 0, maximum: Number.MAX_SAFE_INTEGER,
     description: "Whitespace-delimited words outside OpenUI segments in the final reply, including ordinary Markdown fence labels and code." },
   replyElapsedMs: { type: ["integer", "null"], minimum: 0, maximum: Number.MAX_SAFE_INTEGER,

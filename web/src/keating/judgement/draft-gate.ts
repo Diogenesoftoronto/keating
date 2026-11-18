@@ -451,6 +451,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         backgroundActivityPolicy: activityState?.policy ?? null,
         recordActivity: activityState?.recordActivity ?? false,
         judgementModel,
+        configuredDecisionModel: options.judgementModel?.id ?? (runtime && runtime.settings.backend !== "off" ? runtime.judgementModel?.id ?? null : null),
         maxAttempts: options.maxAttempts,
         refinement: options.refinement,
         maxReasoning: ceiling(options, streamOptions),
