@@ -1,0 +1,157 @@
+{
+  "policy": "keating-teaching-policy/v2.2",
+  "scheduled": 12,
+  "rows": [
+    {
+      "id": "direct-label--jev",
+      "kind": "live",
+      "status": "released",
+      "offered": [],
+      "planReason": "plain-reply",
+      "selected": [],
+      "nativeRequested": false,
+      "selectedAttempt": 1,
+      "drafts": 1
+    },
+    {
+      "id": "direct-label--google",
+      "kind": "live",
+      "status": "released",
+      "offered": [],
+      "planReason": "plain-reply",
+      "selected": [],
+      "nativeRequested": false,
+      "selectedAttempt": 1,
+      "drafts": 2
+    },
+    {
+      "id": "conveyor--jev",
+      "kind": "live",
+      "status": "released",
+      "offered": [
+        "Simulation",
+        "ConceptMap"
+      ],
+      "planReason": null,
+      "selected": [],
+      "nativeRequested": true,
+      "selectedAttempt": 1,
+      "drafts": 1
+    },
+    {
+      "id": "conveyor--google",
+      "kind": "live",
+      "status": "released",
+      "offered": [
+        "Simulation",
+        "ConceptMap"
+      ],
+      "planReason": null,
+      "selected": [
+        "simulation"
+      ],
+      "nativeRequested": false,
+      "selectedAttempt": 2,
+      "drafts": 2
+    },
+    {
+      "id": "account-seats--jev",
+      "kind": "plan",
+      "status": "plan-only",
+      "offered": [],
+      "planReason": "not-learning",
+      "selected": null,
+      "nativeRequested": null,
+      "selectedAttempt": null,
+      "drafts": 0
+    },
+    {
+      "id": "account-seats--google",
+      "kind": "plan",
+      "status": "plan-only",
+      "offered": [],
+      "planReason": "not-learning",
+      "selected": null,
+      "nativeRequested": null,
+      "selectedAttempt": null,
+      "drafts": 0
+    },
+    {
+      "id": "single-rectangle--jev",
+      "kind": "plan",
+      "status": "plan-only",
+      "offered": [
+        "Simulation",
+        "ConceptMap"
+      ],
+      "planReason": null,
+      "selected": null,
+      "nativeRequested": null,
+      "selectedAttempt": null,
+      "drafts": 0
+    },
+    {
+      "id": "single-rectangle--google",
+      "kind": "plan",
+      "status": "plan-only",
+      "offered": [
+        "Simulation",
+        "ConceptMap"
+      ],
+      "planReason": null,
+      "selected": null,
+      "nativeRequested": null,
+      "selectedAttempt": null,
+      "drafts": 0
+    },
+    {
+      "id": "plain-relationship--jev",
+      "kind": "plan",
+      "status": "plan-only",
+      "offered": [],
+      "planReason": "plain-reply",
+      "selected": null,
+      "nativeRequested": null,
+      "selectedAttempt": null,
+      "drafts": 0
+    },
+    {
+      "id": "plain-relationship--google",
+      "kind": "plan",
+      "status": "plan-only",
+      "offered": [],
+      "planReason": "plain-reply",
+      "selected": null,
+      "nativeRequested": null,
+      "selectedAttempt": null,
+      "drafts": 0
+    },
+    {
+      "id": "active-checkpoint--jev",
+      "kind": "fixed",
+      "status": "withheld",
+      "offered": [],
+      "planReason": "no-supported-family",
+      "selected": null,
+      "nativeRequested": null,
+      "selectedAttempt": null,
+      "drafts": 1
+    },
+    {
+      "id": "active-checkpoint--google",
+      "kind": "fixed",
+      "status": "withheld",
+      "offered": [
+        "Question"
+      ],
+      "planReason": null,
+      "selected": null,
+      "nativeRequested": null,
+      "selectedAttempt": null,
+      "drafts": 1
+    }
+  ],
+  "providerRequests": 25,
+  "incrementalBoundUsd": 0.08973627,
+  "cumulativeBoundUsd": 1.733468526
+}

@@ -1,0 +1,18 @@
+{
+  "source": "isolated-read-only-render-of-sealed-conversation",
+  "receiptSha256": "43137d6bcc3cdd31b5b136bfc77e00dd41074f679d649d198acf0f31d3883aa4",
+  "publicTextSha256": "796e0099574f8727c834f24f542eeb8a0ecfce55a4bfe043d3460f3a07cf640b",
+  "parentReceiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+  "learner": "My guess is round, because three of the four tiles are round.",
+  "visibleNotice": "Couldn't produce a reply",
+  "parentChoices": 4,
+  "metrics": {
+    "viewport": 390,
+    "body": 390
+  },
+  "composerVisible": false,
+  "attemptedPost": 0,
+  "pageErrors": [],
+  "blockedExternalOrigins": [],
+  "screenshot": "notice-mobile-replay.png"
+}

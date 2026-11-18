@@ -1,0 +1,139 @@
+{
+  "november": {
+    "scheduled": 20,
+    "opportunities": 16,
+    "firstCompleted": 14,
+    "firstCompiled": 8,
+    "anyDraftCompiled": 14,
+    "finalCompiled": 10,
+    "familyFit": 10,
+    "familyAndLanguage": 9,
+    "questions": 7,
+    "namedOffers": 9,
+    "selectedNamedFamily": 3,
+    "model": [
+      {
+        "model": "MiniMax-M2.7-highspeed",
+        "opportunities": 8,
+        "compiled": 7,
+        "selected": 3
+      },
+      {
+        "model": "gemini-3.1-flash-lite",
+        "opportunities": 8,
+        "compiled": 7,
+        "selected": 7
+      }
+    ],
+    "pairedFirstDrafts": {
+      "pairs": 8,
+      "anyWith": 4,
+      "anyWithout": 4,
+      "familyWith": 3,
+      "familyWithout": 4
+    },
+    "directText": {
+      "scheduled": 4,
+      "withoutFencedControl": 4
+    }
+  },
+  "matchedDecisionStudy": {
+    "jev": {
+      "scheduled": 6,
+      "opportunities": 4,
+      "matchedFenced": 2,
+      "withCompletedDraft": 3,
+      "assessed": 4,
+      "passedSavedRubric": 3,
+      "classroomsObserved": 0
+    },
+    "gemini": {
+      "scheduled": 6,
+      "opportunities": 4,
+      "matchedFenced": 2,
+      "withCompletedDraft": 3,
+      "assessed": 4,
+      "passedSavedRubric": 2,
+      "classroomsObserved": 0
+    }
+  },
+  "terminalImplicitDelays": {
+    "opportunities": 40,
+    "reminders": 0,
+    "firstResponse": 6,
+    "later": 1,
+    "unknown": 0,
+    "unresolved": 33,
+    "superseded": 0,
+    "byResponse": [
+      {
+        "responseNumber": 1,
+        "count": 6
+      },
+      {
+        "responseNumber": 2,
+        "count": 1
+      }
+    ],
+    "medianResponseNumber": 1
+  },
+  "budget": {
+    "accountedUpperUsd": 1.91711828,
+    "invoiceUsd": null,
+    "bound": [
+      {
+        "source": "evidence/budget.json",
+        "entries": 136,
+        "nanoUsd": 831405428
+      },
+      {
+        "source": "policy-v2/ledger.json",
+        "entries": 15,
+        "nanoUsd": 3225474
+      },
+      {
+        "source": "policy-v2.1/ledger.json",
+        "entries": 6,
+        "nanoUsd": 1048152
+      },
+      {
+        "source": "policy-holdout/ledger.json",
+        "entries": 6,
+        "nanoUsd": 133147818
+      },
+      {
+        "source": "policy-holdout/segment-two-ledger.json",
+        "entries": 8,
+        "nanoUsd": 152365526
+      },
+      {
+        "source": "gemini-decision/ledger.json",
+        "entries": 44,
+        "nanoUsd": 518665600
+      },
+      {
+        "source": "cue-paraphrases/ledger.json",
+        "entries": 12,
+        "nanoUsd": 3874258
+      },
+      {
+        "source": "policy-v2.2/ledger.json",
+        "entries": 25,
+        "nanoUsd": 89736270
+      },
+      {
+        "source": "policy-v2.3-completion/ledger.json",
+        "entries": 15,
+        "nanoUsd": 179466690
+      },
+      {
+        "source": "policy-v2.3.2-review/ledger.json",
+        "entries": 8,
+        "nanoUsd": 4183064
+      }
+    ],
+    "overlappingInitialEntries": 7,
+    "observedCompletedSegmentEntries": 15
+  },
+  "providerCalls": 0
+}

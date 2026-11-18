@@ -13,9 +13,12 @@ import type { InteractionFamily, InteractionRecommendation } from "./interaction
 import type { PlanChangeMode, PlanReview, PlanReviewHostTrigger } from "./plan-review.js";
 import type { BackgroundActivityGuidance } from "./background-activity-guidance.js";
 import type { BackgroundActivityPolicy } from "./background-activity-policy.js";
+import type { DebuggingExerciseReview } from "./debugging-exercise.js";
+import type { AttemptedCheckpointFeedback } from "./teaching-drafts/attempt-feedback.js";
 import type { ActivitySelectionReceipt } from "./activity-learning.js";
 import type { ActivitySelection, ActivitySelectionInput, ReleasedActivitySelection } from "./activity-observations.js";
 import type { StateComposition } from "./state-metrics.js";
+import type { TeachingDraftSelectionRule } from "./teaching-selection.js";
 
 export type TeachingDraftReasoning = "off" | "low" | "medium" | "high";
 export type TeachingDraftStandard = "concise" | "supported" | "deep";
@@ -32,6 +35,14 @@ export interface TeachingDraftFeedback {
 export interface TeachingDraftAttempt {
   /** Content-free provenance; the merged response receives its own full review. */
   readonly synthesisSourceAttempts?: readonly number[];
+  /** Only the text ending at the checkpoint was reviewed for publication. */
+  readonly trimmedCheckpointSuffix?: true;
+  /** A required prediction was removed from an optional control brief before the whole candidate was reviewed. */
+  readonly repairedAssessmentBrief?: true;
+  /** Full typed distributions for the example and disclosure checks, when requested. */
+  readonly debuggingExercise?: DebuggingExerciseReview;
+  /** Content-free, raw categorical answers when review inspected a free-text response to the preceding question. */
+  readonly attemptedCheckpointFeedback?: AttemptedCheckpointFeedback;
   readonly attempt: number;
   readonly reasoning: TeachingDraftReasoning;
   readonly standard: TeachingDraftStandard;
@@ -49,6 +60,8 @@ export interface TeachingDraftAttempt {
 /** Content-free record of what the planning judgment recommended. */
 export interface TeachingDraftInteraction {
   readonly action: InteractionRecommendation["action"];
+  readonly reason?: InteractionRecommendation["reason"];
+  readonly codePracticeLanguage?: InteractionRecommendation["codePracticeLanguage"];
   readonly families: readonly { readonly family: InteractionFamily; readonly components: readonly string[] }[];
   /** Interaction-feature ids the planning judge answered true. */
   readonly features: readonly string[];
@@ -91,6 +104,8 @@ export interface TeachingDraftSnapshot {
   readonly attempts: readonly TeachingDraftAttempt[];
   readonly judgeModel: string | null;
   readonly selectedAttempt: number | null;
+  /** Observed prediction-specific selection rule on a released draft. Older receipts omit it. */
+  readonly selectionRule?: TeachingDraftSelectionRule;
   readonly reason: string | null;
   readonly planningMs?: number;
   readonly interaction?: TeachingDraftInteraction;
@@ -107,6 +122,8 @@ export interface TeachingDraftReceipt extends TeachingDraftSnapshot {
   readonly selectionOmittedForBudget: readonly number[];
 }
 export interface TeachingDraftGenerationInput {
+  /** The prompt variant actually sent for this attempt. */
+  readonly variant?: TeachingDraftVariant;
   /** Last-budget recovery when no usable response exists; hosts must disable tool dispatch. */
   readonly textOnlyRecovery?: true;
   /** Private, untrusted source material. Never publish or copy into diagnostics. */

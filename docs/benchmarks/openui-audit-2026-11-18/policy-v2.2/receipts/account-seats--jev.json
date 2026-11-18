@@ -1,0 +1,33 @@
+{
+  "id": "account-seats--jev",
+  "caseId": "account-seats",
+  "provider": "jev",
+  "decisionModel": "jev-1.14.0",
+  "kind": "plan",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "685930bc4f2ec818dc252007bbbd3cee28449cbb325a9ef7e3e0b5d15027719e",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "none",
+    "offered": [],
+    "reason": "not-learning",
+    "directives": [
+      "Give the requested help without asking the learner to complete a checkpoint or exercise. Include a requested visual explanation or demonstration.",
+      "Use an available research tool before settling current or source-specific claims. If unavailable, state what cannot be verified; cite only evidence actually available.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it."
+    ]
+  },
+  "drafts": [],
+  "status": "plan-only",
+  "public": null,
+  "notice": null,
+  "selectedAttempt": null,
+  "findings": []
+}

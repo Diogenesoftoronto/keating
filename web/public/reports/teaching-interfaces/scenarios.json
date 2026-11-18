@@ -1,0 +1,12 @@
+[
+  {"id":"transfer","title":"Try a new equation","group":"opportunity","fit":["question","question-group"],"prompt":"I worked out that 2x = 10 gives x = 5. Give me one different equation so you can see whether I can do it on my own."},
+  {"id":"prediction","title":"Predict a coin flip","group":"opportunity","fit":["question","question-group"],"prompt":"A fair coin just landed heads four times. I think tails must be due. Let me make a prediction about the next flip before you explain."},
+  {"id":"recall","title":"Recall three French colours","group":"opportunity","fit":["quiz","deck","language-practice","question","question-group"],"prompt":"I've studied the French words for red, blue and green. See which ones I can recall, one at a time. Don't give me the translations yet."},
+  {"id":"variable","title":"Change a rectangle","group":"opportunity","fit":["simulation"],"prompt":"I keep mixing up area and perimeter. Could I change the width of a rectangle while its height stays at 4 and watch what happens to both numbers?"},
+  {"id":"structure","title":"Connect a food web","group":"opportunity","fit":["concept-map","diagram"],"prompt":"Grass, grasshoppers, frogs, and herons are in the same food web. I'd like to arrange their connections and see which way the energy flows."},
+  {"id":"code","title":"Repair an off-by-one loop","group":"opportunity","fit":["coding-challenge"],"prompt":"My Python loop skips the last item nearly every time. Give me a tiny broken loop I can fix and try against a couple of example inputs."},
+  {"id":"choice","title":"Choose a practice path","group":"opportunity","fit":["question","question-group"],"prompt":"I want to practice either estimating a shopping total or comparing unit prices. Let me choose the path before we start."},
+  {"id":"order","title":"Put the steps in order","group":"opportunity","fit":["question","question-group","quiz"],"prompt":"I know the steps for making a bar chart but I mix up the sequence. Give me the steps scrambled so I can put them back in order."},
+  {"id":"fact","title":"Answer a bounded fact","group":"control","fit":[],"prompt":"What is 4 factorial? Just give me the value, please."},
+  {"id":"brief","title":"Explain in one sentence","group":"control","fit":[],"prompt":"In one plain sentence, what does the denominator of a fraction tell me? No follow-up exercise, please."}
+]

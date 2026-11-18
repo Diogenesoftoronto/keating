@@ -1,0 +1,20 @@
+{
+  "id": "classroom-tile-confirm--minimax--jev",
+  "policy": "keating-teaching-policy/v2.3.7",
+  "sourceDeltaSha256": "7045fa9fc97c180996d4684bbd9eedcc5e5ae270eb1651b77ba2eb2f57fd08ab",
+  "sourceBaseSha256": "e7e75735b4d16491a133ff2ef46fef59c5189044b0d2e1ed28fa7bd3810b42aa",
+  "sourceFiles": 1813,
+  "priorSummarySha256": "e0c4bf7c2ada24962011d8f96792841ba3d24c6cc2bcc0ade71b07016636be6c",
+  "priorBoundUsd": 2.726584462,
+  "capUsd": 10,
+  "phaseCapUsd": 0.6,
+  "parentReceiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+  "parentPublicTextSha256": "65eecea1789dffb357f65748832beaceaea4d5a144da07fcb1b00a96485265de",
+  "transportSha256": "52fd04074a7bec220e806108720f5b0a78b9ac0f7d8ad4c41d386dc468f0e560",
+  "code": {
+    "cohort.json": "f22c66aa354cf68c66abb3e26faa5228dd925c627561cd01a617547b1b3cc24b",
+    "source.py": "e4341966543ae1eea38cc19bcb1fc6e0f4ec78a1d53623a11dcfcdaac1cf2b96",
+    "environment.mjs": "13920694f19c023bc14e4b05347cea4acc63e70738fddf1a187c88fffcd86b5c",
+    "run.mjs": "4408a6a58c29586fcbd5f9f4668d06ac8a2e1538ba2845801e9532e12a048aa1"
+  }
+}

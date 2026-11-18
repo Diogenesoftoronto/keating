@@ -1,0 +1,21 @@
+{
+  "requestSha256": "eaf4ddc0cd2484bf6b27de4a3d6169e0aa70d03022853a37bc1ac998f429e933",
+  "wireSha256": "037411dc4d91184219f6feb79c9187241cdbe80970b752cfe684b70e204ae7b5",
+  "label": "MiniMax-M2.7-highspeed--recall/2",
+  "requestedModel": "gemini-decision-1",
+  "endpoint": "https://generativelanguage.googleapis.com/v1beta/decisions",
+  "startedAt": "2026-11-18T15:43:57.381Z",
+  "http": 429,
+  "payload": {
+    "error": {
+      "code": "too_many_requests",
+      "status": null,
+      "message": "Rate limit exceeded for model gemini-decision-1 (limit: 50000 input tokens per minute on Free Tier). Please retry in 2s or upgrade your tier at https://ai.dev/rate-limit."
+    }
+  },
+  "shape": [
+    "error"
+  ],
+  "responseSha256": "624ccf6d9ae7d571235b3a2ed540a0a918bb0cc91d68e77f32b88d2269c51246",
+  "finishedAt": "2026-11-18T15:43:57.574Z"
+}

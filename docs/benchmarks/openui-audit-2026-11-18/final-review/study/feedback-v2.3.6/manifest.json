@@ -1,0 +1,86 @@
+{
+  "id": "keating-typed-feedback-v2.3.6",
+  "version": 1,
+  "policy": "keating-teaching-policy/v2.3.6",
+  "sourceBaseSha256": "e7e75735b4d16491a133ff2ef46fef59c5189044b0d2e1ed28fa7bd3810b42aa",
+  "sourceDeltaSha256": "31f2648ee87b9131b6a066acd4a0fa174ac7feaf038aeb7c05731cb528afeaee",
+  "sourceFileCount": 1812,
+  "cohortSha256": "f7f29a12cfb4f3f1c11922f9dd495204e1f466903c490e2c485493dbe0bbe427",
+  "priorBoundUsd": 2.67111486,
+  "previousSummarySha256": "5f39d3f4c35a0c1dce053349946f1c715d2ae06ffb3ff221fca3d711edd0d058",
+  "previousLedgerSha256": "ab87e6bf2897b738261ffb50815b443f44d6be12f02605f96c46a842d9936bc9",
+  "globalCapUsd": 10,
+  "phaseCapUsd": 1.15,
+  "systemSha256": "14beee2f30e73e37d241777b470a8be299af6114a285a0f82962e02ce9f28d2d",
+  "baseSha256": "6ca875ed75e4c0ecb5f45ead6f26b9d3d8fbb54f7013cb8017160ccafd60c9ba",
+  "toolsSha256": "20e43e6f369fb4eafbf6a0665b3aa9001a436fcafe3786b55e0b222d95959f25",
+  "tools": 18,
+  "transportSha256": "52fd04074a7bec220e806108720f5b0a78b9ac0f7d8ad4c41d386dc468f0e560",
+  "code": {
+    "run.mjs": "14e60ad5114b48f48364610d050997646120060a7941210838c40e3420b35eba",
+    "environment.mjs": "13920694f19c023bc14e4b05347cea4acc63e70738fddf1a187c88fffcd86b5c",
+    "source.py": "0e594d3fb2c6a4478fe70c0c6e8e2123a08fa1e2e7e14284bbe065acff6f6d19"
+  },
+  "schedule": [
+    {
+      "id": "review--authentic-confirmation--jev",
+      "caseId": "authentic-confirmation",
+      "arm": "jev",
+      "kind": "fixed-review"
+    },
+    {
+      "id": "review--authentic-confirmation--google",
+      "caseId": "authentic-confirmation",
+      "arm": "google",
+      "kind": "fixed-review"
+    },
+    {
+      "id": "review--wrong-affirmed--google",
+      "caseId": "wrong-affirmed",
+      "arm": "google",
+      "kind": "fixed-review"
+    },
+    {
+      "id": "review--wrong-affirmed--jev",
+      "caseId": "wrong-affirmed",
+      "arm": "jev",
+      "kind": "fixed-review"
+    },
+    {
+      "id": "review--new-question-leaked--jev",
+      "caseId": "new-question-leaked",
+      "arm": "jev",
+      "kind": "fixed-review"
+    },
+    {
+      "id": "review--new-question-leaked--google",
+      "caseId": "new-question-leaked",
+      "arm": "google",
+      "kind": "fixed-review"
+    },
+    {
+      "id": "review--wrong-corrected--google",
+      "caseId": "wrong-corrected",
+      "arm": "google",
+      "kind": "fixed-review"
+    },
+    {
+      "id": "review--wrong-corrected--jev",
+      "caseId": "wrong-corrected",
+      "arm": "jev",
+      "kind": "fixed-review"
+    },
+    {
+      "id": "fresh--confirmation--jev",
+      "caseId": "authentic-confirmation",
+      "arm": "jev",
+      "kind": "fresh-tutor"
+    },
+    {
+      "id": "fresh--confirmation--google",
+      "caseId": "authentic-confirmation",
+      "arm": "google",
+      "kind": "fresh-tutor"
+    }
+  ]
+}

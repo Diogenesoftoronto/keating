@@ -1,0 +1,292 @@
+{
+  "id": "MiniMax-M2.7-highspeed--transfer",
+  "scenario": "transfer",
+  "model": "MiniMax-M2.7-highspeed",
+  "startedAt": "2026-11-18T12:52:22.337Z",
+  "judge": [
+    {
+      "phase": "plan",
+      "hash": "8a424c5e6c2d6b2d67494de67ed3959470d104f9ef09df983ba736b88e7cdf68",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 3527,
+        "outputTokens": 675
+      },
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.62
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.07
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.79
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.81
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.84
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.64
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 0.99
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.62
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.13
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.29
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.08
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.21
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.46
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.08
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.1
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 0.83,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.22,
+            "1": 0.73,
+            "2": 0.05,
+            "3": 0
+          },
+          "confidence": 0.73
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.04,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.97,
+            "1": 0.03,
+            "2": 0,
+            "3": 0
+          },
+          "confidence": 0.97
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 0.42,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.62,
+            "1": 0.35,
+            "2": 0.02,
+            "3": 0.01
+          },
+          "confidence": 0.58
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "concise",
+          "probabilities": {
+            "concise": 0.98,
+            "supported": 0.02,
+            "deep": 0
+          },
+          "confidence": 0.97
+        }
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "3e449de0507537c970306915c0873d5aa8e4f7e0a6ba2ca3ef51f95eb4c6f04f",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5800,
+        "outputTokens": 896
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha": "e7c80b67ad6e1f7ed53ed1d8921ce4fef5f1d9d800e8687853a2633c9d0e8594",
+      "messagesSha": "ae9367bae9c3b31a0e46c064e714492ed6434513a7776678bbd3f532569da934",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "Good instinct — one equation, and I'll wait for your work rather than solve it for you.",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "error",
+        "errorClass": "provider",
+        "usage": null
+      }
+    },
+    {
+      "attempt": 2,
+      "systemSha": "e7c80b67ad6e1f7ed53ed1d8921ce4fef5f1d9d800e8687853a2633c9d0e8594",
+      "messagesSha": "ae9367bae9c3b31a0e46c064e714492ed6434513a7776678bbd3f532569da934",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "Nice — you inverted the multiplication correctly. Here I'll swap the direction of the operation and add a step, so it can't be done by reflex.\n\n```openui lifecycle=ephemeral id=linear-equation-practice-1\n\nroot = LearningSurface([check], \"Your turn\", \"One equation. Show your working — I'll check your steps, not just the number.\", \"ephemeral\")\ncheck = Question([{ header: \"Solve\", question: \"Solve for x:  7x − 3 = 39\", type: \"text\", hint: \"Try undoing the subtraction first, then undo the multiplication. Tell me which order you used and why.\" }], \"ephemeral\", \"Solving linear equations\", \"Write out each step you take.\")\n\n```",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 18427,
+          "output": 615,
+          "cacheRead": 128,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "counterfactual": null,
+  "decision": {
+    "action": "none",
+    "families": [],
+    "features": [
+      "variable_relationship"
+    ],
+    "paired": false
+  },
+  "offer": null,
+  "phase": "released",
+  "selection": 2,
+  "reason": null,
+  "release": {
+    "text": "Nice — you inverted the multiplication correctly. Here I'll swap the direction of the operation and add a step, so it can't be done by reflex.\n\n```openui lifecycle=ephemeral id=linear-equation-practice-1\n\nroot = LearningSurface([check], \"Your turn\", \"One equation. Show your working — I'll check your steps, not just the number.\", \"ephemeral\")\ncheck = Question([{ header: \"Solve\", question: \"Solve for x:  7x − 3 = 39\", type: \"text\", hint: \"Try undoing the subtraction first, then undo the multiplication. Tell me which order you used and why.\" }], \"ephemeral\", \"Solving linear equations\", \"Write out each step you take.\")\n\n```",
+    "unverified": false
+  },
+  "publicText": "Nice — you inverted the multiplication correctly. Here I'll swap the direction of the operation and add a step, so it can't be done by reflex.\n\n```openui lifecycle=ephemeral id=linear-equation-practice-1\n\nroot = LearningSurface([check], \"Your turn\", \"One equation. Show your working — I'll check your steps, not just the number.\", \"ephemeral\")\ncheck = Question([{ header: \"Solve\", question: \"Solve for x:  7x − 3 = 39\", type: \"text\", hint: \"Try undoing the subtraction first, then undo the multiplication. Tell me which order you used and why.\" }], \"ephemeral\", \"Solving linear equations\", \"Write out each step you take.\")\n\n```",
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "generation-error",
+      "checks": []
+    },
+    {
+      "attempt": 2,
+      "status": "pass",
+      "checks": []
+    }
+  ],
+  "directives": [
+    "- Answer the bounded question directly; do not start a diagnostic interview.",
+    "- Respond to the learner's actual reasoning before choosing the next step.",
+    "- Provide one requested OpenUI practice activity now, without requiring a lesson first or attaching a study plan.",
+    "- A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+    "- Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+    "- Address the learner's pacing request against the active plan; propose any plan change and let the learner decide.",
+    "- Choose one useful next learning step based on demonstrated understanding, then let the learner respond."
+  ],
+  "finishedAt": "2026-11-18T12:52:36.627Z"
+}

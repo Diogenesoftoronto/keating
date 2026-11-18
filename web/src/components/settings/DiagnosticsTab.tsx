@@ -19,6 +19,7 @@ import { loadKeatingUiSettings, saveKeatingUiSettings, subscribeKeatingUiSetting
 import { Toggle } from "../Toggle";
 import { JudgementDiagnostics } from "../JudgementDiagnostics";
 import { ModelRequestLog } from "./ModelRequestLog";
+import { OpenUiDiagnosticsPanel } from "./OpenUiDiagnosticsPanel";
 import { CopyDiagnosticButton } from "./CopyDiagnosticButton";
 import { explainDiagnostic, buildHealthChecks, buildHealthText, groupProblems, overallStatus, type CheckStatus } from "../../lib/diagnostics-insights";
 import { diagnosticReportMailto, readDiagnosticRuntimeSnapshot, sendDiagnosticReport } from "../../lib/diagnostics";
@@ -358,6 +359,7 @@ export function DiagnosticsTab() {
 	useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
 	return (
 		<div className={stackClass}>
+			<OpenUiDiagnosticsPanel />
 			<HealthSummary />
 			<section className={sectionClass} aria-labelledby="developer-chat-heading">
 				<h3 id="developer-chat-heading" className={headingClass}>Developer chat details</h3>

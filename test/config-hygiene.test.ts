@@ -239,6 +239,7 @@ const ALLOWLIST: readonly [file: string, literal: string, reason: string][] = [
   ["packages/learner-contracts/src/learner-profile-declared.ts", "balanced", "UI, document or learner-state discriminator; not an upstream inference model choice."],
   ["packages/learner-contracts/src/learner-profile-declared.ts", "default", "UI, document or learner-state discriminator; not an upstream inference model choice."],
   ["packages/learner-contracts/src/learning.ts", "image", "UI, document or learner-state discriminator; not an upstream inference model choice."],
+  ["packages/learner-contracts/src/openui-diagnostic-turn.ts", "image", "Names the OpenUI image component in diagnostic turns."],
   ["packages/learner-contracts/src/openui-source.ts", "image", "UI, document or learner-state discriminator; not an upstream inference model choice."],
   ["packages/learner-contracts/src/rendering.ts", "image", "UI, document or learner-state discriminator; not an upstream inference model choice."],
   ["packages/learner-contracts/src/sessions.ts", "image", "UI, document or learner-state discriminator; not an upstream inference model choice."],

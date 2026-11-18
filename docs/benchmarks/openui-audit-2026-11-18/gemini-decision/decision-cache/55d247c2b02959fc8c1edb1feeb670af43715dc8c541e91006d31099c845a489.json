@@ -1,0 +1,266 @@
+{
+  "requestSha256": "55d247c2b02959fc8c1edb1feeb670af43715dc8c541e91006d31099c845a489",
+  "wireSha256": "c3a4ebce7e65bcb2ff47550ade023a3f41aaad87a8582c03e2991b1d11bf3448",
+  "label": "MiniMax-M2.7-highspeed--spinner/judge-1",
+  "requestedModel": "gemini-decision-1",
+  "endpoint": "https://generativelanguage.googleapis.com/v1beta/decisions",
+  "startedAt": "2026-11-18T15:39:21.205Z",
+  "http": 200,
+  "payload": {
+    "answers": {
+      "extended_production": {
+        "confidence": 0.965122039745374,
+        "noul": 0.034877960254625986,
+        "type": "noul"
+      },
+      "observed_profile_pattern": {
+        "confidence": 0.9775191309276784,
+        "noul": 0.0224808690723216,
+        "type": "noul"
+      },
+      "outside_observation": {
+        "confidence": 0.9341701326196883,
+        "noul": 0.06582986738031167,
+        "type": "noul"
+      },
+      "fresh_sources_needed": {
+        "confidence": 0.9739342412699227,
+        "noul": 0.026065758730077354,
+        "type": "noul"
+      },
+      "explicit_feedback": {
+        "confidence": 0.9825258765727484,
+        "noul": 0.017474123427251586,
+        "type": "noul"
+      },
+      "learner_stuck": {
+        "confidence": 0.99,
+        "noul": 0.01,
+        "type": "noul"
+      },
+      "misconception_visible": {
+        "confidence": 0.8983102600503909,
+        "noul": 0.10168973994960906,
+        "type": "noul"
+      },
+      "untested_coverage": {
+        "confidence": 0.8677016436349033,
+        "noul": 0.1322983563650967,
+        "type": "noul"
+      },
+      "learner_response_due": {
+        "confidence": 0.9623507273713068,
+        "noul": 0.9623507273713068,
+        "type": "noul"
+      },
+      "learning_task": {
+        "confidence": 0.9319466494552354,
+        "noul": 0.9319466494552354,
+        "type": "noul"
+      },
+      "variable_relationship": {
+        "confidence": 0.6018656738222232,
+        "noul": 0.3981343261777767,
+        "type": "noul"
+      },
+      "independent_success": {
+        "confidence": 0.9894161463406199,
+        "noul": 0.010583853659380058,
+        "type": "noul"
+      },
+      "category_distinction": {
+        "confidence": 0.9535841555293763,
+        "noul": 0.0464158444706238,
+        "type": "noul"
+      },
+      "settled_sessions_accumulated": {
+        "confidence": 0.9667141840064704,
+        "noul": 0.03328581599352962,
+        "type": "noul"
+      },
+      "prediction_opportunity": {
+        "confidence": 0.8815913624154914,
+        "noul": 0.8815913624154914,
+        "type": "noul"
+      },
+      "assessment_declined": {
+        "confidence": 0.9808749256307933,
+        "noul": 0.01912507436920679,
+        "type": "noul"
+      },
+      "language_learning": {
+        "confidence": 0.9494244219484226,
+        "noul": 0.05057557805157739,
+        "type": "noul"
+      },
+      "explanation_requested": {
+        "confidence": 0.9862199734660231,
+        "noul": 0.013780026533976933,
+        "type": "noul"
+      },
+      "draft_standard": {
+        "confidence": 0.82631954994555,
+        "choice": "concise",
+        "probabilities": {
+          "supported": 0.10876623279435277,
+          "concise": 0.82631954994555,
+          "deep": 0.06491421726009725
+        },
+        "type": "choice"
+      },
+      "project_goal_requested": {
+        "confidence": 0.7880284907601696,
+        "noul": 0.21197150923983044,
+        "type": "noul"
+      },
+      "structure_relations": {
+        "confidence": 0.8680578076667331,
+        "noul": 0.1319421923332669,
+        "type": "noul"
+      },
+      "practice_requested": {
+        "confidence": 0.9097108246457206,
+        "noul": 0.09028917535427936,
+        "type": "noul"
+      },
+      "progression_requested": {
+        "confidence": 0.825605092740378,
+        "noul": 0.17439490725962203,
+        "type": "noul"
+      },
+      "motion_requested": {
+        "confidence": 0.9522141087719056,
+        "noul": 0.04778589122809444,
+        "type": "noul"
+      },
+      "explicit_profile_preference": {
+        "confidence": 0.8482349749534905,
+        "noul": 0.1517650250465094,
+        "type": "noul"
+      },
+      "draft_reasoning_verification": {
+        "confidence": 0.47948551258812633,
+        "score": 0.8636164154204093,
+        "probabilities": {
+          "0": 0.47948551258812633,
+          "1": 0.2598577418598784,
+          "2": 0.17821156309545472,
+          "3": 0.08244518245654048
+        },
+        "legend": {
+          "0": "No special check beyond a direct answer supported by the supplied context.",
+          "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+          "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+          "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+        },
+        "type": "score"
+      },
+      "direct_answer_requested": {
+        "confidence": 0.9710615030959564,
+        "noul": 0.02893849690404357,
+        "type": "noul"
+      },
+      "improvement_hypothesis_supported": {
+        "confidence": 0.965967250603073,
+        "noul": 0.03403274939692705,
+        "type": "noul"
+      },
+      "draft_reasoning_synthesis": {
+        "confidence": 0.6586599148036714,
+        "score": 0.44800585002186477,
+        "probabilities": {
+          "0": 0.6586599148036714,
+          "1": 0.25537081022610836,
+          "2": 0.0652727851149045,
+          "3": 0.020696489855315796
+        },
+        "legend": {
+          "0": "One simple fact or request; no reconciliation is needed.",
+          "1": "One relevant evidence item or one simple relationship/constraint.",
+          "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+          "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+        },
+        "type": "score"
+      },
+      "plain_reply_requested": {
+        "confidence": 0.5339025475669583,
+        "noul": 0.4660974524330416,
+        "type": "noul"
+      },
+      "visual_reference": {
+        "confidence": 0.8778263719504321,
+        "noul": 0.12217362804956791,
+        "type": "noul"
+      },
+      "executable_code": {
+        "confidence": 0.9551561988017334,
+        "noul": 0.04484380119826663,
+        "type": "noul"
+      },
+      "discrete_recall": {
+        "confidence": 0.9495373101609271,
+        "noul": 0.05046268983907282,
+        "type": "noul"
+      },
+      "draft_reasoning_steps": {
+        "confidence": 0.6518519816466006,
+        "score": 0.4488346966829221,
+        "probabilities": {
+          "0": 0.6518519816466006,
+          "1": 0.2660550293852295,
+          "2": 0.06349929960681686,
+          "3": 0.018593689361352955
+        },
+        "legend": {
+          "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+          "1": "One clear inference or straightforward application using supplied context.",
+          "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+          "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+        },
+        "type": "score"
+      },
+      "performed_skill": {
+        "confidence": 0.9558189325757145,
+        "noul": 0.04418106742428553,
+        "type": "noul"
+      },
+      "hands_on_requested": {
+        "confidence": 0.7957575140518376,
+        "noul": 0.2042424859481624,
+        "type": "noul"
+      },
+      "ordered_procedure": {
+        "confidence": 0.9020881610034235,
+        "noul": 0.09791183899657652,
+        "type": "noul"
+      },
+      "attempt_present": {
+        "confidence": 0.8268807201434788,
+        "noul": 0.17311927985652123,
+        "type": "noul"
+      },
+      "improvement_requested": {
+        "confidence": 0.99,
+        "noul": 0.01,
+        "type": "noul"
+      }
+    },
+    "usage": {
+      "total_tokens": 4761,
+      "total_input_tokens": 4761,
+      "input_tokens_by_modality": [
+        {
+          "modality": "text",
+          "tokens": 4761
+        }
+      ],
+      "total_output_tokens": 0
+    }
+  },
+  "shape": [
+    "answers",
+    "usage"
+  ],
+  "responseSha256": "429caf61d36710a118f8060684d5a22e77341d14a863a0b1414b1e6eec6583de",
+  "finishedAt": "2026-11-18T15:39:26.735Z"
+}

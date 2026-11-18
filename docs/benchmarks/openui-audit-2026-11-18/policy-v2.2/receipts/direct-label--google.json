@@ -1,0 +1,100 @@
+{
+  "id": "direct-label--google",
+  "caseId": "direct-label",
+  "provider": "google",
+  "decisionModel": "gemini-decision-1",
+  "kind": "live",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "73d71114e68099397ccabaab74948b85606184a883cc26df27a7a7e9e6bfdbb1",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "errorCode": null
+    },
+    {
+      "phase": "review",
+      "requestSha256": "3560d3a772e46462cce7173a95c95529ed6d7c38203a2b839b7940e8b4b04d93",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "errorCode": null
+    },
+    {
+      "phase": "review",
+      "requestSha256": "3560d3a772e46462cce7173a95c95529ed6d7c38203a2b839b7940e8b4b04d93",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "none",
+    "offered": [],
+    "reason": "plain-reply",
+    "directives": [
+      "Answer the bounded question directly; do not start a diagnostic interview.",
+      "Honor the requested plain reply. Give the answer in the requested form and stop.",
+      "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it."
+    ]
+  },
+  "drafts": [
+    {
+      "label": "direct-label--google/tutor/1",
+      "kind": "live",
+      "systemSha256": "02fc27f257c05d549769eaf667fe369d341362822bda9ebe9f09211c93cf4413",
+      "text": "24 cm",
+      "attempted": false,
+      "components": [],
+      "outsideWords": 2,
+      "guidanceDelivered": true,
+      "tools": [],
+      "stop": "stop"
+    },
+    {
+      "label": "direct-label--google/tutor/2",
+      "kind": "live",
+      "systemSha256": "02fc27f257c05d549769eaf667fe369d341362822bda9ebe9f09211c93cf4413",
+      "text": "24 cm",
+      "attempted": false,
+      "components": [],
+      "outsideWords": 2,
+      "guidanceDelivered": true,
+      "tools": [],
+      "stop": "stop"
+    }
+  ],
+  "status": "released",
+  "public": {
+    "text": "<!--keating:review=unverified-->\n24 cm",
+    "attempted": false,
+    "components": [],
+    "outsideWords": 3,
+    "tools": []
+  },
+  "notice": "unverified",
+  "selectedAttempt": 1,
+  "findings": [
+    {
+      "attempt": 1,
+      "status": "unknown",
+      "checks": [
+        {
+          "id": "assessed_work_completed",
+          "status": "unknown",
+          "probability": 0.5704139927267458
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "status": "unknown",
+      "checks": [
+        {
+          "id": "assessed_work_completed",
+          "status": "unknown",
+          "probability": 0.5704139927267458
+        }
+      ]
+    }
+  ]
+}

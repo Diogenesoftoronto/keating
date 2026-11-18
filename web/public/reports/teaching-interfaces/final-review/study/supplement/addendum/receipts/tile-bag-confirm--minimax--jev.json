@@ -1,0 +1,1568 @@
+{
+  "id": "tile-bag-confirm--minimax--jev",
+  "caseId": "tile-bag-confirm",
+  "parent": "tile-bag--minimax--jev",
+  "parentReceiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+  "kind": "prospective-followup",
+  "policy": "keating-teaching-policy/v2.3.5",
+  "tutor": "minimax",
+  "arm": "jev",
+  "prompt": "My guess is round, because three of the four tiles are round.",
+  "originalHistory": [
+    {
+      "role": "user",
+      "content": "I drop one square tile into a bag, then add three round tiles. Before you explain, can I guess the shape I'm most likely to draw?",
+      "timestamp": 1
+    },
+    {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 17955,
+        "output": 510,
+        "cacheRead": 187,
+        "cacheWrite": 0,
+        "totalTokens": 18652,
+        "cost": {
+          "input": 0.010773,
+          "output": 0.001224,
+          "cacheRead": 0.00001122,
+          "cacheWrite": 0,
+          "total": 0.012008219999999998
+        },
+        "reasoning": 306,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Good instinct to predict first — let's commit to an answer before I explain anything.\n\n```openui lifecycle=ephemeral id=tile-draw-prediction\n\nroot = LearningSurface([guess], \"Before the explanation\", \"Make a prediction, then I'll show why.\", \"ephemeral\")\nguess = Question([{ header: \"Your prediction\", question: \"The bag holds 4 tiles: 1 square and 3 round. You reach in and draw one tile at random. Which shape are you most likely to draw?\", type: \"choice\", choices: [\"Square\", \"Round\", \"Both are equally likely\", \"There isn't enough information to say\"], allowText: true, hint: \"Think about how many of each shape are in the bag, not about the order they went in.\" }], \"ephemeral\", \"Probability of a random draw\", \"Pick the shape you think is most likely — or write your own reasoning.\")\n\n```"
+        }
+      ]
+    }
+  ],
+  "plan": {
+    "status": "guided",
+    "action": "create",
+    "offered": [
+      "Question",
+      "Simulation"
+    ],
+    "codePracticeLanguage": null,
+    "reason": null,
+    "features": {
+      "variable_relationship": true,
+      "ordered_procedure": false,
+      "discrete_recall": false,
+      "structure_relations": false,
+      "category_distinction": null,
+      "prediction_opportunity": true,
+      "learner_response_due": true,
+      "hands_on_requested": false,
+      "executable_code": false,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "decisions": {
+      "direct_answer_requested": false,
+      "explanation_requested": false,
+      "learner_stuck": false,
+      "attempt_present": true,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": false,
+      "plain_reply_requested": null,
+      "assessment_declined": false,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": null,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": false,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "directives": [
+      "Respond to the learner's actual reasoning before choosing the next step.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+      "At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; collect the learner's choice or independent answer before proceeding; or Simulation to let the learner change a variable and observe the outcome. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested.",
+      "If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself."
+    ]
+  },
+  "refs": [
+    {
+      "label": "tile-bag-confirm--minimax--jev/plan",
+      "entryId": "tile-bag-confirm--minimax--jev/plan",
+      "source": "live",
+      "requestSha256": "27bb60578f275cbfca56a190aa5236653224e27c43ae61cbfec39544316f49a9",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    },
+    {
+      "label": "tile-bag-confirm--minimax--jev/review/1",
+      "entryId": "tile-bag-confirm--minimax--jev/review/1",
+      "source": "live",
+      "requestSha256": "30e96a7d6350faeff1504587e23ccd406297c5f573eba9f2065fc452fde9031b",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    },
+    {
+      "label": "tile-bag-confirm--minimax--jev/review/2",
+      "entryId": "tile-bag-confirm--minimax--jev/review/2",
+      "source": "live",
+      "requestSha256": "d3fd9521c2e214501679951fd804fc80df326537ecef47923715a16f1fdb0d12",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    },
+    {
+      "label": "tile-bag-confirm--minimax--jev/review/3",
+      "entryId": "tile-bag-confirm--minimax--jev/review/3",
+      "source": "live",
+      "requestSha256": "c0ae3be2c386b3e16c02aea157fbeef3f05db1f586069d89e8cb0908d0c180c5",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    }
+  ],
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 17761,
+          "output": 584,
+          "cacheRead": 512,
+          "cacheWrite": 0,
+          "totalTokens": 18857,
+          "cost": {
+            "input": 0.010656599999999999,
+            "output": 0.0014016,
+            "cacheRead": 0.00003072,
+            "cacheWrite": 0,
+            "total": 0.012088919999999998
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 158
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "That's exactly right — and your reasoning is the right kind: the probability of a shape is just its share of the bag.\n\nWith 1 square and 3 round tiles, P(round) = 3/4 = 75% and P(square) = 1/4 = 25%. The order you dropped them in doesn't matter at all; only the counts do.\n\nNow let's see how that share behaves as the bag changes.\n\n```openui lifecycle=ephemeral id=tile-draw-simulation\n\nroot = LearningSurface([sim], \"Move the bag's contents\", \"Change the mix of tiles and watch the chance of drawing a round one.\", \"ephemeral\")\nsim = Simulation(\"tile-draw\", \"Round or square?\", [\n  { id: \"rounds\", label: \"Round tiles in the bag\", unit: \"tiles\", min: 0, max: 12, step: 1, value: 3 },\n  { id: \"squares\", label: \"Square tiles in the bag\", unit: \"tiles\", min: 1, max: 12, step: 1, value: 1 }\n], [\n  { id: \"pRound\", label: \"Chance of drawing a round tile\", unit: \"%\", expr: \"rounds / (rounds + squares) * 100\", precision: 0, emphasis: true },\n  { id: \"pSquare\", label: \"Chance of drawing a square tile\", unit: \"%\", expr: \"squares / (rounds + squares) * 100\", precision: 0 },\n  { id: \"total\", label: \"Tiles in the bag\", unit: \"tiles\", expr: \"rounds + squares\", precision: 0 }\n], \"ephemeral\", \"First try a bag with 6 round tiles and 6 square tiles. Then try 9 rounds and 1 square. Notice what happens to the round chance — and check whether the square tile still has a chance to be drawn when rounds are 0.\")\n\n```"
+          }
+        ]
+      },
+      "text": "That's exactly right — and your reasoning is the right kind: the probability of a shape is just its share of the bag.\n\nWith 1 square and 3 round tiles, P(round) = 3/4 = 75% and P(square) = 1/4 = 25%. The order you dropped them in doesn't matter at all; only the counts do.\n\nNow let's see how that share behaves as the bag changes.\n\n```openui lifecycle=ephemeral id=tile-draw-simulation\n\nroot = LearningSurface([sim], \"Move the bag's contents\", \"Change the mix of tiles and watch the chance of drawing a round one.\", \"ephemeral\")\nsim = Simulation(\"tile-draw\", \"Round or square?\", [\n  { id: \"rounds\", label: \"Round tiles in the bag\", unit: \"tiles\", min: 0, max: 12, step: 1, value: 3 },\n  { id: \"squares\", label: \"Square tiles in the bag\", unit: \"tiles\", min: 1, max: 12, step: 1, value: 1 }\n], [\n  { id: \"pRound\", label: \"Chance of drawing a round tile\", unit: \"%\", expr: \"rounds / (rounds + squares) * 100\", precision: 0, emphasis: true },\n  { id: \"pSquare\", label: \"Chance of drawing a square tile\", unit: \"%\", expr: \"squares / (rounds + squares) * 100\", precision: 0 },\n  { id: \"total\", label: \"Tiles in the bag\", unit: \"tiles\", expr: \"rounds + squares\", precision: 0 }\n], \"ephemeral\", \"First try a bag with 6 round tiles and 6 square tiles. Then try 9 rounds and 1 square. Notice what happens to the round chance — and check whether the square tile still has a chance to be drawn when rounds are 0.\")\n\n```",
+      "toolCalls": [],
+      "attempted": true,
+      "components": [
+        "simulation"
+      ],
+      "outsideWords": 66,
+      "entryId": "tile-bag-confirm--minimax--jev/tutor/1",
+      "completed": true,
+      "availableToolNames": [
+        "animate",
+        "interactive_page",
+        "course_list",
+        "course_inspect",
+        "course_create",
+        "course_update",
+        "room_list",
+        "room_invite",
+        "generate_image",
+        "feedback",
+        "remember_learner_profile",
+        "set_learner_goal",
+        "update_goal_step",
+        "revise_study_plan",
+        "evaluate_teaching",
+        "request_teaching_improvement"
+      ],
+      "providedDirectives": true,
+      "systemSha256": "d54b9e6790e78b53f178e4795e4faf3b8d64dd4c0dafc92af76723208520447f"
+    },
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "toolUse",
+        "timestamp": 1,
+        "usage": {
+          "input": 422,
+          "output": 893,
+          "cacheRead": 18176,
+          "cacheWrite": 0,
+          "totalTokens": 19491,
+          "cost": {
+            "input": 0.0002532,
+            "output": 0.0021432,
+            "cacheRead": 0.00109056,
+            "cacheWrite": 0,
+            "total": 0.00348696
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 695
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Your reasoning is exactly right, and it's the right reason: in a random draw, each of the 4 tiles is equally likely, so the shape you're most likely to draw is the one that occupies more of the bag.\n\nThat gives the probability:\n\n- **Round:** 3 out of 4 tiles → 3/4 = 0.75 (75%)\n- **Square:** 1 out of 4 tiles → 1/4 = 0.25 (25%)\n\nOne thing worth noticing: the *order* the tiles went into the bag doesn't matter at all for a random draw — only how many of each shape are in there. (If instead you'd drawn *twice without replacing*, the second draw would change, since the first tile would be gone from the bag.)\n\nLet you test the model directly:"
+          },
+          {
+            "type": "toolCall",
+            "id": "call_235bde480cf047f4b0a1913e",
+            "name": "animate",
+            "arguments": {
+              "topic": "Tile draw probability"
+            }
+          }
+        ]
+      },
+      "text": "Your reasoning is exactly right, and it's the right reason: in a random draw, each of the 4 tiles is equally likely, so the shape you're most likely to draw is the one that occupies more of the bag.\n\nThat gives the probability:\n\n- **Round:** 3 out of 4 tiles → 3/4 = 0.75 (75%)\n- **Square:** 1 out of 4 tiles → 1/4 = 0.25 (25%)\n\nOne thing worth noticing: the *order* the tiles went into the bag doesn't matter at all for a random draw — only how many of each shape are in there. (If instead you'd drawn *twice without replacing*, the second draw would change, since the first tile would be gone from the bag.)\n\nLet you test the model directly:",
+      "toolCalls": [
+        {
+          "id": "call_235bde480cf047f4b0a1913e",
+          "name": "animate",
+          "arguments": {
+            "topic": "Tile draw probability"
+          }
+        }
+      ],
+      "attempted": false,
+      "components": [],
+      "outsideWords": 125,
+      "entryId": "tile-bag-confirm--minimax--jev/tutor/2",
+      "completed": true,
+      "availableToolNames": [
+        "animate",
+        "interactive_page",
+        "course_list",
+        "course_inspect",
+        "course_create",
+        "course_update",
+        "room_list",
+        "room_invite",
+        "generate_image",
+        "feedback",
+        "remember_learner_profile",
+        "set_learner_goal",
+        "update_goal_step",
+        "revise_study_plan",
+        "evaluate_teaching",
+        "request_teaching_improvement"
+      ],
+      "providedDirectives": true,
+      "systemSha256": "d54b9e6790e78b53f178e4795e4faf3b8d64dd4c0dafc92af76723208520447f"
+    },
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 10068,
+          "output": 162,
+          "cacheRead": 188,
+          "cacheWrite": 0,
+          "totalTokens": 10418,
+          "cost": {
+            "input": 0.0060408,
+            "output": 0.00038879999999999996,
+            "cacheRead": 0.000011279999999999999,
+            "cacheWrite": 0,
+            "total": 0.0064408799999999995
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 100
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Yes—your reasoning is correct. Since 3 of the 4 tiles are round, the probability of drawing a round tile is **3/4 (75%)**, while drawing a square is **1/4 (25%)**. The order in which the tiles were added does not affect the random draw."
+          }
+        ]
+      },
+      "text": "Yes—your reasoning is correct. Since 3 of the 4 tiles are round, the probability of drawing a round tile is **3/4 (75%)**, while drawing a square is **1/4 (25%)**. The order in which the tiles were added does not affect the random draw.",
+      "toolCalls": [],
+      "attempted": false,
+      "components": [],
+      "outsideWords": 43,
+      "entryId": "tile-bag-confirm--minimax--jev/tutor/3",
+      "completed": true,
+      "availableToolNames": [],
+      "providedDirectives": true,
+      "systemSha256": "3a73a1892f11dad89738cc66373a054394015318717d3caf8751db3be9c7b030"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "fail",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.04
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.04
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.3
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.13
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.9
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.46
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.49
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.11
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.21
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.15
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.1
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.05
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.06
+        },
+        {
+          "id": "law_authority_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "law_jurisdiction_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "medicine_evidence_conflated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "history_disagreement_erased",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "psychology_replication_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "politics_normative_as_fact",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.08999999999999997,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.54,
+          "status": "unknown"
+        }
+      ],
+      "variant": "default"
+    },
+    {
+      "attempt": 2,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "fail",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.05
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.04
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.05
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.49
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.05
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.9
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.5
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.69
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.19
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.93
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.14
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.07
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.26
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.09
+        },
+        {
+          "id": "law_authority_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "law_jurisdiction_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "medicine_evidence_conflated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "history_disagreement_erased",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "psychology_replication_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "politics_normative_as_fact",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.050000000000000044,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.41000000000000003,
+          "status": "pass"
+        }
+      ],
+      "variant": "default"
+    },
+    {
+      "attempt": 3,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "fail",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.35
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.84
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.36
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.62
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.24
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.06
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.01
+        },
+        {
+          "id": "law_authority_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "law_jurisdiction_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "medicine_evidence_conflated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "history_disagreement_erased",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "psychology_replication_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "politics_normative_as_fact",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.040000000000000036,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.12,
+          "status": "pass"
+        }
+      ],
+      "variant": "default"
+    }
+  ],
+  "selectedAttempt": null,
+  "selectionRule": null,
+  "releaseReason": "no-approved-draft",
+  "disposition": "withheld",
+  "missing": "no-approved-draft",
+  "public": null,
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 28251,
+        "output": 1639,
+        "cacheRead": 18876,
+        "cacheWrite": 0,
+        "totalTokens": 48766,
+        "cost": {
+          "input": 0.0169506,
+          "output": 0.0039336,
+          "cacheRead": 0.00113256,
+          "cacheWrite": 0,
+          "total": 0.022016759999999996
+        },
+        "reasoning": 953,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "<!--keating:review=withheld-->\nKeating couldn't verify a reply after reviewing the drafts: a proposed tool call had invalid arguments. Retry or choose a different reply model in Settings. Blocking checks: checkpoint_answer_leaked, checkpoint_continued, mastery_overclaimed, unsolicited_animation, runtime_tool_schema.\n\nFailure: no-approved-draft. Draft attempts: 3; completed drafts: 3."
+        }
+      ]
+    },
+    "text": "<!--keating:review=withheld-->\nKeating couldn't verify a reply after reviewing the drafts: a proposed tool call had invalid arguments. Retry or choose a different reply model in Settings. Blocking checks: checkpoint_answer_leaked, checkpoint_continued, mastery_overclaimed, unsolicited_animation, runtime_tool_schema.\n\nFailure: no-approved-draft. Draft attempts: 3; completed drafts: 3.",
+    "toolCalls": []
+  },
+  "notice": "withheld"
+}

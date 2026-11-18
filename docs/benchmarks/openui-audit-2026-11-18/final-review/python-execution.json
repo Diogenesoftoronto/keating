@@ -1,0 +1,51 @@
+[
+  {
+    "body": "133373d69b7d2a43834d",
+    "sourceSha256": "2d201bc5b6cc811d57eae49cc2571ce669fcaa235ad5d6a6ed66532e0cda00cb",
+    "intendedSum": 17,
+    "observed": "expected: 17\ngot: 11",
+    "exitCode": 0
+  },
+  {
+    "body": "4a7c0ab9a2ff3c3371df",
+    "sourceSha256": "01ad6604f97c763e98b8d2ab333fea76776b116dbde3bc2f0364d42c0a902da2",
+    "intendedSum": 17,
+    "observed": "Sum: 4",
+    "exitCode": 0
+  },
+  {
+    "body": "9a58e032ac2cc24b4ccc",
+    "sourceSha256": "9d49d1d4d56abf13b52e121aa8ada1a0fb3cf4f91b563b4b29ea4191f8a3e101",
+    "intendedSum": 17,
+    "observed": "The total is: 27",
+    "exitCode": 0
+  },
+  {
+    "body": "a0a817192eaa1546cca6",
+    "sourceSha256": "846291b6d2ab85edd89df2b0b3ea1ec56dd88661636d36bc14426e1dc654fa48",
+    "intendedSum": 17,
+    "observed": "IndexError: list index out of range",
+    "exitCode": 1
+  },
+  {
+    "body": "a8d10b29021554fbdc28",
+    "sourceSha256": "0de640e4551472c4c663354f700f92e1aa0449c33fbd1187fcbb38cc0fce549b",
+    "intendedSum": 17,
+    "observed": "total: 2",
+    "exitCode": 0
+  },
+  {
+    "body": "a9ddfc9e09a8787581da",
+    "sourceSha256": "cb111fa7b8696e0cb16f4cc308fa74c0bcb2dcd4c99ddeed10cc2b1858163b9a",
+    "intendedSum": 17,
+    "observed": "The total is: 108",
+    "exitCode": 0
+  },
+  {
+    "body": "d8b06398e2961389cd17",
+    "sourceSha256": "69252b7f0fda2d70f8a8e260d37f628f8065a1b370df150e2a4b528a2c4dd910",
+    "intendedSum": 17,
+    "observed": "Sum: 15",
+    "exitCode": 0
+  }
+]

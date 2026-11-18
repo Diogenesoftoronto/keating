@@ -1,0 +1,196 @@
+{
+  "id": "gemini-3.1-flash-lite--perimeter",
+  "caseId": "perimeter",
+  "configuredModel": "gemini-3.1-flash-lite",
+  "provider": "google",
+  "endpoint": "https://generativelanguage.googleapis.com/v1beta",
+  "cohortSha256": "d3393c08ee1903f9e4a426d37cab65add70f5e2d5157cd09a085ddfac174afe8",
+  "status": "complete",
+  "startedAt": "2026-11-18T14:22:21.515Z",
+  "judgments": [
+    {
+      "phase": "plan",
+      "hash": "7c7c470bd8602e388e79e2694697a14006ae730be38f680ad4893c2e7caba4bf",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 4011,
+        "outputTokens": 748
+      },
+      "reusedFrom": null,
+      "answers": {
+        "direct_answer_requested": 0.99,
+        "explanation_requested": 0.02,
+        "learner_stuck": 0.02,
+        "attempt_present": 0.03,
+        "misconception_visible": 0.02,
+        "independent_success": 0.01,
+        "practice_requested": 0.02,
+        "plain_reply_requested": 0.98,
+        "assessment_declined": 0.02,
+        "fresh_sources_needed": 0.02,
+        "explicit_feedback": 0.01,
+        "explicit_profile_preference": 0.83,
+        "observed_profile_pattern": 0.03,
+        "motion_requested": 0.01,
+        "improvement_requested": 0.01,
+        "improvement_hypothesis_supported": 0.01,
+        "settled_sessions_accumulated": 0.01,
+        "project_goal_requested": 0.87,
+        "progression_requested": 0.02,
+        "learning_task": 0.92,
+        "variable_relationship": 0.78,
+        "ordered_procedure": 0.05,
+        "discrete_recall": 0.66,
+        "structure_relations": 0.06,
+        "category_distinction": 0.04,
+        "prediction_opportunity": 0.05,
+        "learner_response_due": 0.12,
+        "hands_on_requested": 0.03,
+        "executable_code": 0.02,
+        "performed_skill": 0.04,
+        "language_learning": 0.17,
+        "visual_reference": 0.02,
+        "extended_production": 0.01,
+        "outside_observation": 0.03,
+        "untested_coverage": 0.15,
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 0.87,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.13,
+            "1": 0.87,
+            "2": 0,
+            "3": 0
+          },
+          "confidence": 0.87
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.08,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.92,
+            "1": 0.08,
+            "2": 0,
+            "3": 0
+          },
+          "confidence": 0.92
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 0.55,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.46,
+            "1": 0.54,
+            "2": 0,
+            "3": 0
+          },
+          "confidence": 0.54
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "concise",
+          "probabilities": {
+            "concise": 1,
+            "supported": 0,
+            "deep": 0
+          },
+          "confidence": 1
+        }
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha256": "8193e79e47da293f8aaf4f342c6ee6d880a8b673fc15245496d51efe0ed72326",
+      "messagesSha256": "71168206fe21fd60de4981a12bca8e6a802c99b95028d031b8625de888ca1698",
+      "toolsSha256": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "payloadSha256": "fafb7ddd9bbe10745239b554c2c35fa751bb87c060ea5ce48d38f285c8dba328",
+      "delivered": true,
+      "hasUsableTools": true,
+      "status": "provider",
+      "response": {
+        "text": "",
+        "nativeTools": [],
+        "provider": "google",
+        "model": "gemini-3.1-flash-lite",
+        "responseModel": null,
+        "stop": "error",
+        "usage": null
+      }
+    }
+  ],
+  "decision": {
+    "model": "jev-1.14.0",
+    "action": "none",
+    "targets": [],
+    "interactionDirectives": [],
+    "planDirectives": [
+      "Answer the bounded question directly; do not start a diagnostic interview.",
+      "Honor the requested plain reply. Give the answer in the requested form and stop.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond."
+    ],
+    "signals": {
+      "learner_response_due": 0.12,
+      "hands_on_requested": 0.03,
+      "plain_reply_requested": 0.98,
+      "assessment_declined": 0.02,
+      "prediction_opportunity": 0.05,
+      "variable_relationship": 0.78
+    }
+  },
+  "phase": "withheld",
+  "selection": null,
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "generation-error",
+      "variant": "default",
+      "trimmedCheckpointSuffix": false,
+      "findings": []
+    },
+    {
+      "attempt": 2,
+      "status": "generation-error",
+      "variant": "default",
+      "trimmedCheckpointSuffix": false,
+      "findings": []
+    },
+    {
+      "attempt": 3,
+      "status": "generation-error",
+      "variant": "default",
+      "trimmedCheckpointSuffix": false,
+      "findings": []
+    }
+  ],
+  "public": {
+    "text": "The reply model failed before producing a complete draft. Try again or check the reply model and connection in Settings.\n\nFailure: generation-unavailable. Draft attempts: 3; completed drafts: 0.",
+    "notice": "withheld",
+    "stop": "stop",
+    "tools": []
+  },
+  "reason": "generation-unavailable",
+  "finishedAt": "2026-11-18T14:22:22.722Z"
+}

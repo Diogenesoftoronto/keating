@@ -1,0 +1,752 @@
+{
+  "version": 1,
+  "policy": "keating-teaching-policy/v2.3.3",
+  "measuredQuestionPolicy": "keating-teaching-policy/v2.3.2",
+  "scope": "post-hoc single-draft web gate replay",
+  "hashes": {
+    "originalLedger": "d59321be0d302579339856562e5224eea2b5a16ee736c8a1bd19f6b175413dfa",
+    "inputs": "f1b7e3d3d6e1f2c74cda08d12d3cff5ddb3218ee4fe560e1edbf447054550e80",
+    "reviews": "b7de2d03ab9f47928f534747cbd7fe3203d109474da65baf87fc89ba4af6ed9a",
+    "requests": "c78d335036142bf008615d411988fcffe9c2ac59702492de392902be1220e79c"
+  },
+  "providerCalls": 0,
+  "tutorCalls": 0,
+  "toolExecutions": 0,
+  "results": [
+    {
+      "id": "python-practice--jev--1/jev",
+      "originalPlanner": "jev",
+      "pairedReviewer": "jev",
+      "identity": "original-provider",
+      "tutor": "MiniMax-M2.7-highspeed",
+      "draftSha256": "90d7f090eae9f417528fd08ae8a7f9e0cea3dbd749f9edfcec0d3ab4712a053e",
+      "dispatched": [
+        {
+          "stage": "plan",
+          "model": "jev-1.14.0",
+          "sha256": "2f30a96055683294919a753b724f045768e75c98f062ab96bcb3a3a074e645dd"
+        },
+        {
+          "stage": "review",
+          "model": "jev-1.14.0",
+          "sha256": "819436f4b1e9e24fd81e45e9d95b6feb7c1628b9efb07a16adf1341366210d0b"
+        }
+      ],
+      "originalDraftStatus": "fail",
+      "originalSelected": false,
+      "attemptStatus": "fail",
+      "additionalDraftUnavailable": true,
+      "singleDraftDisposition": "withheld",
+      "notice": "withheld",
+      "staticProof": {
+        "reference": "all-even-integers",
+        "suppliedInput": "masked",
+        "otherExamples": "unverified",
+        "nativeDescriptionGivesDiagnosis": true
+      },
+      "example": {
+        "type": "choice",
+        "choice": "observable",
+        "probabilities": {
+          "observable": 0.94,
+          "masked": 0.06,
+          "uncertain": 0,
+          "outside": 0
+        },
+        "confidence": 0.92
+      },
+      "disclosure": {
+        "type": "choice",
+        "choice": "independent",
+        "probabilities": {
+          "independent": 0.73,
+          "location_clue": 0.13,
+          "solution_given": 0.11,
+          "uncertain": 0.03,
+          "outside": 0
+        },
+        "confidence": 0.66
+      },
+      "blocking": [
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "checkpoint_repeated",
+          "source": "jev",
+          "status": "fail",
+          "probability": 0.75
+        },
+        {
+          "id": "debug_native_fix_disclosed",
+          "source": "deterministic",
+          "status": "fail",
+          "probability": 1
+        }
+      ],
+      "debuggingChecks": [
+        {
+          "id": "debug_native_fix_disclosed",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06,
+          "status": "pass"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.11,
+          "status": "pass"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.13,
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "python-practice--jev--1/google",
+      "originalPlanner": "jev",
+      "pairedReviewer": "google",
+      "identity": "offline-crossed-fixture",
+      "tutor": "MiniMax-M2.7-highspeed",
+      "draftSha256": "90d7f090eae9f417528fd08ae8a7f9e0cea3dbd749f9edfcec0d3ab4712a053e",
+      "dispatched": [
+        {
+          "stage": "plan",
+          "model": "jev-1.14.0",
+          "sha256": "2f30a96055683294919a753b724f045768e75c98f062ab96bcb3a3a074e645dd"
+        },
+        {
+          "stage": "review",
+          "model": "gemini-decision-1",
+          "sha256": "819436f4b1e9e24fd81e45e9d95b6feb7c1628b9efb07a16adf1341366210d0b"
+        }
+      ],
+      "originalDraftStatus": "fail",
+      "originalSelected": false,
+      "attemptStatus": "fail",
+      "additionalDraftUnavailable": true,
+      "singleDraftDisposition": "withheld",
+      "notice": "withheld",
+      "staticProof": {
+        "reference": "all-even-integers",
+        "suppliedInput": "masked",
+        "otherExamples": "unverified",
+        "nativeDescriptionGivesDiagnosis": true
+      },
+      "example": {
+        "type": "choice",
+        "choice": "observable",
+        "probabilities": {
+          "observable": 0.5461973090237584,
+          "masked": 0.3705842756456069,
+          "uncertain": 0.046978738387500246,
+          "outside": 0.036239676943134395
+        },
+        "confidence": 0.5461973090237584
+      },
+      "disclosure": {
+        "type": "choice",
+        "choice": "independent",
+        "probabilities": {
+          "independent": 0.8391467879119352,
+          "location_clue": 0.09053421846569171,
+          "solution_given": 0.04071142446175559,
+          "uncertain": 0.015407050821136406,
+          "outside": 0.014200518339481223
+        },
+        "confidence": 0.8391467879119352
+      },
+      "blocking": [
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "status": "unknown",
+          "probability": null
+        },
+        {
+          "id": "debug_native_fix_disclosed",
+          "source": "deterministic",
+          "status": "fail",
+          "probability": 1
+        }
+      ],
+      "debuggingChecks": [
+        {
+          "id": "debug_native_fix_disclosed",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.3705842756456069,
+          "status": "unknown"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04071142446175559,
+          "status": "pass"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.09053421846569171,
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "python-practice--jev--2/jev",
+      "originalPlanner": "jev",
+      "pairedReviewer": "jev",
+      "identity": "original-provider",
+      "tutor": "MiniMax-M2.7-highspeed",
+      "draftSha256": "bf840a5c7d91c6b64b0c2c402414247a5b929737b504631152d9305ff4f2226e",
+      "dispatched": [
+        {
+          "stage": "plan",
+          "model": "jev-1.14.0",
+          "sha256": "2f30a96055683294919a753b724f045768e75c98f062ab96bcb3a3a074e645dd"
+        },
+        {
+          "stage": "review",
+          "model": "jev-1.14.0",
+          "sha256": "cef4ebc58bf00646944434ad344aacca5ee3012f961a8c1f2a6038c729c27c05"
+        }
+      ],
+      "originalDraftStatus": "pass",
+      "originalSelected": true,
+      "attemptStatus": "pass",
+      "additionalDraftUnavailable": false,
+      "singleDraftDisposition": "released",
+      "notice": null,
+      "staticProof": null,
+      "example": {
+        "type": "choice",
+        "choice": "observable",
+        "probabilities": {
+          "observable": 0.99,
+          "masked": 0.01,
+          "uncertain": 0,
+          "outside": 0
+        },
+        "confidence": 0.99
+      },
+      "disclosure": {
+        "type": "choice",
+        "choice": "independent",
+        "probabilities": {
+          "independent": 0.87,
+          "location_clue": 0.1,
+          "solution_given": 0.01,
+          "uncertain": 0.02,
+          "outside": 0
+        },
+        "confidence": 0.84
+      },
+      "blocking": [],
+      "debuggingChecks": [
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01,
+          "status": "pass"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01,
+          "status": "pass"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.1,
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "python-practice--jev--2/google",
+      "originalPlanner": "jev",
+      "pairedReviewer": "google",
+      "identity": "offline-crossed-fixture",
+      "tutor": "MiniMax-M2.7-highspeed",
+      "draftSha256": "bf840a5c7d91c6b64b0c2c402414247a5b929737b504631152d9305ff4f2226e",
+      "dispatched": [
+        {
+          "stage": "plan",
+          "model": "jev-1.14.0",
+          "sha256": "2f30a96055683294919a753b724f045768e75c98f062ab96bcb3a3a074e645dd"
+        },
+        {
+          "stage": "review",
+          "model": "gemini-decision-1",
+          "sha256": "cef4ebc58bf00646944434ad344aacca5ee3012f961a8c1f2a6038c729c27c05"
+        }
+      ],
+      "originalDraftStatus": "pass",
+      "originalSelected": true,
+      "attemptStatus": "pass",
+      "additionalDraftUnavailable": false,
+      "singleDraftDisposition": "released",
+      "notice": null,
+      "staticProof": null,
+      "example": {
+        "type": "choice",
+        "choice": "observable",
+        "probabilities": {
+          "observable": 0.8937075915375513,
+          "masked": 0.05473698208072946,
+          "uncertain": 0.04260392498311667,
+          "outside": 0.008951501398602516
+        },
+        "confidence": 0.8937075915375513
+      },
+      "disclosure": {
+        "type": "choice",
+        "choice": "independent",
+        "probabilities": {
+          "independent": 0.9253143313836107,
+          "location_clue": 0.027908353813769667,
+          "solution_given": 0.02558983255636388,
+          "uncertain": 0.010335953900653653,
+          "outside": 0.010851528345601803
+        },
+        "confidence": 0.9253143313836107
+      },
+      "blocking": [],
+      "debuggingChecks": [
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05473698208072946,
+          "status": "pass"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02558983255636388,
+          "status": "pass"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.027908353813769667,
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "python-practice--google--1/jev",
+      "originalPlanner": "google",
+      "pairedReviewer": "jev",
+      "identity": "offline-crossed-fixture",
+      "tutor": "MiniMax-M2.7-highspeed",
+      "draftSha256": "3c680a9cab0cb902416987ae00bb376489f2abbbf70c55fa9768be8a481ff8f6",
+      "dispatched": [
+        {
+          "stage": "plan",
+          "model": "gemini-decision-1",
+          "sha256": "2f30a96055683294919a753b724f045768e75c98f062ab96bcb3a3a074e645dd"
+        },
+        {
+          "stage": "review",
+          "model": "jev-1.14.0",
+          "sha256": "41b31cd6c9f5c9dca4ddbbe4d4a7cfea75b251c5d83bf6afca7ff96ff862fab8"
+        }
+      ],
+      "originalDraftStatus": "fail",
+      "originalSelected": false,
+      "attemptStatus": "fail",
+      "additionalDraftUnavailable": true,
+      "singleDraftDisposition": "withheld",
+      "notice": "withheld",
+      "staticProof": null,
+      "example": {
+        "type": "choice",
+        "choice": "observable",
+        "probabilities": {
+          "observable": 0.93,
+          "masked": 0.06,
+          "uncertain": 0.01,
+          "outside": 0
+        },
+        "confidence": 0.91
+      },
+      "disclosure": {
+        "type": "choice",
+        "choice": "independent",
+        "probabilities": {
+          "independent": 0.91,
+          "location_clue": 0.07,
+          "solution_given": 0.01,
+          "uncertain": 0.01,
+          "outside": 0
+        },
+        "confidence": 0.89
+      },
+      "blocking": [
+        {
+          "id": "checkpoint_answer_leaked",
+          "source": "jev",
+          "status": "fail",
+          "probability": 0.86
+        },
+        {
+          "id": "feedback_invented",
+          "source": "jev",
+          "status": "fail",
+          "probability": 0.79
+        }
+      ],
+      "debuggingChecks": [
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06,
+          "status": "pass"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01,
+          "status": "pass"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.07,
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "python-practice--google--1/google",
+      "originalPlanner": "google",
+      "pairedReviewer": "google",
+      "identity": "original-provider",
+      "tutor": "MiniMax-M2.7-highspeed",
+      "draftSha256": "3c680a9cab0cb902416987ae00bb376489f2abbbf70c55fa9768be8a481ff8f6",
+      "dispatched": [
+        {
+          "stage": "plan",
+          "model": "gemini-decision-1",
+          "sha256": "2f30a96055683294919a753b724f045768e75c98f062ab96bcb3a3a074e645dd"
+        },
+        {
+          "stage": "review",
+          "model": "gemini-decision-1",
+          "sha256": "41b31cd6c9f5c9dca4ddbbe4d4a7cfea75b251c5d83bf6afca7ff96ff862fab8"
+        }
+      ],
+      "originalDraftStatus": "fail",
+      "originalSelected": false,
+      "attemptStatus": "fail",
+      "additionalDraftUnavailable": true,
+      "singleDraftDisposition": "withheld",
+      "notice": "withheld",
+      "staticProof": null,
+      "example": {
+        "type": "choice",
+        "choice": "observable",
+        "probabilities": {
+          "observable": 0.9262015181275285,
+          "masked": 0.041105490045754534,
+          "uncertain": 0.028468867995508695,
+          "outside": 0.004224123831208422
+        },
+        "confidence": 0.9262015181275285
+      },
+      "disclosure": {
+        "type": "choice",
+        "choice": "independent",
+        "probabilities": {
+          "independent": 0.8191688052720673,
+          "location_clue": 0.10489160228750584,
+          "solution_given": 0.0401875721896542,
+          "uncertain": 0.028749098135763138,
+          "outside": 0.007002922115009509
+        },
+        "confidence": 0.8191688052720673
+      },
+      "blocking": [
+        {
+          "id": "feedback_invented",
+          "source": "jev",
+          "status": "fail",
+          "probability": 0.6211320209768003
+        }
+      ],
+      "debuggingChecks": [
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.041105490045754534,
+          "status": "pass"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.0401875721896542,
+          "status": "pass"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.10489160228750584,
+          "status": "pass"
+        }
+      ]
+    },
+    {
+      "id": "python-practice--google--2/jev",
+      "originalPlanner": "google",
+      "pairedReviewer": "jev",
+      "identity": "offline-crossed-fixture",
+      "tutor": "MiniMax-M2.7-highspeed",
+      "draftSha256": "9f7f9e2445a58b6c8e2190fe49cdac59e0368ec0bbc5b7b230f8ab49b5506026",
+      "dispatched": [
+        {
+          "stage": "plan",
+          "model": "gemini-decision-1",
+          "sha256": "2f30a96055683294919a753b724f045768e75c98f062ab96bcb3a3a074e645dd"
+        },
+        {
+          "stage": "review",
+          "model": "jev-1.14.0",
+          "sha256": "e20dece8fd802f74962513ebf7ead3da87a99da894fe8e340ba2088463112574"
+        }
+      ],
+      "originalDraftStatus": "pass",
+      "originalSelected": true,
+      "attemptStatus": "fail",
+      "additionalDraftUnavailable": true,
+      "singleDraftDisposition": "withheld",
+      "notice": "withheld",
+      "staticProof": null,
+      "example": {
+        "type": "choice",
+        "choice": "observable",
+        "probabilities": {
+          "observable": 0.99,
+          "masked": 0.01,
+          "uncertain": 0,
+          "outside": 0
+        },
+        "confidence": 0.99
+      },
+      "disclosure": {
+        "type": "choice",
+        "choice": "location_clue",
+        "probabilities": {
+          "independent": 0.12,
+          "location_clue": 0.81,
+          "solution_given": 0.06,
+          "uncertain": 0.01,
+          "outside": 0
+        },
+        "confidence": 0.76
+      },
+      "blocking": [
+        {
+          "id": "checkpoint_answer_leaked",
+          "source": "jev",
+          "status": "fail",
+          "probability": 0.88
+        }
+      ],
+      "debuggingChecks": [
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01,
+          "status": "pass"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06,
+          "status": "pass"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.81,
+          "status": "fail"
+        }
+      ]
+    },
+    {
+      "id": "python-practice--google--2/google",
+      "originalPlanner": "google",
+      "pairedReviewer": "google",
+      "identity": "original-provider",
+      "tutor": "MiniMax-M2.7-highspeed",
+      "draftSha256": "9f7f9e2445a58b6c8e2190fe49cdac59e0368ec0bbc5b7b230f8ab49b5506026",
+      "dispatched": [
+        {
+          "stage": "plan",
+          "model": "gemini-decision-1",
+          "sha256": "2f30a96055683294919a753b724f045768e75c98f062ab96bcb3a3a074e645dd"
+        },
+        {
+          "stage": "review",
+          "model": "gemini-decision-1",
+          "sha256": "e20dece8fd802f74962513ebf7ead3da87a99da894fe8e340ba2088463112574"
+        }
+      ],
+      "originalDraftStatus": "pass",
+      "originalSelected": true,
+      "attemptStatus": "pass",
+      "additionalDraftUnavailable": true,
+      "singleDraftDisposition": "released",
+      "notice": null,
+      "staticProof": null,
+      "example": {
+        "type": "choice",
+        "choice": "observable",
+        "probabilities": {
+          "observable": 0.8170762080684395,
+          "masked": 0.13529910926200864,
+          "uncertain": 0.04152570860080301,
+          "outside": 0.006098974068748903
+        },
+        "confidence": 0.8170762080684395
+      },
+      "disclosure": {
+        "type": "choice",
+        "choice": "location_clue",
+        "probabilities": {
+          "independent": 0.2118821778082054,
+          "location_clue": 0.6177509562715057,
+          "solution_given": 0.1363629781489677,
+          "uncertain": 0.02910016259691066,
+          "outside": 0.004903725174410495
+        },
+        "confidence": 0.6177509562715057
+      },
+      "blocking": [],
+      "debuggingChecks": [
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.13529910926200864,
+          "status": "pass"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.1363629781489677,
+          "status": "pass"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.6177509562715057,
+          "status": "fail"
+        }
+      ]
+    }
+  ]
+}

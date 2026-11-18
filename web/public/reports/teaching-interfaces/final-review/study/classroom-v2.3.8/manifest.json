@@ -1,0 +1,22 @@
+{
+  "id": "classroom-tile-linked-feedback--minimax--jev",
+  "policy": "keating-teaching-policy/v2.3.8",
+  "sourceDeltaSha256": "aeebc83dbbb3b9322ced2974a140995dcb0e303f6d31a431d47ebe108feb2bd6",
+  "sourceBaseSha256": "e7e75735b4d16491a133ff2ef46fef59c5189044b0d2e1ed28fa7bd3810b42aa",
+  "sourceFiles": 1813,
+  "priorSummarySha256": "b9428865541e6fbd52c57db28e929219ee8948f63cc892daf2ed859328f53537",
+  "priorBoundUsd": 2.74353571,
+  "capUsd": 10,
+  "phaseCapUsd": 0.6,
+  "parentReceiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+  "parentPublicTextSha256": "65eecea1789dffb357f65748832beaceaea4d5a144da07fcb1b00a96485265de",
+  "transportSha256": "52fd04074a7bec220e806108720f5b0a78b9ac0f7d8ad4c41d386dc468f0e560",
+  "priorPlanOfflineProofSha256": "34977214580c5c975fd4cddce8fd9bcb1e2c4fbaa1e21f3ed159a8021fd21531",
+  "code": {
+    "cohort.json": "383f4e9a1853252f0c45378be0e966f3553982c13ee5e5c0d2744971d1e5d0c6",
+    "source.py": "3b8009f6b496c8ae9786ce6c89928cca22b2c0765c821972317890126f74bcd2",
+    "environment.mjs": "13920694f19c023bc14e4b05347cea4acc63e70738fddf1a187c88fffcd86b5c",
+    "run.mjs": "0371a5d2eb35b1327c558378152ad154e7e6e990f686a047cf680d8bc169edae",
+    "old-plan.mjs": "88bf3fa459b936936b744eedd1e37dada62eb72c914cae4ae8dbd482f48f139a"
+  }
+}

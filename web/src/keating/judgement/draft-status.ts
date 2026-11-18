@@ -1,7 +1,9 @@
-import { INTERACTION_AFFORDANCES, TEACHING_INTERACTION_FEATURES, TEACHING_POLICY_DETERMINISTIC_RULES, TEACHING_POLICY_RULES, type PlanReview, type TeachingDraftInteraction, type TeachingDraftSnapshot } from "@keating/learner-contracts";
+import { INTERACTION_AFFORDANCES, INTERACTION_REASONS, TEACHING_INTERACTION_FEATURES, isOpenUiDiagnosticGateIssue, type PlanReview, type TeachingDraftInteraction, type TeachingDraftSnapshot } from "@keating/learner-contracts";
 import { recordDiagnostic } from "../../lib/diagnostics";
+import { recordedCodePracticeLanguage } from "../editable-code-language";
 import { STATE_SECTION_KEYS, type StateComposition, type TeachingDraftPhase } from "@keating/learner-contracts";
 import { ACTIVITY_KINDS, projectActivitySelectionReceipt } from "../../../../packages/learner-contracts/src/judgement/activity-learning";
+import { projectTeachingDraftSelection } from "../../../../packages/learner-contracts/src/judgement/teaching-selection";
 
 export type TeachingDraftFeedbackKind = "helpful" | "too-strict" | "missed-problem";
 export interface TeachingDraftStatus {
@@ -37,8 +39,7 @@ export function publishTeachingDraftContent(sessionId: string, candidate: import
 }
 export function clearTeachingDraftContents(): void { contentStates.clear(); emit(); }
 const listeners = new Set<() => void>();
-const checkIds = new Set<string>([...TEACHING_POLICY_RULES.map(rule => rule.id), ...TEACHING_POLICY_DETERMINISTIC_RULES,
-  "quality_progress", "quality_scope", "runtime_tool_schema"]);
+const checkIds = new Set<string>(["quality_progress", "quality_scope", "runtime_tool_schema"]);
 const featureIds = new Set<string>(TEACHING_INTERACTION_FEATURES.map(feature => feature.id));
 const componentNames = new Set<string>(INTERACTION_AFFORDANCES.flatMap(row => row.components));
 const planTriggers = new Set<string>(["graded-attempt", "stalled-focus", "progression-requested", "goal-requested"]);
@@ -56,8 +57,11 @@ export function getTeachingDraftStatus(sessionId: string | null | undefined): Te
 }
 
 function projectInteraction(interaction: TeachingDraftInteraction): TeachingDraftInteraction {
+  const codePracticeLanguage = recordedCodePracticeLanguage(interaction);
   return {
     action: interaction.action, paired: interaction.paired,
+    ...(interaction.reason && INTERACTION_REASONS.includes(interaction.reason) ? { reason: interaction.reason } : {}),
+    ...(codePracticeLanguage ? { codePracticeLanguage } : {}),
     families: interaction.families.map(({ family, components }) => ({ family, components: components.filter(name => componentNames.has(name)) })),
     features: interaction.features.filter(id => featureIds.has(id)),
     ...(interaction.continueNodeId ? { continueNodeId: interaction.continueNodeId } : {}),
@@ -97,6 +101,7 @@ function projectState(state: StateComposition): StateComposition {
 /** Content-free projection shared by the live status and the persisted review receipt. */
 export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): TeachingDraftSnapshot {
   const activityLearning = projectActivitySelectionReceipt(snapshot.activityLearning);
+  const selectionRule = projectTeachingDraftSelection(snapshot)?.rule;
   const background = snapshot.backgroundActivity;
   const backgroundActivity = background?.version === 1 && background.target === "next-linked-objective-score" && background.causal === false
     && Number.isSafeInteger(background.policyCreatedAt) && background.policyCreatedAt > 0 && ACTIVITY_KINDS.includes(background.preferredKind)
@@ -106,6 +111,7 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     phase: snapshot.phase, attempt: snapshot.attempt, maxAttempts: snapshot.maxAttempts,
     reasoning: snapshot.reasoning, standard: snapshot.standard, elapsedMs: snapshot.elapsedMs,
     judgeModel: snapshot.judgeModel, selectedAttempt: snapshot.selectedAttempt, reason: snapshot.reason,
+    ...(selectionRule ? { selectionRule } : {}),
     ...projectSynthesisSources(snapshot.synthesisSourceAttempts, snapshot.attempt),
     ...(snapshot.planningMs === undefined ? {} : { planningMs: snapshot.planningMs }),
     ...(snapshot.interaction ? { interaction: projectInteraction(snapshot.interaction) } : {}),
@@ -119,7 +125,7 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
       generationMs: attempt.generationMs, judgementMs: attempt.judgementMs, status: attempt.status,
       ...projectSynthesisSources(attempt.synthesisSourceAttempts, attempt.attempt),
       ...projectToolNames(attempt.unavailableTools),
-      checks: attempt.checks.filter(check => checkIds.has(check.id)).map(check => ({
+      checks: attempt.checks.filter(check => isOpenUiDiagnosticGateIssue(check.id) || checkIds.has(check.id)).map(check => ({
         id: check.id, source: check.source, severity: check.severity, status: check.status, probability: check.probability,
       })),
     })),

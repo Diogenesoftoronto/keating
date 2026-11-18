@@ -1,0 +1,1544 @@
+{
+  "id": "odd-filter--minimax--jev",
+  "caseId": "odd-filter",
+  "tutor": "minimax",
+  "arm": "jev",
+  "kind": "prospective-supplement",
+  "policy": "keating-teaching-policy/v2.3.4",
+  "prompt": "Give me a broken Python loop to fix myself. It should collect every odd number in [5, 4, 9]. Make the bug visible on that input. No hints, please.",
+  "originalHistory": [],
+  "plan": {
+    "status": "guided",
+    "action": "none",
+    "offered": [],
+    "features": {
+      "variable_relationship": false,
+      "ordered_procedure": false,
+      "discrete_recall": false,
+      "structure_relations": false,
+      "category_distinction": false,
+      "prediction_opportunity": null,
+      "learner_response_due": null,
+      "hands_on_requested": true,
+      "executable_code": true,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "decisions": {
+      "direct_answer_requested": true,
+      "explanation_requested": false,
+      "learner_stuck": false,
+      "attempt_present": false,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": true,
+      "plain_reply_requested": false,
+      "assessment_declined": false,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": true,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": true,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "directives": [
+      "Answer the bounded question directly; do not start a diagnostic interview.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Give the learner an editable fenced python code block for their exercise. Keep the starter and any examples in Python. Running Python requires an available hosted executor and network access.",
+      "If the learner requests a new bug to find independently, choose a concrete input on which the starter visibly fails or produces the wrong result. State the intended behavior or expected output. Leave locating and repairing the fault to the learner. Keep ordinary documentation and expected-output comments. Withhold unrequested hints and the fix from prose, code comments and controls, including interactive page titles and descriptions shown while loading or on fallback."
+    ],
+    "codePracticeLanguage": "python",
+    "reason": null
+  },
+  "refs": [
+    {
+      "label": "odd-filter--minimax--jev/plan",
+      "entryId": "odd-filter--minimax--jev/plan",
+      "source": "live",
+      "requestSha256": "4476a1a35ae839203f34db8aaccc86da49d7bd4ec6f891407040bc4c7c4a873d",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    },
+    {
+      "label": "odd-filter--minimax--jev/review/1",
+      "entryId": "odd-filter--minimax--jev/review/1",
+      "source": "live",
+      "requestSha256": "8df6a7ec42e030575c94470f58852206b7ed63bd42744e238b9bfe856f1d4dcd",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    },
+    {
+      "label": "odd-filter--minimax--jev/review/2",
+      "entryId": "odd-filter--minimax--jev/review/2",
+      "source": "live",
+      "requestSha256": "b76bfa80ac483a9ca36ae7d9665f868b62bbf30d0d346c820045286ae55c17ea",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    },
+    {
+      "label": "odd-filter--minimax--jev/review/3",
+      "entryId": "odd-filter--minimax--jev/review/3",
+      "source": "live",
+      "requestSha256": "35909ababe1778f2530bf3bece1086485fc39c98fbcd0d49341118680efcf552",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    }
+  ],
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 18546,
+          "output": 838,
+          "cacheRead": 188,
+          "cacheWrite": 0,
+          "totalTokens": 19572,
+          "cost": {
+            "input": 0.0111276,
+            "output": 0.0020112,
+            "cacheRead": 0.000011279999999999999,
+            "cacheWrite": 0,
+            "total": 0.01315008
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 698
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Here's the exercise. The bug is real and visible on that exact input — no hints, just find it.\n\n```python\ndef collect_odds(numbers):\n    \"\"\"Return every odd number in the given list, in order.\"\"\"\n    odds = []\n    for i in range(1, len(numbers)):\n        if numbers[i] % 2 != 0:\n            odds.append(numbers[i])\n    return odds\n\n\n# Expected output for [5, 4, 9]: [5, 9]\nprint(collect_odds([5, 4, 9]))\n```\n\nRun it, then send me two things: the corrected code, and the printed output."
+          }
+        ]
+      },
+      "text": "Here's the exercise. The bug is real and visible on that exact input — no hints, just find it.\n\n```python\ndef collect_odds(numbers):\n    \"\"\"Return every odd number in the given list, in order.\"\"\"\n    odds = []\n    for i in range(1, len(numbers)):\n        if numbers[i] % 2 != 0:\n            odds.append(numbers[i])\n    return odds\n\n\n# Expected output for [5, 4, 9]: [5, 9]\nprint(collect_odds([5, 4, 9]))\n```\n\nRun it, then send me two things: the corrected code, and the printed output.",
+      "toolCalls": [],
+      "attempted": false,
+      "components": [],
+      "outsideWords": 76,
+      "entryId": "odd-filter--minimax--jev/tutor/1",
+      "completed": true,
+      "providedDirectives": true,
+      "systemSha256": "e7290107da0c2947f3c2e2b8a0a09ee4d787c2eae34366d00a46482dc1007822"
+    },
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 18800,
+          "output": 645,
+          "cacheRead": 188,
+          "cacheWrite": 0,
+          "totalTokens": 19633,
+          "cost": {
+            "input": 0.01128,
+            "output": 0.001548,
+            "cacheRead": 0.000011279999999999999,
+            "cacheWrite": 0,
+            "total": 0.01283928
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 510
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Here's the broken version. It should collect every odd number from the list and print them, but on this exact input it prints something else.\n\n```python\n# Collect every odd number from the list and print them.\n# Expected output: [5, 9]\n\nnumbers = [5, 4, 9]\nodds = []\n\nfor n in numbers:\n    if n % 2 == 0:\n        odds.append(n)\n\nprint(odds)\n```\n\nYour job: find the fault, repair it, and get the output to match the expected line. Once you have a fix, tell me what you changed and I'll check it against the same input."
+          }
+        ]
+      },
+      "text": "Here's the broken version. It should collect every odd number from the list and print them, but on this exact input it prints something else.\n\n```python\n# Collect every odd number from the list and print them.\n# Expected output: [5, 9]\n\nnumbers = [5, 4, 9]\nodds = []\n\nfor n in numbers:\n    if n % 2 == 0:\n        odds.append(n)\n\nprint(odds)\n```\n\nYour job: find the fault, repair it, and get the output to match the expected line. Once you have a fix, tell me what you changed and I'll check it against the same input.",
+      "toolCalls": [],
+      "attempted": false,
+      "components": [],
+      "outsideWords": 97,
+      "entryId": "odd-filter--minimax--jev/tutor/2",
+      "completed": true,
+      "providedDirectives": true,
+      "systemSha256": "e7290107da0c2947f3c2e2b8a0a09ee4d787c2eae34366d00a46482dc1007822"
+    },
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 9628,
+          "output": 176,
+          "cacheRead": 128,
+          "cacheWrite": 0,
+          "totalTokens": 9932,
+          "cost": {
+            "input": 0.0057767999999999995,
+            "output": 0.00042239999999999997,
+            "cacheRead": 0.00000768,
+            "cacheWrite": 0,
+            "total": 0.00620688
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 111
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "```python\nnumbers = [5, 4, 9]\nodd_numbers = []\n\nfor i in range(len(numbers)):\n    if numbers[i] % 2 == 1:\n        odd_numbers.append(numbers[i])\n\nprint(odd_numbers)\n# Expected output: [5, 9]\n```"
+          }
+        ]
+      },
+      "text": "```python\nnumbers = [5, 4, 9]\nodd_numbers = []\n\nfor i in range(len(numbers)):\n    if numbers[i] % 2 == 1:\n        odd_numbers.append(numbers[i])\n\nprint(odd_numbers)\n# Expected output: [5, 9]\n```",
+      "toolCalls": [],
+      "attempted": false,
+      "components": [],
+      "outsideWords": 27,
+      "entryId": "odd-filter--minimax--jev/tutor/3",
+      "completed": true,
+      "providedDirectives": true,
+      "systemSha256": "f8e3247049c108bb274543043e0460de1b2b8707509937e2c5cfdab9b77ef496"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "fail",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "exercise_language_preserved",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.05
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.08
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.1
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.89
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.28
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.08
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.46
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.13
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.02
+        },
+        {
+          "id": "code_example_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "code_trace_missing",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.73
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02,
+          "status": "pass"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02,
+          "status": "pass"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.02,
+          "status": "pass"
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.020000000000000018,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.10999999999999999,
+          "status": "pass"
+        }
+      ],
+      "variant": "default",
+      "debuggingExercise": {
+        "example": {
+          "type": "choice",
+          "choice": "observable",
+          "probabilities": {
+            "observable": 0.98,
+            "masked": 0.02,
+            "uncertain": 0,
+            "outside": 0
+          },
+          "confidence": 0.97
+        },
+        "disclosure": {
+          "type": "choice",
+          "choice": "independent",
+          "probabilities": {
+            "independent": 0.95,
+            "location_clue": 0.02,
+            "solution_given": 0.02,
+            "uncertain": 0.01,
+            "outside": 0
+          },
+          "confidence": 0.94
+        }
+      }
+    },
+    {
+      "attempt": 2,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "fail",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "exercise_language_preserved",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.04
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.67
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.37
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.47
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.12
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.13
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.02
+        },
+        {
+          "id": "code_example_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "code_trace_missing",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.8
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0,
+          "status": "pass"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02,
+          "status": "pass"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.04,
+          "status": "pass"
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.020000000000000018,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07999999999999996,
+          "status": "pass"
+        }
+      ],
+      "variant": "default",
+      "debuggingExercise": {
+        "example": {
+          "type": "choice",
+          "choice": "observable",
+          "probabilities": {
+            "observable": 1,
+            "masked": 0,
+            "uncertain": 0,
+            "outside": 0
+          },
+          "confidence": 1
+        },
+        "disclosure": {
+          "type": "choice",
+          "choice": "independent",
+          "probabilities": {
+            "independent": 0.93,
+            "location_clue": 0.04,
+            "solution_given": 0.02,
+            "uncertain": 0.01,
+            "outside": 0
+          },
+          "confidence": 0.91
+        }
+      }
+    },
+    {
+      "attempt": 3,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "fail",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "exercise_language_preserved",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.07
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.06
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.11
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.08
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.12
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.84
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.11
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.59
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.21
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.04
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.01
+        },
+        {
+          "id": "code_example_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.1
+        },
+        {
+          "id": "code_trace_missing",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.71
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.92,
+          "status": "fail"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.38,
+          "status": "unknown"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.01,
+          "status": "unknown"
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.87,
+          "status": "fail"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.6699999999999999,
+          "status": "unknown"
+        }
+      ],
+      "variant": "default",
+      "debuggingExercise": {
+        "example": {
+          "type": "choice",
+          "choice": "masked",
+          "probabilities": {
+            "observable": 0.03,
+            "masked": 0.92,
+            "uncertain": 0.01,
+            "outside": 0.04
+          },
+          "confidence": 0.89
+        },
+        "disclosure": {
+          "type": "choice",
+          "choice": "independent",
+          "probabilities": {
+            "independent": 0.46,
+            "location_clue": 0.01,
+            "solution_given": 0.38,
+            "uncertain": 0.03,
+            "outside": 0.12
+          },
+          "confidence": 0.32
+        }
+      }
+    }
+  ],
+  "selectedAttempt": null,
+  "disposition": "withheld",
+  "missing": "no-approved-draft",
+  "public": null,
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 46974,
+        "output": 1659,
+        "cacheRead": 504,
+        "cacheWrite": 0,
+        "totalTokens": 49137,
+        "cost": {
+          "input": 0.0281844,
+          "output": 0.0039816,
+          "cacheRead": 0.000030239999999999995,
+          "cacheWrite": 0,
+          "total": 0.03219624
+        },
+        "reasoning": 1319,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "<!--keating:review=withheld-->\nKeating couldn't verify a reply after reviewing the drafts: the drafts failed the teaching or evidence checks. Retry or choose a different reply model in Settings. Blocking checks: checkpoint_answer_leaked, checkpoint_continued, debug_example_unwitnessed.\n\nFailure: no-approved-draft. Draft attempts: 3; completed drafts: 3."
+        }
+      ]
+    },
+    "text": "<!--keating:review=withheld-->\nKeating couldn't verify a reply after reviewing the drafts: the drafts failed the teaching or evidence checks. Retry or choose a different reply model in Settings. Blocking checks: checkpoint_answer_leaked, checkpoint_continued, debug_example_unwitnessed.\n\nFailure: no-approved-draft. Draft attempts: 3; completed drafts: 3.",
+    "toolCalls": []
+  },
+  "notice": "withheld"
+}

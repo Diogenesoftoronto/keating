@@ -1,0 +1,1111 @@
+{
+  "id": "classroom-stage-light--minimax--jev",
+  "kind": "classroom",
+  "caseId": "classroom-stage-light",
+  "tutor": "minimax",
+  "arm": "jev",
+  "prompt": "A stage light makes 6 flashes every second. Let me change the flash rate and see how many flashes happen in 12 seconds. I don’t want to take a quiz.",
+  "originalHistory": [],
+  "plan": {
+    "status": "guided",
+    "action": "create",
+    "offered": [
+      "Simulation"
+    ],
+    "families": [
+      {
+        "family": "manipulable",
+        "components": [
+          "Simulation"
+        ],
+        "features": [
+          "variable_relationship",
+          "hands_on_requested"
+        ]
+      }
+    ],
+    "reason": null,
+    "codePracticeLanguage": null,
+    "features": {
+      "variable_relationship": true,
+      "ordered_procedure": false,
+      "discrete_recall": false,
+      "structure_relations": false,
+      "category_distinction": false,
+      "prediction_opportunity": null,
+      "learner_response_due": false,
+      "hands_on_requested": true,
+      "executable_code": false,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "decisions": {
+      "direct_answer_requested": true,
+      "explanation_requested": false,
+      "learner_stuck": false,
+      "attempt_present": false,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": false,
+      "plain_reply_requested": false,
+      "assessment_declined": true,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": true,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": true,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "directives": [
+      "Answer the bounded question directly; do not start a diagnostic interview.",
+      "Give the requested help and any visual demonstration. Let the learner operate controls immediately. Keep test questions and predictions out of both surrounding prose and component instructions unless the learner specifically asks to make that prediction.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Answer the learner's request first; any activity comes after the answer.",
+      "At most one OpenUI activity may help this turn: Simulation to let the learner change a variable and observe the outcome; let the learner carry out the requested action themselves. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested."
+    ]
+  },
+  "refs": [
+    {
+      "label": "classroom-stage-light--minimax--jev/plan",
+      "entryId": "classroom-stage-light--minimax--jev/plan",
+      "source": "live",
+      "requestSha256": "fe35c53246f20df1be9bd824addc6953f09f4af198d73786b46f2ad09e3c0742",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    },
+    {
+      "label": "classroom-stage-light--minimax--jev/review/1",
+      "entryId": "classroom-stage-light--minimax--jev/review/1",
+      "source": "live",
+      "requestSha256": "c69078fc71be17ee2331a57956347c8aafab4d194873ddaa916b36754eb90f40",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    },
+    {
+      "label": "classroom-stage-light--minimax--jev/review/2",
+      "entryId": "classroom-stage-light--minimax--jev/review/2",
+      "source": "live",
+      "requestSha256": "248acd4ce4cdeed613a81e622f2aab65d9afa9ec6b6950722d0b5ee5d812eae7",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    }
+  ],
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 16039,
+          "output": 582,
+          "cacheRead": 128,
+          "cacheWrite": 0,
+          "totalTokens": 16749,
+          "cost": {
+            "input": 0.009623399999999999,
+            "output": 0.0013968,
+            "cacheRead": 0.00000768,
+            "cacheWrite": 0,
+            "total": 0.011027879999999999
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 329
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Here's a slider you can drag: change the flash rate, and the count for a 12-second stretch updates immediately.\n\n```openui lifecycle=resumable id=stage-light-flash-rate\n\nroot = LearningSurface([sim], \"Stage light flash rate\", \"Drag the rate to change how many flashes occur in 12 seconds.\", \"resumable\")\nsim = Simulation(\"flash-sim\", \"Flashes in 12 seconds\", [\n  { id: \"rate\", label: \"Flash rate\", unit: \"flashes/second\", min: 1, max: 20, step: 1, value: 6 }\n], [\n  { id: \"total\", label: \"Flashes in 12 seconds\", unit: \"flashes\", expr: \"rate * 12\", precision: 0, emphasis: true },\n  { id: \"gap\", label: \"Time between flashes\", unit: \"seconds\", expr: \"1 / rate\", precision: 3 }\n], \"resumable\", \"Start by predicting how many flashes you would get at 10 flashes per second, then move the slider and check.\")\n```\n\nTry 10 flashes per second first and see whether the count matches your expectation."
+          }
+        ]
+      },
+      "text": "Here's a slider you can drag: change the flash rate, and the count for a 12-second stretch updates immediately.\n\n```openui lifecycle=resumable id=stage-light-flash-rate\n\nroot = LearningSurface([sim], \"Stage light flash rate\", \"Drag the rate to change how many flashes occur in 12 seconds.\", \"resumable\")\nsim = Simulation(\"flash-sim\", \"Flashes in 12 seconds\", [\n  { id: \"rate\", label: \"Flash rate\", unit: \"flashes/second\", min: 1, max: 20, step: 1, value: 6 }\n], [\n  { id: \"total\", label: \"Flashes in 12 seconds\", unit: \"flashes\", expr: \"rate * 12\", precision: 0, emphasis: true },\n  { id: \"gap\", label: \"Time between flashes\", unit: \"seconds\", expr: \"1 / rate\", precision: 3 }\n], \"resumable\", \"Start by predicting how many flashes you would get at 10 flashes per second, then move the slider and check.\")\n```\n\nTry 10 flashes per second first and see whether the count matches your expectation.",
+      "toolCalls": [],
+      "attempted": true,
+      "components": [
+        "simulation"
+      ],
+      "outsideWords": 33,
+      "entryId": "classroom-stage-light--minimax--jev/tutor/1",
+      "completed": true,
+      "providedDirectives": true,
+      "systemSha256": "2697a37d8f1e43567f4374791ec8e27a177ea6d78f6380dacfa953194be055fe"
+    },
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 15970,
+          "output": 335,
+          "cacheRead": 512,
+          "cacheWrite": 0,
+          "totalTokens": 16817,
+          "cost": {
+            "input": 0.009582,
+            "output": 0.0008039999999999999,
+            "cacheRead": 0.00003072,
+            "cacheWrite": 0,
+            "total": 0.010416719999999999
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 63
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "I'll set up a control you can drag: the flash rate, with the count over 12 seconds updating live.\n\n```openui lifecycle=ephemeral id=flash-rate-sim\nroot = LearningSurface([sim], \"Flashes in 12 seconds\", \"Drag the flash rate and watch the 12-second total update.\", \"ephemeral\")\nsim = Simulation(\"flash-sim\", \"Stage light flash counter\", [\n  { id: \"rate\", label: \"Flash rate\", unit: \"flashes per second\", min: 0, max: 20, step: 1, value: 6 }\n], [\n  { id: \"total\", label: \"Flashes in 12 seconds\", unit: \"flashes\", expr: \"rate * 12\", emphasis: true },\n  { id: \"perSecond\", label: \"Flashes per second\", unit: \"flashes/s\", expr: \"rate\" }\n], \"ephemeral\", \"Move the flash rate slider and watch how the number of flashes in 12 seconds changes. The first slider is the one you asked to change; the totals recalculate immediately.\")\n```\n\nThe starting point is your 6 flashes per second, which gives 72 flashes in 12 seconds. Move the slider to any rate you like and the total follows."
+          }
+        ]
+      },
+      "text": "I'll set up a control you can drag: the flash rate, with the count over 12 seconds updating live.\n\n```openui lifecycle=ephemeral id=flash-rate-sim\nroot = LearningSurface([sim], \"Flashes in 12 seconds\", \"Drag the flash rate and watch the 12-second total update.\", \"ephemeral\")\nsim = Simulation(\"flash-sim\", \"Stage light flash counter\", [\n  { id: \"rate\", label: \"Flash rate\", unit: \"flashes per second\", min: 0, max: 20, step: 1, value: 6 }\n], [\n  { id: \"total\", label: \"Flashes in 12 seconds\", unit: \"flashes\", expr: \"rate * 12\", emphasis: true },\n  { id: \"perSecond\", label: \"Flashes per second\", unit: \"flashes/s\", expr: \"rate\" }\n], \"ephemeral\", \"Move the flash rate slider and watch how the number of flashes in 12 seconds changes. The first slider is the one you asked to change; the totals recalculate immediately.\")\n```\n\nThe starting point is your 6 flashes per second, which gives 72 flashes in 12 seconds. Move the slider to any rate you like and the total follows.",
+      "toolCalls": [],
+      "attempted": true,
+      "components": [
+        "simulation"
+      ],
+      "outsideWords": 47,
+      "entryId": "classroom-stage-light--minimax--jev/tutor/2",
+      "completed": true,
+      "providedDirectives": true,
+      "systemSha256": "2697a37d8f1e43567f4374791ec8e27a177ea6d78f6380dacfa953194be055fe"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "reasoning": "off",
+      "standard": "concise",
+      "generationMs": 5287.1899999994785,
+      "judgementMs": 635.1199999991804,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.05
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.07
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.11
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.09
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.27
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.08
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.09
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.54
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.16
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.14
+        },
+        {
+          "id": "declined_assessment_imposed",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.75
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.47
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.1
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.12
+        },
+        {
+          "id": "law_authority_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "law_jurisdiction_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "medicine_evidence_conflated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "history_disagreement_erased",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "psychology_replication_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "politics_normative_as_fact",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "declined_assessment_structure",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.10999999999999999,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.31000000000000005,
+          "status": "pass"
+        }
+      ],
+      "variant": "default"
+    },
+    {
+      "attempt": 2,
+      "reasoning": "off",
+      "standard": "concise",
+      "generationMs": 5568.464999999851,
+      "judgementMs": 8561.054999999702,
+      "status": "unknown",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.13
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.08
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.17
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.04
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.04
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.54
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.55
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.39
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "declined_assessment_imposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.29
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.09
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.09
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.04
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.15
+        },
+        {
+          "id": "law_authority_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "law_jurisdiction_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "medicine_evidence_conflated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "history_disagreement_erased",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "psychology_replication_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "politics_normative_as_fact",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "declined_assessment_structure",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.10999999999999999,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.24,
+          "status": "pass"
+        }
+      ],
+      "variant": "default"
+    }
+  ],
+  "selectedAttempt": 2,
+  "disposition": "released",
+  "public": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 32009,
+        "output": 917,
+        "cacheRead": 640,
+        "cacheWrite": 0,
+        "totalTokens": 33566,
+        "cost": {
+          "input": 0.019205399999999997,
+          "output": 0.0022007999999999997,
+          "cacheRead": 0.0000384,
+          "cacheWrite": 0,
+          "total": 0.021444599999999998
+        },
+        "reasoning": 392,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "<!--keating:review=unverified-->\nI'll set up a control you can drag: the flash rate, with the count over 12 seconds updating live.\n\n```openui lifecycle=ephemeral id=flash-rate-sim\nroot = LearningSurface([sim], \"Flashes in 12 seconds\", \"Drag the flash rate and watch the 12-second total update.\", \"ephemeral\")\nsim = Simulation(\"flash-sim\", \"Stage light flash counter\", [\n  { id: \"rate\", label: \"Flash rate\", unit: \"flashes per second\", min: 0, max: 20, step: 1, value: 6 }\n], [\n  { id: \"total\", label: \"Flashes in 12 seconds\", unit: \"flashes\", expr: \"rate * 12\", emphasis: true },\n  { id: \"perSecond\", label: \"Flashes per second\", unit: \"flashes/s\", expr: \"rate\" }\n], \"ephemeral\", \"Move the flash rate slider and watch how the number of flashes in 12 seconds changes. The first slider is the one you asked to change; the totals recalculate immediately.\")\n```\n\nThe starting point is your 6 flashes per second, which gives 72 flashes in 12 seconds. Move the slider to any rate you like and the total follows."
+        }
+      ]
+    },
+    "text": "<!--keating:review=unverified-->\nI'll set up a control you can drag: the flash rate, with the count over 12 seconds updating live.\n\n```openui lifecycle=ephemeral id=flash-rate-sim\nroot = LearningSurface([sim], \"Flashes in 12 seconds\", \"Drag the flash rate and watch the 12-second total update.\", \"ephemeral\")\nsim = Simulation(\"flash-sim\", \"Stage light flash counter\", [\n  { id: \"rate\", label: \"Flash rate\", unit: \"flashes per second\", min: 0, max: 20, step: 1, value: 6 }\n], [\n  { id: \"total\", label: \"Flashes in 12 seconds\", unit: \"flashes\", expr: \"rate * 12\", emphasis: true },\n  { id: \"perSecond\", label: \"Flashes per second\", unit: \"flashes/s\", expr: \"rate\" }\n], \"ephemeral\", \"Move the flash rate slider and watch how the number of flashes in 12 seconds changes. The first slider is the one you asked to change; the totals recalculate immediately.\")\n```\n\nThe starting point is your 6 flashes per second, which gives 72 flashes in 12 seconds. Move the slider to any rate you like and the total follows.",
+    "toolCalls": [],
+    "attempted": true,
+    "components": [
+      "simulation"
+    ],
+    "outsideWords": 47
+  },
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 32009,
+        "output": 917,
+        "cacheRead": 640,
+        "cacheWrite": 0,
+        "totalTokens": 33566,
+        "cost": {
+          "input": 0.019205399999999997,
+          "output": 0.0022007999999999997,
+          "cacheRead": 0.0000384,
+          "cacheWrite": 0,
+          "total": 0.021444599999999998
+        },
+        "reasoning": 392,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "<!--keating:review=unverified-->\nI'll set up a control you can drag: the flash rate, with the count over 12 seconds updating live.\n\n```openui lifecycle=ephemeral id=flash-rate-sim\nroot = LearningSurface([sim], \"Flashes in 12 seconds\", \"Drag the flash rate and watch the 12-second total update.\", \"ephemeral\")\nsim = Simulation(\"flash-sim\", \"Stage light flash counter\", [\n  { id: \"rate\", label: \"Flash rate\", unit: \"flashes per second\", min: 0, max: 20, step: 1, value: 6 }\n], [\n  { id: \"total\", label: \"Flashes in 12 seconds\", unit: \"flashes\", expr: \"rate * 12\", emphasis: true },\n  { id: \"perSecond\", label: \"Flashes per second\", unit: \"flashes/s\", expr: \"rate\" }\n], \"ephemeral\", \"Move the flash rate slider and watch how the number of flashes in 12 seconds changes. The first slider is the one you asked to change; the totals recalculate immediately.\")\n```\n\nThe starting point is your 6 flashes per second, which gives 72 flashes in 12 seconds. Move the slider to any rate you like and the total follows."
+        }
+      ]
+    },
+    "text": "<!--keating:review=unverified-->\nI'll set up a control you can drag: the flash rate, with the count over 12 seconds updating live.\n\n```openui lifecycle=ephemeral id=flash-rate-sim\nroot = LearningSurface([sim], \"Flashes in 12 seconds\", \"Drag the flash rate and watch the 12-second total update.\", \"ephemeral\")\nsim = Simulation(\"flash-sim\", \"Stage light flash counter\", [\n  { id: \"rate\", label: \"Flash rate\", unit: \"flashes per second\", min: 0, max: 20, step: 1, value: 6 }\n], [\n  { id: \"total\", label: \"Flashes in 12 seconds\", unit: \"flashes\", expr: \"rate * 12\", emphasis: true },\n  { id: \"perSecond\", label: \"Flashes per second\", unit: \"flashes/s\", expr: \"rate\" }\n], \"ephemeral\", \"Move the flash rate slider and watch how the number of flashes in 12 seconds changes. The first slider is the one you asked to change; the totals recalculate immediately.\")\n```\n\nThe starting point is your 6 flashes per second, which gives 72 flashes in 12 seconds. Move the slider to any rate you like and the total follows.",
+    "toolCalls": []
+  },
+  "notice": "unverified",
+  "completedAt": "2026-11-18T18:21:11.392Z",
+  "classroomContext": {
+    "conversationId": "07e474bb-d24a-4cde-90c8-3f7d898552bc",
+    "turnId": "learner-0"
+  }
+}

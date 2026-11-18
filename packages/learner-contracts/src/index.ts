@@ -10,6 +10,7 @@ export * from "./math-verification.js";
 export * from "./math-question.js";
 export * from "./mobile-workspace.js";
 export * from "./openui-source.js";
+export * from "./openui-diagnostics.js";
 export * from "./simulation-expression.js";
 export * from "./portable.js";
 export * from "./pursuit.js";

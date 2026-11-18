@@ -1,0 +1,79 @@
+{
+  "id": "filling-line--jev",
+  "caseId": "filling-line",
+  "provider": "jev",
+  "decisionModel": "jev-1.14.0",
+  "kind": "live",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "bc5fcb312ea64ffc3e150a3201a75a2620d0eeb9942c4834a27d042bdabf5588",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "errorCode": null
+    },
+    {
+      "phase": "review",
+      "requestSha256": "a9bce1a267397ab7fdd7194a78bf267f03571911867548d497c0e01dfd03511a",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "create",
+    "offered": [
+      "Simulation"
+    ],
+    "reason": null,
+    "codeLanguage": null,
+    "directives": [
+      "Give the requested help and any visual demonstration. Let the learner operate controls immediately. Keep test questions and predictions out of both surrounding prose and component instructions unless the learner specifically asks to make that prediction.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "At most one OpenUI activity may help this turn: Simulation to let the learner change a variable and observe the outcome; let the learner carry out the requested action themselves. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested."
+    ]
+  },
+  "drafts": [
+    {
+      "label": "filling-line--jev/tutor/1",
+      "kind": "live",
+      "systemSha256": "72bf65881eb6bd79a0301c65a9b5c23b0a2cb7321e480fe27d1a08977a3f81fb",
+      "text": "Here's a slider you control directly — set the pump rate and the eight-minute total updates as you move it.\n\n```openui lifecycle=ephemeral id=filling-line-rate\n\nroot = LearningSurface([sim], \"Filling line: rate and eight-minute total\", \"Adjust the pump rate and watch the eight-minute output recompute.\", \"ephemeral\")\nsim = Simulation(\"filling-line-sim\", \"Filling line simulator\", [\n  { id: \"rate\", label: \"Pump rate\", unit: \"bottles/min\", min: 0, max: 30, step: 0.5, value: 5 }\n], [\n  { id: \"total\", label: \"Bottles filled in 8 minutes\", unit: \"bottles\", expr: \"rate * 8\", precision: 0, emphasis: true },\n  { id: \"perHour\", label: \"Bottles per hour at this rate\", unit: \"bottles/h\", expr: \"rate * 60\", precision: 0 }\n], \"ephemeral\", \"Drag the pump-rate slider. The eight-minute total and the hourly figure update immediately, so you can move between slow and fast settings and see how the totals change.\")\n```\n\nMove the slider to any rate you like — try a few and note how the eight-minute total responds. If you'd like, press **Share what I found** afterward and I'll read back the settings you settled on.",
+      "attempted": true,
+      "components": [
+        "simulation"
+      ],
+      "outsideWords": 57,
+      "guidanceDelivered": true,
+      "tools": [],
+      "stop": "stop"
+    }
+  ],
+  "status": "released",
+  "public": {
+    "text": "Here's a slider you control directly — set the pump rate and the eight-minute total updates as you move it.\n\n```openui lifecycle=ephemeral id=filling-line-rate\n\nroot = LearningSurface([sim], \"Filling line: rate and eight-minute total\", \"Adjust the pump rate and watch the eight-minute output recompute.\", \"ephemeral\")\nsim = Simulation(\"filling-line-sim\", \"Filling line simulator\", [\n  { id: \"rate\", label: \"Pump rate\", unit: \"bottles/min\", min: 0, max: 30, step: 0.5, value: 5 }\n], [\n  { id: \"total\", label: \"Bottles filled in 8 minutes\", unit: \"bottles\", expr: \"rate * 8\", precision: 0, emphasis: true },\n  { id: \"perHour\", label: \"Bottles per hour at this rate\", unit: \"bottles/h\", expr: \"rate * 60\", precision: 0 }\n], \"ephemeral\", \"Drag the pump-rate slider. The eight-minute total and the hourly figure update immediately, so you can move between slow and fast settings and see how the totals change.\")\n```\n\nMove the slider to any rate you like — try a few and note how the eight-minute total responds. If you'd like, press **Share what I found** afterward and I'll read back the settings you settled on.",
+    "attempted": true,
+    "components": [
+      "simulation"
+    ],
+    "outsideWords": 57,
+    "tools": []
+  },
+  "notice": null,
+  "selectedAttempt": 1,
+  "findings": [
+    {
+      "attempt": 1,
+      "status": "pass",
+      "adjustments": [],
+      "checks": [
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "probability": 0.57
+        }
+      ]
+    }
+  ]
+}

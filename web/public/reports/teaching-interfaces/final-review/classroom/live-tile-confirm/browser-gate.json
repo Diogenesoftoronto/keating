@@ -1,0 +1,270 @@
+{
+  "snapshot": {
+    "phase": "withheld",
+    "attempt": 3,
+    "maxAttempts": 3,
+    "reasoning": "off",
+    "standard": "concise",
+    "elapsedMs": 35761.37999999896,
+    "attempts": [
+      {
+        "attempt": 1,
+        "reasoning": "off",
+        "standard": "concise",
+        "generationMs": 35281.51000000164,
+        "judgementMs": 0,
+        "status": "generation-error",
+        "checks": [],
+        "variant": "default"
+      },
+      {
+        "attempt": 2,
+        "reasoning": "off",
+        "standard": "concise",
+        "generationMs": 44.32000000029802,
+        "judgementMs": 0,
+        "status": "generation-error",
+        "checks": [],
+        "variant": "default"
+      },
+      {
+        "attempt": 3,
+        "reasoning": "off",
+        "standard": "concise",
+        "generationMs": 32.309999998658895,
+        "judgementMs": 0,
+        "status": "generation-error",
+        "checks": [],
+        "variant": "default"
+      }
+    ],
+    "judgeModel": "jev-1.14.0",
+    "selectedAttempt": null,
+    "reason": "generation-unavailable",
+    "state": {
+      "sections": {
+        "learnerMessage": {
+          "bytes": 63,
+          "entries": 1
+        },
+        "conversation": {
+          "bytes": 1134,
+          "entries": 2
+        },
+        "learnerEvidence": {
+          "bytes": 871,
+          "entries": 6
+        },
+        "availableTools": {
+          "bytes": 231,
+          "entries": 12
+        },
+        "toolResults": {
+          "bytes": 2,
+          "entries": 0
+        },
+        "sources": {
+          "bytes": 2,
+          "entries": 0
+        },
+        "pendingSubmissions": {
+          "bytes": 2,
+          "entries": 0
+        },
+        "activeWork": {
+          "bytes": 225,
+          "entries": 4
+        },
+        "reply": {
+          "bytes": 0,
+          "entries": 0
+        },
+        "candidates": {
+          "bytes": 0,
+          "entries": 0
+        },
+        "other": {
+          "bytes": 332,
+          "entries": 4
+        }
+      },
+      "totalBytes": 2862,
+      "estimatedStateTokens": 954,
+      "estimatedRequestTokens": 7660,
+      "estimatedStateQuestionTokens": 1875,
+      "budgetTokens": 32000,
+      "fillRatio": 0.05859375,
+      "pinned": {
+        "activeWork": true,
+        "plan": false,
+        "focus": false,
+        "openInteractions": true,
+        "pendingSubmissions": false
+      }
+    },
+    "slides": [],
+    "stateHistory": [
+      {
+        "phase": "planning",
+        "attempt": 0,
+        "elapsedMs": 52.625,
+        "requestIndex": 1,
+        "state": {
+          "sections": {
+            "learnerMessage": {
+              "bytes": 63,
+              "entries": 1
+            },
+            "conversation": {
+              "bytes": 1134,
+              "entries": 2
+            },
+            "learnerEvidence": {
+              "bytes": 871,
+              "entries": 6
+            },
+            "availableTools": {
+              "bytes": 231,
+              "entries": 12
+            },
+            "toolResults": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "sources": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "pendingSubmissions": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "activeWork": {
+              "bytes": 225,
+              "entries": 4
+            },
+            "reply": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "candidates": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "other": {
+              "bytes": 332,
+              "entries": 4
+            }
+          },
+          "totalBytes": 2862,
+          "estimatedStateTokens": 954,
+          "estimatedRequestTokens": 7660,
+          "estimatedStateQuestionTokens": 1875,
+          "budgetTokens": 32000,
+          "fillRatio": 0.05859375,
+          "pinned": {
+            "activeWork": true,
+            "plan": false,
+            "focus": false,
+            "openInteractions": true,
+            "pendingSubmissions": false
+          }
+        }
+      }
+    ],
+    "planningMs": 386.535000000149,
+    "interaction": {
+      "action": "continue",
+      "families": [
+        {
+          "family": "question",
+          "components": [
+            "Question"
+          ]
+        },
+        {
+          "family": "manipulable",
+          "components": [
+            "Simulation"
+          ]
+        }
+      ],
+      "features": [
+        "variable_relationship",
+        "prediction_opportunity"
+      ],
+      "continueNodeId": "guess",
+      "paired": false
+    }
+  },
+  "message": {
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "<!--keating:review=withheld-->\nThe reply model failed before producing a complete draft. Try again or check the reply model and connection in Settings.\n\nFailure: generation-unavailable. Draft attempts: 3; completed drafts: 0."
+      }
+    ],
+    "api": "anthropic-messages",
+    "provider": "minimax",
+    "model": "MiniMax-M2.7-highspeed",
+    "stopReason": "stop",
+    "timestamp": 1795029594550,
+    "usage": {
+      "input": 15449,
+      "output": 3072,
+      "cacheRead": 176,
+      "cacheWrite": 0,
+      "totalTokens": 18697,
+      "cost": {
+        "input": 0.009269399999999999,
+        "output": 0.0073728,
+        "cacheRead": 0.000010559999999999999,
+        "cacheWrite": 0,
+        "total": 0.01665276
+      },
+      "reasoning": 458,
+      "cacheWrite1h": 0
+    }
+  },
+  "conversationId": "242b6bad-a49e-4f9a-9c50-ea8cf0ae62cf",
+  "turnId": "learner-1",
+  "browserEvidence": {
+    "activeWork": {
+      "plan": null,
+      "focus": null,
+      "openInteractions": [
+        {
+          "documentId": "openui-1qwjlss-tile-draw-prediction",
+          "nodeId": "guess",
+          "component": "question-group",
+          "presentedAt": 1795029558177,
+          "itemId": null,
+          "state": "awaiting"
+        }
+      ],
+      "truncated": false
+    },
+    "planning": {
+      "previousQuestionPresentation": {
+        "assistantTurnIndex": 1,
+        "documentId": "openui-1qwjlss-tile-draw-prediction",
+        "nodeId": "guess"
+      },
+      "openInteractions": [
+        {
+          "documentId": "openui-1qwjlss-tile-draw-prediction",
+          "nodeId": "guess",
+          "component": "question-group",
+          "presentedAt": 1795029558177,
+          "itemId": null,
+          "state": "awaiting"
+        }
+      ],
+      "pendingSubmissions": 0,
+      "conversationTurns": 2,
+      "previousRole": "assistant"
+    },
+    "staging": "9c0e52a6a1b44b331b3d62033db2063752507605708b976f2510616a4cad3eab"
+  }
+}

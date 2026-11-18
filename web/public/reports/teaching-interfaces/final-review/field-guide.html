@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="author" content="Claude Fable">
+<meta name="description" content="How to follow one learner request through Keating's drafts, review and classroom, and where the trail still goes cold.">
+<title>Follow one learner request</title>
+<style>
+  :root {
+    --paper: #f3eee3; --card: #fbf8f1; --ink: #23201a; --soft: #5f574a;
+    --rule: #d6cdbb; --accent: #2f6b4a; --warn: #8a4a12; --warn-bg: #f6e6cf;
+    --code-bg: #e9e2d2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #191713; --card: #221f1a; --ink: #ece6d9; --soft: #a99f8d;
+      --rule: #3b362d; --accent: #8fcfa8; --warn: #f0b878; --warn-bg: #33281a;
+      --code-bg: #2c2821;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 1.0625rem/1.6 Charter, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  }
+  main { max-width: 41rem; margin: 0 auto; padding: 2.5rem 1rem 4rem; }
+  h1, h2, .label, nav, .byline, figcaption {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  h1 { font-size: clamp(1.75rem, 6vw, 2.4rem); line-height: 1.15; margin: 0 0 .5rem; letter-spacing: -.015em; text-wrap: balance; }
+  h2 { font-size: 1.125rem; margin: 2.5rem 0 .5rem; letter-spacing: -.005em; }
+  p { margin: 0 0 1rem; }
+  .byline { color: var(--soft); font-size: .875rem; margin: 0 0 1.5rem; }
+  .lede { font-size: 1.1875rem; line-height: 1.5; }
+  a { color: var(--accent); text-underline-offset: .15em; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+  nav ul { list-style: none; display: flex; flex-wrap: wrap; gap: .4rem .5rem; padding: 0; margin: 0 0 2rem; font-size: .875rem; }
+  nav a { display: inline-block; padding: .3rem .7rem; border: 1px solid var(--rule); border-radius: 999px; text-decoration: none; background: var(--card); }
+  .trace { list-style: none; margin: 1rem 0; padding: 0; border-left: 2px solid var(--rule); }
+  .trace li { position: relative; padding: 0 0 1rem 1.1rem; }
+  .trace li:last-child { padding-bottom: 0; }
+  .trace li::before {
+    content: ""; position: absolute; left: -.4rem; top: .5rem;
+    width: .6rem; height: .6rem; border-radius: 50%; background: var(--accent);
+  }
+  .trace li.lost::before { background: var(--warn); }
+  .label { display: block; font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--soft); }
+  .lost .label { color: var(--warn); }
+  code, pre { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: .84em; }
+  code { background: var(--code-bg); padding: .08em .3em; border-radius: 3px; overflow-wrap: anywhere; }
+  pre { background: var(--code-bg); padding: .75rem .85rem; border-radius: 6px; margin: 0 0 1rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+  pre code { background: none; padding: 0; font-size: 1em; }
+  .gap { background: var(--warn-bg); border-left: 3px solid var(--warn); padding: .9rem 1rem; border-radius: 0 6px 6px 0; margin: 1rem 0; }
+  .gap p:last-child { margin-bottom: 0; }
+  .wide { overflow-x: auto; margin: 0 0 1rem; }
+  table { border-collapse: collapse; width: 100%; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: .875rem; }
+  caption { text-align: left; color: var(--soft); padding-bottom: .4rem; }
+  th, td { text-align: left; vertical-align: top; padding: .45rem .6rem .45rem 0; border-bottom: 1px solid var(--rule); }
+  thead th { font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; color: var(--soft); }
+  td.flag { color: var(--warn); font-weight: 600; }
+  footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--rule); color: var(--soft); font-size: .9375rem; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Follow one learner request</h1>
+    <p class="byline">Field guide by Claude Fable · 18 November 2026 · Keating teaching policy v2.3.3 to v2.3.8</p>
+    <p class="lede">Keating tries to notice what a learner wants to do, such as guess, vary or fix, without making them name a control. It should also step back when they ask for a short answer. Here is how to follow one request, and where the trail goes cold.</p>
+  </header>
+
+  <nav aria-label="Evidence">
+    <ul>
+      <li><a href="report.html">Read the report</a></li>
+      <li><a href="index.html">Try the replies</a></li>
+      <li><a href="classroom/index.html">See the classroom</a></li>
+      <li><a href="final.json">Download results</a></li>
+    </ul>
+  </nav>
+
+  <section aria-labelledby="walk">
+    <h2 id="walk">One request, three stops</h2>
+    <ol class="trace">
+      <li><span class="label">Learner wrote</span>“Before you tell me, I’d like to guess how many layers it has.”</li>
+      <li><span class="label">Tutor drafted</span>A working Question with layer counts to choose from, in draft 1.</li>
+      <li class="lost"><span class="label">Learner received</span>A sentence asking for the guess. Review faulted repetition around the field, and draft 3 went out.</li>
+    </ol>
+    <p>The same request lost its Question a second time when a chooser preferred approved prose. After the fix, replaying the saved drafts publishes the Question in both turns. Fifteen other recorded outcomes are unchanged, and 21 counterexamples keep it out. This is an offline replay and nothing was rendered.</p>
+  </section>
+
+  <section aria-labelledby="inspect">
+    <h2 id="inspect">Trace it yourself</h2>
+    <p>Open <strong>Settings → Diagnostics → Interface use</strong>, pick <strong>Final review · selected tutor replies</strong>, then <strong>Interface compiled, then dropped</strong>. Each row lists Compiled, Selected and Rendered, the private drafts, the released draft and the time to reply or withholding. <a href="../diagnostics.html?source=review&amp;cue=implicit-action&amp;view=draft-loss">Open the two losses</a></p>
+    <p>A model can ask through the read-only <code>keating.openui_diagnostics</code> WebMCP tool with <code>{"view":"draft-loss","cue":"implicit-action","limit":5}</code>, or the CLI:</p>
+    <pre><code>rtk bun src/cli/main.ts openui-diagnostics web/src/keating/openui/examples/final-review.json --cue implicit-action --view draft-loss --limit 5</code></pre>
+    <p><strong>Native page requested</strong> means the tutor suggested a page. Only <strong>Preview card mounted</strong> or <strong>Ready frame in viewport</strong> means the learner was shown one.</p>
+  </section>
+
+  <section aria-labelledby="live">
+    <h2 id="live">Two live turns, both withheld</h2>
+    <p>Headless, a typed correct guess was confirmed under both decision models. In the classroom, the same typed guess was sent twice, once on v2.3.7 and once on v2.3.8. The learner got a failure notice both times. First, v2.3.7.</p>
+    <ol class="trace">
+      <li><span class="label">Learner typed</span>“My guess is round, because three of the four tiles are round.”</li>
+      <li><span class="label">Tutor drafted</span>“Exactly right”, with 3/4 and 1/4, in 175 words. It then began an interactive page nobody requested.</li>
+      <li class="lost"><span class="label">Learner received</span>A failure notice after 36 seconds. The page’s HTML hit the 3,072-token limit, so the draft never completed.</li>
+    </ol>
+    <p>That tutor request also said the learner had not answered, although the plan knew they had. The study allowed no retry. <a href="classroom/live-tile-confirm/evidence.json">Browser evidence</a> · <a href="study/classroom-v2.3.7/summary.json">Terminal summary</a></p>
+    <p>v2.3.8 removed the wrong instruction, and one fresh classroom turn repeated the guess.</p>
+    <ol class="trace">
+      <li><span class="label">Learner typed</span>The same guess, with the original Question still open.</li>
+      <li><span class="label">Tutor drafted</span>Three complete drafts. The first added a new Question nobody requested. The second ran to 266 words and offered a simulation. The third was a correct 37-word confirmation that stopped.</li>
+      <li class="lost"><span class="label">Learner received</span>A failure notice after 29 seconds. All three drafts were reviewed and none passed. On the third, review was unsure whether it overclaimed mastery.</li>
+    </ol>
+    <div class="wide">
+      <table>
+        <caption>The same typed guess under three policy versions</caption>
+        <thead><tr><th scope="col">Version</th><th scope="col">Where</th><th scope="col">Drafts reviewed</th><th scope="col">Learner saw</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">v2.3.6</th><td>Headless, Jev</td><td>3, third passed</td><td>Correct confirmation</td></tr>
+          <tr><th scope="row">v2.3.6</th><td>Headless, Gemini Decision</td><td>1, passed</td><td>Correct confirmation</td></tr>
+          <tr><th scope="row">v2.3.7</th><td>Classroom, Jev</td><td>0 of 1, cut at the token limit</td><td class="flag">Failure notice</td></tr>
+          <tr><th scope="row">v2.3.8</th><td>Classroom, Jev</td><td>3 of 3, none passed</td><td class="flag">Failure notice</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The fix did what it claimed: none of the three v2.3.8 requests carried the wrong instruction. It did not get the learner an answer. These are single turns with independent generations, so the two classroom rows differ in cause and cannot be read as a rate. <a href="classroom/linked-tile-confirm/evidence.json">Browser evidence</a> · <a href="study/classroom-v2.3.8/summary.json">Terminal summary</a> · <a href="study/classroom-v2.3.8/comparison.json">Request comparison</a></p>
+  </section>
+
+  <section aria-labelledby="cold">
+    <h2 id="cold">Where the trail goes cold</h2>
+    <div class="gap">
+      <p>The inspector follows a control that went missing. It cannot yet follow something added that the learner did not ask for.</p>
+      <p>The v2.3.7 withheld row shows no detected cue, an unobserved page request and no review issues. Nothing names the page that consumed the answer. The v2.3.8 row does better. It lists seven review issues and a compiled Question that was never selected.</p>
+      <p>Neither row can say that a short, correct confirmation existed and was held. That is visible only in the sealed receipt.</p>
+    </div>
+    <p>Both reviewers also still hold an accurate correction of a wrong guess. <a href="study/feedback-v2.3.6/review-stage.json">Matched review outcomes</a></p>
+  </section>
+
+  <section aria-labelledby="optout">
+    <h2 id="optout">A declined quiz, now on the record</h2>
+    <p>The irrigation learner asked to move a flow slider and added “No quiz, thanks.” All four released replies had a slider, so all four matched the request. Both unguided replies still opened their simulation instructions by telling the learner to predict. The diagnostics could not see that, because the row kept only the slider request.</p>
+    <p>New web turns now record two more facts, as categories with no words from either side. One is whether the learner explicitly declined to be tested. The other is whether the released reply carries a checkpoint signal in its simulation instructions, a question interface or its own text.</p>
+    <div class="wide">
+      <table>
+        <caption>The four saved irrigation replies, recomputed offline</caption>
+        <thead><tr><th scope="col">Tutor</th><th scope="col">Guidance</th><th scope="col">Slider</th><th scope="col">Checkpoint signal</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Gemini 3.1 Flash-Lite</th><td>None</td><td>Yes</td><td class="flag">Simulation instructions</td></tr>
+          <tr><th scope="row">MiniMax M2.7 Highspeed</th><td>None</td><td>Yes</td><td class="flag">Simulation instructions</td></tr>
+          <tr><th scope="row">MiniMax M2.7 Highspeed</th><td>Gemini Decision</td><td>Yes</td><td>None</td></tr>
+          <tr><th scope="row">MiniMax M2.7 Highspeed</th><td>Jev</td><td>Yes</td><td>None</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Open <strong>Settings → Diagnostics → Interface use</strong>, choose <strong>Import JSON</strong> and load the four turns. <strong>Assessment opt-outs</strong> shows 2 of 4, and <strong>Inspect turns → Checkpoint after an assessment opt-out</strong> lists the two. The WebMCP tool takes <code>{"view":"assessment-opt-out"}</code>, and the CLI takes the same view:</p>
+    <pre><code>rtk bun src/cli/main.ts openui-diagnostics docs/benchmarks/openui-audit-2026-11-18/final-review/assessment-opt-out/turns.json --view assessment-opt-out</code></pre>
+    <p><a href="assessment-opt-out/turns.json" download>Download the four turns</a> · <a href="assessment-opt-out/evidence.json">Computed evidence</a></p>
+    <div class="gap">
+      <p>The rule is narrow on purpose. It reads explicit English wording and an instruction that opens a sentence. Optional, negated and quoted wording does not count.</p>
+      <p>It missed one thing I flagged by hand. The unguided MiniMax reply ends by asking the learner to report back so the tutor can see how they are thinking. That request sits mid-sentence, so the reply text is not signalled. The turn is still caught through its simulation instructions.</p>
+      <p>A reply with no signal is not shown to fit, and “no opt-out recognised” is not consent to be tested.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>These are a few synthetic prompts and two live classroom turns. They show where controls worked and failed. They do not show production rates or that anyone learned more.</p>
+  </footer>
+</main>
+</body>
+</html>

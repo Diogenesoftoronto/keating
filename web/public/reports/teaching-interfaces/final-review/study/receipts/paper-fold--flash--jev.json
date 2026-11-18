@@ -1,0 +1,630 @@
+{
+  "id": "paper-fold--flash--jev",
+  "caseId": "paper-fold",
+  "kind": "primary",
+  "tutor": "flash",
+  "arm": "jev",
+  "prompt": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has.",
+  "originalHistory": [],
+  "plan": {
+    "status": "guided",
+    "action": "create",
+    "offered": [
+      "Question",
+      "Simulation"
+    ],
+    "families": [
+      {
+        "family": "question",
+        "components": [
+          "Question"
+        ],
+        "features": [
+          "prediction_opportunity",
+          "ordered_procedure",
+          "learner_response_due"
+        ]
+      },
+      {
+        "family": "manipulable",
+        "components": [
+          "Simulation"
+        ],
+        "features": [
+          "variable_relationship"
+        ]
+      }
+    ],
+    "reason": null,
+    "codePracticeLanguage": null,
+    "features": {
+      "variable_relationship": true,
+      "ordered_procedure": true,
+      "discrete_recall": false,
+      "structure_relations": false,
+      "category_distinction": false,
+      "prediction_opportunity": true,
+      "learner_response_due": true,
+      "hands_on_requested": false,
+      "executable_code": false,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "decisions": {
+      "direct_answer_requested": true,
+      "explanation_requested": false,
+      "learner_stuck": false,
+      "attempt_present": false,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": false,
+      "plain_reply_requested": false,
+      "assessment_declined": false,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": true,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": null,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "directives": [
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+      "At most one OpenUI activity may help this turn: Question (an ordering question) to ask for a prediction before explaining; have the learner put the steps in order; collect the learner's choice or independent answer before proceeding; or Simulation to let the learner change a variable and observe the outcome. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested.",
+      "If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself."
+    ]
+  },
+  "refs": [
+    {
+      "label": "paper-fold--flash--jev/plan",
+      "entryId": "paper-fold--minimax--jev/plan",
+      "source": "wire-cache",
+      "requestSha256": "b762ba6b059b7707759026d1ab70560d37ce0365c9d38397602203921db027da",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    },
+    {
+      "label": "paper-fold--flash--jev/review/1",
+      "entryId": "paper-fold--flash--jev/review/1",
+      "source": "live",
+      "requestSha256": "b162b9b2dbe41035bda549b3ad154443c526f3b02760ac08a182f583ff4b2dd5",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    }
+  ],
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "google-generative-ai",
+        "provider": "google",
+        "model": "gemini-3.1-flash-lite",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 10532,
+          "output": 125,
+          "cacheRead": 8145,
+          "cacheWrite": 0,
+          "reasoning": 0,
+          "totalTokens": 18802,
+          "cost": {
+            "input": 0.002633,
+            "output": 0.0001875,
+            "cacheRead": 0.00020362500000000003,
+            "cacheWrite": 0,
+            "total": 0.003024125
+          }
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "```openui lifecycle=ephemeral id=paper-fold-prediction\n\nroot = LearningSurface([prediction], \"Paper folding\", \"How many layers do you think there are?\", \"ephemeral\")\nprediction = Question([{ question: \"After folding a strip of paper in half twice, how many layers of paper are there?\", type: \"choice\", choices: [\"2\", \"3\", \"4\", \"6\", \"8\"], allowText: true, hint: \"Think about what happens to the number of layers with each fold.\" }], \"ephemeral\", \"Paper folding\", \"Make your prediction.\")\n```"
+          }
+        ]
+      },
+      "text": "```openui lifecycle=ephemeral id=paper-fold-prediction\n\nroot = LearningSurface([prediction], \"Paper folding\", \"How many layers do you think there are?\", \"ephemeral\")\nprediction = Question([{ question: \"After folding a strip of paper in half twice, how many layers of paper are there?\", type: \"choice\", choices: [\"2\", \"3\", \"4\", \"6\", \"8\"], allowText: true, hint: \"Think about what happens to the number of layers with each fold.\" }], \"ephemeral\", \"Paper folding\", \"Make your prediction.\")\n```",
+      "toolCalls": [],
+      "attempted": true,
+      "components": [
+        "question-group"
+      ],
+      "outsideWords": 0,
+      "entryId": "paper-fold--flash--jev/tutor/1",
+      "completed": true,
+      "providedDirectives": true,
+      "systemSha256": "54a84faf796f366d0472b4a85763de13418543537365c8a86195c6c7488522d1"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.04
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.44
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.08
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.14
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.34
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.21
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.08
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.12
+        },
+        {
+          "id": "transport_exposed",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.41
+        },
+        {
+          "id": "law_authority_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "law_jurisdiction_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "medicine_evidence_conflated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "history_disagreement_erased",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "psychology_replication_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "politics_normative_as_fact",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.09999999999999998,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.16000000000000003,
+          "status": "pass"
+        }
+      ],
+      "variant": "default"
+    }
+  ],
+  "selectedAttempt": 1,
+  "disposition": "released",
+  "missing": null,
+  "public": {
+    "message": {
+      "role": "assistant",
+      "api": "google-generative-ai",
+      "provider": "google",
+      "model": "gemini-3.1-flash-lite",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 10532,
+        "output": 125,
+        "cacheRead": 8145,
+        "cacheWrite": 0,
+        "totalTokens": 18802,
+        "cost": {
+          "input": 0.002633,
+          "output": 0.0001875,
+          "cacheRead": 0.00020362500000000003,
+          "cacheWrite": 0,
+          "total": 0.003024125
+        },
+        "reasoning": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "```openui lifecycle=ephemeral id=paper-fold-prediction\n\nroot = LearningSurface([prediction], \"Paper folding\", \"How many layers do you think there are?\", \"ephemeral\")\nprediction = Question([{ question: \"After folding a strip of paper in half twice, how many layers of paper are there?\", type: \"choice\", choices: [\"2\", \"3\", \"4\", \"6\", \"8\"], allowText: true, hint: \"Think about what happens to the number of layers with each fold.\" }], \"ephemeral\", \"Paper folding\", \"Make your prediction.\")\n```"
+        }
+      ]
+    },
+    "text": "```openui lifecycle=ephemeral id=paper-fold-prediction\n\nroot = LearningSurface([prediction], \"Paper folding\", \"How many layers do you think there are?\", \"ephemeral\")\nprediction = Question([{ question: \"After folding a strip of paper in half twice, how many layers of paper are there?\", type: \"choice\", choices: [\"2\", \"3\", \"4\", \"6\", \"8\"], allowText: true, hint: \"Think about what happens to the number of layers with each fold.\" }], \"ephemeral\", \"Paper folding\", \"Make your prediction.\")\n```",
+    "toolCalls": [],
+    "attempted": true,
+    "components": [
+      "question-group"
+    ],
+    "outsideWords": 0
+  },
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "google-generative-ai",
+      "provider": "google",
+      "model": "gemini-3.1-flash-lite",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 10532,
+        "output": 125,
+        "cacheRead": 8145,
+        "cacheWrite": 0,
+        "totalTokens": 18802,
+        "cost": {
+          "input": 0.002633,
+          "output": 0.0001875,
+          "cacheRead": 0.00020362500000000003,
+          "cacheWrite": 0,
+          "total": 0.003024125
+        },
+        "reasoning": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "```openui lifecycle=ephemeral id=paper-fold-prediction\n\nroot = LearningSurface([prediction], \"Paper folding\", \"How many layers do you think there are?\", \"ephemeral\")\nprediction = Question([{ question: \"After folding a strip of paper in half twice, how many layers of paper are there?\", type: \"choice\", choices: [\"2\", \"3\", \"4\", \"6\", \"8\"], allowText: true, hint: \"Think about what happens to the number of layers with each fold.\" }], \"ephemeral\", \"Paper folding\", \"Make your prediction.\")\n```"
+        }
+      ]
+    },
+    "text": "```openui lifecycle=ephemeral id=paper-fold-prediction\n\nroot = LearningSurface([prediction], \"Paper folding\", \"How many layers do you think there are?\", \"ephemeral\")\nprediction = Question([{ question: \"After folding a strip of paper in half twice, how many layers of paper are there?\", type: \"choice\", choices: [\"2\", \"3\", \"4\", \"6\", \"8\"], allowText: true, hint: \"Think about what happens to the number of layers with each fold.\" }], \"ephemeral\", \"Paper folding\", \"Make your prediction.\")\n```",
+    "toolCalls": []
+  },
+  "notice": null,
+  "elapsedMs": 13235
+}

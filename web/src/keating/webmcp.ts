@@ -2,6 +2,9 @@ import type { AgentTool } from "@earendil-works/pi-agent-core";
 import webMcpSource from "@jason.today/webmcp/src/webmcp.js?raw";
 
 import { KeatingStorage } from "./storage";
+import { summarizeOpenUiDiagnostics } from "@keating/learner-contracts";
+import { openUIDiagnosticStore } from "./openui/turn-diagnostics";
+import { openUiDiagnosticQuerySchema, queryOpenUiDiagnosticTurns } from "./openui/diagnostic-query";
 
 type WebMcpToolResult = {
 	content: Array<{ type: "text"; text: string }>;
@@ -185,6 +188,28 @@ export async function registerKeatingWebMcp(storage: KeatingStorage, tools: Agen
 		(uri: string) => ({
 			contents: [{ uri, mimeType: "text/html", text: document.body.innerHTML }],
 		})
+	);
+
+	mcp.registerTool(
+		"keating.openui_diagnostics",
+		"Read content-free interface-use metrics. List learner cues missed on the same turn, interfaces lost between stages or withheld replies. Filter by tutor, decision model, mode or learner cue.",
+		openUiDiagnosticQuerySchema,
+		async args => {
+			try {
+				await openUIDiagnosticStore.settled();
+				return { content: [{type: "text", text: JSON.stringify(queryOpenUiDiagnosticTurns(openUIDiagnosticStore.getRows(), args))}] };
+			} catch (error) { return errorResult(error); }
+		},
+	);
+
+	mcp.registerResource(
+		"keating.openui-diagnostics",
+		"Read this browser's content-free interface frequencies, component types, cue-to-interface delays and observation coverage.",
+		{ uri: "keating://openui-diagnostics", mimeType: "application/json" },
+		async (uri: string) => {
+			await openUIDiagnosticStore.settled();
+			return { contents: [{ uri, mimeType: "application/json", text: JSON.stringify(summarizeOpenUiDiagnostics(openUIDiagnosticStore.getRows())) }] };
+		}
 	);
 
 	mcp.registerResource(

@@ -1,7 +1,8 @@
 import type { NoulQuestion } from "./contracts.js";
 import type { TeachingPolicyTurn } from "./teaching-policy-types.js";
 
-export const TEACHING_POLICY_VERSION = "keating-teaching-policy/v1";
+export const TEACHING_POLICY_VERSION = "keating-teaching-policy/v2.3.8";
+export const CHECKPOINT_FEEDBACK_ISSUE = "checkpoint_feedback_unsupported";
 export const POLICY_PROTOCOL_SOURCE = "web/src/keating/prompts/operational-protocol.md";
 const persona = "web/src/keating/persona.ts#DEFAULT_TEACHER_PERSONA";
 const cli = "SYSTEM.md#Core-rules";
@@ -28,6 +29,8 @@ export const TEACHING_POLICY_DECISIONS: readonly TeachingPolicyDecisionDefinitio
   decision("misconception_visible", "Teaching-Loop", "Does the learner's attempt contain a specific misconception supported by `turn.sources`, `turn.learnerEvidence`, or the problem stated in `turn.conversation`? Do not infer a misconception from missing evidence.", "Identify the specific mistaken step and offer a targeted hint or contrasting example."),
   decision("independent_success", "Teaching-Loop", "Does `turn.learnerEvidence` explicitly record a successful unaided attempt on the current skill? Assisted completion and self-reported understanding do not qualify.", "Reduce support for the next nearby attempt; invite a new application without claiming retention or transfer is established."),
   decision("practice_requested", "Teaching-Loop", "Does `turn.learnerMessage` explicitly request a quiz, flashcards, or practice activity?", "Provide one requested OpenUI practice activity now, without requiring a lesson first or attaching a study plan."),
+  decision("plain_reply_requested", "Teaching-Loop", "Does the learner limit the response format to words alone, a value alone, or a brief written answer only? Declining to be tested is a separate preference. If they ask for a visual explanation, their response format is not text-only.", "Honor the requested plain reply. Give the answer in the requested form and stop."),
+  decision("assessment_declined", "Teaching-Loop", "Does the learner ask the tutor to pause testing them on this turn? This includes asking for a demonstration after being questioned, expressly deferring practice, or asking to be spared a quiz or follow-up question. A learner asking to answer before seeing the solution still wants to be tested. A diagram or demonstration they watch does not test them.", "Give the requested help and any visual demonstration. Let the learner operate controls immediately. Keep test questions and predictions out of both surrounding prose and component instructions unless the learner specifically asks to make that prediction."),
   decision("fresh_sources_needed", "Web-research", "Does answering `turn.learnerMessage` require current facts or inspecting a particular URL, paper, or live documentation?", "Use an available research tool before settling current or source-specific claims. If unavailable, state what cannot be verified; cite only evidence actually available."),
   decision("explicit_feedback", "Tools", "Does `turn.learnerMessage` explicitly evaluate this teaching with satisfaction, dissatisfaction, or confusion? Correctness, silence, and completion alone do not qualify.", "The explicit feedback may be recorded after addressing the immediate request."),
   decision("explicit_profile_preference", "Learner-personalization", "Does `turn.learnerMessage` explicitly state a useful motivation, interest, or communication/learning preference? Exclude protected identity, health, diagnosis, intelligence, and personality type.", "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence."),
@@ -65,14 +68,16 @@ export const TEACHING_INTERACTION_FEATURES: readonly TeachingInteractionFeatureD
   feature("discrete_recall", "Does the material include discrete facts, terms, or definitions the learner will need to retrieve from memory?", "practise retrieving the facts from memory"),
   feature("structure_relations", "Is understanding the material mainly about how several concepts relate, such as part-of, causes, depends-on, or contrasts-with?", "lay out how the concepts relate"),
   feature("category_distinction", "Does the material hinge on telling apart similar categories, cases, or examples?", "have the learner sort or tell apart similar cases"),
-  feature("prediction_opportunity", "Is there an outcome the learner could predict before being told, where a wrong prediction would expose a specific misconception?", "ask for a prediction before explaining"),
+  feature("prediction_opportunity", "Is there an outcome the learner could usefully predict before seeing it, where their reasoning would distinguish a specific misconception? A bounded factual answer or definition alone does not supply such an opportunity.", "ask for a prediction before explaining"),
+  feature("learner_response_due", "Does the learner want to submit the next choice or answer before the tutor proceeds? They may want to choose a path, commit to a prediction, or try a fresh example independently. Wanting to operate or explore something does not itself imply a separate question. Asking the tutor to decide, explain, or give a worked answer is insufficient.", "collect the learner's choice or independent answer before proceeding"),
+  feature("hands_on_requested", "Does the learner want to personally manipulate, construct, perform, or collect something as the next learning action, such as varying an input and observing a result? Their wording can imply the action. A topic with variables, asking the tutor to demonstrate, or requesting recall practice about an activity is insufficient.", "let the learner carry out the requested action themselves"),
   feature("executable_code", "Does the material involve code the learner could write or run to observe its behaviour?", "let the learner write or run the code"),
   feature("performed_skill", "Is the skill performed aloud or physically, such as speaking, pronunciation, music, or a physical technique?", "let the learner perform and reflect on it"),
   feature("language_learning", "Is the learner producing or comprehending a natural language they are learning?", "practise producing or understanding the language"),
   feature("visual_reference", "Would the material be hard to convey precisely without an image, such as anatomy, geography, a diagram, or an artwork?", "show the visual the explanation depends on"),
   feature("extended_production", "Does the learner's goal require producing an extended piece of work, such as an essay, proof, project, or report?", "set up the extended piece of work"),
   feature("outside_observation", "Does the question require observing or collecting information outside the chat?", "send the learner to observe or collect evidence"),
-  feature("untested_coverage", "Does `turn.conversation` or `turn.activeWork` show material taught in this session that the learner has not yet been asked to recall or apply?", "check recall of material taught but not yet practised"),
+  feature("untested_coverage", "Does the relevant conversation, active work, or the learner's account identify material already studied whose recall or application they now want to check, or that they have not yet been asked to practise? A topic mentioned for the first time without evidence of study is insufficient.", "check recall of material already studied"),
 ];
 
 export interface TeachingPlanReviewDefinition {
@@ -128,12 +133,13 @@ export const TEACHING_POLICY_RULES: readonly TeachingPolicyRule[] = [
   rule("known_context_reasked", protocol("Session-Bootstrap"), "Does `reply` ask the learner to supply a specific fact about their goals or prior work that is already explicitly supplied in `turn.learnerEvidence`? Checking current understanding with a new task is allowed.", "major"),
   rule("gap_ignored", protocol("Teaching-Loop"), "Does `reply` endorse the specific erroneous step in the learner's attempt as correct when it is contradicted by the supplied problem or evidence? Judge only the actual attempt, not a hypothetical misconception.", "major"),
   rule("learner_voice_replaced", persona, "Does `reply` require the learner to repeat the tutor's exact wording as the criterion for understanding? An invitation to explain in the learner's own words is allowed.", "major"),
-  rule("checkpoint_answer_leaked", protocol("Optional-reveals"), "After posing an unanswered learner checkpoint in `reply.text`, does the reply reveal that checkpoint's answer, including in a spoiler or explanation? Do not count a different worked example requested by the learner.", "major"),
+  rule("checkpoint_answer_leaked", protocol("Optional-reveals"), "When the learner is asked to make a choice, prediction, or independent attempt, does any learner-visible part of `reply.text` give away that checkpoint's answer, including preceding prose, a hint, a spoiler, or later explanation? A list of possible answers, a different worked example, or a practice answer key only shown after responding or turning a card does not itself reveal the answer.", "major"),
   rule("checkpoint_repeated", protocol("Do-NOT-repeat-interactive-content"), "Does `reply.text` repeat the content of an OpenUI question or activity in surrounding prose? A brief nonduplicating introduction is allowed.", "minor"),
   rule("checkpoint_continued", protocol("Streamable-interactions"), "Does `reply.text` advance the lesson as if an unanswered checkpoint had already been answered? Setting up one question and ending the turn is allowed.", "major"),
   rule("checkpoint_not_interactive", protocol("Streamable-interactions"), "Does `reply.text` ask a learner question requiring a submitted answer only in ordinary prose, instead of an OpenUI Question? Rhetorical questions inside an explanation do not require a submission.", "major"),
   rule("practice_withheld", protocol("Teaching-Loop"), "Does `reply` require the learner to complete a lesson before receiving the quiz or flashcards they explicitly requested?", "major"),
   rule("unsolicited_assessment", protocol("Teaching-Loop"), "Does `reply` offer a quiz or flashcards on material that is neither recorded as covered in `turn.learnerEvidence` nor explicitly requested for practice by the learner? A single diagnostic question is allowed.", "major"),
+  rule("declined_assessment_imposed", protocol("Teaching-Loop"), "The learner asked to pause testing. Does this reply still require a test, prediction, graded answer, or other proof of understanding? Read all learner-visible component instructions, labels and ordinary prose, including proposed page content. Operating controls, safety precautions, neutral preferences, optional observations and a prediction explicitly requested by the learner are allowed.", "major"),
   rule("unsolicited_animation", protocol("Tools"), "Does `reply` propose using an animation tool without an explicit learner request to see motion? A request for a static diagram does not authorize animation.", "major"),
   rule("feedback_invented", protocol("Tools"), "Does `reply` propose a feedback rating that is unsupported by an explicit satisfaction, dissatisfaction, or confusion signal in the learner's messages?", "major"),
   rule("profile_evidence_invented", protocol("Learner-personalization"), "Does `reply` propose saving a learner preference or observation for which neither an explicit statement nor repeated concrete behavior is present in `turn`?", "major"),
@@ -173,7 +179,9 @@ export const TEACHING_POLICY_THRESHOLDS = { passAtMost: 0.4, failAtLeast: 0.6, c
 export const TEACHING_POLICY_PERMISSION_THRESHOLD = 0.8;
 
 /** These are checked by parsers/runtime observations, never delegated to semantic inference. */
+export { TEACHING_DEBUGGING_ISSUES } from "./debugging-issue-ids.js";
+
 export const TEACHING_POLICY_DETERMINISTIC_RULES = [
   "nonempty_reply", "available_tool", "legacy_activity_tool", "openui_valid", "one_activity",
-  "activity_without_plan", "one_checkpoint", "checkpoint_last_node", "stop_after_checkpoint", "grading_requires_submission", "improvement_run_limit",
+  "activity_without_plan", "one_checkpoint", "checkpoint_last_node", "stop_after_checkpoint", "grading_requires_submission", "improvement_run_limit", "exercise_language_preserved",
 ] as const;

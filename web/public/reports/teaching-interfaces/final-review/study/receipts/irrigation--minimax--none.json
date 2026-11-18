@@ -1,0 +1,135 @@
+{
+  "id": "irrigation--minimax--none",
+  "caseId": "irrigation",
+  "kind": "primary",
+  "tutor": "minimax",
+  "arm": "none",
+  "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks.",
+  "originalHistory": [],
+  "plan": null,
+  "refs": [],
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 21697,
+          "output": 1450,
+          "cacheRead": 128,
+          "cacheWrite": 0,
+          "totalTokens": 23275,
+          "cost": {
+            "input": 0.013018199999999999,
+            "output": 0.00348,
+            "cacheRead": 0.00000768,
+            "cacheWrite": 0,
+            "total": 0.016505879999999997
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 767
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Good — this is a multiplication problem with a wrinkle, so let's make it move.\n\nThe arithmetic is: litres delivered = flow (L/min) × minutes. With drip irrigation the wrinkle is that \"flow\" is usually *per dripper*, and a zone has many of them, so the real total is flow × number of drippers × time. I've put both on the sliders so you can see the difference between one line and a whole zone.\n\n```openui lifecycle=workspace id=drip-flow-calculator\n\nroot = LearningSurface([sim], \"Drip irrigation: how the litres add up\", \"Move the sliders, watch the bucket fill for 6 minutes.\", \"workspace\")\nsim = Simulation(\"drip-flow-calc\", \"Drip irrigation flow calculator\", [\n  { id: \"flow\", label: \"Flow per dripper\", unit: \"L/min\", min: 0.1, max: 5, step: 0.1, value: 2 },\n  { id: \"drippers\", label: \"Drippers running\", unit: \"\", min: 1, max: 100, step: 1, value: 1 }\n], [\n  { id: \"bucket\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * drippers * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Water per hour (whole zone)\", unit: \"L/h\", expr: \"flow * drippers * 60\", precision: 0 },\n  { id: \"daily\", label: \"Water per day (whole zone)\", unit: \"L/day\", expr: \"flow * drippers * 1440\", precision: 0 },\n  { id: \"fill10\", label: \"Minutes to fill a 10 L bucket\", unit: \"min\", expr: \"10 / (flow * drippers)\", precision: 1 }\n], \"workspace\", \"Predict before you drag: how much water lands in the bucket if 20 drippers each drip 1 L/min for 6 minutes? Then set the sliders to check. The last readout changes faster than you expect when the zone is small — that is usually where the surprise in drip irrigation comes from.\")\n```\n\nA few things worth noticing as you play with it:\n\n- The three \"per hour / per day\" readouts are just the 6-minute figure scaled, so they add no new information — but they make the arithmetic of a long watering window explicit, which is where real irrigation planning happens.\n- \"Minutes to fill a 10 L bucket\" is the same information inverted. For a single dripper, 10 L takes 5 minutes; for 20 drippers it takes 15 seconds. In the field you'd never fill a 10 L bucket with a zone — you'd fill a drip line's volume, which is why the useful unit is usually *litres per hour per zone*.\n- The flow-per-dripper figure is the one that's often quoted on packaging and is easy to misread as zone total.\n\nWhen you've moved the sliders somewhere interesting, hit **Share what I found** and tell me the numbers you landed on — I'd like to see whether you're thinking in per-dripper or per-zone terms."
+          }
+        ]
+      },
+      "text": "Good — this is a multiplication problem with a wrinkle, so let's make it move.\n\nThe arithmetic is: litres delivered = flow (L/min) × minutes. With drip irrigation the wrinkle is that \"flow\" is usually *per dripper*, and a zone has many of them, so the real total is flow × number of drippers × time. I've put both on the sliders so you can see the difference between one line and a whole zone.\n\n```openui lifecycle=workspace id=drip-flow-calculator\n\nroot = LearningSurface([sim], \"Drip irrigation: how the litres add up\", \"Move the sliders, watch the bucket fill for 6 minutes.\", \"workspace\")\nsim = Simulation(\"drip-flow-calc\", \"Drip irrigation flow calculator\", [\n  { id: \"flow\", label: \"Flow per dripper\", unit: \"L/min\", min: 0.1, max: 5, step: 0.1, value: 2 },\n  { id: \"drippers\", label: \"Drippers running\", unit: \"\", min: 1, max: 100, step: 1, value: 1 }\n], [\n  { id: \"bucket\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * drippers * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Water per hour (whole zone)\", unit: \"L/h\", expr: \"flow * drippers * 60\", precision: 0 },\n  { id: \"daily\", label: \"Water per day (whole zone)\", unit: \"L/day\", expr: \"flow * drippers * 1440\", precision: 0 },\n  { id: \"fill10\", label: \"Minutes to fill a 10 L bucket\", unit: \"min\", expr: \"10 / (flow * drippers)\", precision: 1 }\n], \"workspace\", \"Predict before you drag: how much water lands in the bucket if 20 drippers each drip 1 L/min for 6 minutes? Then set the sliders to check. The last readout changes faster than you expect when the zone is small — that is usually where the surprise in drip irrigation comes from.\")\n```\n\nA few things worth noticing as you play with it:\n\n- The three \"per hour / per day\" readouts are just the 6-minute figure scaled, so they add no new information — but they make the arithmetic of a long watering window explicit, which is where real irrigation planning happens.\n- \"Minutes to fill a 10 L bucket\" is the same information inverted. For a single dripper, 10 L takes 5 minutes; for 20 drippers it takes 15 seconds. In the field you'd never fill a 10 L bucket with a zone — you'd fill a drip line's volume, which is why the useful unit is usually *litres per hour per zone*.\n- The flow-per-dripper figure is the one that's often quoted on packaging and is easy to misread as zone total.\n\nWhen you've moved the sliders somewhere interesting, hit **Share what I found** and tell me the numbers you landed on — I'd like to see whether you're thinking in per-dripper or per-zone terms.",
+      "toolCalls": [],
+      "attempted": true,
+      "components": [
+        "simulation"
+      ],
+      "outsideWords": 240,
+      "entryId": "irrigation--minimax--none/tutor/1",
+      "completed": true,
+      "providedDirectives": null,
+      "systemSha256": "14beee2f30e73e37d241777b470a8be299af6114a285a0f82962e02ce9f28d2d"
+    }
+  ],
+  "attempts": [],
+  "selectedAttempt": 1,
+  "disposition": "ungated",
+  "missing": null,
+  "public": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 21697,
+        "output": 1450,
+        "cacheRead": 128,
+        "cacheWrite": 0,
+        "totalTokens": 23275,
+        "cost": {
+          "input": 0.013018199999999999,
+          "output": 0.00348,
+          "cacheRead": 0.00000768,
+          "cacheWrite": 0,
+          "total": 0.016505879999999997
+        },
+        "cacheWrite1h": 0,
+        "reasoning": 767
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Good — this is a multiplication problem with a wrinkle, so let's make it move.\n\nThe arithmetic is: litres delivered = flow (L/min) × minutes. With drip irrigation the wrinkle is that \"flow\" is usually *per dripper*, and a zone has many of them, so the real total is flow × number of drippers × time. I've put both on the sliders so you can see the difference between one line and a whole zone.\n\n```openui lifecycle=workspace id=drip-flow-calculator\n\nroot = LearningSurface([sim], \"Drip irrigation: how the litres add up\", \"Move the sliders, watch the bucket fill for 6 minutes.\", \"workspace\")\nsim = Simulation(\"drip-flow-calc\", \"Drip irrigation flow calculator\", [\n  { id: \"flow\", label: \"Flow per dripper\", unit: \"L/min\", min: 0.1, max: 5, step: 0.1, value: 2 },\n  { id: \"drippers\", label: \"Drippers running\", unit: \"\", min: 1, max: 100, step: 1, value: 1 }\n], [\n  { id: \"bucket\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * drippers * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Water per hour (whole zone)\", unit: \"L/h\", expr: \"flow * drippers * 60\", precision: 0 },\n  { id: \"daily\", label: \"Water per day (whole zone)\", unit: \"L/day\", expr: \"flow * drippers * 1440\", precision: 0 },\n  { id: \"fill10\", label: \"Minutes to fill a 10 L bucket\", unit: \"min\", expr: \"10 / (flow * drippers)\", precision: 1 }\n], \"workspace\", \"Predict before you drag: how much water lands in the bucket if 20 drippers each drip 1 L/min for 6 minutes? Then set the sliders to check. The last readout changes faster than you expect when the zone is small — that is usually where the surprise in drip irrigation comes from.\")\n```\n\nA few things worth noticing as you play with it:\n\n- The three \"per hour / per day\" readouts are just the 6-minute figure scaled, so they add no new information — but they make the arithmetic of a long watering window explicit, which is where real irrigation planning happens.\n- \"Minutes to fill a 10 L bucket\" is the same information inverted. For a single dripper, 10 L takes 5 minutes; for 20 drippers it takes 15 seconds. In the field you'd never fill a 10 L bucket with a zone — you'd fill a drip line's volume, which is why the useful unit is usually *litres per hour per zone*.\n- The flow-per-dripper figure is the one that's often quoted on packaging and is easy to misread as zone total.\n\nWhen you've moved the sliders somewhere interesting, hit **Share what I found** and tell me the numbers you landed on — I'd like to see whether you're thinking in per-dripper or per-zone terms."
+        }
+      ]
+    },
+    "text": "Good — this is a multiplication problem with a wrinkle, so let's make it move.\n\nThe arithmetic is: litres delivered = flow (L/min) × minutes. With drip irrigation the wrinkle is that \"flow\" is usually *per dripper*, and a zone has many of them, so the real total is flow × number of drippers × time. I've put both on the sliders so you can see the difference between one line and a whole zone.\n\n```openui lifecycle=workspace id=drip-flow-calculator\n\nroot = LearningSurface([sim], \"Drip irrigation: how the litres add up\", \"Move the sliders, watch the bucket fill for 6 minutes.\", \"workspace\")\nsim = Simulation(\"drip-flow-calc\", \"Drip irrigation flow calculator\", [\n  { id: \"flow\", label: \"Flow per dripper\", unit: \"L/min\", min: 0.1, max: 5, step: 0.1, value: 2 },\n  { id: \"drippers\", label: \"Drippers running\", unit: \"\", min: 1, max: 100, step: 1, value: 1 }\n], [\n  { id: \"bucket\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * drippers * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Water per hour (whole zone)\", unit: \"L/h\", expr: \"flow * drippers * 60\", precision: 0 },\n  { id: \"daily\", label: \"Water per day (whole zone)\", unit: \"L/day\", expr: \"flow * drippers * 1440\", precision: 0 },\n  { id: \"fill10\", label: \"Minutes to fill a 10 L bucket\", unit: \"min\", expr: \"10 / (flow * drippers)\", precision: 1 }\n], \"workspace\", \"Predict before you drag: how much water lands in the bucket if 20 drippers each drip 1 L/min for 6 minutes? Then set the sliders to check. The last readout changes faster than you expect when the zone is small — that is usually where the surprise in drip irrigation comes from.\")\n```\n\nA few things worth noticing as you play with it:\n\n- The three \"per hour / per day\" readouts are just the 6-minute figure scaled, so they add no new information — but they make the arithmetic of a long watering window explicit, which is where real irrigation planning happens.\n- \"Minutes to fill a 10 L bucket\" is the same information inverted. For a single dripper, 10 L takes 5 minutes; for 20 drippers it takes 15 seconds. In the field you'd never fill a 10 L bucket with a zone — you'd fill a drip line's volume, which is why the useful unit is usually *litres per hour per zone*.\n- The flow-per-dripper figure is the one that's often quoted on packaging and is easy to misread as zone total.\n\nWhen you've moved the sliders somewhere interesting, hit **Share what I found** and tell me the numbers you landed on — I'd like to see whether you're thinking in per-dripper or per-zone terms.",
+    "toolCalls": [],
+    "attempted": true,
+    "components": [
+      "simulation"
+    ],
+    "outsideWords": 240
+  },
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 21697,
+        "output": 1450,
+        "cacheRead": 128,
+        "cacheWrite": 0,
+        "totalTokens": 23275,
+        "cost": {
+          "input": 0.013018199999999999,
+          "output": 0.00348,
+          "cacheRead": 0.00000768,
+          "cacheWrite": 0,
+          "total": 0.016505879999999997
+        },
+        "cacheWrite1h": 0,
+        "reasoning": 767
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Good — this is a multiplication problem with a wrinkle, so let's make it move.\n\nThe arithmetic is: litres delivered = flow (L/min) × minutes. With drip irrigation the wrinkle is that \"flow\" is usually *per dripper*, and a zone has many of them, so the real total is flow × number of drippers × time. I've put both on the sliders so you can see the difference between one line and a whole zone.\n\n```openui lifecycle=workspace id=drip-flow-calculator\n\nroot = LearningSurface([sim], \"Drip irrigation: how the litres add up\", \"Move the sliders, watch the bucket fill for 6 minutes.\", \"workspace\")\nsim = Simulation(\"drip-flow-calc\", \"Drip irrigation flow calculator\", [\n  { id: \"flow\", label: \"Flow per dripper\", unit: \"L/min\", min: 0.1, max: 5, step: 0.1, value: 2 },\n  { id: \"drippers\", label: \"Drippers running\", unit: \"\", min: 1, max: 100, step: 1, value: 1 }\n], [\n  { id: \"bucket\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * drippers * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Water per hour (whole zone)\", unit: \"L/h\", expr: \"flow * drippers * 60\", precision: 0 },\n  { id: \"daily\", label: \"Water per day (whole zone)\", unit: \"L/day\", expr: \"flow * drippers * 1440\", precision: 0 },\n  { id: \"fill10\", label: \"Minutes to fill a 10 L bucket\", unit: \"min\", expr: \"10 / (flow * drippers)\", precision: 1 }\n], \"workspace\", \"Predict before you drag: how much water lands in the bucket if 20 drippers each drip 1 L/min for 6 minutes? Then set the sliders to check. The last readout changes faster than you expect when the zone is small — that is usually where the surprise in drip irrigation comes from.\")\n```\n\nA few things worth noticing as you play with it:\n\n- The three \"per hour / per day\" readouts are just the 6-minute figure scaled, so they add no new information — but they make the arithmetic of a long watering window explicit, which is where real irrigation planning happens.\n- \"Minutes to fill a 10 L bucket\" is the same information inverted. For a single dripper, 10 L takes 5 minutes; for 20 drippers it takes 15 seconds. In the field you'd never fill a 10 L bucket with a zone — you'd fill a drip line's volume, which is why the useful unit is usually *litres per hour per zone*.\n- The flow-per-dripper figure is the one that's often quoted on packaging and is easy to misread as zone total.\n\nWhen you've moved the sliders somewhere interesting, hit **Share what I found** and tell me the numbers you landed on — I'd like to see whether you're thinking in per-dripper or per-zone terms."
+        }
+      ]
+    },
+    "text": "Good — this is a multiplication problem with a wrinkle, so let's make it move.\n\nThe arithmetic is: litres delivered = flow (L/min) × minutes. With drip irrigation the wrinkle is that \"flow\" is usually *per dripper*, and a zone has many of them, so the real total is flow × number of drippers × time. I've put both on the sliders so you can see the difference between one line and a whole zone.\n\n```openui lifecycle=workspace id=drip-flow-calculator\n\nroot = LearningSurface([sim], \"Drip irrigation: how the litres add up\", \"Move the sliders, watch the bucket fill for 6 minutes.\", \"workspace\")\nsim = Simulation(\"drip-flow-calc\", \"Drip irrigation flow calculator\", [\n  { id: \"flow\", label: \"Flow per dripper\", unit: \"L/min\", min: 0.1, max: 5, step: 0.1, value: 2 },\n  { id: \"drippers\", label: \"Drippers running\", unit: \"\", min: 1, max: 100, step: 1, value: 1 }\n], [\n  { id: \"bucket\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * drippers * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Water per hour (whole zone)\", unit: \"L/h\", expr: \"flow * drippers * 60\", precision: 0 },\n  { id: \"daily\", label: \"Water per day (whole zone)\", unit: \"L/day\", expr: \"flow * drippers * 1440\", precision: 0 },\n  { id: \"fill10\", label: \"Minutes to fill a 10 L bucket\", unit: \"min\", expr: \"10 / (flow * drippers)\", precision: 1 }\n], \"workspace\", \"Predict before you drag: how much water lands in the bucket if 20 drippers each drip 1 L/min for 6 minutes? Then set the sliders to check. The last readout changes faster than you expect when the zone is small — that is usually where the surprise in drip irrigation comes from.\")\n```\n\nA few things worth noticing as you play with it:\n\n- The three \"per hour / per day\" readouts are just the 6-minute figure scaled, so they add no new information — but they make the arithmetic of a long watering window explicit, which is where real irrigation planning happens.\n- \"Minutes to fill a 10 L bucket\" is the same information inverted. For a single dripper, 10 L takes 5 minutes; for 20 drippers it takes 15 seconds. In the field you'd never fill a 10 L bucket with a zone — you'd fill a drip line's volume, which is why the useful unit is usually *litres per hour per zone*.\n- The flow-per-dripper figure is the one that's often quoted on packaging and is easy to misread as zone total.\n\nWhen you've moved the sliders somewhere interesting, hit **Share what I found** and tell me the numbers you landed on — I'd like to see whether you're thinking in per-dripper or per-zone terms.",
+    "toolCalls": []
+  },
+  "notice": null,
+  "elapsedMs": 9200
+}

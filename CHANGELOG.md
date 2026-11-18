@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.1
+
+- When a learner wants to try a prediction, Keating can keep a working Question from an eligible tutor draft. A learner who answers the open Question in chat can receive feedback on that attempt.
+- In Chat → Settings → Diagnostics → Interface use, inspect which controls the tutor wrote, which reached the learner, and how many turns elapsed after a cue. The CLI and WebMCP expose the same records. Diagnostics also show when a reply included a checkpoint after the learner declined a quiz.
+- The [interactive study](https://keating.help/reports/teaching-interfaces/final-review/index.html) compares Jev, Gemini Decision and unguided tutors on synthetic requests. It includes the two recovered prediction fields and a classroom case where the reviewer still withheld correct feedback.
+
 ## 4.2.0
 
 ### Sources for factual claims

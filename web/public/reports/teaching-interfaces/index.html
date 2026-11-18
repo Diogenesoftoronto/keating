@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>“Let me predict”, “let me change it”, “let me fix it” · Keating</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: var(--background, light-dark(#fbfaf7, #1a1c1c));
+  --ink: var(--foreground, light-dark(#242824, #e3e9e4));
+  --soft: var(--muted-foreground, light-dark(#4d5c54, #b4bfb7));
+  --line: var(--border, light-dark(#cbd4cc, #47534d));
+  --panel: var(--card, light-dark(#f3f5f0, #222923));
+  --brand: var(--primary, light-dark(#225e45, #93d1ae));
+  --warn: light-dark(#8a4b12, #e6b37a);
+  --r: var(--radius, 9px);
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--font-sans, system-ui, sans-serif); }
+main { max-width: 46rem; margin-inline: auto; padding: clamp(1rem, 4vw, 3rem) 16px 4rem; }
+h1 { font-size: clamp(1.6rem, 5vw, 2.2rem); line-height: 1.15; margin: 0 0 .5rem; text-wrap: balance; }
+h2 { font-size: 1.3rem; line-height: 1.25; margin: 2.6rem 0 .6rem; text-wrap: balance; }
+h3 { font-size: 1rem; margin: 1.5rem 0 .3rem; }
+p { margin: .7rem 0; }
+a { color: var(--brand); text-underline-offset: 2px; }
+a:focus-visible, summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 3px; }
+.byline, .note, caption, figcaption { color: var(--soft); font-size: .88rem; }
+.lede { font-size: 1.12rem; }
+.says { border-left: 3px solid var(--brand); margin: 1rem 0; padding: .1rem 0 .1rem 1rem; }
+.says p { margin: .3rem 0; }
+.says cite { color: var(--soft); font-size: .85rem; font-style: normal; }
+.scroll { overflow-x: auto; margin: 1rem 0; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; }
+caption { text-align: left; padding-bottom: .4rem; }
+th, td { text-align: left; vertical-align: top; padding: .5rem .6rem; border-bottom: 1px solid var(--line); }
+thead th { font-size: .8rem; color: var(--soft); font-weight: 600; }
+td.n, th.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .85em; }
+code { background: var(--panel); padding: .08em .3em; border-radius: 4px; overflow-wrap: anywhere; }
+pre { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: .8rem; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; margin: .7rem 0; }
+pre code { background: none; padding: 0; }
+figure { margin: 1.2rem 0; }
+.bars { display: grid; gap: .45rem; margin: .6rem 0; }
+.bar { display: grid; grid-template-columns: minmax(8.5rem, 12rem) 1fr 2.6rem; gap: .6rem; align-items: center; font-size: .9rem; }
+.track { height: .8rem; background: var(--panel); border: 1px solid var(--line); border-radius: 99px; overflow: hidden; }
+.track i { display: block; height: 100%; background: var(--brand); }
+.track i.lost { background: var(--warn); }
+.bar b { font-variant-numeric: tabular-nums; text-align: right; }
+.steps { list-style: none; padding: 0; margin: 1rem 0; counter-reset: step; }
+.steps li { counter-increment: step; border: 1px solid var(--line); border-radius: var(--r); padding: .7rem .9rem .7rem 3rem; margin: .5rem 0; position: relative; background: var(--panel); }
+.steps li::before { content: counter(step); position: absolute; left: .9rem; top: .7rem; width: 1.5rem; height: 1.5rem; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-size: .8rem; font-weight: 600; }
+.steps strong { display: block; }
+.steps li.lost { border-color: var(--warn); }
+.steps p { margin: .25rem 0 0; }
+details { border: 1px solid var(--line); border-radius: var(--r); padding: .5rem .8rem; margin: .7rem 0; }
+summary { cursor: pointer; font-weight: 600; }
+.tag { display: inline-block; font-size: .74rem; font-weight: 600; border: 1px solid var(--line); border-radius: 99px; padding: 0 .5rem; white-space: nowrap; }
+.tag.m { border-color: var(--brand); color: var(--brand); }
+.tag.u { border-color: var(--warn); color: var(--warn); }
+.answer { border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); padding: .2rem 1rem; margin: 1.2rem 0; }
+.answer ul { margin: .7rem 0; padding-left: 1.1rem; }
+.answer li { margin: .35rem 0; }
+dl.stages { display: grid; grid-template-columns: auto 1fr; gap: .35rem .9rem; margin: 1rem 0; font-size: .95rem; }
+dl.stages dt { font-weight: 600; }
+dl.stages dd { margin: 0; }
+dl.stages b { font-variant-numeric: tabular-nums; }
+details > :last-child { margin-bottom: .3rem; }
+details[open] > summary { margin-bottom: .4rem; }
+ul.plain { padding-left: 1.1rem; margin: .6rem 0; }
+ul.plain li { margin: .3rem 0; }
+nav.links { display: flex; flex-wrap: wrap; gap: .4rem .9rem; font-size: .92rem; margin: .8rem 0 0; }
+.when { color: var(--soft); font-size: .85rem; white-space: nowrap; }
+@media (max-width: 34rem) {
+  .bar { grid-template-columns: 1fr 2.6rem; } .bar span:first-child { grid-column: 1 / -1; }
+  dl.stages { grid-template-columns: 1fr; gap: 0; } dl.stages dd { margin-bottom: .5rem; }
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>“Let me predict”, “let me change it”, “let me fix it”</h1>
+<p class="byline">Claude Fable · November 18, 2026 · Keating web 4.2.0 and the local follow-up checkout</p>
+<p class="lede">A learner who asks to do something should get a control for doing it, without having to name a widget and without a page of prose in front of it. This guide shows how often that happened in scripted tests, what changed, and how to find the next miss.</p>
+<p><strong>Final review.</strong> Two tutors answered four learner requests with Jev, Gemini Decision and ordinary unguided generation. In two guided turns the tutor drafted a usable prediction field that the learner never saw. In a separate live classroom turn, changing a flash-rate slider from 6 to 7 updated the 12-second total from 72 to 84. <a href="final-review/index.html">Compare original and released replies</a> · <a href="final-review/classroom/index.html">See what the learner did</a> · <a href="final-review/field-guide.html">Read Fable’s debugging guide</a> · <a href="final-review/report.html">Read the final results</a>.</p>
+<div class="answer">
+<ul>
+<li><strong>Released build.</strong> On 16 scripted requests to act, the final reply of Keating 4.2.0 carried a control on 10. In older September episodes, 6 of 40 such requests got a matching control on the next reply.</li>
+<li><strong>Earlier four-turn policy check.</strong> Three turns returned a reply and each one let the learner do what they asked. One was a slider and two were editable Python. The fourth timed out, so its result is unknown.</li>
+<li><strong>The action now steers the control.</strong> The policy recommends a Question for predicting, a Simulation for changing a quantity and an editable code block for repairing code. The tutor still writes the reply, so no wording guarantees a control.</li>
+<li><strong>An editor is not yet a good exercise.</strong> Of the four Python drafts the tutor wrote, one hid its bug on the supplied input and one pointed at the faulty line. <a href="#find-the-bug">What a learner would meet</a>.</li>
+<li><strong>Limits.</strong> The policy trials ran locally on November 18, 2026. Each scheduled tutor condition ran once with a synthetic prompt. The study did not measure real learner traffic, satisfaction or learning.</li>
+</ul>
+</div>
+<nav class="links" aria-label="Open the controls">
+<a href="policy-v2.2/preview/index.html#later">Try the earlier slider and Python editors</a>
+<a href="diagnostics.html?source=final&amp;view=action-unmet">Inspect missed learner actions in the final turns</a>
+<a href="policy-v2.2/preview/index.html#bus">Older replays, starting with the bus graph</a>
+<a href="policy-v2.2/REPORT.md" download>Full report</a>
+</nav>
+</header>
+
+<h2>The action picks the control</h2>
+<p>None of these learners named a component. Each row is the latest recorded turn for that kind of request.</p>
+<div class="scroll">
+<table>
+<thead><tr><th scope="col">The learner wants to</th><th scope="col">What fits</th><th scope="col">Latest recorded turn</th></tr></thead>
+<tbody>
+<tr><th scope="row">Commit to a guess</th><td>A Question</td><td>“Let me predict the next spin before you explain.” A Question on the first draft.</td></tr>
+<tr><th scope="row">Change a quantity and watch</th><td>A Simulation</td><td>“Let me adjust the filling rate myself.” <a href="policy-v2.2/preview/index.html#later">One slider and a live total</a>.</td></tr>
+<tr><th scope="row">Repair code</th><td>An editable code block</td><td>“Give me a short Python loop with a small bug that I can edit myself.” <a href="policy-v2.2/preview/index.html#later">Editable Python, twice</a>.</td></tr>
+<tr><th scope="row">Get the answer</th><td>A short sentence</td><td>An octagon’s perimeter. “24 centimetres.” and <a href="policy-v2.2/preview/index.html#answer">nothing else</a>.</td></tr>
+<tr><th scope="row">Do something outside the lesson</th><td>No teaching control</td><td>Changing the seats on an account. Neither planner offered one.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The code editor is ordinary Markdown. It is no OpenUI component, so both Python replies contain zero fenced controls. A tally of generated interfaces would have scored two delivered editors as two misses. The inspector now counts the requested action, whichever kind of control delivers it.</p>
+
+<h2>Four turns under the final policy</h2>
+<p>Two new requests were fixed in advance. MiniMax M2.7 Highspeed tutored each one twice, once planned and reviewed by Jev and once by Gemini Decision 1.</p>
+<div class="scroll">
+<table>
+<thead><tr><th scope="col">Request</th><th scope="col">With Jev</th><th scope="col">With Gemini Decision</th></tr></thead>
+<tbody>
+<tr><th scope="row">Adjust a filling rate and watch an eight-minute total. No predictions or check questions.</th><td>A working slider on the first draft. At 5 and 7.5 bottles per minute it reads 40 and 60 bottles. 57 words sit outside it. No quiz and no goal prompt.</td><td>The planner offered a Simulation. The tutor request timed out after 60 seconds. No reply was observed.</td></tr>
+<tr><th scope="row">A short Python loop with a small bug to edit. Leave the fix to the learner.</th><td>Editable Python on the second draft. The loop prints three items and then raises <code>IndexError</code>. Ten words sit outside the code.</td><td>Editable Python on the second draft. The sum prints 9 where 13 is expected. No words sit outside the code.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Both released bugs are real. A local interpreter reproduced each one and confirmed a one-token repair. Both editors were edited and reset in an offline browser, and the slider was captured in a desktop browser. The live example is still one slider and two editors. <a href="policy-v2.2/preview/index.html#later">Open all four outcomes</a> · <a href="policy-v2.2/preview/filling-line-slider.png">Slider capture</a> · <a href="policy-v2.3-completion/adjudication.json">Scoring notes</a> · <a href="policy-v2.2/preview/browser-results.json">Browser measurements</a></p>
+
+<h3 id="find-the-bug">Can the learner find the bug?</h3>
+<p>The learner asked for a bug to find and fix alone. Counting editors says nothing about that. Reading the four Python drafts as that learner would, two of them fail the request in different ways.</p>
+<div class="scroll">
+<table>
+<thead><tr><th scope="col">Draft</th><th scope="col">What the learner would meet</th><th scope="col">Verdict</th></tr></thead>
+<tbody>
+<tr><th scope="row">With Jev, first draft<br><span class="when">not released</span></th><td>A loop that collects even numbers and skips the first item. The first item is an odd 3, so the output is already every even number. Running it shows nothing wrong. The native page’s fallback description then names the exact error.</td><td>Hidden bug, diagnosis given</td></tr>
+<tr><th scope="row">With Jev, released</th><td>Three fruits print and then <code>IndexError</code>. The failure is visible and the diagnosis is left to the learner.</td><td>Fair</td></tr>
+<tr><th scope="row">With Gemini Decision, first draft<br><span class="when">not released</span></th><td>A count of two long words where the text says three. The expected result names no line.</td><td>Fair</td></tr>
+<tr><th scope="row">With Gemini Decision, released</th><td>A sum of 9 where 13 is expected. A comment beside the faulty slice says <code># Should include every number</code>.</td><td>Unrequested line clue</td></tr>
+</tbody>
+</table>
+</div>
+<p>The clue on the released sum is narrow. It points at the line and says what the line should cover. It gives no corrected expression. The expected total of 13 on its own is fine, since a learner needs to know what right looks like.</p>
+<p><strong>What an operator can do with it.</strong> Open <a href="diagnostics.html?source=final&amp;view=action-unmet">Action unmet on the final turns</a>. It shows three observed requests, all met, and one unknown for the timeout. The editable-code view lists the two editor turns by title. Those views tell you an editor arrived. To judge the exercise, run the starter on its own input and read the comments beside the code. If the output already matches the stated goal, the bug is hidden. If a comment sits on the faulty line, the learner has been pointed to it.</p>
+<details>
+<summary>How the reviewers and the local check handled these four drafts</summary>
+<p>Four kinds of evidence sit behind this section and they answer different questions.</p>
+<ul class="plain">
+<li><strong>Controls the tutor really released.</strong> The v2.3 cohort above. One slider, two editors, one timeout.</li>
+<li><strong>Fresh provider reviews of archived drafts.</strong> In v2.3.2, Jev 1.14.0 and Gemini Decision 1 each reviewed the four unchanged MiniMax drafts, eight reviews in all. Each reviewer matched three of four reference labels on whether the input exposes the bug, and three of four on how much the reply discloses. Both missed the same draft. They called the hidden bug observable and the task independent, although the fallback description names the error. Both caught the line clue on the released sum, at 0.76 and 0.62. The reference labels were recorded before dispatch.</li>
+<li><strong>A static check written afterwards.</strong> Local policy v2.3.3 recognises one narrow shape of program, the parity collector that starts at index 1. For the first Jev draft it proves, without running the code, that the supplied example hides the bug. Other inputs the native page might offer are unknown. The fallback description states the exact diagnosis, and on that disclosure the deterministic review vetoes the draft. The other three programs fall outside this proof and stay with the semantic reviewer.</li>
+<li><strong>Production.</strong> Unmeasured. No rate for real learners exists.</li>
+</ul>
+<p>No tutor ran under v2.3.2 or v2.3.3, so neither shows that a new draft would come out better. Four known examples give no estimate of code quality in general. <a href="policy-v2.3.2-review/README.md" download>Review notes</a> · <a href="policy-v2.3.2-review/examples.json">Reference labels</a> · <a href="policy-v2.3.2-review/summary.json">Provider answers and probabilities</a> · <a href="quality-checks/debugging-example-proof.ts.txt">Static proof</a> · <a href="quality-checks/debugging-example-proof.test.ts.txt">Static proof tests</a> · <a href="quality-checks/debugging-exercise.test.ts.txt">Review tests</a></p>
+<pre><code>rtk bun docs/benchmarks/openui-audit-2026-11-18/policy-v2.3.2-review/review.mjs --verify
+rtk python3 -I -S docs/benchmarks/openui-audit-2026-11-18/policy-v2.3.2-review/check-examples.py
+rtk bun test packages/learner-contracts/test/debugging-exercise.test.ts</code></pre>
+</details>
+
+<h3>What these four turns leave open</h3>
+<ul class="plain">
+<li><strong>The matched pair is incomplete.</strong> The Gemini Decision slider turn returned no body and no token usage. Its full US$0.12 reservation stays on the ledger and it was never retried. The two decision models cannot be compared on the slider.</li>
+<li><strong>Both Python replies took two drafts.</strong> Each first draft held a subtler exercise and was rejected for something outside the code.</li>
+<li><strong>Short code can point at the bug.</strong> The Gemini-reviewed reply puts <code># Should include every number</code> beside the faulty slice. That locates the bug without writing the fix. The Jev-reviewed loop crashes, and a Python traceback will name a line once the code is run. The original review raised neither point. The later reviews flagged the comment and judged the crash a fair exercise.</li>
+<li><strong>Jev’s plan did not name the editor.</strong> The request named Python and asked for practice. Gemini Decision’s plan told the tutor to supply an editable Python block. Jev’s plan offered nothing and gave no language, yet the tutor still delivered the editor. Under v2.3.1 the same two saved plans both produce explicit editor guidance, up from one of two. That replay generated no new reply. <a href="policy-v2.3.1-replay/README.md" download>Editor replay</a></li>
+<li><strong>Editable is not executed.</strong> See the definitions below.</li>
+</ul>
+<details>
+<summary>What the first Python drafts looked like</summary>
+<p>Both first drafts used a five-item list and a loop starting at index 1, which silently skips the first item. Neither carried a comment pointing at the bug. In the Jev-reviewed draft the skipped item was odd and the task was to collect even numbers, so the buggy loop already printed the right answer.</p>
+<p>With Jev, the draft also told the learner to predict the output, requested a native page and left an empty OpenUI fence. The gate rejected the invalid fence. With Gemini Decision, the draft ended in a tool request and the reviewer scored invented feedback at 0.62.</p>
+<p>The released second drafts are 24 and 26 words long with their code included. Outside the code they carry 10 words and none. They are shorter and easier. In these two turns the retry bought a release at the price of a more obvious bug.</p>
+<pre><code>numbers = [4, 7, 2]
+
+total = 0
+for number in numbers[1:]:  # Should include every number
+    total += number
+
+print(total)  # Expected: 13</code></pre>
+<p class="note">The reply released with Gemini Decision. The first comment locates the bug, which the learner had asked to find alone. The second states the expected total, which is fair. Neither writes the fix.</p>
+<p>This command reruns both snippets and their repairs with local Python. It starts no notebook and calls no model.</p>
+<pre><code>rtk python3 -I -S docs/benchmarks/openui-audit-2026-11-18/policy-v2.3-completion/check-python.py</code></pre>
+</details>
+<details>
+<summary>Cost and the completion run</summary>
+<p>All studies together are bounded at US$1.91711828 of a US$2 authorization. That includes the US$0.12 reserved for the timed-out turn and US$0.004183064 for the eight final reviews. The v2.3.1 replay and the v2.3.3 check cost nothing. The bound charges cache tokens at full input price and keeps a reservation whenever usage is missing, so an invoice may differ. <a href="policy-v2.3.2-review/ledger.json">Review ledger</a></p>
+<p>The first v2.3 run stopped before either Python tutor request left the harness. A completion run continued only those two cells with their original plans. Its ledger counts the first seven entries once. <a href="policy-v2.3/cohort.json">Frozen cases</a> · <a href="policy-v2.3-completion/protocol.json">Completion protocol</a> · <a href="policy-v2.3-completion/summary.json">Completion status and cost</a></p>
+</details>
+
+<h2>Words that are easy to confuse</h2>
+<h3>For a control written into the reply</h3>
+<dl class="stages">
+<dt>Offered</dt><dd>The planner named a kind of control for the tutor.</dd>
+<dt>Created</dt><dd>A private draft held a valid control.</dd>
+<dt>Released</dt><dd>The final reply held one.</dd>
+<dt>Rendered</dt><dd>The control mounted in the classroom chat. No study here recorded that.</dd>
+<dt>Fit</dt><dd>The released control suited the requested action and language.</dd>
+</dl>
+<h3>For a full interactive page</h3>
+<p>A tutor can also request a native page through a tool call. The inspector tracks it through separate stages.</p>
+<dl class="stages">
+<dt>Requested</dt><dd>The tutor asked for a page. Every provider run in these studies stopped here, before the tool ran.</dd>
+<dt>Ready</dt><dd>The page’s sandbox loaded and the host accepted its handshake.</dd>
+<dt>Visible</dt><dd>A ready frame sat inside the viewport of a foreground tab. A page can be ready below the fold.</dd>
+<dt>Opened</dt><dd>The learner opened the ready page full screen.</dd>
+</dl>
+<p>None of the four proves the learner looked at the page, used it or learned from it. The conveyor page below was replayed in an offline browser from its recorded request. No classroom chat showed it.</p>
+<h3>Editable and executed</h3>
+<p>An editable block lets the learner change the code in place. Running it needs a hosted executor and a network connection. These studies checked that both Python blocks could be edited and reset. They started no cloud notebook, so nothing here shows a learner running code in Keating.</p>
+<h3>Measured prompts and production</h3>
+<p>Every count on this page comes from a synthetic message written for a test and run once. During the November 11–17, 2026 production window, Keating ran 4.2.0, which lacked the diagnostic observer. How often a real learner received a control during that window is unknown.</p>
+
+<h2>A working control can still miss</h2>
+<p>A learner asked to change a conveyor’s speed and skip test questions. The same tutor answered twice and both replies computed the right totals.</p>
+<ul class="plain">
+<li><strong>The slider that set a test.</strong> With Gemini Decision the tutor released two sliders whose brief demanded a prediction before touching them, inside 143 words of surrounding prose. The planner had recognised the opt-out. The tutor wrote the test into the control anyway.</li>
+<li><strong>The picture that never moves.</strong> With Jev the tutor requested a native page. Its numbers are right, with 60 and 90 cartons in ten minutes at 6 and 9 per minute. Its belt drawing stacks all twelve cartons on one 32-pixel spot at both settings.</li>
+</ul>
+<p><a href="policy-v2.2/preview/index.html#conveyor">Try both conveyor replies</a></p>
+<p>Policy v2.3 answers the first failure in two ways. It removes an imposed prediction from an optional simulation brief when the learner has declined assessment. It also shows a finished simulation first when the learner asked to operate it, and folds the lead paragraphs under <strong>Read the explanation</strong>.</p>
+<details>
+<summary>What the replay of that reply shows</summary>
+<p>On the exact saved reply, the policy removed a 164-character prediction instruction. Both sliders, both formulas and all 143 outside words stayed identical. The top of the control moved from 443 to 115 pixels below the start of the reply on desktop, and from 544 to 147 on a phone.</p>
+<p>When the learner asked for an explanation, or the prose carried a caution, the tutor’s order was kept.</p>
+<p>No decision model reviewed the edited draft. With no review available the gate withheld it. With a passing test fixture the gate released it. That shows the release path. It gives no acceptance rate for v2.3. <a href="policy-v2.3-replay/README.md" download>Replay notes</a> · <a href="policy-v2.3-replay/replay.json">Before and after</a></p>
+<pre><code>rtk bun docs/benchmarks/openui-audit-2026-11-18/policy-v2.3-replay/run.mjs --verify</code></pre>
+</details>
+<details>
+<summary>The bus graph</summary>
+<p>A learner asked to change bus frequency and watch seats per hour. Two recorded simulations opened on a graph of something else, extra riders in one and average load factor in the other. Both now open on buses per hour, using the tutor’s original programs. A saved learner selection survives reopening and Reset restores the authored view. <a href="policy-v2.2/preview/index.html#bus">Compare old and new</a></p>
+</details>
+<p>The native picture is unrepaired. Nothing in the pipeline checks whether an illustration changes when its control does.</p>
+
+<h2>Find the next one</h2>
+<p>The inspector reads saved turns. It holds categories, counts and opaque identifiers, and no learner or tutor text.</p>
+<div class="scroll">
+<table>
+<thead><tr><th scope="col">Recording</th><th scope="col" class="n">Requests to act, missed</th><th scope="col">Open it</th></tr></thead>
+<tbody>
+<tr><th scope="row">Final policy, four turns</th><td class="n">0/3 observed<br>1 unknown</td><td><a href="diagnostics.html?source=final">Sliders and Python editors</a></td></tr>
+<tr><th scope="row">Policy v2.2, four generated turns</th><td class="n">1/2</td><td><a href="diagnostics.html?source=revised">Hands-on and direct replies</a></td></tr>
+<tr><th scope="row">November release audit</th><td class="n">6/16</td><td><a href="diagnostics.html?source=audit&amp;view=unmet&amp;cue=implicit-action">Missed cues in the audit</a></td></tr>
+<tr><th scope="row">September terminal episodes</th><td class="n">34/40</td><td><a href="diagnostics.html?source=episodes&amp;view=unmet&amp;cue=implicit-action">Missed cues in the episodes</a></td></tr>
+</tbody>
+</table>
+</div>
+<p><a href="diagnostics.html">Offline inspector, unfiltered</a> · <a href="openui-diagnostics.md" download>Operator guide</a></p>
+<p>Two views answer different questions. <strong>Missed learner cue</strong> checks for a fenced OpenUI control of the requested kind. <strong>Action unmet</strong> checks whether the learner got the requested action by any supported route, including the code editor. On the final recording the first view can assess one turn of four. The second assesses three and finds no miss. The one v2.2 miss is the conveyor turn that requested a native page, which holds no fenced control.</p>
+<details>
+<summary>From the app</summary>
+<p>Open <strong>Settings → Diagnostics → Interface use</strong> or go to <code>/chat?settings=diagnostics</code>. Under <strong>Data source</strong> choose <strong>Sliders and Python editors · policy 2.3</strong>, or any other recording, then <strong>Inspect turns → Show turns</strong>.</p>
+<p>A turn with no selection evidence is counted separately as unknown. The timed-out slider turn is one.</p>
+</details>
+<details>
+<summary>From a terminal</summary>
+<p>Run these from the repository root. They need no credentials and call no model.</p>
+<pre><code>rtk bun src/cli/main.ts openui-diagnostics web/src/keating/openui/examples/policy-v2.3.json --view action-unmet
+rtk bun src/cli/main.ts openui-diagnostics web/src/keating/openui/examples/policy-v2.3.json --view editable-code
+rtk bun src/cli/main.ts openui-diagnostics web/src/keating/openui/examples/terminal-episodes.json --cue implicit-action --view unmet --limit 2</code></pre>
+<p>The first reports <code>matchingTurns</code> 0, <code>observedOpportunities</code> 3 and <code>unknownOpportunities</code> 1. The second finds the two Python replies. The third reports 34 of 40 and prints two turns. The limit trims the printed list and leaves the counts alone.</p>
+<p>Use <code>--view draft-loss</code> for controls that were created and then dropped, <code>--view native</code> for page requests, and <code>--view withheld --cue direct-text</code> for plain answers a reviewer blocked.</p>
+</details>
+<details>
+<summary>From a model</summary>
+<p>A browser-connected model can call the read-only WebMCP tool <code>keating.openui_diagnostics</code> with the same options.</p>
+<pre><code>{"view":"action-unmet","limit":2}</code></pre>
+<p>The resource <code>keating://openui-diagnostics</code> returns the device summary.</p>
+</details>
+<details>
+<summary>Telling which stage lost a control</summary>
+<p>Filter to <strong>Implicit learning cue</strong> and compare <strong>In a draft</strong>, <strong>In the final reply</strong> and <strong>Shown in chat</strong>. Each stage is observed on a different set of turns, so a gap between two rates is a prompt to look closer. Confirm the loss on a single turn before naming a stage.</p>
+<p>Open <strong>Inspect turns</strong> and choose <strong>Interface compiled, then dropped</strong>. Each turn lists the kinds offered, whether the guidance reached the tutor, the number of private drafts, what compiled, what was selected and the review issues raised.</p>
+<div class="scroll">
+<table>
+<thead><tr><th scope="col">Stage</th><th scope="col">How the loss happens</th><th scope="col">Recorded case</th></tr></thead>
+<tbody>
+<tr><th scope="row">Plan</th><td>The mapping from decision scores to offers removes the fitting kind.</td><td>Scrambled bar-chart steps scored 0.98 as an ordered procedure. A practice signal then removed the ordering Question. Later, Jev’s plan left out the Python editor.</td></tr>
+<tr><th scope="row">Draft</th><td>The tutor answers in prose, or picks a control that teaches something else.</td><td>A Python loop exercise came back as a JavaScript challenge. A language check now flags that reply.</td></tr>
+<tr><th scope="row">Gate</th><td>A structural rule or a reviewer score rejects a draft that holds a working control.</td><td>The coin turn below. All four draft-to-reply losses in the release audit were MiniMax turns.</td></tr>
+<tr><th scope="row">Native tool</th><td>The tutor requests a full page. The harness stops before the tool runs.</td><td>The food web, the bus simulation and the conveyor. Only the conveyor page has been replayed, offline.</td></tr>
+<tr><th scope="row">Inside the control</th><td>The control works and still fails the learner.</td><td>The conveyor’s imposed prediction, its motionless picture and the two bus graphs.</td></tr>
+<tr><th scope="row">Renderer</th><td>The selected control never mounts in the chat.</td><td>No recorded case. No study observed a classroom mount.</td></tr>
+</tbody>
+</table>
+</div>
+</details>
+
+<h2>How the study got here</h2>
+<p>Each step used its own prompts, so the counts describe that step alone and do not form a before-and-after series.</p>
+<div class="scroll">
+<table>
+<thead><tr><th scope="col">Step</th><th scope="col">What ran</th><th scope="col">Result</th></tr></thead>
+<tbody>
+<tr><th scope="row">September episodes</th><td>40 requests to act inside 804 scripted terminal turns</td><td>6 matched on the next reply, 1 on the reply after, 33 never within the recording</td></tr>
+<tr><th scope="row">Release audit</th><td>16 requests to act on Keating 4.2.0, eight per tutor</td><td>10 released a control. Gemini 7 of 8, MiniMax 3 of 8.</td></tr>
+<tr><th scope="row">Gate repair</th><td>Nine saved drafts that failed at the gate, then four fresh requests</td><td>6 of 9 admitted. 2 of the 3 fresh turns that completed released a control.</td></tr>
+<tr><th scope="row">Planner sample</th><td>Six everyday messages to two decision models, planning only</td><td>A fitting kind offered on 4 of 4 by Jev and 3 of 4 by Gemini Decision</td></tr>
+<tr><th scope="row">Policy v2.2</th><td>Six new prompts across both decision models, twelve cells</td><td>Both planners offered a Simulation on both exploration prompts. The conveyor exposed the two failures above.</td></tr>
+<tr><th scope="row">Policy v2.3</th><td>Two new prompts across both decision models, four turns</td><td>3 of 4 returned a reply and all three gave the requested action</td></tr>
+</tbody>
+</table>
+</div>
+<details>
+<summary>Policy v2.2, cell by cell</summary>
+<p>Four cells included live MiniMax generation, six ended at the plan and two reviewed a fixed answer.</p>
+<div class="scroll">
+<table>
+<thead><tr><th scope="col">Request</th><th scope="col">With Jev</th><th scope="col">With Gemini Decision</th></tr></thead>
+<tbody>
+<tr><td>Just the octagon’s perimeter</td><td>“24 centimetres.” on draft one</td><td>“24 cm” after two drafts, marked unverified</td></tr>
+<tr><td>Vary conveyor speed, skip test questions</td><td>A native page request and a goal request, with nine words</td><td>A Simulation on draft two, with 143 words and a demanded prediction</td></tr>
+<tr><td>Change the seats on an account</td><td>No control offered</td><td>No control offered</td></tr>
+<tr><td>Explore rectangle area on the first turn</td><td>Simulation offered</td><td>Simulation offered</td></tr>
+<tr><td>Explain a relationship in plain text</td><td>No control offered</td><td>No control offered</td></tr>
+<tr><td>A hint on an active multiplication exercise</td><td>Withheld the planted answer “63.”</td><td>Withheld it too</td></tr>
+</tbody>
+</table>
+</div>
+<p>The same policy fixed three earlier results on saved answers. The printer request below now keeps its Simulation under Gemini Decision. The correct direct answer “16.” is released under both decision models. A JavaScript exercise sent in answer to a Python request is caught.</p>
+<p>This extension used 25 provider requests and brought the bound to US$1.733468526. <a href="policy-v2.2/REPORT.md" download>Report</a> · <a href="policy-v2.2/cohort.json">Cases and scoring rules</a> · <a href="policy-v2.2/summary.json">Twelve results</a></p>
+</details>
+
+<h2>The release study</h2>
+<p>Everything in this section describes Keating 4.2.0 as released, on the 16 action requests of the November audit.</p>
+<dl class="stages">
+<dt>Offered</dt><dd>The planner named a specific kind on <b>9</b>.</dd>
+<dt>Created</dt><dd>A private draft held a valid control on <b>14</b>.</dd>
+<dt>Released</dt><dd>The final reply held one on <b>10</b>.</dd>
+<dt>Fit</dt><dd>The released control suited the action and language on <b>9</b>.</dd>
+</dl>
+<figure>
+<figcaption>Created and released, by tutor. A request counts once however many drafts it took.</figcaption>
+<div class="bars" role="img" aria-label="Gemini had a valid control in a private draft on 7 of 8 requests and in the final reply on 7 of 8. MiniMax had one in a private draft on 7 of 8 and in the final reply on 3 of 8.">
+<div class="bar"><span>Gemini, created</span><span class="track"><i style="width:87.5%"></i></span><b>7/8</b></div>
+<div class="bar"><span>Gemini, released</span><span class="track"><i style="width:87.5%"></i></span><b>7/8</b></div>
+<div class="bar"><span>MiniMax, created</span><span class="track"><i style="width:87.5%"></i></span><b>7/8</b></div>
+<div class="bar"><span>MiniMax, released</span><span class="track"><i class="lost" style="width:37.5%"></i></span><b>3/8</b></div>
+</div>
+</figure>
+
+<h3>The coin turn</h3>
+<div class="says">
+<p>“A fair coin just landed heads four times. I think tails must be due. Let me make a prediction about the next flip before you explain.”</p>
+<cite>Synthetic learner message from the November audit. The learner names no widget.</cite>
+</div>
+<p>MiniMax M2.7 Highspeed was the tutor.</p>
+<ol class="steps">
+<li><strong>Offered</strong><p>The decision model Jev scored a prediction opportunity at 0.94. Keating told the tutor a Question may help.</p></li>
+<li><strong>Created</strong><p>The first private draft held a working Question with three choices, followed by one more sentence inviting an answer.</p></li>
+<li class="lost"><strong>Rejected twice</strong><p>A fixed rule requires a reply to end at its question. The trailing sentence failed drafts one and two, control included.</p></li>
+<li class="lost"><strong>Recovery</strong><p>The harness asked for a text-only third draft and the tutor complied.</p></li>
+<li><strong>Released</strong><p>“What do you predict for the next flip—heads, tails, or 50/50—and why?” The learner got a sentence and no control.</p></li>
+</ol>
+<details>
+<summary>Read the discarded first draft</summary>
+<pre><code>Good instinct to commit to a prediction first — let's do that.
+
+```openui lifecycle=ephemeral id=coin-prediction-check
+root = LearningSurface([predict], "Commit to a prediction", …)
+predict = Question([{ header: "Next flip",
+  question: "A fair coin just landed heads four times in a row. What do you predict for the very next flip?",
+  type: "choice",
+  choices: ["Heads", "Tails", "Neither is more likely — they're equally likely"],
+  allowText: true, requireReasons: true }], …)
+```
+
+Take your pick and tell me your reasoning — then I'll show you exactly what the probability model says and where the "tails are due" feeling comes from.</code></pre>
+<p class="note">Abridged from the saved receipt. The last sentence sank the draft.</p>
+</details>
+<details>
+<summary>How Gemini handled the same message</summary>
+<p>Gemini 3.1 Flash-Lite received the same message and the same plan. Its first draft ended at the closing fence and the learner got a three-option control.</p>
+<p>The case then ran three more times per tutor. Both tutors wrote a valid Question on every first draft. Gemini released it three times out of three and MiniMax once out of three.</p>
+<p>A reviewer flagged MiniMax’s missing control at 0.61 on the original turn. That flag was advisory and the reply went out. Two of MiniMax’s four replacement replies were 8 and 12 words long, so a check for long-winded prose would have passed them.</p>
+</details>
+
+<h3>What changed after it</h3>
+<ul class="plain">
+<li>The gate trims prose that trails a valid final Question and reviews the trimmed reply in full.</li>
+<li>The ordering Question stays on offer during practice, and a learner who pauses quizzes can still be offered a Simulation.</li>
+<li>Every teaching turn records its cue, plan, drafts, selection and presentation as categories and counts.</li>
+<li>The passive cue label fires on 24 of 26 measured phrase variants, up from 2.</li>
+</ul>
+<details>
+<summary>Evidence for each change</summary>
+<div class="scroll">
+<table>
+<thead><tr><th scope="col">Change</th><th scope="col">Evidence</th><th scope="col">Kind</th></tr></thead>
+<tbody>
+<tr><td>Trailing prose after a valid final Question is trimmed before review.</td><td>On nine saved drafts that had failed this way, the first repair admitted one and the revised policy admits six. All six come from the coin case.</td><td><span class="tag">Replay</span></td></tr>
+<tr><td>A reviewer’s uncertain worry that the introduction repeats the question affects ranking only. Confirmed repetition and possible answer leaks still block.</td><td>Same replay. Ordering, French recall and the Python exercise stayed blocked for leakage or repetition.</td><td><span class="tag">Replay</span></td></tr>
+<tr><td>The ordering Question stays on offer during practice.</td><td>Six prelabelled planning probes went from five matches to six. The planner was adjusted using the missed probe.</td><td><span class="tag u">In sample</span></td></tr>
+<tr><td>The tutor is told which languages the coding component runs.</td><td>Unit tests at the time. The later v2.3 turns produced Python on both Python requests.</td><td><span class="tag">Two turns</span></td></tr>
+<tr><td>Settings, the CLI and WebMCP read one shared summary.</td><td>The CLI counts on this page come from running the commands shown.</td><td><span class="tag m">Verified locally</span></td></tr>
+</tbody>
+</table>
+</div>
+</details>
+<details>
+<summary>The first fresh check after the repair</summary>
+<p>This is an earlier cohort than the four final turns. Three new prompts were scheduled once for each tutor. Two of the three were action requests, which makes four scheduled action turns.</p>
+<p>MiniMax received “Let me predict the next spin before you explain” and released a Question on its first draft. It received “I want to change the hourly bus frequency and watch what happens to the seats available per hour. Please skip the quiz for now” and released a four-slider simulation on its first draft. It answered the plain-text control with “16.”</p>
+<p>Gemini’s provider returned HTTP 503 on two of its three turns. Its third turn requested a native page that never ran.</p>
+<p>That gives a released control on 2 of the 3 action turns that completed and 2 of the 4 that were scheduled. No old-policy arm ran beside them, so no before-and-after rate follows.</p>
+<p>Fit was mixed. The spinner Question offered four numeric choices the learner never supplied. The bus simulation opened on a graph of a different relationship, since repaired.</p>
+</details>
+
+<h2 id="planner">Does a learner have to name a control?</h2>
+<p>No. Both planners recognised learning activities from ordinary wording. Six synthetic messages, labelled in advance, each went once to two decision models. Four ask to act and two should get plain text. The test stopped after planning.</p>
+<div class="scroll">
+<table>
+<caption>Kinds each plan offered the tutor, under the policy of that time</caption>
+<thead><tr><th scope="col">Learner said</th><th scope="col">Jev 1.14.0</th><th scope="col">Gemini Decision 1</th></tr></thead>
+<tbody>
+<tr><td>“Let me guess first.”</td><td>Question</td><td>Question</td></tr>
+<tr><td>“Can I predict first?”</td><td>Question, Simulation, ConceptMap</td><td>Question, Simulation</td></tr>
+<tr><td>“I want to change this, and see what happens.”</td><td>Simulation, ConceptMap</td><td>Simulation, ConceptMap, Fieldwork</td></tr>
+<tr><td>“Let me play with the numbers. No quiz for now.”</td><td>Simulation, ConceptMap</td><td>Nothing</td></tr>
+<tr><td>A one-sentence fact about hexagons</td><td>Nothing</td><td>Nothing</td></tr>
+<tr><td>“I want to change my password, and see my account”</td><td>Nothing</td><td>Nothing</td></tr>
+</tbody>
+<tfoot><tr><th scope="row">Fitting kind · controls left alone</th><td>4/4 · 2/2</td><td>3/4 · 2/2</td></tr></tfoot>
+</table>
+</div>
+<p>The printer case showed the learner’s words were enough to identify the activity. Gemini Decision scored the message 0.849 for a hands-on request, 0.953 for a variable relationship and 0.876 for declining a quiz. Its broader learning-task score was 0.356. Keating read that as no and dropped every offer.</p>
+<p>Policy v2.2 lets a clearly grounded request to explore survive that broad score. Replayed on these saved answers, both models now meet all six. Jev remains the default, and the evidence does not establish a better decision provider.</p>
+<p>Two limits apply. A cue recognised in a plan can still lose its control later, as the coin turn did. A row also passes when the fitting kind appears anywhere among the alternatives, which leaves the tutor’s choice untested.</p>
+<details>
+<summary>Trace the printer case</summary>
+<p>Keating reads a score of 0.6 or more as yes, 0.4 or less as no, and anything between as uncertain. The code marks these cutoffs as uncalibrated.</p>
+<div class="scroll">
+<table>
+<caption>“A printer makes 12 pages per minute…” then “Let me play with the numbers. No quiz for now.”</caption>
+<thead><tr><th scope="col">Question put to the model</th><th scope="col" class="n">Jev</th><th scope="col" class="n">Gemini Decision</th></tr></thead>
+<tbody>
+<tr><th scope="row"><code>hands_on_requested</code></th><td class="n">0.93 yes</td><td class="n">0.849 yes</td></tr>
+<tr><th scope="row"><code>variable_relationship</code></th><td class="n">0.97 yes</td><td class="n">0.953 yes</td></tr>
+<tr><th scope="row"><code>assessment_declined</code></th><td class="n">0.99 yes</td><td class="n">0.876 yes</td></tr>
+<tr><th scope="row"><code>practice_requested</code></th><td class="n">0.05 no</td><td class="n">0.018 no</td></tr>
+<tr><th scope="row"><code>learner_response_due</code></th><td class="n">0.33 no</td><td class="n">0.170 no</td></tr>
+<tr><th scope="row"><code>learning_task</code></th><td class="n">0.68 yes</td><td class="n">0.356 no</td></tr>
+<tr><th scope="row">Offer</th><td class="n">Simulation, ConceptMap</td><td class="n">none</td></tr>
+</tbody>
+</table>
+</div>
+<p>The offer rule of that time needed a yes on <code>learning_task</code> or on <code>practice_requested</code>. One exception let a learner who paused quizzes still explore, and it applied only when <code>learning_task</code> was uncertain.</p>
+<pre><code>const requestedExploration = decisions.learning_task === null
+  &amp;&amp; decisions.assessment_declined === true &amp;&amp; features.hands_on_requested === true;
+if (decisions.learning_task !== true &amp;&amp; decisions.practice_requested !== true
+  &amp;&amp; !requestedExploration) return NONE;</code></pre>
+<p>Gemini’s 0.356 sits 0.044 below the uncertain band, so the exception stayed shut. Neither plan offered a Quiz on any of the six messages.</p>
+<p>The planner has changed since. To replay the saved provider answers through the planner source this sample used, run the historical wrapper. It rebuilds that source in a temporary folder and calls no model.</p>
+<pre><code>rtk bun docs/benchmarks/openui-audit-2026-11-18/verify-historical.mjs cue-paraphrases</code></pre>
+<p>It reports 12 scheduled, 12 dispatched and 12 scored. Running the sample’s own <code>cue-paraphrases/run.mjs</code> directly would load today’s planner instead. <a href="cue-paraphrases/results.json">Scores and full plans</a> · <a href="cue-paraphrases/protocol.json">Cases and pass rule</a></p>
+</details>
+<details>
+<summary>How to use the decision models</summary>
+<p>Each model answers the same 39 typed questions about a turn and Keating turns the scores into a plan. Four things follow from these twelve answers.</p>
+<ul class="plain">
+<li><strong>Trust the specific questions across vendors.</strong> The score that picks the kind cleared 0.6 on both models for all four requests. A prediction opportunity scored 0.83 and 0.89 on Jev and 0.751 and 0.872 on Gemini. A hands-on request scored 0.87 and 0.93 on Jev and 0.944 and 0.849 on Gemini.</li>
+<li><strong>Calibrate the general gate for each model.</strong> <code>learning_task</code> ran lower on Gemini than on Jev in all five subject-matter cases, by 0.06 to 0.44. The pairs were 0.79 and 0.663, 0.95 and 0.771, 0.84 and 0.778, 0.68 and 0.356, 0.83 and 0.392. Both scored the account request at 0.02.</li>
+<li><strong>Read the scores before the offer.</strong> An empty offer can hide three strong specific scores behind one weak general one. Policy v2.2 acts on this for variable exploration.</li>
+<li><strong>Treat an offer as a menu.</strong> Jev listed three kinds for the ramp cars. Gemini added Fieldwork for the resistor after scoring outside observation as yes. The tutor is told to use at most one.</li>
+</ul>
+<p>Both models marked a learner response as due on the two predictions only, at 0.93 and 0.97 for Jev and 0.927 and 0.917 for Gemini. No other case passed 0.33.</p>
+<p>One plan deserves a tutor test. On the hexagon fact, Jev scored <code>learning_task</code> at 0.83, so its prompt held “Give the answer in the requested form and stop” beside the general “Choose one useful next learning step based on demonstrated understanding, then let the learner respond.” No tutor acted on it, so the effect of the conflict is unknown.</p>
+</details>
+<details>
+<summary>Calls, dates and cost of the planner sample</summary>
+<p>The cases and request hashes were frozen at 16:32:33 UTC on November 18. The twelve calls ran between 16:32:47 and 16:34:03 UTC and all returned HTTP 200 with usage.</p>
+<p>Jev’s endpoint echoed the model ID <code>jev-1.14.0</code> in every response. Google’s Decisions endpoint was asked for <code>gemini-decision-1</code> and returned no resolved revision, so that ID is the requested one.</p>
+<p>Jev used 24,149 input and 4,488 output tokens and Google 28,600 input tokens. At list prices this phase cost US$0.003874258. At that point the whole study accounted for at most US$1.643732256. The later cohorts and reviews raised the bound to the US$1.91711828 given above. No invoice was available.</p>
+</details>
+
+<h2>What the recordings show</h2>
+<details>
+<summary>How many final replies held a control</summary>
+<div class="scroll">
+<table>
+<thead><tr><th scope="col">Recording</th><th scope="col" class="n">Released</th><th scope="col">Kinds</th></tr></thead>
+<tbody>
+<tr><th scope="row">September terminal episodes, 804 turns</th><td class="n">204/803</td><td>Every one a Question. One turn lacked reply evidence.</td></tr>
+<tr><th scope="row">November audit, 16 action requests</th><td class="n">10/16</td><td>Seven question groups, two simulations, one coding challenge</td></tr>
+<tr><th scope="row">November audit, 4 plain-text requests</th><td class="n">0/4</td><td>All four got short text, as asked</td></tr>
+<tr><th scope="row">First fresh check, 4 scheduled action requests</th><td class="n">2/3 completed<br>2/4 scheduled</td><td>One question group, one simulation. One turn failed at the provider.</td></tr>
+<tr><th scope="row">Policy v2.2, 2 conveyor turns</th><td class="n">1/2</td><td>One simulation. The other turn requested a native page.</td></tr>
+<tr><th scope="row">Policy v2.3, 4 scheduled action requests</th><td class="n">1/3 fenced<br>3/3 action met</td><td>One simulation and two editable Python blocks. One turn timed out.</td></tr>
+</tbody>
+</table>
+</div>
+</details>
+<details>
+<summary>How many replies a learner waited</summary>
+<p>The inspector counts released tutor replies from the request until a matching control arrives. Private drafts, errors and withheld replies add nothing to that count.</p>
+<div class="scroll">
+<table>
+<thead><tr><th scope="col">Recording</th><th scope="col" class="n">Requests</th><th scope="col" class="n">First reply</th><th scope="col" class="n">Later</th><th scope="col" class="n">Unresolved</th></tr></thead>
+<tbody>
+<tr><th scope="row">September terminal episodes</th><td class="n">40</td><td class="n">6</td><td class="n">1 on reply two</td><td class="n">33</td></tr>
+<tr><th scope="row">November audit</th><td class="n">16</td><td class="n">10</td><td class="n">0</td><td class="n">6</td></tr>
+<tr><th scope="row">First fresh check</th><td class="n">4 scheduled</td><td class="n">2</td><td class="n">0</td><td class="n">2</td></tr>
+</tbody>
+</table>
+</div>
+<p>Every November conversation was a single turn, so a control arriving on a second reply could never be observed there. The only multi-turn data is the September terminal benchmark, which predates the current planner and ran outside the web classroom.</p>
+</details>
+<details>
+<summary>How many seconds a learner waited</summary>
+<p>The diagnostic record has a field for this, <code>replyElapsedMs</code>. It runs from the learner’s message entering an agent run until the released or withheld public reply ends. Rendering comes after it. A retry starts its own clock.</p>
+<p>Archived recordings lack the field, so the inspector reports their timing as unknown. No browser timing from a learner appears on this page.</p>
+<p>The clock was checked locally against the real agent loop under a controlled clock. It recorded 1.25 seconds for the reply, and settling that finished five seconds later left that figure alone. That shows the field measures what it says. It is no measurement of a tutor.</p>
+<p>The saved receipts carry a different clock, the offline wall time of each scripted run. In the first fresh check, MiniMax’s three turns took about 7, 14 and 10 seconds with one draft each. The four release-audit turns that lost their control used three drafts and took about 21 to 80 seconds, including one extra probe call per turn. In the final cohort the one hard number is the 60-second timeout.</p>
+</details>
+<details>
+<summary>Whether the planner’s suggestion helped</summary>
+<p>Jev named a specific kind on 9 of the 16 action requests in the release audit. Three final replies used an offered kind. The inspector shows 3/13 because Jev also offered a Question on all four plain-text requests, where both tutors rightly ignored it.</p>
+<p>A small paired test removed only the sentence that names a kind. With the sentence, 4 of 8 first drafts held a valid control. Without it, 4 of 8 did. A September comparison of the full instruction found a valid control on 6 of 14 matched cases with Jev and 9 of 14 with a compact baseline.</p>
+<p>The final Python turns point the same way. The tutor delivered the editor whether or not the plan named it. These comparisons give little reason to make an offer compulsory, and the application keeps it as advice.</p>
+</details>
+<details>
+<summary>How the passive cue label reads wording</summary>
+<p>A small set of English patterns labels each learner message for the dashboard. The label plays no part in what the tutor does, since the decision model reads the message for that. A missed label hides a turn from the missed-cue view and shrinks its denominator.</p>
+<p>I wrote 26 ordinary rewordings of “let me predict” and “I want to change this and see what happens”. The original patterns fired on 2. The current ones fire on 24. The two left alone describe the subject and name no action by the learner, such as “what happens when the rate doubles?” That makes 24 of 26 a detection count on my own phrasings. It is no estimate of recall.</p>
+<p>Three sentences were wrongly labelled after that widening. Each is now excluded by a rule about its shape.</p>
+<div class="scroll">
+<table>
+<thead><tr><th scope="col">Sentence</th><th scope="col">Rule</th><th scope="col">Still labelled</th></tr></thead>
+<tbody>
+<tr><td>“Let me guess, you want me to memorize it”</td><td>A guess stated straight after the comma, colon or dash is a remark. A sequencing word keeps the request.</td><td>“Let me guess first” · “Let me guess, then tell me if I’m right”</td></tr>
+<tr><td>“What if I lower my expectations?”</td><td>A bare what-if about something of the learner’s own is left alone.</td><td>“What if I lower the rate?” · “I want to adjust my deposit and see what happens to the balance”</td></tr>
+<tr><td>“I want to play with the dog”</td><td>A stated wish to play needs a lesson object such as the numbers, the slope or “it”. “Let me” and “can I” ask the tutor for a turn and pass.</td><td>“I want to play with the numbers” · “Can I play with the pendulum?”</td></tr>
+</tbody>
+</table>
+</div>
+<p>I also checked 139 archived learner messages in 126 distinct wordings. Comparing the current patterns with a checksummed copy of the original file found zero changes to cue kinds or target families.</p>
+<pre><code>rtk bun docs/benchmarks/openui-audit-2026-11-18/verify-archived-cues.mjs
+rtk bun test packages/learner-contracts/test/openui-cue-paraphrase.test.ts</code></pre>
+<p>Known limits are pinned in the test. “Let me guess. You want me to memorize it.” with a full stop, “Let me try a different topic” and “Can I play with the dog?” are still labelled. “What if I double my deposit?” and “I want to play with the pendulum” are now missed. The phrasings are mine and the patterns read English only.</p>
+</details>
+
+<h2>What stays unknown</h2>
+<ul class="plain">
+<li>How often real learners get a control. Every count here is scripted or synthetic, and no build with these changes is in production.</li>
+<li>Whether the two decision models differ on the slider request. One of the two turns never returned.</li>
+<li>Whether controls mount in the classroom chat. They were exercised in offline replays at phone and desktop widths.</li>
+<li>Whether a decision model would pass the v2.3 edit to the conveyor reply. No provider reviewed it.</li>
+<li>Whether a code exercise keeps its difficulty through a retry. Two turns suggest it may not.</li>
+<li>Whether the tutor writes fairer debugging exercises under v2.3.3. No tutor ran under it, and its proof covers one shape of program.</li>
+<li>Whether a provider reviewer would catch a hidden bug elsewhere. Both missed the one example they were shown.</li>
+<li>How the default classroom tutor behaves. No November study included it.</li>
+<li>Whether learners use a control or learn more. No submission, retention or transfer data exists.</li>
+</ul>
+<details>
+<summary>Production on November 18</summary>
+<p>The November 11–17, 2026 production query returned zero diagnostic rows. Version 4.2.0 lacked the observer. The policy trials described here ran locally on November 18.</p>
+</details>
+
+<h2>Sources</h2>
+<nav class="links" aria-label="Sources">
+<a href="policy-v2.2/REPORT.md" download>Final report</a>
+<a href="policy-v2.2/preview/index.html#later">Showcase, final turns</a>
+<a href="policy-v2.2/preview/index.html#bus">Showcase, bus graph</a>
+<a href="policy-v2.2/preview/browser-results.json">Browser measurements</a>
+<a href="policy-v2.3-completion/summary.json">Completion status and cost</a>
+<a href="policy-v2.3-replay/README.md" download>Conveyor replay</a>
+<a href="policy-v2.3.1-replay/README.md" download>Editor replay</a>
+<a href="policy-v2.3.2-review/README.md" download>Python exercise reviews</a>
+<a href="policy-v2.3.2-review/summary.json">Review answers and cost</a>
+<a href="policy-v2.2/preview/filling-line-slider.png">Slider capture</a>
+<a href="openui-diagnostics.md" download>Operator guide</a>
+<a href="REPORT.md" download>Original audit</a>
+<a href="diagnostics-followup.md" download>Diagnostics follow-up</a>
+<a href="gemini-decision/REPORT.md" download>Gemini Decision report</a>
+<a href="gemini-decision/comparison.html">Jev and Gemini Decision compared</a>
+<a href="showcase.html">Release-audit replies</a>
+<a href="gemini-decision/preview/minimax-interfaces.html">Two earlier released controls</a>
+<a href="evidence/MiniMax-M2.7-highspeed--prediction.json">Coin turn receipt</a>
+<a href="policy-holdout/MiniMax-M2.7-highspeed--spinner.json">Spinner turn receipt</a>
+<a href="cue-paraphrases/results.json">Planner sample results</a>
+</nav>
+<p class="note">Portable recordings for the inspector, the CLI and WebMCP</p>
+<nav class="links" aria-label="Portable recordings">
+<a href="traces/policy-v2.3.json">Policy v2.3</a>
+<a href="traces/policy-v2.2.json">Policy v2.2</a>
+<a href="traces/november-audit.json">November audit</a>
+<a href="traces/policy-holdout.json">First fresh check</a>
+<a href="traces/decision-models.json">Decision models</a>
+<a href="traces/terminal-episodes.json">Terminal episodes</a>
+<a href="traces/paired-benchmark.json">Paired benchmark</a>
+</nav>
+</main>
+</body>
+</html>

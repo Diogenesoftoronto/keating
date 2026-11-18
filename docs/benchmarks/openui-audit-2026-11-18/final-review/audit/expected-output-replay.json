@@ -1,0 +1,145 @@
+{
+  "measuredPolicy": "keating-teaching-policy/v2.3.4",
+  "replayPolicy": "keating-teaching-policy/v2.3.5",
+  "paidCalls": 0,
+  "rows": [
+    {
+      "cell": "js-largest--minimax--jev",
+      "attempt": 1,
+      "tutorDraftSha256": "39709d3c959e9e7069f041ca3db26190dcef36f685602bab9c07232a17d03955",
+      "planSha256": "1587d811f6b73bb86db5269dc401ce65e31c2cc748f7c96c4b94e7f1ccc89b70",
+      "reviewSha256": "b6504c8a673a1dc63d0d7f32663223d8017115497167bbf888122a5f53955e5b",
+      "originalCell": "released",
+      "originalAttempt": "pass",
+      "originalBlocking": [],
+      "singleCandidateNow": "released",
+      "newlyScoped": null,
+      "rawCheckpoint": {
+        "id": "checkpoint_answer_leaked",
+        "status": "pass",
+        "source": "jev",
+        "severity": "major",
+        "probability": 0.24
+      },
+      "blockingNow": [],
+      "advisoryTrace": 0.81
+    },
+    {
+      "cell": "odd-filter--minimax--google",
+      "attempt": 1,
+      "tutorDraftSha256": "73b4a2389fe9f07dc33a03ee0227daa29322f74b0286d3658d6c0490b3ddd5c2",
+      "planSha256": "4476a1a35ae839203f34db8aaccc86da49d7bd4ec6f891407040bc4c7c4a873d",
+      "reviewSha256": "3bbe2c0ec869e27fe6b8392ff2ce9a4bc9c82de56d564b02d94b02d86b906089",
+      "originalCell": "released",
+      "originalAttempt": "pass",
+      "originalBlocking": [],
+      "singleCandidateNow": "released",
+      "newlyScoped": null,
+      "rawCheckpoint": {
+        "id": "checkpoint_answer_leaked",
+        "status": "pass",
+        "source": "jev",
+        "severity": "major",
+        "probability": 0.03854451349393371
+      },
+      "blockingNow": [],
+      "advisoryTrace": 0.18586339228311935
+    },
+    {
+      "cell": "js-largest--minimax--google",
+      "attempt": 1,
+      "tutorDraftSha256": "a6cde7818072ddfcd0df8bf4bf5595905b1ca20f8e678cbae6b062e689cbc008",
+      "planSha256": "1587d811f6b73bb86db5269dc401ce65e31c2cc748f7c96c4b94e7f1ccc89b70",
+      "reviewSha256": "c5511910379342b2c7d94884a20a48201a5a18619c98ce144e4a2df58f825d1b",
+      "originalCell": "released",
+      "originalAttempt": "pass",
+      "originalBlocking": [],
+      "singleCandidateNow": "released",
+      "newlyScoped": null,
+      "rawCheckpoint": {
+        "id": "checkpoint_answer_leaked",
+        "status": "pass",
+        "source": "jev",
+        "severity": "major",
+        "probability": 0.09271898445395087
+      },
+      "blockingNow": [],
+      "advisoryTrace": 0.25057705929360663
+    },
+    {
+      "cell": "odd-filter--minimax--jev",
+      "attempt": 1,
+      "tutorDraftSha256": "44480dee3df7db4ca342d5e2cc2467f85d286beb60a5ec79489954f0b70f84d8",
+      "planSha256": "4476a1a35ae839203f34db8aaccc86da49d7bd4ec6f891407040bc4c7c4a873d",
+      "reviewSha256": "8df6a7ec42e030575c94470f58852206b7ed63bd42744e238b9bfe856f1d4dcd",
+      "originalCell": "withheld",
+      "originalAttempt": "fail",
+      "originalBlocking": [
+        "checkpoint_answer_leaked"
+      ],
+      "singleCandidateNow": "released",
+      "newlyScoped": "debugging-expected-output",
+      "rawCheckpoint": {
+        "id": "checkpoint_answer_leaked",
+        "status": "fail",
+        "source": "jev",
+        "severity": "major",
+        "probability": 0.89
+      },
+      "blockingNow": [],
+      "advisoryTrace": 0.73
+    },
+    {
+      "cell": "odd-filter--minimax--jev",
+      "attempt": 2,
+      "tutorDraftSha256": "23b9d788f05ff2cf8ae5cebf0afbc0ff26d62729ea4a603b86bd170a9901d0e2",
+      "planSha256": "4476a1a35ae839203f34db8aaccc86da49d7bd4ec6f891407040bc4c7c4a873d",
+      "reviewSha256": "b76bfa80ac483a9ca36ae7d9665f868b62bbf30d0d346c820045286ae55c17ea",
+      "originalCell": "withheld",
+      "originalAttempt": "fail",
+      "originalBlocking": [
+        "checkpoint_answer_leaked"
+      ],
+      "singleCandidateNow": "released",
+      "newlyScoped": "debugging-expected-output",
+      "rawCheckpoint": {
+        "id": "checkpoint_answer_leaked",
+        "status": "fail",
+        "source": "jev",
+        "severity": "major",
+        "probability": 0.67
+      },
+      "blockingNow": [],
+      "advisoryTrace": 0.8
+    },
+    {
+      "cell": "odd-filter--minimax--jev",
+      "attempt": 3,
+      "tutorDraftSha256": "d1d478648fb32248410bef8eeb3e0544721f02a7e7de6e6cf6e5d87339e3c4b2",
+      "planSha256": "4476a1a35ae839203f34db8aaccc86da49d7bd4ec6f891407040bc4c7c4a873d",
+      "reviewSha256": "35909ababe1778f2530bf3bece1086485fc39c98fbcd0d49341118680efcf552",
+      "originalCell": "withheld",
+      "originalAttempt": "fail",
+      "originalBlocking": [
+        "checkpoint_answer_leaked",
+        "checkpoint_continued",
+        "debug_example_unwitnessed"
+      ],
+      "singleCandidateNow": "withheld",
+      "newlyScoped": null,
+      "rawCheckpoint": {
+        "id": "checkpoint_answer_leaked",
+        "status": "fail",
+        "source": "jev",
+        "severity": "major",
+        "probability": 0.84
+      },
+      "blockingNow": [
+        "checkpoint_answer_leaked",
+        "checkpoint_continued",
+        "debug_example_unwitnessed"
+      ],
+      "advisoryTrace": 0.71
+    }
+  ]
+}

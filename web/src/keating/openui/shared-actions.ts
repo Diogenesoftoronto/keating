@@ -407,6 +407,25 @@ export function simulationDefaultValues(node: UiSimulationNode): Record<string, 
 }
 
 /**
+ * The graph a simulation opens on, before the learner chooses anything.
+ *
+ * The output is the readout the author emphasised, else the first one. The
+ * input is the first authored parameter that output actually depends on, so the
+ * parameter an author lists first is the one the learner is shown varying; a
+ * later assumption the same expression happens to mention never displaces it.
+ * An output no parameter reaches falls back to the first parameter.
+ */
+export function simulationDefaultView(node: UiSimulationNode): { parameterId?: string; readoutId?: string } {
+	const parameterIds = node.parameters.map((parameter) => parameter.id);
+	const usable = node.readouts.filter((item) => parseSimulationExpression(item.expr, parameterIds).ok);
+	const readout = usable.find((item) => item.emphasis) ?? usable[0] ?? node.readouts.find((item) => item.emphasis) ?? node.readouts[0];
+	const parsed = readout ? parseSimulationExpression(readout.expr, parameterIds) : undefined;
+	const depends = parsed?.ok ? parsed.parameters : [];
+	const parameterId = parameterIds.find((id) => depends.includes(id)) ?? parameterIds[0];
+	return { ...(parameterId ? { parameterId } : {}), ...(readout ? { readoutId: readout.id } : {}) };
+}
+
+/**
  * Restore exactly what the learner left. Anything unreadable, foreign to this
  * node, or out of the authored range falls back to the authored default for
  * that field; this never throws.

@@ -1,0 +1,680 @@
+{
+  "id": "review--authentic-confirmation--jev",
+  "caseId": "authentic-confirmation",
+  "arm": "jev",
+  "kind": "fixed-review",
+  "policy": "keating-teaching-policy/v2.3.6",
+  "learner": "My guess is round, because three of the four tiles are round.",
+  "originalHistory": [
+    {
+      "role": "user",
+      "content": "I drop one square tile into a bag, then add three round tiles. Before you explain, can I guess the shape I'm most likely to draw?",
+      "timestamp": 1
+    },
+    {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 17955,
+        "output": 510,
+        "cacheRead": 187,
+        "cacheWrite": 0,
+        "totalTokens": 18652,
+        "cost": {
+          "input": 0.010773,
+          "output": 0.001224,
+          "cacheRead": 0.00001122,
+          "cacheWrite": 0,
+          "total": 0.012008219999999998
+        },
+        "reasoning": 306,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Good instinct to predict first — let's commit to an answer before I explain anything.\n\n```openui lifecycle=ephemeral id=tile-draw-prediction\n\nroot = LearningSurface([guess], \"Before the explanation\", \"Make a prediction, then I'll show why.\", \"ephemeral\")\nguess = Question([{ header: \"Your prediction\", question: \"The bag holds 4 tiles: 1 square and 3 round. You reach in and draw one tile at random. Which shape are you most likely to draw?\", type: \"choice\", choices: [\"Square\", \"Round\", \"Both are equally likely\", \"There isn't enough information to say\"], allowText: true, hint: \"Think about how many of each shape are in the bag, not about the order they went in.\" }], \"ephemeral\", \"Probability of a random draw\", \"Pick the shape you think is most likely — or write your own reasoning.\")\n\n```"
+        }
+      ]
+    }
+  ],
+  "parentSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+  "fixedCandidateSha256": "8d3d4489373c5aa779f345b11dc9aec64421f3382ebd9fddbf1eefe31a072a72",
+  "plan": {
+    "status": "guided",
+    "action": "none",
+    "offered": [],
+    "directives": [
+      "Respond to the learner's actual reasoning before choosing the next step.",
+      "Honor the requested plain reply. Give the answer in the requested form and stop.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence."
+    ],
+    "decisions": {
+      "direct_answer_requested": false,
+      "explanation_requested": false,
+      "learner_stuck": false,
+      "attempt_present": true,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": false,
+      "plain_reply_requested": true,
+      "assessment_declined": false,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": true,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": false,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "features": {
+      "variable_relationship": true,
+      "ordered_procedure": false,
+      "discrete_recall": false,
+      "structure_relations": false,
+      "category_distinction": null,
+      "prediction_opportunity": true,
+      "learner_response_due": false,
+      "hands_on_requested": false,
+      "executable_code": false,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "reason": "plain-reply",
+    "codePracticeLanguage": null
+  },
+  "refs": [
+    {
+      "label": "common-plan/correct",
+      "entryId": "common-plan/correct",
+      "source": "live",
+      "requestSha256": "ea9cc126605b759b1d0c73a8c1a5d181cf25bd83605b4105c33da94af956f49b",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null,
+      "stage": "plan",
+      "arm": "jev"
+    },
+    {
+      "label": "review--authentic-confirmation--jev/review/1",
+      "entryId": "review--authentic-confirmation--jev/review/1",
+      "source": "live",
+      "requestSha256": "a54df9e863059e3343def542f3dc261e69fe1577257aa6da8befbcbb29e6ce12",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null,
+      "stage": "review",
+      "arm": "jev"
+    }
+  ],
+  "reviewSha256": "a54df9e863059e3343def542f3dc261e69fe1577257aa6da8befbcbb29e6ce12",
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 10068,
+          "output": 162,
+          "cacheRead": 188,
+          "cacheWrite": 0,
+          "totalTokens": 10418,
+          "cost": {
+            "input": 0.0060408,
+            "output": 0.00038879999999999996,
+            "cacheRead": 0.000011279999999999999,
+            "cacheWrite": 0,
+            "total": 0.0064408799999999995
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 100
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Yes—your reasoning is correct. Since 3 of the 4 tiles are round, the probability of drawing a round tile is **3/4 (75%)**, while drawing a square is **1/4 (25%)**. The order in which the tiles were added does not affect the random draw."
+          }
+        ]
+      },
+      "text": "Yes—your reasoning is correct. Since 3 of the 4 tiles are round, the probability of drawing a round tile is **3/4 (75%)**, while drawing a square is **1/4 (25%)**. The order in which the tiles were added does not affect the random draw.",
+      "toolCalls": [],
+      "attempted": false,
+      "components": [],
+      "outsideWords": 43,
+      "origin": "fixed",
+      "entryId": null,
+      "completed": true,
+      "providedDirectives": true,
+      "toolNames": []
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.35
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.14
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.43
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.5,
+          "applicability": "feedback-on-attempt"
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.08
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.25
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.07
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.02
+        },
+        {
+          "id": "law_authority_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "law_jurisdiction_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "medicine_evidence_conflated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "history_disagreement_erased",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "psychology_replication_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "politics_normative_as_fact",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06999999999999995,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.13,
+          "status": "pass"
+        },
+        {
+          "id": "checkpoint_feedback_unsupported",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02,
+          "status": "pass"
+        }
+      ],
+      "variant": "default",
+      "attemptedCheckpointFeedback": {
+        "attempt": {
+          "type": "choice",
+          "choice": "answered",
+          "probabilities": {
+            "answered": 0.98,
+            "open": 0.02,
+            "unrelated": 0,
+            "uncertain": 0
+          },
+          "confidence": 0.97
+        },
+        "feedback": {
+          "type": "choice",
+          "choice": "grounded_confirmation",
+          "probabilities": {
+            "grounded_confirmation": 0.97,
+            "grounded_correction": 0,
+            "unsupported": 0.02,
+            "other": 0,
+            "uncertain": 0.01
+          },
+          "confidence": 0.96
+        }
+      }
+    }
+  ],
+  "disposition": "released",
+  "notice": null,
+  "selectedAttempt": 1,
+  "selectionRule": "none",
+  "releaseReason": null,
+  "public": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 10068,
+        "output": 162,
+        "cacheRead": 188,
+        "cacheWrite": 0,
+        "totalTokens": 10418,
+        "cost": {
+          "input": 0.0060408,
+          "output": 0.00038879999999999996,
+          "cacheRead": 0.000011279999999999999,
+          "cacheWrite": 0,
+          "total": 0.0064408799999999995
+        },
+        "reasoning": 100,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Yes—your reasoning is correct. Since 3 of the 4 tiles are round, the probability of drawing a round tile is **3/4 (75%)**, while drawing a square is **1/4 (25%)**. The order in which the tiles were added does not affect the random draw."
+        }
+      ]
+    },
+    "text": "Yes—your reasoning is correct. Since 3 of the 4 tiles are round, the probability of drawing a round tile is **3/4 (75%)**, while drawing a square is **1/4 (25%)**. The order in which the tiles were added does not affect the random draw.",
+    "toolCalls": [],
+    "attempted": false,
+    "components": [],
+    "outsideWords": 43
+  },
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 10068,
+        "output": 162,
+        "cacheRead": 188,
+        "cacheWrite": 0,
+        "totalTokens": 10418,
+        "cost": {
+          "input": 0.0060408,
+          "output": 0.00038879999999999996,
+          "cacheRead": 0.000011279999999999999,
+          "cacheWrite": 0,
+          "total": 0.0064408799999999995
+        },
+        "reasoning": 100,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Yes—your reasoning is correct. Since 3 of the 4 tiles are round, the probability of drawing a round tile is **3/4 (75%)**, while drawing a square is **1/4 (25%)**. The order in which the tiles were added does not affect the random draw."
+        }
+      ]
+    },
+    "text": "Yes—your reasoning is correct. Since 3 of the 4 tiles are round, the probability of drawing a round tile is **3/4 (75%)**, while drawing a square is **1/4 (25%)**. The order in which the tiles were added does not affect the random draw.",
+    "toolCalls": []
+  },
+  "missing": null
+}

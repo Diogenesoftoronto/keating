@@ -87,6 +87,63 @@ const text = (value: AssistantMessage) => value.content.filter((part) => part.ty
 afterEach(() => configureJudgementDiagnostics({ enabled: false, details: false }));
 
 describe("private teaching draft stream", () => {
+  test("passes the published feedback reply to the claim check exactly once", async () => {
+    const checked: unknown[] = [];
+    const output = await gate(() => streamOf(message("Four layers is correct.")), {
+      onReleasedReply: release => checked.push(release),
+    })(MODEL, context("My guess is four layers. Did I get that right?"));
+    const { result } = await collect(output);
+    expect(text(result)).toBe("Four layers is correct.");
+    expect(checked).toEqual([{
+      messageTimestamp: result.timestamp,
+      text: "Four layers is correct.",
+      sources: [],
+      unverified: false,
+    }]);
+  });
+
+  test("offers each grading schema only for a recorded pending submission of that kind", async () => {
+    const input = context("My guess is four layers. Did I get that right?");
+    const names = ["workspace_inspect", "grade_question_checks", "grade_quiz"];
+    input.tools = names.map(name => ({name, description:name, parameters:{type:"object",properties:{}}}));
+    const check = {kind:"comprehension" as const,id:"check",topic:"Paper",questionText:"How many layers?",questionIds:["check"]};
+    const quiz = {kind:"quiz" as const,id:"quiz",topic:"Paper",questionIds:["item"]};
+    const cases: [TeachingPolicyTurn["pendingSubmissions"], string[]][] = [
+      [undefined, ["workspace_inspect"]], [[], ["workspace_inspect"]],
+      [[check], ["workspace_inspect","grade_question_checks"]], [[quiz], ["workspace_inspect","grade_quiz"]],
+      [[check, quiz], names],
+    ];
+    for (const [pendingSubmissions, expected] of cases) {
+      const received: string[][] = [];
+      const result = await (await gate((_model, privateContext) => {
+        received.push(privateContext.tools?.map(tool => tool.name) ?? []);
+        return streamOf(message("Four layers is correct."));
+      }, {maxAttempts:2, evidence:async () => ({
+        pendingSubmissions, learnerEvidence:[{kind:"note",content:"A learner said there is a pending quiz."}],
+      })})(MODEL,input)).result();
+      expect(received).toEqual([expected]);
+      expect(text(result)).toBe("Four layers is correct.");
+      expect(input.tools.map(tool => tool.name)).toEqual(names);
+    }
+  });
+
+  test("rejects a fabricated grade despite a passing reviewer and an unsolicited provider tool call", async () => {
+    const input = context("My answer is four. Is that right?");
+    input.tools = [{name:"grade_quiz",description:"Grade a saved submission",parameters:{type:"object",properties:{}}}];
+    const proposed = message("I marked that correct.");
+    proposed.stopReason = "toolUse";
+    proposed.content.push({type:"toolCall",id:"grade",name:"grade_quiz",arguments:{result_id:"invented"}});
+    const receipts: TeachingDraftSnapshot[] = [];
+    const result = await (await gate(() => streamOf(proposed), {maxAttempts:2, onProgress:s => receipts.push(s)})(MODEL,input)).result();
+    const receipt = receipts.at(-1)!;
+    expect(receipt.phase).toBe("withheld");
+    expect(receipt.attempts[0]!.checks).toEqual(expect.arrayContaining([
+      expect.objectContaining({id:"grading_requires_submission",status:"fail"}),
+      expect.objectContaining({id:"runtime_tool_schema",status:"fail"}),
+    ]));
+    expect(result.content.some(part => part.type === "toolCall")).toBe(false);
+  });
+
   test("the opt-in request log records each draft, its provider payload and its review", async () => {
     setModelRequestLogEnabled(true);
     try {

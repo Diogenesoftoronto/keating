@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "id": "keating-final-review-expected-result-and-typed-feedback",
+  "policy": "keating-teaching-policy/v2.3.5",
+  "protocolSha256": "817d4156dc6fa84f47a1dd234529f82d91822aeb2274dcb8df8ab139a3fef177",
+  "scheduled": 2,
+  "eligible": 2,
+  "publicReplies": 1,
+  "receipts": {
+    "multiples-loop--minimax--jev": "10696fd73d163fe40a97daa91b174f128521d84d5874a3a0b579f14030357943",
+    "tile-bag-confirm--minimax--jev": "4f17f82ba12d94c8b4bab79362c43ba38020026d8093023014291df52e42d7f1"
+  },
+  "providerRequests": 10,
+  "unknownUsage": 0,
+  "previousBoundUsd": 2.62591275,
+  "newBoundUsd": 0.04520211,
+  "totalBoundUsd": 2.67111486,
+  "peakReservationUsd": 2.784321426,
+  "capUsd": 10
+}

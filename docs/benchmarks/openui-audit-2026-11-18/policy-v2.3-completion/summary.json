@@ -1,0 +1,62 @@
+{
+  "policy": "keating-teaching-policy/v2.3",
+  "scheduled": 4,
+  "rows": [
+    {
+      "id": "filling-line--jev",
+      "kind": "live",
+      "status": "released",
+      "offered": [
+        "Simulation"
+      ],
+      "planReason": null,
+      "selected": [
+        "simulation"
+      ],
+      "nativeRequested": false,
+      "selectedAttempt": 1,
+      "drafts": 1
+    },
+    {
+      "id": "filling-line--google",
+      "kind": "live",
+      "status": "provider-error",
+      "offered": [
+        "Simulation",
+        "ConceptMap"
+      ],
+      "planReason": null,
+      "selected": null,
+      "nativeRequested": null,
+      "selectedAttempt": null,
+      "drafts": 1
+    },
+    {
+      "id": "python-practice--jev",
+      "kind": "live",
+      "status": "released",
+      "offered": [],
+      "planReason": "no-supported-family",
+      "selected": [],
+      "nativeRequested": false,
+      "selectedAttempt": 2,
+      "drafts": 2
+    },
+    {
+      "id": "python-practice--google",
+      "kind": "live",
+      "status": "released",
+      "offered": [
+        "Question"
+      ],
+      "planReason": null,
+      "selected": [],
+      "nativeRequested": false,
+      "selectedAttempt": 2,
+      "drafts": 2
+    }
+  ],
+  "providerRequests": 15,
+  "incrementalBoundUsd": 0.17946669,
+  "cumulativeBoundUsd": 1.912935216
+}

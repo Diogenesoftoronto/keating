@@ -11,6 +11,8 @@
 import { useCallback, useEffect, useRef, type MutableRefObject } from "react";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import type { FlueConversation } from "../../keating/flue/conversation";
+import { savedNativePageRefs } from "../../keating/openui/native-page-evidence";
+import { diagnosticConversationId, openUIDiagnosticStore } from "../../keating/openui/turn-diagnostics";
 import { keatingLifecycle } from "../../keating/lifecycle";
 import { detectTopicCategoryShift } from "../../keating/topic-shift-hook";
 import { getProviderApiKey } from "../../lib/provider-models";
@@ -75,8 +77,9 @@ export function useSessionPersistence(refs: AgentHostRefs): SessionPersistence {
         const model = agent.context.model;
         const thinkingLevel = agent.context.thinkingLevel;
         const now = new Date().toISOString();
+        const capturedMessages = agent.context.messages.slice();
         const snapshot = messagesForSessionSnapshot(
-          agent.context.messages,
+          capturedMessages,
           agent.context.streamingMessage,
         );
         const messages = snapshot.messages;
@@ -95,6 +98,12 @@ export function useSessionPersistence(refs: AgentHostRefs): SessionPersistence {
         });
 
         await sessions.save(record.data, record.metadata);
+        try {
+          const refs = savedNativePageRefs(capturedMessages);
+          if (refs.length) void openUIDiagnosticStore.settled().then(() => {
+            for (const ref of refs) openUIDiagnosticStore.nativeObservation(diagnosticConversationId(sessionId), [ref], { saved: true });
+          }).catch(() => {});
+        } catch { /* Diagnostics are independent of the durable session save. */ }
         sessionSnapshotsRef.current.remember(agent, stamp);
         window.dispatchEvent(new CustomEvent("keating:sessions-changed"));
 

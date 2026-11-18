@@ -1,0 +1,295 @@
+{
+  "id": "gemini-3.1-flash-lite--prediction",
+  "scenario": "prediction",
+  "model": "gemini-3.1-flash-lite",
+  "startedAt": "2026-11-18T12:52:50.394Z",
+  "judge": [
+    {
+      "phase": "plan",
+      "hash": "877d6e53fbfadfcac9c5a7c304579d5b974bddcfff0942cf027b40e561ab5f06",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 3521,
+        "outputTokens": 674
+      },
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.16
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.52
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.81
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.8
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.55
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.13
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.08
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 0.97
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.41
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.25
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.25
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.39
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.25
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.07
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.07
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.08
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 0.96,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.23,
+            "1": 0.59,
+            "2": 0.18,
+            "3": 0
+          },
+          "confidence": 0.59
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.11,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.91,
+            "1": 0.08,
+            "2": 0.01,
+            "3": 0
+          },
+          "confidence": 0.9
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 0.71,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.58,
+            "1": 0.18,
+            "2": 0.18,
+            "3": 0.06
+          },
+          "confidence": 0.28
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "supported",
+          "probabilities": {
+            "concise": 0.35,
+            "supported": 0.61,
+            "deep": 0.04
+          },
+          "confidence": 0.42
+        }
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "31d4f177e249c02870e4d1abab281d73675f688c693d3ddd2a2d292b258600b2",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5782,
+        "outputTokens": 896
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha": "93258c674c00e549624766751a5a9798ae155b1cf68dec4e8f4c8bdf1b76dd6a",
+      "messagesSha": "0ec9fe70f4bd6e97791ae82e071949ed7151262ab7f0d4809760f064552f702c",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "```openui lifecycle=ephemeral id=coin-flip-prediction\n\nroot = LearningSurface([prediction], \"Predict the next flip\", \"Your prediction helps us explore how probability works.\", \"ephemeral\")\nprediction = Question([{ \n  question: \"Given the coin is fair and just landed heads four times, what is the probability that the next flip will be tails?\", \n  type: \"choice\", \n  choices: [\"Less than 50%\", \"Exactly 50%\", \"More than 50%\"], \n  allowText: true, \n  hint: \"Consider whether the coin has a memory of its previous results.\" \n}], \"ephemeral\", \"Coin flip probability\", \"Select your prediction.\")\n```",
+        "toolNames": [],
+        "requestedModel": "gemini-3.1-flash-lite",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 18428,
+          "output": 156,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "counterfactual": {
+    "systemSha": "52a969944cd9e5848a4f79e190ec62a43bc5e2d8d5b527d3d20af1396edcc977",
+    "messagesSha": "0ec9fe70f4bd6e97791ae82e071949ed7151262ab7f0d4809760f064552f702c",
+    "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+    "response": {
+      "text": "```openui lifecycle=ephemeral id=coin-flip-prediction\n\nroot = LearningSurface([prediction], \"Predict the next flip\", \"Your prediction helps us explore the gambler's fallacy.\", \"ephemeral\")\nprediction = Question([{ question: \"Given the last four flips were heads, what is the probability that the next flip is tails?\", type: \"choice\", choices: [\"Less than 50%\", \"Exactly 50%\", \"More than 50%\"], allowText: true, hint: \"Consider whether the coin has a memory of its previous results.\" }], \"ephemeral\", \"Coin flip probability\", \"Select your prediction.\")\n```",
+      "toolNames": [],
+      "requestedModel": "gemini-3.1-flash-lite",
+      "responseModel": null,
+      "stop": "stop",
+      "errorClass": null,
+      "usage": {
+        "input": 10251,
+        "output": 136,
+        "cacheRead": 8145,
+        "cacheWrite": 0
+      }
+    }
+  },
+  "decision": {
+    "action": "create",
+    "families": [
+      {
+        "family": "question",
+        "components": [
+          "Question"
+        ]
+      }
+    ],
+    "features": [
+      "prediction_opportunity"
+    ],
+    "paired": false
+  },
+  "offer": "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining. Prose is acceptable when it serves the learner better.",
+  "phase": "released",
+  "selection": 1,
+  "reason": null,
+  "release": {
+    "text": "```openui lifecycle=ephemeral id=coin-flip-prediction\n\nroot = LearningSurface([prediction], \"Predict the next flip\", \"Your prediction helps us explore how probability works.\", \"ephemeral\")\nprediction = Question([{ \n  question: \"Given the coin is fair and just landed heads four times, what is the probability that the next flip will be tails?\", \n  type: \"choice\", \n  choices: [\"Less than 50%\", \"Exactly 50%\", \"More than 50%\"], \n  allowText: true, \n  hint: \"Consider whether the coin has a memory of its previous results.\" \n}], \"ephemeral\", \"Coin flip probability\", \"Select your prediction.\")\n```",
+    "unverified": false
+  },
+  "publicText": "```openui lifecycle=ephemeral id=coin-flip-prediction\n\nroot = LearningSurface([prediction], \"Predict the next flip\", \"Your prediction helps us explore how probability works.\", \"ephemeral\")\nprediction = Question([{ \n  question: \"Given the coin is fair and just landed heads four times, what is the probability that the next flip will be tails?\", \n  type: \"choice\", \n  choices: [\"Less than 50%\", \"Exactly 50%\", \"More than 50%\"], \n  allowText: true, \n  hint: \"Consider whether the coin has a memory of its previous results.\" \n}], \"ephemeral\", \"Coin flip probability\", \"Select your prediction.\")\n```",
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "pass",
+      "checks": []
+    }
+  ],
+  "directives": [
+    "- Respond to the learner's actual reasoning before choosing the next step.",
+    "- Identify the specific mistaken step and offer a targeted hint or contrasting example.",
+    "- Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+    "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining. Prose is acceptable when it serves the learner better.",
+    "- If you pose a question or quiz, stop and wait for the learner's answer. Do not answer it yourself."
+  ],
+  "finishedAt": "2026-11-18T12:52:55.029Z"
+}

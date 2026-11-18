@@ -1,0 +1,36 @@
+{
+  "policy": "keating-teaching-policy/v2.3.5",
+  "parentReceiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+  "typedReceiptSha256": "4f17f82ba12d94c8b4bab79362c43ba38020026d8093023014291df52e42d7f1",
+  "beforeTyping": {
+    "openInteractions": [
+      {
+        "documentId": "openui-pktwwm-tile-draw-prediction",
+        "nodeId": "guess",
+        "component": "question-group",
+        "state": "awaiting"
+      }
+    ],
+    "pendingSubmissions": 0
+  },
+  "afterTyping": {
+    "openInteractions": [
+      {
+        "documentId": "openui-pktwwm-tile-draw-prediction",
+        "nodeId": "guess",
+        "component": "question-group",
+        "state": "awaiting"
+      }
+    ],
+    "pendingSubmissions": 0
+  },
+  "questionSubmits": 0,
+  "followupDispatches": 0,
+  "canceledBeforeModel": 1,
+  "transport": [
+    {
+      "kind": "recorded-public-message",
+      "status": 200
+    }
+  ]
+}

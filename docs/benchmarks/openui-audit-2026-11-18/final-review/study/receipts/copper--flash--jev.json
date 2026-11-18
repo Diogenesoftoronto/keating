@@ -1,0 +1,172 @@
+{
+  "id": "copper--flash--jev",
+  "caseId": "copper",
+  "kind": "primary",
+  "tutor": "flash",
+  "arm": "jev",
+  "prompt": "What is the chemical symbol for copper? Just the symbol, please.",
+  "originalHistory": [],
+  "plan": {
+    "status": "guided",
+    "action": "none",
+    "offered": [],
+    "families": [],
+    "reason": "plain-reply",
+    "codePracticeLanguage": null,
+    "features": {
+      "variable_relationship": false,
+      "ordered_procedure": false,
+      "discrete_recall": true,
+      "structure_relations": false,
+      "category_distinction": false,
+      "prediction_opportunity": false,
+      "learner_response_due": false,
+      "hands_on_requested": false,
+      "executable_code": false,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "decisions": {
+      "direct_answer_requested": true,
+      "explanation_requested": false,
+      "learner_stuck": false,
+      "attempt_present": false,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": false,
+      "plain_reply_requested": true,
+      "assessment_declined": false,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": true,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": null,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "directives": [
+      "Answer the bounded question directly; do not start a diagnostic interview.",
+      "Honor the requested plain reply. Give the answer in the requested form and stop.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence."
+    ]
+  },
+  "refs": [
+    {
+      "label": "copper--flash--jev/plan",
+      "entryId": "copper--flash--jev/plan",
+      "source": "live",
+      "requestSha256": "1ff6cfae0c383ac445df755a37ecba1551c57641bf0b0e4034e01eed70ba9d07",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    }
+  ],
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "google-generative-ai",
+        "provider": "google",
+        "model": "gemini-3.1-flash-lite",
+        "stopReason": "error",
+        "timestamp": 1,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "totalTokens": 0,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "content": []
+      },
+      "text": "",
+      "toolCalls": [],
+      "attempted": false,
+      "components": [],
+      "outsideWords": 0,
+      "entryId": "copper--flash--jev/tutor/1",
+      "completed": false,
+      "providedDirectives": true,
+      "systemSha256": "a7461f00c29ce84f9b41e9b0ef9cdfda77d88236bb95a4fff780d9651b9190e1"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "generation-error",
+      "checks": [],
+      "variant": "default"
+    },
+    {
+      "attempt": 2,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "generation-error",
+      "checks": [],
+      "variant": "default"
+    },
+    {
+      "attempt": 3,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "generation-error",
+      "checks": [],
+      "variant": "default"
+    }
+  ],
+  "selectedAttempt": null,
+  "disposition": "provider-error",
+  "missing": "tutor-503-error",
+  "public": null,
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "google-generative-ai",
+      "provider": "google",
+      "model": "gemini-3.1-flash-lite",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 0,
+        "output": 0,
+        "cacheRead": 0,
+        "cacheWrite": 0,
+        "totalTokens": 0,
+        "cost": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "total": 0
+        }
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "<!--keating:review=withheld-->\nThe reply model failed before producing a complete draft. Try again or check the reply model and connection in Settings.\n\nFailure: generation-unavailable. Draft attempts: 3; completed drafts: 0."
+        }
+      ]
+    },
+    "text": "<!--keating:review=withheld-->\nThe reply model failed before producing a complete draft. Try again or check the reply model and connection in Settings.\n\nFailure: generation-unavailable. Draft attempts: 3; completed drafts: 0.",
+    "toolCalls": []
+  },
+  "notice": "withheld",
+  "elapsedMs": 2634
+}

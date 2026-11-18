@@ -1,0 +1,235 @@
+{
+  "policy": "keating-teaching-policy/v2.1",
+  "dateUtc": "2026-11-18",
+  "manifestSha256": "c19b82104c42411bb9ed63604f44ece2e4583bc6770830c8a90ceb50f2e37aec",
+  "model": "jev-1.14.0",
+  "checkpointReplay": {
+    "reviewed": 9,
+    "approvedBefore": 1,
+    "approvedAfter": 6,
+    "heldAfter": 3,
+    "notes": "The incoming nine drafts, their trimmed bytes, the fresh v2 review questions and every Jev probability are identical in both conditions. This is an offline release-policy comparison on a selected synthetic cohort.",
+    "rows": [
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction/1",
+        "before": "withheld",
+        "after": "released",
+        "reviewRequestSha256": "b54df070d56c4763a00a6b0e405e5e34791f99db95970e7dae7445fc2c4a926c",
+        "remainingBlockers": [],
+        "uncertainRepetition": 0.48,
+        "leakProbability": 0.13
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction/2",
+        "before": "released",
+        "after": "released",
+        "reviewRequestSha256": "a629689f76e4e52de182a4fe893eb99d4346a76d956452ed59b3c400ab28abd9",
+        "remainingBlockers": [],
+        "uncertainRepetition": null,
+        "leakProbability": 0.37
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--order/2",
+        "before": "withheld",
+        "after": "withheld",
+        "reviewRequestSha256": "2edb62c9e43f1bc927b4db6126d86f9b8f252315fd3075a40b75244bf178198c",
+        "remainingBlockers": [
+          {
+            "id": "checkpoint_answer_leaked",
+            "status": "unknown",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.51
+          }
+        ],
+        "uncertainRepetition": 0.51,
+        "leakProbability": 0.51
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--recall/2",
+        "before": "withheld",
+        "after": "withheld",
+        "reviewRequestSha256": "5185ba08bb39e2570c0e3b84e42079d275d9254e93e95fd91da5d531bd20505b",
+        "remainingBlockers": [
+          {
+            "id": "checkpoint_repeated",
+            "status": "fail",
+            "source": "jev",
+            "severity": "minor",
+            "probability": 0.64
+          }
+        ],
+        "uncertainRepetition": null,
+        "leakProbability": 0.28
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--code/2",
+        "before": "withheld",
+        "after": "withheld",
+        "reviewRequestSha256": "b6838d8a5706f884b3fd973c344f66b08e39a87686578075b88ceb9dcaaa3f4d",
+        "remainingBlockers": [
+          {
+            "id": "checkpoint_answer_leaked",
+            "status": "fail",
+            "source": "jev",
+            "severity": "major",
+            "probability": 0.74
+          }
+        ],
+        "uncertainRepetition": 0.44,
+        "leakProbability": 0.74
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction--repeat-1/1",
+        "before": "withheld",
+        "after": "released",
+        "reviewRequestSha256": "c098a90ea523fd309ae0515bf4e2afdf62056080b6a1698c13e703459540b1d7",
+        "remainingBlockers": [],
+        "uncertainRepetition": 0.44,
+        "leakProbability": 0.22
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction--repeat-1/2",
+        "before": "withheld",
+        "after": "released",
+        "reviewRequestSha256": "9e9b525dbc9578321d4d8cd81a18bdcaca1b713cffcb45f15a1c7d4f0935041a",
+        "remainingBlockers": [],
+        "uncertainRepetition": 0.44,
+        "leakProbability": 0.11
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction--repeat-3/1",
+        "before": "withheld",
+        "after": "released",
+        "reviewRequestSha256": "0ab75662a551628e6870f7372d8776a22e0d62b905a4dd88a71beb12add400bf",
+        "remainingBlockers": [],
+        "uncertainRepetition": 0.42,
+        "leakProbability": 0.31
+      },
+      {
+        "id": "MiniMax-M2.7-highspeed--prediction--repeat-3/2",
+        "before": "withheld",
+        "after": "released",
+        "reviewRequestSha256": "738ea62a59911b5107110022b4507414aee1733d5b77e40c6a22814308925125",
+        "remainingBlockers": [],
+        "uncertainRepetition": 0.49,
+        "leakProbability": 0.27
+      }
+    ]
+  },
+  "freshPlanning": {
+    "cases": 6,
+    "decisionMatches": 6,
+    "offerMatches": 5,
+    "rows": [
+      {
+        "id": "pause-after-questioning",
+        "expected": {
+          "declined": true,
+          "mode": "no-assessment"
+        },
+        "action": "none",
+        "offered": [],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true,
+        "declinedProbability": 0.98,
+        "plainReplyProbability": 0.2
+      },
+      {
+        "id": "brief-explanation",
+        "expected": {
+          "declined": true,
+          "mode": "none"
+        },
+        "action": "none",
+        "offered": [],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true,
+        "declinedProbability": 0.98,
+        "plainReplyProbability": 0.93
+      },
+      {
+        "id": "debug-without-quiz",
+        "expected": {
+          "declined": true,
+          "mode": "no-assessment"
+        },
+        "action": "none",
+        "offered": [],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true,
+        "declinedProbability": 0.93,
+        "plainReplyProbability": 0.64
+      },
+      {
+        "id": "simulation-without-test",
+        "expected": {
+          "declined": true,
+          "mode": "visual-without-assessment",
+          "component": "Simulation"
+        },
+        "action": "none",
+        "offered": [],
+        "declined": true,
+        "offerMatches": false,
+        "decisionMatches": true,
+        "declinedProbability": 0.73,
+        "plainReplyProbability": 0.04
+      },
+      {
+        "id": "simulation-with-prediction",
+        "expected": {
+          "declined": false,
+          "mode": "includes",
+          "component": "Simulation"
+        },
+        "action": "create",
+        "offered": [
+          "Simulation"
+        ],
+        "declined": false,
+        "offerMatches": true,
+        "decisionMatches": true,
+        "declinedProbability": 0.04,
+        "plainReplyProbability": 0.04
+      },
+      {
+        "id": "independent-choice",
+        "expected": {
+          "declined": false,
+          "mode": "includes",
+          "component": "Question"
+        },
+        "action": "create",
+        "offered": [
+          "Question",
+          "Quiz",
+          "Flashcards"
+        ],
+        "declined": false,
+        "offerMatches": true,
+        "decisionMatches": true,
+        "declinedProbability": 0.05,
+        "plainReplyProbability": 0.45
+      }
+    ],
+    "notes": "An offer is generated by the planner. No tutor generation or learner exposure was measured."
+  },
+  "accounting": {
+    "calls": 6,
+    "newTutorCalls": 0,
+    "newReviewCalls": 0,
+    "inputTokens": 24956,
+    "outputTokens": 4486,
+    "unknownUsageCalls": 0,
+    "newListPriceUsd": 0.001048152,
+    "bothFollowupsUsd": 0.004273626,
+    "cumulativeAccountedUsd": 0.835679054,
+    "followupCap": 0.25,
+    "studyCap": 2,
+    "priceSource": "https://docs.typesafe.ai/models"
+  }
+}

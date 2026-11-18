@@ -1,0 +1,4077 @@
+{
+  "version": 1,
+  "manifestSha256": "0613c000ead24a0c93146a1de6a6ae23e00cdf3854307cc1b42824eaf87e43c1",
+  "scope": "planning only",
+  "scheduled": 12,
+  "dispatches": 12,
+  "measuredUsage": 12,
+  "inputTokens": 52749,
+  "outputTokens": 4488,
+  "usagePricedUsd": 0.003874258,
+  "heldForUnknownUsageUsd": 0,
+  "accountedUsd": 0.003874258,
+  "cumulativeBoundUsd": 1.643732256,
+  "rows": [
+    {
+      "caseId": "guess-first",
+      "provider": "jev",
+      "requestedModel": "jev-1.14.0",
+      "requestSha256": "bb32c7485cfa691576ea76e0084f8349d0c5320186f4b255f174f9e70489aa3b",
+      "wireSha256": "fe824b4e0d0e0088fd54a873b48c72a3a6e67d53abdfe50ed86741fe509fe5ea",
+      "status": "complete",
+      "http": 200,
+      "modelProvenance": "response-model",
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.15
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.6
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.29
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.79
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.45
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.31
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.28
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.83
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.93
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.26
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.26
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.14
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 0.25,
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              },
+              "probabilities": {
+                "0": 0.79,
+                "1": 0.18,
+                "2": 0.03,
+                "3": 0
+              },
+              "confidence": 0.76
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0.41,
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              },
+              "probabilities": {
+                "0": 0.7,
+                "1": 0.19,
+                "2": 0.11,
+                "3": 0
+              },
+              "confidence": 0.59
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 1.02,
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              },
+              "probabilities": {
+                "0": 0.44,
+                "1": 0.23,
+                "2": 0.2,
+                "3": 0.13
+              },
+              "confidence": 0
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.95,
+                "supported": 0.04,
+                "deep": 0.01
+              },
+              "confidence": 0.92
+            }
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "jev-1.14.0",
+            "calibrationSha256": null
+          },
+          "usage": {
+            "inputTokens": 4030,
+            "outputTokens": 748
+          }
+        }
+      },
+      "assessment": {
+        "plan": {
+          "version": "keating-teaching-policy/v2.1",
+          "status": "guided",
+          "decisions": {
+            "direct_answer_requested": false,
+            "explanation_requested": false,
+            "learner_stuck": false,
+            "attempt_present": false,
+            "misconception_visible": false,
+            "independent_success": false,
+            "practice_requested": false,
+            "plain_reply_requested": false,
+            "assessment_declined": false,
+            "fresh_sources_needed": false,
+            "explicit_feedback": false,
+            "explicit_profile_preference": true,
+            "observed_profile_pattern": false,
+            "motion_requested": false,
+            "improvement_requested": false,
+            "improvement_hypothesis_supported": false,
+            "settled_sessions_accumulated": false,
+            "project_goal_requested": false,
+            "progression_requested": false,
+            "learning_task": true
+          },
+          "features": {
+            "variable_relationship": null,
+            "ordered_procedure": false,
+            "discrete_recall": false,
+            "structure_relations": false,
+            "category_distinction": false,
+            "prediction_opportunity": true,
+            "learner_response_due": true,
+            "hands_on_requested": false,
+            "executable_code": false,
+            "performed_skill": false,
+            "language_learning": false,
+            "visual_reference": false,
+            "extended_production": false,
+            "outside_observation": false,
+            "untested_coverage": false
+          },
+          "interaction": {
+            "action": "create",
+            "families": [
+              {
+                "family": "question",
+                "components": [
+                  "Question"
+                ],
+                "features": [
+                  "prediction_opportunity",
+                  "learner_response_due"
+                ]
+              }
+            ]
+          },
+          "planReview": null,
+          "directives": [
+            "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+            "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+            "At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; collect the learner's choice or independent answer before proceeding. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+            "If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself."
+          ],
+          "uncertain": [],
+          "allowedTools": [
+            "interactive_page",
+            "course_list",
+            "course_inspect",
+            "course_create",
+            "course_update",
+            "room_list",
+            "room_invite",
+            "generate_image",
+            "update_goal_step",
+            "revise_study_plan"
+          ]
+        },
+        "sessionPlan": {
+          "action": "create",
+          "families": [
+            {
+              "family": "question",
+              "components": [
+                "Question"
+              ]
+            }
+          ],
+          "features": [
+            "prediction_opportunity",
+            "learner_response_due"
+          ],
+          "paired": false
+        },
+        "tutorPromptSha256": "27b9ef2fa70d6dcc2c71ab03e17630de70ec258e374f242449b12b58db6c0eac",
+        "offered": [
+          "Question"
+        ],
+        "assessmentOffered": true,
+        "familyMatches": true,
+        "dispositionMatches": true,
+        "learnerResponseDue": true,
+        "responseDueMatches": true,
+        "genericLetLearnerRespondDirective": true,
+        "plainReplyRequested": false,
+        "quizOffered": false,
+        "assessmentDeclined": false,
+        "tutorReleased": null
+      }
+    },
+    {
+      "caseId": "guess-first",
+      "provider": "google",
+      "requestedModel": "gemini-decision-1",
+      "requestSha256": "bb32c7485cfa691576ea76e0084f8349d0c5320186f4b255f174f9e70489aa3b",
+      "wireSha256": "bcef565b7079ef5b01b401ca1e9e7a0a5559a54f3aa2c8b63f24cb31baa2feb6",
+      "status": "complete",
+      "http": 200,
+      "modelProvenance": "documented-request-model",
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.031232336854442933
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.0298190977353152
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.09393982259995558
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.5161089378945
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.028777558720006327
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.011968983188203504
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.033844371949524
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.019736983006449795
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.011624571654853132
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.03056702144537611
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.02371165745415514
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.011804183039999649
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.10101492671882784
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.6625147519589131
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.3234025531414155
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.06970216452878553
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.06311191342495144
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.06378321576070618
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.12662348764139983
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.7512684364354832
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.9267038356586321
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.13763295862694422
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.021618430640167885
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.04392771430461448
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.08272494884684316
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.06063666268284423
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.029059433941358986
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.07374485272562392
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.10115551411534629
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 0.18607816252348658,
+              "confidence": 0.8493689177244423,
+              "probabilities": {
+                "0": 0.8493689177244423,
+                "1": 0.12381311848046979,
+                "2": 0.01818884734224681,
+                "3": 0.008629116452841054
+              },
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              }
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0.27671027808736165,
+              "confidence": 0.7844209143341797,
+              "probabilities": {
+                "0": 0.7844209143341797,
+                "1": 0.16852449606302397,
+                "2": 0.03297798678405137,
+                "3": 0.014076602818744966
+              },
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              }
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 0.41943119062162276,
+              "confidence": 0.696530642850221,
+              "probabilities": {
+                "0": 0.696530642850221,
+                "1": 0.21726349339439163,
+                "2": 0.056449894038930554,
+                "3": 0.029755969716456682
+              },
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              }
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.8920723223038202,
+                "supported": 0.08057538469463071,
+                "deep": 0.027352293001549146
+              },
+              "confidence": 0.8920723223038202
+            }
+          },
+          "usage": {
+            "inputTokens": 4769,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "assessment": {
+        "plan": {
+          "version": "keating-teaching-policy/v2.1",
+          "status": "guided",
+          "decisions": {
+            "direct_answer_requested": false,
+            "explanation_requested": false,
+            "learner_stuck": false,
+            "attempt_present": false,
+            "misconception_visible": false,
+            "independent_success": false,
+            "practice_requested": false,
+            "plain_reply_requested": null,
+            "assessment_declined": false,
+            "fresh_sources_needed": false,
+            "explicit_feedback": false,
+            "explicit_profile_preference": false,
+            "observed_profile_pattern": false,
+            "motion_requested": false,
+            "improvement_requested": false,
+            "improvement_hypothesis_supported": false,
+            "settled_sessions_accumulated": false,
+            "project_goal_requested": false,
+            "progression_requested": false,
+            "learning_task": true
+          },
+          "features": {
+            "variable_relationship": false,
+            "ordered_procedure": false,
+            "discrete_recall": false,
+            "structure_relations": false,
+            "category_distinction": false,
+            "prediction_opportunity": true,
+            "learner_response_due": true,
+            "hands_on_requested": false,
+            "executable_code": false,
+            "performed_skill": false,
+            "language_learning": false,
+            "visual_reference": false,
+            "extended_production": false,
+            "outside_observation": false,
+            "untested_coverage": false
+          },
+          "interaction": {
+            "action": "create",
+            "families": [
+              {
+                "family": "question",
+                "components": [
+                  "Question"
+                ],
+                "features": [
+                  "prediction_opportunity",
+                  "learner_response_due"
+                ]
+              }
+            ]
+          },
+          "planReview": null,
+          "directives": [
+            "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+            "At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; collect the learner's choice or independent answer before proceeding. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+            "If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself."
+          ],
+          "uncertain": [
+            "plain_reply_requested"
+          ],
+          "allowedTools": [
+            "interactive_page",
+            "course_list",
+            "course_inspect",
+            "course_create",
+            "course_update",
+            "room_list",
+            "room_invite",
+            "generate_image",
+            "update_goal_step",
+            "revise_study_plan"
+          ]
+        },
+        "sessionPlan": {
+          "action": "create",
+          "families": [
+            {
+              "family": "question",
+              "components": [
+                "Question"
+              ]
+            }
+          ],
+          "features": [
+            "prediction_opportunity",
+            "learner_response_due"
+          ],
+          "paired": false
+        },
+        "tutorPromptSha256": "f18d0612cd6d04eab6d8fec0d78747d3e9162232e0ed18487f31ca58a050bd38",
+        "offered": [
+          "Question"
+        ],
+        "assessmentOffered": true,
+        "familyMatches": true,
+        "dispositionMatches": true,
+        "learnerResponseDue": true,
+        "responseDueMatches": true,
+        "genericLetLearnerRespondDirective": true,
+        "plainReplyRequested": null,
+        "quizOffered": false,
+        "assessmentDeclined": false,
+        "tutorReleased": null
+      }
+    },
+    {
+      "caseId": "predict-first",
+      "provider": "jev",
+      "requestedModel": "jev-1.14.0",
+      "requestSha256": "60a8e7572bea92187c4bff74e36860b7935137edc67a1299665f4f674cf13db9",
+      "wireSha256": "982a96bc12604519efa1c0c0fa2ecb98186b4dacedf16af1f441b14f9273441e",
+      "status": "complete",
+      "http": 200,
+      "modelProvenance": "response-model",
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.29
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.16
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.66
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.44
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.64
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.95
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.98
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.32
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.73
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.54
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.89
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.97
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.38
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.19
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.32
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.18
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 0.33,
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              },
+              "probabilities": {
+                "0": 0.72,
+                "1": 0.23,
+                "2": 0.05,
+                "3": 0
+              },
+              "confidence": 0.67
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0.34,
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              },
+              "probabilities": {
+                "0": 0.75,
+                "1": 0.17,
+                "2": 0.08,
+                "3": 0
+              },
+              "confidence": 0.67
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 0.58,
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              },
+              "probabilities": {
+                "0": 0.7,
+                "1": 0.11,
+                "2": 0.12,
+                "3": 0.07
+              },
+              "confidence": 0.44
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.97,
+                "supported": 0.02,
+                "deep": 0.01
+              },
+              "confidence": 0.96
+            }
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "jev-1.14.0",
+            "calibrationSha256": null
+          },
+          "usage": {
+            "inputTokens": 4033,
+            "outputTokens": 748
+          }
+        }
+      },
+      "assessment": {
+        "plan": {
+          "version": "keating-teaching-policy/v2.1",
+          "status": "guided",
+          "decisions": {
+            "direct_answer_requested": false,
+            "explanation_requested": false,
+            "learner_stuck": false,
+            "attempt_present": false,
+            "misconception_visible": false,
+            "independent_success": false,
+            "practice_requested": false,
+            "plain_reply_requested": false,
+            "assessment_declined": false,
+            "fresh_sources_needed": false,
+            "explicit_feedback": false,
+            "explicit_profile_preference": true,
+            "observed_profile_pattern": false,
+            "motion_requested": false,
+            "improvement_requested": false,
+            "improvement_hypothesis_supported": false,
+            "settled_sessions_accumulated": false,
+            "project_goal_requested": null,
+            "progression_requested": true,
+            "learning_task": true
+          },
+          "features": {
+            "variable_relationship": true,
+            "ordered_procedure": false,
+            "discrete_recall": false,
+            "structure_relations": true,
+            "category_distinction": null,
+            "prediction_opportunity": true,
+            "learner_response_due": true,
+            "hands_on_requested": false,
+            "executable_code": false,
+            "performed_skill": false,
+            "language_learning": false,
+            "visual_reference": false,
+            "extended_production": false,
+            "outside_observation": false,
+            "untested_coverage": false
+          },
+          "interaction": {
+            "action": "create",
+            "families": [
+              {
+                "family": "question",
+                "components": [
+                  "Question"
+                ],
+                "features": [
+                  "prediction_opportunity",
+                  "learner_response_due"
+                ]
+              },
+              {
+                "family": "manipulable",
+                "components": [
+                  "Simulation"
+                ],
+                "features": [
+                  "variable_relationship"
+                ]
+              },
+              {
+                "family": "workspace",
+                "components": [
+                  "ConceptMap"
+                ],
+                "features": [
+                  "structure_relations"
+                ]
+              }
+            ]
+          },
+          "planReview": null,
+          "directives": [
+            "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+            "Address the learner's pacing request against the active plan; propose any plan change and let the learner decide.",
+            "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+            "At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; collect the learner's choice or independent answer before proceeding; or Simulation to let the learner change a variable and observe the outcome; or ConceptMap to lay out how the concepts relate. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+            "If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself."
+          ],
+          "uncertain": [
+            "project_goal_requested"
+          ],
+          "allowedTools": [
+            "interactive_page",
+            "course_list",
+            "course_inspect",
+            "course_create",
+            "course_update",
+            "room_list",
+            "room_invite",
+            "generate_image",
+            "update_goal_step",
+            "revise_study_plan"
+          ]
+        },
+        "sessionPlan": {
+          "action": "create",
+          "families": [
+            {
+              "family": "question",
+              "components": [
+                "Question"
+              ]
+            },
+            {
+              "family": "manipulable",
+              "components": [
+                "Simulation"
+              ]
+            },
+            {
+              "family": "workspace",
+              "components": [
+                "ConceptMap"
+              ]
+            }
+          ],
+          "features": [
+            "variable_relationship",
+            "structure_relations",
+            "prediction_opportunity",
+            "learner_response_due"
+          ],
+          "paired": false
+        },
+        "tutorPromptSha256": "08ad60a1666ef2c4667ee0945f7d5faaa76485f52ac5c499ea43082652cb78bd",
+        "offered": [
+          "Question",
+          "Simulation",
+          "ConceptMap"
+        ],
+        "assessmentOffered": true,
+        "familyMatches": true,
+        "dispositionMatches": true,
+        "learnerResponseDue": true,
+        "responseDueMatches": true,
+        "genericLetLearnerRespondDirective": true,
+        "plainReplyRequested": false,
+        "quizOffered": false,
+        "assessmentDeclined": false,
+        "tutorReleased": null
+      }
+    },
+    {
+      "caseId": "predict-first",
+      "provider": "google",
+      "requestedModel": "gemini-decision-1",
+      "requestSha256": "60a8e7572bea92187c4bff74e36860b7935137edc67a1299665f4f674cf13db9",
+      "wireSha256": "365c8471ec8c7ba904cc1bc27f6d57d2d1b696a37f464b8b706074caaf833212",
+      "status": "complete",
+      "http": 200,
+      "modelProvenance": "documented-request-model",
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.05700373998349053
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.015779870084404173
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.035317622381777256
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.024090408109165407
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.06797972582944785
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.30565557420409645
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.021143762954480637
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.025828483575464634
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.09304192959758613
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.016796143186708037
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.06082540907754562
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.05114204139164149
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.026192284126035748
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.048293249059619715
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.22008350533141427
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.7712881944082363
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.9502521169524453
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.10797664438490734
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.04965033749595031
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.4478434508700469
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.14106235557670382
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.8721041001301265
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.9167727918027675
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.2424628779836294
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.04867642551560447
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.07438870872541753
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.046848771389999204
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.16431572899756167
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.03024466218556554
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.1381557307655792
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.14123415782945295
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 0.3484341647863845,
+              "confidence": 0.731736656626911,
+              "probabilities": {
+                "0": 0.731736656626911,
+                "1": 0.20474588545717037,
+                "2": 0.046864094418541696,
+                "3": 0.01665336349737692
+              },
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              }
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0.4034874170785904,
+              "confidence": 0.6884085439313024,
+              "probabilities": {
+                "0": 0.6884085439313024,
+                "1": 0.23675781722368358,
+                "2": 0.05777131668013529,
+                "3": 0.017062322164878754
+              },
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              }
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 0.522188261325237,
+              "confidence": 0.6405455629727209,
+              "probabilities": {
+                "0": 0.6405455629727209,
+                "1": 0.23844670277323737,
+                "2": 0.07928164421012557,
+                "3": 0.04172609004391615
+              },
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              }
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.779324792001987,
+                "supported": 0.15239961853898537,
+                "deep": 0.06827558945902776
+              },
+              "confidence": 0.779324792001987
+            }
+          },
+          "usage": {
+            "inputTokens": 4772,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "assessment": {
+        "plan": {
+          "version": "keating-teaching-policy/v2.1",
+          "status": "guided",
+          "decisions": {
+            "direct_answer_requested": false,
+            "explanation_requested": false,
+            "learner_stuck": false,
+            "attempt_present": false,
+            "misconception_visible": false,
+            "independent_success": false,
+            "practice_requested": false,
+            "plain_reply_requested": false,
+            "assessment_declined": false,
+            "fresh_sources_needed": false,
+            "explicit_feedback": false,
+            "explicit_profile_preference": false,
+            "observed_profile_pattern": false,
+            "motion_requested": false,
+            "improvement_requested": false,
+            "improvement_hypothesis_supported": false,
+            "settled_sessions_accumulated": false,
+            "project_goal_requested": false,
+            "progression_requested": false,
+            "learning_task": true
+          },
+          "features": {
+            "variable_relationship": true,
+            "ordered_procedure": false,
+            "discrete_recall": false,
+            "structure_relations": null,
+            "category_distinction": false,
+            "prediction_opportunity": true,
+            "learner_response_due": true,
+            "hands_on_requested": false,
+            "executable_code": false,
+            "performed_skill": false,
+            "language_learning": false,
+            "visual_reference": false,
+            "extended_production": false,
+            "outside_observation": false,
+            "untested_coverage": false
+          },
+          "interaction": {
+            "action": "create",
+            "families": [
+              {
+                "family": "question",
+                "components": [
+                  "Question"
+                ],
+                "features": [
+                  "prediction_opportunity",
+                  "learner_response_due"
+                ]
+              },
+              {
+                "family": "manipulable",
+                "components": [
+                  "Simulation"
+                ],
+                "features": [
+                  "variable_relationship"
+                ]
+              }
+            ]
+          },
+          "planReview": null,
+          "directives": [
+            "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+            "At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; collect the learner's choice or independent answer before proceeding; or Simulation to let the learner change a variable and observe the outcome. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+            "If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself."
+          ],
+          "uncertain": [],
+          "allowedTools": [
+            "interactive_page",
+            "course_list",
+            "course_inspect",
+            "course_create",
+            "course_update",
+            "room_list",
+            "room_invite",
+            "generate_image",
+            "update_goal_step",
+            "revise_study_plan"
+          ]
+        },
+        "sessionPlan": {
+          "action": "create",
+          "families": [
+            {
+              "family": "question",
+              "components": [
+                "Question"
+              ]
+            },
+            {
+              "family": "manipulable",
+              "components": [
+                "Simulation"
+              ]
+            }
+          ],
+          "features": [
+            "variable_relationship",
+            "prediction_opportunity",
+            "learner_response_due"
+          ],
+          "paired": false
+        },
+        "tutorPromptSha256": "82baa6028ee99f216964e6cc9081a558e618a6665ddd1a1ea8e4f9339f79d490",
+        "offered": [
+          "Question",
+          "Simulation"
+        ],
+        "assessmentOffered": true,
+        "familyMatches": true,
+        "dispositionMatches": true,
+        "learnerResponseDue": true,
+        "responseDueMatches": true,
+        "genericLetLearnerRespondDirective": true,
+        "plainReplyRequested": false,
+        "quizOffered": false,
+        "assessmentDeclined": false,
+        "tutorReleased": null
+      }
+    },
+    {
+      "caseId": "change-this",
+      "provider": "jev",
+      "requestedModel": "jev-1.14.0",
+      "requestSha256": "7071e4f15b6d5a8600f8a727236907fc855da2c6802d2668e32b2ef225726688",
+      "wireSha256": "0ee754bd33bd8c3eb115d18c5e03aefd2bb145bf207f97f4e581294750b8c46f",
+      "status": "complete",
+      "http": 200,
+      "modelProvenance": "response-model",
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.48
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.26
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.29
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.84
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.98
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.37
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.77
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.1
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.69
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.31
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.87
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.22
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.3
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.35
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.29
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 0.89,
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              },
+              "probabilities": {
+                "0": 0.33,
+                "1": 0.46,
+                "2": 0.2,
+                "3": 0.01
+              },
+              "confidence": 0.45
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0.16,
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              },
+              "probabilities": {
+                "0": 0.87,
+                "1": 0.11,
+                "2": 0.02,
+                "3": 0
+              },
+              "confidence": 0.85
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 1.46,
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              },
+              "probabilities": {
+                "0": 0.36,
+                "1": 0.07,
+                "2": 0.32,
+                "3": 0.25
+              },
+              "confidence": 0
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.77,
+                "supported": 0.19,
+                "deep": 0.04
+              },
+              "confidence": 0.66
+            }
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "jev-1.14.0",
+            "calibrationSha256": null
+          },
+          "usage": {
+            "inputTokens": 4041,
+            "outputTokens": 748
+          }
+        }
+      },
+      "assessment": {
+        "plan": {
+          "version": "keating-teaching-policy/v2.1",
+          "status": "guided",
+          "decisions": {
+            "direct_answer_requested": false,
+            "explanation_requested": false,
+            "learner_stuck": false,
+            "attempt_present": false,
+            "misconception_visible": false,
+            "independent_success": false,
+            "practice_requested": false,
+            "plain_reply_requested": false,
+            "assessment_declined": false,
+            "fresh_sources_needed": false,
+            "explicit_feedback": false,
+            "explicit_profile_preference": null,
+            "observed_profile_pattern": false,
+            "motion_requested": false,
+            "improvement_requested": false,
+            "improvement_hypothesis_supported": false,
+            "settled_sessions_accumulated": false,
+            "project_goal_requested": false,
+            "progression_requested": false,
+            "learning_task": true
+          },
+          "features": {
+            "variable_relationship": true,
+            "ordered_procedure": false,
+            "discrete_recall": false,
+            "structure_relations": true,
+            "category_distinction": false,
+            "prediction_opportunity": true,
+            "learner_response_due": false,
+            "hands_on_requested": true,
+            "executable_code": false,
+            "performed_skill": false,
+            "language_learning": false,
+            "visual_reference": false,
+            "extended_production": false,
+            "outside_observation": false,
+            "untested_coverage": false
+          },
+          "interaction": {
+            "action": "create",
+            "families": [
+              {
+                "family": "manipulable",
+                "components": [
+                  "Simulation"
+                ],
+                "features": [
+                  "variable_relationship",
+                  "hands_on_requested"
+                ]
+              },
+              {
+                "family": "workspace",
+                "components": [
+                  "ConceptMap"
+                ],
+                "features": [
+                  "structure_relations",
+                  "hands_on_requested"
+                ]
+              }
+            ]
+          },
+          "planReview": null,
+          "directives": [
+            "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+            "At most one OpenUI activity may help this turn: Simulation to let the learner change a variable and observe the outcome; let the learner carry out the requested action themselves; or ConceptMap to lay out how the concepts relate; let the learner carry out the requested action themselves. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better."
+          ],
+          "uncertain": [
+            "explicit_profile_preference"
+          ],
+          "allowedTools": [
+            "interactive_page",
+            "course_list",
+            "course_inspect",
+            "course_create",
+            "course_update",
+            "room_list",
+            "room_invite",
+            "generate_image",
+            "update_goal_step",
+            "revise_study_plan"
+          ]
+        },
+        "sessionPlan": {
+          "action": "create",
+          "families": [
+            {
+              "family": "manipulable",
+              "components": [
+                "Simulation"
+              ]
+            },
+            {
+              "family": "workspace",
+              "components": [
+                "ConceptMap"
+              ]
+            }
+          ],
+          "features": [
+            "variable_relationship",
+            "structure_relations",
+            "prediction_opportunity",
+            "hands_on_requested"
+          ],
+          "paired": false
+        },
+        "tutorPromptSha256": "ff9a6819ec028b851c0793825734bc9a539e54c29a669c86aa6c9a0ab822011f",
+        "offered": [
+          "Simulation",
+          "ConceptMap"
+        ],
+        "assessmentOffered": false,
+        "familyMatches": true,
+        "dispositionMatches": true,
+        "learnerResponseDue": false,
+        "responseDueMatches": true,
+        "genericLetLearnerRespondDirective": true,
+        "plainReplyRequested": false,
+        "quizOffered": false,
+        "assessmentDeclined": false,
+        "tutorReleased": null
+      }
+    },
+    {
+      "caseId": "change-this",
+      "provider": "google",
+      "requestedModel": "gemini-decision-1",
+      "requestSha256": "7071e4f15b6d5a8600f8a727236907fc855da2c6802d2668e32b2ef225726688",
+      "wireSha256": "b43baa6209f5c01cb4dfe788649a043338289942cb14e0e93f8b3dcd025bada0",
+      "status": "complete",
+      "http": 200,
+      "modelProvenance": "documented-request-model",
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.018307482469749226
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.013503209931651194
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.041354836375124604
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.0683055263141193
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.10795729665168569
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.19548022506896287
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.13833855000103729
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.07278920917458068
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.03510273792487053
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.28165719912563586
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.01700434898942373
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.15836744749397869
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.07156686032051025
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.03562499718586099
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.04248638189013693
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.44950726659792495
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.7779447512554826
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.9735218799241995
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.1269855459129975
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.1103573544782329
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.8858830687023437
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.044836748345426496
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.7977740331461105
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.2564485162629856
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.9436976433173764
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.10026225988793286
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.03375638855701287
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.1111399180170554
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.22838110895867728
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.05042186596652348
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.6003231675281128
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.10410066458640777
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 1.2220214722438028,
+              "confidence": 0.42383662860614024,
+              "probabilities": {
+                "0": 0.22766401962721444,
+                "1": 0.42383662860614024,
+                "2": 0.24731321166227344,
+                "3": 0.10118614010437188
+              },
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              }
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0.8250152058838836,
+              "confidence": 0.4303533795629477,
+              "probabilities": {
+                "0": 0.4303533795629477,
+                "1": 0.36042168748609954,
+                "2": 0.1630812804550741,
+                "3": 0.0461436524958786
+              },
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              }
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 1.588738473670815,
+              "confidence": 0.36068615370356355,
+              "probabilities": {
+                "0": 0.15686232435014544,
+                "1": 0.2899941997875926,
+                "2": 0.36068615370356355,
+                "3": 0.19245732215869843
+              },
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              }
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.5798293528569226,
+                "supported": 0.3456334485421261,
+                "deep": 0.07453719860095137
+              },
+              "confidence": 0.5798293528569226
+            }
+          },
+          "usage": {
+            "inputTokens": 4780,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "assessment": {
+        "plan": {
+          "version": "keating-teaching-policy/v2.1",
+          "status": "guided",
+          "decisions": {
+            "direct_answer_requested": false,
+            "explanation_requested": false,
+            "learner_stuck": false,
+            "attempt_present": false,
+            "misconception_visible": false,
+            "independent_success": false,
+            "practice_requested": false,
+            "plain_reply_requested": false,
+            "assessment_declined": false,
+            "fresh_sources_needed": false,
+            "explicit_feedback": false,
+            "explicit_profile_preference": false,
+            "observed_profile_pattern": false,
+            "motion_requested": false,
+            "improvement_requested": false,
+            "improvement_hypothesis_supported": false,
+            "settled_sessions_accumulated": false,
+            "project_goal_requested": false,
+            "progression_requested": null,
+            "learning_task": true
+          },
+          "features": {
+            "variable_relationship": true,
+            "ordered_procedure": false,
+            "discrete_recall": false,
+            "structure_relations": true,
+            "category_distinction": false,
+            "prediction_opportunity": true,
+            "learner_response_due": false,
+            "hands_on_requested": true,
+            "executable_code": false,
+            "performed_skill": false,
+            "language_learning": false,
+            "visual_reference": false,
+            "extended_production": false,
+            "outside_observation": true,
+            "untested_coverage": false
+          },
+          "interaction": {
+            "action": "create",
+            "families": [
+              {
+                "family": "manipulable",
+                "components": [
+                  "Simulation"
+                ],
+                "features": [
+                  "variable_relationship",
+                  "hands_on_requested"
+                ]
+              },
+              {
+                "family": "workspace",
+                "components": [
+                  "ConceptMap"
+                ],
+                "features": [
+                  "structure_relations",
+                  "hands_on_requested"
+                ]
+              },
+              {
+                "family": "away",
+                "components": [
+                  "Fieldwork"
+                ],
+                "features": [
+                  "outside_observation",
+                  "hands_on_requested"
+                ]
+              }
+            ]
+          },
+          "planReview": null,
+          "directives": [
+            "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+            "At most one OpenUI activity may help this turn: Simulation to let the learner change a variable and observe the outcome; let the learner carry out the requested action themselves; or ConceptMap to lay out how the concepts relate; let the learner carry out the requested action themselves; or Fieldwork to send the learner to observe or collect evidence; let the learner carry out the requested action themselves. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better."
+          ],
+          "uncertain": [
+            "progression_requested"
+          ],
+          "allowedTools": [
+            "interactive_page",
+            "course_list",
+            "course_inspect",
+            "course_create",
+            "course_update",
+            "room_list",
+            "room_invite",
+            "generate_image",
+            "update_goal_step",
+            "revise_study_plan"
+          ]
+        },
+        "sessionPlan": {
+          "action": "create",
+          "families": [
+            {
+              "family": "manipulable",
+              "components": [
+                "Simulation"
+              ]
+            },
+            {
+              "family": "workspace",
+              "components": [
+                "ConceptMap"
+              ]
+            },
+            {
+              "family": "away",
+              "components": [
+                "Fieldwork"
+              ]
+            }
+          ],
+          "features": [
+            "variable_relationship",
+            "structure_relations",
+            "prediction_opportunity",
+            "hands_on_requested",
+            "outside_observation"
+          ],
+          "paired": false
+        },
+        "tutorPromptSha256": "13970a55078ae52adca1d6c7a193db391b2541647b5c91790111745ca03fb473",
+        "offered": [
+          "Simulation",
+          "ConceptMap",
+          "Fieldwork"
+        ],
+        "assessmentOffered": true,
+        "familyMatches": true,
+        "dispositionMatches": true,
+        "learnerResponseDue": false,
+        "responseDueMatches": true,
+        "genericLetLearnerRespondDirective": true,
+        "plainReplyRequested": false,
+        "quizOffered": false,
+        "assessmentDeclined": false,
+        "tutorReleased": null
+      }
+    },
+    {
+      "caseId": "play-with-numbers",
+      "provider": "jev",
+      "requestedModel": "jev-1.14.0",
+      "requestSha256": "4e22bedb2a317841ac762c20b6ed6e6104374f815ea3ef89e29e4e34757a051e",
+      "wireSha256": "f8441b5422a91530ab8bbed2d3693584873ac7e7c8fe2e572c3cf5955e35d083",
+      "status": "complete",
+      "http": 200,
+      "modelProvenance": "response-model",
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.99
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.89
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.36
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.54
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.68
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.97
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.11
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.41
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.78
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.48
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.33
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.93
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.12
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.08
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.48
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 0.05,
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              },
+              "probabilities": {
+                "0": 0.96,
+                "1": 0.04,
+                "2": 0,
+                "3": 0
+              },
+              "confidence": 0.96
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0.17,
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              },
+              "probabilities": {
+                "0": 0.84,
+                "1": 0.16,
+                "2": 0,
+                "3": 0
+              },
+              "confidence": 0.84
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 0.82,
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              },
+              "probabilities": {
+                "0": 0.62,
+                "1": 0.07,
+                "2": 0.18,
+                "3": 0.13
+              },
+              "confidence": 0.18
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.89,
+                "supported": 0.1,
+                "deep": 0.01
+              },
+              "confidence": 0.83
+            }
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "jev-1.14.0",
+            "calibrationSha256": null
+          },
+          "usage": {
+            "inputTokens": 4040,
+            "outputTokens": 748
+          }
+        }
+      },
+      "assessment": {
+        "plan": {
+          "version": "keating-teaching-policy/v2.1",
+          "status": "guided",
+          "decisions": {
+            "direct_answer_requested": false,
+            "explanation_requested": false,
+            "learner_stuck": false,
+            "attempt_present": false,
+            "misconception_visible": false,
+            "independent_success": false,
+            "practice_requested": false,
+            "plain_reply_requested": false,
+            "assessment_declined": true,
+            "fresh_sources_needed": false,
+            "explicit_feedback": false,
+            "explicit_profile_preference": true,
+            "observed_profile_pattern": false,
+            "motion_requested": false,
+            "improvement_requested": false,
+            "improvement_hypothesis_supported": false,
+            "settled_sessions_accumulated": false,
+            "project_goal_requested": false,
+            "progression_requested": null,
+            "learning_task": true
+          },
+          "features": {
+            "variable_relationship": true,
+            "ordered_procedure": false,
+            "discrete_recall": null,
+            "structure_relations": true,
+            "category_distinction": false,
+            "prediction_opportunity": null,
+            "learner_response_due": false,
+            "hands_on_requested": true,
+            "executable_code": false,
+            "performed_skill": false,
+            "language_learning": false,
+            "visual_reference": false,
+            "extended_production": false,
+            "outside_observation": false,
+            "untested_coverage": null
+          },
+          "interaction": {
+            "action": "create",
+            "families": [
+              {
+                "family": "manipulable",
+                "components": [
+                  "Simulation"
+                ],
+                "features": [
+                  "variable_relationship",
+                  "hands_on_requested"
+                ]
+              },
+              {
+                "family": "workspace",
+                "components": [
+                  "ConceptMap"
+                ],
+                "features": [
+                  "structure_relations",
+                  "hands_on_requested"
+                ]
+              }
+            ]
+          },
+          "planReview": null,
+          "directives": [
+            "Give the requested help without asking the learner to complete a checkpoint or exercise. Include a requested visual explanation or demonstration.",
+            "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+            "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+            "At most one OpenUI activity may help this turn: Simulation to let the learner change a variable and observe the outcome; let the learner carry out the requested action themselves; or ConceptMap to lay out how the concepts relate; let the learner carry out the requested action themselves. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better."
+          ],
+          "uncertain": [
+            "progression_requested"
+          ],
+          "allowedTools": [
+            "interactive_page",
+            "course_list",
+            "course_inspect",
+            "course_create",
+            "course_update",
+            "room_list",
+            "room_invite",
+            "generate_image",
+            "remember_learner_profile",
+            "update_goal_step",
+            "revise_study_plan"
+          ]
+        },
+        "sessionPlan": {
+          "action": "create",
+          "families": [
+            {
+              "family": "manipulable",
+              "components": [
+                "Simulation"
+              ]
+            },
+            {
+              "family": "workspace",
+              "components": [
+                "ConceptMap"
+              ]
+            }
+          ],
+          "features": [
+            "variable_relationship",
+            "structure_relations",
+            "hands_on_requested"
+          ],
+          "paired": false
+        },
+        "tutorPromptSha256": "3353862f31247316d8b14fb893a6028134a828a402e5c2997a425a99bed2cb1c",
+        "offered": [
+          "Simulation",
+          "ConceptMap"
+        ],
+        "assessmentOffered": false,
+        "familyMatches": true,
+        "dispositionMatches": true,
+        "learnerResponseDue": false,
+        "responseDueMatches": true,
+        "genericLetLearnerRespondDirective": true,
+        "plainReplyRequested": false,
+        "quizOffered": false,
+        "assessmentDeclined": true,
+        "tutorReleased": null
+      }
+    },
+    {
+      "caseId": "play-with-numbers",
+      "provider": "google",
+      "requestedModel": "gemini-decision-1",
+      "requestSha256": "4e22bedb2a317841ac762c20b6ed6e6104374f815ea3ef89e29e4e34757a051e",
+      "wireSha256": "90dc605e3d2b3aa2146e45cf45a15ddd3f38106d9661d23e5f41d89296ece932",
+      "status": "complete",
+      "http": 200,
+      "modelProvenance": "documented-request-model",
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.022003629584151203
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.010665174788718895
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.023447075880183
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.0306746593466124
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.014653446959448804
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.017826045115213872
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.2467467936068567
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.8761459281667493
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.03429125786532495
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.05516746409778941
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.44716674967901654
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.023431913190323127
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.012265602089212064
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.014385756250776194
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.03359283216132863
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.02836872266745666
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.05294247150591275
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.25340765357421213
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.3560115052057912
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.953494875562192
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.12791008961419686
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.12356419786794536
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.7254879795478711
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.06212182059293184
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.25257418121854947
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.16978001070941715
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.8487553133915314
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.10018616569433247
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.03950178746340839
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.0853062865797829
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.06939487763369125
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.049315642924818784
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.10329059611716977
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.15843930454121105
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 0.2980636110558842,
+              "confidence": 0.785142108088014,
+              "probabilities": {
+                "0": 0.785142108088014,
+                "1": 0.1536880989810981,
+                "2": 0.03913386671787797,
+                "3": 0.022035926213010048
+              },
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              }
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0.4041336483527105,
+              "confidence": 0.6952606333448701,
+              "probabilities": {
+                "0": 0.6952606333448701,
+                "1": 0.22373352726888057,
+                "2": 0.06261739707491809,
+                "3": 0.01838844231133124
+              },
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              }
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 0.7768128976491775,
+              "confidence": 0.4858520742808302,
+              "probabilities": {
+                "0": 0.4858520742808302,
+                "1": 0.31467907056188704,
+                "2": 0.1362727383845581,
+                "3": 0.06319611677272474
+              },
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              }
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.5737071479288488,
+                "supported": 0.32992706639096914,
+                "deep": 0.09636578568018205
+              },
+              "confidence": 0.5737071479288488
+            }
+          },
+          "usage": {
+            "inputTokens": 4779,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "assessment": {
+        "plan": {
+          "version": "keating-teaching-policy/v2.1",
+          "status": "guided",
+          "decisions": {
+            "direct_answer_requested": false,
+            "explanation_requested": false,
+            "learner_stuck": false,
+            "attempt_present": false,
+            "misconception_visible": false,
+            "independent_success": false,
+            "practice_requested": false,
+            "plain_reply_requested": false,
+            "assessment_declined": true,
+            "fresh_sources_needed": false,
+            "explicit_feedback": false,
+            "explicit_profile_preference": null,
+            "observed_profile_pattern": false,
+            "motion_requested": false,
+            "improvement_requested": false,
+            "improvement_hypothesis_supported": false,
+            "settled_sessions_accumulated": false,
+            "project_goal_requested": false,
+            "progression_requested": false,
+            "learning_task": false
+          },
+          "features": {
+            "variable_relationship": true,
+            "ordered_procedure": false,
+            "discrete_recall": false,
+            "structure_relations": true,
+            "category_distinction": false,
+            "prediction_opportunity": false,
+            "learner_response_due": false,
+            "hands_on_requested": true,
+            "executable_code": false,
+            "performed_skill": false,
+            "language_learning": false,
+            "visual_reference": false,
+            "extended_production": false,
+            "outside_observation": false,
+            "untested_coverage": false
+          },
+          "interaction": {
+            "action": "none",
+            "families": []
+          },
+          "planReview": null,
+          "directives": [
+            "Give the requested help without asking the learner to complete a checkpoint or exercise. Include a requested visual explanation or demonstration."
+          ],
+          "uncertain": [
+            "explicit_profile_preference"
+          ],
+          "allowedTools": [
+            "interactive_page",
+            "course_list",
+            "course_inspect",
+            "course_create",
+            "course_update",
+            "room_list",
+            "room_invite",
+            "generate_image",
+            "update_goal_step",
+            "revise_study_plan"
+          ]
+        },
+        "sessionPlan": {
+          "action": "none",
+          "families": [],
+          "features": [
+            "variable_relationship",
+            "structure_relations",
+            "hands_on_requested"
+          ],
+          "paired": false
+        },
+        "tutorPromptSha256": "14102d4231516373cf78e36b9c697d7000f9d558c3eec07aa1d140bc95fe29f2",
+        "offered": [],
+        "assessmentOffered": false,
+        "familyMatches": false,
+        "dispositionMatches": false,
+        "learnerResponseDue": false,
+        "responseDueMatches": true,
+        "genericLetLearnerRespondDirective": false,
+        "plainReplyRequested": false,
+        "quizOffered": false,
+        "assessmentDeclined": true,
+        "tutorReleased": null
+      }
+    },
+    {
+      "caseId": "short-fact",
+      "provider": "jev",
+      "requestedModel": "jev-1.14.0",
+      "requestSha256": "1086bd0b0a4789c68d48c74b201d462285c4d0c723aa82e166495d2727e58181",
+      "wireSha256": "f9bc0af99711d93f1cae7b222f31dcaea81a0988a31209fdf01aa476969a5304",
+      "status": "complete",
+      "http": 200,
+      "modelProvenance": "response-model",
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.99
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.97
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.78
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.71
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.83
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.84
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.3
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.09
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 0.04,
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.03,
+                "2": 0,
+                "3": 0
+              },
+              "confidence": 0.97
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0,
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              },
+              "probabilities": {
+                "0": 1,
+                "1": 0,
+                "2": 0,
+                "3": 0
+              },
+              "confidence": 1
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 0.23,
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              },
+              "probabilities": {
+                "0": 0.79,
+                "1": 0.19,
+                "2": 0.01,
+                "3": 0.01
+              },
+              "confidence": 0.76
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 1,
+                "supported": 0,
+                "deep": 0
+              },
+              "confidence": 1
+            }
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "jev-1.14.0",
+            "calibrationSha256": null
+          },
+          "usage": {
+            "inputTokens": 4006,
+            "outputTokens": 748
+          }
+        }
+      },
+      "assessment": {
+        "plan": {
+          "version": "keating-teaching-policy/v2.1",
+          "status": "guided",
+          "decisions": {
+            "direct_answer_requested": true,
+            "explanation_requested": false,
+            "learner_stuck": false,
+            "attempt_present": false,
+            "misconception_visible": false,
+            "independent_success": false,
+            "practice_requested": false,
+            "plain_reply_requested": true,
+            "assessment_declined": false,
+            "fresh_sources_needed": false,
+            "explicit_feedback": false,
+            "explicit_profile_preference": true,
+            "observed_profile_pattern": false,
+            "motion_requested": false,
+            "improvement_requested": false,
+            "improvement_hypothesis_supported": false,
+            "settled_sessions_accumulated": false,
+            "project_goal_requested": true,
+            "progression_requested": false,
+            "learning_task": true
+          },
+          "features": {
+            "variable_relationship": false,
+            "ordered_procedure": false,
+            "discrete_recall": true,
+            "structure_relations": false,
+            "category_distinction": false,
+            "prediction_opportunity": false,
+            "learner_response_due": false,
+            "hands_on_requested": false,
+            "executable_code": false,
+            "performed_skill": false,
+            "language_learning": false,
+            "visual_reference": false,
+            "extended_production": false,
+            "outside_observation": false,
+            "untested_coverage": false
+          },
+          "interaction": {
+            "action": "none",
+            "families": []
+          },
+          "planReview": null,
+          "directives": [
+            "Answer the bounded question directly; do not start a diagnostic interview.",
+            "Honor the requested plain reply. Give the answer in the requested form and stop.",
+            "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+            "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+            "Choose one useful next learning step based on demonstrated understanding, then let the learner respond."
+          ],
+          "uncertain": [],
+          "allowedTools": [
+            "interactive_page",
+            "course_list",
+            "course_inspect",
+            "course_create",
+            "course_update",
+            "room_list",
+            "room_invite",
+            "generate_image",
+            "update_goal_step",
+            "revise_study_plan"
+          ]
+        },
+        "sessionPlan": {
+          "action": "none",
+          "families": [],
+          "features": [
+            "discrete_recall"
+          ],
+          "paired": false
+        },
+        "tutorPromptSha256": "d5166328eca6ea58137eadde9a282a37a55f64914b8967ecc800adf77ccfa262",
+        "offered": [],
+        "assessmentOffered": false,
+        "familyMatches": true,
+        "dispositionMatches": true,
+        "learnerResponseDue": false,
+        "responseDueMatches": true,
+        "genericLetLearnerRespondDirective": true,
+        "plainReplyRequested": true,
+        "quizOffered": false,
+        "assessmentDeclined": false,
+        "tutorReleased": null
+      }
+    },
+    {
+      "caseId": "short-fact",
+      "provider": "google",
+      "requestedModel": "gemini-decision-1",
+      "requestSha256": "1086bd0b0a4789c68d48c74b201d462285c4d0c723aa82e166495d2727e58181",
+      "wireSha256": "4c9c696feec7fcfa0f1e3ab8ab839c44b49525b0d91737aec27fba71ad242d3a",
+      "status": "complete",
+      "http": 200,
+      "modelProvenance": "documented-request-model",
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.9816707703236193
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.06501716793850912
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.012960559419927808
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.17489968898871397
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.047184051061207266
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.03857382986665233
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.07298906269783695
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.9545424256088622
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.10923222655406543
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.18403080844446143
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.023009764766473068
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.022704221488274442
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.04039606893531038
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.032617162723774726
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.24653766613248562
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.06864231537593181
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.39225217398559487
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.06808371350849536
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.03021743597260587
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.7788165627902773
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.04319607803322619
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.03726524325567382
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.027540844503719117
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.09213889936859325
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.01848544999838176
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.03890274011848613
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.09026100811657567
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.0297059198615805
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.04862741413151896
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.09923316229869253
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 0.0776268404703219,
+              "confidence": 0.9315703810828077,
+              "probabilities": {
+                "0": 0.9315703810828077,
+                "1": 0.0613356485553692,
+                "2": 0.004990719170517066,
+                "3": 0.0021032511913061914
+              },
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              }
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0.17142637771384162,
+              "confidence": 0.8518232760741683,
+              "probabilities": {
+                "0": 0.8518232760741683,
+                "1": 0.12848520097430444,
+                "2": 0.016133392115044595,
+                "3": 0.0035581308364826623
+              },
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              }
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 0.42229369273446554,
+              "confidence": 0.6603850451597051,
+              "probabilities": {
+                "0": 0.6603850451597051,
+                "1": 0.2789220281645213,
+                "2": 0.0387071154573769,
+                "3": 0.02198581121839682
+              },
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              }
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.9909999966614071,
+                "supported": 0.005822195689117306,
+                "deep": 0.003177807649475555
+              },
+              "confidence": 0.9909999966614071
+            }
+          },
+          "usage": {
+            "inputTokens": 4753,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "assessment": {
+        "plan": {
+          "version": "keating-teaching-policy/v2.1",
+          "status": "guided",
+          "decisions": {
+            "direct_answer_requested": true,
+            "explanation_requested": false,
+            "learner_stuck": false,
+            "attempt_present": false,
+            "misconception_visible": false,
+            "independent_success": false,
+            "practice_requested": false,
+            "plain_reply_requested": true,
+            "assessment_declined": false,
+            "fresh_sources_needed": false,
+            "explicit_feedback": false,
+            "explicit_profile_preference": false,
+            "observed_profile_pattern": false,
+            "motion_requested": false,
+            "improvement_requested": false,
+            "improvement_hypothesis_supported": false,
+            "settled_sessions_accumulated": false,
+            "project_goal_requested": false,
+            "progression_requested": false,
+            "learning_task": false
+          },
+          "features": {
+            "variable_relationship": false,
+            "ordered_procedure": false,
+            "discrete_recall": true,
+            "structure_relations": false,
+            "category_distinction": false,
+            "prediction_opportunity": false,
+            "learner_response_due": false,
+            "hands_on_requested": false,
+            "executable_code": false,
+            "performed_skill": false,
+            "language_learning": false,
+            "visual_reference": false,
+            "extended_production": false,
+            "outside_observation": false,
+            "untested_coverage": false
+          },
+          "interaction": {
+            "action": "none",
+            "families": []
+          },
+          "planReview": null,
+          "directives": [
+            "Answer the bounded question directly; do not start a diagnostic interview.",
+            "Honor the requested plain reply. Give the answer in the requested form and stop."
+          ],
+          "uncertain": [],
+          "allowedTools": [
+            "interactive_page",
+            "course_list",
+            "course_inspect",
+            "course_create",
+            "course_update",
+            "room_list",
+            "room_invite",
+            "generate_image",
+            "update_goal_step",
+            "revise_study_plan"
+          ]
+        },
+        "sessionPlan": {
+          "action": "none",
+          "families": [],
+          "features": [
+            "discrete_recall"
+          ],
+          "paired": false
+        },
+        "tutorPromptSha256": "708b9197d859ee264f2879ed99ffb89a798b137decf5c2c5f5dea280ab7e8dfe",
+        "offered": [],
+        "assessmentOffered": false,
+        "familyMatches": true,
+        "dispositionMatches": true,
+        "learnerResponseDue": false,
+        "responseDueMatches": true,
+        "genericLetLearnerRespondDirective": false,
+        "plainReplyRequested": true,
+        "quizOffered": false,
+        "assessmentDeclined": false,
+        "tutorReleased": null
+      }
+    },
+    {
+      "caseId": "account-password",
+      "provider": "jev",
+      "requestedModel": "jev-1.14.0",
+      "requestSha256": "3e65e30b8259e1ab53b5f733288651c5c7cf0f3c1928ae76f82d830fb7974963",
+      "wireSha256": "122895eebc99a0fd15ad4f922f4a27be1c3cd4df9408497379ad4f01000368c2",
+      "status": "complete",
+      "http": 200,
+      "modelProvenance": "response-model",
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.2
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.06
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.39
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.93
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.07
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.05
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.13
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.21
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.04
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.17
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.03
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.02
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.84
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 0.78,
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              },
+              "probabilities": {
+                "0": 0.48,
+                "1": 0.31,
+                "2": 0.15,
+                "3": 0.06
+              },
+              "confidence": 0.21
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0.05,
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              },
+              "probabilities": {
+                "0": 0.97,
+                "1": 0.02,
+                "2": 0.01,
+                "3": 0
+              },
+              "confidence": 0.96
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 1.92,
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              },
+              "probabilities": {
+                "0": 0.2,
+                "1": 0.06,
+                "2": 0.35,
+                "3": 0.39
+              },
+              "confidence": 0
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.96,
+                "supported": 0.04,
+                "deep": 0
+              },
+              "confidence": 0.94
+            }
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "jev-1.14.0",
+            "calibrationSha256": null
+          },
+          "usage": {
+            "inputTokens": 3999,
+            "outputTokens": 748
+          }
+        }
+      },
+      "assessment": {
+        "plan": {
+          "version": "keating-teaching-policy/v2.1",
+          "status": "guided",
+          "decisions": {
+            "direct_answer_requested": false,
+            "explanation_requested": false,
+            "learner_stuck": false,
+            "attempt_present": false,
+            "misconception_visible": false,
+            "independent_success": false,
+            "practice_requested": false,
+            "plain_reply_requested": false,
+            "assessment_declined": false,
+            "fresh_sources_needed": false,
+            "explicit_feedback": false,
+            "explicit_profile_preference": false,
+            "observed_profile_pattern": false,
+            "motion_requested": false,
+            "improvement_requested": false,
+            "improvement_hypothesis_supported": false,
+            "settled_sessions_accumulated": false,
+            "project_goal_requested": true,
+            "progression_requested": false,
+            "learning_task": false
+          },
+          "features": {
+            "variable_relationship": false,
+            "ordered_procedure": false,
+            "discrete_recall": false,
+            "structure_relations": false,
+            "category_distinction": false,
+            "prediction_opportunity": false,
+            "learner_response_due": false,
+            "hands_on_requested": false,
+            "executable_code": false,
+            "performed_skill": false,
+            "language_learning": false,
+            "visual_reference": false,
+            "extended_production": false,
+            "outside_observation": true,
+            "untested_coverage": false
+          },
+          "interaction": {
+            "action": "none",
+            "families": []
+          },
+          "planReview": null,
+          "directives": [
+            "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it."
+          ],
+          "uncertain": [],
+          "allowedTools": [
+            "interactive_page",
+            "course_list",
+            "course_inspect",
+            "course_create",
+            "course_update",
+            "room_list",
+            "room_invite",
+            "generate_image",
+            "set_learner_goal",
+            "update_goal_step",
+            "revise_study_plan"
+          ]
+        },
+        "sessionPlan": {
+          "action": "none",
+          "families": [],
+          "features": [
+            "outside_observation"
+          ],
+          "paired": false
+        },
+        "tutorPromptSha256": "1a613930a157bab38deacc45a6557a733e4a92536b4071489ac52a50c8bba369",
+        "offered": [],
+        "assessmentOffered": false,
+        "familyMatches": true,
+        "dispositionMatches": true,
+        "learnerResponseDue": false,
+        "responseDueMatches": true,
+        "genericLetLearnerRespondDirective": false,
+        "plainReplyRequested": false,
+        "quizOffered": false,
+        "assessmentDeclined": false,
+        "tutorReleased": null
+      }
+    },
+    {
+      "caseId": "account-password",
+      "provider": "google",
+      "requestedModel": "gemini-decision-1",
+      "requestSha256": "3e65e30b8259e1ab53b5f733288651c5c7cf0f3c1928ae76f82d830fb7974963",
+      "wireSha256": "c01f6b2e35b9cb84ce4e62000d5ca0f940c7302d0d55bbfd1b6b11de949016f4",
+      "status": "complete",
+      "http": 200,
+      "modelProvenance": "documented-request-model",
+      "outcome": {
+        "ok": true,
+        "response": {
+          "answers": {
+            "direct_answer_requested": {
+              "type": "noul",
+              "noul": 0.030211472460053873
+            },
+            "explanation_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "learner_stuck": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "attempt_present": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "misconception_visible": {
+              "type": "noul",
+              "noul": 0.05370774432651556
+            },
+            "independent_success": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "practice_requested": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "plain_reply_requested": {
+              "type": "noul",
+              "noul": 0.09813172143869447
+            },
+            "assessment_declined": {
+              "type": "noul",
+              "noul": 0.031924127158696136
+            },
+            "fresh_sources_needed": {
+              "type": "noul",
+              "noul": 0.18991568312603513
+            },
+            "explicit_feedback": {
+              "type": "noul",
+              "noul": 0.01519641337488552
+            },
+            "explicit_profile_preference": {
+              "type": "noul",
+              "noul": 0.022342268916167564
+            },
+            "observed_profile_pattern": {
+              "type": "noul",
+              "noul": 0.013547160757788093
+            },
+            "motion_requested": {
+              "type": "noul",
+              "noul": 0.01271577611362509
+            },
+            "improvement_requested": {
+              "type": "noul",
+              "noul": 0.015438118091578823
+            },
+            "improvement_hypothesis_supported": {
+              "type": "noul",
+              "noul": 0.012310984055137968
+            },
+            "settled_sessions_accumulated": {
+              "type": "noul",
+              "noul": 0.027481292793455216
+            },
+            "project_goal_requested": {
+              "type": "noul",
+              "noul": 0.14960702400534973
+            },
+            "progression_requested": {
+              "type": "noul",
+              "noul": 0.04942531969964548
+            },
+            "learning_task": {
+              "type": "noul",
+              "noul": 0.020769083143857996
+            },
+            "variable_relationship": {
+              "type": "noul",
+              "noul": 0.05427342749819158
+            },
+            "ordered_procedure": {
+              "type": "noul",
+              "noul": 0.20577119225429627
+            },
+            "discrete_recall": {
+              "type": "noul",
+              "noul": 0.026773854224925987
+            },
+            "structure_relations": {
+              "type": "noul",
+              "noul": 0.022144090016353243
+            },
+            "category_distinction": {
+              "type": "noul",
+              "noul": 0.02269264153166763
+            },
+            "prediction_opportunity": {
+              "type": "noul",
+              "noul": 0.025017044197440046
+            },
+            "learner_response_due": {
+              "type": "noul",
+              "noul": 0.05507736343485244
+            },
+            "hands_on_requested": {
+              "type": "noul",
+              "noul": 0.05025823843099037
+            },
+            "executable_code": {
+              "type": "noul",
+              "noul": 0.025975916756249808
+            },
+            "performed_skill": {
+              "type": "noul",
+              "noul": 0.020091656701802366
+            },
+            "language_learning": {
+              "type": "noul",
+              "noul": 0.05697239760111439
+            },
+            "visual_reference": {
+              "type": "noul",
+              "noul": 0.03015312588135302
+            },
+            "extended_production": {
+              "type": "noul",
+              "noul": 0.01
+            },
+            "outside_observation": {
+              "type": "noul",
+              "noul": 0.3225799495530223
+            },
+            "untested_coverage": {
+              "type": "noul",
+              "noul": 0.025499404123073097
+            },
+            "draft_reasoning_steps": {
+              "type": "score",
+              "score": 0.7058532042258412,
+              "confidence": 0.49402519275788315,
+              "probabilities": {
+                "0": 0.49402519275788315,
+                "1": 0.34897254988440296,
+                "2": 0.11412611773170363,
+                "3": 0.04287613962601034
+              },
+              "legend": {
+                "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+                "1": "One clear inference or straightforward application using supplied context.",
+                "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+                "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+              }
+            },
+            "draft_reasoning_synthesis": {
+              "type": "score",
+              "score": 0.8164285869281787,
+              "confidence": 0.48487928867261515,
+              "probabilities": {
+                "0": 0.48487928867261515,
+                "1": 0.28175933679104453,
+                "2": 0.16541487347188705,
+                "3": 0.06794650106445334
+              },
+              "legend": {
+                "0": "One simple fact or request; no reconciliation is needed.",
+                "1": "One relevant evidence item or one simple relationship/constraint.",
+                "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+                "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+              }
+            },
+            "draft_reasoning_verification": {
+              "type": "score",
+              "score": 1.5015965315165638,
+              "confidence": 0.3483174300250553,
+              "probabilities": {
+                "0": 0.2258259590463032,
+                "1": 0.23630408065973557,
+                "2": 0.3483174300250553,
+                "3": 0.18955253026890595
+              },
+              "legend": {
+                "0": "No special check beyond a direct answer supported by the supplied context.",
+                "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+                "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+                "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+              }
+            },
+            "draft_standard": {
+              "type": "choice",
+              "choice": "concise",
+              "probabilities": {
+                "concise": 0.9003073579710811,
+                "supported": 0.06781021238058518,
+                "deep": 0.031882429648333654
+              },
+              "confidence": 0.9003073579710811
+            }
+          },
+          "usage": {
+            "inputTokens": 4747,
+            "outputTokens": 0
+          },
+          "backend": {
+            "backend": "system-one",
+            "model": "gemini-decision-1",
+            "calibrationSha256": null
+          }
+        }
+      },
+      "assessment": {
+        "plan": {
+          "version": "keating-teaching-policy/v2.1",
+          "status": "guided",
+          "decisions": {
+            "direct_answer_requested": false,
+            "explanation_requested": false,
+            "learner_stuck": false,
+            "attempt_present": false,
+            "misconception_visible": false,
+            "independent_success": false,
+            "practice_requested": false,
+            "plain_reply_requested": false,
+            "assessment_declined": false,
+            "fresh_sources_needed": false,
+            "explicit_feedback": false,
+            "explicit_profile_preference": false,
+            "observed_profile_pattern": false,
+            "motion_requested": false,
+            "improvement_requested": false,
+            "improvement_hypothesis_supported": false,
+            "settled_sessions_accumulated": false,
+            "project_goal_requested": false,
+            "progression_requested": false,
+            "learning_task": false
+          },
+          "features": {
+            "variable_relationship": false,
+            "ordered_procedure": false,
+            "discrete_recall": false,
+            "structure_relations": false,
+            "category_distinction": false,
+            "prediction_opportunity": false,
+            "learner_response_due": false,
+            "hands_on_requested": false,
+            "executable_code": false,
+            "performed_skill": false,
+            "language_learning": false,
+            "visual_reference": false,
+            "extended_production": false,
+            "outside_observation": false,
+            "untested_coverage": false
+          },
+          "interaction": {
+            "action": "none",
+            "families": []
+          },
+          "planReview": null,
+          "directives": [],
+          "uncertain": [],
+          "allowedTools": [
+            "interactive_page",
+            "course_list",
+            "course_inspect",
+            "course_create",
+            "course_update",
+            "room_list",
+            "room_invite",
+            "generate_image",
+            "update_goal_step",
+            "revise_study_plan"
+          ]
+        },
+        "sessionPlan": {
+          "action": "none",
+          "families": [],
+          "features": [],
+          "paired": false
+        },
+        "tutorPromptSha256": "a3e4b5589a66f52dfda7903b83bade93ff7b80402af29cec521319990dee4767",
+        "offered": [],
+        "assessmentOffered": false,
+        "familyMatches": true,
+        "dispositionMatches": true,
+        "learnerResponseDue": false,
+        "responseDueMatches": true,
+        "genericLetLearnerRespondDirective": false,
+        "plainReplyRequested": false,
+        "quizOffered": false,
+        "assessmentDeclined": false,
+        "tutorReleased": null
+      }
+    }
+  ]
+}

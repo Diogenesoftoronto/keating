@@ -2,6 +2,8 @@
 
 This is the source of truth for Keating's web analytics. It turns product behavior into a small set of questions that can be answered repeatedly, while keeping learner and model-authored content out of PostHog.
 
+For interface frequency, component types and replies from an implicit learner cue to presentation, use the versioned `openui_turn_observed` snapshots. The reader deduplicates revisions of each turn and reports observation coverage. [OpenUI diagnostics](../openui-diagnostics.md)
+
 ## Outcomes
 
 The primary activation outcome is a successful first AI turn, not a visit or a session object.

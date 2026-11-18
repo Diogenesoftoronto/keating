@@ -1,0 +1,122 @@
+{
+  "id": "conveyor--google",
+  "caseId": "conveyor",
+  "provider": "google",
+  "decisionModel": "gemini-decision-1",
+  "kind": "live",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "3454a661b440b3f90f0c2656c8771f9f0472ac3c7b30f7dd2d3ed4acc0fbe2ee",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "errorCode": null
+    },
+    {
+      "phase": "review",
+      "requestSha256": "0eb61587e4c514e999c5fe928157a9df6f88973282bd789066c2fb15b3bae5e2",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "errorCode": null
+    },
+    {
+      "phase": "review",
+      "requestSha256": "0588aadc77f903a1f304944596a2dd1070fd364e5a05f4501cfc65faacc63470",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "create",
+    "offered": [
+      "Simulation",
+      "ConceptMap"
+    ],
+    "reason": null,
+    "directives": [
+      "Give the requested help without asking the learner to complete a checkpoint or exercise. Include a requested visual explanation or demonstration.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+      "Address the learner's pacing request against the active plan; propose any plan change and let the learner decide.",
+      "At most one OpenUI activity may help this turn: Simulation to let the learner change a variable and observe the outcome; let the learner carry out the requested action themselves; or ConceptMap to lay out how the concepts relate; let the learner carry out the requested action themselves. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested."
+    ]
+  },
+  "drafts": [
+    {
+      "label": "conveyor--google/tutor/1",
+      "kind": "live",
+      "systemSha256": "36f851e7c5f4279fe53523ccffbbe922c9865112149868d4c82824742cb97202",
+      "text": "Here's a model you can drive yourself. It mirrors the idea behind the six-carton-per-minute figure: cartons come off the belt at a rate set by how fast the belt moves and how closely the cartons are spaced, and the ramp-up means the first minute or so produces less than a flat-line estimate would suggest.\n\nTwo things are modeled explicitly, so you can check them:\n\n- **Ramp-up:** the belt accelerates to its set speed instead of jumping there, so it loses a little distance at the start of the ten minutes.\n- **Spacing:** cartons ride nose-to-tail at a fixed gap, so a tighter line means more cartons per meter.\n\nI skipped the check questions as you asked. The simulation asks you to predict before you move anything — write your predicted number down, then drag the speed slider and compare.\n\n```openui lifecycle=ephemeral id=conveyor-speed-output\n\nroot = LearningSurface([sim], \"Conveyor speed and ten-minute output\", \"Move the sliders and watch what ten minutes of running actually delivers.\", \"ephemeral\")\nsim = Simulation(\"conveyor-output\", \"Conveyor speed and ten-minute output\", [\n  { id: \"v\", label: \"Belt top speed\", unit: \"m/min\", min: 10, max: 120, step: 5, value: 45 },\n  { id: \"s\", label: \"Carton spacing\", unit: \"m\", min: 0.2, max: 1, step: 0.05, value: 0.5 },\n  { id: \"a\", label: \"Ramp-up acceleration\", unit: \"m/min²\", min: 12, max: 60, step: 1, value: 25 }\n], [\n  { id: \"cartons\", label: \"Cartons in 10 minutes\", unit: \"cartons\", expr: \"(v * 10 - v * v / (2 * a)) / s\", precision: 0, emphasis: true },\n  { id: \"dist\", label: \"Belt distance covered\", unit: \"m\", expr: \"v * 10 - v * v / (2 * a)\", precision: 1 },\n  { id: \"rate\", label: \"Average output\", unit: \"cartons/min\", expr: \"(v * 10 - v * v / (2 * a)) / s / 10\", precision: 1 }\n], \"ephemeral\", \"Before you touch a slider: predict the cartons delivered in 10 minutes at the starting settings (45 m/min, 0.5 m spacing, 25 m/min² ramp). Then move the belt speed slider and check whether your prediction matched. Notice what happens to the gap between 'distance covered' and 'speed x 10' as speed rises.\")\n\n```\n\nTwo things worth watching when you explore: at 45 m/min the belt covers a little under 450 m in ten minutes (the ramp-up cost), and doubling the speed does **not** exactly double the carton count — the ramp-up penalty grows with speed, because a faster belt spends proportionally longer getting up to speed. If you want to explore that more sharply, push the acceleration down to 12 m/min².\n\nPress **Share what I found** when you've moved something, and tell me what you found — I'll take it from there.",
+      "attempted": true,
+      "components": [
+        "simulation"
+      ],
+      "outsideWords": 228,
+      "guidanceDelivered": true,
+      "tools": [],
+      "stop": "stop"
+    },
+    {
+      "label": "conveyor--google/tutor/2",
+      "kind": "live",
+      "systemSha256": "36f851e7c5f4279fe53523ccffbbe922c9865112149868d4c82824742cb97202",
+      "text": "Here's the relationship in one line: **output rate = belt speed ÷ carton spacing** (with cartons evenly spaced and nothing falling off or being rejected). So at the standard setting of 60 m/min with cartons every 10 m, you get 6 cartons/min — and 60 cartons in ten minutes.\n\nTwo consequences worth noticing: with spacing fixed, the relationship is *linear* (double the speed, double the output), and speed and spacing are interchangeable — halving the spacing has the same effect on output as doubling the speed, because what matters is cartons per metre.\n\nMove the sliders to test that.\n\n```openui lifecycle=ephemeral id=conveyor-speed-output\n\nroot = LearningSurface([sim], \"Conveyor speed and output\", \"Vary the belt speed and carton spacing; read the output each time.\", \"ephemeral\")\nsim = Simulation(\"conveyor-sim\", \"Conveyor output model\", [\n  { id: \"speed\", label: \"Belt speed\", unit: \"m/min\", min: 0, max: 120, step: 5, value: 60 },\n  { id: \"spacing\", label: \"Carton spacing\", unit: \"m\", min: 2, max: 20, step: 1, value: 10 }\n], [\n  { id: \"total\", label: \"Cartons in 10 minutes\", unit: \"cartons\", expr: \"speed/spacing*10\", precision: 0, emphasis: true },\n  { id: \"rate\", label: \"Cartons per minute\", unit: \"cartons/min\", expr: \"speed/spacing\", precision: 1 }\n], \"ephemeral\", \"Before you touch anything, predict: if you raise the belt speed from 60 to 90 m/min and leave the spacing at 10 m, how many cartons should come out in ten minutes? Then move the speed slider and check. After that, try raising the speed AND halving the spacing to see whether the two changes add up.\")\n```\n\nThe model assumes a steady belt, evenly spaced cartons, and no losses — that's why spacing is the only thing standing between speed and output. When you press **Share what I found**, I'll read your actual numbers and we'll see whether your prediction held.",
+      "attempted": true,
+      "components": [
+        "simulation"
+      ],
+      "outsideWords": 143,
+      "guidanceDelivered": true,
+      "tools": [],
+      "stop": "stop"
+    }
+  ],
+  "status": "released",
+  "public": {
+    "text": "Here's the relationship in one line: **output rate = belt speed ÷ carton spacing** (with cartons evenly spaced and nothing falling off or being rejected). So at the standard setting of 60 m/min with cartons every 10 m, you get 6 cartons/min — and 60 cartons in ten minutes.\n\nTwo consequences worth noticing: with spacing fixed, the relationship is *linear* (double the speed, double the output), and speed and spacing are interchangeable — halving the spacing has the same effect on output as doubling the speed, because what matters is cartons per metre.\n\nMove the sliders to test that.\n\n```openui lifecycle=ephemeral id=conveyor-speed-output\n\nroot = LearningSurface([sim], \"Conveyor speed and output\", \"Vary the belt speed and carton spacing; read the output each time.\", \"ephemeral\")\nsim = Simulation(\"conveyor-sim\", \"Conveyor output model\", [\n  { id: \"speed\", label: \"Belt speed\", unit: \"m/min\", min: 0, max: 120, step: 5, value: 60 },\n  { id: \"spacing\", label: \"Carton spacing\", unit: \"m\", min: 2, max: 20, step: 1, value: 10 }\n], [\n  { id: \"total\", label: \"Cartons in 10 minutes\", unit: \"cartons\", expr: \"speed/spacing*10\", precision: 0, emphasis: true },\n  { id: \"rate\", label: \"Cartons per minute\", unit: \"cartons/min\", expr: \"speed/spacing\", precision: 1 }\n], \"ephemeral\", \"Before you touch anything, predict: if you raise the belt speed from 60 to 90 m/min and leave the spacing at 10 m, how many cartons should come out in ten minutes? Then move the speed slider and check. After that, try raising the speed AND halving the spacing to see whether the two changes add up.\")\n```\n\nThe model assumes a steady belt, evenly spaced cartons, and no losses — that's why spacing is the only thing standing between speed and output. When you press **Share what I found**, I'll read your actual numbers and we'll see whether your prediction held.",
+    "attempted": true,
+    "components": [
+      "simulation"
+    ],
+    "outsideWords": 143,
+    "tools": []
+  },
+  "notice": null,
+  "selectedAttempt": 2,
+  "findings": [
+    {
+      "attempt": 1,
+      "status": "unknown",
+      "checks": [
+        {
+          "id": "direct_help_withheld",
+          "status": "unknown",
+          "probability": 0.41119342249983176
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "unknown",
+          "probability": 0.4028232270644287
+        },
+        {
+          "id": "quality_scope",
+          "status": "unknown",
+          "probability": 0.580887382151573
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "status": "pass",
+      "checks": [
+        {
+          "id": "quality_scope",
+          "status": "unknown",
+          "probability": 0.689458761968659
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "id": "keating-final-review-expected-result-and-typed-feedback",
+  "orderedCases": ["multiples-loop", "tile-bag-confirm"],
+  "policy": "Final independently sealed product source after the debugging, prediction selection and contextual tool changes",
+  "tutor": "MiniMax-M2.7-highspeed",
+  "decision": "jev-1.14.0",
+  "allStudyCapUsd": 10,
+  "temperature": 0,
+  "maxOutputTokens": 3072,
+  "maxDrafts": 3,
+  "outerTimeoutMs": 240000,
+  "cases": [
+    {
+      "id": "multiples-loop",
+      "parent": null,
+      "learner": "I'm learning Python. Give me a broken loop that should collect the multiples of three in [6, 5, 9]. The expected result is [6, 9]. I want to find the bug myself. No hints, please.",
+      "rubric": "Check the first draft and the public reply separately. Look for a real editable Python starter that demonstrably returns something other than [6, 9] or raises on this exact list. The learner supplied the expectation. A comment repeating that expectation is permitted. An explicit fault, replacement, pointed diagnosis or premature location clue in visible prose, code, native metadata or controls fails the no-hints requirement. No graded checkpoint is required. A withheld reply fails delivery even if a private candidate was usable."
+    },
+    {
+      "id": "tile-bag-confirm",
+      "parent": "tile-bag--minimax--jev",
+      "learner": "My guess is round, because three of the four tiles are round.",
+      "rubric": "Use the actual published parent and the learner's plain-text answer. Check for correct concise confirmation that the reasoning is sound, or equivalent useful feedback. The learner did not submit a stored quiz score, request another test, or ask for a formal grade. Record whether grade_quiz was offered on the tutor wire, proposed, or actually executed. Record any newly forced checkpoint or invented evidence separately. If the parent has no public reply or a pending native tool, the slot is ineligible and has no provider call."
+    }
+  ],
+  "method": "A two-slot follow-up prompted by a withheld expected-output exercise and failures to acknowledge plain-text learner answers. Fixed before either response. One new empty-history exercise and one continuation of the original public prediction on exactly the same synthetic transcript. No replacement case, retries of ambiguous requests, tutor fallback, private history reconstruction or tool execution. Fresh ordinary-gate outcomes supply observational evidence for these two cases only."
+}

@@ -1,0 +1,33 @@
+{
+  "study": "gemini-decision-1-v21-matched",
+  "policy": "keating-teaching-policy/v2.1",
+  "cases": "../policy-holdout/cohort.json",
+  "casesSha256": "d3393c08ee1903f9e4a426d37cab65add70f5e2d5157cd09a085ddfac174afe8",
+  "releasedInputs": "../policy-holdout/release-inputs.json.gz",
+  "release": "feb14a770371032619839271cfb3d1a4fe5079ff",
+  "primaryTutor": "MiniMax-M2.7-highspeed",
+  "secondaryTutor": "gemini-3.1-flash-lite",
+  "order": ["spinner","bus","perimeter"],
+  "judge": {
+    "provider": "google",
+    "model": "gemini-decision-1",
+    "endpoint": "https://generativelanguage.googleapis.com/v1beta/decisions",
+    "apiDocumentation": "https://aistudio.google.com/docs/decisions-api",
+    "priceSource": "https://aistudio.google.com/docs/pricing#gemini-decision",
+    "inputPerMillionUsd": 0.1,
+    "outputPerMillionUsd": 0,
+    "nativeMaxInputTokens": 262144,
+    "reserveUsd": 0.0262144,
+    "requestTokenBudgetForParity": 64000,
+    "stateQuestionTokenBudgetForParity": 32000
+  },
+  "previousBoundUsd": 1.121192398,
+  "allStudyLimitUsd": 2,
+  "incrementalLimitUsd": 0.878807602,
+  "tutorReserveUsd": 0.12,
+  "matchedDecisionInputsSha256":"5c85c07809e97efb1ad2164cdd2d5fd431aca160d9736f83be95bc2059ff5df2",
+  "paidNetworkRetries": 0,
+  "scope": "Six fresh original case/model cells, first all three MiniMax, then all three Gemini Flash-Lite. One answer per as-yet-unseen typed Google judgment. Reuse only exact state/question and wire payload hashes. Optionally score the separately preregistered six frozen plans and nine reviews through the same budget and cache. Both scopes use only synthetic inputs.",
+  "modelIdentity": "Record Google's requested and returned model IDs separately. A successful pinned-model HTTP response with typed answers establishes the called service even when the response omits a revision. A failed judge cannot fall back to Jev or a bypass. Tools are proposed only. No native tool execution or browser traffic.",
+  "measure": "Original predeclared learner-fit rubric and teacher protocol from the cited cohort. Keep outages unknown, native page proposals distinct from compiled OpenUI, all six scheduled cells visible, independently observed native tool output, and no assumed rendering."
+}

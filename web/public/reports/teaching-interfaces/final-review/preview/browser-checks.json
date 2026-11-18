@@ -1,0 +1,48 @@
+[
+  {
+    "width": 390,
+    "comparisonMatches": 3,
+    "stageLight": [
+      6,
+      72,
+      7,
+      84
+    ],
+    "irrigationOutputsAtTwoSettings": 4,
+    "questionSubmitted": true,
+    "proseAfterReview": true,
+    "editorChangedAndReset": true,
+    "finalPolicyCases": 7,
+    "fieldGuideLinks": 13,
+    "missingGenerationRepresented": true,
+    "unguidedExercised": true,
+    "inspectorDraftLosses": 2,
+    "filteredDecisionPairs": 2,
+    "horizontalOverflow": false,
+    "pageErrors": [],
+    "externalRequests": []
+  },
+  {
+    "width": 1280,
+    "comparisonMatches": 3,
+    "stageLight": [
+      6,
+      72,
+      7,
+      84
+    ],
+    "irrigationOutputsAtTwoSettings": 4,
+    "questionSubmitted": true,
+    "proseAfterReview": true,
+    "editorChangedAndReset": true,
+    "finalPolicyCases": 7,
+    "fieldGuideLinks": 13,
+    "missingGenerationRepresented": true,
+    "unguidedExercised": true,
+    "inspectorDraftLosses": 2,
+    "filteredDecisionPairs": 2,
+    "horizontalOverflow": false,
+    "pageErrors": [],
+    "externalRequests": []
+  }
+]

@@ -1,0 +1,101 @@
+{
+  "id": "active-checkpoint--google",
+  "caseId": "active-checkpoint",
+  "provider": "google",
+  "decisionModel": "gemini-decision-1",
+  "kind": "fixed",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "3c084a8de61fb1c395a000dca792c3a10bf67ec5d02a0ab3be319bc0b52c3dfc",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "errorCode": null
+    },
+    {
+      "phase": "review",
+      "requestSha256": "f6b861a649134e971ab15aa342f756eab1c949aa3f102178d634d8a9870d0268",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "create",
+    "offered": [
+      "Question"
+    ],
+    "reason": null,
+    "directives": [
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+      "At most one OpenUI activity may help this turn: Question to collect the learner's choice or independent answer before proceeding. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you pose a question or quiz, put all instructions in it and end the reply at its closing fence. Do not answer it yourself."
+    ]
+  },
+  "drafts": [
+    {
+      "label": "active-checkpoint--google/tutor/1",
+      "kind": "fixed",
+      "systemSha256": "784e3d6572c1772f854bf94bb28945f4ce72c3b3a249dec98f3054ece8f723a5",
+      "text": "63.",
+      "attempted": false,
+      "components": [],
+      "outsideWords": 1,
+      "guidanceDelivered": true,
+      "tools": [],
+      "stop": "stop"
+    }
+  ],
+  "status": "withheld",
+  "public": null,
+  "notice": "withheld",
+  "selectedAttempt": null,
+  "findings": [
+    {
+      "attempt": 1,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "instruction_override",
+          "status": "unknown",
+          "probability": 0.44181941224550053
+        },
+        {
+          "id": "explanation_missing",
+          "status": "unknown",
+          "probability": 0.5480055534587509
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "unknown",
+          "probability": 0.4029633196904285
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "probability": 0.9736877204185006
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "fail",
+          "probability": 0.8919387332691927
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "fail",
+          "probability": 0.7462887592217565
+        },
+        {
+          "id": "quality_progress",
+          "status": "fail",
+          "probability": 0.8822098358209687
+        },
+        {
+          "id": "quality_scope",
+          "status": "fail",
+          "probability": 0.987508001015484
+        }
+      ]
+    }
+  ]
+}

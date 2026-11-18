@@ -1,0 +1,223 @@
+{
+  "rows": [
+    {
+      "id": "python-practice--jev--1/jev",
+      "status": "reviewed",
+      "scores": {
+        "debug_example_witness": {
+          "choice": "observable",
+          "confidence": 0.92,
+          "probabilities": {
+            "observable": 0.94,
+            "masked": 0.06,
+            "uncertain": 0,
+            "outside": 0
+          }
+        },
+        "debug_solution_visibility": {
+          "choice": "independent",
+          "confidence": 0.66,
+          "probabilities": {
+            "independent": 0.73,
+            "location_clue": 0.13,
+            "solution_given": 0.11,
+            "uncertain": 0.03,
+            "outside": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "python-practice--jev--1/google",
+      "status": "reviewed",
+      "scores": {
+        "debug_example_witness": {
+          "choice": "observable",
+          "confidence": 0.5461973090237584,
+          "probabilities": {
+            "observable": 0.5461973090237584,
+            "masked": 0.3705842756456069,
+            "uncertain": 0.046978738387500246,
+            "outside": 0.036239676943134395
+          }
+        },
+        "debug_solution_visibility": {
+          "choice": "independent",
+          "confidence": 0.8391467879119352,
+          "probabilities": {
+            "independent": 0.8391467879119352,
+            "location_clue": 0.09053421846569171,
+            "solution_given": 0.04071142446175559,
+            "uncertain": 0.015407050821136406,
+            "outside": 0.014200518339481223
+          }
+        }
+      }
+    },
+    {
+      "id": "python-practice--jev--2/jev",
+      "status": "reviewed",
+      "scores": {
+        "debug_example_witness": {
+          "choice": "observable",
+          "confidence": 0.99,
+          "probabilities": {
+            "observable": 0.99,
+            "masked": 0.01,
+            "uncertain": 0,
+            "outside": 0
+          }
+        },
+        "debug_solution_visibility": {
+          "choice": "independent",
+          "confidence": 0.84,
+          "probabilities": {
+            "independent": 0.87,
+            "location_clue": 0.1,
+            "solution_given": 0.01,
+            "uncertain": 0.02,
+            "outside": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "python-practice--jev--2/google",
+      "status": "reviewed",
+      "scores": {
+        "debug_example_witness": {
+          "choice": "observable",
+          "confidence": 0.8937075915375513,
+          "probabilities": {
+            "observable": 0.8937075915375513,
+            "masked": 0.05473698208072946,
+            "uncertain": 0.04260392498311667,
+            "outside": 0.008951501398602516
+          }
+        },
+        "debug_solution_visibility": {
+          "choice": "independent",
+          "confidence": 0.9253143313836107,
+          "probabilities": {
+            "independent": 0.9253143313836107,
+            "location_clue": 0.027908353813769667,
+            "solution_given": 0.02558983255636388,
+            "uncertain": 0.010335953900653653,
+            "outside": 0.010851528345601803
+          }
+        }
+      }
+    },
+    {
+      "id": "python-practice--google--1/jev",
+      "status": "reviewed",
+      "scores": {
+        "debug_example_witness": {
+          "choice": "observable",
+          "confidence": 0.91,
+          "probabilities": {
+            "observable": 0.93,
+            "masked": 0.06,
+            "uncertain": 0.01,
+            "outside": 0
+          }
+        },
+        "debug_solution_visibility": {
+          "choice": "independent",
+          "confidence": 0.89,
+          "probabilities": {
+            "independent": 0.91,
+            "location_clue": 0.07,
+            "solution_given": 0.01,
+            "uncertain": 0.01,
+            "outside": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "python-practice--google--1/google",
+      "status": "reviewed",
+      "scores": {
+        "debug_example_witness": {
+          "choice": "observable",
+          "confidence": 0.9262015181275285,
+          "probabilities": {
+            "observable": 0.9262015181275285,
+            "masked": 0.041105490045754534,
+            "uncertain": 0.028468867995508695,
+            "outside": 0.004224123831208422
+          }
+        },
+        "debug_solution_visibility": {
+          "choice": "independent",
+          "confidence": 0.8191688052720673,
+          "probabilities": {
+            "independent": 0.8191688052720673,
+            "location_clue": 0.10489160228750584,
+            "solution_given": 0.0401875721896542,
+            "uncertain": 0.028749098135763138,
+            "outside": 0.007002922115009509
+          }
+        }
+      }
+    },
+    {
+      "id": "python-practice--google--2/jev",
+      "status": "reviewed",
+      "scores": {
+        "debug_example_witness": {
+          "choice": "observable",
+          "confidence": 0.99,
+          "probabilities": {
+            "observable": 0.99,
+            "masked": 0.01,
+            "uncertain": 0,
+            "outside": 0
+          }
+        },
+        "debug_solution_visibility": {
+          "choice": "location_clue",
+          "confidence": 0.76,
+          "probabilities": {
+            "independent": 0.12,
+            "location_clue": 0.81,
+            "solution_given": 0.06,
+            "uncertain": 0.01,
+            "outside": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "python-practice--google--2/google",
+      "status": "reviewed",
+      "scores": {
+        "debug_example_witness": {
+          "choice": "observable",
+          "confidence": 0.8170762080684395,
+          "probabilities": {
+            "observable": 0.8170762080684395,
+            "masked": 0.13529910926200864,
+            "uncertain": 0.04152570860080301,
+            "outside": 0.006098974068748903
+          }
+        },
+        "debug_solution_visibility": {
+          "choice": "location_clue",
+          "confidence": 0.6177509562715057,
+          "probabilities": {
+            "independent": 0.2118821778082054,
+            "location_clue": 0.6177509562715057,
+            "solution_given": 0.1363629781489677,
+            "uncertain": 0.02910016259691066,
+            "outside": 0.004903725174410495
+          }
+        }
+      }
+    }
+  ],
+  "providerRequests": 8,
+  "extraUsd": 0.004183064,
+  "totalBoundUsd": 1.91711828
+}

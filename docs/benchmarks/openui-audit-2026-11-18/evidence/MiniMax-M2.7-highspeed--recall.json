@@ -1,0 +1,416 @@
+{
+  "id": "MiniMax-M2.7-highspeed--recall",
+  "scenario": "recall",
+  "model": "MiniMax-M2.7-highspeed",
+  "startedAt": "2026-11-18T12:53:19.776Z",
+  "judge": [
+    {
+      "phase": "plan",
+      "hash": "81e4c63124aaf9f93c07b7ce4156f34b7f1b52c9b1f04fb3c38aa3d15c5e3631",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 3525,
+        "outputTokens": 675
+      },
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.22
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.08
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.91
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.22
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 0.99
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.6
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.36
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.51
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.27
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.86
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.14
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 0.75,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.42,
+            "1": 0.44,
+            "2": 0.11,
+            "3": 0.03
+          },
+          "confidence": 0.41
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.11,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.92,
+            "1": 0.05,
+            "2": 0.03,
+            "3": 0
+          },
+          "confidence": 0.89
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 1.19,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.41,
+            "1": 0.12,
+            "2": 0.32,
+            "3": 0.15
+          },
+          "confidence": 0
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "concise",
+          "probabilities": {
+            "concise": 0.97,
+            "supported": 0.03,
+            "deep": 0
+          },
+          "confidence": 0.96
+        }
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "9d78985d56b926909d25c1d709f7c599a06bc3ac9429a28809d6bde94b06487c",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5788,
+        "outputTokens": 896
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "0ade11b0c3f4934ac324759bce5b77cda2458bebe4b85f91e1c024a517a6e588",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5938,
+        "outputTokens": 896
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "884a672b132443debe44cc5aeb74d5c251e591543b899acc5b239785576c2383",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5633,
+        "outputTokens": 896
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha": "f06af395b93ef5c8421c41b030a1ff6c449e42a363079d529c6592b37950a643",
+      "messagesSha": "8966339c655b1a63091d08b8c9072b9be4bd13e6681fa337057a762ffbd73308",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "Perfect — retrieval practice is exactly the right use of a deck here. One card at a time, and I'll hold back the translations until you've recalled them.",
+        "toolNames": [
+          "remember_learner_profile",
+          "feedback"
+        ],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "toolUse",
+        "errorClass": null,
+        "usage": {
+          "input": 18047,
+          "output": 349,
+          "cacheRead": 512,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 2,
+      "systemSha": "f06af395b93ef5c8421c41b030a1ff6c449e42a363079d529c6592b37950a643",
+      "messagesSha": "a03b00f43bac307108e39cb6833461760d19eb6476e78c08e422a00c715c2b10",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "Three cards, one at a time — answer out loud or in your head *before* you flip, so the recall attempt is yours.\n\n```openui lifecycle=resumable id=french-color-recall\nroot = LearningSurface([intro, deck], \"French colour recall\", \"Three cards, one at a time.\", \"resumable\")\nintro = Explanation(\"Each card shows an English colour and asks for its French word. Try to produce the answer out loud or in writing *first*, then flip to check. I won't give you the translations up front — the recall is the whole point. If a card trips you up, say which one and we'll work on that one specifically.\", \"How this works\")\ndeck = Flashcards(\"french-colours\", \"French vocabulary: colours\", \"French colour words\", [\n  { id: \"c-red\", front: \"red → ?\", back: \"rouge\", tags: [\"colour\", \"vocabulary\"] },\n  { id: \"c-blue\", front: \"blue → ?\", back: \"bleu\", tags: [\"colour\", \"vocabulary\"] },\n  { id: \"c-green\", front: \"green → ?\", back: \"vert\", tags: [\"colour\", \"vocabulary\"] }\n], \"resumable\", \"Recall the French word for each colour, one card at a time.\")\n```\n\nWork through the deck and tell me which ones felt solid and which one you had to guess at — I'll pick up from there.",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 18638,
+          "output": 819,
+          "cacheRead": 128,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 3,
+      "systemSha": "ab7f32d006bf45935a971cfcf903def6f9003b0e673f47340a193c9be5812452",
+      "messagesSha": "8d664dc88323f87ef51116b776ac1a4a1071065c6329528d878f4073a2bc8744",
+      "toolsSha": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "response": {
+        "text": "What French word do you recall for **red**?",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 9096,
+          "output": 90,
+          "cacheRead": 513,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "counterfactual": {
+    "systemSha": "d5882bd54a9616dce0694002e8a5041edc531d69cce93f535492fccf5b40ccd2",
+    "messagesSha": "8966339c655b1a63091d08b8c9072b9be4bd13e6681fa337057a762ffbd73308",
+    "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+    "response": {
+      "text": "",
+      "toolNames": [
+        "set_learner_goal"
+      ],
+      "requestedModel": "MiniMax-M2.7-highspeed",
+      "responseModel": null,
+      "stop": "toolUse",
+      "errorClass": null,
+      "usage": {
+        "input": 18014,
+        "output": 1498,
+        "cacheRead": 512,
+        "cacheWrite": 0
+      }
+    }
+  },
+  "decision": {
+    "action": "create",
+    "families": [
+      {
+        "family": "retrieval",
+        "components": [
+          "LanguagePractice"
+        ]
+      }
+    ],
+    "features": [
+      "ordered_procedure",
+      "discrete_recall",
+      "language_learning"
+    ],
+    "paired": false
+  },
+  "offer": "- At most one OpenUI activity may help this turn: LanguagePractice to practise producing or understanding the language. Prose is acceptable when it serves the learner better.",
+  "phase": "released",
+  "selection": 3,
+  "reason": null,
+  "release": {
+    "text": "What French word do you recall for **red**?",
+    "unverified": false
+  },
+  "publicText": "What French word do you recall for **red**?",
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "practice_missing",
+          "status": "fail",
+          "probability": 0.79
+        },
+        {
+          "id": "feedback_invented",
+          "status": "fail",
+          "probability": 0.77
+        },
+        {
+          "id": "quality_progress",
+          "status": "unknown",
+          "probability": 0.69
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "stop_after_checkpoint",
+          "status": "fail",
+          "probability": 1
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "probability": 0.6
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "probability": 0.54
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "unknown",
+          "probability": 0.46
+        }
+      ]
+    },
+    {
+      "attempt": 3,
+      "status": "pass",
+      "checks": [
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "fail",
+          "probability": 0.8
+        }
+      ]
+    }
+  ],
+  "directives": [
+    "- Provide one requested OpenUI practice activity now, without requiring a lesson first or attaching a study plan.",
+    "- A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+    "- Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+    "- Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+    "- At most one OpenUI activity may help this turn: LanguagePractice to practise producing or understanding the language. Prose is acceptable when it serves the learner better.",
+    "- If you pose a question or quiz, stop and wait for the learner's answer. Do not answer it yourself."
+  ],
+  "finishedAt": "2026-11-18T12:53:40.700Z"
+}

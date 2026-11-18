@@ -1,0 +1,640 @@
+{
+  "id": "js-largest--minimax--google",
+  "caseId": "js-largest",
+  "tutor": "minimax",
+  "arm": "google",
+  "kind": "prospective-supplement",
+  "policy": "keating-teaching-policy/v2.3.4",
+  "prompt": "I'm learning JavaScript loops. Give me a small JavaScript exercise I can edit myself to return the largest number in [4, 1, 9].",
+  "originalHistory": [],
+  "plan": {
+    "status": "guided",
+    "action": "create",
+    "offered": [
+      "CodingChallenge"
+    ],
+    "features": {
+      "variable_relationship": false,
+      "ordered_procedure": false,
+      "discrete_recall": false,
+      "structure_relations": false,
+      "category_distinction": false,
+      "prediction_opportunity": false,
+      "learner_response_due": false,
+      "hands_on_requested": true,
+      "executable_code": true,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "decisions": {
+      "direct_answer_requested": false,
+      "explanation_requested": false,
+      "learner_stuck": false,
+      "attempt_present": false,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": true,
+      "plain_reply_requested": false,
+      "assessment_declined": false,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": false,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": true,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "directives": [
+      "Provide one requested OpenUI practice activity now, without requiring a lesson first or attaching a study plan.",
+      "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+      "Keep the exercise, starter and tests in the learner's requested JavaScript.",
+      "If the learner requests a new bug to find independently, choose a concrete input on which the starter visibly fails or produces the wrong result. State the intended behavior or expected output. Leave locating and repairing the fault to the learner. Keep ordinary documentation and expected-output comments. Withhold unrequested hints and the fix from prose, code comments and controls, including interactive page titles and descriptions shown while loading or on fallback.",
+      "At most one OpenUI activity may help this turn: CodingChallenge to let the learner write or run the code. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "CodingChallenge runs JavaScript or TypeScript. Preserve the requested language. For another language, a short code sample and a Question can collect the learner's fix without claiming to run it.",
+      "If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested."
+    ],
+    "codePracticeLanguage": "javascript",
+    "reason": null
+  },
+  "refs": [
+    {
+      "label": "js-largest--minimax--google/plan",
+      "entryId": "js-largest--minimax--google/plan",
+      "source": "live",
+      "requestSha256": "1587d811f6b73bb86db5269dc401ce65e31c2cc748f7c96c4b94e7f1ccc89b70",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "error": null,
+      "provenance": "documented-request-model"
+    },
+    {
+      "label": "js-largest--minimax--google/review/1",
+      "entryId": "js-largest--minimax--google/review/1",
+      "source": "live",
+      "requestSha256": "c5511910379342b2c7d94884a20a48201a5a18619c98ce144e4a2df58f825d1b",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "error": null,
+      "provenance": "documented-request-model"
+    }
+  ],
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 18737,
+          "output": 654,
+          "cacheRead": 128,
+          "cacheWrite": 0,
+          "totalTokens": 19519,
+          "cost": {
+            "input": 0.011242199999999999,
+            "output": 0.0015696,
+            "cacheRead": 0.00000768,
+            "cacheWrite": 0,
+            "total": 0.012819479999999998
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 184
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Here's an editable exercise. The starter sets up the loop for you; the body is yours to write.\n\n```openui lifecycle=resumeral id=js-loops-largest-number\n\nroot = LearningSurface([challenge], \"Find the largest number with a loop\", \"Write the loop body, then run the sample tests.\", \"resumable\")\nchallenge = CodingChallenge(\"js-loops-largest\", \"Largest number in an array\", \"Write a function `largest(arr)` that returns the largest number in the array using a `for` loop.\\n\\nRules:\\n- Start with a `max` variable holding the first element (`arr[0]`).\\n- Loop from index 1 to the end of the array.\\n- Update `max` whenever you find a bigger number.\\n- Return `max` at the end.\\n\\nDo not use `Math.max(...arr)`.\", \"javascript\", \"function largest(arr) {\\n  let max = arr[0];\\n  // TODO: loop over the rest of the array and update max\\n  return max;\\n}\\n\", \"largest\", [{\"id\": \"t1\", \"label\": \"largest([4, 1, 9]) is 9\", \"args\": [[4, 1, 9]], \"expected\": 9}, {\"id\": \"t2\", \"label\": \"largest([7]) is 7 (single element)\", \"args\": [[7]], \"expected\": 7}, {\"id\": \"t3\", \"label\": \"largest([-4, -1, -9]) is -1 (all negative)\", \"args\": [[-4, -1, -9]], \"expected\": -1}, {\"id\": \"t4\", \"label\": \"largest([2, 8, 3, 8, 1]) is 8\", \"args\": [[2, 8, 3, 8, 1]], \"expected\": 8}], \"resumable\", \"Hint: the comparison operator you want is `>` — update `max` only when the current element beats it.\")\n```\n\nPress **Run tests** when your version is ready — the results come back to me and we'll look at them together."
+          }
+        ]
+      },
+      "text": "Here's an editable exercise. The starter sets up the loop for you; the body is yours to write.\n\n```openui lifecycle=resumeral id=js-loops-largest-number\n\nroot = LearningSurface([challenge], \"Find the largest number with a loop\", \"Write the loop body, then run the sample tests.\", \"resumable\")\nchallenge = CodingChallenge(\"js-loops-largest\", \"Largest number in an array\", \"Write a function `largest(arr)` that returns the largest number in the array using a `for` loop.\\n\\nRules:\\n- Start with a `max` variable holding the first element (`arr[0]`).\\n- Loop from index 1 to the end of the array.\\n- Update `max` whenever you find a bigger number.\\n- Return `max` at the end.\\n\\nDo not use `Math.max(...arr)`.\", \"javascript\", \"function largest(arr) {\\n  let max = arr[0];\\n  // TODO: loop over the rest of the array and update max\\n  return max;\\n}\\n\", \"largest\", [{\"id\": \"t1\", \"label\": \"largest([4, 1, 9]) is 9\", \"args\": [[4, 1, 9]], \"expected\": 9}, {\"id\": \"t2\", \"label\": \"largest([7]) is 7 (single element)\", \"args\": [[7]], \"expected\": 7}, {\"id\": \"t3\", \"label\": \"largest([-4, -1, -9]) is -1 (all negative)\", \"args\": [[-4, -1, -9]], \"expected\": -1}, {\"id\": \"t4\", \"label\": \"largest([2, 8, 3, 8, 1]) is 8\", \"args\": [[2, 8, 3, 8, 1]], \"expected\": 8}], \"resumable\", \"Hint: the comparison operator you want is `>` — update `max` only when the current element beats it.\")\n```\n\nPress **Run tests** when your version is ready — the results come back to me and we'll look at them together.",
+      "toolCalls": [],
+      "attempted": true,
+      "components": [
+        "coding-challenge"
+      ],
+      "outsideWords": 39,
+      "entryId": "js-largest--minimax--google/tutor/1",
+      "completed": true,
+      "providedDirectives": true,
+      "systemSha256": "b4a4b21fc06dad2f0e75ee5caf01751a4e13d84f8e06897e8530de2b208d3b74"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "exercise_language_preserved",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03245724239756856
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.021865998483733388
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.05080195576515637
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.015892302922687118
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03720909186415096
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.033889576437619744
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.015455847272978284
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.025270785743696622
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.11288834138145563
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04310224026703388
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.060200460087313695
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02334056042259687
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02879935797482701
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.012053953799011762
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.016955330641643823
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02828650571315198
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.09271898445395087
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.1302875824362501
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04424912731578054
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.042049191644220704
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04513402553116811
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.038198688767561835
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05586639656660863
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.09245270420552376
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.023759030136553068
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.028486523930977357
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.022619596859491164
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02514242674007161
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05080448155909667
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.047778920097614044
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.025065044085681533
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.029214755905001333
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04956308290914113
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03360411764124663
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07020642168173993
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.02514292562438809
+        },
+        {
+          "id": "code_example_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06583732596849483
+        },
+        {
+          "id": "code_trace_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.25057705929360663
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.056266017721154526,
+          "status": "pass"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04524959790932816,
+          "status": "unknown"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.11848686630067864,
+          "status": "unknown"
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.037879328219887265,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.11261459537651242,
+          "status": "pass"
+        }
+      ],
+      "variant": "default",
+      "debuggingExercise": {
+        "example": {
+          "type": "choice",
+          "choice": "outside",
+          "probabilities": {
+            "observable": 0.06510783479427579,
+            "masked": 0.056266017721154526,
+            "uncertain": 0.017546743087815543,
+            "outside": 0.8610794043967541
+          },
+          "confidence": 0.8610794043967541
+        },
+        "disclosure": {
+          "type": "choice",
+          "choice": "outside",
+          "probabilities": {
+            "independent": 0.27081490357887605,
+            "location_clue": 0.11848686630067864,
+            "solution_given": 0.04524959790932816,
+            "uncertain": 0.025093945444172726,
+            "outside": 0.5403546867669444
+          },
+          "confidence": 0.5403546867669444
+        }
+      }
+    }
+  ],
+  "selectedAttempt": 1,
+  "disposition": "released",
+  "missing": null,
+  "public": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 18737,
+        "output": 654,
+        "cacheRead": 128,
+        "cacheWrite": 0,
+        "totalTokens": 19519,
+        "cost": {
+          "input": 0.011242199999999999,
+          "output": 0.0015696,
+          "cacheRead": 0.00000768,
+          "cacheWrite": 0,
+          "total": 0.012819479999999998
+        },
+        "reasoning": 184,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Here's an editable exercise. The starter sets up the loop for you; the body is yours to write.\n\n```openui lifecycle=resumeral id=js-loops-largest-number\n\nroot = LearningSurface([challenge], \"Find the largest number with a loop\", \"Write the loop body, then run the sample tests.\", \"resumable\")\nchallenge = CodingChallenge(\"js-loops-largest\", \"Largest number in an array\", \"Write a function `largest(arr)` that returns the largest number in the array using a `for` loop.\\n\\nRules:\\n- Start with a `max` variable holding the first element (`arr[0]`).\\n- Loop from index 1 to the end of the array.\\n- Update `max` whenever you find a bigger number.\\n- Return `max` at the end.\\n\\nDo not use `Math.max(...arr)`.\", \"javascript\", \"function largest(arr) {\\n  let max = arr[0];\\n  // TODO: loop over the rest of the array and update max\\n  return max;\\n}\\n\", \"largest\", [{\"id\": \"t1\", \"label\": \"largest([4, 1, 9]) is 9\", \"args\": [[4, 1, 9]], \"expected\": 9}, {\"id\": \"t2\", \"label\": \"largest([7]) is 7 (single element)\", \"args\": [[7]], \"expected\": 7}, {\"id\": \"t3\", \"label\": \"largest([-4, -1, -9]) is -1 (all negative)\", \"args\": [[-4, -1, -9]], \"expected\": -1}, {\"id\": \"t4\", \"label\": \"largest([2, 8, 3, 8, 1]) is 8\", \"args\": [[2, 8, 3, 8, 1]], \"expected\": 8}], \"resumable\", \"Hint: the comparison operator you want is `>` — update `max` only when the current element beats it.\")\n```\n\nPress **Run tests** when your version is ready — the results come back to me and we'll look at them together."
+        }
+      ]
+    },
+    "text": "Here's an editable exercise. The starter sets up the loop for you; the body is yours to write.\n\n```openui lifecycle=resumeral id=js-loops-largest-number\n\nroot = LearningSurface([challenge], \"Find the largest number with a loop\", \"Write the loop body, then run the sample tests.\", \"resumable\")\nchallenge = CodingChallenge(\"js-loops-largest\", \"Largest number in an array\", \"Write a function `largest(arr)` that returns the largest number in the array using a `for` loop.\\n\\nRules:\\n- Start with a `max` variable holding the first element (`arr[0]`).\\n- Loop from index 1 to the end of the array.\\n- Update `max` whenever you find a bigger number.\\n- Return `max` at the end.\\n\\nDo not use `Math.max(...arr)`.\", \"javascript\", \"function largest(arr) {\\n  let max = arr[0];\\n  // TODO: loop over the rest of the array and update max\\n  return max;\\n}\\n\", \"largest\", [{\"id\": \"t1\", \"label\": \"largest([4, 1, 9]) is 9\", \"args\": [[4, 1, 9]], \"expected\": 9}, {\"id\": \"t2\", \"label\": \"largest([7]) is 7 (single element)\", \"args\": [[7]], \"expected\": 7}, {\"id\": \"t3\", \"label\": \"largest([-4, -1, -9]) is -1 (all negative)\", \"args\": [[-4, -1, -9]], \"expected\": -1}, {\"id\": \"t4\", \"label\": \"largest([2, 8, 3, 8, 1]) is 8\", \"args\": [[2, 8, 3, 8, 1]], \"expected\": 8}], \"resumable\", \"Hint: the comparison operator you want is `>` — update `max` only when the current element beats it.\")\n```\n\nPress **Run tests** when your version is ready — the results come back to me and we'll look at them together.",
+    "toolCalls": [],
+    "attempted": true,
+    "components": [
+      "coding-challenge"
+    ],
+    "outsideWords": 39
+  },
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 18737,
+        "output": 654,
+        "cacheRead": 128,
+        "cacheWrite": 0,
+        "totalTokens": 19519,
+        "cost": {
+          "input": 0.011242199999999999,
+          "output": 0.0015696,
+          "cacheRead": 0.00000768,
+          "cacheWrite": 0,
+          "total": 0.012819479999999998
+        },
+        "reasoning": 184,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Here's an editable exercise. The starter sets up the loop for you; the body is yours to write.\n\n```openui lifecycle=resumeral id=js-loops-largest-number\n\nroot = LearningSurface([challenge], \"Find the largest number with a loop\", \"Write the loop body, then run the sample tests.\", \"resumable\")\nchallenge = CodingChallenge(\"js-loops-largest\", \"Largest number in an array\", \"Write a function `largest(arr)` that returns the largest number in the array using a `for` loop.\\n\\nRules:\\n- Start with a `max` variable holding the first element (`arr[0]`).\\n- Loop from index 1 to the end of the array.\\n- Update `max` whenever you find a bigger number.\\n- Return `max` at the end.\\n\\nDo not use `Math.max(...arr)`.\", \"javascript\", \"function largest(arr) {\\n  let max = arr[0];\\n  // TODO: loop over the rest of the array and update max\\n  return max;\\n}\\n\", \"largest\", [{\"id\": \"t1\", \"label\": \"largest([4, 1, 9]) is 9\", \"args\": [[4, 1, 9]], \"expected\": 9}, {\"id\": \"t2\", \"label\": \"largest([7]) is 7 (single element)\", \"args\": [[7]], \"expected\": 7}, {\"id\": \"t3\", \"label\": \"largest([-4, -1, -9]) is -1 (all negative)\", \"args\": [[-4, -1, -9]], \"expected\": -1}, {\"id\": \"t4\", \"label\": \"largest([2, 8, 3, 8, 1]) is 8\", \"args\": [[2, 8, 3, 8, 1]], \"expected\": 8}], \"resumable\", \"Hint: the comparison operator you want is `>` — update `max` only when the current element beats it.\")\n```\n\nPress **Run tests** when your version is ready — the results come back to me and we'll look at them together."
+        }
+      ]
+    },
+    "text": "Here's an editable exercise. The starter sets up the loop for you; the body is yours to write.\n\n```openui lifecycle=resumeral id=js-loops-largest-number\n\nroot = LearningSurface([challenge], \"Find the largest number with a loop\", \"Write the loop body, then run the sample tests.\", \"resumable\")\nchallenge = CodingChallenge(\"js-loops-largest\", \"Largest number in an array\", \"Write a function `largest(arr)` that returns the largest number in the array using a `for` loop.\\n\\nRules:\\n- Start with a `max` variable holding the first element (`arr[0]`).\\n- Loop from index 1 to the end of the array.\\n- Update `max` whenever you find a bigger number.\\n- Return `max` at the end.\\n\\nDo not use `Math.max(...arr)`.\", \"javascript\", \"function largest(arr) {\\n  let max = arr[0];\\n  // TODO: loop over the rest of the array and update max\\n  return max;\\n}\\n\", \"largest\", [{\"id\": \"t1\", \"label\": \"largest([4, 1, 9]) is 9\", \"args\": [[4, 1, 9]], \"expected\": 9}, {\"id\": \"t2\", \"label\": \"largest([7]) is 7 (single element)\", \"args\": [[7]], \"expected\": 7}, {\"id\": \"t3\", \"label\": \"largest([-4, -1, -9]) is -1 (all negative)\", \"args\": [[-4, -1, -9]], \"expected\": -1}, {\"id\": \"t4\", \"label\": \"largest([2, 8, 3, 8, 1]) is 8\", \"args\": [[2, 8, 3, 8, 1]], \"expected\": 8}], \"resumable\", \"Hint: the comparison operator you want is `>` — update `max` only when the current element beats it.\")\n```\n\nPress **Run tests** when your version is ready — the results come back to me and we'll look at them together.",
+    "toolCalls": []
+  },
+  "notice": null
+}

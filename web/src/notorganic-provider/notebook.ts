@@ -55,3 +55,26 @@ export async function getHostedNotebookRun(runId: string, snapshotId: string | u
 		pds_snapshot_id: snapshotId,
 	};
 }
+
+export function isPendingNotebookRun(run: HostedNotebookRun): boolean {
+	return run.status === "queued" || run.status === "running";
+}
+
+/** A refresh only observes the accepted run. Publish its identity before the first poll can fail. */
+export async function startOrRefreshCodeRun(
+	input: NotebookRequest,
+	pending: HostedNotebookRun | null,
+	onUpdate: (run: HostedNotebookRun) => void,
+	fetcher?: typeof fetch,
+	pause: () => Promise<void> = () => new Promise(resolve => setTimeout(resolve, 1000)),
+): Promise<void> {
+	let run = pending
+		? await getHostedNotebookRun(pending.id, pending.pds_snapshot_id, fetcher)
+		: await createHostedCodeRun(input, fetcher);
+	onUpdate(run);
+	for (let attempt = 0; isPendingNotebookRun(run) && attempt < 18; attempt++) {
+		await pause();
+		run = await getHostedNotebookRun(run.id, run.pds_snapshot_id, fetcher);
+		onUpdate(run);
+	}
+}

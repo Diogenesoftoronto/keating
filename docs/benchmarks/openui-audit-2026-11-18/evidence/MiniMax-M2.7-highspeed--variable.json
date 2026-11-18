@@ -1,0 +1,381 @@
+{
+  "id": "MiniMax-M2.7-highspeed--variable",
+  "scenario": "variable",
+  "model": "MiniMax-M2.7-highspeed",
+  "startedAt": "2026-11-18T12:53:40.701Z",
+  "judge": [
+    {
+      "phase": "plan",
+      "hash": "e1d5f35a8a25231987537c42c5dbcbd4a89689a50780e45066f6652e47dff35a",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 3523,
+        "outputTokens": 674
+      },
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.65
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.17
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.58
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.37
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.41
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.11
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.53
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.96
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.71
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 1
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.98
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.1
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.28
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.92
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.87
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.87
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.1
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.07
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.11
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.32
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.52
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 1.1,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.19,
+            "1": 0.53,
+            "2": 0.26,
+            "3": 0.02
+          },
+          "confidence": 0.51
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0.21,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 0.81,
+            "1": 0.17,
+            "2": 0.02,
+            "3": 0
+          },
+          "confidence": 0.79
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 0.56,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.63,
+            "1": 0.22,
+            "2": 0.12,
+            "3": 0.03
+          },
+          "confidence": 0.45
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "supported",
+          "probabilities": {
+            "concise": 0.2,
+            "supported": 0.79,
+            "deep": 0.01
+          },
+          "confidence": 0.68
+        }
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "64f01062f3db598fc5a7f35ab530f589de27be5504d50999f3267f103abc33e0",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5980,
+        "outputTokens": 896
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "e95d09ae5c128a834110c3e20463ed78f9e2937d620082682e6d9f36ef65f7cf",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 6165,
+        "outputTokens": 896
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha": "7acd6446b5a5b9172ea66ff080ae0e20a945c34bcfd3170b7c8cc14d3dce2367",
+      "messagesSha": "c66ed8b90d8771a9336b9ff41420328b6ce45d82a536d371d3c1ac9830c82543",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "Yes—here's a model where the height is locked at **4** and you slide the width. Watch the two numbers respond differently:\n\n- **Area** = width × 4 → grows by 4 for every 1 unit of width\n- **Perimeter** = 2 × (width + 4) → grows by 2 for every 1 unit of width\n\n```openui lifecycle=ephemeral id=rectangle-area-perimeter-explorer\n\nroot = LearningSurface([model], \"Rectangle: area vs. perimeter\", \"Height stays fixed at 4. Move the width slider and compare how each measurement changes.\", \"ephemeral\")\nmodel = Simulation(\"rect-model\", \"Explore area and perimeter\", [\n  { id: \"width\", label: \"Width\", unit: \"units\", min: 1, max: 20, step: 1, value: 5 }\n], [\n  { id: \"area\", label: \"Area\", unit: \"square units\", expr: \"width * 4\", precision: 0, emphasis: true },\n  { id: \"perimeter\", label: \"Perimeter\", unit: \"units\", expr: \"2 * (width + 4)\", precision: 0 }\n], \"ephemeral\", \"First predict: if width grows from 5 to 6, which measurement changes more? Then slide the width and check your prediction. Try adding 1 unit at a time near the start, then try jumping from 5 to 15.\")\n```\n\nTry it, and then tell me one thing you notice—for example, why does area increase faster than perimeter when the width changes?",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 18623,
+          "output": 582,
+          "cacheRead": 0,
+          "cacheWrite": 0
+        }
+      }
+    },
+    {
+      "attempt": 2,
+      "systemSha": "7acd6446b5a5b9172ea66ff080ae0e20a945c34bcfd3170b7c8cc14d3dce2367",
+      "messagesSha": "c1a73379cd19cd7df2b4704f55682d3472c41bff3c04a204c7c840a7e6972492",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "Yes — a slider is ideal here, because the two quantities react to the same change in different ways.\n\nThe key is to keep the formulas visible while you move:\n\n- **Area** = width × height, so with height fixed at 4: **Area = 4w**\n- **Perimeter** = 2(width + height), so: **Perimeter = 2w + 8**\n\nHere’s a concrete example to anchor it: if the width is 6, the area is 24 square units but the perimeter is only 20 units. Widening adds **4 square units of area** for every unit of width, but adds just **2 perimeter units** — because only the two horizontal sides get longer.\n\nSet the slider to **w = 4** first. There, area and perimeter are both 16, so the rectangle is a square. Then widen it and watch which quantity pulls away faster.\n\n```openui lifecycle=resumable id=rectangle-area-perimeter-explorer\nroot = LearningSurface([sim], \"Rectangle Explorer\", \"Height stays fixed at 4. Move the width and compare area with perimeter.\", \"resumable\")\nsim = Simulation(\"rect-explorer\", \"Width changes, height stays at 4\", [\n  { id: \"width\", label: \"Width\", unit: \"units\", min: 1, max: 20, step: 0.5, value: 4 }\n], [\n  { id: \"area\", label: \"Area\", unit: \"square units\", expr: \"4 * width\", precision: 1, emphasis: true },\n  { id: \"perimeter\", label: \"Perimeter\", unit: \"units\", expr: \"2 * (width + 4)\", precision: 1 },\n  { id: \"gap\", label: \"Area minus perimeter\", unit: \"units\", expr: \"4 * width - 2 * (width + 4)\", precision: 1 }\n], \"resumable\", \"First predict which number grows faster as the width increases. Then drag the Width slider from 4 toward 20 and watch Area, Perimeter, and the gap between them. The height never changes, so every change you see comes from the width alone.\")\n```\n\nThe third readout is the clincher: **area minus perimeter** is zero at a square and grows twice as fast as the width increases. That is the distinction in one number — perimeter tracks the *border*, while area tracks everything *inside* it.",
+        "toolNames": [],
+        "requestedModel": "MiniMax-M2.7-highspeed",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 486,
+          "output": 1273,
+          "cacheRead": 18432,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "counterfactual": {
+    "systemSha": "c8c1c84718005d9119777b697e401f405d69f3e50759ca1420ba13aff7b90ce8",
+    "messagesSha": "c66ed8b90d8771a9336b9ff41420328b6ce45d82a536d371d3c1ac9830c82543",
+    "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+    "response": {
+      "text": "Absolutely — this is exactly the case where moving the slider teaches better than reading. Here's the mental model first, then the toy.\n\n**Area** = how much surface, `length × width`. **Perimeter** = how much border to walk around, `2 × (length + width)`. Keeping the height at 4 makes the comparison clean: change the width, and area grows by 4 for every 1 unit of width (you add a whole column of height 4), while the perimeter grows by only 2 (you add one unit to two opposite sides).\n\nOne prediction to make before you touch anything: at what width do area and perimeter become **equal**? Slide toward it and watch the two numbers cross.\n\n```openui lifecycle=resumable id=rect-area-perimeter\nroot = LearningSurface([model, toy], \"Rectangle: area vs perimeter\", \"Height is locked at 4. Change the width and watch both numbers respond differently.\", \"resumable\")\nmodel = Explanation(\"## The two numbers measure different things\\n\\n- **Area** = the space inside: `length × width`. In square units.\\n- **Perimeter** = the distance around the edge: `2 × (length + width)`. In plain units.\\n\\nWith the height fixed at 4, widening the rectangle by 1 unit **adds 4 square units** of area (a new 1-by-4 column) but only **2 units** of perimeter (one unit on each of the two opposite sides). That gap is the whole trick: area scales with the width times the height, perimeter only scales with the width itself.\\n\\nTry this: watch for the width where **area minus perimeter** hits zero. At that width the two numbers are equal — a 4-by-4 square.\", \"How they differ\")\ntoy = Simulation(\"rect-sim\", \"Rectangle explorer (height locked at 4)\", [\n  { id: \"w\", label: \"Width\", unit: \"units\", min: 1, max: 12, step: 0.5, value: 3 }\n], [\n  { id: \"area\", label: \"Area\", unit: \"square units\", expr: \"w * 4\", precision: 1, emphasis: true },\n  { id: \"per\", label: \"Perimeter\", unit: \"units\", expr: \"2 * (w + 4)\", precision: 1 },\n  { id: \"diff\", label: \"Area minus perimeter\", unit: \"square units\", expr: \"2 * w - 8\", precision: 1 }\n], \"resumable\", \"Height is fixed at 4. First, predict (out loud or to yourself) at what width area and perimeter will be equal. Then slide the width slowly from 1 up to 12 and note where the difference readout crosses zero.\")\n```\n\nMove the slider slowly and watch the third number — when it crosses zero, area and perimeter are momentarily the same. Then try the reverse test that trips people up: at width 2, area is 8 but perimeter is 12, so the *perimeter* is the bigger number. Ask yourself why that's not a contradiction.\n\nHit **Share what I found** when you've got a setting worth discussing, and tell me which comparison confused you most — we can drill exactly that one.",
+      "toolNames": [],
+      "requestedModel": "MiniMax-M2.7-highspeed",
+      "responseModel": null,
+      "stop": "stop",
+      "errorClass": null,
+      "usage": {
+        "input": 18043,
+        "output": 1852,
+        "cacheRead": 512,
+        "cacheWrite": 0
+      }
+    }
+  },
+  "decision": {
+    "action": "create",
+    "families": [
+      {
+        "family": "question",
+        "components": [
+          "Question"
+        ]
+      },
+      {
+        "family": "manipulable",
+        "components": [
+          "Simulation"
+        ]
+      },
+      {
+        "family": "workspace",
+        "components": [
+          "ConceptMap"
+        ]
+      }
+    ],
+    "features": [
+      "variable_relationship",
+      "structure_relations",
+      "category_distinction",
+      "prediction_opportunity"
+    ],
+    "lead": "answer-first",
+    "paired": false
+  },
+  "offer": "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; have the learner sort or tell apart similar cases; or Simulation to let the learner change a variable and observe the outcome; or ConceptMap to lay out how the concepts relate. Prose is acceptable when it serves the learner better.",
+  "phase": "released",
+  "selection": 2,
+  "reason": "best-effort-draft",
+  "release": {
+    "text": "Yes — a slider is ideal here, because the two quantities react to the same change in different ways.\n\nThe key is to keep the formulas visible while you move:\n\n- **Area** = width × height, so with height fixed at 4: **Area = 4w**\n- **Perimeter** = 2(width + height), so: **Perimeter = 2w + 8**\n\nHere’s a concrete example to anchor it: if the width is 6, the area is 24 square units but the perimeter is only 20 units. Widening adds **4 square units of area** for every unit of width, but adds just **2 perimeter units** — because only the two horizontal sides get longer.\n\nSet the slider to **w = 4** first. There, area and perimeter are both 16, so the rectangle is a square. Then widen it and watch which quantity pulls away faster.\n\n```openui lifecycle=resumable id=rectangle-area-perimeter-explorer\nroot = LearningSurface([sim], \"Rectangle Explorer\", \"Height stays fixed at 4. Move the width and compare area with perimeter.\", \"resumable\")\nsim = Simulation(\"rect-explorer\", \"Width changes, height stays at 4\", [\n  { id: \"width\", label: \"Width\", unit: \"units\", min: 1, max: 20, step: 0.5, value: 4 }\n], [\n  { id: \"area\", label: \"Area\", unit: \"square units\", expr: \"4 * width\", precision: 1, emphasis: true },\n  { id: \"perimeter\", label: \"Perimeter\", unit: \"units\", expr: \"2 * (width + 4)\", precision: 1 },\n  { id: \"gap\", label: \"Area minus perimeter\", unit: \"units\", expr: \"4 * width - 2 * (width + 4)\", precision: 1 }\n], \"resumable\", \"First predict which number grows faster as the width increases. Then drag the Width slider from 4 toward 20 and watch Area, Perimeter, and the gap between them. The height never changes, so every change you see comes from the width alone.\")\n```\n\nThe third readout is the clincher: **area minus perimeter** is zero at a square and grows twice as fast as the width increases. That is the distinction in one number — perimeter tracks the *border*, while area tracks everything *inside* it.",
+    "unverified": true
+  },
+  "publicText": "<!--keating:review=unverified-->\nYes — a slider is ideal here, because the two quantities react to the same change in different ways.\n\nThe key is to keep the formulas visible while you move:\n\n- **Area** = width × height, so with height fixed at 4: **Area = 4w**\n- **Perimeter** = 2(width + height), so: **Perimeter = 2w + 8**\n\nHere’s a concrete example to anchor it: if the width is 6, the area is 24 square units but the perimeter is only 20 units. Widening adds **4 square units of area** for every unit of width, but adds just **2 perimeter units** — because only the two horizontal sides get longer.\n\nSet the slider to **w = 4** first. There, area and perimeter are both 16, so the rectangle is a square. Then widen it and watch which quantity pulls away faster.\n\n```openui lifecycle=resumable id=rectangle-area-perimeter-explorer\nroot = LearningSurface([sim], \"Rectangle Explorer\", \"Height stays fixed at 4. Move the width and compare area with perimeter.\", \"resumable\")\nsim = Simulation(\"rect-explorer\", \"Width changes, height stays at 4\", [\n  { id: \"width\", label: \"Width\", unit: \"units\", min: 1, max: 20, step: 0.5, value: 4 }\n], [\n  { id: \"area\", label: \"Area\", unit: \"square units\", expr: \"4 * width\", precision: 1, emphasis: true },\n  { id: \"perimeter\", label: \"Perimeter\", unit: \"units\", expr: \"2 * (width + 4)\", precision: 1 },\n  { id: \"gap\", label: \"Area minus perimeter\", unit: \"units\", expr: \"4 * width - 2 * (width + 4)\", precision: 1 }\n], \"resumable\", \"First predict which number grows faster as the width increases. Then drag the Width slider from 4 toward 20 and watch Area, Perimeter, and the gap between them. The height never changes, so every change you see comes from the width alone.\")\n```\n\nThe third readout is the clincher: **area minus perimeter** is zero at a square and grows twice as fast as the width increases. That is the distinction in one number — perimeter tracks the *border*, while area tracks everything *inside* it.",
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "unknown",
+      "checks": [
+        {
+          "id": "direct_help_withheld",
+          "status": "unknown",
+          "probability": 0.43
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "unknown",
+          "probability": 0.5
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "probability": 0.55
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "fail",
+          "probability": 0.77
+        }
+      ]
+    },
+    {
+      "attempt": 2,
+      "status": "fail",
+      "checks": [
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "probability": 0.72
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "probability": 0.55
+        }
+      ]
+    }
+  ],
+  "directives": [
+    "- Answer the bounded question directly; do not start a diagnostic interview.",
+    "- A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+    "- An available animation tool may be used for the requested motion; author topic-specific content.",
+    "- Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+    "- Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+    "- Answer the learner's request first; any activity comes after the answer.",
+    "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining; have the learner sort or tell apart similar cases; or Simulation to let the learner change a variable and observe the outcome; or ConceptMap to lay out how the concepts relate. Prose is acceptable when it serves the learner better.",
+    "- If you pose a question or quiz, stop and wait for the learner's answer. Do not answer it yourself."
+  ],
+  "finishedAt": "2026-11-18T12:54:33.675Z"
+}

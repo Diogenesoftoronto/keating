@@ -1,0 +1,107 @@
+{
+  "probe": {
+    "archivedDraftSha256": "8f9d3916b021755c268c59375b97468a638d5e5eb0c55ed52fa33ddac74527ac",
+    "observedComponents": [
+      "coding-challenge",
+      "markdown"
+    ],
+    "challengeLanguages": [
+      "javascript"
+    ],
+    "markdownEditor": {
+      "editableCode": [],
+      "editorOutsideWords": null
+    },
+    "cases": [
+      {
+        "prompt": "Give me a JavaScript coding challenge I can fix and test myself.",
+        "cue": {
+          "kind": "explicit-interface",
+          "targets": [
+            "coding-challenge"
+          ],
+          "codeLanguage": "javascript"
+        },
+        "actionMatched": true,
+        "missedActionTurns": 0
+      },
+      {
+        "prompt": "Give me a short JavaScript loop I can fix myself.",
+        "cue": {
+          "kind": "implicit-action",
+          "targets": [
+            "coding-challenge",
+            "editable-code"
+          ],
+          "codeLanguage": "javascript"
+        },
+        "actionMatched": true,
+        "missedActionTurns": 0
+      },
+      {
+        "prompt": "Give me a short TypeScript loop I can fix myself.",
+        "cue": {
+          "kind": "implicit-action",
+          "targets": [
+            "coding-challenge",
+            "editable-code"
+          ],
+          "codeLanguage": "typescript"
+        },
+        "actionMatched": false,
+        "missedActionTurns": 1
+      },
+      {
+        "prompt": "Give me a short Python loop I can fix myself.",
+        "cue": {
+          "kind": "implicit-action",
+          "targets": [
+            "editable-code"
+          ],
+          "codeLanguage": "python"
+        },
+        "actionMatched": false,
+        "missedActionTurns": 1
+      }
+    ],
+    "proofCases": [
+      {
+        "suffix": "",
+        "staticFindings": [
+          "debug_native_fix_disclosed"
+        ],
+        "disposition": "withheld",
+        "failedChecks": [
+          "debug_native_fix_disclosed"
+        ]
+      },
+      {
+        "suffix": " No hints, please.",
+        "staticFindings": [
+          "debug_native_fix_disclosed"
+        ],
+        "disposition": "withheld",
+        "failedChecks": [
+          "debug_native_fix_disclosed"
+        ]
+      },
+      {
+        "suffix": " No spoilers, please.",
+        "staticFindings": [
+          "debug_native_fix_disclosed"
+        ],
+        "disposition": "withheld",
+        "failedChecks": [
+          "debug_native_fix_disclosed"
+        ]
+      },
+      {
+        "suffix": " No solutions, but give me a hint.",
+        "staticFindings": [],
+        "disposition": "released",
+        "failedChecks": []
+      }
+    ],
+    "paidCalls": 0
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "cohortSha256": "d3393c08ee1903f9e4a426d37cab65add70f5e2d5157cd09a085ddfac174afe8",
+  "priorStudyAccountedUsd": 0.8314054280000001,
+  "priorFollowupsUsd": 0.004273625999999999,
+  "stopReason": "budget",
+  "entries": [
+    {
+      "kind": "jev",
+      "label": "gemini-3.1-flash-lite--spinner/judge-1",
+      "model": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00016854600000000002,
+      "measured": true,
+      "status": "complete",
+      "startedAt": "2026-11-18T14:17:35.110Z",
+      "http": 200,
+      "host": "api.typesafe.ai",
+      "finishedAt": "2026-11-18T14:17:35.367Z"
+    },
+    {
+      "kind": "tutor",
+      "label": "gemini-3.1-flash-lite--spinner/tutor-1",
+      "model": "gemini-3.1-flash-lite",
+      "reservedUsd": 0.12,
+      "accountedUsd": 0.12,
+      "measured": false,
+      "status": "provider",
+      "startedAt": "2026-11-18T14:17:35.529Z",
+      "http": 503,
+      "host": "generativelanguage.googleapis.com",
+      "finishedAt": "2026-11-18T14:17:54.319Z"
+    },
+    {
+      "kind": "jev",
+      "label": "MiniMax-M2.7-highspeed--spinner/judge-1",
+      "model": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00016854600000000002,
+      "measured": true,
+      "status": "complete",
+      "startedAt": "2026-11-18T14:17:54.391Z",
+      "http": 200,
+      "host": "api.typesafe.ai",
+      "finishedAt": "2026-11-18T14:17:54.585Z"
+    },
+    {
+      "kind": "tutor",
+      "label": "MiniMax-M2.7-highspeed--spinner/tutor-1",
+      "model": "MiniMax-M2.7-highspeed",
+      "reservedUsd": 0.12,
+      "accountedUsd": 0.012394800000000001,
+      "measured": true,
+      "status": "stop",
+      "startedAt": "2026-11-18T14:17:54.683Z",
+      "http": 200,
+      "host": "api.minimax.io",
+      "finishedAt": "2026-11-18T14:18:00.678Z"
+    },
+    {
+      "kind": "jev",
+      "label": "MiniMax-M2.7-highspeed--spinner/judge-2",
+      "model": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000247338,
+      "measured": true,
+      "status": "complete",
+      "startedAt": "2026-11-18T14:18:00.764Z",
+      "http": 200,
+      "host": "api.typesafe.ai",
+      "finishedAt": "2026-11-18T14:18:00.921Z"
+    },
+    {
+      "kind": "jev",
+      "label": "gemini-3.1-flash-lite--bus/judge-1",
+      "model": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00016858800000000003,
+      "measured": true,
+      "status": "complete",
+      "startedAt": "2026-11-18T14:18:01.033Z",
+      "http": 200,
+      "host": "api.typesafe.ai",
+      "finishedAt": "2026-11-18T14:18:01.202Z"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "release": "4.2.0",
+  "sourceCommit": "feb14a770371032619839271cfb3d1a4fe5079ff",
+  "railwayDeployment": "491d80e4-7c3e-4d58-bb04-5d55425eaa2c",
+  "hosts": ["keating.help", "chat.keating.help"],
+  "productionReceipt": "https://keating.help/staging-build.json",
+  "classroomArizeConfig": "https://chat.keating.help/api/observability/v1/arize/config",
+  "posthogProject": 473463,
+  "windowUTC": {"startInclusive": "2026-10-19T00:00:00Z", "endExclusive": "2026-11-18T00:00:00Z"},
+  "counts": {"message_sent":129,"agent_turn_started":67,"distinctStartedRunIds":67,"agent_turn_completed":58,"distinctCompletedRunIds":58,"success":40,"failure":18,"$ai_generation":62,"distinctGenerationRunIds":58,"tool_invoked":4},
+  "completedByVersion": {"4.0.11":{"success":8,"failure":0},"4.0.17":{"success":32,"failure":18}},
+  "latestCompletedUTC":"2026-11-05T13:00:16Z",
+  "releaseWindowUTC":{"startInclusive":"2026-11-11T00:00:00Z","endExclusive":"2026-11-18T00:00:00Z","app_version":"4.2.0","message_sent":38,"agent_turn_started":3,"agent_turn_completed":0,"$ai_generation":0},
+  "aggregation":"Count each event type, then distinct nonempty run_id for start, end and generation events. Group completed turns by app_version and success. Filter to the two production hostnames. All message, start and end events in the 30-day query belonged to chat.keating.help.",
+  "observedToolNames":{"client-web-search":3,"remember_learner_profile":1},
+  "coverage":"Opt-in/opt-out and Do Not Track affect capture. Tool events cover native calls. Fenced interfaces travel inside assistant messages. Production analytics has no joinable per-turn field for Jev's projected offer, proposed source components, validity, or actual renderer presentation. No learner content was retrieved.",
+  "rates":{"offered":null,"generatedOpenUi":null,"validQuestionPresented":null,"matchingOfferPresented":null}
+}

@@ -17,6 +17,8 @@ export interface TeachingPolicyTurn {
   readonly domain: "unknown" | "general" | "mathematics" | "philosophy" | "science" | "code" | "law" | "medicine" | "history" | "psychology" | "politics" | "art";
   /** Record-derived plan position; rebuilt each turn and never evicted by the conversation window. */
   readonly activeWork?: ActiveWork;
+  /** Host joined a single rendered Question to this exact assistant turn in the current learner session. */
+  readonly previousQuestionPresentation?: { readonly assistantTurnIndex: number; readonly documentId: string; readonly nodeId: string };
 }
 
 export interface TeachingPolicyReply {
@@ -43,6 +45,8 @@ export interface TeachingPolicyPlan {
 
 export interface TeachingPolicyCheck {
   readonly id: string;
+  /** Raw status and probability are retained when independent evidence establishes that no checkpoint is at stake. */
+  readonly applicability?: "standalone-direct-answer" | "debugging-expected-output" | "feedback-on-attempt";
   readonly status: "pass" | "fail" | "unknown";
   readonly source: "deterministic" | "jev";
   readonly severity: "critical" | "major" | "minor";

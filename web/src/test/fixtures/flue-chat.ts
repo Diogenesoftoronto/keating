@@ -16,7 +16,7 @@ import type { ChatPanelHandle } from "../../types/chat-panel";
 function check(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
-const model: Model<Api> = {
+export const model: Model<Api> = {
   id: "fixture",
   name: "Fixture",
   provider: "openai",
@@ -38,7 +38,7 @@ const usage = {
 };
 const pixel =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=";
-function response(
+export function response(
   content: AssistantMessage["content"],
   stopReason: "stop" | "toolUse" | "aborted" = "stop",
 ) {

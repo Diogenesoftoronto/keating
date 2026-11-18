@@ -21,6 +21,7 @@ import {
   judgementRequestProblem,
   runTeachingDrafts,
   teachingDraftAttemptLimit,
+  teachingToolHasRequiredSubmission,
   type JudgementBackendKey,
   type JudgementCaller,
   type JudgementOutcome,
@@ -40,6 +41,8 @@ import { createWebJudgementRuntime, type WebJudgementRuntime } from "./runtime";
 import { describeDraftFailure } from "./draft-failure";
 import { DRAFT_TIME_BUDGET_MS } from "./draft-progress";
 import { withReviewNotice } from "./review-notice";
+import { activeOpenUIDiagnosticTurn } from "../openui/turn-observer";
+import { previousQuestionPresentation } from "./previous-question-presentation";
 import { attachModelRequestPayload, loggingJudge, recordModelRequest } from "../model-request-log";
 import type { BackgroundActivityPolicy } from "../../../../packages/learner-contracts/src/judgement/background-activity-policy";
 
@@ -163,10 +166,11 @@ function searchSources(messages: Context["messages"]): TeachingPolicyTurn["sourc
   return sources;
 }
 
-function projectedTurn(context: Context, evidence: Partial<TeachingPolicyTurn>, domain?: TeachingPolicyTurn["domain"]): TeachingPolicyTurn {
+function projectedTurn(context: Context, evidence: Partial<TeachingPolicyTurn>, domain?: TeachingPolicyTurn["domain"], sessionId?: string): TeachingPolicyTurn {
   let latestIndex = context.messages.length - 1;
   while (latestIndex >= 0 && context.messages[latestIndex]!.role !== "user") latestIndex--;
   const latest = context.messages[latestIndex];
+  const previousQuestion = previousQuestionPresentation(sessionId, context.messages, evidence.activeWork);
   const results: TeachingPolicyTurn["toolResults"][number][] = context.messages.flatMap((message) => {
     if (message.role !== "toolResult") return [];
     const details = message.details === undefined ? "" : `\nStructured tool result: ${JSON.stringify(message.details)}`;
@@ -189,6 +193,7 @@ function projectedTurn(context: Context, evidence: Partial<TeachingPolicyTurn>, 
       kind, id, questionIds: [...questionIds], ...(topic === undefined ? {} : { topic }), ...(questionText === undefined ? {} : { questionText }),
     })) } : {}),
     ...(evidence.activeWork ? { activeWork: structuredClone(evidence.activeWork) } : {}),
+    ...(previousQuestion ? { previousQuestionPresentation: previousQuestion } : {}),
   };
 }
 
@@ -291,6 +296,11 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
   };
   return (model, context, streamOptions) => {
     const startedAt = Date.now();
+    const observation = (() => {
+      try { return activeOpenUIDiagnosticTurn(options.sessionId)?.beginRound(); }
+      catch { return undefined; }
+    })();
+    let planningReviewer: { backend: string; model: string } | null = null;
     const captureDraftContent = options.captureDraftContent?.() === true;
     const clearDraftContent = () => {
       if (options.isCurrent?.() ?? true) {
@@ -317,6 +327,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       judgeModel: null, selectedAttempt: null, reason: null };
     const progress = (next: TeachingDraftSnapshot) => {
       lastProgress = timedOut && next.phase === "cancelled" ? { ...next, phase: "withheld", reason: "time-budget" } : next;
+      try { observation?.plan(lastProgress, planningReviewer); } catch { /* Measurements cannot change publication. */ }
       // Cancellation is a terminal update for this session, even after abort.
       if (options.isCurrent?.() ?? true) { try { options.onProgress?.(lastProgress); } catch { /* A view cannot change publication. */ } }
     };
@@ -397,8 +408,15 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       loadingEvidence = false;
       if (!current()) { publish(safeMessage("", true)); return; }
       const runtime = options.makeCaller ? undefined : createWebJudgementRuntime();
-      const judge = loggingJudge(options.makeCaller?.() ?? createDraftGateJudgementCaller(runtime), options.sessionId,
+      const loggedJudge = loggingJudge(options.makeCaller?.() ?? createDraftGateJudgementCaller(runtime), options.sessionId,
         () => judgementModel.id);
+      const judge: JudgementCaller = async (request, signal) => {
+        const outcome = await loggedJudge(request, signal);
+        if (observation && lastProgress.phase === "planning" && outcome.ok) {
+          planningReviewer = outcome.response.backend;
+        }
+        return outcome;
+      };
       const judgementModel = options.judgementModel ?? runtime?.judgementModel ?? (() => {
         const settings = loadJudgementModelSettings();
         const hosted = settings.backend === "hosted";
@@ -407,7 +425,11 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         stateQuestionTokens: settings.stateQuestionTokens ?? settings.contextWindowTokens
             ?? (hosted ? JEV_STATE_QUESTION_TOKEN_LIMIT : null) };
       })();
-      const turn = projectedTurn(snapshot, evidence, options.domain);
+      const turn = projectedTurn(snapshot, evidence, options.domain, options.sessionId);
+      // A typed guess has no grading record. Keep normal conversational feedback
+      // available without advertising an operation the tutor cannot complete.
+      const draftContext: Context = { ...snapshot,
+        tools: snapshot.tools?.filter(tool => teachingToolHasRequiredSubmission(tool.name, turn.pendingSubmissions)) };
       reviewedActiveWork = turn.activeWork;
       // Tutor and judge read the same record-derived view of the lesson plan.
       const activeWork = formatActiveWork(turn.activeWork);
@@ -436,10 +458,10 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
           if (!current() || options.captureDraftContent?.() !== true) { clearDraftContent(); return; }
           try { options.onDraftContent?.(candidate); } catch { /* Inspection cannot affect publication. */ }
         } } : {}),
-        check: (reply) => checkSchemas(snapshot, reply),
-        generate: async ({ reasoning, systemPrompt, feedback, synthesis, textOnlyRecovery, signal }) => {
+        check: (reply) => checkSchemas(draftContext, reply),
+        generate: async ({ attempt, reasoning, systemPrompt, feedback, synthesis, textOnlyRecovery, variant, signal }) => {
           if (!current()) throw new Error("draft-stale");
-          const privateContext = structuredClone(snapshot);
+          const privateContext = structuredClone(draftContext);
           privateContext.systemPrompt = [systemPrompt, activeWork, layers].filter(Boolean).join("\n\n");
           if (feedback.length) privateContext.messages.push({ role: "user", timestamp: Date.now(), content:
             "Private draft revision directions from Keating's checker. These are code-owned repair criteria, not another learner message. Respond to the original learner request. "
@@ -482,6 +504,12 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
           if (textOnlyRecovery && message.content.some(part => part.type === "toolCall")) throw new Error("draft-recovery-tool-call");
           if (!message.content.some(part => part.type === "text" && part.text.trim()
             || part.type === "toolCall")) throw new Error("draft-empty-response");
+          // The tutor returned a completed candidate. Keep component kinds only;
+          // the existing opt-in raw draft inspector is independent.
+          try {
+            const offered = !textOnlyRecovery && variant !== "prose";
+            observation?.candidate(message, variant ? offered : null, attempt);
+          } catch { /* A measurement cannot reject a tutor candidate. */ }
           return { reply: policyReply(message), value: message };
         },
       });

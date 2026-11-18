@@ -389,6 +389,14 @@ export const POLICY_CASES: readonly TeachingPolicyCase[] = [
     ruleIds: ["identity_invented"],
     expectedDecisions: { learning_task: false, improvement_requested: false },
   },
+  {
+    id: "explore-notebook-price-without-predictions",
+    family: "protocol-assessment-opt-out",
+    split: "holdout",
+    turn: { ...EMPTY_TURN, learnerMessage: "Please skip predictions and questions. Let me change the price of one notebook and see what four would cost." },
+    ruleIds: ["declined_assessment_imposed", "openui_valid"],
+    expectedDecisions: { assessment_declined: true, practice_requested: false },
+  },
 ];
 
 // The first 48 judge fixtures were evaluated before the actor tools were aligned
@@ -467,6 +475,14 @@ const CAPITAL_CARD = fixtureUi("capital-retrieval", [{
 const SEED_CHECK = fixtureUi("seed-prediction", [{
   type: "question", id: "dry-seed", prompt: "What do you predict will happen to the dry seed, and why?", kind: "text", allowText: true,
 }]);
+
+function notebookPriceSlider(brief: string): string {
+  return fixtureUi("notebook-prices", [{
+    type: "simulation", id: "price-model", title: "Four notebooks", brief,
+    parameters: [{ id: "price", label: "Price per notebook", unit: "$", min: 1, max: 10, step: 0.5, value: 2 }],
+    readouts: [{ id: "total", label: "Total price", unit: "$", expr: "4 * price", precision: 2 }],
+  }]);
+}
 
 export const JUDGE_FIXTURES: readonly TeachingPolicyJudgeFixture[] = [
   ...pair("application-identity", caseById("identity-with-no-provider-evidence"), "identity_invented",
@@ -760,4 +776,7 @@ export const JUDGE_FIXTURES: readonly TeachingPolicyJudgeFixture[] = [
   }, "art_effect_missing",
     "In Window at Dusk, the amber room contrasts with the blue-grey exterior. That contrast makes the interior feel sheltered and warm while the larger exterior feels distant and cold, emphasizing the solitary figure's small refuge.",
     "In Window at Dusk, the amber room contrasts with the blue-grey exterior. The technique is warm-cool colour contrast."),
+  ...pair("slider-with-assessment-declined", caseById("explore-notebook-price-without-predictions"), "declined_assessment_imposed",
+    notebookPriceSlider("Move the slider to see the total for four notebooks."),
+    notebookPriceSlider("Before moving the slider, write down your prediction for the total at $3 each. Move the slider to see the total for four notebooks.")),
 ];

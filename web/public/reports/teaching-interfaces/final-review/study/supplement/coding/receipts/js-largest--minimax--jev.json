@@ -1,0 +1,640 @@
+{
+  "id": "js-largest--minimax--jev",
+  "caseId": "js-largest",
+  "tutor": "minimax",
+  "arm": "jev",
+  "kind": "prospective-supplement",
+  "policy": "keating-teaching-policy/v2.3.4",
+  "prompt": "I'm learning JavaScript loops. Give me a small JavaScript exercise I can edit myself to return the largest number in [4, 1, 9].",
+  "originalHistory": [],
+  "plan": {
+    "status": "guided",
+    "action": "create",
+    "offered": [
+      "CodingChallenge"
+    ],
+    "features": {
+      "variable_relationship": false,
+      "ordered_procedure": false,
+      "discrete_recall": false,
+      "structure_relations": false,
+      "category_distinction": false,
+      "prediction_opportunity": false,
+      "learner_response_due": false,
+      "hands_on_requested": true,
+      "executable_code": true,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "decisions": {
+      "direct_answer_requested": true,
+      "explanation_requested": false,
+      "learner_stuck": false,
+      "attempt_present": false,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": true,
+      "plain_reply_requested": false,
+      "assessment_declined": false,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": true,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": true,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "directives": [
+      "Answer the bounded question directly; do not start a diagnostic interview.",
+      "Provide one requested OpenUI practice activity now, without requiring a lesson first or attaching a study plan.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+      "Keep the exercise, starter and tests in the learner's requested JavaScript.",
+      "If the learner requests a new bug to find independently, choose a concrete input on which the starter visibly fails or produces the wrong result. State the intended behavior or expected output. Leave locating and repairing the fault to the learner. Keep ordinary documentation and expected-output comments. Withhold unrequested hints and the fix from prose, code comments and controls, including interactive page titles and descriptions shown while loading or on fallback.",
+      "At most one OpenUI activity may help this turn: CodingChallenge to let the learner write or run the code. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "CodingChallenge runs JavaScript or TypeScript. Preserve the requested language. For another language, a short code sample and a Question can collect the learner's fix without claiming to run it.",
+      "If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested."
+    ],
+    "codePracticeLanguage": "javascript",
+    "reason": null
+  },
+  "refs": [
+    {
+      "label": "js-largest--minimax--jev/plan",
+      "entryId": "js-largest--minimax--jev/plan",
+      "source": "live",
+      "requestSha256": "1587d811f6b73bb86db5269dc401ce65e31c2cc748f7c96c4b94e7f1ccc89b70",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    },
+    {
+      "label": "js-largest--minimax--jev/review/1",
+      "entryId": "js-largest--minimax--jev/review/1",
+      "source": "live",
+      "requestSha256": "b6504c8a673a1dc63d0d7f32663223d8017115497167bbf888122a5f53955e5b",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "error": null
+    }
+  ],
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 18712,
+          "output": 569,
+          "cacheRead": 188,
+          "cacheWrite": 0,
+          "totalTokens": 19469,
+          "cost": {
+            "input": 0.0112272,
+            "output": 0.0013656,
+            "cacheRead": 0.000011279999999999999,
+            "cacheWrite": 0,
+            "total": 0.01260408
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 170
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Here's a small one to edit yourself — a `largest` function that should scan an array with a loop and return the biggest value.\n\n```openui lifecycle=ephemeral id=js-largest-loop\n\nroot = LearningSurface([challenge], \"Largest number with a loop\", \"Edit the code, run the sample tests, and make them pass.\", \"ephemeral\")\nchallenge = CodingChallenge(\"js-largest-loop\", \"Largest number in an array\", \"Write a function named `largest` that takes an array of numbers and returns the largest one, using a loop (for, while, or for...of). Do not use Math.max. Empty arrays are not tested. Run the sample tests to check your work.\", \"javascript\", \"function largest(arr) {\\n  // Your code here: loop over arr and track the biggest value.\\n  // Start your result from the first element so negative arrays work.\\n  return null;\\n}\\n\", \"largest\", [\n  { id: \"t1\", label: \"Finds 9 in [4, 1, 9]\", args: [[4, 1, 9]], expected: 9 },\n  { id: \"t2\", label: \"Handles all-negative array\", args: [[-5, -2, -9]], expected: -2 },\n  { id: \"t3\", label: \"Handles single-element array\", args: [[7]], expected: 7 },\n  { id: \"t4\", label: \"Finds max in [1, 1, 1]\", args: [[1, 1, 1]], expected: 1 }\n], \"ephemeral\", \"Hint: keep a variable holding the biggest value seen so far, and update it only when you find something larger.\")\n```\n\nThe starter returns `null`, so every test fails at first — that's the point. Make it pass all four."
+          }
+        ]
+      },
+      "text": "Here's a small one to edit yourself — a `largest` function that should scan an array with a loop and return the biggest value.\n\n```openui lifecycle=ephemeral id=js-largest-loop\n\nroot = LearningSurface([challenge], \"Largest number with a loop\", \"Edit the code, run the sample tests, and make them pass.\", \"ephemeral\")\nchallenge = CodingChallenge(\"js-largest-loop\", \"Largest number in an array\", \"Write a function named `largest` that takes an array of numbers and returns the largest one, using a loop (for, while, or for...of). Do not use Math.max. Empty arrays are not tested. Run the sample tests to check your work.\", \"javascript\", \"function largest(arr) {\\n  // Your code here: loop over arr and track the biggest value.\\n  // Start your result from the first element so negative arrays work.\\n  return null;\\n}\\n\", \"largest\", [\n  { id: \"t1\", label: \"Finds 9 in [4, 1, 9]\", args: [[4, 1, 9]], expected: 9 },\n  { id: \"t2\", label: \"Handles all-negative array\", args: [[-5, -2, -9]], expected: -2 },\n  { id: \"t3\", label: \"Handles single-element array\", args: [[7]], expected: 7 },\n  { id: \"t4\", label: \"Finds max in [1, 1, 1]\", args: [[1, 1, 1]], expected: 1 }\n], \"ephemeral\", \"Hint: keep a variable holding the biggest value seen so far, and update it only when you find something larger.\")\n```\n\nThe starter returns `null`, so every test fails at first — that's the point. Make it pass all four.",
+      "toolCalls": [],
+      "attempted": true,
+      "components": [
+        "coding-challenge"
+      ],
+      "outsideWords": 43,
+      "entryId": "js-largest--minimax--jev/tutor/1",
+      "completed": true,
+      "providedDirectives": true,
+      "systemSha256": "ab19dc911cc1ba481f5bb37c68913529e1bcceec0edc8a92385a779295ba48f6"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "exercise_language_preserved",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.05
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.07
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.24
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.54
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.09
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.28
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.29
+        },
+        {
+          "id": "code_example_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.2
+        },
+        {
+          "id": "code_trace_missing",
+          "status": "fail",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.81
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04,
+          "status": "pass"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04,
+          "status": "pass"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.04,
+          "status": "pass"
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.020000000000000018,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.09999999999999998,
+          "status": "pass"
+        }
+      ],
+      "variant": "default",
+      "debuggingExercise": {
+        "example": {
+          "type": "choice",
+          "choice": "outside",
+          "probabilities": {
+            "observable": 0.08,
+            "masked": 0.04,
+            "uncertain": 0.01,
+            "outside": 0.87
+          },
+          "confidence": 0.83
+        },
+        "disclosure": {
+          "type": "choice",
+          "choice": "outside",
+          "probabilities": {
+            "independent": 0.05,
+            "location_clue": 0.04,
+            "solution_given": 0.04,
+            "uncertain": 0.01,
+            "outside": 0.86
+          },
+          "confidence": 0.82
+        }
+      }
+    }
+  ],
+  "selectedAttempt": 1,
+  "disposition": "released",
+  "missing": null,
+  "public": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 18712,
+        "output": 569,
+        "cacheRead": 188,
+        "cacheWrite": 0,
+        "totalTokens": 19469,
+        "cost": {
+          "input": 0.0112272,
+          "output": 0.0013656,
+          "cacheRead": 0.000011279999999999999,
+          "cacheWrite": 0,
+          "total": 0.01260408
+        },
+        "reasoning": 170,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Here's a small one to edit yourself — a `largest` function that should scan an array with a loop and return the biggest value.\n\n```openui lifecycle=ephemeral id=js-largest-loop\n\nroot = LearningSurface([challenge], \"Largest number with a loop\", \"Edit the code, run the sample tests, and make them pass.\", \"ephemeral\")\nchallenge = CodingChallenge(\"js-largest-loop\", \"Largest number in an array\", \"Write a function named `largest` that takes an array of numbers and returns the largest one, using a loop (for, while, or for...of). Do not use Math.max. Empty arrays are not tested. Run the sample tests to check your work.\", \"javascript\", \"function largest(arr) {\\n  // Your code here: loop over arr and track the biggest value.\\n  // Start your result from the first element so negative arrays work.\\n  return null;\\n}\\n\", \"largest\", [\n  { id: \"t1\", label: \"Finds 9 in [4, 1, 9]\", args: [[4, 1, 9]], expected: 9 },\n  { id: \"t2\", label: \"Handles all-negative array\", args: [[-5, -2, -9]], expected: -2 },\n  { id: \"t3\", label: \"Handles single-element array\", args: [[7]], expected: 7 },\n  { id: \"t4\", label: \"Finds max in [1, 1, 1]\", args: [[1, 1, 1]], expected: 1 }\n], \"ephemeral\", \"Hint: keep a variable holding the biggest value seen so far, and update it only when you find something larger.\")\n```\n\nThe starter returns `null`, so every test fails at first — that's the point. Make it pass all four."
+        }
+      ]
+    },
+    "text": "Here's a small one to edit yourself — a `largest` function that should scan an array with a loop and return the biggest value.\n\n```openui lifecycle=ephemeral id=js-largest-loop\n\nroot = LearningSurface([challenge], \"Largest number with a loop\", \"Edit the code, run the sample tests, and make them pass.\", \"ephemeral\")\nchallenge = CodingChallenge(\"js-largest-loop\", \"Largest number in an array\", \"Write a function named `largest` that takes an array of numbers and returns the largest one, using a loop (for, while, or for...of). Do not use Math.max. Empty arrays are not tested. Run the sample tests to check your work.\", \"javascript\", \"function largest(arr) {\\n  // Your code here: loop over arr and track the biggest value.\\n  // Start your result from the first element so negative arrays work.\\n  return null;\\n}\\n\", \"largest\", [\n  { id: \"t1\", label: \"Finds 9 in [4, 1, 9]\", args: [[4, 1, 9]], expected: 9 },\n  { id: \"t2\", label: \"Handles all-negative array\", args: [[-5, -2, -9]], expected: -2 },\n  { id: \"t3\", label: \"Handles single-element array\", args: [[7]], expected: 7 },\n  { id: \"t4\", label: \"Finds max in [1, 1, 1]\", args: [[1, 1, 1]], expected: 1 }\n], \"ephemeral\", \"Hint: keep a variable holding the biggest value seen so far, and update it only when you find something larger.\")\n```\n\nThe starter returns `null`, so every test fails at first — that's the point. Make it pass all four.",
+    "toolCalls": [],
+    "attempted": true,
+    "components": [
+      "coding-challenge"
+    ],
+    "outsideWords": 43
+  },
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 18712,
+        "output": 569,
+        "cacheRead": 188,
+        "cacheWrite": 0,
+        "totalTokens": 19469,
+        "cost": {
+          "input": 0.0112272,
+          "output": 0.0013656,
+          "cacheRead": 0.000011279999999999999,
+          "cacheWrite": 0,
+          "total": 0.01260408
+        },
+        "reasoning": 170,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Here's a small one to edit yourself — a `largest` function that should scan an array with a loop and return the biggest value.\n\n```openui lifecycle=ephemeral id=js-largest-loop\n\nroot = LearningSurface([challenge], \"Largest number with a loop\", \"Edit the code, run the sample tests, and make them pass.\", \"ephemeral\")\nchallenge = CodingChallenge(\"js-largest-loop\", \"Largest number in an array\", \"Write a function named `largest` that takes an array of numbers and returns the largest one, using a loop (for, while, or for...of). Do not use Math.max. Empty arrays are not tested. Run the sample tests to check your work.\", \"javascript\", \"function largest(arr) {\\n  // Your code here: loop over arr and track the biggest value.\\n  // Start your result from the first element so negative arrays work.\\n  return null;\\n}\\n\", \"largest\", [\n  { id: \"t1\", label: \"Finds 9 in [4, 1, 9]\", args: [[4, 1, 9]], expected: 9 },\n  { id: \"t2\", label: \"Handles all-negative array\", args: [[-5, -2, -9]], expected: -2 },\n  { id: \"t3\", label: \"Handles single-element array\", args: [[7]], expected: 7 },\n  { id: \"t4\", label: \"Finds max in [1, 1, 1]\", args: [[1, 1, 1]], expected: 1 }\n], \"ephemeral\", \"Hint: keep a variable holding the biggest value seen so far, and update it only when you find something larger.\")\n```\n\nThe starter returns `null`, so every test fails at first — that's the point. Make it pass all four."
+        }
+      ]
+    },
+    "text": "Here's a small one to edit yourself — a `largest` function that should scan an array with a loop and return the biggest value.\n\n```openui lifecycle=ephemeral id=js-largest-loop\n\nroot = LearningSurface([challenge], \"Largest number with a loop\", \"Edit the code, run the sample tests, and make them pass.\", \"ephemeral\")\nchallenge = CodingChallenge(\"js-largest-loop\", \"Largest number in an array\", \"Write a function named `largest` that takes an array of numbers and returns the largest one, using a loop (for, while, or for...of). Do not use Math.max. Empty arrays are not tested. Run the sample tests to check your work.\", \"javascript\", \"function largest(arr) {\\n  // Your code here: loop over arr and track the biggest value.\\n  // Start your result from the first element so negative arrays work.\\n  return null;\\n}\\n\", \"largest\", [\n  { id: \"t1\", label: \"Finds 9 in [4, 1, 9]\", args: [[4, 1, 9]], expected: 9 },\n  { id: \"t2\", label: \"Handles all-negative array\", args: [[-5, -2, -9]], expected: -2 },\n  { id: \"t3\", label: \"Handles single-element array\", args: [[7]], expected: 7 },\n  { id: \"t4\", label: \"Finds max in [1, 1, 1]\", args: [[1, 1, 1]], expected: 1 }\n], \"ephemeral\", \"Hint: keep a variable holding the biggest value seen so far, and update it only when you find something larger.\")\n```\n\nThe starter returns `null`, so every test fails at first — that's the point. Make it pass all four.",
+    "toolCalls": []
+  },
+  "notice": null
+}

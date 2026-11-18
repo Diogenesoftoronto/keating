@@ -9,6 +9,13 @@ const snapshot: TeachingDraftSnapshot = { phase: "checking", attempt: 1, maxAtte
   elapsedMs: 500, attempts: [], judgeModel: "jev-1.13.0", selectedAttempt: null, reason: null };
 afterEach(clearTeachingDraftStatuses);
 
+test("conditional exercise issues survive status projection as closed check codes", () => {
+  const ids = ["debug_example_unwitnessed", "debug_fix_disclosed", "debug_location_hint", "debug_static_example_masked", "debug_native_fix_disclosed"];
+  const projected = projectTeachingDraftSnapshot({...snapshot, attempts:[{attempt:1, variant:"default", reasoning:"low", standard:"concise", generationMs:1, judgementMs:1,
+    status:"fail", checks:[...ids,"private-diagnosis"].map(id=>({id, source:"deterministic", severity:"major", status:"fail", probability:1}))}]});
+  expect(projected.attempts[0]?.checks.map(c=>c.id)).toEqual(ids);
+});
+
 test("best available release does not imply every review concern passed", () => {
   publishTeachingDraftStatus("best-effort", { ...snapshot, phase: "released", reason: "best-effort-draft", selectedAttempt: 2 });
   const html = renderToStaticMarkup(<DraftReviewStatus showDeveloperDetails sessionId="best-effort" status={getTeachingDraftStatus("best-effort")} />);

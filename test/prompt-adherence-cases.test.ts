@@ -43,8 +43,8 @@ describe("authored teaching policy benchmark evidence", () => {
     }
   });
 
-  test("all 54 semantic rules have one positive and one negative authored fixture", () => {
-    expect(JUDGE_FIXTURES).toHaveLength(108);
+  test("every catalogued semantic rule has one positive and one negative authored fixture", () => {
+    expect(JUDGE_FIXTURES).toHaveLength(TEACHING_POLICY_RULES.length * 2);
     const labels = new Map<string, boolean[]>();
     for (const fixture of JUDGE_FIXTURES) {
       for (const [id, present] of Object.entries(fixture.violations)) {
@@ -90,6 +90,23 @@ describe("authored teaching policy benchmark evidence", () => {
       expect(validateUiDocument(document)).toBe(true);
       expect(document.nodes.some((node: { type: string }) => node.type === "question")).toBe(true);
     }
+  });
+
+  test("the opt-out pair keeps the requested slider and changes only its assessment instruction", () => {
+    const pair = JUDGE_FIXTURES.filter(entry => Object.hasOwn(entry.violations, "declined_assessment_imposed"));
+    expect(pair).toHaveLength(2);
+    const [compliant, violating] = pair;
+    const scenario = POLICY_CASES.find(entry => entry.family === compliant!.family)!;
+    expect(scenario.expectedDecisions).toEqual({ assessment_declined: true, practice_requested: false });
+    expect(compliant!.turn).toEqual(scenario.turn);
+    expect(compliant!.split).toBe("holdout");
+    const directive = "Before moving the slider, write down your prediction for the total at $3 each. ";
+    expect(violating!.reply.text).toContain(directive);
+    expect(violating!.reply.text.replace(directive, "")).toBe(compliant!.reply.text);
+    const document = JSON.parse(compliant!.reply.text.split("\n")[1]!);
+    expect(validateUiDocument(document)).toBe(true);
+    expect(document.nodes).toHaveLength(1);
+    expect(document.nodes[0]).toMatchObject({ type: "simulation", readouts: [{ expr: "4 * price" }] });
   });
 
   test("every activity and artifact fixture uses valid canonical OpenUI", () => {

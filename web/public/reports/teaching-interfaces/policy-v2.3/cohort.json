@@ -1,0 +1,27 @@
+{
+  "study": "Final classroom policy: an exploration opt-out and a Python repair",
+  "previousBoundUsd": 1.733468526,
+  "studyCapUsd": 2,
+  "additionalCapUsd": 0.25,
+  "decisionModels": ["jev-1.14.0", "gemini-decision-1"],
+  "tutor": "MiniMax-M2.7-highspeed",
+  "maxDrafts": 2,
+  "maxOutputTokens": 3072,
+  "cases": [
+    {
+      "id": "filling-line", "kind": "live", "history": [
+        {"role":"user","content":"I'm trying to understand the filling line at a juice workshop."},
+        {"role":"assistant","content":"Its pump fills bottles at a steady rate. At five bottles per minute, it fills forty bottles during an eight-minute run."}
+      ],
+      "learner": "Let me adjust the filling rate myself and watch the total for an eight-minute run. No predictions or check questions this time.",
+      "expect": "simulation",
+      "rubric": "Let the learner change the rate and see eight times that many bottles. No required or instructed prediction, quiz or checkpoint before exploration. A tool proposal needs a separate local mounting check. Count visible prose and record any tool call that adds a goal."
+    },
+    {
+      "id": "python-practice", "kind": "live", "history": [],
+      "learner": "I'm practising Python lists. Give me a short Python loop with a small bug that I can edit myself. Leave finding the fix to me.",
+      "expect": "python",
+      "rubric": "A released editable Python example contains a real small bug. Keep the solution for the learner. No JavaScript or TypeScript substitution or misleading execution claim. Count ordinary fenced Python separately from OpenUI, even when both appear in one reply."
+    }
+  ]
+}

@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "oldPolicy": "keating-teaching-policy/v2.3.5",
+  "newPolicy": "keating-teaching-policy/v2.3.6",
+  "paidCalls": 0,
+  "oldDisposition": "withheld",
+  "oldSelectedAttempt": null,
+  "oldLedgerSha256": "ab87e6bf2897b738261ffb50815b443f44d6be12f02605f96c46a842d9936bc9",
+  "oldReceiptSha256": "4f17f82ba12d94c8b4bab79362c43ba38020026d8093023014291df52e42d7f1",
+  "priorTutorReceiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+  "learnerMessage": "My guess is round, because three of the four tiles are round.",
+  "singleQuestion": [
+    "question-group"
+  ],
+  "oldPlanRequestSha256": "27bb60578f275cbfca56a190aa5236653224e27c43ae61cbfec39544316f49a9",
+  "newPlanRequestSha256": "ea9cc126605b759b1d0c73a8c1a5d181cf25bd83605b4105c33da94af956f49b",
+  "changedPlanQuestions": [
+    "learner_response_due"
+  ],
+  "originalPlan": {
+    "attemptPresent": true,
+    "learnerResponseDue": true,
+    "action": "create"
+  },
+  "newOutcome": null,
+  "note": "Request projection holds the archived plan answers fixed. New review questions have no historical response. Separate prospective study outcomes use their own plans and judgments.",
+  "candidates": [
+    {
+      "attempt": 1,
+      "candidateSha256": "e8b242b68463238ad3a4d906fef988daa2956e58355bcab01fd5aae9c173fdf1",
+      "tools": [],
+      "components": [
+        "simulation"
+      ],
+      "oldReviewSha256": "30e96a7d6350faeff1504587e23ccd406297c5f573eba9f2065fc452fde9031b",
+      "oldWireSha256": "1abfdd398ece98d33cfb1c158716a1bbb76b17f55cafe3d533aec032bceacf30",
+      "result": "fail",
+      "blockers": [
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "probability": 0.9,
+          "severity": "major"
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "unknown",
+          "probability": 0.49,
+          "severity": "major"
+        }
+      ],
+      "newRequestSha256": "30e96a7d6350faeff1504587e23ccd406297c5f573eba9f2065fc452fde9031b",
+      "changedQuestions": []
+    },
+    {
+      "attempt": 2,
+      "candidateSha256": "6c6d0e525c96e4baf113d021fecd515b6ada562031a2308caaa7e44ae34fc5d0",
+      "tools": [
+        "animate"
+      ],
+      "components": [],
+      "oldReviewSha256": "d3fd9521c2e214501679951fd804fc80df326537ecef47923715a16f1fdb0d12",
+      "oldWireSha256": "c51181c84a0c3d12126d5b3b6ef5f312d31297a1608db1b6baece24018d22157",
+      "result": "fail",
+      "blockers": [
+        {
+          "id": "mastery_overclaimed",
+          "status": "unknown",
+          "probability": 0.49,
+          "severity": "critical"
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "probability": 0.9,
+          "severity": "major"
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "fail",
+          "probability": 0.69,
+          "severity": "major"
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "fail",
+          "probability": 0.93,
+          "severity": "major"
+        },
+        {
+          "id": "runtime_tool_schema",
+          "status": "fail",
+          "probability": 1,
+          "severity": "critical"
+        }
+      ],
+      "newRequestSha256": "d3fd9521c2e214501679951fd804fc80df326537ecef47923715a16f1fdb0d12",
+      "changedQuestions": []
+    },
+    {
+      "attempt": 3,
+      "candidateSha256": "8d3d4489373c5aa779f345b11dc9aec64421f3382ebd9fddbf1eefe31a072a72",
+      "tools": [],
+      "components": [],
+      "oldReviewSha256": "c0ae3be2c386b3e16c02aea157fbeef3f05db1f586069d89e8cb0908d0c180c5",
+      "oldWireSha256": "bdfaea03a2439bb23dfe76bf21b7930e857f9373ad080841644745712d50231f",
+      "result": "fail",
+      "blockers": [
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "fail",
+          "probability": 0.84,
+          "severity": "major"
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "fail",
+          "probability": 0.62,
+          "severity": "major"
+        }
+      ],
+      "newRequestSha256": "a54df9e863059e3343def542f3dc261e69fe1577257aa6da8befbcbb29e6ce12",
+      "changedQuestions": [
+        "checkpoint_answer_leaked",
+        "checkpoint_continued",
+        "checkpoint_attempt_state",
+        "checkpoint_feedback_support"
+      ]
+    }
+  ]
+}

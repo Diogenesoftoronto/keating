@@ -1,0 +1,30 @@
+{
+  "id": "account-seats--google",
+  "caseId": "account-seats",
+  "provider": "google",
+  "decisionModel": "gemini-decision-1",
+  "kind": "plan",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "685930bc4f2ec818dc252007bbbd3cee28449cbb325a9ef7e3e0b5d15027719e",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "none",
+    "offered": [],
+    "reason": "not-learning",
+    "directives": [
+      "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it."
+    ]
+  },
+  "drafts": [],
+  "status": "plan-only",
+  "public": null,
+  "notice": null,
+  "selectedAttempt": null,
+  "findings": []
+}

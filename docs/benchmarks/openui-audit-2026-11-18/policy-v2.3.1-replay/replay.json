@@ -1,0 +1,109 @@
+{
+  "policy": "keating-teaching-policy/v2.3.1",
+  "originalPolicy": "keating-teaching-policy/v2.3",
+  "scope": "post-hoc replay of recorded planning decisions",
+  "rows": [
+    {
+      "id": "python-practice--jev",
+      "requestedModel": "jev-1.14.0",
+      "originalReceiptSha256": "25bb39c1fede158179dd468045bf98d6d50e42d3f3add1852af18595e8c05e85",
+      "semanticRequestSha256": "2f30a96055683294919a753b724f045768e75c98f062ab96bcb3a3a074e645dd",
+      "wireSha256": "a428976f7d22b04d6e0839ea6ca1e6e7b7d0c9b7471345c0acc0abea449420ac",
+      "planningProbabilities": {
+        "learning_task": 0.99,
+        "practice_requested": 0.92,
+        "hands_on_requested": 0.93,
+        "executable_code": 0.51,
+        "learner_response_due": 0.42,
+        "project_goal_requested": 0.95
+      },
+      "before": {
+        "action": "none",
+        "offered": [],
+        "reason": "no-supported-family",
+        "codeLanguage": null,
+        "editor": false,
+        "genericOpenUI": true,
+        "goalCapture": true,
+        "genericNextStep": true
+      },
+      "after": {
+        "action": "none",
+        "offered": [],
+        "reason": null,
+        "codeLanguage": "python",
+        "editor": true,
+        "genericOpenUI": false,
+        "goalCapture": false,
+        "genericNextStep": false
+      },
+      "newTutorPromptSha256": "9ef28e98848c42d8d174a3b250dadedb52132fbb6627824fb58b5b68abdc1d29",
+      "originalTutor": {
+        "model": "MiniMax-M2.7-highspeed",
+        "release": "released",
+        "attempt": 2,
+        "selectedReplySha256": "bf840a5c7d91c6b64b0c2c402414247a5b929737b504631152d9305ff4f2226e",
+        "canonicalComponents": [],
+        "editableCode": [
+          "python"
+        ]
+      },
+      "newTutorReply": null
+    },
+    {
+      "id": "python-practice--google",
+      "requestedModel": "gemini-decision-1",
+      "originalReceiptSha256": "61c331dd5365fcb6e40514606aad162f1eec694be92c9df278a1dd166e6ce44f",
+      "semanticRequestSha256": "2f30a96055683294919a753b724f045768e75c98f062ab96bcb3a3a074e645dd",
+      "wireSha256": "61d421d00754986010ba2c9fb250328e9c92f9a087bfb3a30d91741673047eec",
+      "planningProbabilities": {
+        "learning_task": 0.9847059545517178,
+        "practice_requested": 0.9384580133320719,
+        "hands_on_requested": 0.9199534498903627,
+        "executable_code": 0.8342122523013555,
+        "learner_response_due": 0.6142487962860729,
+        "project_goal_requested": 0.5529394354694234
+      },
+      "before": {
+        "action": "create",
+        "offered": [
+          "Question"
+        ],
+        "reason": null,
+        "codeLanguage": "python",
+        "editor": true,
+        "genericOpenUI": false,
+        "goalCapture": false,
+        "genericNextStep": true
+      },
+      "after": {
+        "action": "create",
+        "offered": [
+          "Question"
+        ],
+        "reason": null,
+        "codeLanguage": "python",
+        "editor": true,
+        "genericOpenUI": false,
+        "goalCapture": false,
+        "genericNextStep": true
+      },
+      "newTutorPromptSha256": "6a91e2a892cb27e7846dabccd957c44480700e782ecab0193d3efc1f7f5195f9",
+      "originalTutor": {
+        "model": "MiniMax-M2.7-highspeed",
+        "release": "released",
+        "attempt": 2,
+        "selectedReplySha256": "9f7f9e2445a58b6c8e2190fe49cdac59e0368ec0bbc5b7b230f8ab49b5506026",
+        "canonicalComponents": [],
+        "editableCode": [
+          "python"
+        ]
+      },
+      "newTutorReply": null
+    }
+  ],
+  "networkRequests": 0,
+  "newTutorCalls": 0,
+  "newDecisionCalls": 0,
+  "incrementalUsd": 0
+}

@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "turns": [
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.2/direct-label--jev",
+      "turnId": "direct-label--jev",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "decisionModel": "jev-1.14.0",
+      "cue": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "reply": "released",
+      "attempted": false,
+      "compiled": [],
+      "selected": [],
+      "rendered": null,
+      "outsideWords": 2,
+      "editableCode": [],
+      "editorOutsideWords": null,
+      "nativePageRequested": false,
+      "guidance": {
+        "source": "jev",
+        "action": "none",
+        "targets": [],
+        "delivered": true,
+        "reason": "plain-reply"
+      },
+      "draftAttempts": 1,
+      "gateIssues": [],
+      "fit": {
+        "source": "policy-v2.2-case-rubric",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.2/direct-label--google",
+      "turnId": "direct-label--google",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "decisionModel": "gemini-decision-1",
+      "cue": {
+        "kind": "direct-text",
+        "targets": []
+      },
+      "reply": "released",
+      "attempted": false,
+      "compiled": [],
+      "selected": [],
+      "rendered": null,
+      "outsideWords": 2,
+      "editableCode": [],
+      "editorOutsideWords": null,
+      "nativePageRequested": false,
+      "guidance": {
+        "source": "other",
+        "action": "none",
+        "targets": [],
+        "delivered": true,
+        "reason": "plain-reply"
+      },
+      "draftAttempts": 2,
+      "gateIssues": [
+        "assessed_work_completed"
+      ],
+      "fit": {
+        "source": "policy-v2.2-case-rubric",
+        "passed": true
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.2/conveyor--jev",
+      "turnId": "conveyor--jev",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "decisionModel": "jev-1.14.0",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "released",
+      "attempted": false,
+      "compiled": [],
+      "selected": [],
+      "rendered": null,
+      "outsideWords": 9,
+      "editableCode": [],
+      "editorOutsideWords": null,
+      "nativePageRequested": true,
+      "guidance": {
+        "source": "jev",
+        "action": "create",
+        "targets": [
+          "concept-map",
+          "simulation"
+        ],
+        "delivered": true
+      },
+      "draftAttempts": 1,
+      "gateIssues": [],
+      "fit": {
+        "source": "policy-v2.2-case-rubric",
+        "passed": null
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "conversationId": "policy-v2.2/conveyor--google",
+      "turnId": "conveyor--google",
+      "turnIndex": 0,
+      "model": "MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "decisionModel": "gemini-decision-1",
+      "cue": {
+        "kind": "implicit-action",
+        "targets": [
+          "simulation"
+        ]
+      },
+      "reply": "released",
+      "attempted": true,
+      "compiled": [
+        "simulation"
+      ],
+      "selected": [
+        "simulation"
+      ],
+      "rendered": null,
+      "outsideWords": 143,
+      "editableCode": [],
+      "editorOutsideWords": null,
+      "nativePageRequested": false,
+      "guidance": {
+        "source": "other",
+        "action": "create",
+        "targets": [
+          "concept-map",
+          "simulation"
+        ],
+        "delivered": true
+      },
+      "draftAttempts": 2,
+      "gateIssues": [
+        "checkpoint_answer_leaked",
+        "direct_help_withheld"
+      ],
+      "fit": {
+        "source": "policy-v2.2-case-rubric",
+        "passed": false
+      }
+    }
+  ]
+}

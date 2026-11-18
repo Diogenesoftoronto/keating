@@ -1,0 +1,76 @@
+# Where Keating loses a learner’s interface
+
+**November 18, 2026.** Keating’s release harness sometimes discarded a usable tutor interface. On eight synthetic opportunities per tutor, Gemini and MiniMax both produced valid private drafts on seven. Gemini released seven interfaces and MiniMax released three. The new inspector exposes the loss on individual turns, the controls that survive, and how long a learner waits. [Open the offline inspector](./diagnostics.html) · [Try the actual tutor outputs](./showcase.html) · [Original study and sampling method](./REPORT.md)
+
+## What the learner received
+
+The subsequent decision-model comparison added a judge filter and withheld-reply view. Both judges produced the same number of requested interfaces on the matched tutor cases, but only Gemini Decision blocked the identical correct answer `16.` as a leaked checkpoint. [Gemini Decision report](./gemini-decision/REPORT.md) · [Interactive comparison](./gemini-decision/comparison.html)
+
+| Recorded outcome | Gemini 3.1 Flash-Lite | MiniMax M2.7 Highspeed |
+| --- | ---: | ---: |
+| Action cues with a valid interface in a private draft | 7/8 | 7/8 |
+| Action cues with an interface in the final reply | 7/8 | 3/8 |
+| Final interface fit the requested action and language | 6/8 | 3/8 |
+| Final interface used one of Jev’s specifically offered types | 2/4 | 1/5 |
+| Direct-text requests answered with plain text | 2/2 | 2/2 |
+| Median words outside the final interface | 0 across 7 replies | 60 across 3 replies |
+
+The ten released interfaces comprised seven question groups, two simulations and one coding challenge. The challenge used a different language than the Python the learner requested. MiniMax’s rectangle simulation came with 181 words outside the interface. All four losses between a compiled draft and the final selection occurred on MiniMax. In the inspector, choose **Recorded tutor audit → Inspect turns → Interface compiled, then dropped** to open those four turn records. [Scored replies and canonical components](./scored.json) · [Machine-readable turn data](../../../web/src/keating/openui/examples/november-audit.json)
+
+The four replacement replies ranged from 8 words for French recall and 12 for the coin prediction to 92 for ordering and 108 for the coding task. A length threshold alone would miss two brief replies that had discarded a usable learner control. [Turn records](../../../web/src/keating/openui/examples/november-audit.json)
+
+**Learners gave the tutor opportunities without naming a widget.** In 154 completed September terminal episodes, the independent cue detector found 40 implicit requests among 804 learner turns. Six got a matching interface on the first reply (15%). One more got it on the second (7/40 within the recorded episode, 17.5%). The other 33 reached the end of observation without a match. Overall, 204/803 observable final replies contained an interface (25.4%). One turn had insufficient final-reply evidence. The source menu’s **Multi-turn teaching episodes** view reproduces those counts. These are scripted exchanges, and the detector uses conservative English patterns. [Frozen terminal results](../../../web/public/reports/learning-to-teach/benchmark-v3-results.json) · [Cue and delay definitions](../../openui-diagnostics.md)
+
+## Which part of Jev’s guidance helped?
+
+The specific component suggestion showed no overall increase in this small comparison. Removing just the sentence that offered a component left valid first drafts at **4/8 in each condition**. The offered family appeared **3/8 with** the sentence and **4/8 without** it. A separate September benchmark compared the entire turn-specific instruction with a compact baseline. For MiniMax, one of two observable case pairs fit the cue only with the baseline. Gemini 3.1 matched in both arms on its two observable pairs. Several pairs lacked usable evidence. Neither experiment establishes a general benefit from removing Jev. [November offer-removal results](./summary.json) · [September paired records](../../../web/src/keating/openui/examples/paired-benchmark.json)
+
+The clearest failure was a release decision. On the coin prediction, MiniMax produced a compilable Question followed by a sentence inviting the learner to answer. The gate could discard the entire control. The local change trims trailing prose after a terminal checkpoint and submits the exact resulting candidate for review. Jev’s uncertain, minor finding that the introduction might repeat the question can now influence ranking. Confirmed repetition and a possible answer leak still block release. [Original coin turn](./evidence/MiniMax-M2.7-highspeed--prediction.json) · [Draft policy](../../../packages/learner-contracts/src/judgement/teaching-drafts/policy.ts)
+
+| Saved-candidate replay | First repair policy | Revised release policy |
+| --- | ---: | ---: |
+| Structurally repairable drafts passing all blocking checks | 1/9 | 6/9 |
+| Distinct historical turns with an admitted draft | 1/6 | 3/6 |
+
+All six approved drafts came from three repetitions of the coin case. The ordering exercise stayed withheld for possible answer leakage, the recall exercise for confirmed repetition, and the Python exercise for confirmed leakage. The comparison used identical tutor text, review requests and Jev probabilities. It measures the changed release decision on selected historical failures. A new tutor run would be needed to estimate how often a different reply now reaches a learner. [Blind reviews before the adjustment](./policy-v2/summary.json) · [Per-candidate replay after the adjustment](./policy-v2.1/summary.json)
+
+**A learner can pause testing and still want to explore.** On six further prelabelled synthetic planning probes, Jev recognized the assessment preference in 6/6. The first version of the planner offered the expected interface, or honored a pause, on 5/6. In the missed case Jev recognized both the request to change a variable and the request for no more questions. A broad learning-task score suppressed the slider. The revised planner preserves the simulation when those signals agree. It matched 6/6 on the same saved decisions after that change. This last count is an in-sample check. No new tutor replies were generated for either policy follow-up. [Prespecified probes](./policy-v2.1/probes.json) · [First scoring](./policy-v2.1/initial-summary.json) · [Fresh Jev decisions](./policy-v2.1/planning.json)
+
+## Fresh tutor replies under the revised policy
+
+After the policy was fixed, three new cases were labelled and each was scheduled once for both audit tutors. The spinner prompt asked to predict before an explanation. The bus prompt asked to vary frequency and see the effect on capacity while skipping the quiz. The square-perimeter prompt asked for just the answer. The run used empty learner histories, the original release’s tutor instructions and tool schemas, and the revised local web draft gate. Its expected action and answer-quality criteria were fixed before the first call. [Prompts and scoring criteria](./policy-holdout/cohort.json) · [Source and input hashes](./policy-holdout/manifest.json)
+
+| Fresh learner cue | MiniMax M2.7 Highspeed | Gemini 3.1 Flash-Lite |
+| --- | --- | --- |
+| Let me predict the next spin | Released a question group on its first draft. 26 words outside the interface. | Google returned HTTP 503. No completed tutor draft. |
+| Let me change bus frequency. Skip the quiz. | Released a simulation on its first draft. 98 words outside the interface. | Returned a native `interactive_page` call. The tool was never executed, so its page is unknown. |
+| Give just the square’s perimeter | Released “16.” | Google returned HTTP 503. No completed tutor draft. |
+
+MiniMax released the requested interface on **2/2 new implicit action cues**, and answered the direct control in one word. Gemini produced one tool proposal across its three scheduled cells. The two provider failures supply no evidence of Gemini’s instructional choices. All six scheduled tutor requests reached the provider once. Jev’s guidance reached all four completed replies. Two of three completed action-cue replies used an offered OpenUI family, and three of four completed replies met the prespecified case criteria. These new prompts check how the policy behaves outside the tuning set. The different cases and lack of a simultaneous old-policy arm preclude an overall before-and-after rate estimate. [MiniMax prediction](./policy-holdout/MiniMax-M2.7-highspeed--spinner.json) · [MiniMax simulation](./policy-holdout/segment-two--MiniMax-M2.7-highspeed--bus.json) · [Gemini tool request](./policy-holdout/segment-two--gemini-3.1-flash-lite--bus.json) · [Six-turn export](./policy-holdout/turns.json)
+
+The quality of the surrounding text still varies. The spinner gives four numeric choices even though the learner supplied no wedge sizes, alongside a write-in response. The bus simulation invites a prediction in prose and adds a paragraph of suggested experiments. Its four sliders work immediately, with no prediction field or graded checkpoint. In the offline replay, changing buses per hour from 8 to 16 with 40 seats per bus doubled offered capacity from 320 to 640 seats per hour. Both replies were exercised in Chromium at desktop and phone widths with external requests blocked. [Try both released MiniMax replies](./policy-holdout/preview/minimax-interfaces.html) · [Per-case assessment](./policy-holdout/adjudication.json)
+
+The bus example illustrates a remaining fit problem. Its first graph plots spare seats against extra riders attracted per added bus. To see the relationship the learner asked about, select **Buses per hour** and **Seats offered per hour** on the graph. The live readout responds to the frequency slider immediately. [Try the bus simulation](./policy-holdout/preview/minimax-interfaces.html#bus)
+
+These cases also exposed a gap in the separate, local cue detector used for passive traffic. It initially recognized the class of the spinner and perimeter prompts and missed the bus prompt. Supporting “I want to change … and watch” and keeping an assessment pause separate from a plain-text request resolved the miss. The three prelabelled classes now agree in sample. Replaying the older terminal and paired archives left all their recorded classifications unchanged. The prospective tutor results use the original fixed labels. [Diagnostic cue rules](../../../packages/learner-contracts/src/openui-diagnostic-turn.ts)
+
+## How to investigate the next incident
+
+1. In **Settings → Diagnostics → Interface use**, choose a tutor and **Implicit learning cue** or **Explicit interface request**. Compare **In a draft**, **In the final reply** and **Shown in chat**. The component counts, prose length, and direct-text controls show whether an apparent increase serves the learner.
+2. Open **Inspect turns**. Each loss record exposes Jev’s offered types, whether the guidance reached the tutor, the model’s compiled types, the selected types, and observed review issues. Use **Replies until a matching interface** to distinguish first-reply delivery, later delivery, reminders, and unresolved cues.
+3. For a model, call the read-only WebMCP tool `keating.openui_diagnostics` with `{"view":"draft-loss","cue":"implicit-action","limit":5}`. For an offline trace, run `keating openui-diagnostics trace.json --cue implicit-action --view draft-loss --limit 5`. Both return the match count and a bounded set of turn records. Omit the view to retrieve the full distribution. The packaged inspector also imports future JSON exports while offline. [Operator guide and fleet query](../../openui-diagnostics.md)
+
+The classroom observer records categories, counts and opaque turn identifiers. It keeps up to 500 recent teaching turns per browser and uses Keating’s existing analytics consent for fleet capture. Browser presentation confirms a committed component. Learner attention, retention and transfer remain unmeasured.
+
+## Production coverage and verification
+
+The connected production PostHog project accepted the new query for November 11–17 UTC on the two production hosts at version 4.2.0. It returned zero diagnostic records. At the time of the audit, the deployed version lacked the event fields needed to measure this rate. Product-wide prevalence and the default classroom tutor’s performance during that window therefore remain unknown. The observer and policy changes were tested locally on November 18, 2026. [Production window](./production.json) · [Verified query and coverage](../../openui-diagnostics.md#export-a-production-window)
+
+Local verification covered shared policy and aggregation tests, web and mobile recovery, the CLI, fleet conversion, TypeScript, and a Vite + Nitro production build. Chromium exercised the real chat renderer, IndexedDB persistence, Settings, the model bridge, and the downloadable inspector. Selected audit word counts matched the prior scorer, including measured zeros. Offline policy verification and showcase generation can be repeated from the repository root.
+
+```sh
+rtk bun docs/benchmarks/openui-audit-2026-11-18/verify-historical.mjs policy-v2 policy-v2.1 jev jev-resume
+rtk bun docs/benchmarks/openui-audit-2026-11-18/build-diagnostics.ts
+```
+
+The planning and gate checks used 21 additional Jev calls at a combined list price of **US$0.004274**. The fresh three-case tutor check added **US$0.045513** in usage-based accounting plus two US$0.12 reservations for the unmetered HTTP 503s. The original study also retained two full reservations for missing usage. The cumulative accounted bound is **US$1.1212 of US$2**. The provider invoice was unavailable. [Original ledger](./evidence/budget.json) · [Policy checks](./policy-v2.1/summary.json) · [First budget segment](./policy-holdout/ledger.json) · [Continuation and deduplication record](./policy-holdout/budget-amendment.json) · [Second budget segment](./policy-holdout/segment-two-ledger.json)

@@ -1,0 +1,275 @@
+{
+  "version": 1,
+  "model": "jev-1.14.0",
+  "cases": [
+    {
+      "id": "pause-after-questioning",
+      "stage": "plan",
+      "expected": {
+        "declined": true,
+        "mode": "no-assessment"
+      },
+      "jev": {
+        "action": "none",
+        "offered": [],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "answersSha256": "c059cbab1d28fb61ee7740bc2cf28a4fa1557c98ed860264ca2709969b663854"
+    },
+    {
+      "id": "brief-explanation",
+      "stage": "plan",
+      "expected": {
+        "declined": true,
+        "mode": "none"
+      },
+      "jev": {
+        "action": "none",
+        "offered": [],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "answersSha256": "0be62e10a00c16348690b66d202897fb9c6de12a8f51434e01253b2dc68e81f3"
+    },
+    {
+      "id": "debug-without-quiz",
+      "stage": "plan",
+      "expected": {
+        "declined": true,
+        "mode": "no-assessment"
+      },
+      "jev": {
+        "action": "none",
+        "offered": [],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "answersSha256": "60c924ebfd29e1c49e55aca63dca8dee5652d53e7e18a7f674a0b4bacc2cb628"
+    },
+    {
+      "id": "simulation-without-test",
+      "stage": "plan",
+      "expected": {
+        "declined": true,
+        "mode": "visual-without-assessment",
+        "component": "Simulation"
+      },
+      "jev": {
+        "action": "create",
+        "offered": [
+          "Simulation"
+        ],
+        "declined": true,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "answersSha256": "8e626836bfc5ac76f6698d12698b2862cd2b959861f35bf95d4b2032914e1609"
+    },
+    {
+      "id": "simulation-with-prediction",
+      "stage": "plan",
+      "expected": {
+        "declined": false,
+        "mode": "includes",
+        "component": "Simulation"
+      },
+      "jev": {
+        "action": "create",
+        "offered": [
+          "Simulation"
+        ],
+        "declined": false,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "answersSha256": "631cb7f4d32da64aae9c8b836f78116ea02e45d5f62472f8e1c9c3b3d099d27e"
+    },
+    {
+      "id": "independent-choice",
+      "stage": "plan",
+      "expected": {
+        "declined": false,
+        "mode": "includes",
+        "component": "Question"
+      },
+      "jev": {
+        "action": "create",
+        "offered": [
+          "Question",
+          "Quiz",
+          "Flashcards"
+        ],
+        "declined": false,
+        "offerMatches": true,
+        "decisionMatches": true
+      },
+      "answersSha256": "d413b86df4a543b2baab681bcb79ce025c94d888f6ae9f29671207b5b3667a6f"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction/1",
+      "stage": "review",
+      "expected": null,
+      "jev": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "answersSha256": "4a4faab4b9414acde098be0bcffb089c4934cccdcb70ec90d4e8e0946ad458ca",
+      "sourceTurn": "MiniMax-M2.7-highspeed--prediction",
+      "attempt": 1,
+      "originalDraftSha256": "832bf1a750f1227d7d92e4f6f280f7986d33ec1b58c5993f22e65e3a13a28dee",
+      "reviewedDraftSha256": "6336f9809066ccaa43e028d943511b775a88cb3c3666d61341492191675c9473",
+      "commonHistoricalPlanningResponseSha256": "f3573e9a0f62c9a51acbf4be60d891a63b62d79f6d366b46e8dc3a18dd3ecd6e"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction/2",
+      "stage": "review",
+      "expected": null,
+      "jev": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "answersSha256": "a7aece14d5dc356252513beb6fff85a021bb8fa61a4546a9d289f71fb60634d9",
+      "sourceTurn": "MiniMax-M2.7-highspeed--prediction",
+      "attempt": 2,
+      "originalDraftSha256": "8b21ef6baf7348a538ee466c472f13c9ce85627f52d498128229dc8f390195ad",
+      "reviewedDraftSha256": "6b3c5dc9a7b01205c48f6c12b5c27f9c885cbe615ee18f980be310db56bcdd0d",
+      "commonHistoricalPlanningResponseSha256": "f3573e9a0f62c9a51acbf4be60d891a63b62d79f6d366b46e8dc3a18dd3ecd6e"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--order/2",
+      "stage": "review",
+      "expected": null,
+      "jev": {
+        "gate": "withheld",
+        "attempt": "unknown",
+        "blockers": [
+          {
+            "id": "checkpoint_answer_leaked",
+            "status": "unknown",
+            "probability": 0.51
+          }
+        ]
+      },
+      "answersSha256": "e83aaeb134ef2b38a41148ef68f5de3da54ae4482069a31dfa5687d17affbb16",
+      "sourceTurn": "MiniMax-M2.7-highspeed--order",
+      "attempt": 2,
+      "originalDraftSha256": "00185a1d83c7e84ba31f8bf4df309710c71a7ca6c9b8a3aef184419c3e765a68",
+      "reviewedDraftSha256": "e30309fc2bba016da56e6b73858c2a8a5c0197f9f0d68d2dafd1031ac996ccd1",
+      "commonHistoricalPlanningResponseSha256": "386f48f0af3eea77db67c9edef8efc4731bea19ec8c99efbbbccdacdc0972084"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--recall/2",
+      "stage": "review",
+      "expected": null,
+      "jev": {
+        "gate": "withheld",
+        "attempt": "fail",
+        "blockers": [
+          {
+            "id": "checkpoint_repeated",
+            "status": "fail",
+            "probability": 0.64
+          }
+        ]
+      },
+      "answersSha256": "02eab9fb569ea06aab116c73afd40cb7fe06a896183918a19c394c913124e336",
+      "sourceTurn": "MiniMax-M2.7-highspeed--recall",
+      "attempt": 2,
+      "originalDraftSha256": "b707ae79e1a2e655218317912927ebf0270579eb7e5eae114c49b442909e1b25",
+      "reviewedDraftSha256": "36110e65041502eea22465de7f07b1a0169b682fc8462ec4b2a7791136b45ab5",
+      "commonHistoricalPlanningResponseSha256": "fb7b4b571ad8c65463e440c2ffa85968ea9a5788baa77425bd7e58ec58133877"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--code/2",
+      "stage": "review",
+      "expected": null,
+      "jev": {
+        "gate": "withheld",
+        "attempt": "fail",
+        "blockers": [
+          {
+            "id": "checkpoint_answer_leaked",
+            "status": "fail",
+            "probability": 0.74
+          }
+        ]
+      },
+      "answersSha256": "1f63e3d35776ee71c3473be29c418f74643b7fd57ec3d2a397d30e7fc030a05c",
+      "sourceTurn": "MiniMax-M2.7-highspeed--code",
+      "attempt": 2,
+      "originalDraftSha256": "5ca0a0a87f4310b27d36b6cf813f833d834c0908c5d0c5b64485a14366cc9973",
+      "reviewedDraftSha256": "82277b1bed5c828071551e4e23285936f1eedf4d2b231cb5d58b654d2cf6ec07",
+      "commonHistoricalPlanningResponseSha256": "f5e739bb7716ca87fcd605e28093bcd3ca13ab69cb9168b5b7b57faee88b0e9c"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction--repeat-1/1",
+      "stage": "review",
+      "expected": null,
+      "jev": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "answersSha256": "a18f0c5c4afe6d46ceca77edf49b0b1792fc185b7d970996ae78624529af5de9",
+      "sourceTurn": "MiniMax-M2.7-highspeed--prediction--repeat-1",
+      "attempt": 1,
+      "originalDraftSha256": "688bb3b95f7ff0fb3217f484bbb12e6c795a5f64e6c7d2b6ecf0dd3e9545c59a",
+      "reviewedDraftSha256": "1c5cd7b2f1e2f0b30d039a8b0212e9a530f6afeab6a04237261e24c46dfd83d2",
+      "commonHistoricalPlanningResponseSha256": "609f5322ef368794b9fd1f6de0548434f8a3664559a168e1090bacdff00dcb4a"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction--repeat-1/2",
+      "stage": "review",
+      "expected": null,
+      "jev": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "answersSha256": "72eda44088c6bdd9a07bda7dc5a642f159112aa6ad6de0c2c96a160b1974dda9",
+      "sourceTurn": "MiniMax-M2.7-highspeed--prediction--repeat-1",
+      "attempt": 2,
+      "originalDraftSha256": "215a870db768355f9f588bfaa77e2c380d417838495c7f597c769504c310dac1",
+      "reviewedDraftSha256": "4f851403e7c69d94b934192eadabacebb50edd31eeb7f98db9177d21df90a566",
+      "commonHistoricalPlanningResponseSha256": "609f5322ef368794b9fd1f6de0548434f8a3664559a168e1090bacdff00dcb4a"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction--repeat-3/1",
+      "stage": "review",
+      "expected": null,
+      "jev": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "answersSha256": "0eb7e5cd76544c41a011b897c2329bbd2d4f7baffa7aea96bcd434e8694c0ae4",
+      "sourceTurn": "MiniMax-M2.7-highspeed--prediction--repeat-3",
+      "attempt": 1,
+      "originalDraftSha256": "b057310d4c30cf26f8b20b1be9048a9be3c1154b974440a0af77bc52c1d7e4b4",
+      "reviewedDraftSha256": "403d612e26ccf6ba190d350c2ce673a00be219294385445d0a632eea58a95936",
+      "commonHistoricalPlanningResponseSha256": "15fbafb8178870f04c50e401ba345ca11e1615d1b16d6740e72174668e648282"
+    },
+    {
+      "id": "MiniMax-M2.7-highspeed--prediction--repeat-3/2",
+      "stage": "review",
+      "expected": null,
+      "jev": {
+        "gate": "released",
+        "attempt": "pass",
+        "blockers": []
+      },
+      "answersSha256": "b14b8becb60188418ffe7f6c237c11fffebc1ab911cf38cb46bacb87e4ad99e4",
+      "sourceTurn": "MiniMax-M2.7-highspeed--prediction--repeat-3",
+      "attempt": 2,
+      "originalDraftSha256": "42ad0c563d1f23784c5dd80c0e1ab5a49885a3d7065bc52b8047905fac5f82a1",
+      "reviewedDraftSha256": "5bd6b509d50f529082db3225667ef58de9eb003aa5f8095926257a870660f808",
+      "commonHistoricalPlanningResponseSha256": "15fbafb8178870f04c50e401ba345ca11e1615d1b16d6740e72174668e648282"
+    }
+  ]
+}

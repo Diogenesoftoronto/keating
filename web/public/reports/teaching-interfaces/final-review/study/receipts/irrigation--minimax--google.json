@@ -1,0 +1,637 @@
+{
+  "id": "irrigation--minimax--google",
+  "caseId": "irrigation",
+  "kind": "primary",
+  "tutor": "minimax",
+  "arm": "google",
+  "prompt": "I'm trying to work out how drip irrigation adds up. Let me change the flow in litres per minute and see how much water drains into a bucket in 6 minutes. No quiz, thanks.",
+  "originalHistory": [],
+  "plan": {
+    "status": "guided",
+    "action": "create",
+    "offered": [
+      "Simulation"
+    ],
+    "families": [
+      {
+        "family": "manipulable",
+        "components": [
+          "Simulation"
+        ],
+        "features": [
+          "variable_relationship",
+          "hands_on_requested"
+        ]
+      }
+    ],
+    "reason": null,
+    "codePracticeLanguage": null,
+    "features": {
+      "variable_relationship": true,
+      "ordered_procedure": false,
+      "discrete_recall": false,
+      "structure_relations": false,
+      "category_distinction": false,
+      "prediction_opportunity": true,
+      "learner_response_due": false,
+      "hands_on_requested": true,
+      "executable_code": false,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "decisions": {
+      "direct_answer_requested": false,
+      "explanation_requested": false,
+      "learner_stuck": false,
+      "attempt_present": false,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": false,
+      "plain_reply_requested": false,
+      "assessment_declined": true,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": true,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": null,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "directives": [
+      "Give the requested help and any visual demonstration. Let the learner operate controls immediately. Keep test questions and predictions out of both surrounding prose and component instructions unless the learner specifically asks to make that prediction.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "At most one OpenUI activity may help this turn: Simulation to let the learner change a variable and observe the outcome; let the learner carry out the requested action themselves. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested."
+    ]
+  },
+  "refs": [
+    {
+      "label": "irrigation--minimax--google/plan",
+      "entryId": "irrigation--flash--google/plan",
+      "source": "wire-cache",
+      "requestSha256": "1b50c39379d8aa5908ec8f8eb2a926f83222d77120e46e38e1952eea74cb4779",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "error": null,
+      "provenance": "documented-request-model"
+    },
+    {
+      "label": "irrigation--minimax--google/review/1",
+      "entryId": "irrigation--minimax--google/review/1",
+      "source": "live",
+      "requestSha256": "f0b45d54797e5955ede7e6fae682d8548c87608faa7a86b4533dcfe1afdc42cd",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "error": null,
+      "provenance": "documented-request-model"
+    }
+  ],
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 18326,
+          "output": 309,
+          "cacheRead": 513,
+          "cacheWrite": 0,
+          "totalTokens": 19148,
+          "cost": {
+            "input": 0.0109956,
+            "output": 0.0007415999999999999,
+            "cacheRead": 0.00003078,
+            "cacheWrite": 0,
+            "total": 0.011767979999999999
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 39
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Here's a model where you set the drip flow and watch the 6-minute bucket total.\n\n```openui lifecycle=ephemeral id=drip-irrigation-sim\n\nroot = LearningSurface([sim], \"Drip irrigation: flow to bucket\", \"Set the drip flow rate and read the 6-minute bucket total.\", \"ephemeral\")\nsim = Simulation(\"drip-sim\", \"Flow to bucket over 6 minutes\", [\n  { id: \"flow\", label: \"Drip flow rate\", unit: \"L/min\", min: 0.5, max: 20, step: 0.5, value: 2 }\n], [\n  { id: \"bucket\", label: \"Water in bucket\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"rate\", label: \"Flow rate\", unit: \"L/min\", expr: \"flow\", precision: 1 }\n], \"ephemeral\", \"Move the flow slider. The bucket line reads flow × 6 minutes, assuming no losses to evaporation or runoff. Press Share what I found to send your settings back.\")\n```\n\nDrag the slider and watch the bucket total scale linearly — every 0.5 L/min adds 3 L over the 6 minutes."
+          }
+        ]
+      },
+      "text": "Here's a model where you set the drip flow and watch the 6-minute bucket total.\n\n```openui lifecycle=ephemeral id=drip-irrigation-sim\n\nroot = LearningSurface([sim], \"Drip irrigation: flow to bucket\", \"Set the drip flow rate and read the 6-minute bucket total.\", \"ephemeral\")\nsim = Simulation(\"drip-sim\", \"Flow to bucket over 6 minutes\", [\n  { id: \"flow\", label: \"Drip flow rate\", unit: \"L/min\", min: 0.5, max: 20, step: 0.5, value: 2 }\n], [\n  { id: \"bucket\", label: \"Water in bucket\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"rate\", label: \"Flow rate\", unit: \"L/min\", expr: \"flow\", precision: 1 }\n], \"ephemeral\", \"Move the flow slider. The bucket line reads flow × 6 minutes, assuming no losses to evaporation or runoff. Press Share what I found to send your settings back.\")\n```\n\nDrag the slider and watch the bucket total scale linearly — every 0.5 L/min adds 3 L over the 6 minutes.",
+      "toolCalls": [],
+      "attempted": true,
+      "components": [
+        "simulation"
+      ],
+      "outsideWords": 36,
+      "entryId": "irrigation--minimax--google/tutor/1",
+      "completed": true,
+      "providedDirectives": true,
+      "systemSha256": "72bf65881eb6bd79a0301c65a9b5c23b0a2cb7321e480fe27d1a08977a3f81fb"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.0351127547140439
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02413990312798552
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.028790914167407214
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.021208412332706594
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.034806448485639595
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.0312556722724708
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.08482599220356936
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.1390943188298893
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06557636349487951
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.029284747186629885
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.026487345387117937
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03234469181251951
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.037439849993158254
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.027641405817311324
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.24797109692589495
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.36893585209409435
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06502638907501765
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.035060736343756276
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.043271919433995276
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.017273708081714093
+        },
+        {
+          "id": "declined_assessment_imposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05516574823785658
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07388874796845642
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.07796185106321779
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04782341199795344
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.050484179777692734
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03963619309828118
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05794979256966136
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.25588366112474903
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.04522776508656373
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03987198858602065
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02972091250264993
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03151492974696276
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05351144693974465
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.033843385685690154
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.04935818442170164
+        },
+        {
+          "id": "law_authority_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03662243272743857
+        },
+        {
+          "id": "law_jurisdiction_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.020762518611893672
+        },
+        {
+          "id": "medicine_evidence_conflated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.0180300031636384
+        },
+        {
+          "id": "history_disagreement_erased",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.013989762064167587
+        },
+        {
+          "id": "psychology_replication_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.019518132278505247
+        },
+        {
+          "id": "politics_normative_as_fact",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.015172822121206823
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "declined_assessment_structure",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.05435467129201077,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.1522086268764712,
+          "status": "pass"
+        }
+      ],
+      "variant": "default"
+    }
+  ],
+  "selectedAttempt": 1,
+  "disposition": "released",
+  "missing": null,
+  "public": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 18326,
+        "output": 309,
+        "cacheRead": 513,
+        "cacheWrite": 0,
+        "totalTokens": 19148,
+        "cost": {
+          "input": 0.0109956,
+          "output": 0.0007415999999999999,
+          "cacheRead": 0.00003078,
+          "cacheWrite": 0,
+          "total": 0.011767979999999999
+        },
+        "reasoning": 39,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Here's a model where you set the drip flow and watch the 6-minute bucket total.\n\n```openui lifecycle=ephemeral id=drip-irrigation-sim\n\nroot = LearningSurface([sim], \"Drip irrigation: flow to bucket\", \"Set the drip flow rate and read the 6-minute bucket total.\", \"ephemeral\")\nsim = Simulation(\"drip-sim\", \"Flow to bucket over 6 minutes\", [\n  { id: \"flow\", label: \"Drip flow rate\", unit: \"L/min\", min: 0.5, max: 20, step: 0.5, value: 2 }\n], [\n  { id: \"bucket\", label: \"Water in bucket\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"rate\", label: \"Flow rate\", unit: \"L/min\", expr: \"flow\", precision: 1 }\n], \"ephemeral\", \"Move the flow slider. The bucket line reads flow × 6 minutes, assuming no losses to evaporation or runoff. Press Share what I found to send your settings back.\")\n```\n\nDrag the slider and watch the bucket total scale linearly — every 0.5 L/min adds 3 L over the 6 minutes."
+        }
+      ]
+    },
+    "text": "Here's a model where you set the drip flow and watch the 6-minute bucket total.\n\n```openui lifecycle=ephemeral id=drip-irrigation-sim\n\nroot = LearningSurface([sim], \"Drip irrigation: flow to bucket\", \"Set the drip flow rate and read the 6-minute bucket total.\", \"ephemeral\")\nsim = Simulation(\"drip-sim\", \"Flow to bucket over 6 minutes\", [\n  { id: \"flow\", label: \"Drip flow rate\", unit: \"L/min\", min: 0.5, max: 20, step: 0.5, value: 2 }\n], [\n  { id: \"bucket\", label: \"Water in bucket\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"rate\", label: \"Flow rate\", unit: \"L/min\", expr: \"flow\", precision: 1 }\n], \"ephemeral\", \"Move the flow slider. The bucket line reads flow × 6 minutes, assuming no losses to evaporation or runoff. Press Share what I found to send your settings back.\")\n```\n\nDrag the slider and watch the bucket total scale linearly — every 0.5 L/min adds 3 L over the 6 minutes.",
+    "toolCalls": [],
+    "attempted": true,
+    "components": [
+      "simulation"
+    ],
+    "outsideWords": 36
+  },
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 18326,
+        "output": 309,
+        "cacheRead": 513,
+        "cacheWrite": 0,
+        "totalTokens": 19148,
+        "cost": {
+          "input": 0.0109956,
+          "output": 0.0007415999999999999,
+          "cacheRead": 0.00003078,
+          "cacheWrite": 0,
+          "total": 0.011767979999999999
+        },
+        "reasoning": 39,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Here's a model where you set the drip flow and watch the 6-minute bucket total.\n\n```openui lifecycle=ephemeral id=drip-irrigation-sim\n\nroot = LearningSurface([sim], \"Drip irrigation: flow to bucket\", \"Set the drip flow rate and read the 6-minute bucket total.\", \"ephemeral\")\nsim = Simulation(\"drip-sim\", \"Flow to bucket over 6 minutes\", [\n  { id: \"flow\", label: \"Drip flow rate\", unit: \"L/min\", min: 0.5, max: 20, step: 0.5, value: 2 }\n], [\n  { id: \"bucket\", label: \"Water in bucket\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"rate\", label: \"Flow rate\", unit: \"L/min\", expr: \"flow\", precision: 1 }\n], \"ephemeral\", \"Move the flow slider. The bucket line reads flow × 6 minutes, assuming no losses to evaporation or runoff. Press Share what I found to send your settings back.\")\n```\n\nDrag the slider and watch the bucket total scale linearly — every 0.5 L/min adds 3 L over the 6 minutes."
+        }
+      ]
+    },
+    "text": "Here's a model where you set the drip flow and watch the 6-minute bucket total.\n\n```openui lifecycle=ephemeral id=drip-irrigation-sim\n\nroot = LearningSurface([sim], \"Drip irrigation: flow to bucket\", \"Set the drip flow rate and read the 6-minute bucket total.\", \"ephemeral\")\nsim = Simulation(\"drip-sim\", \"Flow to bucket over 6 minutes\", [\n  { id: \"flow\", label: \"Drip flow rate\", unit: \"L/min\", min: 0.5, max: 20, step: 0.5, value: 2 }\n], [\n  { id: \"bucket\", label: \"Water in bucket\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"rate\", label: \"Flow rate\", unit: \"L/min\", expr: \"flow\", precision: 1 }\n], \"ephemeral\", \"Move the flow slider. The bucket line reads flow × 6 minutes, assuming no losses to evaporation or runoff. Press Share what I found to send your settings back.\")\n```\n\nDrag the slider and watch the bucket total scale linearly — every 0.5 L/min adds 3 L over the 6 minutes.",
+    "toolCalls": []
+  },
+  "notice": null,
+  "elapsedMs": 3890
+}

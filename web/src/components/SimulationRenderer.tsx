@@ -13,6 +13,7 @@ import {
 	loadSimulationState,
 	saveSimulationState,
 	simulationDefaultValues,
+	simulationDefaultView,
 	simulationShareIntent,
 	simulationShareMatches,
 	type SimulationShareIntent,
@@ -79,9 +80,13 @@ export function useSimulationInteraction({ node, documentId, storage: storageOve
 	const [restored] = useState(() => documentId === undefined ? { values: simulationDefaultValues(node) } : loadSimulationState(storage, documentId, node));
 	const [values, setValues] = useState<Record<string, number>>(restored.values);
 	const compiled = useMemo(() => compileReadouts(node), [node]);
-	const defaultReadout = compiled.find((item) => item.readout.emphasis) ?? compiled[0];
-	const [readoutId, setReadoutId] = useState(restored.readoutId ?? defaultReadout?.readout.id ?? "");
-	const [parameterId, setParameterId] = useState(() => restored.parameterId ?? [...node.parameters].reverse().find((parameter) => defaultReadout?.parameters.includes(parameter.id))?.id ?? node.parameters[0]?.id ?? "");
+	// What the author asked the learner to look at; a saved learner choice wins over it.
+	const defaultView = useMemo(() => simulationDefaultView(node), [node]);
+	const defaultReadout = compiled.find((item) => item.readout.id === defaultView.readoutId) ?? compiled[0];
+	const defaultReadoutId = defaultReadout?.readout.id ?? "";
+	const defaultParameterId = defaultView.parameterId ?? "";
+	const [readoutId, setReadoutId] = useState(restored.readoutId ?? defaultReadoutId);
+	const [parameterId, setParameterId] = useState(restored.parameterId ?? defaultParameterId);
 	const touched = useRef(false);
 	const [saveFailed, setSaveFailed] = useState(false);
 	const [shareStatus, setShareStatus] = useState<"idle" | "shared" | "failed">("idle");
@@ -95,6 +100,8 @@ export function useSimulationInteraction({ node, documentId, storage: storageOve
 	return {
 		compiled,
 		defaultReadout,
+		/** True once the settings or the graph differ from what the author set up. */
+		dirty: parameterId !== defaultParameterId || readoutId !== defaultReadoutId || node.parameters.some((item) => values[item.id] !== item.value),
 		values,
 		parameterId,
 		readoutId,
@@ -109,7 +116,8 @@ export function useSimulationInteraction({ node, documentId, storage: storageOve
 			interact();
 			setValues((current) => ({ ...current, [id]: Number.isFinite(raw) ? Math.max(parameter.min, Math.min(parameter.max, raw)) : parameter.value }));
 		},
-		reset() { interact(); setValues(simulationDefaultValues(node)); },
+		/** Back to the authored start: the starting values and the graph the author opened on. */
+		reset() { interact(); setValues(simulationDefaultValues(node)); setParameterId(defaultParameterId); setReadoutId(defaultReadoutId); },
 		selectParameter(id: string) { interact(); setParameterId(id); },
 		selectReadout(id: string) { interact(); setReadoutId(id); },
 		/** One learner turn per distinct share; a repeat of the last shared settings sends nothing. */
@@ -141,7 +149,6 @@ function SimulationControls(props: SimulationRendererProps) {
 	const selected = compiled.find((item) => item.readout.id === outputId) ?? compiled[0];
 	const samples = useMemo(() => parameter ? sampleSimulation(parameter, selected?.expression, values) : [], [parameter, selected?.expression, values]);
 	const plotted = useMemo(() => samples.filter((point): point is { x: number; y: number } => point.y !== undefined), [samples]);
-	const dirty = node.parameters.some((item) => values[item.id] !== item.value);
 	if (!parameter || !selected) return null;
 	const { readout, expression } = selected;
 	const currentValue = expression ? evaluateSimulationExpression(expression, values) : undefined;
@@ -155,7 +162,7 @@ function SimulationControls(props: SimulationRendererProps) {
 			<h4 id={`${identifier}-title`} className="simulation__title">
 				<Activity size={18} aria-hidden="true" className={css({ flexShrink: 0, color: "var(--primary)" })} />{node.title}
 			</h4>
-			<button type="button" aria-label="Reset simulation" title="Reset simulation" disabled={!dirty} onClick={interaction.reset} className="simulation__reset">
+			<button type="button" aria-label="Reset simulation" title="Reset simulation" disabled={!interaction.dirty} onClick={interaction.reset} className="simulation__reset">
 				<RotateCcw size={16} aria-hidden="true" /><span className="simulation__reset-label">Reset</span>
 			</button>
 		</header>

@@ -1,0 +1,60 @@
+{
+  "schemaVersion": 1,
+  "view": "withheld",
+  "matchingTurns": 1,
+  "turns": [
+    {
+      "schemaVersion": 1,
+      "conversationId": "ccbc1dff-3dd9-4803-b06d-92d914c5ef44",
+      "turnId": "learner-1",
+      "turnIndex": 1,
+      "model": "minimax/MiniMax-M2.7-highspeed",
+      "mode": "guided",
+      "cue": {
+        "kind": "none",
+        "targets": []
+      },
+      "reply": "withheld",
+      "replyElapsedMs": 28807,
+      "attempted": true,
+      "compiled": [
+        "question-group"
+      ],
+      "selected": [],
+      "rendered": [],
+      "guidance": {
+        "source": "jev",
+        "action": "continue",
+        "delivered": true,
+        "targets": [
+          "question",
+          "simulation"
+        ]
+      },
+      "outsideWords": null,
+      "nativePageRequested": null,
+      "draftAttempts": 3,
+      "gateIssues": [
+        "checkpoint_answer_leaked",
+        "checkpoint_continued",
+        "checkpoint_not_interactive",
+        "checkpoint_repeated",
+        "mastery_overclaimed",
+        "unsolicited_animation",
+        "unsolicited_assessment"
+      ],
+      "decisionModel": "jev-1.14.0",
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      }
+    }
+  ]
+}

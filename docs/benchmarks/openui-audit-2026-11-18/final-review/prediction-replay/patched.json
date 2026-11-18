@@ -1,0 +1,1869 @@
+{
+ "contracts": "packages/learner-contracts",
+ "results": {
+  "target/jev-best-effort": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "Good instinct \u2014 guessing first is exactly how you find out where your model of paper actually comes from. Here's your chance:\n\n```openui lifecycle=ephemeral id=paper-fold-layers-guess\n\nroot = LearningSurface([guess], \"How many layers?\", \"Predict first \u2014 I'll explain after you commit.\", \"ephemeral\")\nguess = Question([{ header: \"Your guess\", question: \"A strip of paper is folded in half once, then folded in half again. How many layers of paper are in the final stack?\", type: \"choice\", choices: [\"2 layers\", \"3 layers\", \"4 layers\", \"8 layers\"], allowText: true, hint: \"Pick a number, or write your own answer and how you worked it out.\" }], \"ephemeral\", \"Folding and layers\", \"Commit to an answer before I explain.\")\n```",
+   "publicToolCalls": [],
+   "publicHasOpenUi": true,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.6"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 2,
+    "selection": 0,
+    "generate": 2
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "target/google-approved-choice": {
+   "id": "paper-fold--flash--google",
+   "status": "released",
+   "selectedAttempt": 2,
+   "reason": null,
+   "notice": null,
+   "publicText": "```openui lifecycle=ephemeral id=paper-folding-prediction\n\nroot = LearningSurface([prediction], \"Paper Folding\", \"How many layers do you think the strip will have after two folds?\", \"ephemeral\")\nprediction = Question([{ question: \"After folding a strip of paper in half twice, how many layers of paper will there be?\", type: \"choice\", choices: [\"2\", \"3\", \"4\", \"6\", \"8\"], hint: \"Think about what happens to the number of layers with each fold.\" }], \"ephemeral\", \"Paper folding layers\", \"Make your prediction.\")\n```",
+   "publicToolCalls": [],
+   "publicHasOpenUi": true,
+   "selectionCandidateAttempts": [
+    2
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": [
+      "checkpoint_not_interactive=fail@0.6311770550602884"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "pass",
+     "notPassed": []
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 2,
+    "selection": 0,
+    "generate": 2
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "guard/jev-answer-leaked": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 3,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "How many layers do you think the strip has after the two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    3
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_answer_leaked=fail@0.7",
+      "checkpoint_repeated=fail@0.6"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.63",
+      "checkpoint_repeated=fail@0.72",
+      "checkpoint_not_interactive=fail@0.73"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "guard/jev-answer-leak-uncertain": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 3,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "How many layers do you think the strip has after the two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    3
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_answer_leaked=unknown@0.5",
+      "checkpoint_repeated=fail@0.6"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.63",
+      "checkpoint_repeated=fail@0.72",
+      "checkpoint_not_interactive=fail@0.73"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "guard/jev-continued-past-question": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 3,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "How many layers do you think the strip has after the two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    3
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.6",
+      "checkpoint_continued=fail@0.7"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.63",
+      "checkpoint_repeated=fail@0.72",
+      "checkpoint_not_interactive=fail@0.73"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "guard/jev-confident-repetition": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 3,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "How many layers do you think the strip has after the two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    3
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.85"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.63",
+      "checkpoint_repeated=fail@0.72",
+      "checkpoint_not_interactive=fail@0.73"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "guard/jev-unsupported-claim": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 3,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "How many layers do you think the strip has after the two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    3
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "tool_success_invented=fail@0.9",
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.6"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.63",
+      "checkpoint_repeated=fail@0.72",
+      "checkpoint_not_interactive=fail@0.73"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "guard/jev-invalid-openui": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 3,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "How many layers do you think the strip has after the two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    3
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "notPassed": [
+      "openui_valid=fail@1",
+      "one_activity=unknown@null",
+      "activity_without_plan=unknown@null",
+      "one_checkpoint=unknown@null",
+      "checkpoint_last_node=unknown@null",
+      "stop_after_checkpoint=unknown@null",
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.6"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.63",
+      "checkpoint_repeated=fail@0.72",
+      "checkpoint_not_interactive=fail@0.73"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "guard/jev-profile-write-attached": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 3,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "How many layers do you think the strip has after the two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    3
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "notPassed": [
+      "stop_after_checkpoint=fail@1",
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.6"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.63",
+      "checkpoint_repeated=fail@0.72",
+      "checkpoint_not_interactive=fail@0.73"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "guard/jev-assessment-declined": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 3,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "How many layers do you think the strip has after the two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    3
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.6",
+      "declined_assessment_imposed=unknown@null"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.63",
+      "checkpoint_repeated=fail@0.72",
+      "checkpoint_not_interactive=fail@0.73"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [
+    "review:declined_assessment_imposed"
+   ],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "guard/jev-plain-reply-requested": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 3,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "How many layers do you think the strip has after the two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    3
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.6"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.63",
+      "checkpoint_repeated=fail@0.72",
+      "checkpoint_not_interactive=fail@0.73"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "guard/jev-response-not-requested": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 3,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "How many layers do you think the strip has after the two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    3
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.6"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.63",
+      "checkpoint_repeated=fail@0.72",
+      "checkpoint_not_interactive=fail@0.73"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "guard/jev-response-uncertain": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 3,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "How many layers do you think the strip has after the two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    3
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.6"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.63",
+      "checkpoint_repeated=fail@0.72",
+      "checkpoint_not_interactive=fail@0.73"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "guard/copper-recorded": {
+   "id": "copper--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "Cu",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": []
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 1
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "guard/copper-question-injected": {
+   "id": "copper--minimax--jev",
+   "status": "withheld",
+   "selectedAttempt": null,
+   "reason": "generation-unavailable",
+   "notice": "withheld",
+   "publicText": null,
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.6"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "generation-error",
+     "notPassed": []
+    },
+    {
+     "attempt": 3,
+     "status": "generation-error",
+     "notPassed": []
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [
+    "draft 2",
+    "draft 3"
+   ],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "guard/copper-plan-on-paper-fold-drafts": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 3,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "How many layers do you think the strip has after the two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    3
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.6"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.63",
+      "checkpoint_repeated=fail@0.72",
+      "checkpoint_not_interactive=fail@0.73"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "guard/irrigation-optional-recorded": {
+   "id": "irrigation--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "Here's a model you can move yourself: set the drip flow, and the 6-minute total recomputes instantly.\n\n```openui lifecycle=ephemeral id=drip-irrigation-volume\n\nroot = LearningSurface([sim], \"Drip irrigation: 6-minute bucket total\", \"Adjust the flow rate and watch the volume that lands in the bucket.\", \"ephemeral\")\nsim = Simulation(\"drip-vol\", \"Drip flow and bucket total\", [\n  { id: \"flow\", label: \"Flow rate\", unit: \"L/min\", min: 0, max: 30, step: 0.5, value: 2 }\n], [\n  { id: \"total\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Same flow sustained\", unit: \"L/h\", expr: \"flow * 60\", precision: 0 },\n  { id: \"perdrop\", label: \"Per-second rate\", unit: \"mL/s\", expr: \"flow * 1000 / 60\", precision: 1 }\n], \"ephemeral\", \"Start at 2 L/min and move the slider. The emphasised readout is the bucket total after 6 minutes.\")\n```\n\nTry raising it to 10 L/min and watch the first number move \u2014 it's a straight multiply by 6, so the readout is the thing doing the accounting for you.",
+   "publicToolCalls": [],
+   "publicHasOpenUi": true,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": [
+      "checkpoint_repeated=unknown@0.47",
+      "quality_scope=unknown@0.51"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 1
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": true
+   }
+  },
+  "guard/stage-light-no-quiz-recorded": {
+   "id": "classroom-stage-light--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 2,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "I'll set up a control you can drag: the flash rate, with the count over 12 seconds updating live.\n\n```openui lifecycle=ephemeral id=flash-rate-sim\nroot = LearningSurface([sim], \"Flashes in 12 seconds\", \"Drag the flash rate and watch the 12-second total update.\", \"ephemeral\")\nsim = Simulation(\"flash-sim\", \"Stage light flash counter\", [\n  { id: \"rate\", label: \"Flash rate\", unit: \"flashes per second\", min: 0, max: 20, step: 1, value: 6 }\n], [\n  { id: \"total\", label: \"Flashes in 12 seconds\", unit: \"flashes\", expr: \"rate * 12\", emphasis: true },\n  { id: \"perSecond\", label: \"Flashes per second\", unit: \"flashes/s\", expr: \"rate\" }\n], \"ephemeral\", \"Move the flash rate slider and watch how the number of flashes in 12 seconds changes. The first slider is the one you asked to change; the totals recalculate immediately.\")\n```\n\nThe starting point is your 6 flashes per second, which gives 72 flashes in 12 seconds. Move the slider to any rate you like and the total follows.",
+   "publicToolCalls": [],
+   "publicHasOpenUi": true,
+   "selectionCandidateAttempts": [
+    2
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "notPassed": [
+      "checkpoint_repeated=unknown@0.54",
+      "declined_assessment_imposed=fail@0.75",
+      "unsolicited_animation=unknown@0.47"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "unknown",
+     "notPassed": [
+      "checkpoint_answer_leaked=unknown@0.54",
+      "checkpoint_repeated=unknown@0.55"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 2,
+    "selection": 0,
+    "generate": 2
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 2,
+    "notice": "unverified",
+    "hadOpenUi": true
+   }
+  },
+  "guard/stage-light-question-injected": {
+   "id": "classroom-stage-light--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 2,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "I'll set up a control you can drag: the flash rate, with the count over 12 seconds updating live.\n\n```openui lifecycle=ephemeral id=flash-rate-sim\nroot = LearningSurface([sim], \"Flashes in 12 seconds\", \"Drag the flash rate and watch the 12-second total update.\", \"ephemeral\")\nsim = Simulation(\"flash-sim\", \"Stage light flash counter\", [\n  { id: \"rate\", label: \"Flash rate\", unit: \"flashes per second\", min: 0, max: 20, step: 1, value: 6 }\n], [\n  { id: \"total\", label: \"Flashes in 12 seconds\", unit: \"flashes\", expr: \"rate * 12\", emphasis: true },\n  { id: \"perSecond\", label: \"Flashes per second\", unit: \"flashes/s\", expr: \"rate\" }\n], \"ephemeral\", \"Move the flash rate slider and watch how the number of flashes in 12 seconds changes. The first slider is the one you asked to change; the totals recalculate immediately.\")\n```\n\nThe starting point is your 6 flashes per second, which gives 72 flashes in 12 seconds. Move the slider to any rate you like and the total follows.",
+   "publicToolCalls": [],
+   "publicHasOpenUi": true,
+   "selectionCandidateAttempts": [
+    2
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.6",
+      "declined_assessment_imposed=fail@0.75"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "unknown",
+     "notPassed": [
+      "checkpoint_answer_leaked=unknown@0.54",
+      "checkpoint_repeated=unknown@0.55"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 2,
+    "selection": 0,
+    "generate": 2
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 2,
+    "notice": "unverified",
+    "hadOpenUi": true
+   }
+  },
+  "guard/google-question-leaks": {
+   "id": "paper-fold--flash--google",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "That sounds like a fun puzzle! Go ahead and share your guess\u2014how many layers do you think the strip will have after those two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": [
+      "checkpoint_not_interactive=fail@0.6311770550602884"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "checkpoint_answer_leaked=fail@0.7"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 2,
+    "selection": 0,
+    "generate": 2
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "guard/google-assessment-declined": {
+   "id": "paper-fold--flash--google",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "That sounds like a fun puzzle! Go ahead and share your guess\u2014how many layers do you think the strip will have after those two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": [
+      "checkpoint_not_interactive=fail@0.6311770550602884"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "unknown",
+     "notPassed": [
+      "declined_assessment_imposed=unknown@null"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 2,
+    "selection": 0,
+    "generate": 2
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [
+    "review:declined_assessment_imposed"
+   ],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "guard/google-response-not-requested": {
+   "id": "paper-fold--flash--google",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "That sounds like a fun puzzle! Go ahead and share your guess\u2014how many layers do you think the strip will have after those two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": [
+      "checkpoint_not_interactive=fail@0.6311770550602884"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 1
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "guard/google-prose-not-a-question": {
+   "id": "paper-fold--flash--google",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "That sounds like a fun puzzle! Go ahead and share your guess\u2014how many layers do you think the strip will have after those two folds?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": []
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 1
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "sweep/classroom-stage-light--minimax--jev": {
+   "id": "classroom-stage-light--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 2,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "I'll set up a control you can drag: the flash rate, with the count over 12 seconds updating live.\n\n```openui lifecycle=ephemeral id=flash-rate-sim\nroot = LearningSurface([sim], \"Flashes in 12 seconds\", \"Drag the flash rate and watch the 12-second total update.\", \"ephemeral\")\nsim = Simulation(\"flash-sim\", \"Stage light flash counter\", [\n  { id: \"rate\", label: \"Flash rate\", unit: \"flashes per second\", min: 0, max: 20, step: 1, value: 6 }\n], [\n  { id: \"total\", label: \"Flashes in 12 seconds\", unit: \"flashes\", expr: \"rate * 12\", emphasis: true },\n  { id: \"perSecond\", label: \"Flashes per second\", unit: \"flashes/s\", expr: \"rate\" }\n], \"ephemeral\", \"Move the flash rate slider and watch how the number of flashes in 12 seconds changes. The first slider is the one you asked to change; the totals recalculate immediately.\")\n```\n\nThe starting point is your 6 flashes per second, which gives 72 flashes in 12 seconds. Move the slider to any rate you like and the total follows.",
+   "publicToolCalls": [],
+   "publicHasOpenUi": true,
+   "selectionCandidateAttempts": [
+    2
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "notPassed": [
+      "checkpoint_repeated=unknown@0.54",
+      "declined_assessment_imposed=fail@0.75",
+      "unsolicited_animation=unknown@0.47"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "unknown",
+     "notPassed": [
+      "checkpoint_answer_leaked=unknown@0.54",
+      "checkpoint_repeated=unknown@0.55"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 2,
+    "selection": 0,
+    "generate": 2
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 2,
+    "notice": "unverified",
+    "hadOpenUi": true
+   }
+  },
+  "sweep/copper--flash--google": {
+   "id": "copper--flash--google",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "Cu",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": []
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 1
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "sweep/copper--minimax--google": {
+   "id": "copper--minimax--google",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "Cu",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": []
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 1
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "sweep/copper--minimax--jev": {
+   "id": "copper--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "Cu",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": []
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 1
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "sweep/irrigation--minimax--google": {
+   "id": "irrigation--minimax--google",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "Here's a model where you set the drip flow and watch the 6-minute bucket total.\n\n```openui lifecycle=ephemeral id=drip-irrigation-sim\n\nroot = LearningSurface([sim], \"Drip irrigation: flow to bucket\", \"Set the drip flow rate and read the 6-minute bucket total.\", \"ephemeral\")\nsim = Simulation(\"drip-sim\", \"Flow to bucket over 6 minutes\", [\n  { id: \"flow\", label: \"Drip flow rate\", unit: \"L/min\", min: 0.5, max: 20, step: 0.5, value: 2 }\n], [\n  { id: \"bucket\", label: \"Water in bucket\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"rate\", label: \"Flow rate\", unit: \"L/min\", expr: \"flow\", precision: 1 }\n], \"ephemeral\", \"Move the flow slider. The bucket line reads flow \u00d7 6 minutes, assuming no losses to evaporation or runoff. Press Share what I found to send your settings back.\")\n```\n\nDrag the slider and watch the bucket total scale linearly \u2014 every 0.5 L/min adds 3 L over the 6 minutes.",
+   "publicToolCalls": [],
+   "publicHasOpenUi": true,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": []
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 1
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": true
+   }
+  },
+  "sweep/irrigation--minimax--jev": {
+   "id": "irrigation--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "Here's a model you can move yourself: set the drip flow, and the 6-minute total recomputes instantly.\n\n```openui lifecycle=ephemeral id=drip-irrigation-volume\n\nroot = LearningSurface([sim], \"Drip irrigation: 6-minute bucket total\", \"Adjust the flow rate and watch the volume that lands in the bucket.\", \"ephemeral\")\nsim = Simulation(\"drip-vol\", \"Drip flow and bucket total\", [\n  { id: \"flow\", label: \"Flow rate\", unit: \"L/min\", min: 0, max: 30, step: 0.5, value: 2 }\n], [\n  { id: \"total\", label: \"Water in bucket after 6 min\", unit: \"L\", expr: \"flow * 6\", precision: 1, emphasis: true },\n  { id: \"hourly\", label: \"Same flow sustained\", unit: \"L/h\", expr: \"flow * 60\", precision: 0 },\n  { id: \"perdrop\", label: \"Per-second rate\", unit: \"mL/s\", expr: \"flow * 1000 / 60\", precision: 1 }\n], \"ephemeral\", \"Start at 2 L/min and move the slider. The emphasised readout is the bucket total after 6 minutes.\")\n```\n\nTry raising it to 10 L/min and watch the first number move \u2014 it's a straight multiply by 6, so the readout is the thing doing the accounting for you.",
+   "publicToolCalls": [],
+   "publicHasOpenUi": true,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": [
+      "checkpoint_repeated=unknown@0.47",
+      "quality_scope=unknown@0.51"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 1
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": true
+   }
+  },
+  "sweep/paper-fold--flash--google": {
+   "id": "paper-fold--flash--google",
+   "status": "released",
+   "selectedAttempt": 2,
+   "reason": null,
+   "notice": null,
+   "publicText": "```openui lifecycle=ephemeral id=paper-folding-prediction\n\nroot = LearningSurface([prediction], \"Paper Folding\", \"How many layers do you think the strip will have after two folds?\", \"ephemeral\")\nprediction = Question([{ question: \"After folding a strip of paper in half twice, how many layers of paper will there be?\", type: \"choice\", choices: [\"2\", \"3\", \"4\", \"6\", \"8\"], hint: \"Think about what happens to the number of layers with each fold.\" }], \"ephemeral\", \"Paper folding layers\", \"Make your prediction.\")\n```",
+   "publicToolCalls": [],
+   "publicHasOpenUi": true,
+   "selectionCandidateAttempts": [
+    2
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": [
+      "checkpoint_not_interactive=fail@0.6311770550602884"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "pass",
+     "notPassed": []
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 2,
+    "selection": 0,
+    "generate": 2
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "sweep/paper-fold--flash--jev": {
+   "id": "paper-fold--flash--jev",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "```openui lifecycle=ephemeral id=paper-fold-prediction\n\nroot = LearningSurface([prediction], \"Paper folding\", \"How many layers do you think there are?\", \"ephemeral\")\nprediction = Question([{ question: \"After folding a strip of paper in half twice, how many layers of paper are there?\", type: \"choice\", choices: [\"2\", \"3\", \"4\", \"6\", \"8\"], allowText: true, hint: \"Think about what happens to the number of layers with each fold.\" }], \"ephemeral\", \"Paper folding\", \"Make your prediction.\")\n```",
+   "publicToolCalls": [],
+   "publicHasOpenUi": true,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": [
+      "direct_answer_missing=unknown@0.44",
+      "transport_exposed=unknown@0.41"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 1
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": true
+   }
+  },
+  "sweep/paper-fold--minimax--google": {
+   "id": "paper-fold--minimax--google",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "Nice \u2014 let's lock in your prediction before I spoil it. There's one subtlety here (the direction of the second fold), so I'd like your reasoning too.\n\n```openui lifecycle=ephemeral id=paper-fold-layers-guess\n\nroot = LearningSurface([guess], \"Paper strip: how many layers?\", \"Your guess and reasoning come before my answer.\", \"ephemeral\")\nguess = Question([\n  { header: \"Your guess\", question: \"A strip of paper is folded in half once, then in half again. How many layers of paper are there at the end?\", type: \"choice\", choices: [\"2 layers\", \"4 layers\", \"8 layers\", \"16 layers\"], allowText: true, hint: \"Guess first \u2014 then tell me why.\" },\n  { header: \"How you folded\", question: \"For the second fold, what did you do with the strip?\", type: \"choice\", choices: [\"Folded it in half again the same way (lengthwise, making it quarter-length)\", \"Folded it across the width, perpendicular to the first fold\", \"It depends / other\", \"I haven't decided yet\"], hint: \"The two folds can be made in different directions.\" },\n  { header: \"Reasoning\", question: \"In a sentence or two, explain how you arrived at your layer count.\", type: \"text\", hint: \"How does each fold multiply the layers?\" }\n], \"ephemeral\", \"Folding and layers\", \"Give the number, the fold direction, and your reasoning.\")\n```\n\n",
+   "publicToolCalls": [],
+   "publicHasOpenUi": true,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": [
+      "explanation_missing=unknown@0.4394962331202441",
+      "direct_answer_missing=unknown@0.4970633035955075",
+      "quality_scope=unknown@0.6329085382676483"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 1
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": true
+   }
+  },
+  "sweep/paper-fold--minimax--jev": {
+   "id": "paper-fold--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": "best-effort-draft",
+   "notice": "unverified",
+   "publicText": "Good instinct \u2014 guessing first is exactly how you find out where your model of paper actually comes from. Here's your chance:\n\n```openui lifecycle=ephemeral id=paper-fold-layers-guess\n\nroot = LearningSurface([guess], \"How many layers?\", \"Predict first \u2014 I'll explain after you commit.\", \"ephemeral\")\nguess = Question([{ header: \"Your guess\", question: \"A strip of paper is folded in half once, then folded in half again. How many layers of paper are in the final stack?\", type: \"choice\", choices: [\"2 layers\", \"3 layers\", \"4 layers\", \"8 layers\"], allowText: true, hint: \"Pick a number, or write your own answer and how you worked it out.\" }], \"ephemeral\", \"Folding and layers\", \"Commit to an answer before I explain.\")\n```",
+   "publicToolCalls": [],
+   "publicHasOpenUi": true,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "trimmedCheckpointSuffix": true,
+     "notPassed": [
+      "direct_answer_missing=unknown@0.53",
+      "checkpoint_repeated=fail@0.6"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "direct_answer_missing=fail@0.61",
+      "profile_evidence_invented=fail@0.72",
+      "quality_progress=fail@0.89",
+      "quality_scope=unknown@0.79"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 2,
+    "selection": 0,
+    "generate": 2
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 3,
+    "notice": "unverified",
+    "hadOpenUi": false
+   }
+  },
+  "sweep/paper-followup--flash--google": {
+   "id": "paper-followup--flash--google",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "That is exactly right! Each fold doubles the number of layers:\n\n*   **Start:** 1 layer\n*   **First fold:** 2 layers\n*   **Second fold:** 4 layers\n\nSince you've got the pattern down, what do you think would happen if you folded it a third time?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": [
+      "quality_scope=unknown@0.40525835433776036"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 1
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "sweep/paper-followup--flash--jev": {
+   "id": "paper-followup--flash--jev",
+   "status": "withheld",
+   "selectedAttempt": null,
+   "reason": "no-approved-draft",
+   "notice": "withheld",
+   "publicText": null,
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "notPassed": [
+      "mastery_overclaimed=fail@0.88",
+      "transfer_overclaimed=fail@0.63",
+      "checkpoint_answer_leaked=fail@0.8",
+      "checkpoint_repeated=unknown@0.48",
+      "checkpoint_not_interactive=fail@0.68"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "mastery_overclaimed=fail@0.8",
+      "transfer_overclaimed=unknown@0.46",
+      "checkpoint_repeated=unknown@0.57",
+      "unsolicited_assessment=unknown@0.46"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "checkpoint_answer_leaked=fail@0.73",
+      "checkpoint_repeated=unknown@0.48",
+      "checkpoint_not_interactive=fail@0.81"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "withheld",
+    "selectedAttempt": null,
+    "notice": "withheld",
+    "hadOpenUi": false
+   }
+  },
+  "sweep/paper-followup--minimax--google": {
+   "id": "paper-followup--minimax--google",
+   "status": "withheld",
+   "selectedAttempt": null,
+   "reason": "no-approved-draft",
+   "notice": "withheld",
+   "publicText": null,
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "notPassed": [
+      "grading_requires_submission=fail@1",
+      "explanation_missing=unknown@0.43819031199869674",
+      "quality_progress=unknown@0.5549855752747368",
+      "quality_scope=fail@0.8056687957806002"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "fail",
+     "notPassed": [
+      "grading_requires_submission=fail@1",
+      "explanation_missing=unknown@0.43819031199869674",
+      "quality_progress=unknown@0.5549855752747368",
+      "quality_scope=fail@0.8056687957806002"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "unknown",
+     "notPassed": [
+      "checkpoint_answer_leaked=unknown@0.4779345800667692",
+      "quality_scope=fail@0.8407443816070193"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "withheld",
+    "selectedAttempt": null,
+    "notice": "withheld",
+    "hadOpenUi": false
+   }
+  },
+  "sweep/paper-followup--minimax--jev": {
+   "id": "paper-followup--minimax--jev",
+   "status": "withheld",
+   "selectedAttempt": null,
+   "reason": "no-approved-draft",
+   "notice": "withheld",
+   "publicText": null,
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "notPassed": [
+      "grading_requires_submission=fail@1",
+      "sensitive_inference=unknown@0.42",
+      "checkpoint_answer_leaked=fail@0.78",
+      "checkpoint_not_interactive=fail@0.71"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "unknown",
+     "notPassed": [
+      "unsolicited_assessment=unknown@0.42",
+      "transport_exposed=unknown@0.47"
+     ]
+    },
+    {
+     "attempt": 3,
+     "status": "fail",
+     "notPassed": [
+      "checkpoint_answer_leaked=fail@0.76"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 3,
+    "selection": 0,
+    "generate": 3
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "withheld",
+    "selectedAttempt": null,
+    "notice": "withheld",
+    "hadOpenUi": false
+   }
+  },
+  "sweep/python-sum--flash--jev": {
+   "id": "python-sum--flash--jev",
+   "status": "released",
+   "selectedAttempt": 2,
+   "reason": null,
+   "notice": null,
+   "publicText": "Here is a short Python loop designed to sum the numbers in the list `[6, 9, 2]`. It contains a logical error that will cause it to produce an incorrect result.\n\n```python\nnumbers = [6, 9, 2]\ntotal = 0\n\nfor i in range(len(numbers)):\n    total = numbers[i + 1]\n\nprint(f\"The total is: {total}\")\n```\n\nTry running this code. What result do you get, and why does the loop behave this way?",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    2
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "unknown",
+     "notPassed": [
+      "checkpoint_answer_leaked=unknown@0.43",
+      "checkpoint_not_interactive=fail@0.7",
+      "code_trace_missing=fail@0.82"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "pass",
+     "notPassed": [
+      "checkpoint_not_interactive=fail@0.7",
+      "code_trace_missing=fail@0.83"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 2,
+    "selection": 0,
+    "generate": 2
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 2,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "sweep/python-sum--minimax--google": {
+   "id": "python-sum--minimax--google",
+   "status": "released",
+   "selectedAttempt": 1,
+   "reason": null,
+   "notice": null,
+   "publicText": "Here's a loop meant to sum the list. Run it as-is: it should print **17**, but it won't. Find and fix the fault yourself, then tell me what you changed.\n\n```python\nnumbers = [6, 9, 2]\n\ntotal = 0\nfor i in range(len(numbers) - 1):\n    total += numbers[i]\n\nprint(\"Sum:\", total)\n```\n\nWork in the block above \u2014 it's editable. Once you've found the fault, paste your fixed version or describe the change in one line, and I'll check it against the expected output of 17.",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    1
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "pass",
+     "notPassed": []
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 1,
+    "selection": 0,
+    "generate": 1
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 1,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  },
+  "sweep/python-sum--minimax--jev": {
+   "id": "python-sum--minimax--jev",
+   "status": "released",
+   "selectedAttempt": 2,
+   "reason": null,
+   "notice": null,
+   "publicText": "Here's a short loop with one fault in it. The spec: it should add the numbers in `[6, 9, 2]` and print `17`. Run it as-is and compare what it prints with what it should print \u2014 the wrong result is visible, so you can locate the fault by watching the output, not by guessing.\n\n```python\ndef add_all(numbers):\n    total = 0\n    for n in numbers:\n        total = n\n    return total\n\nnumbers = [6, 9, 2]\nprint(\"total:\", add_all(numbers))\n```\n\nTwo notes so you don't hit friction instead of the bug:\n\n- I can't execute Python here \u2014 no hosted executor is available in this chat \u2014 so run it in your own editor or REPL.\n- The bug is in the loop, and exactly one statement in it is wrong. Don't change the function signature, the list, or the `print` line; edit inside the loop only, then re-run and see whether the output becomes `17`.\n\nWhen you've found it, tell me which line was at fault and what you changed it to \u2014 and explain *why* the original line produced the wrong number, since that reasoning is the part that generalizes.",
+   "publicToolCalls": [],
+   "publicHasOpenUi": false,
+   "selectionCandidateAttempts": [
+    2
+   ],
+   "attempts": [
+    {
+     "attempt": 1,
+     "status": "fail",
+     "notPassed": [
+      "checkpoint_answer_leaked=fail@0.8",
+      "code_trace_missing=fail@0.83"
+     ]
+    },
+    {
+     "attempt": 2,
+     "status": "pass",
+     "notPassed": [
+      "checkpoint_not_interactive=fail@0.76",
+      "code_trace_missing=fail@0.87"
+     ]
+    }
+   ],
+   "calls": {
+    "plan": 1,
+    "review": 2,
+    "selection": 0,
+    "generate": 2
+   },
+   "outOfRecord": [],
+   "questionsMissingFromRecord": [],
+   "recorded": {
+    "disposition": "released",
+    "selectedAttempt": 2,
+    "notice": null,
+    "hadOpenUi": false
+   }
+  }
+ }
+}

@@ -1,0 +1,22 @@
+{
+  "version":1,
+  "recordedAt":"2026-11-18T15:45:49Z",
+  "firstPassFileSha256":"81f48d3bf5a0872aea8a0a3b7782e7c004fdb5b827edf373dfd2805ef06e088f",
+  "initiallyScheduled":15,
+  "initiallySuccessful":9,
+  "initiallyRateLimited":6,
+  "originalStatus":429,
+  "providerReason":"Explicit quota rejection on the Free Tier (50,000 input tokens per minute); Google included a retry-after interval of one or two seconds. These responses contained no answers or usage.",
+  "minimumDelayAfterOriginalMs":61000,
+  "minimumGapBetweenNewDecisionsMs":14000,
+  "maximumFurtherDispatchesPerListedCase":1,
+  "eligible":[
+    "eaf4ddc0cd2484bf6b27de4a3d6169e0aa70d03022853a37bc1ac998f429e933",
+    "6ef613c2b6b97b24557185dca051e1b9ac74773e8338fc23e8d362d1444c03a4",
+    "c81e5091904728d42e54027064539cb9262ed5b0cea9e5c6b70b38114e6a406f",
+    "ef1d5b923eb550654c1745ce1f9fd726b68b0b8f8c951885303ac23e28524d79",
+    "df3ecbabc333c74f0a73ed856ee4898da4755c83198782e89f4a0ba219f49e20",
+    "bb5861cf35980e78701bdb2a978eae79e8e0b2097d95402e388e2e5eee731810"
+  ],
+  "accounting":"Retain each entire original US$0.0262144 reserve, snapshot and refusal record. Independently reserve each supplemental POST under the user’s original US$2 limit. Skip any successful, ambiguous or already-resubmitted input."
+}

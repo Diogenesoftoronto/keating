@@ -1,0 +1,63 @@
+{
+  "id": "filling-line--google",
+  "caseId": "filling-line",
+  "provider": "google",
+  "decisionModel": "gemini-decision-1",
+  "kind": "live",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "bc5fcb312ea64ffc3e150a3201a75a2620d0eeb9942c4834a27d042bdabf5588",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "create",
+    "offered": [
+      "Simulation",
+      "ConceptMap"
+    ],
+    "reason": null,
+    "codeLanguage": null,
+    "directives": [
+      "Give the requested help and any visual demonstration. Let the learner operate controls immediately. Keep test questions and predictions out of both surrounding prose and component instructions unless the learner specifically asks to make that prediction.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "At most one OpenUI activity may help this turn: Simulation to let the learner change a variable and observe the outcome; let the learner carry out the requested action themselves; or ConceptMap to lay out how the concepts relate; let the learner carry out the requested action themselves. Prefer the option that gives the learner the action they asked to take. Prose is acceptable when it serves the learner better.",
+      "If you include a working control, keep the surrounding prose to the context and first action the learner needs. Put units and assumptions in the control. Skip restating its labels or results. Include any explanation the learner explicitly requested."
+    ]
+  },
+  "drafts": [
+    {
+      "label": "filling-line--google/tutor/1",
+      "kind": "live",
+      "systemSha256": "1fc1ef5a6f01065f144775a00919406a10a7c83c0bfccf5fb4c92c2190a65f7b",
+      "text": "",
+      "attempted": false,
+      "components": [],
+      "outsideWords": 0,
+      "guidanceDelivered": true,
+      "tools": [],
+      "stop": "error"
+    }
+  ],
+  "status": "provider-error",
+  "public": null,
+  "notice": "withheld",
+  "selectedAttempt": null,
+  "findings": [
+    {
+      "attempt": 1,
+      "status": "generation-error",
+      "adjustments": [],
+      "checks": []
+    },
+    {
+      "attempt": 2,
+      "status": "generation-error",
+      "adjustments": [],
+      "checks": []
+    }
+  ]
+}

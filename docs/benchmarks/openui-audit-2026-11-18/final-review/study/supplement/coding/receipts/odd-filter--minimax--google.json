@@ -1,0 +1,628 @@
+{
+  "id": "odd-filter--minimax--google",
+  "caseId": "odd-filter",
+  "tutor": "minimax",
+  "arm": "google",
+  "kind": "prospective-supplement",
+  "policy": "keating-teaching-policy/v2.3.4",
+  "prompt": "Give me a broken Python loop to fix myself. It should collect every odd number in [5, 4, 9]. Make the bug visible on that input. No hints, please.",
+  "originalHistory": [],
+  "plan": {
+    "status": "guided",
+    "action": "none",
+    "offered": [],
+    "features": {
+      "variable_relationship": false,
+      "ordered_procedure": false,
+      "discrete_recall": false,
+      "structure_relations": false,
+      "category_distinction": false,
+      "prediction_opportunity": false,
+      "learner_response_due": false,
+      "hands_on_requested": true,
+      "executable_code": true,
+      "performed_skill": false,
+      "language_learning": false,
+      "visual_reference": false,
+      "extended_production": false,
+      "outside_observation": false,
+      "untested_coverage": false
+    },
+    "decisions": {
+      "direct_answer_requested": false,
+      "explanation_requested": false,
+      "learner_stuck": false,
+      "attempt_present": false,
+      "misconception_visible": false,
+      "independent_success": false,
+      "practice_requested": true,
+      "plain_reply_requested": false,
+      "assessment_declined": false,
+      "fresh_sources_needed": false,
+      "explicit_feedback": false,
+      "explicit_profile_preference": false,
+      "observed_profile_pattern": false,
+      "motion_requested": false,
+      "improvement_requested": false,
+      "improvement_hypothesis_supported": false,
+      "settled_sessions_accumulated": false,
+      "project_goal_requested": null,
+      "progression_requested": false,
+      "learning_task": true
+    },
+    "directives": [
+      "Give the learner an editable fenced python code block for their exercise. Keep the starter and any examples in Python. Running Python requires an available hosted executor and network access.",
+      "If the learner requests a new bug to find independently, choose a concrete input on which the starter visibly fails or produces the wrong result. State the intended behavior or expected output. Leave locating and repairing the fault to the learner. Keep ordinary documentation and expected-output comments. Withhold unrequested hints and the fix from prose, code comments and controls, including interactive page titles and descriptions shown while loading or on fallback."
+    ],
+    "codePracticeLanguage": "python",
+    "reason": null
+  },
+  "refs": [
+    {
+      "label": "odd-filter--minimax--google/plan",
+      "entryId": "odd-filter--minimax--google/plan",
+      "source": "live",
+      "requestSha256": "4476a1a35ae839203f34db8aaccc86da49d7bd4ec6f891407040bc4c7c4a873d",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "error": null,
+      "provenance": "documented-request-model"
+    },
+    {
+      "label": "odd-filter--minimax--google/review/1",
+      "entryId": "odd-filter--minimax--google/review/1",
+      "source": "live",
+      "requestSha256": "3bbe2c0ec869e27fe6b8392ff2ce9a4bc9c82de56d564b02d94b02d86b906089",
+      "ok": true,
+      "model": "gemini-decision-1",
+      "error": null,
+      "provenance": "documented-request-model"
+    }
+  ],
+  "drafts": [
+    {
+      "message": {
+        "role": "assistant",
+        "api": "anthropic-messages",
+        "provider": "minimax",
+        "model": "MiniMax-M2.7-highspeed",
+        "stopReason": "stop",
+        "timestamp": 1,
+        "usage": {
+          "input": 18584,
+          "output": 758,
+          "cacheRead": 128,
+          "cacheWrite": 0,
+          "totalTokens": 19470,
+          "cost": {
+            "input": 0.0111504,
+            "output": 0.0018192,
+            "cacheRead": 0.00000768,
+            "cacheWrite": 0,
+            "total": 0.012977279999999999
+          },
+          "cacheWrite1h": 0,
+          "reasoning": 623
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Here you go — the bug is live on that exact input.\n\n```python\n\"\"\"Collect every odd number from the list.\n\nInput:  [5, 4, 9]\nExpected output: [5, 9]\n\"\"\"\n\nnumbers = [5, 4, 9]\nodds = []\n\nfor i in range(len(numbers) - 1):\n    if numbers[i] % 2 == 1:\n        odds.append(numbers[i])\n\nprint(odds)\n```\n\nRun it as-is and compare the printed result against the expected output in the docstring. When you've located and repaired the fault, tell me what you changed and I'll check the reasoning."
+          }
+        ]
+      },
+      "text": "Here you go — the bug is live on that exact input.\n\n```python\n\"\"\"Collect every odd number from the list.\n\nInput:  [5, 4, 9]\nExpected output: [5, 9]\n\"\"\"\n\nnumbers = [5, 4, 9]\nodds = []\n\nfor i in range(len(numbers) - 1):\n    if numbers[i] % 2 == 1:\n        odds.append(numbers[i])\n\nprint(odds)\n```\n\nRun it as-is and compare the printed result against the expected output in the docstring. When you've located and repaired the fault, tell me what you changed and I'll check the reasoning.",
+      "toolCalls": [],
+      "attempted": false,
+      "components": [],
+      "outsideWords": 84,
+      "entryId": "odd-filter--minimax--google/tutor/1",
+      "completed": true,
+      "providedDirectives": true,
+      "systemSha256": "62347cd52539adfe5be9de8b2530569497688310ae72a4743bd5ef166b28b319"
+    }
+  ],
+  "attempts": [
+    {
+      "attempt": 1,
+      "reasoning": "off",
+      "standard": "concise",
+      "status": "pass",
+      "checks": [
+        {
+          "id": "nonempty_reply",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "available_tool",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "legacy_activity_tool",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "openui_valid",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "exercise_language_preserved",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_activity",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "activity_without_plan",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "one_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "checkpoint_last_node",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "stop_after_checkpoint",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "grading_requires_submission",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "improvement_run_limit",
+          "source": "deterministic",
+          "severity": "major",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "identity_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03670444227060016
+        },
+        {
+          "id": "instruction_override",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.031046131551545494
+        },
+        {
+          "id": "tool_success_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03849607261073207
+        },
+        {
+          "id": "sensitive_inference",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.01
+        },
+        {
+          "id": "mastery_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.024616869785435123
+        },
+        {
+          "id": "retention_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.033763666282220446
+        },
+        {
+          "id": "transfer_overclaimed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.02151565302044888
+        },
+        {
+          "id": "synthetic_efficacy_claim",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.025137825091928696
+        },
+        {
+          "id": "explanation_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06738236772875532
+        },
+        {
+          "id": "direct_answer_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.0802188452285298
+        },
+        {
+          "id": "practice_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.09024262083633736
+        },
+        {
+          "id": "direct_help_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03700151895618946
+        },
+        {
+          "id": "diagnostic_interview_forced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04079094762650372
+        },
+        {
+          "id": "known_context_reasked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.01548754184413522
+        },
+        {
+          "id": "gap_ignored",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.018295283651713175
+        },
+        {
+          "id": "learner_voice_replaced",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.024541401632894727
+        },
+        {
+          "id": "checkpoint_answer_leaked",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.03854451349393371
+        },
+        {
+          "id": "checkpoint_repeated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.18299648855688358
+        },
+        {
+          "id": "checkpoint_continued",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04450378202326953
+        },
+        {
+          "id": "checkpoint_not_interactive",
+          "status": "unknown",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.4517120527590643
+        },
+        {
+          "id": "practice_withheld",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04987932603542629
+        },
+        {
+          "id": "unsolicited_assessment",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.11189097923575518
+        },
+        {
+          "id": "unsolicited_animation",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.02549953788984136
+        },
+        {
+          "id": "feedback_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.053447256451688116
+        },
+        {
+          "id": "profile_evidence_invented",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.019947471041279953
+        },
+        {
+          "id": "preference_graded",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04411468819302468
+        },
+        {
+          "id": "alternative_answer_rejected",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.042932439573727846
+        },
+        {
+          "id": "observed_preference_overrides_declared",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.0320578350892989
+        },
+        {
+          "id": "housekeeping_delegated",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.06037585923188228
+        },
+        {
+          "id": "assessed_work_completed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.05451285704991187
+        },
+        {
+          "id": "source_link_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.04449339810408469
+        },
+        {
+          "id": "source_contradicted",
+          "status": "pass",
+          "source": "jev",
+          "severity": "critical",
+          "probability": 0.03460185205474614
+        },
+        {
+          "id": "improvement_interrupts",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.0660545058688737
+        },
+        {
+          "id": "repeated_improvement_unrequested",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.037318718191669334
+        },
+        {
+          "id": "artifact_placeholder",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.029350198687966067
+        },
+        {
+          "id": "transport_exposed",
+          "status": "pass",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.026390868153797792
+        },
+        {
+          "id": "code_example_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.27607023897681016
+        },
+        {
+          "id": "code_trace_missing",
+          "status": "pass",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.18586339228311935
+        },
+        {
+          "id": "runtime_tool_schema",
+          "source": "deterministic",
+          "severity": "critical",
+          "status": "pass",
+          "probability": 0
+        },
+        {
+          "id": "debug_example_unwitnessed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.027424206654728504,
+          "status": "pass"
+        },
+        {
+          "id": "debug_fix_disclosed",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.017985033632453816,
+          "status": "pass"
+        },
+        {
+          "id": "debug_location_hint",
+          "source": "jev",
+          "severity": "minor",
+          "probability": 0.027542055047899996,
+          "status": "pass"
+        },
+        {
+          "id": "quality_progress",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.030546460423438115,
+          "status": "pass"
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "severity": "major",
+          "probability": 0.16121760699177534,
+          "status": "pass"
+        }
+      ],
+      "variant": "default",
+      "debuggingExercise": {
+        "example": {
+          "type": "choice",
+          "choice": "observable",
+          "probabilities": {
+            "observable": 0.9507654202851452,
+            "masked": 0.027424206654728504,
+            "uncertain": 0.016396529608324936,
+            "outside": 0.005413843451801245
+          },
+          "confidence": 0.9507654202851452
+        },
+        "disclosure": {
+          "type": "choice",
+          "choice": "independent",
+          "probabilities": {
+            "independent": 0.9412817491546226,
+            "location_clue": 0.027542055047899996,
+            "solution_given": 0.017985033632453816,
+            "uncertain": 0.008992135178209192,
+            "outside": 0.004199026986814173
+          },
+          "confidence": 0.9412817491546226
+        }
+      }
+    }
+  ],
+  "selectedAttempt": 1,
+  "disposition": "released",
+  "missing": null,
+  "public": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 18584,
+        "output": 758,
+        "cacheRead": 128,
+        "cacheWrite": 0,
+        "totalTokens": 19470,
+        "cost": {
+          "input": 0.0111504,
+          "output": 0.0018192,
+          "cacheRead": 0.00000768,
+          "cacheWrite": 0,
+          "total": 0.012977279999999999
+        },
+        "reasoning": 623,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Here you go — the bug is live on that exact input.\n\n```python\n\"\"\"Collect every odd number from the list.\n\nInput:  [5, 4, 9]\nExpected output: [5, 9]\n\"\"\"\n\nnumbers = [5, 4, 9]\nodds = []\n\nfor i in range(len(numbers) - 1):\n    if numbers[i] % 2 == 1:\n        odds.append(numbers[i])\n\nprint(odds)\n```\n\nRun it as-is and compare the printed result against the expected output in the docstring. When you've located and repaired the fault, tell me what you changed and I'll check the reasoning."
+        }
+      ]
+    },
+    "text": "Here you go — the bug is live on that exact input.\n\n```python\n\"\"\"Collect every odd number from the list.\n\nInput:  [5, 4, 9]\nExpected output: [5, 9]\n\"\"\"\n\nnumbers = [5, 4, 9]\nodds = []\n\nfor i in range(len(numbers) - 1):\n    if numbers[i] % 2 == 1:\n        odds.append(numbers[i])\n\nprint(odds)\n```\n\nRun it as-is and compare the printed result against the expected output in the docstring. When you've located and repaired the fault, tell me what you changed and I'll check the reasoning.",
+    "toolCalls": [],
+    "attempted": false,
+    "components": [],
+    "outsideWords": 84
+  },
+  "publicEnvelope": {
+    "message": {
+      "role": "assistant",
+      "api": "anthropic-messages",
+      "provider": "minimax",
+      "model": "MiniMax-M2.7-highspeed",
+      "stopReason": "stop",
+      "timestamp": 1,
+      "usage": {
+        "input": 18584,
+        "output": 758,
+        "cacheRead": 128,
+        "cacheWrite": 0,
+        "totalTokens": 19470,
+        "cost": {
+          "input": 0.0111504,
+          "output": 0.0018192,
+          "cacheRead": 0.00000768,
+          "cacheWrite": 0,
+          "total": 0.012977279999999999
+        },
+        "reasoning": 623,
+        "cacheWrite1h": 0
+      },
+      "content": [
+        {
+          "type": "text",
+          "text": "Here you go — the bug is live on that exact input.\n\n```python\n\"\"\"Collect every odd number from the list.\n\nInput:  [5, 4, 9]\nExpected output: [5, 9]\n\"\"\"\n\nnumbers = [5, 4, 9]\nodds = []\n\nfor i in range(len(numbers) - 1):\n    if numbers[i] % 2 == 1:\n        odds.append(numbers[i])\n\nprint(odds)\n```\n\nRun it as-is and compare the printed result against the expected output in the docstring. When you've located and repaired the fault, tell me what you changed and I'll check the reasoning."
+        }
+      ]
+    },
+    "text": "Here you go — the bug is live on that exact input.\n\n```python\n\"\"\"Collect every odd number from the list.\n\nInput:  [5, 4, 9]\nExpected output: [5, 9]\n\"\"\"\n\nnumbers = [5, 4, 9]\nodds = []\n\nfor i in range(len(numbers) - 1):\n    if numbers[i] % 2 == 1:\n        odds.append(numbers[i])\n\nprint(odds)\n```\n\nRun it as-is and compare the printed result against the expected output in the docstring. When you've located and repaired the fault, tell me what you changed and I'll check the reasoning.",
+    "toolCalls": []
+  },
+  "notice": null
+}

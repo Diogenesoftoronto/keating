@@ -1,0 +1,168 @@
+{
+  "version": 1,
+  "environment": "Offline Chromium in a fresh local file context",
+  "viewports": [
+    [
+      390,
+      844
+    ],
+    [
+      1365,
+      960
+    ]
+  ],
+  "externalRequests": 0,
+  "browserErrors": 0,
+  "cspViolations": 0,
+  "googleConveyor": {
+    "source": "policy-v2.2/receipts/conveyor--google.json",
+    "words": 143,
+    "spacingMetres": 10,
+    "speedMetresPerMinuteAndTenMinuteCartons": [
+      [
+        60,
+        60
+      ],
+      [
+        90,
+        90
+      ]
+    ]
+  },
+  "nativeConveyor": {
+    "source": "policy-v2.2/receipts/conveyor--jev.json",
+    "ledgerEntry": "conveyor--jev/tutor/1",
+    "originalHtmlSha256": "7d2c1b1b3d476ddc7e35da26fd33cf39fc2c172598b1ef795461978895ac25e0",
+    "words": 9,
+    "rateTenMinuteCartonsHourlyCartons": [
+      [
+        6,
+        60,
+        360
+      ],
+      [
+        9,
+        90,
+        540
+      ]
+    ],
+    "cartons": 12,
+    "distinctBoxPositions": 1,
+    "boxPixelsRelativeToBelt": [
+      1,
+      7,
+      32,
+      32
+    ],
+    "activeAnimations": 0,
+    "normalAndReducedMotionMatched": true,
+    "elapsedObservationMs": 500,
+    "cause": "The authored CSS absolutely positions every sample carton at the same top offset. The loop appends up to twelve without spacing or animation."
+  },
+  "bus": [
+    {
+      "reviewer": "Jev",
+      "old": "Extra riders attracted per added bus (riders)",
+      "now": "Buses per hour (buses)",
+      "readings": [
+        [
+          8,
+          320,
+          -44
+        ],
+        [
+          16,
+          640,
+          212
+        ]
+      ]
+    },
+    {
+      "reviewer": "Gemini Decision",
+      "old": "Average load factor (%)",
+      "now": "Buses per hour (buses)",
+      "readings": [
+        [
+          8,
+          320,
+          96
+        ],
+        [
+          16,
+          640,
+          192
+        ]
+      ]
+    }
+  ],
+  "perimeter": [
+    {
+      "model": "jev-1.14.0",
+      "score": 0.35,
+      "raw": "pass",
+      "prior": "released",
+      "current": "released"
+    },
+    {
+      "model": "gemini-decision-1",
+      "score": 0.7374669921053815,
+      "raw": "fail",
+      "prior": "withheld",
+      "current": "released"
+    }
+  ],
+  "recordedPythonEditAndReset": true,
+  "languageChecks": [
+    "fail",
+    "pass"
+  ],
+  "later": [
+    {
+      "task": "filling-line",
+      "decision": "Jev",
+      "status": "released",
+      "source": "policy-v2.3-completion/receipts/filling-line--jev.json",
+      "words": 57,
+      "editorOutsideWords": null,
+      "rateEightMinutesHour": [
+        [
+          5,
+          40,
+          300
+        ],
+        [
+          7.5,
+          60,
+          450
+        ]
+      ]
+    },
+    {
+      "task": "filling-line",
+      "decision": "Gemini Decision",
+      "status": "provider-error",
+      "source": "policy-v2.3-completion/receipts/filling-line--google.json",
+      "words": null,
+      "editorOutsideWords": null,
+      "observation": "The tutor request timed out. No public reply was observed."
+    },
+    {
+      "task": "python-practice",
+      "decision": "Jev",
+      "status": "released",
+      "source": "policy-v2.3-completion/receipts/python-practice--jev.json",
+      "words": 24,
+      "editorOutsideWords": 10,
+      "pythonEditReset": true
+    },
+    {
+      "task": "python-practice",
+      "decision": "Gemini Decision",
+      "status": "released",
+      "source": "policy-v2.3-completion/receipts/python-practice--google.json",
+      "words": 26,
+      "editorOutsideWords": 0,
+      "pythonEditReset": true
+    }
+  ]
+}

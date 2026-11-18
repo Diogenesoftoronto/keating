@@ -1,0 +1,14 @@
+{
+  "parentReceiptSha256": "af42b63a97207089e5ad0f28b675a7c4fea27965c902eaae43d7d58ea2c28015",
+  "parentPublicTextSha256": "65eecea1789dffb357f65748832beaceaea4d5a144da07fcb1b00a96485265de",
+  "pendingSubmissions": 0,
+  "openInteractions": [
+    {
+      "documentId": "openui-g18a19-tile-draw-prediction",
+      "nodeId": "guess",
+      "component": "question-group",
+      "state": "awaiting"
+    }
+  ],
+  "bridgeStageSha256": "c82bc39d8356f055ff5c84678983065b42f00f3ac473ee93bc8362c8373baa89"
+}

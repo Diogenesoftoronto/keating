@@ -1,0 +1,47 @@
+{
+  "id": "python-practice--jev",
+  "caseId": "python-practice",
+  "provider": "jev",
+  "decisionModel": "jev-1.14.0",
+  "kind": "live",
+  "phases": [
+    {
+      "phase": "plan",
+      "requestSha256": "2f30a96055683294919a753b724f045768e75c98f062ab96bcb3a3a074e645dd",
+      "ok": true,
+      "model": "jev-1.14.0",
+      "errorCode": null
+    }
+  ],
+  "plan": {
+    "action": "none",
+    "offered": [],
+    "reason": "no-supported-family",
+    "codeLanguage": null,
+    "directives": [
+      "Provide one requested OpenUI practice activity now, without requiring a lesson first or attaching a study plan.",
+      "A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+      "Capture the concrete goal when the goal tool is available; scaffold actionable prerequisite steps toward it.",
+      "Choose one useful next learning step based on demonstrated understanding, then let the learner respond."
+    ]
+  },
+  "drafts": [],
+  "status": "withheld",
+  "public": null,
+  "notice": "withheld",
+  "selectedAttempt": null,
+  "findings": [
+    {
+      "attempt": 1,
+      "status": "generation-error",
+      "adjustments": [],
+      "checks": []
+    },
+    {
+      "attempt": 2,
+      "status": "generation-error",
+      "adjustments": [],
+      "checks": []
+    }
+  ]
+}

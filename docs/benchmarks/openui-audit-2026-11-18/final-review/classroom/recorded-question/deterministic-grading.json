@@ -1,0 +1,22 @@
+{
+  "id": "paper-fold--flash--jev",
+  "receiptSha256": "066ca8aa33ca006e09dd6dd020ea41bef46d275f205ea72b19a11127f1b34258",
+  "scope": "Independent offline re-enactment after genuine classroom submission",
+  "conversationId": "529a2fbe-2682-4d52-8605-f2a24745a7c8",
+  "turnId": "learner-0",
+  "topic": "Paper folding",
+  "question": "After folding a strip of paper in half twice, how many layers of paper are there?",
+  "answered": "4",
+  "before": {
+    "grading": "pending",
+    "score": null,
+    "pendingComprehension": 1
+  },
+  "after": {
+    "grading": "model",
+    "score": 1,
+    "pendingComprehension": 0
+  },
+  "verdictSource": "Predetermined four-layer arithmetic in the offline verification",
+  "modelCalls": 0
+}

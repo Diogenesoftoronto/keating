@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "policy": "keating-teaching-policy/v2.1",
+  "planCases": 6,
+  "reviewCases": 9,
+  "requestsFileSha256": "5c85c07809e97efb1ad2164cdd2d5fd431aca160d9736f83be95bc2059ff5df2",
+  "referenceFileSha256": "305aa769c4ac135a89dc59c797c9694aac4dc4d7b8768e8921d0c050cbcd61e7",
+  "inputs": {
+    "docs/benchmarks/openui-audit-2026-11-18/policy-v2/evidence.json": "dff95bc17f1a39ee211bd706eebcdbf425d19853ff0c0184708b2f9455bda81e",
+    "docs/benchmarks/openui-audit-2026-11-18/policy-v2/cohort.json": "ab770ee8a4c4b037c3dad5f4a32efa93fa563c78438685e49a0bc1d811a003d7",
+    "docs/benchmarks/openui-audit-2026-11-18/policy-v2.1/probes.json": "8926869086578e7b5520e78cb2b7bd12391ef9cada13d57199662e0f61433a30",
+    "docs/benchmarks/openui-audit-2026-11-18/policy-v2.1/planning.json": "3499646330df23911e8b67dd3d22cdbfebeea76077e267aeae79e831f0739930",
+    "docs/benchmarks/openui-audit-2026-11-18/policy-v2.1/summary.json": "ff4e7905d4c94432d1ca4fe0e2d773b5eeba402567b42fb25d0ed4c7b1363a00",
+    "scripts/training/benchmarks/teaching-v1/cases.json": "ae8d071141d1c1af6f61ec87968777fb98bc2539d8b0e7002353801b5d0bd8a5",
+    "docs/benchmarks/openui-audit-2026-11-18/evidence/MiniMax-M2.7-highspeed--prediction.json": "e8e451fca97b6e739e11ccc7662533afde3fd22c783165ecbf22063c1ad3f102",
+    "docs/benchmarks/openui-audit-2026-11-18/evidence/MiniMax-M2.7-highspeed--order.json": "7699e0b966f864acab8f84be449da424a1fb25535ad13242b267aa92dcf18df3",
+    "docs/benchmarks/openui-audit-2026-11-18/evidence/MiniMax-M2.7-highspeed--recall.json": "2cb5a4283974c8591fb3d51f5112f642fb1e5f345c579a24e6c7a7eb9fa7529f",
+    "docs/benchmarks/openui-audit-2026-11-18/evidence/MiniMax-M2.7-highspeed--code.json": "dcd613ded56ef8d93f4e2c699a6c2330b3d430be92850ede1a10a58e51e100fb",
+    "docs/benchmarks/openui-audit-2026-11-18/evidence/MiniMax-M2.7-highspeed--prediction--repeat-1.json": "86cda85512519b01d22773d1990aff4aa586f421900520883a566e7cc05213a7",
+    "docs/benchmarks/openui-audit-2026-11-18/evidence/MiniMax-M2.7-highspeed--prediction--repeat-3.json": "cab5e8323e6f58e7b5ad8c70372f9c2bc1f8fcd144955befa96c9c0984c3edf5"
+  },
+  "policyHashes": {
+    "packages/learner-contracts/src/judgement/teaching-policy-catalog.ts": "d435be7a0621d248a012ed3baf3976bc420cc2dbb62b49ae6faa0c10fe90fa32",
+    "packages/learner-contracts/src/judgement/interaction-affordances.ts": "940b7f3895199e1c77f23e1ac08bf9b6b382d752217833b6cd78ade37f1a9c32",
+    "packages/learner-contracts/src/judgement/teaching-policy.ts": "af16a6495e8aa3d5d1ffed672665dc96d81f3a5fd753511411371bf434f12ae9",
+    "packages/learner-contracts/src/judgement/teaching-drafts/session.ts": "1a8c9576d7e9e2a3ee09c17b8858d8ec21e70aabe07fdacd1332a0cf87f25ccc",
+    "packages/learner-contracts/src/judgement/teaching-drafts/policy.ts": "0842b56d5e35603e7da5b9fc046df8d8ae6c945051fd279a570af472f925e3bc"
+  },
+  "design": "Six prelabelled planning probes and nine previously suffix-blocked MiniMax candidates across six historical turns. Both decision providers receive the identical shared request per case. Runtime changes, tutor sampling, production prevalence and human learning are outside this fixed-input comparison.",
+  "endpoints": {
+    "planning": "Compare assessment-declined correctness and offered-family match against the frozen expected values. The historical v2.1 projector was refined on one of these six cases.",
+    "review": "Compare release/withhold and blocking rule IDs on each identical trimmed candidate, holding its historical planning answers, local gate and deterministic checks fixed. Review reference outcomes establish agreement, not semantic correctness.",
+    "unknown": "A missing, failed or malformed provider observation contributes no measured provider decision; keep it in scheduled coverage."
+  }
+}

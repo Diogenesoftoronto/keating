@@ -1,0 +1,299 @@
+{
+  "id": "gemini-3.1-flash-lite--brief",
+  "scenario": "brief",
+  "model": "gemini-3.1-flash-lite",
+  "startedAt": "2026-11-18T12:58:13.330Z",
+  "judge": [
+    {
+      "phase": "plan",
+      "hash": "a81d531ed05adf1a6f46847d27d4e1c9bc08b2a2c1bb1b674a0104498fbe2907",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 3514,
+        "outputTokens": 675
+      },
+      "answers": {
+        "direct_answer_requested": {
+          "type": "noul",
+          "noul": 0.99
+        },
+        "explanation_requested": {
+          "type": "noul",
+          "noul": 0.89
+        },
+        "learner_stuck": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "attempt_present": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "misconception_visible": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "independent_success": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "practice_requested": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "fresh_sources_needed": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "explicit_feedback": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "explicit_profile_preference": {
+          "type": "noul",
+          "noul": 0.9
+        },
+        "observed_profile_pattern": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "motion_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_requested": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "improvement_hypothesis_supported": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "settled_sessions_accumulated": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "project_goal_requested": {
+          "type": "noul",
+          "noul": 0.54
+        },
+        "progression_requested": {
+          "type": "noul",
+          "noul": 0.05
+        },
+        "learning_task": {
+          "type": "noul",
+          "noul": 0.99
+        },
+        "variable_relationship": {
+          "type": "noul",
+          "noul": 0.15
+        },
+        "ordered_procedure": {
+          "type": "noul",
+          "noul": 0.04
+        },
+        "discrete_recall": {
+          "type": "noul",
+          "noul": 0.75
+        },
+        "structure_relations": {
+          "type": "noul",
+          "noul": 0.26
+        },
+        "category_distinction": {
+          "type": "noul",
+          "noul": 0.09
+        },
+        "prediction_opportunity": {
+          "type": "noul",
+          "noul": 0.65
+        },
+        "executable_code": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "performed_skill": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "language_learning": {
+          "type": "noul",
+          "noul": 0.25
+        },
+        "visual_reference": {
+          "type": "noul",
+          "noul": 0.06
+        },
+        "extended_production": {
+          "type": "noul",
+          "noul": 0.01
+        },
+        "outside_observation": {
+          "type": "noul",
+          "noul": 0.03
+        },
+        "untested_coverage": {
+          "type": "noul",
+          "noul": 0.02
+        },
+        "draft_reasoning_steps": {
+          "type": "score",
+          "score": 0.04,
+          "legend": {
+            "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+            "1": "One clear inference or straightforward application using supplied context.",
+            "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+            "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+          },
+          "probabilities": {
+            "0": 0.97,
+            "1": 0.03,
+            "2": 0,
+            "3": 0
+          },
+          "confidence": 0.97
+        },
+        "draft_reasoning_synthesis": {
+          "type": "score",
+          "score": 0,
+          "legend": {
+            "0": "One simple fact or request; no reconciliation is needed.",
+            "1": "One relevant evidence item or one simple relationship/constraint.",
+            "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+            "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+          },
+          "probabilities": {
+            "0": 1,
+            "1": 0,
+            "2": 0,
+            "3": 0
+          },
+          "confidence": 1
+        },
+        "draft_reasoning_verification": {
+          "type": "score",
+          "score": 0.21,
+          "legend": {
+            "0": "No special check beyond a direct answer supported by the supplied context.",
+            "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+            "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+            "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+          },
+          "probabilities": {
+            "0": 0.86,
+            "1": 0.1,
+            "2": 0.03,
+            "3": 0.01
+          },
+          "confidence": 0.81
+        },
+        "draft_standard": {
+          "type": "choice",
+          "choice": "concise",
+          "probabilities": {
+            "concise": 1,
+            "supported": 0,
+            "deep": 0
+          },
+          "confidence": 1
+        }
+      }
+    },
+    {
+      "phase": "review",
+      "hash": "062b1967da95266edb90b869119e6fb26c70f6f9744f3f5e132a4868e7260a0c",
+      "model": "jev-1.14.0",
+      "error": null,
+      "usage": {
+        "inputTokens": 5629,
+        "outputTokens": 896
+      }
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "systemSha": "6a0fe15ac1ca7604b53cd54830e0146238dd63c1d093c6eed9aa0499fb932274",
+      "messagesSha": "846e17561c87d7369a591e6e8dee0eeba7e618c023392defd8e6dc9abb26e110",
+      "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+      "response": {
+        "text": "The denominator of a fraction tells you how many equal parts the whole has been divided into.",
+        "toolNames": [],
+        "requestedModel": "gemini-3.1-flash-lite",
+        "responseModel": null,
+        "stop": "stop",
+        "errorClass": null,
+        "usage": {
+          "input": 10313,
+          "output": 18,
+          "cacheRead": 8145,
+          "cacheWrite": 0
+        }
+      }
+    }
+  ],
+  "counterfactual": {
+    "systemSha": "69e2b6f2dacb906440a356d227c613251b5e86db2eea279b9ba7c91a784570b8",
+    "messagesSha": "846e17561c87d7369a591e6e8dee0eeba7e618c023392defd8e6dc9abb26e110",
+    "toolsSha": "d7f41a82f4bc8a43cc7258c97d8139e514e9eaa399a572d917a7590072a6ee84",
+    "response": {
+      "text": "The denominator of a fraction tells you how many equal parts the whole has been divided into.",
+      "toolNames": [],
+      "requestedModel": "gemini-3.1-flash-lite",
+      "responseModel": null,
+      "stop": "stop",
+      "errorClass": null,
+      "usage": {
+        "input": 18426,
+        "output": 18,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      }
+    }
+  },
+  "decision": {
+    "action": "create",
+    "families": [
+      {
+        "family": "question",
+        "components": [
+          "Question"
+        ]
+      }
+    ],
+    "features": [
+      "discrete_recall",
+      "prediction_opportunity"
+    ],
+    "lead": "answer-first",
+    "paired": false
+  },
+  "offer": "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining. Prose is acceptable when it serves the learner better.",
+  "phase": "released",
+  "selection": 1,
+  "reason": null,
+  "release": {
+    "text": "The denominator of a fraction tells you how many equal parts the whole has been divided into.",
+    "unverified": false
+  },
+  "publicText": "The denominator of a fraction tells you how many equal parts the whole has been divided into.",
+  "checks": [
+    {
+      "attempt": 1,
+      "status": "pass",
+      "checks": []
+    }
+  ],
+  "directives": [
+    "- Answer the bounded question directly; do not start a diagnostic interview.",
+    "- Give the requested explanation or worked example openly before inviting an attempt.",
+    "- A stated non-sensitive preference may be remembered after helping; preserve the learner's own wording and evidence.",
+    "- Choose one useful next learning step based on demonstrated understanding, then let the learner respond.",
+    "- Answer the learner's request first; any activity comes after the answer.",
+    "- At most one OpenUI activity may help this turn: Question to ask for a prediction before explaining. Prose is acceptable when it serves the learner better.",
+    "- If you pose a question or quiz, stop and wait for the learner's answer. Do not answer it yourself."
+  ],
+  "finishedAt": "2026-11-18T12:58:16.948Z"
+}

@@ -1,0 +1,815 @@
+{
+  "headline": "When does Keating give the learner a control?",
+  "dek": "Twenty synthetic tutoring turns through the 4.2.0 web draft gate. Compare the models, then try the interfaces they actually wrote.",
+  "metrics": [
+    {
+      "label": "Interface released",
+      "n": 10,
+      "d": 16,
+      "note": "Turns designed for learner action"
+    },
+    {
+      "label": "Specific offer followed",
+      "n": 3,
+      "d": 9,
+      "note": "Offered opportunities, final component"
+    },
+    {
+      "label": "Text requests honored",
+      "n": 4,
+      "d": 4,
+      "note": "Direct answers without an interface"
+    }
+  ],
+  "models": [
+    {
+      "name": "Gemini 3.1 Flash-Lite",
+      "opportunities": 8,
+      "attempted": 7,
+      "valid": 7,
+      "matched": 6,
+      "proseControlCount": 2,
+      "cleanProse": 2
+    },
+    {
+      "name": "MiniMax M2.7 Highspeed",
+      "opportunities": 8,
+      "attempted": 8,
+      "valid": 3,
+      "matched": 3,
+      "proseControlCount": 2,
+      "cleanProse": 2
+    }
+  ],
+  "modeDescriptions": {
+    "attempted": "At least one complete private tutor draft included a recognized OpenUI fence.",
+    "valid": "The selected response contains a validated component. It also rendered to static markup with Keating 4.2.0.",
+    "matched": "The released component fits the prespecified family and the learner’s explicit language. Gemini’s JavaScript exercise for a Python learner loses one here."
+  },
+  "examples": [
+    {
+      "title": "Predict a coin flip",
+      "cohort": "November 18 · Gate output",
+      "model": "Gemini 3.1 Flash-Lite",
+      "prompt": "A fair coin just landed heads four times. I think tails must be due. Let me make a prediction about the next flip before you explain.",
+      "decision": "Offered Question.",
+      "verdict": "Compiled Question",
+      "note": "The learner can commit to a probability before opening the hint.",
+      "text": "```openui lifecycle=ephemeral id=coin-flip-prediction\n\nroot = LearningSurface([prediction], \"Predict the next flip\", \"Your prediction helps us explore how probability works.\", \"ephemeral\")\nprediction = Question([{ \n  question: \"Given the coin is fair and just landed heads four times, what is the probability that the next flip will be tails?\", \n  type: \"choice\", \n  choices: [\"Less than 50%\", \"Exactly 50%\", \"More than 50%\"], \n  allowText: true, \n  hint: \"Consider whether the coin has a memory of its previous results.\" \n}], \"ephemeral\", \"Coin flip probability\", \"Select your prediction.\")\n```",
+      "nodes": [
+        {
+          "type": "question-group",
+          "id": "prediction",
+          "topic": "Coin flip probability",
+          "intro": "Select your prediction.",
+          "questions": [
+            {
+              "id": "prediction-question-1",
+              "prompt": "Given the coin is fair and just landed heads four times, what is the probability that the next flip will be tails?",
+              "kind": "choice",
+              "choices": [
+                {
+                  "id": "prediction-question-1-choice-1",
+                  "label": "Less than 50%"
+                },
+                {
+                  "id": "prediction-question-1-choice-2",
+                  "label": "Exactly 50%"
+                },
+                {
+                  "id": "prediction-question-1-choice-3",
+                  "label": "More than 50%"
+                }
+              ],
+              "hint": "Consider whether the coin has a memory of its previous results.",
+              "allowText": true
+            }
+          ]
+        }
+      ],
+      "receipt": "gemini-3.1-flash-lite--prediction"
+    },
+    {
+      "title": "Coin flip · first draft",
+      "cohort": "November 18 · Private draft",
+      "model": "MiniMax M2.7 Highspeed",
+      "prompt": "A fair coin just landed heads four times. I think tails must be due. Let me make a prediction about the next flip before you explain.",
+      "decision": "Offered Question.",
+      "verdict": "Private draft · rejected",
+      "note": "The question compiled. A sentence after the closing fence violated the rule to stop at the checkpoint.",
+      "text": "Good instinct to commit to a prediction first — let's do that.\n\n```openui lifecycle=ephemeral id=coin-prediction-check\n\nroot = LearningSurface([predict], \"Commit to a prediction\", \"Say what you expect next, and why — we'll check it against the mathematics afterward.\", \"ephemeral\")\npredict = Question([{ header: \"Next flip\", question: \"A fair coin just landed heads four times in a row. What do you predict for the very next flip?\", type: \"choice\", choices: [\"Heads\", \"Tails\", \"Neither is more likely — they're equally likely\"], allowText: true, requireReasons: true, reasonLabel: \"Your reasoning\", hint: \"Pick an option or write your own prediction.\" }], \"ephemeral\", \"Coin toss probability\", \"Make the call before the explanation.\")\n```\n\nTake your pick and tell me your reasoning — then I'll show you exactly what the probability model says and where the \"tails are due\" feeling comes from.",
+      "nodes": [
+        {
+          "type": "question-group",
+          "id": "predict",
+          "topic": "Coin toss probability",
+          "intro": "Make the call before the explanation.",
+          "questions": [
+            {
+              "id": "predict-question-1",
+              "prompt": "A fair coin just landed heads four times in a row. What do you predict for the very next flip?",
+              "kind": "choice",
+              "header": "Next flip",
+              "choices": [
+                {
+                  "id": "predict-question-1-choice-1",
+                  "label": "Heads"
+                },
+                {
+                  "id": "predict-question-1-choice-2",
+                  "label": "Tails"
+                },
+                {
+                  "id": "predict-question-1-choice-3",
+                  "label": "Neither is more likely — they're equally likely"
+                }
+              ],
+              "hint": "Pick an option or write your own prediction.",
+              "allowText": true,
+              "requireReasons": true,
+              "reasonLabel": "Your reasoning"
+            }
+          ]
+        }
+      ],
+      "receipt": "MiniMax-M2.7-highspeed--prediction"
+    },
+    {
+      "title": "Coin flip · released reply",
+      "cohort": "November 18 · Gate output",
+      "model": "MiniMax M2.7 Highspeed",
+      "prompt": "A fair coin just landed heads four times. I think tails must be due. Let me make a prediction about the next flip before you explain.",
+      "decision": "Offered Question.",
+      "verdict": "Prose released",
+      "note": "The second Question had the same trailing-prose problem. The third draft passed with a prose question; the reviewer still flagged the missing control.",
+      "text": "What do you predict for the next flip—**heads, tails, or 50/50**—and why?",
+      "nodes": [],
+      "receipt": "MiniMax-M2.7-highspeed--prediction"
+    },
+    {
+      "title": "Change a rectangle",
+      "cohort": "November 18 · Gate output",
+      "model": "Gemini 3.1 Flash-Lite",
+      "prompt": "I keep mixing up area and perimeter. Could I change the width of a rectangle while its height stays at 4 and watch what happens to both numbers?",
+      "decision": "Offered Question, Simulation, ConceptMap.",
+      "verdict": "Compiled Simulation",
+      "note": "At width 5 the two readouts are 20 square units and 18 units. Change width to 10 to get 40 and 28.",
+      "text": "```openui lifecycle=ephemeral id=area-perimeter-sim\nroot = LearningSurface([sim], \"Area vs. Perimeter\", \"Watch how changing the width affects area and perimeter when the height is fixed at 4.\", \"ephemeral\")\nsim = Simulation(\"rect-sim\", \"Rectangle Dimensions\", \n  [\n    { id: \"width\", label: \"Width\", min: 1, max: 10, step: 1, value: 5 }\n  ],\n  [\n    { id: \"area\", label: \"Area\", unit: \"sq units\", expr: \"width * 4\", emphasis: true },\n    { id: \"perimeter\", label: \"Perimeter\", unit: \"units\", expr: \"(width + 4) * 2\" }\n  ],\n  \"ephemeral\",\n  \"Predict what happens to the area and perimeter if you double the width from 5 to 10. Then, move the slider and see if your prediction matches.\"\n)\n```",
+      "nodes": [
+        {
+          "type": "simulation",
+          "id": "rect-sim",
+          "title": "Rectangle Dimensions",
+          "brief": "Predict what happens to the area and perimeter if you double the width from 5 to 10. Then, move the slider and see if your prediction matches.",
+          "parameters": [
+            {
+              "id": "width",
+              "label": "Width",
+              "min": 1,
+              "max": 10,
+              "step": 1,
+              "value": 5
+            }
+          ],
+          "readouts": [
+            {
+              "id": "area",
+              "label": "Area",
+              "unit": "sq units",
+              "expr": "width * 4",
+              "emphasis": true
+            },
+            {
+              "id": "perimeter",
+              "label": "Perimeter",
+              "unit": "units",
+              "expr": "(width + 4) * 2"
+            }
+          ]
+        }
+      ],
+      "receipt": "gemini-3.1-flash-lite--variable"
+    },
+    {
+      "title": "Change a rectangle",
+      "cohort": "November 18 · Gate output",
+      "model": "MiniMax M2.7 Highspeed",
+      "prompt": "I keep mixing up area and perimeter. Could I change the width of a rectangle while its height stays at 4 and watch what happens to both numbers?",
+      "decision": "Offered Question, Simulation, ConceptMap.",
+      "verdict": "Compiled Simulation",
+      "note": "The working slider is surrounded by 181 words of prose. Creating an interface and keeping the reply concise are separate outcomes. The gate marked this reply as best effort.",
+      "text": "Yes — a slider is ideal here, because the two quantities react to the same change in different ways.\n\nThe key is to keep the formulas visible while you move:\n\n- **Area** = width × height, so with height fixed at 4: **Area = 4w**\n- **Perimeter** = 2(width + height), so: **Perimeter = 2w + 8**\n\nHere’s a concrete example to anchor it: if the width is 6, the area is 24 square units but the perimeter is only 20 units. Widening adds **4 square units of area** for every unit of width, but adds just **2 perimeter units** — because only the two horizontal sides get longer.\n\nSet the slider to **w = 4** first. There, area and perimeter are both 16, so the rectangle is a square. Then widen it and watch which quantity pulls away faster.\n\n```openui lifecycle=resumable id=rectangle-area-perimeter-explorer\nroot = LearningSurface([sim], \"Rectangle Explorer\", \"Height stays fixed at 4. Move the width and compare area with perimeter.\", \"resumable\")\nsim = Simulation(\"rect-explorer\", \"Width changes, height stays at 4\", [\n  { id: \"width\", label: \"Width\", unit: \"units\", min: 1, max: 20, step: 0.5, value: 4 }\n], [\n  { id: \"area\", label: \"Area\", unit: \"square units\", expr: \"4 * width\", precision: 1, emphasis: true },\n  { id: \"perimeter\", label: \"Perimeter\", unit: \"units\", expr: \"2 * (width + 4)\", precision: 1 },\n  { id: \"gap\", label: \"Area minus perimeter\", unit: \"units\", expr: \"4 * width - 2 * (width + 4)\", precision: 1 }\n], \"resumable\", \"First predict which number grows faster as the width increases. Then drag the Width slider from 4 toward 20 and watch Area, Perimeter, and the gap between them. The height never changes, so every change you see comes from the width alone.\")\n```\n\nThe third readout is the clincher: **area minus perimeter** is zero at a square and grows twice as fast as the width increases. That is the distinction in one number — perimeter tracks the *border*, while area tracks everything *inside* it.",
+      "nodes": [
+        {
+          "type": "simulation",
+          "id": "rect-explorer",
+          "title": "Width changes, height stays at 4",
+          "brief": "First predict which number grows faster as the width increases. Then drag the Width slider from 4 toward 20 and watch Area, Perimeter, and the gap between them. The height never changes, so every change you see comes from the width alone.",
+          "parameters": [
+            {
+              "id": "width",
+              "label": "Width",
+              "unit": "units",
+              "min": 1,
+              "max": 20,
+              "step": 0.5,
+              "value": 4
+            }
+          ],
+          "readouts": [
+            {
+              "id": "area",
+              "label": "Area",
+              "unit": "square units",
+              "expr": "4 * width",
+              "precision": 1,
+              "emphasis": true
+            },
+            {
+              "id": "perimeter",
+              "label": "Perimeter",
+              "unit": "units",
+              "expr": "2 * (width + 4)",
+              "precision": 1
+            },
+            {
+              "id": "gap",
+              "label": "Area minus perimeter",
+              "unit": "units",
+              "expr": "4 * width - 2 * (width + 4)",
+              "precision": 1
+            }
+          ]
+        }
+      ],
+      "receipt": "MiniMax-M2.7-highspeed--variable"
+    },
+    {
+      "title": "Recall three French colours",
+      "cohort": "November 18 · Gate output",
+      "model": "Gemini 3.1 Flash-Lite",
+      "prompt": "I've studied the French words for red, blue and green. See which ones I can recall, one at a time. Don't give me the translations yet.",
+      "decision": "Offered LanguagePractice.",
+      "verdict": "Compiled Question",
+      "note": "The tutor used a single short-answer Question. It gives the learner the requested retrieval practice while choosing another component than the one Jev offered. The gate marked this reply as best effort.",
+      "text": "```openui lifecycle=ephemeral id=french-color-recall\nroot = LearningSurface([recall], \"French Color Recall\", \"Let's see what you remember. I'll ask for one at a time.\", \"ephemeral\")\nrecall = Question([{ question: \"What is the French word for 'red'?\", type: \"text\" }], \"ephemeral\", \"French colors\", \"Type the word you recall.\")\n```",
+      "nodes": [
+        {
+          "type": "question-group",
+          "id": "recall",
+          "topic": "French colors",
+          "intro": "Type the word you recall.",
+          "questions": [
+            {
+              "id": "recall-question-1",
+              "prompt": "What is the French word for 'red'?",
+              "kind": "text"
+            }
+          ]
+        }
+      ],
+      "receipt": "gemini-3.1-flash-lite--recall"
+    },
+    {
+      "title": "Recall three French colours",
+      "cohort": "November 18 · Gate output",
+      "model": "MiniMax M2.7 Highspeed",
+      "prompt": "I've studied the French words for red, blue and green. See which ones I can recall, one at a time. Don't give me the translations yet.",
+      "decision": "Offered LanguagePractice.",
+      "verdict": "Prose released",
+      "note": "A private Flashcards draft compiled. The gate flagged the checkpoint ending and an answer leak, then released a one-line recall prompt.",
+      "text": "What French word do you recall for **red**?",
+      "nodes": [],
+      "receipt": "MiniMax-M2.7-highspeed--recall"
+    },
+    {
+      "title": "Put the steps in order",
+      "cohort": "November 18 · Gate output",
+      "model": "Gemini 3.1 Flash-Lite",
+      "prompt": "I know the steps for making a bar chart but I mix up the sequence. Give me the steps scrambled so I can put them back in order.",
+      "decision": "No component named. The tutor received a separate instruction to provide one OpenUI practice activity.",
+      "verdict": "Compiled Question",
+      "note": "Jev recognized that the steps need ordering. The practice filter removed the targeted Question offer. The general practice directive still produced an ordering control.",
+      "text": "```openui lifecycle=ephemeral id=bar-chart-ordering\n\nroot = LearningSurface([ordering], \"Bar Chart Sequence\", \"Drag the steps into the correct order to create a bar chart.\", \"ephemeral\")\nordering = Question([{\n  question: \"Arrange the steps for creating a bar chart in the correct order.\",\n  type: \"ordering\",\n  items: [\n    \"Label the axes and add a title\",\n    \"Determine the scale and intervals\",\n    \"Draw the bars for each category\",\n    \"Identify the data categories and values\",\n    \"Choose a chart type and layout\"\n  ],\n  itemLabel: \"Step\"\n}], \"ephemeral\", \"Bar Chart Steps\", \"Order the steps from start to finish.\")\n```",
+      "nodes": [
+        {
+          "type": "question-group",
+          "id": "ordering",
+          "topic": "Bar Chart Steps",
+          "intro": "Order the steps from start to finish.",
+          "questions": [
+            {
+              "id": "ordering-question-1",
+              "prompt": "Arrange the steps for creating a bar chart in the correct order.",
+              "kind": "ordering",
+              "items": [
+                "Label the axes and add a title",
+                "Determine the scale and intervals",
+                "Draw the bars for each category",
+                "Identify the data categories and values",
+                "Choose a chart type and layout"
+              ],
+              "itemLabel": "Step"
+            }
+          ]
+        }
+      ],
+      "receipt": "gemini-3.1-flash-lite--order"
+    },
+    {
+      "title": "Put the steps in order",
+      "cohort": "November 18 · Gate output",
+      "model": "MiniMax M2.7 Highspeed",
+      "prompt": "I know the steps for making a bar chart but I mix up the sequence. Give me the steps scrambled so I can put them back in order.",
+      "decision": "No component named. The tutor received a separate instruction to provide one OpenUI practice activity.",
+      "verdict": "Prose released",
+      "note": "The second draft contained a valid ordering Question and failed the checkpoint-ending rule. The selected draft lists ten steps for the learner to reorder in chat.",
+      "text": "Here are the steps scrambled for you to reorder:\n\n1. Choose the chart title.\n2. Draw and label the horizontal axis.\n3. Check that the bar heights and lengths match the data values.\n4. Select the appropriate bar chart type.\n5. Draw and label the vertical axis.\n6. Add bars for each category.\n7. Identify the data categories and values you want to show.\n8. Add a scale to the vertical axis.\n9. Add a legend if the chart includes multiple data series.\n10. Review the completed chart for accuracy and clarity.",
+      "nodes": [],
+      "receipt": "MiniMax-M2.7-highspeed--order"
+    },
+    {
+      "title": "Food web · rejected diagram",
+      "cohort": "November 18 · Private draft",
+      "model": "MiniMax M2.7 Highspeed",
+      "prompt": "Grass, grasshoppers, frogs, and herons are in the same food web. I'd like to arrange their connections and see which way the energy flows.",
+      "decision": "Offered Question, ConceptMap, LearningImage.",
+      "verdict": "Rejected by the compiler",
+      "note": "All three attempts failed the shared document contract. The harness withheld the reply.",
+      "text": "Here's a starter web you can build in — the four organisms are placed, the arrows are yours to draw and label.\n\nThe convention: **an arrow points the way energy moves**, i.e. from the organism being eaten *to* the organism that eats it.\n\n```openui lifecycle=workspace id=food-web-herons\n\nroot = LearningSurface([intro, web], \"Grass → Heron food web\", \"Build the web and label each energy transfer.\", \"workspace\")\n\nintro = Callout(\"Draw one arrow per feeding relationship. Point it from the food toward the eater, and label it with the energy that moves (for example: \\\"energy to the frog\\\"). One organism may eat more than one thing, and one may be eaten by more than one predator.\", \"info\", \"How to draw it\")\n\nweb = Diagram(\"food-web-herons-diagram\", \"Who eats whom?\", \"Add arrows between these four organisms so the whole web is connected, then explain what each arrow means. Check the structure once you have drawn every arrow.\", [\n  { id: \"grass\", label: \"Grass\", kind: \"producer\" },\n  { id: \"grasshopper\", label: \"Grasshopper\", kind: \"primary consumer\" },\n  { id: \"frog\", label: \"Frog\", kind: \"secondary consumer\" },\n  { id: \"heron\", label: \"Heron\", kind: \"apex consumer\" }\n], [], [\n  { id: \"c1\", label: \"Grass feeds the grasshopper\", type: \"connection\", fromKind: \"producer\", toKind: \"primary consumer\" },\n  { id: \"c2\", label: \"Grasshopper feeds the frog\", type: \"connection\", fromKind: \"primary consumer\", toKind: \"secondary consumer\" },\n  { id: \"c3\", label: \"Frog feeds the heron\", type: \"connection\", fromKind: \"secondary consumer\", toKind: \"apex consumer\" },\n  { id: \"p1\", label: \"Energy reaches the heron from the grass\", type: \"path\", fromKind: \"producer\", toKind: \"apex consumer\" }\n], [\n  \"Every arrow points from the organism being eaten to the organism that eats it.\",\n  \"Each of the four organisms is connected to at least one other organism.\",\n  \"Arrows form a connected web, not separate chains.\",\n  \"Every arrow has a label naming the energy that moves along it.\",\n  \"No arrow points from an eater back to its food.\"\n], \"workspace\", [\"producer\", \"primary consumer\", \"secondary consumer\", \"apex consumer\"])\n```\n\nA few things worth deciding while you build:\n\n- The **frog** is a good place to look for a second arrow — real herons and frogs eat more than one prey item, so the web usually branches rather than forming one clean line.\n- The **grasshopper** may also feed something besides the frog.\n- Herons will eat grasshoppers *and* frogs, so both arrows can point into the heron.\n\nWhen you've drawn it, tell me which arrows you added and I'll check the direction and labels against the actual feeding relationships.",
+      "nodes": [],
+      "receipt": "MiniMax-M2.7-highspeed--structure"
+    },
+    {
+      "title": "Connect a food web",
+      "cohort": "November 18 · Gate output",
+      "model": "Gemini 3.1 Flash-Lite",
+      "prompt": "Grass, grasshoppers, frogs, and herons are in the same food web. I'd like to arrange their connections and see which way the energy flows.",
+      "decision": "Offered Question, ConceptMap, LearningImage.",
+      "verdict": "Native tool proposed",
+      "note": "The gate released an interactive_page tool call. The probe ended at tool dispatch, so its resulting page and behavior are unknown.",
+      "text": "",
+      "nodes": [],
+      "receipt": "gemini-3.1-flash-lite--structure"
+    },
+    {
+      "title": "Repair an off-by-one loop",
+      "cohort": "November 18 · Gate output",
+      "model": "Gemini 3.1 Flash-Lite",
+      "prompt": "My Python loop skips the last item nearly every time. Give me a tiny broken loop I can fix and try against a couple of example inputs.",
+      "decision": "No component named. The tutor received a separate instruction to provide one OpenUI practice activity.",
+      "verdict": "Compiled CodingChallenge",
+      "note": "The component compiles and the prose talks about Python. Its editor contains JavaScript. It misses the learner’s requested language. The gate marked this reply as best effort.",
+      "text": "This is a classic \"off-by-one\" error. In Python, `range(start, stop)` stops *before* the `stop` value, so if you want to include the last index of a list, you need to be careful with your bounds.\n\nHere is a small challenge for you.\n\n```openui lifecycle=ephemeral id=python-loop-challenge\nroot = LearningSurface([explanation, challenge], \"Fix the loop\", \"A common off-by-one error.\", \"ephemeral\")\n\nexplanation = Explanation(\"Python's `range(n)` generates numbers from `0` to `n-1`. If you use `range(len(my_list))` to iterate, you get every index. If you use a different stop condition, you might miss the end.\", \"Why it happens\")\n\nchallenge = CodingChallenge(\"fix-loop\", \"Fix the loop\", \"The function `get_all_items` is supposed to return a list of all items, but it currently skips the last one. Fix the `range` stop condition.\", \"javascript\", \n\"function get_all_items(items) {\\n  let result = [];\\n  // The loop currently stops too early\\n  for (let i = 0; i < items.length - 1; i++) {\\n    result.push(items[i]);\\n  }\\n  return result;\\n}\", \n\"get_all_items\", \n[\n  { id: \"test1\", label: \"Standard list\", args: [[\"apple\", \"banana\", \"cherry\"]], expected: [\"apple\", \"banana\", \"cherry\"] },\n  { id: \"test2\", label: \"Single item\", args: [[\"solo\"]], expected: [\"solo\"] }\n])\n```\n\nGive that a try! Once you adjust the loop condition, run the tests to see if it captures the full list.",
+      "nodes": [
+        {
+          "type": "markdown",
+          "id": "explanation",
+          "markdown": "### Why it happens\n\nPython's `range(n)` generates numbers from `0` to `n-1`. If you use `range(len(my_list))` to iterate, you get every index. If you use a different stop condition, you might miss the end."
+        },
+        {
+          "type": "coding-challenge",
+          "id": "fix-loop",
+          "title": "Fix the loop",
+          "prompt": "The function `get_all_items` is supposed to return a list of all items, but it currently skips the last one. Fix the `range` stop condition.",
+          "language": "javascript",
+          "starterCode": "function get_all_items(items) {\n  let result = [];\n  // The loop currently stops too early\n  for (let i = 0; i < items.length - 1; i++) {\n    result.push(items[i]);\n  }\n  return result;\n}",
+          "entrypoint": "get_all_items",
+          "tests": [
+            {
+              "id": "test1",
+              "label": "Standard list",
+              "args": [
+                [
+                  "apple",
+                  "banana",
+                  "cherry"
+                ]
+              ],
+              "expected": [
+                "apple",
+                "banana",
+                "cherry"
+              ]
+            },
+            {
+              "id": "test2",
+              "label": "Single item",
+              "args": [
+                [
+                  "solo"
+                ]
+              ],
+              "expected": [
+                "solo"
+              ]
+            }
+          ]
+        }
+      ],
+      "receipt": "gemini-3.1-flash-lite--code"
+    },
+    {
+      "title": "Repair an off-by-one loop",
+      "cohort": "November 18 · Gate output",
+      "model": "MiniMax M2.7 Highspeed",
+      "prompt": "My Python loop skips the last item nearly every time. Give me a tiny broken loop I can fix and try against a couple of example inputs.",
+      "decision": "Offered CodingChallenge.",
+      "verdict": "Prose released",
+      "note": "This tutor preserved Python and gave three test inputs in prose. The release’s CodingChallenge accepts JavaScript or TypeScript. The gate marked this reply as best effort.",
+      "text": "Try this tiny broken loop:\n\n```python\nitems = [\"apple\", \"banana\", \"cherry\"]\n\nfor i in range(len(items) - 1):\n    print(items[i])\n```\n\nExample inputs to try:\n\n```python\nitems = [\"apple\", \"banana\", \"cherry\"]\nitems = [\"cat\", \"dog\"]\nitems = [\"solo\"]\n```\n\nWhat happens:\n\n1. `range(len(items) - 1)` produces the indexes `0` through one less than the final valid index.\n2. For `[\"apple\", \"banana\", \"cherry\"]`, it produces `0, 1`, so the loop prints only `\"apple\"` and `\"banana\"`.\n3. The last valid index is `2`, but it is never reached.\n\n**Hint:** the loop’s stop condition excludes the final valid index. Try changing the range so it includes every index up to `len(items) - 1`.",
+      "nodes": [],
+      "receipt": "MiniMax-M2.7-highspeed--code"
+    },
+    {
+      "title": "Answer a bounded fact",
+      "cohort": "November 18 · Gate output",
+      "model": "Gemini 3.1 Flash-Lite",
+      "prompt": "What is 4 factorial? Just give me the value, please.",
+      "decision": "Offered Question.",
+      "verdict": "Prose released",
+      "note": "The learner asked only for the value. The entire reply was “24”.",
+      "text": "24",
+      "nodes": [],
+      "receipt": "gemini-3.1-flash-lite--fact"
+    },
+    {
+      "title": "Explain in one sentence",
+      "cohort": "November 18 · Gate output",
+      "model": "MiniMax M2.7 Highspeed",
+      "prompt": "In one plain sentence, what does the denominator of a fraction tell me? No follow-up exercise, please.",
+      "decision": "Offered Question.",
+      "verdict": "Prose released",
+      "note": "The learner asked for one sentence and no follow-up. The tutor honored both despite the Question offer.",
+      "text": "The denominator tells you how many equal parts the whole is divided into — and therefore what size each part is.",
+      "nodes": [],
+      "receipt": "MiniMax-M2.7-highspeed--brief"
+    },
+    {
+      "title": "Choose a practice path",
+      "cohort": "November 18 · Gate output",
+      "model": "MiniMax M2.7 Highspeed",
+      "prompt": "I want to practice either estimating a shopping total or comparing unit prices. Let me choose the path before we start.",
+      "decision": "No component named. The tutor received a separate instruction to provide one OpenUI practice activity.",
+      "verdict": "Compiled Question",
+      "note": "The release renderer produced markup for this response. The gate marked this reply as best effort.",
+      "text": "Two solid paths, both about buying well:\n\n- **Estimating a shopping total** — build a mental total from a basket, round it out, then check against the receipt.\n- **Comparing unit prices** — work out the real cost per unit so you can rank products that don't compare directly on sticker price.\n\nSince you want to pick, here's the choice:\n\n```openui lifecycle=ephemeral id=shopping-math-path\n\nroot = LearningSurface([pathChoice], \"Choose your practice path\", \"Each path gets its own focused drill. You can switch later.\", \"ephemeral\")\npathChoice = Question([\n  { header: \"Pick one\", question: \"Which do you want to work on first: estimating a shopping total, or comparing unit prices?\", type: \"choice\", choices: [\"Estimating a shopping total — add up a basket fast, round it, then reconcile with the receipt\", \"Comparing unit prices — find the cost per unit and rank options that aren't directly comparable\"], allowText: true, hint: \"If you like quick mental arithmetic, take the total. If you like catching tricks, take unit price.\" }\n], \"ephemeral\", \"Shopping math\", \"One answer, and I'll set the drill up to match.\")\n```",
+      "nodes": [
+        {
+          "type": "question-group",
+          "id": "pathChoice",
+          "topic": "Shopping math",
+          "intro": "One answer, and I'll set the drill up to match.",
+          "questions": [
+            {
+              "id": "pathChoice-question-1",
+              "prompt": "Which do you want to work on first: estimating a shopping total, or comparing unit prices?",
+              "kind": "choice",
+              "header": "Pick one",
+              "choices": [
+                {
+                  "id": "pathChoice-question-1-choice-1",
+                  "label": "Estimating a shopping total — add up a basket fast, round it, then reconcile with the receipt"
+                },
+                {
+                  "id": "pathChoice-question-1-choice-2",
+                  "label": "Comparing unit prices — find the cost per unit and rank options that aren't directly comparable"
+                }
+              ],
+              "hint": "If you like quick mental arithmetic, take the total. If you like catching tricks, take unit price.",
+              "allowText": true
+            }
+          ]
+        }
+      ],
+      "receipt": "MiniMax-M2.7-highspeed--choice"
+    },
+    {
+      "title": "Answer a bounded fact",
+      "cohort": "November 18 · Gate output",
+      "model": "MiniMax M2.7 Highspeed",
+      "prompt": "What is 4 factorial? Just give me the value, please.",
+      "decision": "Offered Question.",
+      "verdict": "Prose released",
+      "note": "The released reply used prose.",
+      "text": "4! = 4 × 3 × 2 × 1 = **24**.",
+      "nodes": [],
+      "receipt": "MiniMax-M2.7-highspeed--fact"
+    },
+    {
+      "title": "Try a new equation",
+      "cohort": "November 18 · Gate output",
+      "model": "MiniMax M2.7 Highspeed",
+      "prompt": "I worked out that 2x = 10 gives x = 5. Give me one different equation so you can see whether I can do it on my own.",
+      "decision": "No component named. The tutor received a separate instruction to provide one OpenUI practice activity.",
+      "verdict": "Compiled Question",
+      "note": "The release renderer produced markup for this response.",
+      "text": "Nice — you inverted the multiplication correctly. Here I'll swap the direction of the operation and add a step, so it can't be done by reflex.\n\n```openui lifecycle=ephemeral id=linear-equation-practice-1\n\nroot = LearningSurface([check], \"Your turn\", \"One equation. Show your working — I'll check your steps, not just the number.\", \"ephemeral\")\ncheck = Question([{ header: \"Solve\", question: \"Solve for x:  7x − 3 = 39\", type: \"text\", hint: \"Try undoing the subtraction first, then undo the multiplication. Tell me which order you used and why.\" }], \"ephemeral\", \"Solving linear equations\", \"Write out each step you take.\")\n\n```",
+      "nodes": [
+        {
+          "type": "question-group",
+          "id": "check",
+          "topic": "Solving linear equations",
+          "intro": "Write out each step you take.",
+          "questions": [
+            {
+              "id": "check-question-1",
+              "prompt": "Solve for x:  7x − 3 = 39",
+              "kind": "text",
+              "header": "Solve",
+              "hint": "Try undoing the subtraction first, then undo the multiplication. Tell me which order you used and why."
+            }
+          ]
+        }
+      ],
+      "receipt": "MiniMax-M2.7-highspeed--transfer"
+    },
+    {
+      "title": "Explain in one sentence",
+      "cohort": "November 18 · Gate output",
+      "model": "Gemini 3.1 Flash-Lite",
+      "prompt": "In one plain sentence, what does the denominator of a fraction tell me? No follow-up exercise, please.",
+      "decision": "Offered Question.",
+      "verdict": "Prose released",
+      "note": "The released reply used prose.",
+      "text": "The denominator of a fraction tells you how many equal parts the whole has been divided into.",
+      "nodes": [],
+      "receipt": "gemini-3.1-flash-lite--brief"
+    },
+    {
+      "title": "Choose a practice path",
+      "cohort": "November 18 · Gate output",
+      "model": "Gemini 3.1 Flash-Lite",
+      "prompt": "I want to practice either estimating a shopping total or comparing unit prices. Let me choose the path before we start.",
+      "decision": "No component named. The tutor received a separate instruction to provide one OpenUI practice activity.",
+      "verdict": "Compiled Question",
+      "note": "The release renderer produced markup for this response. The gate marked this reply as best effort.",
+      "text": "That sounds like a great way to sharpen your everyday math skills. Which of those two would you like to focus on first?\n\n```openui lifecycle=ephemeral id=math-practice-choice\nroot = LearningSurface([choice], \"Choose your practice path\", \"Select the skill you'd like to work on.\", \"ephemeral\")\nchoice = Question([{\n  question: \"Which math skill would you like to practice?\",\n  type: \"choice\",\n  choices: [\"Estimating a shopping total\", \"Comparing unit prices\"]\n}], \"ephemeral\", \"Math practice selection\", \"Pick one to begin.\")\n```",
+      "nodes": [
+        {
+          "type": "question-group",
+          "id": "choice",
+          "topic": "Math practice selection",
+          "intro": "Pick one to begin.",
+          "questions": [
+            {
+              "id": "choice-question-1",
+              "prompt": "Which math skill would you like to practice?",
+              "kind": "choice",
+              "choices": [
+                {
+                  "id": "choice-question-1-choice-1",
+                  "label": "Estimating a shopping total"
+                },
+                {
+                  "id": "choice-question-1-choice-2",
+                  "label": "Comparing unit prices"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "receipt": "gemini-3.1-flash-lite--choice"
+    },
+    {
+      "title": "Try a new equation",
+      "cohort": "November 18 · Gate output",
+      "model": "Gemini 3.1 Flash-Lite",
+      "prompt": "I worked out that 2x = 10 gives x = 5. Give me one different equation so you can see whether I can do it on my own.",
+      "decision": "No component named. The tutor received a separate instruction to provide one OpenUI practice activity.",
+      "verdict": "Compiled Question",
+      "note": "The release renderer produced markup for this response.",
+      "text": "```openui lifecycle=ephemeral id=algebra-check\n\nroot = LearningSurface([check], \"Check your understanding\", \"Your answer helps me see how you're thinking about this.\", \"ephemeral\")\ncheck = Question([{ question: \"Solve for x: 3x + 2 = 11\", type: \"text\", hint: \"Show your steps if you'd like.\" }], \"ephemeral\", \"Algebra practice\", \"Solve the equation and explain your steps.\")\n```",
+      "nodes": [
+        {
+          "type": "question-group",
+          "id": "check",
+          "topic": "Algebra practice",
+          "intro": "Solve the equation and explain your steps.",
+          "questions": [
+            {
+              "id": "check-question-1",
+              "prompt": "Solve for x: 3x + 2 = 11",
+              "kind": "text",
+              "hint": "Show your steps if you'd like."
+            }
+          ]
+        }
+      ],
+      "receipt": "gemini-3.1-flash-lite--transfer"
+    },
+    {
+      "title": "Coin flip · graded checkpoint",
+      "cohort": "September · Checkpoint experiment",
+      "model": "Inkling Small + OpenUI SFT + SDPO",
+      "prompt": "A fair coin landed heads three times. I think tails must be more likely next. Check my understanding with one OpenUI text Question and wait for my reasoning.",
+      "decision": "This benchmark recorded no Jev component offer.",
+      "verdict": "Passed",
+      "note": "The grading call matched the actual submitted IDs, graded only pending work, and executed successfully in isolated memory.",
+      "text": "```openui lifecycle=ephemeral id=coin-fairness-check revision=0\nroot = LearningSurface([check], \"Check your reasoning\", \"\", \"ephemeral\")\ncheck = Question([{\"header\":\"Your reasoning\",\"question\":\"Why might a fair coin still land heads again?\",\"type\":\"text\"}],\"ephemeral\",\"Coin fairness\",\"Explain your reasoning.\")\n```",
+      "nodes": [
+        {
+          "type": "question-group",
+          "id": "check",
+          "topic": "Coin fairness",
+          "intro": "Explain your reasoning.",
+          "questions": [
+            {
+              "id": "check-question-1",
+              "prompt": "Why might a fair coin still land heads again?",
+              "kind": "text",
+              "header": "Your reasoning"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "More fractions · working Question",
+      "cohort": "September · Frozen CLI",
+      "model": "Kimi K3",
+      "prompt": "Can we do one more?",
+      "decision": "This benchmark recorded no Jev component offer.",
+      "verdict": "Rendered",
+      "note": "Recorded assistant output from the frozen terminal benchmark.",
+      "text": "Absolutely — and this one's the boss level, because you've now got both skills in your toolbox: *same-size scoops*, and *make the pieces the same size before counting*.\n\nHere it is:\n\n```keating-ui\n{\"schemaVersion\":1,\"id\":\"unlike-scoop-challenge\",\"revision\":0,\"lifecycle\":\"ready\",\"retention\":\"ephemeral\",\"supportedSurfaces\":[\"web\",\"desktop\",\"mobile\",\"terminal\"],\"nodes\":[{\"type\":\"question\",\"id\":\"half-plus-quarter\",\"prompt\":\"Final recipe line: one ½-cup scoop of flour, then one ¼-cup scoop. Total flour? Show your chain if you like: the half-cup holds ___ quarter-scoops, so together that's ___ quarters = ___/4.\",\"kind\":\"choice\",\"choices\":[{\"id\":\"three-quarters\",\"label\":\"3/4 cup\"},{\"id\":\"two-sixths\",\"label\":\"2/6 cup\"},{\"id\":\"one-third\",\"label\":\"1/3 cup\"}],\"allowText\":true,\"hint\":\"The scoops are different sizes this time — but the half-cup measure fits a whole number of quarter-scoops. Fill in the blank first, then count.\"}],\"createdAt\":\"2026-09-07T13:06:00.000Z\",\"updatedAt\":\"2026-09-07T13:06:00.000Z\"}\n```",
+      "nodes": [
+        {
+          "type": "question",
+          "id": "half-plus-quarter",
+          "prompt": "Final recipe line: one ½-cup scoop of flour, then one ¼-cup scoop. Total flour? Show your chain if you like: the half-cup holds ___ quarter-scoops, so together that's ___ quarters = ___/4.",
+          "kind": "choice",
+          "choices": [
+            {
+              "id": "three-quarters",
+              "label": "3/4 cup"
+            },
+            {
+              "id": "two-sixths",
+              "label": "2/6 cup"
+            },
+            {
+              "id": "one-third",
+              "label": "1/3 cup"
+            }
+          ],
+          "allowText": true,
+          "hint": "The scoops are different sizes this time — but the half-cup measure fits a whole number of quarter-scoops. Fill in the blank first, then count."
+        }
+      ]
+    },
+    {
+      "title": "More fractions · rejected source",
+      "cohort": "September · Frozen CLI",
+      "model": "Gemma 4 31B",
+      "prompt": "Can we do one more?",
+      "decision": "This benchmark recorded no Jev component offer.",
+      "verdict": "Rejected",
+      "note": "The UI document does not satisfy the shared contract. Nothing was executed; correct it and retry.",
+      "text": "```keating-ui\n{\"schemaVersion\":1,\"id\":\"fraction-challenge\",\"revision\":0,\"lifecycle\":\"ready\",\"retention\":\"ephemeral\",\"supportedSurfaces\":[\"web\",\"desktop\",\"mobile\",\"terminal\"],\"nodes\":[{\"type\":\"markdown\",\"id\":\"challenge-intro\",\"content\":\"Let's test your intuition. Imagine you have one **quarter-cup** (1/4) and you want to add another **quarter-cup** (1/4) to it.\"},{\"type\":\"question\",\"id\":\"final-check\",\"prompt\":\"Based on what we just talked about with the scoops, what is the total?\",\"kind\":\"choice\",\"choices\":[{\"id\":\"two-eighths\",\"label\":\"2/8 cup\"},{\"id\":\"two-quarters\",\"label\":\"2/4 cup\"},{\"id\":\"one-eighth\",\"label\":\"1/8 cup\"}],\"allowText\":true,\"hint\":\"Remember: The bottom number tells you the SIZE of the scoop. The top number tells you HOW MANY scoops you have.\"}],\"createdAt\":\"2026-09-07T12:28:00.000Z\",\"updatedAt\":\"2026-09-07T12:28:00.000Z\"}\n```",
+      "nodes": []
+    },
+    {
+      "title": "More fractions · prose",
+      "cohort": "September · Frozen CLI",
+      "model": "Inkling Small",
+      "prompt": "Can we do one more?",
+      "decision": "This benchmark recorded no Jev component offer.",
+      "verdict": "No recognized surface",
+      "note": "Recorded assistant output from the frozen terminal benchmark.",
+      "text": "Sure — what's the problem? Give me the fractions or measurement, and we'll trace it together (predict, check, repair). Which one are you checking?",
+      "nodes": []
+    },
+    {
+      "title": "Speed recall cards",
+      "cohort": "September · Checkpoint experiment",
+      "model": "Inkling Small + OpenUI SFT",
+      "prompt": "We finished learning speed = distance / time, consistent units, and the difference between average and instantaneous speed. Make four resumable OpenUI Flashcards with concrete recall prompts, including 100 km in 2 hours and a stopped car.",
+      "decision": "This benchmark recorded no Jev component offer.",
+      "verdict": "Passed",
+      "note": "The requested activity compiled through Keating’s current contract.",
+      "text": "```openui lifecycle=resumable id=flashcards-speed-basics revision=0\nroot = LearningSurface([activity], \"Speed: recall and apply\", \"\", \"resumable\")\nactivity = Flashcards(\"speed-basics\", \"Speed: recall and apply\", \"Recall the idea before turning over each card.\", [{\"front\":\"What is the definition of speed?\",\"back\":\"Speed is distance travelled per unit of time.\"},{\"front\":\"Calculate the speed: 100 km in 2 hours.\",\"back\":\"50 km/h.\"},{\"front\":\"A car is stopped. What is its speed?\",\"back\":\"0 km/h.\"},{\"front\":\"Why must units be consistent in a speed calculation?\",\"back\":\"Mixed units give a meaningless number; convert them before dividing.\"}], \"resumable\")\n```",
+      "nodes": [
+        {
+          "type": "deck",
+          "id": "speed-basics",
+          "title": "Recall the idea before turning over each card.",
+          "topic": "Speed: recall and apply",
+          "cards": [
+            {
+              "id": "activity-card-1",
+              "front": "What is the definition of speed?",
+              "back": "Speed is distance travelled per unit of time."
+            },
+            {
+              "id": "activity-card-2",
+              "front": "Calculate the speed: 100 km in 2 hours.",
+              "back": "50 km/h."
+            },
+            {
+              "id": "activity-card-3",
+              "front": "A car is stopped. What is its speed?",
+              "back": "0 km/h."
+            },
+            {
+              "id": "activity-card-4",
+              "front": "Why must units be consistent in a speed calculation?",
+              "back": "Mixed units give a meaningless number; convert them before dividing."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Taxi fare explorer",
+      "cohort": "September · Checkpoint experiment",
+      "model": "Inkling Small + OpenUI SFT + SDPO",
+      "prompt": "Build an OpenUI Simulation for a taxi charging a $5 starting fee plus $2 per kilometre. Give me one distance slider from 0 to 20 kilometres and a calculated total fare readout. Use a workspace lifecycle.",
+      "decision": "This benchmark recorded no Jev component offer.",
+      "verdict": "Passed",
+      "note": "The requested activity compiled through Keating’s current contract.",
+      "text": "```openui lifecycle=workspace id=taxi-fare-simulation\nroot = LearningSurface([sim], \"Taxi fare simulation\", \"\", \"workspace\")\nsim = Simulation(\"taxi-fare\", \"Taxi fare\", [{ id: \"distance\", label: \"Distance\", unit: \"km\", min: 0, max: 20, step: 1, value: 5 }], [{ id: \"fare\", label: \"Total fare\", unit: \"$\", expr: \"5 + 2 * distance\", precision: 2 }], \"workspace\")\n```",
+      "nodes": [
+        {
+          "type": "simulation",
+          "id": "taxi-fare",
+          "title": "Taxi fare",
+          "parameters": [
+            {
+              "id": "distance",
+              "label": "Distance",
+              "unit": "km",
+              "min": 0,
+              "max": 20,
+              "step": 1,
+              "value": 5
+            }
+          ],
+          "readouts": [
+            {
+              "id": "fare",
+              "label": "Total fare",
+              "unit": "$",
+              "expr": "5 + 2 * distance",
+              "precision": 2
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "historical": [
+    {
+      "name": "DeepSeek V4 Flash",
+      "n": 120,
+      "attempted": 106,
+      "valid": 73
+    },
+    {
+      "name": "Gemma 4 31B",
+      "n": 120,
+      "attempted": 103,
+      "valid": 63
+    },
+    {
+      "name": "GLM 5.3",
+      "n": 5,
+      "attempted": 0,
+      "valid": 0
+    },
+    {
+      "name": "Kimi K3",
+      "n": 89,
+      "attempted": 83,
+      "valid": 54
+    },
+    {
+      "name": "Qwen3.6 35B",
+      "n": 115,
+      "attempted": 0,
+      "valid": 0
+    },
+    {
+      "name": "Inkling Small",
+      "n": 120,
+      "attempted": 0,
+      "valid": 0
+    },
+    {
+      "name": "Nemotron 3.5 Lightning",
+      "n": 115,
+      "attempted": 0,
+      "valid": 0
+    },
+    {
+      "name": "Qwen 3.8 27B",
+      "n": 120,
+      "attempted": 52,
+      "valid": 14
+    }
+  ],
+  "historicalNote": "September 7 · headless Pi/CLI 3.2.0. 804 turn steps in 154 complete episodes. The frozen terminal adapter recognized 344 and presented a valid document on 204. Six of 40 natural requests for another exercise received a valid Question.",
+  "production": "Production frequency is unknown. On 4.2.0, PostHog recorded 38 message-sent events, three turn starts and zero turn completions from November 11 through 17 UTC. The events lack Jev offer, compiled component and presentation fields.",
+  "reportHref": "REPORT.md"
+}

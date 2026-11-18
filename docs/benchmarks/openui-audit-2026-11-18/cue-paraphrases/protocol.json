@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "scope": "Six prospectively labelled synthetic planner requests, each submitted once to each named provider. Only the current learner message, preceding synthetic tutor context and ordinary app planning state reach a provider. Teaching policy v2.1. No tutor generation, review or classroom observation.",
+  "policy": "keating-teaching-policy/v2.1",
+  "previousLedgerSha256": "23c9559e46abc483c4e637a935d530492e81f3ce3f641a47b2b932f37646329d",
+  "previousSummarySha256": "6505c1d1981b75f37f30dd3f9642eb11742576a226d847f4973bc736a28a6612",
+  "previousAccountedUsd": 1.639857998,
+  "studyCapUsd": 2,
+  "segmentCapUsd": 0.18,
+  "maximumIfAllUsageMissingUsd": 0.1752864,
+  "budgetRule": "Lock the original study budget. Reserve the full per-call cap durably before each dispatch. Measure listed input cost on provider usage; retain the whole reservation when unavailable. Never resubmit an already reserved input or retry a failed call. Stop the segment on billing or authentication failure.",
+  "schedule": "Cases in listed order; Jev then Gemini in each pair. All requests sequential. Space Google dispatches by at least 15 seconds to reduce burst quota errors.",
+  "providers": {
+    "jev": {"id":"jev-1.14.0","endpoint":"https://api.typesafe.ai/v1/systemone","inputUsdPerMillion":0.042,"outputUsdPerMillion":0,"reserveUsd":0.003,"pricing":"https://docs.typesafe.ai/models"},
+    "google": {"id":"gemini-decision-1","endpoint":"https://generativelanguage.googleapis.com/v1beta/decisions","inputUsdPerMillion":0.1,"outputUsdPerMillion":0,"reserveUsd":0.0262144,"pricing":"https://aistudio.google.com/docs/pricing#gemini-decision","documentation":"https://aistudio.google.com/docs/decisions-api"}
+  },
+  "assessment": "Interface opportunity passes when the application offers the labelled component for creation. A no-quiz cue also requires the offer to exclude assessed activities. Both controls require no interface offer. Expected response due is independently compared to the semantic learner_response_due feature. The direct fact also records whether the plain-reply decision is true. Unknown or incomplete provider outcomes are unscored. All offered alternatives, conditional question instructions and projected plan fields are retained; no plan proves a tutor asked or released anything.",
+  "cases": [
+    {"id":"guess-first","context":"A jar holds five red beads and two yellow ones. I am about to draw one bead without looking.","learner":"Let me guess first.","label":"prediction","expectedComponent":"Question","forbidAssessment":false,"expectedResponseDue":true},
+    {"id":"predict-first","context":"Two identical toy cars start at the same time. One rolls down a steep ramp and the other down a gentle ramp.","learner":"Can I predict first?","label":"prediction","expectedComponent":"Question","forbidAssessment":false,"expectedResponseDue":true},
+    {"id":"change-this","context":"A lamp is connected to a variable resistor. The voltage stays fixed and the meter shows how much current flows as the resistance changes.","learner":"I want to change this, and see what happens.","label":"manipulation","expectedComponent":"Simulation","forbidAssessment":false,"expectedResponseDue":false},
+    {"id":"play-with-numbers","context":"A printer makes 12 pages per minute. Its speed and the time it runs determine how many pages come out.","learner":"Let me play with the numbers. No quiz for now.","label":"manipulation","expectedComponent":"Simulation","forbidAssessment":true,"expectedResponseDue":false},
+    {"id":"short-fact","context":null,"learner":"In one short sentence, how many sides does a hexagon have? Just the answer.","label":"direct fact","expectedComponent":null,"forbidAssessment":true,"expectedResponseDue":false},
+    {"id":"account-password","context":null,"learner":"I want to change my password, and see my account","label":"account support","expectedComponent":null,"forbidAssessment":true,"expectedResponseDue":false}
+  ]
+}

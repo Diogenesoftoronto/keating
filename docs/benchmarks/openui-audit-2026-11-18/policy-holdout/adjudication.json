@@ -1,0 +1,22 @@
+{
+  "MiniMax-M2.7-highspeed--spinner": {
+    "publicTextSha256": "182d79320fc05bd871135f6ddf647b964c92277cb552166a633e7c16b3ab35ac",
+    "passed": true,
+    "note": "A learner can predict before seeing an explanation, in the actual Question with preset choices and a write-in answer. The tutor changes the observation from the same wedge to the colour blue. The four numerical choices are underdetermined because the spinner layout is unspecified. A write-in response can explain that ambiguity. The release omits the sentence that followed the checkpoint in the submitted candidate."
+  },
+  "gemini-3.1-flash-lite--bus": {
+    "publicTextSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "passed": false,
+    "note": "Gemini proposed the native interactive_page tool. The gate released that proposal with zero text and zero compiled OpenUI nodes. The study never executes native tools, so it cannot establish which page a later tool round might have created."
+  },
+  "MiniMax-M2.7-highspeed--bus": {
+    "publicTextSha256": "6c435829ab004a31a081a68f053f74c5fe70982980b8a17f4a8d58ed8a72f59e",
+    "passed": true,
+    "note": "A valid Simulation exposes buses per hour and seats per bus. At the authored defaults, changing 8 buses/hour to 16 changes offered capacity from 320 to 640 and spare seats from −44 to 212 using the declared demand model. The brief invites a prediction; it never asks the learner to submit one for assessment. The extra demand model and surrounding prose make this more elaborate than the learner requested."
+  },
+  "MiniMax-M2.7-highspeed--perimeter": {
+    "publicTextSha256": "3ec1d1e80d46e73bc4cdd8ffbefd465585ac8d88692825c5572babb285e8c436",
+    "passed": true,
+    "note": "The complete selected answer is “16.” It is one word, has the correct perimeter, and contains no interface, follow-up question or exercise."
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "reviewCandidates": [
+    ["MiniMax-M2.7-highspeed--prediction", 1],
+    ["MiniMax-M2.7-highspeed--prediction", 2],
+    ["MiniMax-M2.7-highspeed--order", 2],
+    ["MiniMax-M2.7-highspeed--recall", 2],
+    ["MiniMax-M2.7-highspeed--code", 2],
+    ["MiniMax-M2.7-highspeed--prediction--repeat-1", 1],
+    ["MiniMax-M2.7-highspeed--prediction--repeat-1", 2],
+    ["MiniMax-M2.7-highspeed--prediction--repeat-3", 1],
+    ["MiniMax-M2.7-highspeed--prediction--repeat-3", 2]
+  ],
+  "planningCases": [
+    {"source":"teaching-v2","id":"openui-question-two-viable","expected":{"component":"Question","signals":{"learner_response_due":true}}},
+    {"source":"teaching-v2","id":"openui-simulation-break-even","expected":{"component":"Simulation","signals":{"hands_on_requested":true,"variable_relationship":true}}},
+    {"source":"interaction-features","id":"interaction-mitosis-order","expected":{"component":"Question","signals":{"ordered_procedure":true}}},
+    {"source":"interaction-features","id":"interaction-moonrise","expected":{"component":"Fieldwork","signals":{"hands_on_requested":true,"outside_observation":true}}},
+    {"source":"teaching-v2","id":"direct-derivative-help","expected":{"component":null,"signals":{"plain_reply_requested":true,"hands_on_requested":false,"learner_response_due":false}}},
+    {"source":"teaching-v2","id":"worked-equation-negative","expected":{"component":null,"signals":{"plain_reply_requested":true,"hands_on_requested":false,"learner_response_due":false}}}
+  ],
+  "historicalToolNames": ["animate","interactive_page","course_list","course_inspect","course_create","course_update","room_list","room_invite","generate_image","feedback","grade_quiz","grade_question_checks","remember_learner_profile","set_learner_goal","update_goal_step","revise_study_plan","evaluate_teaching","request_teaching_improvement"],
+  "historicalToolSchemasSha256": "c03ca9351998a17512996805bae6b65df19787a03f0d91aef9afa51d609cb13e",
+  "oldRelease": "feb14a770371032619839271cfb3d1a4fe5079ff"
+}
