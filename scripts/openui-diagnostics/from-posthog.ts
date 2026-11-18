@@ -8,7 +8,7 @@ const PROPERTIES = [
   "cue_kind", "cue_targets", "cue_repeat", "reply_outcome", "ui_attempted", "compiled_components", "selected_components",
   "rendered_components", "guidance_source", "guidance_action", "guidance_delivered", "guidance_targets",
   "draft_attempts", "gate_issues", "decision_model", "outside_words", "native_page_requested", "reply_elapsed_ms", "native_page", "guidance_reason",
-  "editable_code", "cue_code_language", "guidance_code_language", "editor_outside_words", "coding_challenge_languages", "draft_selection",
+  "requested_model", "editable_code", "cue_code_language", "guidance_code_language", "editor_outside_words", "coding_challenge_languages", "draft_selection",
   "assessment_opt_out", "assessment_checkpoints", "draft_pair_reviews", "draft_final_comparison",
 ] as const;
 const COLUMNS = [...PROPERTIES, "observation_host", "observation_version", "observation_second", "total_turns"];
@@ -77,7 +77,7 @@ function fromProperties(fields: Record<Property, unknown>): OpenUiDiagnosticTurn
   const noGuidance = [p.guidance_source, p.guidance_action, p.guidance_delivered, p.guidance_targets, p.guidance_reason, p.guidance_code_language].every(v => v === null);
   const row = {
     schemaVersion: p.diagnostic_schema, conversationId: p.conversation_id, turnId: p.turn_id, turnIndex: p.turn_index,
-    model: p.model, mode: p.decision_mode,
+    model: p.model, mode: p.decision_mode, ...(p.requested_model === null ? {} : { requestedModel: p.requested_model }),
     cue: { kind: p.cue_kind, targets: p.cue_targets, ...(p.cue_repeat === null ? {} : { repeat: p.cue_repeat }),
       ...(p.cue_code_language === null ? {} : { codeLanguage: p.cue_code_language }) },
     reply: p.reply_outcome, replyElapsedMs: p.reply_elapsed_ms, attempted: p.ui_attempted,
@@ -108,7 +108,8 @@ export function openUiFleetExport(response: unknown, scope: OpenUiFleetScope) {
     throw new Error("Expected the complete diagnostic HogQL result with its original column names.");
   }
   const { results, columns } = response;
-  const beforeFinalComparison = COLUMNS.filter(key => key !== "draft_final_comparison");
+  const beforeRequestedModel = COLUMNS.filter(key => key !== "requested_model");
+  const beforeFinalComparison = beforeRequestedModel.filter(key => key !== "draft_final_comparison");
   const beforePairReviews = beforeFinalComparison.filter(key => key !== "draft_pair_reviews");
   const beforeAssessment = beforePairReviews.filter(key => key !== "assessment_opt_out" && key !== "assessment_checkpoints");
   const beforeSelection = beforeAssessment.filter(key => key !== "draft_selection");
@@ -116,7 +117,7 @@ export function openUiFleetExport(response: unknown, scope: OpenUiFleetScope) {
   const beforeWords = beforeChallenges.filter(key => key !== "editor_outside_words");
   const beforeCode = beforeWords.filter(key => !["editable_code", "cue_code_language", "guidance_code_language"].includes(key));
   const beforeNative = beforeCode.filter(key => key !== "native_page" && key !== "guidance_reason");
-  const schemas = [COLUMNS, beforeFinalComparison, beforePairReviews, beforeAssessment, beforeSelection, beforeChallenges, beforeWords, beforeCode, beforeNative, beforeNative.filter(key => key !== "reply_elapsed_ms")];
+  const schemas = [COLUMNS, beforeRequestedModel, beforeFinalComparison, beforePairReviews, beforeAssessment, beforeSelection, beforeChallenges, beforeWords, beforeCode, beforeNative, beforeNative.filter(key => key !== "reply_elapsed_ms")];
   if (!schemas.some(expected => columns.length === expected.length && expected.every(key => columns.includes(key)))) {
     throw new Error("Expected the complete diagnostic HogQL result with its original column names.");
   }

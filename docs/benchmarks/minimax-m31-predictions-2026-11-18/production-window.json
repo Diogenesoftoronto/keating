@@ -1,0 +1,23 @@
+{
+  "project": 473463,
+  "hosts": [
+    "keating.help",
+    "chat.keating.help"
+  ],
+  "versions": [
+    "4.2.0",
+    "4.2.1",
+    "4.2.2"
+  ],
+  "fromUtc": "2026-11-11T00:00:00Z",
+  "untilExclusiveUtc": "2026-11-18T22:45:00Z",
+  "event": "openui_turn_observed",
+  "source": "PostHog execute-sql",
+  "query": "SELECT count() AS captured_events, uniqExact(tuple(JSONExtractString(properties, 'conversation_id'),JSONExtractString(properties, 'turn_id'))) AS distinct_turns FROM events WHERE event = 'openui_turn_observed' AND JSONExtractString(properties, '$host') IN ('keating.help','chat.keating.help') AND JSONExtractString(properties, 'app_version') IN ('4.2.0','4.2.1','4.2.2') AND timestamp >= toDateTime('2026-11-11 00:00:00','UTC') AND timestamp < toDateTime('2026-11-18 22:45:00','UTC')",
+  "result": {
+    "capturedEvents": 0,
+    "distinctTurns": 0,
+    "realLearnerInterfaceRate": null
+  },
+  "taxonomy": "Event absent from project taxonomy at query time."
+}

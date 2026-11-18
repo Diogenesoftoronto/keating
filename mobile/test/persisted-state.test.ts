@@ -24,6 +24,15 @@ function legacyState() {
 }
 
 describe("mobile persisted-state migration", () => {
+  test("restores the exact MiniMax model and provider from a saved lesson", () => {
+    const fixture = legacyState();
+    const providerSettings = { provider: "minimax", model: "MiniMax-M3.1-Flash", baseUrl: "https://api.minimax.io/v1", temperature: 0.6 };
+    const state = migratePersistedState({ ...fixture, providerSettings, sessions: [{
+      ...fixture.sessions[0], messages: [{ ...fixture.sessions[0]!.messages[0], role: "assistant", provider: providerSettings.provider, model: providerSettings.model }],
+    }] });
+    expect(state?.providerSettings).toEqual(providerSettings);
+    expect(state?.sessions[0]?.messages[0]).toMatchObject({ provider: "minimax", model: "MiniMax-M3.1-Flash" });
+  });
   test("validates and upgrades the legacy AsyncStorage envelope without changing learner data", () => {
     const migrated = migratePersistedState(legacyState());
     expect(migrated?.schemaVersion).toBe(4);

@@ -19,6 +19,8 @@ import {
   type PlanReviewHostTrigger,
   type PlanReviewMemory,
   judgementRequestProblem,
+  isTutorRateLimit,
+  TUTOR_RATE_LIMIT_REASON,
   runTeachingDrafts,
   teachingDraftAttemptLimit,
   teachingToolHasRequiredSubmission,
@@ -497,6 +499,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
             } };
           if (reasoning === "off") delete generationOptions.reasoning;
           else generationOptions.reasoning = reasoning;
+          observation?.generationRequested(model.id.startsWith(model.provider + "/") ? model.id : model.provider + "/" + model.id);
           const privateStream = await stream(model, privateContext, generationOptions);
           // result() observes the private terminal result; its event queue is
           // never forwarded to the app, tool executor, or learner transcript.
@@ -506,7 +509,10 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
           // A token limit is terminal transport state, not a finished response.
           // Retry incomplete or empty generations without asking the reviewer
           // to judge a fragment as if it were the model's complete answer.
-          if (!["stop", "toolUse"].includes(message.stopReason)) throw new Error("draft-provider-unavailable");
+          if (!["stop", "toolUse"].includes(message.stopReason)) {
+            const rateLimited = message.stopReason === "error" && isTutorRateLimit(message.errorMessage);
+            throw new Error(rateLimited ? TUTOR_RATE_LIMIT_REASON : "draft-provider-unavailable");
+          }
           if (textOnlyRecovery && message.content.some(part => part.type === "toolCall")) throw new Error("draft-recovery-tool-call");
           if (!message.content.some(part => part.type === "text" && part.text.trim()
             || part.type === "toolCall")) throw new Error("draft-empty-response");

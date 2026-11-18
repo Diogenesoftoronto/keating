@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { DEFAULT_MODELS } from "../../runtime-config/src/index.js";
-import { runTeachingDrafts, type TeachingDraftSnapshot } from "../src/judgement/teaching-drafts.js";
+import { isTutorRateLimit, runTeachingDrafts, TUTOR_RATE_LIMIT_REASON, type TeachingDraftSnapshot } from "../src/judgement/teaching-drafts.js";
 import type { JudgementBackendKey, JudgementCaller, JudgementRequest } from "../src/judgement/contracts.js";
 import { teachingDraftAnswers, teachingDraftTurn as turn } from "./fixtures/teaching-drafts.js";
 
@@ -133,6 +133,31 @@ test("an unsafe pair preference cannot execute a rejected tool, and a generation
   expect(result.receipt.pairReviews![0]?.candidateIssueIds?.find(row => row.attempt === 1)?.issues).toContain("available_tool");
   expect(result.receipt.pairReviews![1]?.candidateIssueIds).toEqual([{ attempt: 4, issues: [] }]);
   expect(JSON.stringify(result.receipt)).not.toContain("private!");
+});
+
+test("rate-limit classification requires an observed HTTP status and honors the structured transport status first", () => {
+  for (const error of [{statusCode: 429}, {response: {status: 429}}, Error("429 {\"error\":\"private detail\"}"),
+    "HTTP 429", TUTOR_RATE_LIMIT_REASON]) expect(isTutorRateLimit(error)).toBe(true);
+  for (const error of [Object.assign(Error("HTTP 429"), {status: 503}), {status: 4290}, "HTTP 4290",
+    Error("429 tokens requested"), Error("An incident referenced HTTP 429."), Error("Quota exhausted"), undefined]) {
+    expect(isTutorRateLimit(error)).toBe(false);
+  }
+});
+
+test.each(["failed", "released"] as const)("a partial tutor rate limit is attributed only to the failed lane when other drafts are %s", async other => {
+  const result = await runTeachingDrafts({
+    turn, ruleIds: [], judge: async request => answers(request),
+    generate: async ({attempt}) => {
+      if (attempt === 1) throw Object.assign(Error("PRIVATE response body"), {status: 429});
+      if (other === "failed") throw Error("PRIVATE transport error");
+      return generated(attempt);
+    },
+  });
+  expect(result.status).toBe(other === "released" ? "released" : "withheld");
+  expect(result.receipt.reason).not.toBe(TUTOR_RATE_LIMIT_REASON);
+  expect(result.receipt.attempts.map(a => a.generationFailure ?? null)).toEqual([TUTOR_RATE_LIMIT_REASON, null, null, null]);
+  expect(result.receipt.pairReviews?.map(p => p.status)).toEqual(other === "released" ? ["incomplete", "compared"] : ["incomplete", "incomplete"]);
+  expect(JSON.stringify(result.receipt)).not.toContain("PRIVATE");
 });
 
 test.each(["unavailable", "partial"] as const)("pair issues identify the affected sibling when another review is %s", async missing => {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  NATIVE_PAGE_STAGES, OPENUI_DIAGNOSTIC_CUES, OPENUI_DIAGNOSTIC_MODES, findUnmetOpenUiCues, isOpenUiDiagnosticInterface, matchesLearnerInterface, matchesSelectedLearnerAction, openUiCheckpointAfterOptOut, openUiDiagnosticLoss, queryOpenUiDiagnosticTurns, summarizeOpenUiDiagnostics,
+  NATIVE_PAGE_STAGES, OPENUI_DIAGNOSTIC_CUES, OPENUI_DIAGNOSTIC_MODES, findUnmetOpenUiCues, isOpenUiDiagnosticInterface, matchesLearnerInterface, matchesOpenUiTutor, matchesSelectedLearnerAction, openUiCheckpointAfterOptOut, openUiDiagnosticLoss, queryOpenUiDiagnosticTurns, summarizeOpenUiDiagnostics,
   type OpenUiDiagnosticFilter, type OpenUiDiagnosticRate, type OpenUiDiagnosticSummary, type OpenUiDiagnosticTurn,
 } from "@keating/learner-contracts";
 import { downloadTextFile } from "../../lib/browser-download";
@@ -143,10 +143,11 @@ function TurnDetails({ row, unmet }: {row: OpenUiDiagnosticTurn; unmet: boolean}
   const outcome = lost ? types(row.compiled) + " → no interface" : CUES[row.cue.kind];
   return <details className="ou-turn"><summary>
     <span>{row.experiment?.caseId ?? `Turn ${row.turnIndex + 1}`}</span>
-    <span>{row.model ?? "Unknown tutor"}</span>
+    <span>{row.model ?? (row.requestedModel ? "Requested " + row.requestedModel : "Unknown tutor")}</span>
     <span>{unmet ? describeUnmetCue(row) : outcome}</span><span>{row.reply}</span>
   </summary><dl>
-    <dt>Tutor</dt><dd>{row.model ?? "Unknown"}</dd>
+    <dt>Observed tutor</dt><dd>{row.model ?? "Unknown"}</dd>
+    {row.requestedModel && row.requestedModel !== row.model && <><dt>Requested tutor</dt><dd>{row.requestedModel}</dd></>}
     <dt>Guidance</dt><dd>{MODES[row.mode]}{row.decisionModel && " · " + row.decisionModel}</dd>
     {unmet && <><dt>Learner cue</dt><dd>{CUES[row.cue.kind]}</dd></>}
     <dt>Expected types</dt><dd>{types(row.cue.targets)}</dd>
@@ -200,7 +201,7 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
   const [limit, setLimit] = useState(10);
   const [loss, setLoss] = useState<OpenUiTurnView>(initialView ?? "all");
   const summary = useMemo(() => summarizeOpenUiDiagnostics(turns, filter), [turns, filter]);
-  const models = useMemo(() => [...new Set(turns.map(r => r.model).filter((m): m is string => m !== null))].sort(), [turns]);
+  const models = useMemo(() => [...new Set(turns.flatMap(r => [r.model, r.requestedModel]).filter((m): m is string => Boolean(m)))].sort(), [turns]);
   const decisionModels = useMemo(() => [...new Set(turns.map(r => r.decisionModel ?? "unknown"))].sort(), [turns]);
   const visible = useMemo(() => {
     const seen = new Set<string>();
@@ -208,7 +209,7 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
       const key = JSON.stringify([r.conversationId, r.turnId]);
       if (seen.has(key)) return false;
       seen.add(key);
-      return (!filter.model || r.model === filter.model) && (!filter.decisionModel || (r.decisionModel ?? "unknown") === filter.decisionModel)
+      return matchesOpenUiTutor(r, filter.model) && (!filter.decisionModel || (r.decisionModel ?? "unknown") === filter.decisionModel)
         && (!filter.mode || r.mode === filter.mode) && (!filter.cue || r.cue.kind === filter.cue);
     }).slice().reverse();
   }, [turns, filter]);

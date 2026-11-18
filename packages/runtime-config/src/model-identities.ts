@@ -3,6 +3,7 @@ export const MODEL_IDS = {
   minimax_m2_7_highspeed_discovery: "minimax-m2.7-highspeed",
   minimax_m2_7_highspeed: "MiniMax-M2.7-highspeed",
   minimax_m3: "MiniMax-M3",
+  minimax_m3_1_flash: "MiniMax-M3.1-Flash",
   anthropic_claude_sonnet_4_6: "anthropic/claude-sonnet-4.6",
   balanced: "balanced",
   inkling_2_small: "inkling-2-small",

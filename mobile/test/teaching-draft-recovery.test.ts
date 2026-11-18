@@ -1,5 +1,7 @@
 import { expect, test } from "bun:test";
-import { createMobileTeachingDraftRound } from "../src/lib/judgement/teaching-drafts";
+import { TUTOR_RATE_LIMIT_MESSAGE } from "@keating/learner-contracts";
+import { createMobileTeachingDraftRound, MOBILE_WITHHELD_TEACHING_REPLY } from "../src/lib/judgement/teaching-drafts";
+import { settingsForProvider } from "../src/lib/provider-config";
 import { acceptingTeachingJudge, EMPTY_LEARNER_DATA } from "./helpers/judgement-fixtures";
 
 test("native final recovery disables tools while preserving selected model and answers the learner", async () => {
@@ -13,8 +15,33 @@ test("native final recovery disables tools while preserving selected model and a
       }
       return { text: "", calls: [{ id: "invalid", name: "unknown_tool", arguments: {} }], assistantTurn: null, usage: null };
     } });
-  const result = await request({ provider: "openai", model: "selected-teacher", customBaseUrl: "" }, "key",
+  const result = await request({ ...settingsForProvider("openai"), model: "selected-teacher" }, "key",
     [{ id: "user", role: "user", content: "What is four factorial?", createdAt: 1 }],
     { tools: [{ name: "workspace_inspect", description: "Read", parameters: { type: "object", properties: {} } }] });
   expect(calls).toBe(3); expect(result.text).toBe("Four factorial is 24."); expect(result.calls).toEqual([]);
+});
+
+test.each([429, 503])("native classroom attributes a tutor HTTP %i using the response status and keeps the provider body private", async status => {
+  let tutorRequests = 0;
+  let judgeRequests = 0;
+  const request = createMobileTeachingDraftRound({
+    current: () => true, evidence: async () => EMPTY_LEARNER_DATA, onReleased() {},
+    judge: async (input, signal) => {
+      judgeRequests++;
+      const outcome = await acceptingTeachingJudge(input, signal);
+      return outcome.ok ? { ...outcome, response: { ...outcome.response,
+        backend: { backend: "system-one", model: "jev-fixture", calibrationSha256: null } } } : outcome;
+    },
+  });
+  const result = await request(settingsForProvider("minimax"), "fixture",
+    [{ id: "learner", role: "user", content: "Can I predict what happens?", createdAt: 1 }], {
+      fetchImpl: async () => {
+        tutorRequests++;
+        const message = status === 429 ? "PRIVATE upstream detail" : "HTTP 429 is in this PRIVATE upstream detail";
+        return Response.json({error: { message }}, {status});
+      },
+    });
+  expect([tutorRequests, judgeRequests]).toEqual([4, 1]);
+  expect(result).toEqual({ text: status === 429 ? TUTOR_RATE_LIMIT_MESSAGE : MOBILE_WITHHELD_TEACHING_REPLY,
+    calls: [], assistantTurn: null, usage: null });
 });

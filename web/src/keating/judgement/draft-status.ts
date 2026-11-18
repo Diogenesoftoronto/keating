@@ -1,4 +1,4 @@
-import { INTERACTION_AFFORDANCES, INTERACTION_REASONS, TEACHING_INTERACTION_FEATURES, isOpenUiDiagnosticGateIssue, type PlanReview, type TeachingDraftInteraction, type TeachingDraftSnapshot } from "@keating/learner-contracts";
+import { INTERACTION_AFFORDANCES, INTERACTION_REASONS, TEACHING_INTERACTION_FEATURES, TUTOR_RATE_LIMIT_REASON, isOpenUiDiagnosticGateIssue, type PlanReview, type TeachingDraftInteraction, type TeachingDraftSnapshot } from "@keating/learner-contracts";
 import { recordDiagnostic } from "../../lib/diagnostics";
 import { recordedCodePracticeLanguage } from "../editable-code-language";
 import { STATE_SECTION_KEYS, type StateComposition, type TeachingDraftPhase } from "@keating/learner-contracts";
@@ -128,6 +128,7 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     ...(snapshot.stateHistory ? { stateHistory: snapshot.stateHistory.slice(-64).map(sample => ({ phase: safePhase(sample.phase), attempt: nonnegative(sample.attempt), elapsedMs: nonnegative(sample.elapsedMs), requestIndex: nonnegative(sample.requestIndex), state: projectState(sample.state) })) } : {}),
     attempts: snapshot.attempts.map(attempt => ({ attempt: attempt.attempt, reasoning: attempt.reasoning, standard: attempt.standard, variant: attempt.variant ?? "default",
       generationMs: attempt.generationMs, judgementMs: attempt.judgementMs, status: attempt.status,
+      ...(attempt.status === "generation-error" && attempt.generationFailure === TUTOR_RATE_LIMIT_REASON ? { generationFailure: TUTOR_RATE_LIMIT_REASON } : {}),
       ...(attempt.feedbackOnly === true ? { feedbackOnly: true as const } : {}),
       ...(attempt.predictionQuestionOnly === true ? { predictionQuestionOnly: true as const } : {}),
       ...projectSynthesisSources(attempt.synthesisSourceAttempts, attempt.attempt),

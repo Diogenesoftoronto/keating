@@ -43,6 +43,8 @@ export interface OpenUiDiagnosticTurn {
   /** Physical learner-turn index. Missing positions break exact delay measurement. */
   turnIndex: number;
   model: string | null;
+  /** Tutor selected when generation started in the final observed round. The provider may return a different identity or no reply. */
+  requestedModel?: string;
   mode: OpenUiDiagnosticMode;
   cue: OpenUiDiagnosticCue;
   reply: typeof REPLIES[number];
@@ -252,7 +254,7 @@ export function openUiMatchesTargets(components: readonly string[], targets: rea
   return targets.some(kind => kind === "any" ? actual.size > 0 : actual.has(kind === "question-group" ? "question" : kind));
 }
 
-const ROW_KEYS = ["schemaVersion", "conversationId", "turnId", "turnIndex", "model", "mode", "cue", "reply",
+const ROW_KEYS = ["schemaVersion", "conversationId", "turnId", "turnIndex", "model", "requestedModel", "mode", "cue", "reply",
   "attempted", "compiled", "selected", "rendered", "guidance", "experiment", "fit", "draftAttempts", "selection", "pairReviews", "finalComparison", "gateIssues", "decisionModel", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"];
 type RecordValue = Record<string, unknown>;
 function fields(value: unknown, allowed: readonly string[]): value is RecordValue {
@@ -337,6 +339,7 @@ export function isOpenUiDiagnosticTurn(value: unknown): value is OpenUiDiagnosti
     && (value.finalComparison === undefined || validOpenUiFinalComparison(value.finalComparison, value.pairReviews))
     && (value.draftAttempts === undefined || (Number.isSafeInteger(value.draftAttempts) && (value.draftAttempts as number) >= 0))
     && (value.decisionModel === undefined || value.decisionModel === null || identifier(value.decisionModel))
+    && (value.requestedModel === undefined || identifier(value.requestedModel))
     && (value.assessment === undefined || validAssessment(value.assessment, value.reply, value.selected))
     && (value.gateIssues === undefined || (Array.isArray(value.gateIssues) && value.gateIssues.length <= OPENUI_DIAGNOSTIC_GATE_ISSUES.length
       && value.gateIssues.every(id => typeof id === "string" && isOpenUiDiagnosticGateIssue(id)) && new Set(value.gateIssues).size === value.gateIssues.length))
@@ -361,7 +364,7 @@ const targetsSchema = stringList([...COMPONENTS, "any"]);
 const measuredComponents = { anyOf: [stringList(COMPONENTS), { type: "null" }] };
 const recordSchema = (properties: Record<string, unknown>, required: string[] = Object.keys(properties)) =>
   ({ type: "object", additionalProperties: false, required, properties });
-const requiredTurnKeys = ROW_KEYS.filter(k => !["fit", "experiment", "decisionModel", "draftAttempts", "selection", "pairReviews", "finalComparison", "gateIssues", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"].includes(k));
+const requiredTurnKeys = ROW_KEYS.filter(k => !["fit", "experiment", "requestedModel", "decisionModel", "draftAttempts", "selection", "pairReviews", "finalComparison", "gateIssues", "outsideWords", "nativePageRequested", "nativePage", "editableCode", "codingChallengeLanguages", "editorOutsideWords", "replyElapsedMs", "assessment"].includes(k));
 const cueSchema = {
   ...recordSchema({ kind: { enum: OPENUI_DIAGNOSTIC_CUES }, targets: stringList([...COMPONENTS, "any", "editable-code"]),
     repeat: { type: "boolean" }, codeLanguage: { enum: EDITABLE_CODE_LANGUAGES } }, ["kind", "targets"]),
@@ -374,6 +377,7 @@ const turnSchema = recordSchema({
   schemaVersion: { const: 1 }, conversationId: identifierSchema, turnId: identifierSchema,
   turnIndex: { type: "integer", minimum: 0, maximum: Number.MAX_SAFE_INTEGER },
   model: { anyOf: [identifierSchema, { type: "null" }] }, mode: { enum: OPENUI_DIAGNOSTIC_MODES }, cue: cueSchema,
+  requestedModel: identifierSchema,
   reply: { enum: REPLIES }, attempted: measuredBoolean, compiled: measuredComponents, selected: measuredComponents, rendered: measuredComponents,
   guidance: { anyOf: [{ type: "null" }, recordSchema({
     source: { enum: ["jev", "other", "unknown"] }, action: { enum: ["create", "continue", "grade-first", "none", "unknown"] },

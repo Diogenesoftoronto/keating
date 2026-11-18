@@ -83,21 +83,25 @@ describe("read-only Keating fleet diagnostics", () => {
     expect(output[0]!.selected).toEqual([]);
   });
   test("preserves measured zero and withheld duration, and reads both old events and saved pre-timing query results", () => {
-    const observed = query([snapshot(row(0, { replyElapsedMs: 0 }), 2), snapshot(row(1, { reply: "withheld", replyElapsedMs: 1234 }), 4),
+    const observed = query([snapshot(row(0, { replyElapsedMs: 0 }), 2), snapshot(row(1, { reply: "withheld", model:null, requestedModel:"minimax/requested-tutor", replyElapsedMs: 1234 }), 4),
       snapshot(row(2), 1, { properties: { reply_elapsed_ms: undefined } })]);
-    expect(observed.columns).toHaveLength(41);
+    expect(observed.columns).toHaveLength(42);
     const rows = openUiFleetExport(observed, scope).turns;
+    expect(rows[1]).toMatchObject({model:null, requestedModel:"minimax/requested-tutor"});
     expect(rows.map(r => r.replyElapsedMs)).toEqual([0, 1234, null]);
     expect(summarizeOpenUiDiagnostics(rows).overall.replyElapsedMs).toEqual({ observed: 2, unknown: 1, median: 617, p90: 1234 });
     const omit = (...fields: string[]) => ({ columns: observed.columns.filter(key => !fields.includes(key)),
       results: observed.results.map(r => r.filter((_, i) => !fields.includes(observed.columns[i]!))) });
-    const pairsOnly = omit("draft_final_comparison");
+    const beforeRequestedModel = omit("requested_model");
+    expect(beforeRequestedModel.columns).toHaveLength(41);
+    expect(openUiFleetExport(beforeRequestedModel, scope).turns.every(r => r.requestedModel === undefined)).toBe(true);
+    const pairsOnly = omit("requested_model", "draft_final_comparison");
     expect(pairsOnly.columns).toHaveLength(40);
     expect(openUiFleetExport(pairsOnly, scope).turns.every(r => r.finalComparison === undefined)).toBe(true);
-    const beforePairs = omit("draft_pair_reviews", "draft_final_comparison");
+    const beforePairs = omit("requested_model", "draft_pair_reviews", "draft_final_comparison");
     expect(beforePairs.columns).toHaveLength(39);
     expect(openUiFleetExport(beforePairs, scope).turns.every(r => r.pairReviews === undefined)).toBe(true);
-    const assessment = ["draft_final_comparison", "draft_pair_reviews", "assessment_opt_out", "assessment_checkpoints"];
+    const assessment = ["requested_model", "draft_final_comparison", "draft_pair_reviews", "assessment_opt_out", "assessment_checkpoints"];
     const beforeAssessment = omit(...assessment);
     expect(beforeAssessment.columns).toHaveLength(37);
     expect(openUiFleetExport(beforeAssessment, scope).turns.every(r => r.assessment === undefined)).toBe(true);

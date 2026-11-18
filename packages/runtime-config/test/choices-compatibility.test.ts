@@ -2,8 +2,15 @@
 import { expect, test } from "bun:test";
 import { DEFAULT_MODELS, LIVE_MODEL_CHOICES, MODEL_CHOICES } from "../src/index.js";
 import * as runtimeConfig from "../src/index.js";
+const minimaxSetup = [
+  { value: "MiniMax-M2.7-highspeed", label: "MiniMax M2.7 Highspeed" },
+  { value: "MiniMax-M3", label: "MiniMax-M3" },
+  { value: "MiniMax-M3.1-Flash", label: "MiniMax M3.1 Flash" },
+  { value: "custom", label: "Custom", hint: "Type a model name" },
+];
 const shipped = {
   "cliSetup": {
+    "minimax": minimaxSetup,
     "notorganic": [
       {
         "label": "Inkling 2 Small",
@@ -136,6 +143,7 @@ const shipped = {
     ]
   },
   "piSetup": {
+    "minimax": minimaxSetup,
     "zyphra": [
       {
         "label": "ZAYA1-8B",
@@ -385,7 +393,7 @@ test("role defaults drive menu, live recommendation and mobile fallback identiti
 test("provider, speech and judgement choice labels retain their shipped values", () => {
   expect(MODEL_CHOICES.piProviders).toEqual({
     zyphra: [{ value: "zyphra/ZAYA1-8B", label: "ZAYA1-8B" }],
-    minimax: [{ value: "MiniMax-M2.7-highspeed", label: "MiniMax M2.7 Highspeed" }, { value: "MiniMax-M3", label: "MiniMax-M3" }],
+    minimax: minimaxSetup.slice(0, 3),
   });
   expect(MODEL_CHOICES.webCompatibility.minimax).toEqual([
     { value: "MiniMax-M3", label: "MiniMax-M3" }, { value: "minimax-m2.7-highspeed", label: "MiniMax M2.7 Highspeed" },

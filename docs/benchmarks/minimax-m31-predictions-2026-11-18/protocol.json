@@ -1,0 +1,30 @@
+{
+  "study": "paired-flash-prediction",
+  "setting": "Local release-worktree Chromium classroom with live Jev and MiniMax",
+  "tutorModel": "MiniMax-M3.1-Flash",
+  "judgeModel": "jev-1.14.0",
+  "comparisonTutor": "MiniMax-M2.7-highspeed",
+  "criteria": "Repeat both earlier prediction prompts verbatim. Count each scheduled turn, visible actionable Questions, local submissions, withheld replies and provider failures.",
+  "priceSource": "https://www.minimax.io/blog/minimax-m31f",
+  "tutorTransport": "MiniMax OpenAI-compatible Chat Completions",
+  "cohort": [
+    {
+      "case": "paper-fold",
+      "learner": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has.",
+      "opportunity": "Provide a usable question or grouped question before revealing four layers. A native page can qualify separately only with evidence of an actual usable control. A prose question alone misses the interface target.",
+      "historicalReceipt": "docs/benchmarks/jev-paired-prediction-2026-11-18/paper-fold.json",
+      "historicalReceiptSha256": "e4106809f2fa8b1b124ac72ae374834b014dba02bd5c5bfa515a55d2eb8edc08",
+      "parentQuestionReceiptSha256": null
+    },
+    {
+      "case": "sock-draw",
+      "learner": "There are two blue socks and one yellow sock in a drawer. I’m going to draw one at random without looking. I’d like to guess which colour I’m more likely to pick before you explain.",
+      "opportunity": "Invite a guess about the more likely colour without revealing blue. Provide a visible learner-operable Question or equivalent native input. The known answer is blue because two of the three socks are blue.",
+      "historicalReceipt": "docs/benchmarks/jev-paired-prediction-2026-11-18/sock-draw.json",
+      "historicalReceiptSha256": "87b9a43422e91ae6923f152cd4f0d601e7561d62873701315fcf439f9ad96b66",
+      "parentQuestionReceiptSha256": null
+    }
+  ],
+  "questionAction": "On each released Question, select four layers for paper or blue for the sock draw. If the authored control takes text, enter the answer and its reason. Inspect the actual locally saved submission and grading state. Further inference is closed.",
+  "signal": "Four fresh tutor requests, two independently observed overlapping Jev comparisons, public text, selected/rendered controls and budget are recorded for each scheduled turn."
+}

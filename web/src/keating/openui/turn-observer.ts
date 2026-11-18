@@ -1,4 +1,4 @@
-import { INTERACTION_REASONS, type TeachingDraftSnapshot } from "@keating/learner-contracts";
+import { INTERACTION_REASONS, TUTOR_RATE_LIMIT_REASON, type TeachingDraftSnapshot } from "@keating/learner-contracts";
 import {
   classifyOpenUiCue, isOpenUiDiagnosticGateIssue, normalizeOpenUiComponent, observeAssessmentOptOut, projectOpenUiPairReviews, projectOpenUiFinalComparison, projectTeachingDraftSelection, type OpenUiDiagnosticTurn,
 } from "../../../../packages/learner-contracts/src/openui-diagnostic-turn";
@@ -82,6 +82,7 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
     beginRound() {
       const token = ++round;
       finalSelection = undefined;
+      delete row.requestedModel;
       delete row.pairReviews;
       delete row.finalComparison;
       const attemptTutors = new Map<number, string>();
@@ -96,6 +97,11 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
       row.gateIssues ??= [];
       row.decisionModel = null;
       return {
+        generationRequested(tutor: string) {
+          if (ended || token !== round) return;
+          const id = identity(tutor);
+          if (id) row.requestedModel = id;
+        },
         plan(snapshot: TeachingDraftSnapshot, reviewer: Reviewer | null) {
           if (ended || token !== round) return;
           const pairReviews = projectOpenUiPairReviews(snapshot.pairReviews);
@@ -108,6 +114,8 @@ function start(conversationId: string, turnIndex: number, learner: Message, mode
           row.draftAttempts = Math.max(row.draftAttempts ?? 0, completedAttempts + snapshot.attempt);
           row.gateIssues = union(row.gateIssues ?? [], snapshot.attempts.flatMap(item => item.checks.flatMap(check =>
             check.status !== "pass" && !check.applicability && isOpenUiDiagnosticGateIssue(check.id) ? [check.id] : [])));
+          if (snapshot.attempts.some(a => a.status === "generation-error" && a.generationFailure === TUTOR_RATE_LIMIT_REASON))
+            row.gateIssues = union(row.gateIssues, [TUTOR_RATE_LIMIT_REASON]);
           if (!snapshot.interaction || !reviewer) return;
           row.mode = "guided";
           row.decisionModel = identity(reviewer.model);

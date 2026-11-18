@@ -1,10 +1,11 @@
-import { MODEL_CHOICES, SERVICE_ENDPOINTS } from "../../packages/runtime-config/src/index.js";
+import { MINIMAX_M31_FLASH_PROFILE, MODEL_CHOICES, SERVICE_ENDPOINTS } from "../../packages/runtime-config/src/index.js";
 import { existsSync, statSync, readFileSync } from "node:fs";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn, spawnSync } from "node:child_process";
 import { homedir } from "node:os";
+import { FileAuthStorageBackend } from "@earendil-works/pi-coding-agent";
 
 import { DEFAULT_PI_PROVIDER, FALLBACK_PI_MODELS, type KeatingConfig, loadKeatingConfig, mergePiDefaultsWithOverrides } from "../core/config.js";
 import { ensureProjectScaffold } from "../core/project.js";
@@ -120,38 +121,52 @@ const MINIMAX_PI_PROVIDER = {
 		input: ["text"], contextWindow: 204_800, maxTokens: 32_768,
 		cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }
 	},
-    { id: MODEL_CHOICES.piProviders.minimax[1].value, name: MODEL_CHOICES.piProviders.minimax[1].label, reasoning: true }
+    { id: MODEL_CHOICES.piProviders.minimax[1].value, name: MODEL_CHOICES.piProviders.minimax[1].label, reasoning: true },
+    MINIMAX_M31_FLASH_PROFILE,
   ]
 } as const;
 
-const EXTRA_PI_PROVIDERS: Record<string, { envKey: string; provider: unknown }> = {
+type PiProviderRegistration = { baseUrl: string; api: string; models: readonly { id: string }[] };
+const EXTRA_PI_PROVIDERS: Record<string, { envKey: string; provider: PiProviderRegistration }> = {
   zyphra: { envKey: "ZYPHRA_API_KEY", provider: ZYPHRA_PI_PROVIDER },
   minimax: { envKey: "MINIMAX_API_KEY", provider: MINIMAX_PI_PROVIDER }
 };
 
 export async function syncExtraProviders(cwd: string, env: NodeJS.ProcessEnv): Promise<void> {
-  const active = Object.entries(EXTRA_PI_PROVIDERS).filter(([, entry]) => env[entry.envKey]);
-  if (active.length === 0) return;
-
-  const modelsPath = join(configDir(cwd), "models.json");
-  let existing: Record<string, unknown> = {};
-  try {
-    const raw = await readFile(modelsPath, "utf8");
-    const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      existing = parsed as Record<string, unknown>;
+  const storage = new FileAuthStorageBackend(join(configDir(cwd), "models.json"));
+  await storage.withLockAsync(async raw => {
+    // Keep hand-authored routes, credentials, model IDs and overrides. The
+    // metadata-only Flash row must already exist when a first-time /login
+    // refreshes the Pi client or the caller supplies a one-use --api-key.
+    let existing;
+    try {
+      existing = JSON.parse(raw ?? "{}");
+    } catch {
+      throw new Error("Invalid JSON in the Pi model configuration (models.json).");
     }
-  } catch {
-    existing = {};
-  }
-
-  const providers = { ...((existing.providers as Record<string, unknown>) ?? {}) };
-  for (const [name, entry] of active) {
-    providers[name] = entry.provider;
-  }
-  const merged = { ...existing, providers };
-  await mkdir(configDir(cwd), { recursive: true });
-  await writeFile(modelsPath, `${JSON.stringify(merged, null, 2)}\n`, "utf8");
+    if (!existing || typeof existing !== "object" || Array.isArray(existing)
+      || (existing.providers !== undefined && (!existing.providers || typeof existing.providers !== "object" || Array.isArray(existing.providers)))) {
+      throw new Error("Invalid Pi model configuration. Expected a providers object in models.json.");
+    }
+    const providers = { ...existing.providers };
+    for (const [name, { provider, envKey }] of Object.entries(EXTRA_PI_PROVIDERS)) {
+      if (!env[envKey] && name !== MINIMAX_M31_FLASH_PROFILE.provider) continue;
+      const previous = providers[name] ?? {};
+      if (typeof previous !== "object" || Array.isArray(previous) || (previous.models !== undefined && !Array.isArray(previous.models))) {
+        throw new Error(`Invalid Pi model configuration for ${name}.`);
+      }
+      // An explicitly different protocol or destination owns its own catalog.
+      if ((previous.api && previous.api !== provider.api)
+        || (previous.baseUrl && String(previous.baseUrl).replace(/\/+$/, "") !== provider.baseUrl)) continue;
+      const defaults = env[envKey] ? provider : { models: [MINIMAX_M31_FLASH_PROFILE] };
+      const previousModels: { id?: string }[] = previous.models ?? [];
+      const added = defaults.models.filter(model => !previousModels.some(prior => prior?.id === model.id));
+      providers[name] = { ...defaults, ...previous, models: [...previousModels, ...added] };
+    }
+    const merged = { ...existing, providers };
+    const next = JSON.stringify(merged) === JSON.stringify(existing) ? undefined : `${JSON.stringify(merged, null, 2)}\n`;
+    return { result: undefined, next };
+  });
 }
 
 async function syncPiSettings(cwd: string, config: KeatingConfig): Promise<void> {

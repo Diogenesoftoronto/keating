@@ -11,6 +11,7 @@ const SETUP_PROVIDERS: SetupChoice[] = [
   { label: "Google", value: "google", hint: "Gemini models" },
   { label: "OpenAI", value: "openai" },
   { label: "Anthropic", value: "anthropic" },
+  { label: "MiniMax", value: "minimax" },
   { label: "Custom", value: "custom", hint: "Type a provider name" }
 ];
 

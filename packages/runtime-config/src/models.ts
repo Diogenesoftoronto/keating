@@ -1,5 +1,6 @@
 /** Public model roles and ordered choices. Platform adapters supply environment and user overrides. */
 import { MODEL_IDS } from "./model-identities.js";
+import { SERVICE_ENDPOINTS } from "./services.js";
 export type { RuntimeModelId } from "./model-identities.js";
 
 /** Intentional platform differences are independent defaults, not accidental drift. */
@@ -60,6 +61,29 @@ export const GPT_6_LUNA_PROFILE = {
   },
 };
 
+/** MiniMax's direct Chat Completions API uses automatic caching and always-on reasoning.
+ * https://platform.minimax.io/docs/api-reference/text-chat-openai.md
+ * https://www.minimax.io/blog/minimax-m31f
+ */
+export const MINIMAX_M31_FLASH_PROFILE = {
+  id: MODEL_IDS.minimax_m3_1_flash,
+  name: "MiniMax M3.1 Flash",
+  provider: "minimax" as const,
+  api: "openai-completions" as const,
+  baseUrl: SERVICE_ENDPOINTS.minimax,
+  reasoning: true,
+  thinkingLevelMap: { off: null, minimal: "low", low: "low", medium: "medium", high: "high", xhigh: "xhigh", max: "max" },
+  input: ["text", "image"] as ("text" | "image")[],
+  contextWindow: 1_000_000,
+  maxTokens: 524_288,
+  cost: { input: 0.15, output: 0.60, cacheRead: 0.015, cacheWrite: 0 },
+  compat: {
+    supportsDeveloperRole: false, supportsReasoningEffort: true, supportsStore: false,
+    supportsStrictMode: false, supportsLongCacheRetention: false,
+    maxTokensField: "max_completion_tokens" as const,
+  },
+};
+
 /** Discovery preferences; provider catalogs still own availability and metadata. */
 export const MODEL_PREFERENCES = {
   webChat: {
@@ -94,6 +118,8 @@ export const IMAGE_MODEL_IDS = {
 
 /** Labels follow the selected role ID; changing a default cannot leave a stale consumer label. */
 const SETUP_MODEL_LABELS: Record<string, string> = {
+  [MODEL_IDS.minimax_m2_7_highspeed]: "MiniMax M2.7 Highspeed",
+  [MINIMAX_M31_FLASH_PROFILE.id]: MINIMAX_M31_FLASH_PROFILE.name,
   [MODEL_IDS.balanced]: "Balanced",
   [MODEL_IDS.inkling_2_small]: "Inkling 2 Small",
   [MODEL_IDS.zyphra_zaya1_8b]: "ZAYA1-8B",
@@ -155,9 +181,14 @@ const PI_PROVIDER_LABELS: Record<string, string> = {
   [MODEL_IDS.zyphra_zaya1_8b]: "ZAYA1-8B", [MODEL_IDS.minimax_m2_7_highspeed]: "MiniMax M2.7 Highspeed",
   [MODEL_IDS.minimax_m3]: MODEL_IDS.minimax_m3,
 };
+const minimaxSetupChoices = menu([
+  setupChoice(DEFAULT_MODELS.cli.minimax), setupChoice(MODEL_IDS.minimax_m3),
+  setupChoice(MINIMAX_M31_FLASH_PROFILE.id), setupChoice("custom", "Type a model name"),
+]);
 /** Ordered surface/provider menus. Their first entries use that surface's default role. */
 export const MODEL_CHOICES = {
   cliSetup: {
+    minimax: minimaxSetupChoices,
     notorganic: menu([
       setupChoice(DEFAULT_MODELS.cli.notorganic, "Five-minute device-bound capability"),
     ]),
@@ -199,6 +230,7 @@ export const MODEL_CHOICES = {
     ]),
   },
   piSetup: {
+    minimax: minimaxSetupChoices,
     zyphra: menu([
       setupChoice(DEFAULT_MODELS.cli.zyphra, "Recommended"),
       setupChoice("custom", "Type a model name"),
@@ -242,6 +274,7 @@ export const MODEL_CHOICES = {
     minimax: [
       { value: DEFAULT_MODELS.cli.minimax, label: PI_PROVIDER_LABELS[DEFAULT_MODELS.cli.minimax] ?? DEFAULT_MODELS.cli.minimax },
       { value: MODEL_IDS.minimax_m3, label: MODEL_IDS.minimax_m3 },
+      { value: MINIMAX_M31_FLASH_PROFILE.id, label: MINIMAX_M31_FLASH_PROFILE.name },
     ],
   },
   webCompatibility: {

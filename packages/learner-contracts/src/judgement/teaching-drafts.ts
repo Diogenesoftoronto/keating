@@ -22,6 +22,7 @@ import type { TeachingDraftSelectionRule } from "./teaching-selection.js";
 import type { TeachingDraftPairReview } from "./teaching-drafts/pair-review.js";
 
 export type { TeachingDraftPairReview } from "./teaching-drafts/pair-review.js";
+export { isTutorRateLimit, TUTOR_RATE_LIMIT_MESSAGE, TUTOR_RATE_LIMIT_REASON } from "./teaching-drafts/generation-failure.js";
 
 export type TeachingDraftReasoning = "off" | "low" | "medium" | "high";
 export type TeachingDraftStandard = "concise" | "supported" | "deep";
@@ -36,6 +37,8 @@ export interface TeachingDraftFeedback {
   readonly instruction: string;
 }
 export interface TeachingDraftAttempt {
+  /** Present only on a failed tutor transport when the provider's rate limit was observed. */
+  readonly generationFailure?: "generation-rate-limited";
   /** This candidate was explicitly written as a visible reply to the existing ungraded question. */
   readonly feedbackOnly?: true;
   /** This candidate was asked to collect the learner's next answer in one OpenUI Question. */

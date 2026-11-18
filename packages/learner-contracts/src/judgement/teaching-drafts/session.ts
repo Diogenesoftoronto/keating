@@ -31,6 +31,7 @@ import { debuggingExerciseQuestions, offersNewCodePractice, readDebuggingExercis
 import { scopeDebuggingExpectedOutput } from "../debugging-expected-output.js";
 import { proveDebuggingExample, provenDebuggingFailures } from "../debugging-example-proof.js";
 import { nominateTeachingDraftPairs, observedPairCandidateIssues, reviewTeachingDraftPair, type TeachingDraftPair, type TeachingDraftPairReview } from "./pair-review.js";
+import { isTutorRateLimit, TUTOR_RATE_LIMIT_REASON } from "./generation-failure.js";
 
 interface DraftContext<T> {
   backgroundPolicy: BackgroundActivityPolicy | null;
@@ -494,9 +495,11 @@ export class TeachingDraftSession<T> {
         ...(provenance.predictionQuestionOnly ? { predictionQuestionOnly: true as const } : {}),
         feedback: structuredClone(feedback),
         ...(textOnlyRecovery ? { textOnlyRecovery: true as const } : {}), ...(synthesis ? { synthesis: structuredClone(synthesis) } : {}), signal: this.context.controller.signal })));
-    } catch {
+    } catch (error) {
       if (this.context.controller.signal.aborted && !this.pairReviews) throw new Error("draft-interrupted");
-      this.context.attempts.push({ attempt: step.attempt, reasoning: this.context.reasoning, standard: this.context.standard, generationMs: this.context.now() - started, judgementMs: 0, status: "generation-error", checks: [], variant, ...provenance });
+      this.context.attempts.push({ attempt: step.attempt, reasoning: this.context.reasoning, standard: this.context.standard,
+        generationMs: this.context.now() - started, judgementMs: 0, status: "generation-error", checks: [], variant, ...provenance,
+        ...(isTutorRateLimit(error) ? { generationFailure: TUTOR_RATE_LIMIT_REASON } : {}) });
       step.reason = "generation-unavailable";
       return null;
     }
@@ -615,7 +618,9 @@ export class TeachingDraftSession<T> {
         this.context.reason = "best-effort-draft";
         return this.result("released", best.value, best.reply);
       }
-      this.context.reason = this.context.reason ?? "no-approved-draft"; return this.result("withheld");
+      const allRateLimited = this.context.attempts.length > 0 && this.context.attempts.every(attempt => attempt.generationFailure === TUTOR_RATE_LIMIT_REASON);
+      this.context.reason = allRateLimited ? TUTOR_RATE_LIMIT_REASON : this.context.reason ?? "no-approved-draft";
+      return this.result("withheld");
     }
     this.publish("selecting");
     // Keep the full turn and complete candidates. When their combination exceeds

@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import {
+  BUILT_IN_MODEL_CATALOG,
   catalogSections,
   filterCatalogModels,
   isCatalogModel,
   isNativeTransportCompatible,
+  mergeCatalogModels,
   LONG_CONTEXT_THRESHOLD,
   NATIVE_PROVIDER_TRANSPORT,
   modelReasoningLevels,
@@ -14,6 +16,7 @@ import {
   selectedProviderSettings,
 } from "../src/lib/model-catalog";
 import type { ProviderSettings } from "../src/lib/types";
+import { DEFAULT_PROVIDER_SETTINGS, providerDefinition, settingsForProvider } from "../src/lib/provider-config";
 
 const payload = {
   openai: {
@@ -59,6 +62,31 @@ const payload = {
 };
 
 describe("models.dev mobile catalog", () => {
+  test("selects direct MiniMax from the bundled or refreshed picker, repairs the stale discovery-only row, and retains other provider settings", () => {
+    const id = "MiniMax-M3.1-Flash";
+    const original = settingsForProvider("openai");
+    const bundled = BUILT_IN_MODEL_CATALOG.find(model => model.key === `minimax::${id}`)!;
+    const stale = { ...bundled, nativeProvider: null, transport: null, callable: false,
+      source: "models.dev", unavailabilityReason: "No native transport", recoveryHint: "custom-or-router" };
+    expect([stale].filter(isCatalogModel)).toHaveLength(0);
+    const refreshed = parseModelsDevCatalog({ minimax: { name: "MiniMax", models: {
+      [id]: { id, name: "Older catalog label", reasoning: false },
+      "unverified-model": { modalities: { input: ["text"], output: ["text"] }, limit: { context: 8192 } },
+    } } });
+    expect(refreshed.find(row => row.id === "unverified-model")?.callable).toBe(false);
+    const available = mergeCatalogModels(BUILT_IN_MODEL_CATALOG, refreshed);
+    const exact = available.filter(row => row.key === `minimax::${id}`);
+    expect(exact).toEqual([bundled]);
+    expect(isCatalogModel(bundled)).toBe(true);
+    const selected = selectedProviderSettings(original, exact[0]!);
+    expect(selected).toEqual({ provider: "minimax", model: id, baseUrl: "https://api.minimax.io/v1", temperature: original.temperature });
+    expect(providerDefinition(selected.provider).requiresKey).toBe(true);
+    expect(modelSupportsToolCalls(available, selected)).toBe(true);
+    expect(modelSupportsTemperature(available, selected)).toBe(false);
+    expect(resolveModelReasoningLevel(available, selected, "off")).toBe("low");
+    expect(selectedProviderSettings(selected, available.find(row => row.provider === original.provider && row.id === original.model)!)).toEqual(original);
+    expect(DEFAULT_PROVIDER_SETTINGS).toEqual(original);
+  });
   test("keeps every validated provider/model result discoverable with explicit native callability", () => {
     const models = parseModelsDevCatalog(payload);
     expect(models).toHaveLength(4);
@@ -123,6 +151,7 @@ describe("models.dev mobile catalog", () => {
       anthropic: "anthropic-messages",
       google: "google-generative-ai",
       openrouter: "openai-chat-completions",
+      minimax: "openai-chat-completions",
       custom: "openai-chat-completions",
     });
     expect(isNativeTransportCompatible("openai", "gpt-5.6-luna")).toBe(true);

@@ -8,6 +8,13 @@ import {
 } from "../src/index.js";
 
 const question = { kind: "implicit-action", targets: ["question"] } as const;
+test("a tutor filter includes an observed request without inventing a completed response", () => {
+  const id = "minimax/requested-tutor";
+  const missing = turn(0, {model:null, requestedModel:id, reply:"withheld", selected:[]});
+  const archived = turn(1, {model:null, reply:"withheld", selected:[]});
+  expect(queryOpenUiDiagnosticTurns([missing,archived], {view:"withheld", model:id})).toMatchObject({matchingTurns:1, turns:[missing]});
+  expect(() => parseOpenUiDiagnosticExport([{...missing, requestedModel:"unbounded learner prose"}])).toThrow("Invalid OpenUI");
+});
 const direct = { kind: "direct-text", targets: [] } as const;
 function turn(index: number, fields: Partial<OpenUiDiagnosticTurn> = {}): OpenUiDiagnosticTurn {
   return { schemaVersion: 1, conversationId: "a", turnId: "t" + index, turnIndex: index, model: "tutor-1", mode: "guided",

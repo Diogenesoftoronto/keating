@@ -9,6 +9,7 @@ import { OPENUI_TURN_VIEWS, OpenUiUsageView, type ObservationStage, type OpenUiT
 import "./openui-diagnostics.css";
 
 const recordings = {
+  "flash-prediction": { label: "MiniMax M3.1 Flash · two predictions", stage: "rendered", load: () => import("../../keating/openui/examples/flash-prediction.json") },
   "jev-pairs-review": { label: "Jev pair reviews · reconstructed final decisions", stage: "rendered", load: () => import("../../keating/openui/examples/jev-pairs-review.json") },
   "jev-pairs-prediction": { label: "Jev pair reviews · two predictions", stage: "rendered", load: () => import("../../keating/openui/examples/jev-pairs-prediction.json") },
   "jev-pairs": { label: "Jev pair reviews · five classroom turns", stage: "rendered", load: () => import("../../keating/openui/examples/jev-pairs.json") },
@@ -49,6 +50,7 @@ export async function loadOpenUiRecordingLink(params: URLSearchParams, fallback?
 }
 const descriptions: Record<Source, string> = {
   "jev-pairs-review": "The paper and sock classroom turns with each draft’s review issues and the final Jev scores reconstructed from their saved provider records. The original browser exports are available under Two predictions.",
+  "flash-prediction": "Paper produced a free-text Question. All four sock generation requests returned HTTP 429. This example adds the requested tutor and the rate-limit finding from the saved provider requests to the original browser export.",
   "jev-pairs-prediction": "Two learners wanted to guess before hearing the explanation. Open a turn to see which drafts used the Question prompt and which answer reached the classroom.",
   "jev-pairs": "Two learners got feedback on the open tile question. Another used a train-speed slider. Inspect which alternatives reached the classroom and why the paper-fold prediction was withheld.",
   "jev-pairs-first": "Two MiniMax classroom replies with four private drafts per turn. The copper answer was published. All four drafts on the tile question failed their individual checks.",

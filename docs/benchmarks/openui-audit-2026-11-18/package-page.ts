@@ -84,7 +84,7 @@ const alongside = [
       .map(id=>"study/receipts/"+id+".json"),
   ].map(name=>"final-review/"+name),
 ];
-const recordings = ["november-audit", "policy-holdout", "decision-models", "terminal-episodes", "paired-benchmark", "policy-v2.2", "policy-v2.3","final-review","final-review-first","assessment-opt-out","jev-pairs-first","jev-pairs","jev-pairs-prediction","jev-pairs-review"];
+const recordings = ["november-audit", "policy-holdout", "decision-models", "terminal-episodes", "paired-benchmark", "policy-v2.2", "policy-v2.3","final-review","final-review-first","assessment-opt-out","jev-pairs-first","jev-pairs","jev-pairs-prediction","jev-pairs-review","flash-prediction"];
 if (!readFileSync(resolve(study,"final-review/assessment-opt-out/turns.json")).equals(readFileSync(resolve(study,"../../../web/src/keating/openui/examples/assessment-opt-out.json")))) {
   throw new Error("The Settings opt-out example must match the four measured simulation replies.");
 }
@@ -92,12 +92,17 @@ for (const [recording, folder] of [
   ["jev-pairs-first", "jev-parallel-pairs-2026-11-18"],
   ["jev-pairs", "jev-paired-feedback-2026-11-18"],
   ["jev-pairs-prediction", "jev-paired-prediction-2026-11-18"],
+  ["flash-prediction", "minimax-m31-predictions-2026-11-18"],
 ] as const) {
-  const measured = readFileSync(resolve(study, "..", folder, "settings-export.json"));
+  const measured = readFileSync(resolve(study, "..", folder, recording === "flash-prediction" ? "review-projection.json" : "settings-export.json"));
   const example = readFileSync(resolve(repository, "web/src/keating/openui/examples", recording + ".json"));
-  if (!measured.equals(example)) throw new Error("The Settings recording differs from the classroom export: " + recording);
+  if (!measured.equals(example)) throw new Error("The Settings recording differs from its source: " + recording);
 }
 const files = new Map<string, string>();
+for (const name of [
+  "summary.json", "protocol.json", "ledger.json", "settings-export.json", "review-projection.json", "production-window.json", "paper-fold.json", "sock-draw.json",
+  "paper-fold-classroom.png", "paper-fold-after-action.png", "sock-draw-classroom.png",
+]) files.set(resolve(study, "../minimax-m31-predictions-2026-11-18", name), "jev-pairs/minimax-flash/" + name);
 if (!readFileSync(resolve(study, "../jev-paired-prediction-2026-11-18/review-projection.json")).equals(
   readFileSync(resolve(repository, "web/src/keating/openui/examples/jev-pairs-review.json")),
 )) throw new Error("The reconstructed review example must match the verified offline projection.");

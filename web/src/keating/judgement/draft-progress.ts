@@ -4,7 +4,7 @@
  * developer review (what needs attention, where the time went, which checks
  * failed in which draft). Nothing here reads private draft text.
  */
-import { blocksRelease, type TeachingDraftSnapshot, type TeachingPolicyCheck } from "@keating/learner-contracts";
+import { blocksRelease, TUTOR_RATE_LIMIT_REASON, type TeachingDraftSnapshot, type TeachingPolicyCheck } from "@keating/learner-contracts";
 import { describeTeachingCheck } from "./check-descriptions";
 import { describeReviewCause } from "./draft-failure";
 
@@ -88,15 +88,17 @@ export function diagnoseDraft(snapshot: TeachingDraftSnapshot, elapsedMs = snaps
     findings.push({ tone: "blocked", title: `Withheld: ${reason || "unknown reason"}`,
       detail: cause ?? "No draft passed the blocking checks. The rows marked ✕ below are what stopped release.",
       ...(reason.startsWith("backend-") || reason === "review-unavailable" || reason === "request-invalid" ? { action: JUDGEMENT_SETTINGS }
-        : reason === "generation-unavailable" || reason === "time-budget" ? { action: MODEL_SETTINGS } : {}) });
+        : reason === TUTOR_RATE_LIMIT_REASON || reason === "generation-unavailable" || reason === "time-budget" ? { action: MODEL_SETTINGS } : {}) });
   }
   if (terminal && snapshot.phase !== "cancelled" && !snapshot.judgeModel)
     findings.push({ tone: "blocked", title: "No reviewer was dispatched", detail: "No judgement model handled this turn, so nothing was checked.", action: JUDGEMENT_SETTINGS });
 
   const generationErrors = snapshot.attempts.filter(attempt => attempt.status === "generation-error").length;
+  const rateLimited = snapshot.attempts.filter(attempt => attempt.generationFailure === TUTOR_RATE_LIMIT_REASON).length;
   if (generationErrors) findings.push({ tone: generationErrors === snapshot.attempts.length ? "blocked" : "caution",
     title: `${generationErrors} of ${snapshot.attempts.length} ${snapshot.attempts.length === 1 ? "draft" : "drafts"} failed to generate`,
-    detail: "The reply model errored before finishing. Check the provider connection, credits, or try another reply model.", action: MODEL_SETTINGS });
+    detail: rateLimited ? `The reply provider returned HTTP 429 for ${rateLimited} of these attempts.`
+      : "The reply model errored before finishing. Check the provider connection, credits, or try another reply model.", action: MODEL_SETTINGS });
 
   const reviewed = snapshot.attempts.filter(attempt => attempt.status !== "generation-error");
   for (const row of checkMatrix(snapshot).rows) {

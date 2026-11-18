@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { TUTOR_RATE_LIMIT_MESSAGE } from "@keating/learner-contracts";
 import { ShieldAlert, ShieldQuestion } from "lucide-react";
 import { css } from "../../styled-system/css";
 import type { ReviewNoticeKind } from "../keating/judgement/review-notice";
@@ -86,10 +87,11 @@ export function ReviewNoticeCard({ kind, children, reason }: { kind: ReviewNotic
 		);
 	}
 	const tip = reason?.trim() || WITHHELD_FALLBACK;
+	const label = tip === TUTOR_RATE_LIMIT_MESSAGE ? "Reply provider rate limit reached" : "Couldn't produce a reply";
 	return (
-		<span role="alert" aria-label={`Couldn't produce a reply. ${tip}`} tabIndex={0} className={withheldBadgeClass}>
+		<span role="alert" aria-label={`${label}. ${tip}`} tabIndex={0} className={withheldBadgeClass}>
 			<ShieldAlert size={14} aria-hidden />
-			<span aria-hidden>Couldn't produce a reply</span>
+			<span aria-hidden>{label}</span>
 			<span data-tip data-below aria-hidden className={tipClass}>{tip}</span>
 		</span>
 	);

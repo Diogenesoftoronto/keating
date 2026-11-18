@@ -17,11 +17,12 @@ import type {
   StudyArtifact,
 } from "../types";
 import { durableAgentEvents } from "../durable-agent-events";
+import { NATIVE_PROVIDER_IDS } from "../types";
 import { convertLegacyPersistedState } from "./legacy-migration";
 import { stableRelatedId } from "./ids";
 import type { LocalAttachmentLocation } from "./records";
 
-const NATIVE_PROVIDERS = new Set<ProviderId>(["openai", "anthropic", "google", "openrouter", "custom", "litert"]);
+const NATIVE_PROVIDERS = new Set<ProviderId>(NATIVE_PROVIDER_IDS);
 type PortableMessage = LearnerSession["messages"][number];
 type NativeMessage = Omit<PortableMessage, "role"> & { role: "user" | "assistant" };
 

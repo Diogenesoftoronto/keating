@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS, SERVICE_ENDPOINTS } from "@keating/runtime-config";
+import { DEFAULT_MODELS, MINIMAX_M31_FLASH_PROFILE, SERVICE_ENDPOINTS } from "@keating/runtime-config";
 import type { ProviderId, ProviderSettings } from "./types";
 import { OFFLINE_MODEL } from "./offline-model-contract";
 
@@ -50,6 +50,14 @@ export const PROVIDERS: readonly ProviderDefinition[] = [
     description: "Models routed through OpenRouter",
     defaultModel: DEFAULT_MODELS.mobile.openrouter,
     defaultBaseUrl: SERVICE_ENDPOINTS.openrouter,
+    requiresKey: true,
+  },
+  {
+    id: "minimax",
+    label: "MiniMax",
+    description: "Direct MiniMax chat models",
+    defaultModel: MINIMAX_M31_FLASH_PROFILE.id,
+    defaultBaseUrl: MINIMAX_M31_FLASH_PROFILE.baseUrl,
     requiresKey: true,
   },
   {
