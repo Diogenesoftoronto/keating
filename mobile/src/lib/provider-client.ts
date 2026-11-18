@@ -1,4 +1,4 @@
-import { API_VERSIONS } from "@keating/runtime-config";
+import { API_VERSIONS, MINIMAX_M31_FLASH_PROFILE } from "@keating/runtime-config";
 import {
   anthropicMaxTokens,
   anthropicThinkingBudget,
@@ -55,7 +55,7 @@ export type ProviderToolContinuation =
   | { provider: "openai"; previousResponseId: string; results: ProviderToolResult[] }
   | { provider: "anthropic"; exchanges: Array<{ assistantContent: Array<Record<string, unknown>>; results: ProviderToolResult[] }> }
   | { provider: "google"; exchanges: Array<{ modelContent: Record<string, unknown>; results: ProviderToolResult[] }> }
-  | { provider: "openrouter" | "custom"; exchanges: Array<{ assistantMessage: Record<string, unknown>; results: ProviderToolResult[] }> };
+  | { provider: "openrouter" | "minimax" | "custom"; exchanges: Array<{ assistantMessage: Record<string, unknown>; results: ProviderToolResult[] }> };
 
 const MAX_HISTORY_MESSAGES = 40;
 
@@ -341,7 +341,7 @@ export function buildProviderRequest(
     stream = false,
     systemPrompt = KEATING_MOBILE_SYSTEM_PROMPT,
     reasoningLevel = "off",
-    supportsTemperature = settings.provider !== "openai",
+    supportsTemperature = settings.provider !== "openai" && settings.provider !== "minimax",
     tools = [],
     continuation,
   } = options;
@@ -485,9 +485,12 @@ export function buildProviderRequest(
     };
   }
 
+  const directMiniMax = settings.provider === MINIMAX_M31_FLASH_PROFILE.provider;
   const chatEffort = settings.provider === "openrouter"
     ? openRouterReasoningEffort(reasoningLevel)
-    : openAiReasoningEffort(reasoningLevel);
+    : directMiniMax
+      ? MINIMAX_M31_FLASH_PROFILE.thinkingLevelMap[reasoningLevel]
+      : openAiReasoningEffort(reasoningLevel);
   if (apiKey) commonHeaders.Authorization = `Bearer ${apiKey}`;
   if (settings.provider === "openrouter") {
     commonHeaders["HTTP-Referer"] = "https://keating.help";
@@ -495,7 +498,7 @@ export function buildProviderRequest(
   }
 
   return {
-    url: openAiChatUrl(settings.baseUrl),
+    url: openAiChatUrl(directMiniMax ? MINIMAX_M31_FLASH_PROFILE.baseUrl : settings.baseUrl),
     init: {
       method: "POST",
       headers: commonHeaders,
@@ -503,6 +506,8 @@ export function buildProviderRequest(
       body: JSON.stringify({
         model: settings.model,
         ...(supportsTemperature ? { temperature: settings.temperature } : {}),
+        ...(directMiniMax ? { max_completion_tokens: 4096 } : {}),
+        ...(directMiniMax && stream ? { stream_options: { include_usage: true } } : {}),
         ...(chatEffort
           ? settings.provider === "openrouter"
             ? { reasoning: { effort: chatEffort } }
@@ -512,7 +517,7 @@ export function buildProviderRequest(
         messages: [
           { role: "system", content: systemPrompt },
           ...chatHistoryMessages(history, tools.length > 0, settings.provider === "openrouter"),
-          ...(continuation && (continuation.provider === "openrouter" || continuation.provider === "custom") ? continuation.exchanges.flatMap((exchange) => [
+          ...(continuation && continuation.provider === settings.provider ? continuation.exchanges.flatMap((exchange) => [
             exchange.assistantMessage,
             ...exchange.results.map((result) => ({
               role: "tool",
@@ -691,7 +696,7 @@ export type ProviderAssistantTurn =
   | { provider: "openai"; previousResponseId: string }
   | { provider: "anthropic"; assistantContent: Array<Record<string, unknown>> }
   | { provider: "google"; modelContent: Record<string, unknown> }
-  | { provider: "openrouter" | "custom"; assistantMessage: Record<string, unknown> };
+  | { provider: "openrouter" | "minimax" | "custom"; assistantMessage: Record<string, unknown> };
 
 export interface ProviderRound {
   text: string;
@@ -954,14 +959,14 @@ export function extractStreamDelta(settings: ProviderSettings, data: string): st
 
 async function throwProviderError(response: Response): Promise<never> {
   const text = await response.text().catch(() => "");
-  let payload: unknown = {};
+  const fallback = `Provider request failed with HTTP ${response.status}.`;
+  let message: string;
   try {
-    payload = text ? JSON.parse(text) : {};
+    message = providerErrorMessage(text ? JSON.parse(text) : {}, fallback);
   } catch {
-    const plainText = boundedProviderText(text);
-    throw new Error(plainText || `Provider request failed with HTTP ${response.status}.`);
+    message = boundedProviderText(text) || fallback;
   }
-  throw new Error(providerErrorMessage(payload, `Provider request failed with HTTP ${response.status}.`));
+  throw Object.assign(new Error(message), { status: response.status });
 }
 
 export interface StreamCompletionOptions extends ProviderRequestOptions {
@@ -1043,12 +1048,14 @@ function streamedGooglePayload(payloads: readonly any[]): Record<string, unknown
   };
 }
 
-function streamedChatPayload(payloads: readonly any[], text: string): Record<string, unknown> {
+function streamedChatPayload(payloads: readonly any[], text: string, preserveReasoning: boolean): Record<string, unknown> {
   const toolCalls = new Map<string | number, Record<string, any>>();
+  let reasoningContent = "";
   let finishReason: string | undefined;
   let usage: Record<string, unknown> | undefined;
   for (const payload of payloads) {
     const choice = payload?.choices?.[0];
+    if (preserveReasoning && typeof choice?.delta?.reasoning_content === "string") reasoningContent += choice.delta.reasoning_content;
     for (const fragment of choice?.delta?.tool_calls ?? []) {
       const key = Number.isSafeInteger(fragment?.index) ? fragment.index : String(fragment?.id ?? toolCalls.size);
       const call = toolCalls.get(key) ?? { id: "", type: "function", function: { name: "", arguments: "" } };
@@ -1066,6 +1073,7 @@ function streamedChatPayload(payloads: readonly any[], text: string): Record<str
       message: {
         role: "assistant",
         content: text || null,
+        ...(reasoningContent ? { reasoning_content: reasoningContent } : {}),
         ...(toolCalls.size ? { tool_calls: [...toolCalls.values()] } : {}),
       },
       ...(finishReason ? { finish_reason: finishReason } : {}),
@@ -1105,7 +1113,7 @@ function streamedProviderRound(
   } else if (settings.provider === "google") {
     payload = streamedGooglePayload(payloads);
   } else {
-    payload = streamedChatPayload(payloads, visibleText);
+    payload = streamedChatPayload(payloads, visibleText, settings.provider === "minimax");
   }
   const round = extractProviderRound(settings, payload);
   return { ...round, text: visibleText.trim() || round.text, usage };
@@ -1305,20 +1313,13 @@ export async function requestProviderRound(
   const { fetchImpl = fetch, ...requestOptions } = options;
   const request = buildProviderRequest(settings, apiKey, messages, requestOptions);
   const response = await fetchImpl(request.url, request.init);
+  if (!response.ok) await throwProviderError(response);
   const responseText = await response.text();
   let payload: unknown = {};
   try {
     payload = responseText ? JSON.parse(responseText) : {};
   } catch {
-    if (!response.ok) {
-      const plainText = boundedProviderText(responseText);
-      throw new Error(plainText || `Provider request failed with HTTP ${response.status}.`);
-    }
     throw new Error("The provider returned an invalid JSON response.");
-  }
-
-  if (!response.ok) {
-    throw new Error(providerErrorMessage(payload, `Provider request failed with HTTP ${response.status}.`));
   }
   return extractProviderRound(settings, payload);
 }

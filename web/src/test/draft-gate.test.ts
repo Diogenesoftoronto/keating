@@ -2,6 +2,7 @@ import { afterEach, describe, expect, test } from "bun:test";
 import * as fc from "fast-check";
 import { getModels } from "@earendil-works/pi-ai/compat";
 import { hybridStreamFn } from "../hooks/keating-stream";
+import { resolveProviderWebSearchRoute } from "../keating/provider-web-search";
 import type { AgentOptions } from "@earendil-works/pi-agent-core";
 import {
   createAssistantMessageEventStream,
@@ -30,6 +31,7 @@ import operationalProtocolMarkdown from "../keating/prompts/operational-protocol
 import { configureJudgementDiagnostics, getJudgementDiagnostics, observeJudgementCaller } from "../keating/judgement/diagnostics";
 import type { WebJudgementRuntime } from "../keating/judgement/runtime";
 import { answerDraftGateReview as answer } from "./helpers/teaching-draft-judge";
+import { MemoryStorage } from "./helpers/memory-storage";
 import { presentationsFromAssistantText } from "../keating/judgement/active-work-host";
 import { registerQuestionSourceRow } from "../keating/judgement/previous-question-presentation";
 import { learningMessageId } from "../keating/learning-intelligence/source-navigation";
@@ -724,13 +726,26 @@ describe("private teaching draft stream", () => {
       return {ok:true,response:{...outcome.response,backend:{backend:"system-one",model:"jev-1.14.0",calibrationSha256:null},answers}};
     }});
     const location = Object.getOwnPropertyDescriptor(globalThis, "location");
+    const storage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    const originalHosted = process.env.VITE_NOTORGANIC_ENABLED;
+    const settings = new MemoryStorage();
+    settings.setItem("keating_ui_settings", JSON.stringify({webSearch:"auto"}));
     let result: AssistantMessage;
     try {
+      // A deployment with Not Organic configured routes search through Keating's client tool.
+      // Exercise Anthropic's own tool on this wire, even in the release-hook environment.
+      process.env.VITE_NOTORGANIC_ENABLED = "false";
+      Object.defineProperty(globalThis,"localStorage",{configurable:true,value:settings});
       Object.defineProperty(globalThis,"location",{configurable:true,value:new URL("http://127.0.0.1:9")});
+      expect(resolveProviderWebSearchRoute(model, true)).toMatchObject({kind:"native",tool:"anthropic-web-search"});
       const streamOptions = {apiKey:"test-key",fetch:fakeFetch,maxRetries:0};
       result = await (await realGate(model,input,streamOptions)).result();
       await (await realGate(model,fresh,streamOptions)).result();
     } finally {
+      if (originalHosted === undefined) delete process.env.VITE_NOTORGANIC_ENABLED;
+      else process.env.VITE_NOTORGANIC_ENABLED = originalHosted;
+      if (storage) Object.defineProperty(globalThis,"localStorage",storage);
+      else Reflect.deleteProperty(globalThis,"localStorage");
       if (location) Object.defineProperty(globalThis,"location",location);
       else Reflect.deleteProperty(globalThis,"location");
     }

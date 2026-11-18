@@ -107,6 +107,9 @@
   details { margin: 0 0 1rem; }
   summary { cursor: pointer; font-size: .9375rem; font-weight: 600; }
   details > :not(summary) { margin-top: .6rem; }
+  .later { margin-top: 3rem; padding-top: .5rem; border-top: 3px double var(--rule); }
+  .later h2 { margin-top: .75rem; }
+  .panel.shown { display: block; margin: 0 0 1rem; }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   }
@@ -126,6 +129,7 @@
       <li><a href="../diagnostics.html?source=jev-pairs&amp;view=pair-reviews">Inspect the five turns</a></li>
       <li><a href="../diagnostics.html?source=jev-pairs-prediction&amp;view=pair-reviews">Inspect the two predictions</a></li>
       <li><a href="summary.json">Download results</a></li>
+      <li><a href="#later">Later model comparison</a></li>
       <li><a href="../final-review/report.html">Earlier report</a></li>
     </ul>
   </nav>
@@ -342,7 +346,7 @@
       <p>The pairing was run with Jev only. The controlled results for Gemini Decision are unchanged and remain in the <a href="../final-review/report.html">earlier report</a>.</p>
       <p>The focused requests in these recordings carried zero tools. A replay of the five archived turns under v2.4.1 routing sent no provider requests and reproduced the same five outcomes, including the withheld paper turn. That turn needed fresh drafts. <a href="prediction/offline-routing.json">Offline routing check</a></p>
       <p>Two related fixes shipped with offline tests only. The real provider SDK had been adding an auxiliary search tool back onto focused requests, and mobile now keeps the identity of a saved Question.</p>
-      <p>Usage across the whole study is estimated at US$3.137837464 of the US$10 authorized, using the provider’s recorded tokens. <a href="first-classroom-ledger.json">First two turns</a> · <a href="ledger.json">Five classroom turns</a> · <a href="prediction/ledger.json">Two predictions</a></p>
+      <p>Usage through these nine M2.7 turns and the earlier study is estimated at US$3.137837464 of the US$10 authorized, using the provider’s recorded tokens. The <a href="#later">later model comparison</a> states its own addition. <a href="first-classroom-ledger.json">First two turns</a> · <a href="ledger.json">Five classroom turns</a> · <a href="prediction/ledger.json">Two predictions</a></p>
     </details>
     <details>
       <summary>The withheld paper turn, as the learner saw it</summary>
@@ -353,8 +357,48 @@
     </details>
   </section>
 
+  <section class="later" aria-labelledby="later">
+    <span class="label">Added later · 18 November 2026 · separate from the nine turns above</span>
+    <h2 id="later">The two prediction prompts with MiniMax M3.1 Flash</h2>
+    <p>Two fresh classroom turns repeated the paper and sock prompts word for word with MiniMax-M3.1-Flash as tutor, called through MiniMax’s Chat Completions API. Jev 1.14.0, the policy and the local Chromium classroom were the same. The counts, findings and cost in the sections above cover only the nine M2.7 turns.</p>
+    <div class="wide">
+      <table>
+        <caption>One turn per prompt</caption>
+        <thead><tr><th scope="col">Prompt</th><th scope="col">Tutor calls</th><th scope="col">Learner saw</th><th scope="col">Wait</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Paper layers</th><td>4 completed, each reporting MiniMax-M3.1-Flash</td><td>A Question with one free-text field and no words around it. <a href="minimax-flash/paper-fold-classroom.png">Screen</a></td><td class="num">22.8 s</td></tr>
+          <tr><th scope="row">Sock colour</th><td class="flag">4 returned HTTP 429, with no usage</td><td class="flag">“Couldn’t produce a reply”. No draft, no review, no pair comparison, no interface.</td><td class="num">4.4 s</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel shown ui">
+      <p class="said"><span class="label">Paper layers · M3.1 Flash</span>“Before you tell me, I’d like to guess how many layers it has.”</p>
+      <div class="pairs">
+        <div><span class="label">Pair 1</span><ul>
+          <li class="draft held"><b>Draft 1 · ordinary</b><span class="v">Not eligible · progress 0.90, scope 0.75</span></li>
+          <li class="draft"><b>Draft 2 · Question only</b><span class="v">Passed · one free-text field</span><span class="chip">Jev preferred, 0.87</span><span class="chip">Advanced</span></li>
+        </ul></div>
+        <div><span class="label">Pair 2</span><ul>
+          <li class="draft"><b>Draft 3 · ordinary</b><span class="v">Passed</span><span class="chip">Jev preferred, 0.71</span><span class="chip">Advanced</span></li>
+          <li class="draft"><b>Draft 4 · Question only</b><span class="v">Passed</span></li>
+        </ul></div>
+      </div>
+      <div class="end">
+        <p><strong>Final comparison: Question-only draft 2 over ordinary draft 3, 0.59 to 0.41, confidence 0.18.</strong></p>
+        <p>The two pair requests were in flight together for 68 ms. The script typed “Four layers. The second fold doubles the two layers.” and submitted. The answer was saved on the device, with grading pending.</p>
+        <p><a href="minimax-flash/paper-fold.json">Receipt</a> · <a href="minimax-flash/ledger.json">Ledger, with the final scores</a> · <a href="../diagnostics.html?source=flash-prediction&amp;view=pair-reviews">Both turns in the inspector</a></p>
+      </div>
+    </div>
+    <p>The sock turn cannot be scored for tutor ability, because the provider refused all four requests before any text was written. In Settings its pair rows read “Neither draft completed.” <a href="minimax-flash/sock-draw.json">Receipt</a></p>
+    <p>On these two prompts M2.7 rendered a Question on 2 of 2, in the separate earlier run under the same policy. M3.1 Flash delivered a Question on 1 of 2, and on 1 of 1 where its tutor generation completed. One turn per prompt, with one lost to a rate limit, is insufficient to rank the two models.</p>
+    <p>This phase is bounded at US$0.650047168. That is US$0.010047168 from recorded usage plus US$0.64 retained for the four unmetered 429 requests. The cumulative study bound becomes US$3.787884632 of the US$10 authorized. It is an estimate and no invoice was available. <a href="minimax-flash/summary.json">Results</a> · <a href="minimax-flash/ledger.json">Request and cost ledger</a></p>
+  </section>
+
+  <p>The MiniMax inspector example adds the requested tutor and the four confirmed rate-limit responses from the saved request ledger. Filtering by tutor now keeps the failed sock turn in view. Its observed tutor remains unknown. <a href="minimax-flash/settings-export.json">Original browser export</a> · <a href="minimax-flash/review-projection.json">Reconstructed inspector data</a></p>
+
   <footer>
-    <p>Nine synthetic classroom turns across three runs on one day. They show how the four-draft review behaved on these prompts. They are not a production rate and not evidence that anyone learned more. <a href="protocol.json">Registered prompts</a> · <a href="prediction/protocol.json">Prediction prompts</a> · <a href="../index.html">The full study</a></p>
+    <p>The production analytics check counted zero recorded tutor turns on the two public hosts for versions 4.2.0–4.2.2 between 11 November and 18 November at 22:45 UTC. A real-learner interface rate is unavailable for that window. <a href="minimax-flash/production-window.json">Production query and counts</a></p>
+    <p>Nine synthetic classroom turns across three runs on one day, and two later turns with a second tutor model reported separately. They show how the four-draft review behaved on these prompts. They are not a production rate and not evidence that anyone learned more. <a href="protocol.json">Registered prompts</a> · <a href="prediction/protocol.json">Prediction prompts</a> · <a href="../index.html">The full study</a></p>
   </footer>
 </main>
 </body>

@@ -1,0 +1,1957 @@
+{
+  "version": 1,
+  "source": {
+    "gitHead": "04a9af1f4c71668f0b510a0311cf629d411a9004",
+    "files": {
+      "packages/learner-contracts/src/judgement/active-work.ts": "f84de9a2a1e67cf3415483a9f3ffefef13b75bd59210110cc22673b0d72f766a",
+      "packages/learner-contracts/src/judgement/activity-learning.ts": "8707ca0e6160ca6e680f1378a2cafc7b2348b9d92bc5f3c6966da85b897ed424",
+      "packages/learner-contracts/src/judgement/activity-observations.ts": "0db9ca4f9af6f86e80526ac8b274fcc99dee04928d1418fcb09ba55f1aadb488",
+      "packages/learner-contracts/src/judgement/assessment-opt-out.ts": "0ce71cbab81d4641e222d3cd4d1055e468da57a0a35ced4a23d6831033b4e1d3",
+      "packages/learner-contracts/src/judgement/assessment.ts": "6a329e337bf3bc491f8452a8a5692608e35c1888f29adf9fe6f8cfec32feb6e5",
+      "packages/learner-contracts/src/judgement/background-activity-guidance.ts": "6787074e9517f166b0d48b69622a62043c8b8afdfcc8038ae2f711c68c47b9c4",
+      "packages/learner-contracts/src/judgement/background-activity-policy.ts": "0e104e0c1ff3121822342fce02aa11e802ee4844e475347fa9627253a73065a2",
+      "packages/learner-contracts/src/judgement/boosting-artifact.ts": "3afc45f92934b0c46d0ca31deca9745b525eebc47b01ccd196cd8d4914a7ef9f",
+      "packages/learner-contracts/src/judgement/boosting.ts": "b20c6fe5acbb8f0edef6b16f2c880182405e7b8b75737325193c261019cf1d7d",
+      "packages/learner-contracts/src/judgement/calibration-artifact.ts": "d0c5f9da8f758effc681a7e4f3b3f35494941eb682d27b76392d37d307b5ef9a",
+      "packages/learner-contracts/src/judgement/code-practice-language.ts": "41b2b31fe29cb41289e54d5c3f30c37caae5a2da576eb828df07d21ac8b131c0",
+      "packages/learner-contracts/src/judgement/contracts.ts": "8c9e385adc6b45c8b90d80d8ecd9d221534e9ed858f7381cdc4209b8c4422991",
+      "packages/learner-contracts/src/judgement/debugging-example-proof.ts": "9a234aa767cb5ce2bc5e6ff2a0f4db40733ee0d60d76fe171c633c257ed2d5bb",
+      "packages/learner-contracts/src/judgement/debugging-exercise.ts": "9335a3ed3e01396a0e345dc53af6c4f22750ff1687da3c4657cc8fcb7fecf592",
+      "packages/learner-contracts/src/judgement/debugging-expected-output.ts": "61f4f256ee281e33fb53cdc87472578a8533890f2087b49effa6d09ff0e754fe",
+      "packages/learner-contracts/src/judgement/debugging-issue-ids.ts": "37d21ef0d8ac6cc47b7ca36f8d30f1b54b06ae989010fc9f08a793281141fdea",
+      "packages/learner-contracts/src/judgement/decision-policy-data.ts": "380b068bf52ce385ba22316ae264ff520107c21bf834e96a5013eb9789e5fe6a",
+      "packages/learner-contracts/src/judgement/decision-policy-fit.ts": "54eade5a08eb233247ac798d309c9e2911baa0b3e1d82df0130a7fa1d2a23ec0",
+      "packages/learner-contracts/src/judgement/domain-classification.ts": "84ba2d49296b68e0ba8a2e7c0b81076a521c0120ef166ba4433df506d7d41ac1",
+      "packages/learner-contracts/src/judgement/index.ts": "e059cd50ebd8ead3885618527ca2afd563f0e18126c04655960284a51ab0a442",
+      "packages/learner-contracts/src/judgement/interaction-affordances.ts": "a6a52d2a3f00d5764ca19cf4892d2bbd8dffb5e0dc2be2de0adbe802bfea5be8",
+      "packages/learner-contracts/src/judgement/local-backend.ts": "07aace62ae00550e268ff6d8366cd66cde1abf02a1706129bd67d2515d3c38dc",
+      "packages/learner-contracts/src/judgement/memory-admission.ts": "d494da11806bd473fbcd31b630cc2959604f9f6d9485e0c7f1386c10ea496c78",
+      "packages/learner-contracts/src/judgement/memory-bank.ts": "784a47ffc4ec9a59a2842f7b10f76ec3e20945d2c2b3f6ed107ceb55d1088c93",
+      "packages/learner-contracts/src/judgement/online-decision-policy.ts": "69e391f58a6f314946b474f6270d3fe38a1d28e66e35a52223eefdaa1ffe3aa4",
+      "packages/learner-contracts/src/judgement/performance-evidence.ts": "3234874109f89ed3a4eeb33fb145e21b3225694b9472b82090695373f10bfd3e",
+      "packages/learner-contracts/src/judgement/plan-review.ts": "9fc1882294b58bc55abdabcf4c118625be6ec396b3d27fbda73ae43bf33a110c",
+      "packages/learner-contracts/src/judgement/profile-extraction.ts": "9cd461fd910edb9922e4e14aab5950b3635e4bebb2ba64f7e9c50366f1fa3db8",
+      "packages/learner-contracts/src/judgement/projections.ts": "d9624e80513b5c83be5e34a4c328a2974148df19d60f0fac35ed56115bca438c",
+      "packages/learner-contracts/src/judgement/pursuit-switch.ts": "2758eb53dad1c9cd6b1dcbe9f2c98bb6b312958dd181712cd11f898d34f45698",
+      "packages/learner-contracts/src/judgement/quiz-boosting-features.ts": "e6947ef0c071c35e8ce637ab1e9beda33ccc9c607c9bfa064598f9606b121613",
+      "packages/learner-contracts/src/judgement/ranking-holdout.ts": "94dfd9e6850440862b4abbe6b06a59ee38b0f6a42b72b36bf97f28d03480fea2",
+      "packages/learner-contracts/src/judgement/retrieval.ts": "ef5dd186c54bbc652644ec77c3ed774baab73b6d8c4bc54c6491cde3ee50bb58",
+      "packages/learner-contracts/src/judgement/router.ts": "baaddb4bbae8c4c626d308dbd7825b853ae4b18478e37e61e306cefe6d70f555",
+      "packages/learner-contracts/src/judgement/state-metrics.ts": "ab3dd713499ceb4da2f3d03bf457e47bfbb2ceabf318fbac431a4a5b1d719203",
+      "packages/learner-contracts/src/judgement/system-one.ts": "f21ee0359c5b927ac7bd257e3b72170b9112cdf49a7b4a766984c46c5234bd26",
+      "packages/learner-contracts/src/judgement/teaching-adjustment.ts": "1bea89f97a5c729aee7d7d87a30942a4c429cda51d26fb3c3a026174626a2f20",
+      "packages/learner-contracts/src/judgement/teaching-drafts.ts": "6671fc0be7a3bcb6f8152f25a5bc52548051c98d1256985a0cf222eaff7a2e83",
+      "packages/learner-contracts/src/judgement/teaching-drafts/attempt-feedback.ts": "42d2ae065f7da240b1b7badfc56c5bf220075c795d6bec89e1a0842028dffc18",
+      "packages/learner-contracts/src/judgement/teaching-drafts/attempt-first.ts": "f88dfa15565882630ae32448e015754be126d453071340d8f23269d5e5b5073b",
+      "packages/learner-contracts/src/judgement/teaching-drafts/checkpoint-scope.ts": "bb2c4ed1d0dc1a6765041998c6715aaa291cc44522fa355b1cda3862f23ee015",
+      "packages/learner-contracts/src/judgement/teaching-drafts/pair-review.ts": "c63c72b08e501f2637a9e896b63dda7186a6055c54ecaa70a2fd4367d95059af",
+      "packages/learner-contracts/src/judgement/teaching-drafts/policy.ts": "00d3aea6a10babb6b980f1d45f0740e4f673bb9f122ef48c447c8ea34a7f6c28",
+      "packages/learner-contracts/src/judgement/teaching-drafts/session.ts": "3c3c3316daf6fa5c0b8e964b780adc3018d95b10b684867bcb4aabd094e0292e",
+      "packages/learner-contracts/src/judgement/teaching-policy-catalog.ts": "2456c15f8f69249baef7d37dc5cc2f5826213077b97068985bece795512e3373",
+      "packages/learner-contracts/src/judgement/teaching-policy-types.ts": "53079974670f70002c1cf2963e91da3456e9d3e8a26740387122557ccd9cac91",
+      "packages/learner-contracts/src/judgement/teaching-policy.ts": "a1b63017e68308391b4ea422cdcdbcc440519141ca298959b8200279f51b601e",
+      "packages/learner-contracts/src/judgement/teaching-selection.ts": "41d68780d54ed8bb9ce4b2c292cf9848a826afcce3667dd51efc3d9dfc02a51d",
+      "packages/learner-contracts/src/judgement/wire.ts": "bb4d5c48b73536067ec273d6c89721d8c7104a8b7b263471923d78a04b612774",
+      "web/src/keating/judgement/active-work-host.ts": "698558e42c7bd8d3178b4523fa4a1420b9b1158f9083600b26d74aa3422d8351",
+      "web/src/keating/judgement/activity-learning.ts": "90dbd97339787b8095e5643a50d1e4a5e405fd34b611207b781faa1f921c4334",
+      "web/src/keating/judgement/browser-grading.ts": "1319241eb6e3c301207f0b2b51815aae7af0bf570e267dc93a79e29e2a21cd27",
+      "web/src/keating/judgement/calibration.ts": "8c63e88acd2b3de5acc52e2eaf203e2ea50c83a8c86e7bad499e39800658e954",
+      "web/src/keating/judgement/check-descriptions.ts": "0e225a19e8cf2237f6696ed5d7a09150089fe9cef611369efcebe4affed7c1f2",
+      "web/src/keating/judgement/claim-citation-runtime.ts": "b8b0a96eccef439940d53ac45f1d8bcdeaa62ae9d0b4e66333ae2ab628187d3f",
+      "web/src/keating/judgement/claim-citation-store.ts": "c57854cabb47087cf0a95f61efe5215beff5621c2a13303948b255e86dfb46b7",
+      "web/src/keating/judgement/claim-citations.ts": "5125f840d4b969fdedee2492f126199ba896668d82faa2cc28c6aead1c612ae4",
+      "web/src/keating/judgement/coming-up-readiness.ts": "af16bb2969222c95dddfcd4973506e26a50f46d9673f187c7772e3c48a2abb65",
+      "web/src/keating/judgement/custom-backend.ts": "7d5d4be53a3e197f534b04590a045598c086428bb49ab96b6f46c5d3db2213ea",
+      "web/src/keating/judgement/decision-policies.ts": "a72c8886941f7cf4ad441f5b85cc9b4914aa54e423757c179194502d93c6bff7",
+      "web/src/keating/judgement/diagnostics.ts": "af70495c6b86acca28a81399930be080af8322f630259eccd105ac1bfe578f0e",
+      "web/src/keating/judgement/draft-evidence.ts": "a4230ee0777050427628690f63d9085acf487aababc74178900903f7c68fe4d5",
+      "web/src/keating/judgement/draft-failure.ts": "ecf142fa419db5bc71ccfad016cf9f40f303447cfde3974b41c9beb92add56fe",
+      "web/src/keating/judgement/draft-gate.ts": "f8807d1f7ffb372e0fe4c7340deed6fbb4a2b49dec22b0a9bd4e900c4797e6b2",
+      "web/src/keating/judgement/draft-progress.ts": "ec2201d0e7fa61e24e959731b338ebb91b4d7a167c5e485d62cf70013d64fa5d",
+      "web/src/keating/judgement/draft-status.ts": "a8f376760210c7c5028ff531703cc73de886187c00d94aeb80a2b1848e70f64a",
+      "web/src/keating/judgement/evolution.ts": "324586836d02d4f2b73faab0e11b6164de9e1bc1121f7a42324a48bc9f8fff5a",
+      "web/src/keating/judgement/index.ts": "90bac1062ff34fcf130d17a178b3ec1c64b8d31c97c175af4551097ddce32d1d",
+      "web/src/keating/judgement/judgement-labels.ts": "efee1c03b0a95f52ea48625608efd344d6ddea282e758736c67e4f93b7576dab",
+      "web/src/keating/judgement/julia-scorer.ts": "532193f7fa56aa40cc055da035af59ebeb5d688fde5ba970f8b51091124c74a6",
+      "web/src/keating/judgement/lesson-plan-review.ts": "9d79eef3a4e9156fdd8c09f03e86618ae515bd0ce9e23a2d0da789f0b149aeb3",
+      "web/src/keating/judgement/live-review.ts": "34872bd50bb573a37cb35b9c07882d3b0a017147296beb2fd32569f40f82df35",
+      "web/src/keating/judgement/local-scorer.ts": "334e84794dcb7141c70ca497eba2c1123108f80c19c62cb9207e13455aa29f00",
+      "web/src/keating/judgement/memory-admission.ts": "ee20ca96d4dd621eed0c2937e271d1e8f6352a7a0c7efd11482967197816200f",
+      "web/src/keating/judgement/online-evidence.ts": "639e3f24be37ea44d469582ab027ec4033bfedc2913056fbea6120232a92b7b6",
+      "web/src/keating/judgement/online-projection.ts": "1eb8202ceca95a1f1f3c55c6069fe496f65b1a08a1e8ecf17f7e56e7a9c7e684",
+      "web/src/keating/judgement/operation.ts": "c3b19a81c82a299cbe3db59ad29d925ec481ab2d85e5d6e48f1bad21edf97777",
+      "web/src/keating/judgement/previous-question-presentation.ts": "1ebc1a2c9646331f078bb49a1579b9aeece7e76f3394091ffd94f6d71017c83a",
+      "web/src/keating/judgement/profile-extraction.ts": "8a1bbf3c5517089d551395d9d18305f78cc5137b79d5b0913d45153cdcedda8d",
+      "web/src/keating/judgement/prompt-evaluation.ts": "a4f4f5e4d15372b201d4f7571ed604f4ce098b7ad86ae5c6a2fabe0fff2b2d6a",
+      "web/src/keating/judgement/prompt-evolution.ts": "9a21bbf5a12c87e7be374afb0ffd2e0accf031559b1d8b74c0d1fb1fe244ed75",
+      "web/src/keating/judgement/public-account.ts": "55ac5377cbf88cd22ba9f3396a5110c24de0451efecdd760ab845f9991d4ed50",
+      "web/src/keating/judgement/quiz-performance.ts": "7ef977f45a536541a6d6f6277f5cf4cb99b84bba92b84e68034ff7068dae698b",
+      "web/src/keating/judgement/reply-review.ts": "fecb5abe78703479c9e7fbc795ee24595ab9699b4ba298de2ff70f5df1d7a8ab",
+      "web/src/keating/judgement/review-notice.ts": "92b927e1981e5e3d323e29671c535f35fe3caf40b3b690eab7302f1ff623b9e8",
+      "web/src/keating/judgement/runtime.ts": "7edcda97adfc6b01d05b41131f0e006cd162e7b89060e06708cf6acc098320b0",
+      "web/src/keating/judgement/study-estimate-store.ts": "b603f0d9fe2711d67a72b4c0cd2b57c2327c6aae26cebc5c589ec8d3fff075b9",
+      "web/src/keating/judgement/study-estimates.ts": "ba439130f47fde61e5731482c85271f548935f4e10510c714c98622f219b95ef",
+      "web/src/keating/judgement/tabular-account.ts": "d2cf07859285738b28df3827fe9f17b3931a3ea62481daf61628434187133fd8",
+      "web/src/keating/judgement/teaching-adjustment.ts": "793729af3edfcfa44bb30daa2818b54c25f33b35dfb8909b129e70b4b869eefd",
+      "web/src/keating/judgement/transport.ts": "9117234b18c26c3c1968a6d51d81667a533a50b98d92bf0c12185498f3c9189e",
+      "web/src/keating/judgement/turn-ledger.ts": "a021ce647386b381a7d2983e4f7175978b534c3c216ca6fda67dcd2463fdca32",
+      "web/src/keating/judgement/turn-records.ts": "7ca72e174bc51dced94fc4452bebea5d372390a627ac785a987c4f9e2e5bb0e2",
+      "web/src/keating/judgement/typesafe-key.ts": "90a300d9e903444e59af9e66e9203324b2bb24cd109b1dee26442404dbbb4b5d",
+      "web/src/keating/openui/diagnostic-components.ts": "ce899a99693b9a9b6344fd5f7d433d5de092e9b0b6ff919875c0289dd8d18fda",
+      "web/src/keating/openui/diagnostic-query.ts": "bd2667773b91f23721195dee518a54665fb0c58d7c87732d11033b879727a9dd",
+      "web/src/keating/openui/editable-code-evidence.ts": "68ffd9c3bd77e3883087190986ad765b5640c419be1031fbb0cdcd696ceca099",
+      "web/src/keating/openui/hands-on-first.ts": "fc9111b0a94126df5e350cfa8748808937c7dac3d877c29c7b0584b2b373b6f7",
+      "web/src/keating/openui/native-page-evidence.ts": "d2335743c5b97fad1fe85c7121cc457dd1d90df393ad64b54745653d57bf7db7",
+      "web/src/keating/openui/native-page-render.ts": "31185430981392feca7bb8214876572225c0ff6787fa1bee57910059f6b1b645",
+      "web/src/keating/openui/preview.ts": "a314de0c695dcc41ae12feca8e258279d6df37b2838d4d024d59100417ac9642",
+      "web/src/keating/openui/quiz-progress.ts": "600810268aacd9e02d7923ae131ab0d590360099dd7cb3699ad4162f343142df",
+      "web/src/keating/openui/render-diagnostics.ts": "dcc8dfd39c824a8a1db077ee544942fe154fa4c1a07d9c3e6ac5636a1f1af27a",
+      "web/src/keating/openui/segments.ts": "4bb1bad47c0298f869ed127b886320ee4d40ec24bdb5d5d96db261fe2dfaa178",
+      "web/src/keating/openui/shared-actions.ts": "91cf5d3192e2c679583fae562e89f31a53da9d4740abc136db60d2d31d997936",
+      "web/src/keating/openui/shared-bridge.ts": "ff8193ebe7813cb0d9bbde00c4a3cbcf69a25d87f9b6769832b37d86d81162cd",
+      "web/src/keating/openui/source-state.ts": "d11e4877c68308e5e58c807b61d31f5fad765f7cca6a662fee75cb9a59a13c60",
+      "web/src/keating/openui/turn-diagnostics.ts": "3d65de65008b87f2e972695f173f128b8abda3a08c23a5e7bb147792f5424ba9",
+      "web/src/keating/openui/turn-observer.ts": "75d1063534cbb27a23956b09f7f2a129a01c082d6bff0ebeb39efdcd91c832db",
+      "web/src/keating/openui/types.ts": "69b7a6577ec3c057fbca547f3540af4633cfe7cd01d296a7a159fb3045b4c2a0",
+      "packages/learner-contracts/src/openui-cue-context.ts": "e6059817db9655bb3e10a467bde964515f2b907cb2cf570c9d68fde803b6f25a",
+      "packages/learner-contracts/src/openui-diagnostic-issues.ts": "2f7b2736e19ba91d077e3e76f43113d5898b84e42cc4ccb653794c4b428f1fc1",
+      "packages/learner-contracts/src/openui-diagnostic-turn.ts": "c8bce6843c26ce09a76e68129698c732450e3ed133189bbd0ed1040c103045ee",
+      "packages/learner-contracts/src/openui-diagnostics.ts": "090f908d29521ca628113cbc06eb8882d47cc04c64df3820d054077cf5640a45",
+      "packages/learner-contracts/src/openui-pair-reviews.ts": "640f77f1d8d2e5567c9145bfe1ddb1dc849c720113b1a232e661cd99fe6bf3ea",
+      "packages/learner-contracts/src/openui-source.ts": "6fa90d91030d47366824fa42edbba7eaf2caf14a2feefb0352caa6b52fc75656",
+      "packages/runtime-config/src/index.ts": "58864dd0dc13cd088f62c3f709accbef86e99f1d47f7d4248b24fb6e951cf3ff",
+      "packages/runtime-config/src/model-identities.ts": "fdf22d6163f3e2f38dce59413b680b33998fc0e45c425f2fc6d82a41be417b74",
+      "packages/runtime-config/src/models.ts": "f0cfdbd303ec5ffed52cdc2a04b99428621b44949548a201c785a3df3471c935",
+      "packages/runtime-config/src/services.ts": "625f7d34e124840052e0bdce7cde028ed527cbfe6869e74fb581f715b90dcc84",
+      "scripts/openui-diagnostics/jev-pair-transport.mjs": "066596d94f10d7c382caa320a4a1aa02dfccb529811d9808fc11b59c092fc10b",
+      "scripts/openui-diagnostics/probe-jev-pairs.mjs": "23a1f4c2a79118658dcd0949b8aa99ae6a505d43810ed001b23597399c1af6b6",
+      "docs/benchmarks/openui-audit-2026-11-18/final-review/classroom/host.mjs": "c00296b9062def2761306c8ab21045e2606b340a64463a4017f1aaa877e61cd0",
+      "docs/benchmarks/openui-audit-2026-11-18/final-review/classroom/entry.tsx": "fd8cd6da33e91ab1ed92d64ca48973a2d181181605ed12955ac729ca411686d0"
+    },
+    "sha256": "d4d8119e92214bbfd16bb8941a12b94c4d86af07d1b8bb4931c158350ec4c94e"
+  },
+  "priorBoundUsd": 3.137837464,
+  "phaseCapUsd": 0.75,
+  "globalCapUsd": 10,
+  "protocol": "paired-flash-prediction",
+  "tutorModel": "MiniMax-M3.1-Flash",
+  "entries": [
+    {
+      "cell": "paper-fold",
+      "kind": "decision",
+      "stage": "plan",
+      "model": "jev-1.14.0",
+      "url": "https://api.typesafe.ai/v1/systemone",
+      "wireSha256": "c0f026fb3d5669f2c9b17c5ad3805d290ae60233fe590baa7813da8ca4163a9f",
+      "request": 1,
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000168882,
+      "usage": {
+        "input": 4021,
+        "output": 748
+      },
+      "reservedAt": 1795041735150,
+      "sentAt": 1795041735171,
+      "receivedAt": 1795041735316,
+      "finishedAt": 1795041735317,
+      "http": 200,
+      "status": "received",
+      "responseSha256": "f20b2f2121f2db61b6e00e2604436b1d71326671fa9d4b9b9acf95b1c33af2b3",
+      "response": {
+        "answers": {
+          "direct_answer_requested": {
+            "type": "noul",
+            "noul": 0.84
+          },
+          "explanation_requested": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "learner_stuck": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "attempt_present": {
+            "type": "noul",
+            "noul": 0.15
+          },
+          "misconception_visible": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "independent_success": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "practice_requested": {
+            "type": "noul",
+            "noul": 0.05
+          },
+          "plain_reply_requested": {
+            "type": "noul",
+            "noul": 0.15
+          },
+          "assessment_declined": {
+            "type": "noul",
+            "noul": 0.05
+          },
+          "fresh_sources_needed": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "explicit_feedback": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "explicit_profile_preference": {
+            "type": "noul",
+            "noul": 0.59
+          },
+          "observed_profile_pattern": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "motion_requested": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "improvement_requested": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "improvement_hypothesis_supported": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "settled_sessions_accumulated": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "project_goal_requested": {
+            "type": "noul",
+            "noul": 0.46
+          },
+          "progression_requested": {
+            "type": "noul",
+            "noul": 0.04
+          },
+          "learning_task": {
+            "type": "noul",
+            "noul": 0.97
+          },
+          "variable_relationship": {
+            "type": "noul",
+            "noul": 0.75
+          },
+          "ordered_procedure": {
+            "type": "noul",
+            "noul": 0.74
+          },
+          "discrete_recall": {
+            "type": "noul",
+            "noul": 0.23
+          },
+          "structure_relations": {
+            "type": "noul",
+            "noul": 0.14
+          },
+          "category_distinction": {
+            "type": "noul",
+            "noul": 0.1
+          },
+          "prediction_opportunity": {
+            "type": "noul",
+            "noul": 0.66
+          },
+          "learner_response_due": {
+            "type": "noul",
+            "noul": 0.85
+          },
+          "hands_on_requested": {
+            "type": "noul",
+            "noul": 0.16
+          },
+          "executable_code": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "performed_skill": {
+            "type": "noul",
+            "noul": 0.11
+          },
+          "language_learning": {
+            "type": "noul",
+            "noul": 0.12
+          },
+          "visual_reference": {
+            "type": "noul",
+            "noul": 0.17
+          },
+          "extended_production": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "outside_observation": {
+            "type": "noul",
+            "noul": 0.05
+          },
+          "untested_coverage": {
+            "type": "noul",
+            "noul": 0.08
+          },
+          "draft_reasoning_steps": {
+            "type": "score",
+            "score": 0.91,
+            "confidence": 0.81,
+            "legend": {
+              "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+              "1": "One clear inference or straightforward application using supplied context.",
+              "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+              "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+            },
+            "probabilities": {
+              "0": 0.14,
+              "1": 0.81,
+              "2": 0.05,
+              "3": 0
+            }
+          },
+          "draft_reasoning_synthesis": {
+            "type": "score",
+            "score": 0.22,
+            "confidence": 0.79,
+            "legend": {
+              "0": "One simple fact or request; no reconciliation is needed.",
+              "1": "One relevant evidence item or one simple relationship/constraint.",
+              "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+              "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+            },
+            "probabilities": {
+              "0": 0.8,
+              "1": 0.19,
+              "2": 0.01,
+              "3": 0
+            }
+          },
+          "draft_reasoning_verification": {
+            "type": "score",
+            "score": 0.45,
+            "confidence": 0.56,
+            "legend": {
+              "0": "No special check beyond a direct answer supported by the supplied context.",
+              "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+              "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+              "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+            },
+            "probabilities": {
+              "0": 0.6,
+              "1": 0.37,
+              "2": 0.02,
+              "3": 0.01
+            }
+          },
+          "draft_standard": {
+            "type": "choice",
+            "choice": "concise",
+            "confidence": 0.83,
+            "probabilities": {
+              "concise": 0.89,
+              "supported": 0.1,
+              "deep": 0.01
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 4021,
+          "output_tokens": 748
+        },
+        "model": "jev-1.14.0"
+      }
+    },
+    {
+      "cell": "paper-fold",
+      "kind": "tutor",
+      "stage": "generation",
+      "model": "MiniMax-M3.1-Flash",
+      "url": "https://api.minimax.io/v1/chat/completions",
+      "wireSha256": "4c8aed2a0ac8bb2cd6634b28b716d309ccb11539c3cbaf5a7357a7fab2ceb1a7",
+      "request": 1,
+      "reservedUsd": 0.16,
+      "accountedUsd": 0.0025776,
+      "usage": {
+        "input": 15524,
+        "output": 415
+      },
+      "reservedAt": 1795041735454,
+      "sentAt": 1795041735469,
+      "receivedAt": 1795041738321,
+      "finishedAt": 1795041738322,
+      "http": 200,
+      "status": "toolUse",
+      "responseSha256": "e280ad98d2b94d853a768f939d185335cd341ada987213de477f14b96724c150",
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "message": {
+        "role": "assistant",
+        "api": "openai-completions",
+        "provider": "minimax",
+        "model": "MiniMax-M3.1-Flash",
+        "stopReason": "toolUse",
+        "timestamp": 1795041738322,
+        "usage": {
+          "input": 15336,
+          "output": 415,
+          "cacheRead": 188,
+          "cacheWrite": 0,
+          "reasoning": 281,
+          "totalTokens": 15939,
+          "cost": {
+            "input": 0.0023003999999999998,
+            "output": 0.000249,
+            "cacheRead": 0.0000028199999999999997,
+            "cacheWrite": 0,
+            "total": 0.00255222
+          }
+        },
+        "content": [
+          {
+            "type": "toolCall",
+            "id": "call_01a1f0d33c21779a87e63f95",
+            "name": "remember_learner_profile",
+            "arguments": {
+              "category": "learning-preference",
+              "value": "Wants to commit to a prediction before receiving the explanation — ask for the guess first.",
+              "source": "explicit",
+              "evidence": "\"Before you tell me, I'd like to guess how many layers it has.\"",
+              "confidence": 0.9
+            }
+          },
+          {
+            "type": "toolCall",
+            "id": "call_01a1f0d33cd9726283e91cbe",
+            "name": "feedback",
+            "arguments": {
+              "signal": "up",
+              "topic": "prediction before explanation"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "cell": "paper-fold",
+      "kind": "tutor",
+      "stage": "generation",
+      "model": "MiniMax-M3.1-Flash",
+      "url": "https://api.minimax.io/v1/chat/completions",
+      "wireSha256": "09b93ec4974ed6984b400b130b122b5b4b58d8e6e73472a8a3312ebc6097299c",
+      "request": 2,
+      "reservedUsd": 0.16,
+      "accountedUsd": 0.0015243,
+      "usage": {
+        "input": 9382,
+        "output": 195
+      },
+      "reservedAt": 1795041735473,
+      "sentAt": 1795041735488,
+      "receivedAt": 1795041740143,
+      "finishedAt": 1795041740144,
+      "http": 200,
+      "status": "stop",
+      "responseSha256": "612b44c1cfdc74c644d1688a2074659c95fe159fdf0cdfdf6d499de2d6dbeca7",
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "message": {
+        "role": "assistant",
+        "api": "openai-completions",
+        "provider": "minimax",
+        "model": "MiniMax-M3.1-Flash",
+        "stopReason": "stop",
+        "timestamp": 1795041740144,
+        "usage": {
+          "input": 9382,
+          "output": 195,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 132,
+          "totalTokens": 9577,
+          "cost": {
+            "input": 0.0014073,
+            "output": 0.000117,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0.0015243
+          }
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "```openui lifecycle=ephemeral id=paper-layers-guess\n\nroot = LearningSurface([response])\nresponse = Question([{ question: \"How many layers do you think the strip has after being folded in half twice?\", type: \"text\" }], \"ephemeral\")\n```"
+          }
+        ]
+      }
+    },
+    {
+      "cell": "paper-fold",
+      "kind": "tutor",
+      "stage": "generation",
+      "model": "MiniMax-M3.1-Flash",
+      "url": "https://api.minimax.io/v1/chat/completions",
+      "wireSha256": "83b4ff67795e88f338cb9089f05ac35b9568bb7293c96ab3d8c8d9641b2c79f4",
+      "request": 3,
+      "reservedUsd": 0.16,
+      "accountedUsd": 0.00295365,
+      "usage": {
+        "input": 15523,
+        "output": 1042
+      },
+      "reservedAt": 1795041735492,
+      "sentAt": 1795041735507,
+      "receivedAt": 1795041753460,
+      "finishedAt": 1795041753462,
+      "http": 200,
+      "status": "stop",
+      "responseSha256": "3f51d7ebae4fec1a0bd862647958bc897875497f6e33a7b87020f548cbf2d7b5",
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "message": {
+        "role": "assistant",
+        "api": "openai-completions",
+        "provider": "minimax",
+        "model": "MiniMax-M3.1-Flash",
+        "stopReason": "stop",
+        "timestamp": 1795041753462,
+        "usage": {
+          "input": 15395,
+          "output": 1042,
+          "cacheRead": 128,
+          "cacheWrite": 0,
+          "reasoning": 852,
+          "totalTokens": 16565,
+          "cost": {
+            "input": 0.00230925,
+            "output": 0.0006252,
+            "cacheRead": 0.00000192,
+            "cacheWrite": 0,
+            "total": 0.0029363699999999998
+          }
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Fair enough — your guess first, then I'll unpack the reasoning.\n\n```openui lifecycle=ephemeral id=paper-fold-layers\nroot = LearningSurface([guess], \"Folded paper: lock in your prediction\", \"Commit to a number before I explain it.\", \"ephemeral\")\nguess = Question([{ header: \"Your guess\", question: \"A strip of paper is folded in half once, then folded in half again. How many layers of paper do you think you are holding at the end?\", type: \"choice\", choices: [\"2 layers\", \"3 layers\", \"4 layers\", \"8 layers\"], allowText: true, hint: \"Track what happens to the layer count at each single fold. Does it double, or does it go up by one?\" }], \"ephemeral\", \"Folding and layers\", \"Pick the closest answer, or type your own guess with your reasoning.\")\n```"
+          }
+        ]
+      }
+    },
+    {
+      "cell": "paper-fold",
+      "kind": "tutor",
+      "stage": "generation",
+      "model": "MiniMax-M3.1-Flash",
+      "url": "https://api.minimax.io/v1/chat/completions",
+      "wireSha256": "9cbcf549dbbc8a9467f6a1cfe59cdf8a09dca640266e9345589a142bf6e8dc0e",
+      "request": 4,
+      "reservedUsd": 0.16,
+      "accountedUsd": 0.0015645,
+      "usage": {
+        "input": 9386,
+        "output": 261
+      },
+      "reservedAt": 1795041735511,
+      "sentAt": 1795041735526,
+      "receivedAt": 1795041741913,
+      "finishedAt": 1795041741913,
+      "http": 200,
+      "status": "stop",
+      "responseSha256": "4789b58537ff01d69dcee90e8cde061ae5020ab9ed3f20529b076be3c497b113",
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "message": {
+        "role": "assistant",
+        "api": "openai-completions",
+        "provider": "minimax",
+        "model": "MiniMax-M3.1-Flash",
+        "stopReason": "stop",
+        "timestamp": 1795041741913,
+        "usage": {
+          "input": 9386,
+          "output": 261,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "reasoning": 197,
+          "totalTokens": 9647,
+          "cost": {
+            "input": 0.0014079,
+            "output": 0.00015659999999999998,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0.0015645
+          }
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "```openui lifecycle=ephemeral id=paper-fold-layers-guess\nroot = LearningSurface([response])\nresponse = Question([{ question: \"How many layers do you think the strip has after being folded in half twice?\", type: \"text\" }], \"ephemeral\")\n```"
+          }
+        ]
+      }
+    },
+    {
+      "cell": "paper-fold",
+      "kind": "decision",
+      "stage": "review",
+      "model": "jev-1.14.0",
+      "url": "https://api.typesafe.ai/v1/systemone",
+      "wireSha256": "454e0e15cbe307f3e3a95736a68c9c820cd3258d158290cb84bf1d540228f721",
+      "request": 2,
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000243306,
+      "usage": {
+        "input": 5793,
+        "output": 896
+      },
+      "reservedAt": 1795041738478,
+      "sentAt": 1795041738493,
+      "receivedAt": 1795041738645,
+      "finishedAt": 1795041738646,
+      "http": 200,
+      "status": "received",
+      "responseSha256": "e79ec7b5c8b880f6fe81de0965b7f296da728b3145b4089b1352dc3b7f70f085",
+      "response": {
+        "answers": {
+          "identity_invented": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "instruction_override": {
+            "type": "noul",
+            "noul": 0.1
+          },
+          "tool_success_invented": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "sensitive_inference": {
+            "type": "noul",
+            "noul": 0.13
+          },
+          "mastery_overclaimed": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "retention_overclaimed": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "transfer_overclaimed": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "synthetic_efficacy_claim": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "explanation_missing": {
+            "type": "noul",
+            "noul": 0.09
+          },
+          "direct_answer_missing": {
+            "type": "noul",
+            "noul": 0.51
+          },
+          "practice_missing": {
+            "type": "noul",
+            "noul": 0.05
+          },
+          "direct_help_withheld": {
+            "type": "noul",
+            "noul": 0.07
+          },
+          "diagnostic_interview_forced": {
+            "type": "noul",
+            "noul": 0.18
+          },
+          "known_context_reasked": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "gap_ignored": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "learner_voice_replaced": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "checkpoint_answer_leaked": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "checkpoint_repeated": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "checkpoint_continued": {
+            "type": "noul",
+            "noul": 0.06
+          },
+          "checkpoint_not_interactive": {
+            "type": "noul",
+            "noul": 0.05
+          },
+          "practice_withheld": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "unsolicited_assessment": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "unsolicited_animation": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "feedback_invented": {
+            "type": "noul",
+            "noul": 0.51
+          },
+          "profile_evidence_invented": {
+            "type": "noul",
+            "noul": 0.05
+          },
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.17
+          },
+          "alternative_answer_rejected": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "observed_preference_overrides_declared": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "housekeeping_delegated": {
+            "type": "noul",
+            "noul": 0.07
+          },
+          "assessed_work_completed": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "source_link_missing": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "source_contradicted": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "improvement_interrupts": {
+            "type": "noul",
+            "noul": 0.63
+          },
+          "repeated_improvement_unrequested": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "artifact_placeholder": {
+            "type": "noul",
+            "noul": 0.3
+          },
+          "transport_exposed": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "law_authority_missing": {
+            "type": "noul",
+            "noul": 0.07
+          },
+          "law_jurisdiction_missing": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "medicine_evidence_conflated": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "history_disagreement_erased": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "psychology_replication_ignored": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "politics_normative_as_fact": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "quality_progress": {
+            "type": "noul",
+            "noul": 0.1
+          },
+          "quality_scope": {
+            "type": "noul",
+            "noul": 0.25
+          }
+        },
+        "usage": {
+          "input_tokens": 5793,
+          "output_tokens": 896
+        },
+        "model": "jev-1.14.0"
+      }
+    },
+    {
+      "cell": "paper-fold",
+      "kind": "decision",
+      "stage": "review",
+      "model": "jev-1.14.0",
+      "url": "https://api.typesafe.ai/v1/systemone",
+      "wireSha256": "9c9bd6dccccd7369566cc2e512b1424f0fcb9b1fa6ada121c7605c72ddc839ed",
+      "request": 3,
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00024045,
+      "usage": {
+        "input": 5725,
+        "output": 896
+      },
+      "reservedAt": 1795041740255,
+      "sentAt": 1795041740270,
+      "receivedAt": 1795041740391,
+      "finishedAt": 1795041740391,
+      "http": 200,
+      "status": "received",
+      "responseSha256": "07f0cc60822b8d8268da1bcae26176bbc767006548eeac8696790d99818787b0",
+      "response": {
+        "answers": {
+          "identity_invented": {
+            "type": "noul",
+            "noul": 0.04
+          },
+          "instruction_override": {
+            "type": "noul",
+            "noul": 0.04
+          },
+          "tool_success_invented": {
+            "type": "noul",
+            "noul": 0.04
+          },
+          "sensitive_inference": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "mastery_overclaimed": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "retention_overclaimed": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "transfer_overclaimed": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "synthetic_efficacy_claim": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "explanation_missing": {
+            "type": "noul",
+            "noul": 0.06
+          },
+          "direct_answer_missing": {
+            "type": "noul",
+            "noul": 0.37
+          },
+          "practice_missing": {
+            "type": "noul",
+            "noul": 0.05
+          },
+          "direct_help_withheld": {
+            "type": "noul",
+            "noul": 0.07
+          },
+          "diagnostic_interview_forced": {
+            "type": "noul",
+            "noul": 0.07
+          },
+          "known_context_reasked": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "gap_ignored": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "learner_voice_replaced": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "checkpoint_answer_leaked": {
+            "type": "noul",
+            "noul": 0.04
+          },
+          "checkpoint_repeated": {
+            "type": "noul",
+            "noul": 0.49
+          },
+          "checkpoint_continued": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "checkpoint_not_interactive": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "practice_withheld": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "unsolicited_assessment": {
+            "type": "noul",
+            "noul": 0.21
+          },
+          "unsolicited_animation": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "feedback_invented": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "profile_evidence_invented": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "alternative_answer_rejected": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "observed_preference_overrides_declared": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "housekeeping_delegated": {
+            "type": "noul",
+            "noul": 0.05
+          },
+          "assessed_work_completed": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "source_link_missing": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "source_contradicted": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "improvement_interrupts": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "repeated_improvement_unrequested": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "artifact_placeholder": {
+            "type": "noul",
+            "noul": 0.14
+          },
+          "transport_exposed": {
+            "type": "noul",
+            "noul": 0.43
+          },
+          "law_authority_missing": {
+            "type": "noul",
+            "noul": 0.06
+          },
+          "law_jurisdiction_missing": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "medicine_evidence_conflated": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "history_disagreement_erased": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "psychology_replication_ignored": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "politics_normative_as_fact": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "quality_progress": {
+            "type": "noul",
+            "noul": 0.84
+          },
+          "quality_scope": {
+            "type": "noul",
+            "noul": 0.74
+          }
+        },
+        "usage": {
+          "input_tokens": 5725,
+          "output_tokens": 896
+        },
+        "model": "jev-1.14.0"
+      }
+    },
+    {
+      "cell": "paper-fold",
+      "kind": "decision",
+      "stage": "review",
+      "model": "jev-1.14.0",
+      "url": "https://api.typesafe.ai/v1/systemone",
+      "wireSha256": "39062b52a4a0da6791406c3184837021b47dfee380c1a79f9af7c56fd80d48c9",
+      "request": 4,
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000240492,
+      "usage": {
+        "input": 5726,
+        "output": 896
+      },
+      "reservedAt": 1795041742016,
+      "sentAt": 1795041742031,
+      "receivedAt": 1795041742149,
+      "finishedAt": 1795041742150,
+      "http": 200,
+      "status": "received",
+      "responseSha256": "c7496f33f03446f161761a25d598149bd4720865d006fbcab6bfd2c7c395533f",
+      "response": {
+        "answers": {
+          "identity_invented": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "instruction_override": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "tool_success_invented": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "sensitive_inference": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "mastery_overclaimed": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "retention_overclaimed": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "transfer_overclaimed": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "synthetic_efficacy_claim": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "explanation_missing": {
+            "type": "noul",
+            "noul": 0.05
+          },
+          "direct_answer_missing": {
+            "type": "noul",
+            "noul": 0.3
+          },
+          "practice_missing": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "direct_help_withheld": {
+            "type": "noul",
+            "noul": 0.05
+          },
+          "diagnostic_interview_forced": {
+            "type": "noul",
+            "noul": 0.08
+          },
+          "known_context_reasked": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "gap_ignored": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "learner_voice_replaced": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "checkpoint_answer_leaked": {
+            "type": "noul",
+            "noul": 0.04
+          },
+          "checkpoint_repeated": {
+            "type": "noul",
+            "noul": 0.49
+          },
+          "checkpoint_continued": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "checkpoint_not_interactive": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "practice_withheld": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "unsolicited_assessment": {
+            "type": "noul",
+            "noul": 0.21
+          },
+          "unsolicited_animation": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "feedback_invented": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "profile_evidence_invented": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "alternative_answer_rejected": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "observed_preference_overrides_declared": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "housekeeping_delegated": {
+            "type": "noul",
+            "noul": 0.05
+          },
+          "assessed_work_completed": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "source_link_missing": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "source_contradicted": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "improvement_interrupts": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "repeated_improvement_unrequested": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "artifact_placeholder": {
+            "type": "noul",
+            "noul": 0.14
+          },
+          "transport_exposed": {
+            "type": "noul",
+            "noul": 0.37
+          },
+          "law_authority_missing": {
+            "type": "noul",
+            "noul": 0.05
+          },
+          "law_jurisdiction_missing": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "medicine_evidence_conflated": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "history_disagreement_erased": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "psychology_replication_ignored": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "politics_normative_as_fact": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "quality_progress": {
+            "type": "noul",
+            "noul": 0.83
+          },
+          "quality_scope": {
+            "type": "noul",
+            "noul": 0.75
+          }
+        },
+        "usage": {
+          "input_tokens": 5726,
+          "output_tokens": 896
+        },
+        "model": "jev-1.14.0"
+      }
+    },
+    {
+      "cell": "paper-fold",
+      "kind": "decision",
+      "stage": "review",
+      "model": "jev-1.14.0",
+      "url": "https://api.typesafe.ai/v1/systemone",
+      "wireSha256": "2f7de1fdb9453b25e43d0f79316a5ff02837725c32e73bcb772b2fee9f517981",
+      "request": 5,
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.00024612,
+      "usage": {
+        "input": 5860,
+        "output": 896
+      },
+      "reservedAt": 1795041753635,
+      "sentAt": 1795041753700,
+      "receivedAt": 1795041753824,
+      "finishedAt": 1795041753824,
+      "http": 200,
+      "status": "received",
+      "responseSha256": "93eef94229ac96fd3271a58fc45d4ea5796933ecc3aca46e04f1071988206e49",
+      "response": {
+        "answers": {
+          "identity_invented": {
+            "type": "noul",
+            "noul": 0.04
+          },
+          "instruction_override": {
+            "type": "noul",
+            "noul": 0.06
+          },
+          "tool_success_invented": {
+            "type": "noul",
+            "noul": 0.04
+          },
+          "sensitive_inference": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "mastery_overclaimed": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "retention_overclaimed": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "transfer_overclaimed": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "synthetic_efficacy_claim": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "explanation_missing": {
+            "type": "noul",
+            "noul": 0.06
+          },
+          "direct_answer_missing": {
+            "type": "noul",
+            "noul": 0.42
+          },
+          "practice_missing": {
+            "type": "noul",
+            "noul": 0.04
+          },
+          "direct_help_withheld": {
+            "type": "noul",
+            "noul": 0.09
+          },
+          "diagnostic_interview_forced": {
+            "type": "noul",
+            "noul": 0.14
+          },
+          "known_context_reasked": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "gap_ignored": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "learner_voice_replaced": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "checkpoint_answer_leaked": {
+            "type": "noul",
+            "noul": 0.29
+          },
+          "checkpoint_repeated": {
+            "type": "noul",
+            "noul": 0.55
+          },
+          "checkpoint_continued": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "checkpoint_not_interactive": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "practice_withheld": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "unsolicited_assessment": {
+            "type": "noul",
+            "noul": 0.26
+          },
+          "unsolicited_animation": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "feedback_invented": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "profile_evidence_invented": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "preference_graded": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "alternative_answer_rejected": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "observed_preference_overrides_declared": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "housekeeping_delegated": {
+            "type": "noul",
+            "noul": 0.08
+          },
+          "assessed_work_completed": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "source_link_missing": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "source_contradicted": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "improvement_interrupts": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "repeated_improvement_unrequested": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "artifact_placeholder": {
+            "type": "noul",
+            "noul": 0.1
+          },
+          "transport_exposed": {
+            "type": "noul",
+            "noul": 0.46
+          },
+          "law_authority_missing": {
+            "type": "noul",
+            "noul": 0.06
+          },
+          "law_jurisdiction_missing": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "medicine_evidence_conflated": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "history_disagreement_erased": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "psychology_replication_ignored": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "politics_normative_as_fact": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "quality_progress": {
+            "type": "noul",
+            "noul": 0.91
+          },
+          "quality_scope": {
+            "type": "noul",
+            "noul": 0.87
+          }
+        },
+        "usage": {
+          "input_tokens": 5860,
+          "output_tokens": 896
+        },
+        "model": "jev-1.14.0"
+      }
+    },
+    {
+      "cell": "paper-fold",
+      "kind": "decision",
+      "stage": "pair",
+      "model": "jev-1.14.0",
+      "url": "https://api.typesafe.ai/v1/systemone",
+      "wireSha256": "ae67c13b66629c0e8ea004ec888b0aea8f81996b7e1a14474d5d6e0ec3cf9be6",
+      "request": 6,
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000037128,
+      "usage": {
+        "input": 884,
+        "output": 39
+      },
+      "reservedAt": 1795041753932,
+      "sentAt": 1795041753974,
+      "receivedAt": 1795041754086,
+      "finishedAt": 1795041754086,
+      "http": 200,
+      "status": "received",
+      "responseSha256": "e9572c8fe20240bbcb7915a33c8f5a1a0a56940f8f7ac7f601f90a1692eb7b94",
+      "response": {
+        "answers": {
+          "draft_pair_choice": {
+            "type": "choice",
+            "choice": "draft_2",
+            "confidence": 0.74,
+            "probabilities": {
+              "draft_1": 0.13,
+              "draft_2": 0.87
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 884,
+          "output_tokens": 39
+        },
+        "model": "jev-1.14.0"
+      }
+    },
+    {
+      "cell": "paper-fold",
+      "kind": "decision",
+      "stage": "pair",
+      "model": "jev-1.14.0",
+      "url": "https://api.typesafe.ai/v1/systemone",
+      "wireSha256": "702e84b7c67edb820168e987c109d7e39bb23208a86c480fb83b1e2de9736188",
+      "request": 7,
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000039984,
+      "usage": {
+        "input": 952,
+        "output": 39
+      },
+      "reservedAt": 1795041753976,
+      "sentAt": 1795041754018,
+      "receivedAt": 1795041754127,
+      "finishedAt": 1795041754127,
+      "http": 200,
+      "status": "received",
+      "responseSha256": "a092fbbe90b7946d9ce22332bde4cb701ba88f80f1492b11869a0ae0b13a9f9b",
+      "response": {
+        "answers": {
+          "draft_pair_choice": {
+            "type": "choice",
+            "choice": "draft_3",
+            "confidence": 0.42,
+            "probabilities": {
+              "draft_3": 0.71,
+              "draft_4": 0.29
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 952,
+          "output_tokens": 39
+        },
+        "model": "jev-1.14.0"
+      }
+    },
+    {
+      "cell": "paper-fold",
+      "kind": "decision",
+      "stage": "final-choice",
+      "model": "jev-1.14.0",
+      "url": "https://api.typesafe.ai/v1/systemone",
+      "wireSha256": "df9d3057bf66d770ba31d1cf2985c87abacb974aed6bd79c6cf20da4e382c1e2",
+      "request": 8,
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000041454,
+      "usage": {
+        "input": 987,
+        "output": 38
+      },
+      "reservedAt": 1795041754208,
+      "sentAt": 1795041754251,
+      "receivedAt": 1795041754314,
+      "finishedAt": 1795041754314,
+      "http": 200,
+      "status": "received",
+      "responseSha256": "095dd3853b4821d0542da4869c31d762eeb27d9556fb3551045bb4c4a9a5592f",
+      "response": {
+        "answers": {
+          "draft_choice": {
+            "type": "choice",
+            "choice": "draft_2",
+            "confidence": 0.18,
+            "probabilities": {
+              "draft_3": 0.41,
+              "draft_2": 0.59
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 987,
+          "output_tokens": 38
+        },
+        "model": "jev-1.14.0"
+      }
+    },
+    {
+      "cell": "sock-draw",
+      "kind": "decision",
+      "stage": "plan",
+      "model": "jev-1.14.0",
+      "url": "https://api.typesafe.ai/v1/systemone",
+      "wireSha256": "d4508ba543c8f10f77ed78bcba2d4eb71c8cb97747936747ee4669670a6c6973",
+      "request": 1,
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000169302,
+      "usage": {
+        "input": 4031,
+        "output": 748
+      },
+      "reservedAt": 1795041767791,
+      "sentAt": 1795041767822,
+      "receivedAt": 1795041767947,
+      "finishedAt": 1795041767947,
+      "http": 200,
+      "status": "received",
+      "responseSha256": "1a20f399460bb079ba5ed151bd86f71cffc702a8e376315d4249e8034a1c8365",
+      "response": {
+        "answers": {
+          "direct_answer_requested": {
+            "type": "noul",
+            "noul": 0.86
+          },
+          "explanation_requested": {
+            "type": "noul",
+            "noul": 0.51
+          },
+          "learner_stuck": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "attempt_present": {
+            "type": "noul",
+            "noul": 0.11
+          },
+          "misconception_visible": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "independent_success": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "practice_requested": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "plain_reply_requested": {
+            "type": "noul",
+            "noul": 0.29
+          },
+          "assessment_declined": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "fresh_sources_needed": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "explicit_feedback": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "explicit_profile_preference": {
+            "type": "noul",
+            "noul": 0.46
+          },
+          "observed_profile_pattern": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "motion_requested": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "improvement_requested": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "improvement_hypothesis_supported": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "settled_sessions_accumulated": {
+            "type": "noul",
+            "noul": 0.01
+          },
+          "project_goal_requested": {
+            "type": "noul",
+            "noul": 0.53
+          },
+          "progression_requested": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "learning_task": {
+            "type": "noul",
+            "noul": 0.97
+          },
+          "variable_relationship": {
+            "type": "noul",
+            "noul": 0.48
+          },
+          "ordered_procedure": {
+            "type": "noul",
+            "noul": 0.08
+          },
+          "discrete_recall": {
+            "type": "noul",
+            "noul": 0.23
+          },
+          "structure_relations": {
+            "type": "noul",
+            "noul": 0.24
+          },
+          "category_distinction": {
+            "type": "noul",
+            "noul": 0.3
+          },
+          "prediction_opportunity": {
+            "type": "noul",
+            "noul": 0.73
+          },
+          "learner_response_due": {
+            "type": "noul",
+            "noul": 0.9
+          },
+          "hands_on_requested": {
+            "type": "noul",
+            "noul": 0.18
+          },
+          "executable_code": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "performed_skill": {
+            "type": "noul",
+            "noul": 0.07
+          },
+          "language_learning": {
+            "type": "noul",
+            "noul": 0.13
+          },
+          "visual_reference": {
+            "type": "noul",
+            "noul": 0.04
+          },
+          "extended_production": {
+            "type": "noul",
+            "noul": 0.02
+          },
+          "outside_observation": {
+            "type": "noul",
+            "noul": 0.03
+          },
+          "untested_coverage": {
+            "type": "noul",
+            "noul": 0.08
+          },
+          "draft_reasoning_steps": {
+            "type": "score",
+            "score": 0.88,
+            "confidence": 0.84,
+            "legend": {
+              "0": "No substantive reasoning: a greeting, acknowledgement, preference, or directly stated fact.",
+              "1": "One clear inference or straightforward application using supplied context.",
+              "2": "Several connected steps, a comparison, diagnosis of a specific attempt, or moderate synthesis.",
+              "3": "Many dependent steps, a non-routine derivation, or carrying through a multi-stage plan."
+            },
+            "probabilities": {
+              "0": 0.14,
+              "1": 0.84,
+              "2": 0.02,
+              "3": 0
+            }
+          },
+          "draft_reasoning_synthesis": {
+            "type": "score",
+            "score": 0.64,
+            "confidence": 0.36,
+            "legend": {
+              "0": "One simple fact or request; no reconciliation is needed.",
+              "1": "One relevant evidence item or one simple relationship/constraint.",
+              "2": "Several relevant pieces of evidence, constraints, or options must be combined or compared.",
+              "3": "Conflicting evidence or many interacting constraints across relevant sources must be reconciled."
+            },
+            "probabilities": {
+              "0": 0.54,
+              "1": 0.28,
+              "2": 0.18,
+              "3": 0
+            }
+          },
+          "draft_reasoning_verification": {
+            "type": "score",
+            "score": 0.32,
+            "confidence": 0.67,
+            "legend": {
+              "0": "No special check beyond a direct answer supported by the supplied context.",
+              "1": "One straightforward check of a supplied fact, calculation, or constraint.",
+              "2": "Several claims or calculations need cross-checking, or an important uncertainty/limit must be distinguished.",
+              "3": "A material error or conflicting high-impact detail makes careful verification and explicit bounds central."
+            },
+            "probabilities": {
+              "0": 0.7,
+              "1": 0.28,
+              "2": 0.01,
+              "3": 0.01
+            }
+          },
+          "draft_standard": {
+            "type": "choice",
+            "choice": "concise",
+            "confidence": 0.91,
+            "probabilities": {
+              "concise": 0.94,
+              "supported": 0.05,
+              "deep": 0.01
+            }
+          }
+        },
+        "usage": {
+          "input_tokens": 4031,
+          "output_tokens": 748
+        },
+        "model": "jev-1.14.0"
+      }
+    },
+    {
+      "cell": "sock-draw",
+      "kind": "tutor",
+      "stage": "generation",
+      "model": "MiniMax-M3.1-Flash",
+      "url": "https://api.minimax.io/v1/chat/completions",
+      "wireSha256": "e7a85193572672b1c1d8ba7a2e706d5432e13e73e232d3e019f249db7886f8dc",
+      "request": 1,
+      "reservedUsd": 0.16,
+      "accountedUsd": 0.16,
+      "usage": null,
+      "reservedAt": 1795041768057,
+      "sentAt": 1795041768071,
+      "receivedAt": 1795041768248,
+      "finishedAt": 1795041768248,
+      "http": 429,
+      "status": "error",
+      "responseSha256": "26903f3927ce916807e8aa6094643e37c92444cfe9e4123a9c43caf9bb3e784c",
+      "reportedModels": [],
+      "message": {
+        "role": "assistant",
+        "api": "openai-completions",
+        "provider": "minimax",
+        "model": "MiniMax-M3.1-Flash",
+        "stopReason": "error",
+        "timestamp": 1795041768248,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "totalTokens": 0,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "content": []
+      }
+    },
+    {
+      "cell": "sock-draw",
+      "kind": "tutor",
+      "stage": "generation",
+      "model": "MiniMax-M3.1-Flash",
+      "url": "https://api.minimax.io/v1/chat/completions",
+      "wireSha256": "7ceded1968d3e566c0e582890dd4e2fc5144dc415e0cb141160398274e4e2360",
+      "request": 2,
+      "reservedUsd": 0.16,
+      "accountedUsd": 0.16,
+      "usage": null,
+      "reservedAt": 1795041768078,
+      "sentAt": 1795041768093,
+      "receivedAt": 1795041768195,
+      "finishedAt": 1795041768197,
+      "http": 429,
+      "status": "error",
+      "responseSha256": "e2878aa60c272675d3afd8a61bf65bdd2a7f479effc85a0f59bb38c52894b6ba",
+      "reportedModels": [],
+      "message": {
+        "role": "assistant",
+        "api": "openai-completions",
+        "provider": "minimax",
+        "model": "MiniMax-M3.1-Flash",
+        "stopReason": "error",
+        "timestamp": 1795041768197,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "totalTokens": 0,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "content": []
+      }
+    },
+    {
+      "cell": "sock-draw",
+      "kind": "tutor",
+      "stage": "generation",
+      "model": "MiniMax-M3.1-Flash",
+      "url": "https://api.minimax.io/v1/chat/completions",
+      "wireSha256": "1fc737dd17468bd7b43bbf09e8d713a4ee78465daa0038ef9e8fc99e99828347",
+      "request": 3,
+      "reservedUsd": 0.16,
+      "accountedUsd": 0.16,
+      "usage": null,
+      "reservedAt": 1795041768099,
+      "sentAt": 1795041768114,
+      "receivedAt": 1795041768231,
+      "finishedAt": 1795041768232,
+      "http": 429,
+      "status": "error",
+      "responseSha256": "d01c69f00ba2a555b9d99c89aede42ddb2882a74d1bfb65ee5692240ad098fb4",
+      "reportedModels": [],
+      "message": {
+        "role": "assistant",
+        "api": "openai-completions",
+        "provider": "minimax",
+        "model": "MiniMax-M3.1-Flash",
+        "stopReason": "error",
+        "timestamp": 1795041768232,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "totalTokens": 0,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "content": []
+      }
+    },
+    {
+      "cell": "sock-draw",
+      "kind": "tutor",
+      "stage": "generation",
+      "model": "MiniMax-M3.1-Flash",
+      "url": "https://api.minimax.io/v1/chat/completions",
+      "wireSha256": "334df82658ac42957a21c895e307bb4adeca15254c93236d5513bb7747d53ea6",
+      "request": 4,
+      "reservedUsd": 0.16,
+      "accountedUsd": 0.16,
+      "usage": null,
+      "reservedAt": 1795041768120,
+      "sentAt": 1795041768135,
+      "receivedAt": 1795041768263,
+      "finishedAt": 1795041768264,
+      "http": 429,
+      "status": "error",
+      "responseSha256": "b7209822a555220c455d1a9f77349001e9305dbde5ef471cccceffb54882c6cf",
+      "reportedModels": [],
+      "message": {
+        "role": "assistant",
+        "api": "openai-completions",
+        "provider": "minimax",
+        "model": "MiniMax-M3.1-Flash",
+        "stopReason": "error",
+        "timestamp": 1795041768264,
+        "usage": {
+          "input": 0,
+          "output": 0,
+          "cacheRead": 0,
+          "cacheWrite": 0,
+          "totalTokens": 0,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0,
+            "total": 0
+          }
+        },
+        "content": []
+      }
+    }
+  ]
+}

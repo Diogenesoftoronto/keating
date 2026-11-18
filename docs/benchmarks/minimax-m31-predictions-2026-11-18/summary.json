@@ -1,0 +1,400 @@
+{
+  "rows": [
+    {
+      "case": "paper-fold",
+      "learner": "A strip of paper is folded in half once, then in half again. Before you tell me, I'd like to guess how many layers it has.",
+      "previousDisposition": "released",
+      "disposition": "released",
+      "requestedTutorModel": "MiniMax-M3.1-Flash",
+      "reportedTutorModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "actualTutorRequests": 4,
+      "completeTutorMessages": 4,
+      "fourTutorRequestsOverlapMs": 2795,
+      "individualReviews": 4,
+      "pairRequests": 2,
+      "concurrentPairReviewsMs": 68,
+      "pairs": [
+        {
+          "candidateAttempts": [
+            1,
+            2
+          ],
+          "wire": "ae67c13b66629c0e8ea004ec888b0aea8f81996b7e1a14474d5d6e0ec3cf9be6",
+          "status": "compared",
+          "preferredAttempt": 2,
+          "eligibleAttempts": [
+            2
+          ],
+          "finalistAttempt": 2,
+          "sentAt": 1795041753974,
+          "receivedAt": 1795041754086,
+          "predictionQuestionAttempts": [
+            2
+          ]
+        },
+        {
+          "candidateAttempts": [
+            3,
+            4
+          ],
+          "wire": "702e84b7c67edb820168e987c109d7e39bb23208a86c480fb83b1e2de9736188",
+          "status": "compared",
+          "preferredAttempt": 3,
+          "eligibleAttempts": [
+            3,
+            4
+          ],
+          "finalistAttempt": 3,
+          "sentAt": 1795041754018,
+          "receivedAt": 1795041754127,
+          "predictionQuestionAttempts": [
+            4
+          ]
+        }
+      ],
+      "selectedAttempt": 2,
+      "visibleText": "Quick check\n1 / 1\nHow many layers do you think the strip has after being folded in half twice?\nFinish check",
+      "rendered": [
+        "question-group"
+      ],
+      "elapsedMs": 22848,
+      "recordedSnapshotPairCount": 2,
+      "diagnosticPairCount": 2,
+      "runtimePairOverlapMs": 269.75999999791384,
+      "controls": {
+        "components": [
+          "question-group"
+        ],
+        "sliders": 0,
+        "questions": 1,
+        "adjustment": null,
+        "nativePages": [],
+        "questionActions": [
+          {
+            "step": "type",
+            "prompt": "How many layers do you think the strip has after being folded in half twice?",
+            "answer": "Four layers. The second fold doubles the two layers."
+          },
+          {
+            "step": "submit",
+            "savedAnswers": [
+              {
+                "answer": "Four layers. The second fold doubles the two layers.",
+                "question": "How many layers do you think the strip has after being folded in half twice?",
+                "grading": "pending",
+                "score": null
+              }
+            ],
+            "localActions": [
+              {
+                "type": "submit-question-group",
+                "nodeId": "response",
+                "status": "completed",
+                "result": "completed"
+              }
+            ],
+            "pendingSubmissions": 1,
+            "stoppedFollowupTurns": 1
+          }
+        ],
+        "newProviderRequestsDuringAction": 0
+      },
+      "checkpointReplyMode": null,
+      "interactionPlan": {
+        "action": "create",
+        "families": [
+          {
+            "family": "question",
+            "components": [
+              "Question"
+            ]
+          },
+          {
+            "family": "manipulable",
+            "components": [
+              "Simulation"
+            ]
+          }
+        ],
+        "features": [
+          "variable_relationship",
+          "ordered_procedure",
+          "prediction_opportunity",
+          "learner_response_due"
+        ],
+        "paired": false
+      },
+      "delivery": {
+        "guidance": {
+          "source": "jev",
+          "action": "create",
+          "delivered": true,
+          "targets": [
+            "question",
+            "simulation"
+          ]
+        },
+        "attempted": true,
+        "compiled": [
+          "question-group"
+        ],
+        "selected": [
+          "question-group"
+        ],
+        "rendered": [
+          "question-group"
+        ],
+        "nativePage": {
+          "succeeded": false,
+          "failed": false,
+          "attached": false,
+          "saved": false,
+          "mounted": false,
+          "ready": false,
+          "visible": false,
+          "opened": false,
+          "frameFailed": false
+        }
+      },
+      "candidateStrategies": [
+        {
+          "attempt": 1,
+          "variant": "default",
+          "feedbackOnly": false,
+          "predictionQuestionOnly": false
+        },
+        {
+          "attempt": 2,
+          "variant": "interactive",
+          "feedbackOnly": false,
+          "predictionQuestionOnly": true
+        },
+        {
+          "attempt": 3,
+          "variant": "default",
+          "feedbackOnly": false,
+          "predictionQuestionOnly": false
+        },
+        {
+          "attempt": 4,
+          "variant": "interactive",
+          "feedbackOnly": false,
+          "predictionQuestionOnly": true
+        }
+      ],
+      "tutorPromptShapes": [
+        {
+          "dispatch": 1,
+          "strategy": "ordinary",
+          "wireSha256": "4c8aed2a0ac8bb2cd6634b28b716d309ccb11539c3cbaf5a7357a7fab2ceb1a7",
+          "toolNames": [
+            "animate",
+            "interactive_page",
+            "generate_image",
+            "feedback",
+            "remember_learner_profile",
+            "set_learner_goal",
+            "update_goal_step",
+            "revise_study_plan",
+            "evaluate_teaching",
+            "request_teaching_improvement"
+          ],
+          "hasSingleQuestionGrammar": false
+        },
+        {
+          "dispatch": 2,
+          "strategy": "collect-prediction",
+          "wireSha256": "09b93ec4974ed6984b400b130b122b5b4b58d8e6e73472a8a3312ebc6097299c",
+          "toolNames": [],
+          "hasSingleQuestionGrammar": true
+        },
+        {
+          "dispatch": 3,
+          "strategy": "ordinary",
+          "wireSha256": "83b4ff67795e88f338cb9089f05ac35b9568bb7293c96ab3d8c8d9641b2c79f4",
+          "toolNames": [
+            "animate",
+            "interactive_page",
+            "generate_image",
+            "feedback",
+            "remember_learner_profile",
+            "set_learner_goal",
+            "update_goal_step",
+            "revise_study_plan",
+            "evaluate_teaching",
+            "request_teaching_improvement"
+          ],
+          "hasSingleQuestionGrammar": false
+        },
+        {
+          "dispatch": 4,
+          "strategy": "collect-prediction",
+          "wireSha256": "9cbcf549dbbc8a9467f6a1cfe59cdf8a09dca640266e9345589a142bf6e8dc0e",
+          "toolNames": [],
+          "hasSingleQuestionGrammar": true
+        }
+      ]
+    },
+    {
+      "case": "sock-draw",
+      "learner": "There are two blue socks and one yellow sock in a drawer. I’m going to draw one at random without looking. I’d like to guess which colour I’m more likely to pick before you explain.",
+      "previousDisposition": "released",
+      "disposition": "withheld",
+      "requestedTutorModel": "MiniMax-M3.1-Flash",
+      "reportedTutorModels": [],
+      "actualTutorRequests": 4,
+      "completeTutorMessages": 0,
+      "fourTutorRequestsOverlapMs": 60,
+      "individualReviews": 0,
+      "pairRequests": 0,
+      "concurrentPairReviewsMs": null,
+      "pairs": [],
+      "selectedAttempt": null,
+      "visibleText": "Couldn't produce a reply\nTry again\nReload Keating\nIf this keeps happening, reload the page or start a new conversation.",
+      "rendered": [],
+      "elapsedMs": 4417,
+      "recordedSnapshotPairCount": 2,
+      "diagnosticPairCount": 2,
+      "runtimePairOverlapMs": null,
+      "controls": {
+        "components": [],
+        "sliders": 0,
+        "questions": 0,
+        "adjustment": null,
+        "nativePages": [],
+        "newProviderRequestsDuringAction": 0
+      },
+      "checkpointReplyMode": null,
+      "interactionPlan": {
+        "action": "create",
+        "families": [
+          {
+            "family": "question",
+            "components": [
+              "Question"
+            ]
+          }
+        ],
+        "features": [
+          "prediction_opportunity",
+          "learner_response_due"
+        ],
+        "paired": false
+      },
+      "delivery": {
+        "guidance": {
+          "source": "jev",
+          "action": "create",
+          "delivered": null,
+          "targets": [
+            "question"
+          ]
+        },
+        "attempted": null,
+        "compiled": null,
+        "selected": [],
+        "rendered": [],
+        "nativePage": {
+          "succeeded": null,
+          "failed": null,
+          "attached": null,
+          "saved": null,
+          "mounted": null,
+          "ready": null,
+          "visible": null,
+          "opened": null,
+          "frameFailed": null
+        }
+      },
+      "candidateStrategies": [
+        {
+          "attempt": 1,
+          "variant": "default",
+          "feedbackOnly": false,
+          "predictionQuestionOnly": false
+        },
+        {
+          "attempt": 2,
+          "variant": "interactive",
+          "feedbackOnly": false,
+          "predictionQuestionOnly": true
+        },
+        {
+          "attempt": 3,
+          "variant": "default",
+          "feedbackOnly": false,
+          "predictionQuestionOnly": false
+        },
+        {
+          "attempt": 4,
+          "variant": "interactive",
+          "feedbackOnly": false,
+          "predictionQuestionOnly": true
+        }
+      ],
+      "tutorPromptShapes": [
+        {
+          "dispatch": 1,
+          "strategy": "ordinary",
+          "wireSha256": "e7a85193572672b1c1d8ba7a2e706d5432e13e73e232d3e019f249db7886f8dc",
+          "toolNames": [
+            "animate",
+            "interactive_page",
+            "generate_image",
+            "feedback",
+            "remember_learner_profile",
+            "set_learner_goal",
+            "update_goal_step",
+            "revise_study_plan",
+            "evaluate_teaching",
+            "request_teaching_improvement"
+          ],
+          "hasSingleQuestionGrammar": false
+        },
+        {
+          "dispatch": 2,
+          "strategy": "collect-prediction",
+          "wireSha256": "7ceded1968d3e566c0e582890dd4e2fc5144dc415e0cb141160398274e4e2360",
+          "toolNames": [],
+          "hasSingleQuestionGrammar": true
+        },
+        {
+          "dispatch": 3,
+          "strategy": "ordinary",
+          "wireSha256": "1fc737dd17468bd7b43bbf09e8d713a4ee78465daa0038ef9e8fc99e99828347",
+          "toolNames": [
+            "animate",
+            "interactive_page",
+            "generate_image",
+            "feedback",
+            "remember_learner_profile",
+            "set_learner_goal",
+            "update_goal_step",
+            "revise_study_plan",
+            "evaluate_teaching",
+            "request_teaching_improvement"
+          ],
+          "hasSingleQuestionGrammar": false
+        },
+        {
+          "dispatch": 4,
+          "strategy": "collect-prediction",
+          "wireSha256": "334df82658ac42957a21c895e307bb4adeca15254c93236d5513bb7747d53ea6",
+          "toolNames": [],
+          "hasSingleQuestionGrammar": true
+        }
+      ]
+    }
+  ],
+  "requests": 17,
+  "metered": 13,
+  "priorBoundUsd": 3.137837464,
+  "newBoundUsd": 0.650047168,
+  "totalBoundUsd": 3.787884632,
+  "phaseCapUsd": 0.75,
+  "globalCapUsd": 10,
+  "invoiceUsd": null,
+  "sourceSha256": "d4d8119e92214bbfd16bb8941a12b94c4d86af07d1b8bb4931c158350ec4c94e"
+}

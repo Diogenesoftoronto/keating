@@ -99,8 +99,8 @@ function Classroom() {
   const persistence = useSessionPersistence({sessionIdRef:sessionRef, sessionParentIdRef:useRef(null),
     sessionForkedAtRef:useRef(null), agentRef} as any);
   useEffect(() => { void (async () => {
-    const model = getModel(options.provider, options.model);
-    if (!model) throw Error("The recorded tutor is absent from Pi's model registry");
+    const model = getModel(options.provider, options.model) ?? options.classroomModel;
+    if (model?.provider !== options.provider || model.id !== options.model) throw Error("The classroom cannot resolve the requested tutor");
     const tools = filterAvailableKeatingTools(await createKeatingTools(keatingStorage), {
       coursesAvailable:false, runtime:DEFAULT_AGENT_RUNTIME_CONFIG, speechEnabled:false,
       clientWebSearch:shouldExposeClientWebSearch(model),

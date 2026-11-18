@@ -1,4 +1,4 @@
-import { runTeachingDrafts, validateToolCall, projectActiveWork, type UiDocument, type ActivitySelectionInput, type ActivitySelection,
+import { runTeachingDrafts, validateToolCall, projectActiveWork, TUTOR_RATE_LIMIT_REASON, TUTOR_RATE_LIMIT_MESSAGE, type UiDocument, type ActivitySelectionInput, type ActivitySelection,
   type JudgementCaller, type PortableLearnerData, type ReleasedActivitySelection, type UiActionJournal,
   type TeachingPolicyCheck, type TeachingPolicyReply, type TeachingPolicyTurn, type TeachingDraftRefinement } from "@keating/learner-contracts";
 import { requestProviderRound, type ProviderRound, type ProviderToolResult } from "../provider-client";
@@ -141,7 +141,8 @@ export function createMobileTeachingDraftRound(options: {
       !feedbackQuestion && result.receipt.interaction?.action === "continue" && result.receipt.interaction.continueNodeId === activeNode?.id);
     if (result.status === "cancelled") throw new DOMException("Teaching request changed.", "AbortError");
     if (result.status !== "released" || !result.reply || !result.value) {
-      return { text: MOBILE_WITHHELD_TEACHING_REPLY, calls: [], assistantTurn: null, usage: totalUsage };
+      return { text: result.receipt.reason === TUTOR_RATE_LIMIT_REASON ? TUTOR_RATE_LIMIT_MESSAGE : MOBILE_WITHHELD_TEACHING_REPLY,
+        calls: [], assistantTurn: null, usage: totalUsage };
     }
     // The reviewed reply is authoritative; native continuation metadata may accompany only the same proposed calls.
     if (result.value.calls.length !== result.reply.toolCalls.length || result.value.calls.some((call, index) =>

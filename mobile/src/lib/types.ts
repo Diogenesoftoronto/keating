@@ -1,6 +1,7 @@
 import type { AgentStreamEvent } from "@keating/learner-contracts";
 
-export type ProviderId = "openai" | "anthropic" | "google" | "openrouter" | "custom" | "litert";
+export const NATIVE_PROVIDER_IDS = ["openai", "anthropic", "google", "openrouter", "minimax", "custom", "litert"] as const;
+export type ProviderId = (typeof NATIVE_PROVIDER_IDS)[number];
 
 export type MessageRole = "user" | "assistant";
 export type MessageFeedback = "helpful" | "missed";

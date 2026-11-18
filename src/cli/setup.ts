@@ -19,6 +19,7 @@ const PROVIDERS: SetupChoice[] = [
   { label: "Google", value: "google", hint: "Recommended for best performance" },
   { label: "OpenAI", value: "openai" },
   { label: "Anthropic", value: "anthropic" },
+  { label: "MiniMax", value: "minimax" },
   { label: "Custom", value: "custom", hint: "Type a provider name" }
 ];
 

@@ -7,6 +7,7 @@ import type {
   StudyArtifact,
 } from "./types";
 import { validateAgentStream } from "@keating/learner-contracts";
+import { NATIVE_PROVIDER_IDS } from "./types";
 
 type PersistedAppStateV1 = Omit<PersistedAppState, "schemaVersion"> & { schemaVersion: 1 };
 type PersistedAppStateV2 = Omit<PersistedAppState, "schemaVersion"> & { schemaVersion: 2 };
@@ -21,7 +22,7 @@ function isFiniteNumber(value: unknown): value is number {
 }
 
 function isProviderId(value: unknown): value is ProviderId {
-  return ["openai", "anthropic", "google", "openrouter", "custom", "litert"].includes(String(value));
+  return NATIVE_PROVIDER_IDS.includes(value as ProviderId);
 }
 
 function isChatAttachment(value: unknown): boolean {

@@ -1,0 +1,340 @@
+{
+  "id": "sock-draw",
+  "learner": "There are two blue socks and one yellow sock in a drawer. I’m going to draw one at random without looking. I’d like to guess which colour I’m more likely to pick before you explain.",
+  "startedAt": 1795041764173,
+  "receivedAt": 1795041768590,
+  "previous": null,
+  "prior": {
+    "receipt": "docs/benchmarks/jev-paired-prediction-2026-11-18/sock-draw.json",
+    "sha256": "87b9a43422e91ae6923f152cd4f0d601e7561d62873701315fcf439f9ad96b66",
+    "disposition": "released",
+    "publicText": "```openui lifecycle=ephemeral id=sock-colour-prediction\n\nroot = LearningSurface([response])\nresponse = Question([{ question: \"Which colour do you predict you are more likely to pick: blue or yellow?\", type: \"choice\", choices: [\"Blue\", \"Yellow\"] }], \"ephemeral\")\n```"
+  },
+  "snapshot": {
+    "phase": "withheld",
+    "attempt": 4,
+    "maxAttempts": 4,
+    "reasoning": "off",
+    "standard": "concise",
+    "elapsedMs": 579.5599999986589,
+    "attempts": [
+      {
+        "attempt": 1,
+        "reasoning": "off",
+        "standard": "concise",
+        "generationMs": 302.2799999974668,
+        "judgementMs": 0,
+        "status": "generation-error",
+        "checks": [],
+        "variant": "default"
+      },
+      {
+        "attempt": 2,
+        "reasoning": "off",
+        "standard": "concise",
+        "generationMs": 227.48499999940395,
+        "judgementMs": 0,
+        "status": "generation-error",
+        "checks": [],
+        "variant": "interactive",
+        "predictionQuestionOnly": true
+      },
+      {
+        "attempt": 3,
+        "reasoning": "off",
+        "standard": "concise",
+        "generationMs": 292.839999999851,
+        "judgementMs": 0,
+        "status": "generation-error",
+        "checks": [],
+        "variant": "default"
+      },
+      {
+        "attempt": 4,
+        "reasoning": "off",
+        "standard": "concise",
+        "generationMs": 289.7749999985099,
+        "judgementMs": 0,
+        "status": "generation-error",
+        "checks": [],
+        "variant": "interactive",
+        "predictionQuestionOnly": true
+      }
+    ],
+    "judgeModel": "jev-1.14.0",
+    "selectedAttempt": null,
+    "reason": "generation-unavailable",
+    "pairReviews": [
+      {
+        "pair": 1,
+        "candidateAttempts": [],
+        "preferredAttempt": null,
+        "model": null,
+        "status": "incomplete",
+        "policyVersion": "keating-teaching-policy/v2.4.1",
+        "feedbackOnlyAttempts": [],
+        "predictionQuestionAttempts": [],
+        "candidateIssueIds": [],
+        "eligibleAttempts": [],
+        "finalistAttempt": null
+      },
+      {
+        "pair": 2,
+        "candidateAttempts": [],
+        "preferredAttempt": null,
+        "model": null,
+        "status": "incomplete",
+        "policyVersion": "keating-teaching-policy/v2.4.1",
+        "feedbackOnlyAttempts": [],
+        "predictionQuestionAttempts": [],
+        "candidateIssueIds": [],
+        "eligibleAttempts": [],
+        "finalistAttempt": null
+      }
+    ],
+    "state": {
+      "sections": {
+        "learnerMessage": {
+          "bytes": 297,
+          "entries": 1
+        },
+        "conversation": {
+          "bytes": 2,
+          "entries": 0
+        },
+        "learnerEvidence": {
+          "bytes": 2,
+          "entries": 0
+        },
+        "availableTools": {
+          "bytes": 231,
+          "entries": 12
+        },
+        "toolResults": {
+          "bytes": 2,
+          "entries": 0
+        },
+        "sources": {
+          "bytes": 2,
+          "entries": 0
+        },
+        "pendingSubmissions": {
+          "bytes": 0,
+          "entries": 0
+        },
+        "activeWork": {
+          "bytes": 0,
+          "entries": 0
+        },
+        "reply": {
+          "bytes": 0,
+          "entries": 0
+        },
+        "candidates": {
+          "bytes": 0,
+          "entries": 0
+        },
+        "other": {
+          "bytes": 172,
+          "entries": 3
+        }
+      },
+      "totalBytes": 708,
+      "estimatedStateTokens": 236,
+      "estimatedRequestTokens": 6756,
+      "estimatedStateQuestionTokens": 1024,
+      "budgetTokens": 32000,
+      "fillRatio": 0.032,
+      "pinned": {
+        "activeWork": false,
+        "plan": false,
+        "focus": false,
+        "openInteractions": false,
+        "pendingSubmissions": false
+      }
+    },
+    "slides": [],
+    "stateHistory": [
+      {
+        "phase": "planning",
+        "attempt": 0,
+        "elapsedMs": 28.439999997615814,
+        "requestIndex": 1,
+        "state": {
+          "sections": {
+            "learnerMessage": {
+              "bytes": 297,
+              "entries": 1
+            },
+            "conversation": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "learnerEvidence": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "availableTools": {
+              "bytes": 231,
+              "entries": 12
+            },
+            "toolResults": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "sources": {
+              "bytes": 2,
+              "entries": 0
+            },
+            "pendingSubmissions": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "activeWork": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "reply": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "candidates": {
+              "bytes": 0,
+              "entries": 0
+            },
+            "other": {
+              "bytes": 172,
+              "entries": 3
+            }
+          },
+          "totalBytes": 708,
+          "estimatedStateTokens": 236,
+          "estimatedRequestTokens": 6756,
+          "estimatedStateQuestionTokens": 1024,
+          "budgetTokens": 32000,
+          "fillRatio": 0.032,
+          "pinned": {
+            "activeWork": false,
+            "plan": false,
+            "focus": false,
+            "openInteractions": false,
+            "pendingSubmissions": false
+          }
+        }
+      }
+    ],
+    "planningMs": 238.35999999940395,
+    "interaction": {
+      "action": "create",
+      "families": [
+        {
+          "family": "question",
+          "components": [
+            "Question"
+          ]
+        }
+      ],
+      "features": [
+        "prediction_opportunity",
+        "learner_response_due"
+      ],
+      "paired": false
+    }
+  },
+  "public": {
+    "text": "<!--keating:review=withheld-->\nThe reply model failed before producing a complete draft. Try again or check the reply model and connection in Settings.\n\nFailure: generation-unavailable. Draft attempts: 4; completed drafts: 0.",
+    "toolCalls": [],
+    "visibleText": "Couldn't produce a reply\nTry again\nReload Keating\nIf this keeps happening, reload the page or start a new conversation.",
+    "rendered": []
+  },
+  "observation": {
+    "schemaVersion": 1,
+    "conversationId": "79dceb52-7818-460d-92bb-1122896cc38e",
+    "turnId": "learner-0",
+    "turnIndex": 0,
+    "model": null,
+    "mode": "guided",
+    "cue": {
+      "kind": "implicit-action",
+      "targets": [
+        "question",
+        "quiz"
+      ]
+    },
+    "reply": "withheld",
+    "replyElapsedMs": 4085,
+    "attempted": null,
+    "compiled": null,
+    "selected": [],
+    "rendered": [],
+    "guidance": {
+      "source": "jev",
+      "action": "create",
+      "delivered": null,
+      "targets": [
+        "question"
+      ]
+    },
+    "outsideWords": null,
+    "nativePageRequested": null,
+    "assessment": {
+      "optOut": false,
+      "checkpoints": null
+    },
+    "draftAttempts": 4,
+    "gateIssues": [],
+    "decisionModel": "jev-1.14.0",
+    "pairReviews": [
+      {
+        "pair": 1,
+        "candidateAttempts": [],
+        "status": "incomplete",
+        "preferredAttempt": null,
+        "model": null,
+        "eligibleAttempts": [],
+        "finalistAttempt": null,
+        "feedbackOnlyAttempts": [],
+        "policyVersion": "keating-teaching-policy/v2.4.1",
+        "predictionQuestionAttempts": [],
+        "candidateIssueIds": []
+      },
+      {
+        "pair": 2,
+        "candidateAttempts": [],
+        "status": "incomplete",
+        "preferredAttempt": null,
+        "model": null,
+        "eligibleAttempts": [],
+        "finalistAttempt": null,
+        "feedbackOnlyAttempts": [],
+        "policyVersion": "keating-teaching-policy/v2.4.1",
+        "predictionQuestionAttempts": [],
+        "candidateIssueIds": []
+      }
+    ],
+    "nativePage": {
+      "succeeded": null,
+      "failed": null,
+      "attached": null,
+      "saved": null,
+      "mounted": null,
+      "ready": null,
+      "visible": null,
+      "opened": null,
+      "frameFailed": null
+    }
+  },
+  "browserErrors": [],
+  "blockedExternalOrigins": [
+    "https://cdn.jsdelivr.net"
+  ],
+  "transportErrors": [],
+  "controls": {
+    "components": [],
+    "sliders": 0,
+    "questions": 0,
+    "adjustment": null,
+    "nativePages": [],
+    "newProviderRequestsDuringAction": 0
+  }
+}

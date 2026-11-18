@@ -1,6 +1,6 @@
-import { SERVICE_ENDPOINTS, DEFAULT_MODELS, MODEL_CHOICES } from "@keating/runtime-config";
+import { SERVICE_ENDPOINTS, DEFAULT_MODELS, MINIMAX_M31_FLASH_PROFILE, MODEL_CHOICES } from "@keating/runtime-config";
 import { providerDefinition } from "./provider-config";
-import type { ProviderId, ProviderSettings } from "./types";
+import { NATIVE_PROVIDER_IDS, type ProviderId, type ProviderSettings } from "./types";
 import type { ReasoningLevel } from "./ui-settings";
 import { OFFLINE_MODELS } from "./offline-model-contract";
 
@@ -28,6 +28,7 @@ export const NATIVE_PROVIDER_TRANSPORT: Readonly<Record<ProviderId, NativeModelT
   anthropic: "anthropic-messages",
   google: "google-generative-ai",
   openrouter: "openai-chat-completions",
+  minimax: "openai-chat-completions",
   custom: "openai-chat-completions",
 };
 
@@ -68,13 +69,13 @@ export interface CatalogSections {
 
 type ModelsDevProviderId = Exclude<ProviderId, "custom" | "litert">;
 
-const MODELS_DEV_PROVIDERS = new Set<ModelsDevProviderId>(["openai", "anthropic", "google", "openrouter"]);
-const PROVIDER_IDS = new Set<ProviderId>(["openai", "anthropic", "google", "openrouter", "custom", "litert"]);
+const MODELS_DEV_PROVIDERS = new Set<ModelsDevProviderId>(["openai", "anthropic", "google", "openrouter", "minimax"]);
+const PROVIDER_IDS = new Set<ProviderId>(NATIVE_PROVIDER_IDS);
 const MODEL_SOURCES = new Set<CatalogModel["source"]>(["models.dev", "built-in", "custom"]);
 const REASONING_LEVELS = new Set<ReasoningLevel>(["off", "minimal", "low", "medium", "high", "xhigh"]);
 const REASONING_ORDER: readonly ReasoningLevel[] = ["off", "minimal", "low", "medium", "high", "xhigh"];
 
-const TRANSPORT_INCOMPATIBLE_ID_PATTERNS: Readonly<Record<ModelsDevProviderId, readonly RegExp[]>> = {
+const TRANSPORT_INCOMPATIBLE_ID_PATTERNS: Readonly<Record<Exclude<ModelsDevProviderId, "minimax">, readonly RegExp[]>> = {
   openai: [/embedding/i, /realtime/i, /transcri/i, /whisper/i, /\btts\b/i, /moderation/i, /image/i, /audio/i],
   anthropic: [],
   google: [/embedding/i, /(?:^|[-/])live(?:[-/]|$)/i, /image/i, /lyria/i, /robotics/i, /deep-research/i],
@@ -226,6 +227,7 @@ export function isCatalogModel(value: unknown): value is CatalogModel {
 }
 
 export function isNativeTransportCompatible(provider: ModelsDevProviderId, modelId: string): boolean {
+  if (provider === "minimax") return modelId === MINIMAX_M31_FLASH_PROFILE.id;
   return !TRANSPORT_INCOMPATIBLE_ID_PATTERNS[provider].some((pattern) => pattern.test(modelId));
 }
 
@@ -252,6 +254,10 @@ export function parseModelsDevCatalog(payload: unknown): CatalogModel[] {
       if (!isRecord(modelValue)) continue;
       const id = typeof modelValue.id === "string" && modelValue.id.trim() ? modelValue.id.trim() : recordKey.trim();
       if (!id) continue;
+      if (provider === MINIMAX_M31_FLASH_PROFILE.provider && id === MINIMAX_M31_FLASH_PROFILE.id) {
+        models.push(MINIMAX_FLASH_CATALOG_MODEL);
+        continue;
+      }
       const modalities = isRecord(modelValue.modalities) ? modelValue.modalities : {};
       const inputs = stringArray(modalities.input);
       const limits = isRecord(modelValue.limit) ? modelValue.limit : {};
@@ -423,6 +429,18 @@ function compareModels(left: CatalogModel, right: CatalogModel): number {
   return left.providerLabel.localeCompare(right.providerLabel) || left.name.localeCompare(right.name);
 }
 
+const MINIMAX_FLASH_CATALOG_MODEL: CatalogModel = {
+  key: catalogKey(MINIMAX_M31_FLASH_PROFILE.provider, MINIMAX_M31_FLASH_PROFILE.id),
+  provider: MINIMAX_M31_FLASH_PROFILE.provider, providerLabel: "MiniMax",
+  id: MINIMAX_M31_FLASH_PROFILE.id, name: MINIMAX_M31_FLASH_PROFILE.name,
+  description: "Direct MiniMax chat with image input and tool calls.",
+  reasoning: true, reasoningLevels: ["low", "medium", "high", "xhigh"],
+  temperature: false, toolCall: true, vision: true,
+  contextWindow: MINIMAX_M31_FLASH_PROFILE.contextWindow, maxOutputTokens: MINIMAX_M31_FLASH_PROFILE.maxTokens,
+  nativeProvider: "minimax", transport: NATIVE_PROVIDER_TRANSPORT.minimax,
+  callable: true, unavailabilityReason: null, recoveryHint: null, source: "built-in",
+};
+
 export const BUILT_IN_MODEL_CATALOG: readonly CatalogModel[] = [
   ...OFFLINE_MODELS.map((model): CatalogModel => ({
     key: `litert::${model.id}`, provider: "litert", providerLabel: "On this device",
@@ -516,4 +534,5 @@ export const BUILT_IN_MODEL_CATALOG: readonly CatalogModel[] = [
     recoveryHint: null,
     source: "built-in",
   },
+  MINIMAX_FLASH_CATALOG_MODEL,
 ] as const;

@@ -46,7 +46,7 @@ export function openUIDiagnosticEvent(row: OpenUiDiagnosticTurn, revision: numbe
   return {
     diagnostic_schema: 1, diagnostic_revision: revision,
     conversation_id: row.conversationId, turn_id: row.turnId, turn_index: row.turnIndex,
-    model: row.model, decision_mode: row.mode, cue_kind: row.cue.kind, cue_targets: row.cue.targets,
+    model: row.model, requested_model: row.requestedModel ?? null, decision_mode: row.mode, cue_kind: row.cue.kind, cue_targets: row.cue.targets,
     cue_repeat: row.cue.repeat ?? false,
     reply_outcome: row.reply, reply_elapsed_ms: row.replyElapsedMs ?? null, ui_attempted: row.attempted, outside_words: row.outsideWords ?? null,
     native_page_requested: row.nativePageRequested ?? null, native_page: row.nativePage ?? null, guidance_reason: row.guidance?.reason ?? null,

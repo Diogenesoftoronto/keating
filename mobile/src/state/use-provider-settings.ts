@@ -22,6 +22,7 @@ export const emptyKeyStatus: KeyStatus = {
   anthropic: false,
   google: false,
   openrouter: false,
+  minimax: false,
   custom: false,
 };
 

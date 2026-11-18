@@ -311,6 +311,42 @@ describe("buildProviderRequest", () => {
     ]);
   });
 
+  it("sends direct MiniMax a bounded streamed tool turn and returns the exact thinking and tool call on continuation", async () => {
+    // An imported or stale URL cannot move this provider's key to a different host.
+    const settings = { ...settingsForProvider("minimax"), baseUrl: "https://custom.example/v1" };
+    const call = { index: 0, id: result.callId, type: "function", function: { name: tool.name, arguments: '{"topic":"closures"}' } };
+    const chunks = [
+      { choices: [{ delta: { reasoning_content: "First " } }] },
+      { choices: [{ delta: { reasoning_content: "step." } }] },
+      { choices: [{ delta: { tool_calls: [call] }, finish_reason: "tool_calls" }] },
+      { choices: [], usage: { prompt_tokens: 5, completion_tokens: 8, total_tokens: 13 } },
+    ];
+    const round = await requestProviderRound(settings, "minimax-test-key", messages, {
+      stream: true, reasoningLevel: "minimal", tools: [tool], onTextDelta: () => {},
+      fetchImpl: async (url, init) => {
+        expect(url).toBe("https://api.minimax.io/v1/chat/completions");
+        expect(new Headers(init?.headers).get("authorization")).toBe("Bearer minimax-test-key");
+        const body = JSON.parse(String(init?.body));
+        expect(body).toMatchObject({ model: "MiniMax-M3.1-Flash", reasoning_effort: "low", max_completion_tokens: 4096,
+          tools: [{ type: "function", function: tool }], stream_options: { include_usage: true } });
+        expect(body.temperature).toBeUndefined();
+        return new Response(chunks.map(item => `data: ${JSON.stringify(item)}\n\n`).join("") + "data: [DONE]\n\n",
+          { headers: { "Content-Type": "text/event-stream" } });
+      },
+    });
+    expect(round.text).toBe("");
+    expect(round.calls[0]?.id).toBe(result.callId);
+    const continuation = continueProviderTurn(round.assistantTurn!, [result]);
+    expect(continuation.provider).toBe("minimax");
+    const body = JSON.parse(String(buildProviderRequest(settings, "minimax-test-key", messages, { continuation }).init.body));
+    expect(body.messages.slice(-2)).toEqual([
+      { role: "assistant", content: null, reasoning_content: "First step.",
+        tool_calls: [{ id: result.callId, type: "function", function: call.function }] },
+      { role: "tool", tool_call_id: result.callId, content: JSON.stringify(result.output) },
+    ]);
+    expect(body.reasoning_effort).toBeUndefined();
+  });
+
   it("retains every stateless-provider exchange across three model rounds", () => {
     const first = continueProviderTurn(
       { provider: "anthropic", assistantContent: [{ type: "tool_use", id: "call-1", name: tool.name, input: { topic: "one" } }] },

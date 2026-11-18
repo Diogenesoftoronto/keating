@@ -3,6 +3,10 @@ import { IDBFactory } from "fake-indexeddb";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createAssistantMessageEventStream, type Api, type AssistantMessage, type Model } from "@earendil-works/pi-ai";
+import { streamSimple } from "@earendil-works/pi-ai/compat";
+import { TUTOR_RATE_LIMIT_MESSAGE, TUTOR_RATE_LIMIT_REASON } from "@keating/learner-contracts";
+import { ReviewNoticeCard } from "../components/ReviewNoticeCard";
+import { projectTeachingDraftSnapshot } from "../keating/judgement/draft-status";
 import type { TeachingDraftSnapshot } from "@keating/learner-contracts";
 import type { OpenUiDiagnosticTurn } from "../../../packages/learner-contracts/src/openui-diagnostic-turn";
 import { readFileSync } from "node:fs";
@@ -13,7 +17,7 @@ import { activeOpenUIDiagnosticTurn, observeOpenUITurns } from "../keating/openu
 import { KeatingOpenUIRenderer } from "../keating/openui/renderer";
 import { createOpenUIActionLearnerResponse, serializeLearnerResponse } from "../keating/learner-response";
 import { withTeachingDraftGate } from "../keating/judgement/draft-gate";
-import { withReviewNotice } from "../keating/judgement/review-notice";
+import { parseReviewNotice, withheldSummary, withReviewNotice } from "../keating/judgement/review-notice";
 import { answerDraftGateReview } from "./helpers/teaching-draft-judge";
 
 const source = [
@@ -34,6 +38,65 @@ const row = (index: number): OpenUiDiagnosticTurn => ({ schemaVersion: 1, conver
   reply: "pending", attempted: null, compiled: null, selected: null, rendered: null, guidance: null });
 
 describe("durable content-free OpenUI turn observation", () => {
+  test("a failed generation keeps the requested tutor and ignores late events from a previous round", async () => {
+    const store = createOpenUIDiagnosticStore(() => undefined);
+    const sessionId = "no-completed-generation";
+    const messages = [learner("Let me guess before you explain.")];
+    const observer = observeOpenUITurns({sessionId, store, messages:() => messages, mode:() => "unknown", capture() {}});
+    observer.observe({type:"agent_start"});
+    const turn = activeOpenUIDiagnosticTurn(sessionId)!;
+    const first = turn.beginRound();
+    first.generationRequested("minimax/old-tutor");
+    turn.beginRound().generationRequested("minimax/current-tutor");
+    first.generationRequested("minimax/stale-tutor");
+    observer.observe({type:"agent_end"});
+    await store.settled();
+    expect(store.getRows()[0]).toMatchObject({requestedModel:"minimax/current-tutor", model:null});
+    observer.dispose();
+  });
+  test("four HTTP 429s from the tutor reach the classroom and diagnostic export without fabricating a Jev rejection", async () => {
+    const store = createOpenUIDiagnosticStore(() => undefined);
+    const sessionId = "tutor-http-rate-limit";
+    const messages: Array<AssistantMessage | ReturnType<typeof learner>> = [learner("I would like to predict the result.")];
+    const observer = observeOpenUITurns({ sessionId, store, messages: () => messages, mode: () => "unknown", capture() {} });
+    observer.observe({ type: "agent_start" });
+    let tutorRequests = 0;
+    let judgeRequests = 0;
+    const snapshots: TeachingDraftSnapshot[] = [];
+    const fakeFetch: typeof fetch = Object.assign(async () => {
+      tutorRequests++;
+      return Response.json({ error: { type: "opaque", message: "PRIVATE provider detail" } }, { status: 429 });
+    }, { preconnect() {} });
+    const actor = { ...model, provider: "minimax", api: "anthropic-messages", id: "MiniMax-M3.1", baseUrl: "http://127.0.0.1:9" } as Model<Api>;
+    const gate = withTeachingDraftGate((m, c, options) => streamSimple(m, c, { ...options, apiKey: "fixture", fetch: fakeFetch, maxRetries: 0 }), {
+      sessionId, basePrompt: () => "Tutor", onProgress: snapshot => snapshots.push(snapshot), makeCaller: () => async request => {
+        judgeRequests++;
+        const outcome = answerDraftGateReview(request);
+        if (!outcome.ok) return outcome;
+        return { ok: true, response: { ...outcome.response, backend: { backend: "system-one", model: "jev-fixture", calibrationSha256: null } } };
+      },
+    });
+    try {
+      const reply = await (await gate(actor, { systemPrompt: "Tutor", messages: [learner("I would like to predict the result.")] })).result();
+      messages.push(reply);
+      observer.observe({ type: "agent_end" });
+      await store.settled();
+      const notice = parseReviewNotice(reply.content.find(block => block.type === "text")?.text ?? "");
+      expect(notice?.kind).toBe("withheld");
+      expect(notice?.text).toContain(TUTOR_RATE_LIMIT_MESSAGE);
+      const view = renderToStaticMarkup(createElement(ReviewNoticeCard, { kind: notice!.kind, reason: withheldSummary(notice!.text) }));
+      expect(view).toContain("<span aria-hidden=\"true\">Reply provider rate limit reached</span>");
+      expect([tutorRequests, judgeRequests]).toEqual([4, 1]);
+      const receipt = projectTeachingDraftSnapshot(snapshots.at(-1)!);
+      expect(receipt.reason).toBe(TUTOR_RATE_LIMIT_REASON);
+      expect(receipt.attempts.map(a => [a.status, a.generationFailure, a.checks])).toEqual(
+        Array.from({length: 4}, () => ["generation-error", TUTOR_RATE_LIMIT_REASON, []]));
+      expect(receipt.pairReviews?.map(p => [p.status, p.preferredAttempt])).toEqual([["incomplete", null], ["incomplete", null]]);
+      expect(store.getRows()[0]).toMatchObject({ reply: "withheld", model: null, gateIssues: [TUTOR_RATE_LIMIT_REASON] });
+      expect(JSON.stringify([reply, receipt, store.getRows()])).not.toContain("PRIVATE provider detail");
+    } finally { observer.dispose(); }
+  });
+
   test("binds an actual language-only planning receipt to the selected Python editor without crediting fenced OpenUI", async () => {
     const store = createOpenUIDiagnosticStore(()=>undefined);
     const sessionId = "code-language-offer";
@@ -108,7 +171,7 @@ describe("durable content-free OpenUI turn observation", () => {
     observer.observe({ type: "agent_end" });
     await store.settled();
     const [observed] = store.getRows();
-    expect(observed).toMatchObject({ turnId: "learner-1", turnIndex: 1, model: "fixture/fixture-tutor", mode: "guided",
+    expect(observed).toMatchObject({ turnId: "learner-1", turnIndex: 1, model: "fixture/fixture-tutor", requestedModel:"fixture/fixture-tutor", mode: "guided",
       decisionModel: "jev-1.fixture", reply: "released", attempted: true, compiled: ["question-group"], selected: ["question-group"], rendered: null,
       selection: { attempt: 1, review: "verified", rule: "none" },
       guidance: { source: "jev", action: "create", delivered: true, targets: ["question"] } });

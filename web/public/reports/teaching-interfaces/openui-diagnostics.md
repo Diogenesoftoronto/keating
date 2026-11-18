@@ -18,11 +18,14 @@ Browser-connected models can read `keating://openui-diagnostics` through Keating
 
 ## Replay and compare tutors
 
+A provider can reject all four requests before Jev sees a draft. On new guided turns, the tutor filter includes the model Keating requested even if the **Observed tutor** is unknown. The turn shows both identities if they differ. An incomplete pair records the empty slots. Only a completed comparison counts as a Jev vote.
+
 Choose a recording that observed the stage you want to investigate.
 
 | Recording | What it measures |
 | --- | --- |
 | Jev pair reviews · two predictions | Two learners who wanted to guess saw a Question on the first reply. One ordinary draft and one prediction-focused draft won. [Compare the pair decisions](diagnostics.html?source=jev-pairs-prediction&view=pair-reviews) |
+| MiniMax M3.1 Flash · two predictions | A free-text paper-fold Question reached the learner. MiniMax returned HTTP 429 on all four sock-draw attempts. [Inspect both turns](diagnostics.html?source=flash-prediction&view=pair-reviews) |
 | Jev pair reviews · five classroom turns | Two typed answers, a one-word request and two implicit requests for controls. Includes the feedback-only prompt assignments and a withheld prediction. [Open the five turns](diagnostics.html?source=jev-pairs&view=pair-reviews) |
 | Jev pair reviews · first classroom check | Four MiniMax replies on each of two Jev-guided turns. Both pair preferences, the individual eligibility decisions and the classroom outcome are recorded. |
 | Final review · selected tutor replies | Follows guided turns through review and release. Includes withheld turns and provider errors. [Open the two lost prediction fields](diagnostics.html?source=review&cue=implicit-action&view=draft-loss) |

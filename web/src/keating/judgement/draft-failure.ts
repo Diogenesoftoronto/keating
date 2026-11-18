@@ -1,6 +1,7 @@
-import { blocksRelease, type TeachingDraftSnapshot } from "@keating/learner-contracts";
+import { blocksRelease, TUTOR_RATE_LIMIT_MESSAGE, TUTOR_RATE_LIMIT_REASON, type TeachingDraftSnapshot } from "@keating/learner-contracts";
 
 const failures: Record<string, string> = {
+  [TUTOR_RATE_LIMIT_REASON]: TUTOR_RATE_LIMIT_MESSAGE,
   "backend-unavailable": "The judgement model is unavailable. Check the judgement model in Settings, then try again.",
   "backend-unauthorized": "The review provider rejected authentication. Reconnect your account or update the judgement model credentials in Settings.",
   "backend-payment-required": "The review provider couldn't fund this review. Check your account credit and request spending limit, then try again.",

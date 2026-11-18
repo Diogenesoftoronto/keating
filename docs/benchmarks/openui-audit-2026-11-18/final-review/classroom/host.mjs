@@ -24,7 +24,8 @@ export async function startHost({ product, sample, bridge, exhibit, useGateDefau
   await writeFile(join(fixture,"index.html"), '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Keating classroom</title><style>html,body,#app{margin:0;height:100%;min-height:0}body{background:var(--background);color:var(--foreground)}[data-inspector]{max-width:70rem;margin:auto;padding:1rem}</style></head><body><main id="app"></main><script type="module" src="/entry.tsx"></script></body></html>');
   let replaySent = false;
   const traffic = [];
-  const config = {live:!!bridge, followup:!!sample.followup, readOnly:!!exhibit, gradeDemo:!!sample.gradeDemo, provider:sample.provider, model:sample.model, useGateDefaults};
+  const config = {live:!!bridge, followup:!!sample.followup, readOnly:!!exhibit, gradeDemo:!!sample.gradeDemo, provider:sample.provider, model:sample.model,
+    ...(sample.classroomModel && {classroomModel:sample.classroomModel}), useGateDefaults};
   const handlers = {
     name:"isolated-classroom-transport",
     configureServer(vite) {

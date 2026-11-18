@@ -5,10 +5,11 @@ import { join, relative, resolve } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { cohort, repo, startHost, study } from "../../docs/benchmarks/openui-audit-2026-11-18/final-review/classroom/host.mjs";
 import { fileSha, read, save, sha, usd } from "../../docs/benchmarks/openui-audit-2026-11-18/final-review/study/common.mjs";
-import { amount, cost, createProbeTransport, globalCapUsd, judgeId, phaseCapUsd, priorBoundUsd, tutorId } from "./jev-pair-transport.mjs";
+import { amount, cost, createProbeTransport, flashTutorId, globalCapUsd, judgeId, phaseCapUsd, priorBoundUsd, tutorId as baselineTutorId } from "./jev-pair-transport.mjs";
 import { createSystemOneCaller } from "../../packages/learner-contracts/src/judgement/system-one.ts";
 import { parseOpenUiDiagnosticExport } from "../../packages/learner-contracts/src/openui-diagnostic-turn.ts";
 import { pairReviewOverlapMs } from "../../packages/learner-contracts/src/openui-pair-reviews.ts";
+import { MINIMAX_M31_FLASH_PROFILE } from "../../packages/runtime-config/src/index.ts";
 import { stripReviewNotice } from "../../web/src/keating/judgement/review-notice.ts";
 
 const parentPath = join(study, "supplement/prediction/receipts/tile-bag--minimax--jev.json");
@@ -20,23 +21,27 @@ const originalCases = [
   {id:"copper-symbol", learner:cohort.cases.find(c => c.id === "copper").learner, baseline:join(study, "receipts/copper--minimax--jev.json")},
 ];
 const args = process.argv.slice(2), budgetArg = args.find(v => v.startsWith("--max-additional-usd="));
-const [mode, output] = args.filter(v => !["--feedback","--prediction"].includes(v) && v !== budgetArg);
+const [mode, output] = args.filter(v => !["--feedback","--prediction","--minimax-flash"].includes(v) && v !== budgetArg);
 assert(["--preflight","--preflight-controls","--run","--verify"].includes(mode) && (mode.startsWith("--preflight") || output),
   "Use --preflight, --run <new directory>, or --verify <saved directory>.");
 const folder = output && resolve(output);
 const stored = mode === "--verify" ? read(join(folder, "ledger.json")) : null;
-const prediction = args.includes("--prediction") || stored?.protocol === "paired-prediction";
+const flash = args.includes("--minimax-flash") || stored?.protocol === "paired-flash-prediction";
+const tutorId = flash ? flashTutorId : baselineTutorId;
+const prediction = flash || args.includes("--prediction") || stored?.protocol === "paired-prediction";
 const followup = prediction || args.includes("--feedback") || stored?.protocol === "paired-feedback";
 const firstBatch = join(repo, "docs/benchmarks/jev-parallel-pairs-2026-11-18");
 const feedbackBatch = join(repo, "docs/benchmarks/jev-paired-feedback-2026-11-18");
+const predictionBatch = join(repo, "docs/benchmarks/jev-paired-prediction-2026-11-18");
 const scopeLedger = join(repo, "docs/benchmarks/jev-feedback-scope-2026-11-18/summary.json");
 const budget = stored ?? {
-  priorBoundUsd:prediction ? 3.070723792 : followup ? 2.861363164 : priorBoundUsd,
+  priorBoundUsd:flash ? 3.137837464 : prediction ? 3.070723792 : followup ? 2.861363164 : priorBoundUsd,
   phaseCapUsd:budgetArg ? Number(budgetArg.slice(budgetArg.indexOf("=") + 1)) : phaseCapUsd,
   globalCapUsd,
 };
 if (followup) {
-  assert.equal(read(prediction ? join(feedbackBatch,"summary.json") : scopeLedger).totalBoundUsd, budget.priorBoundUsd);
+  const priorReport = flash ? join(predictionBatch,"summary.json") : prediction ? join(feedbackBatch,"summary.json") : scopeLedger;
+  assert.equal(read(priorReport).totalBoundUsd, budget.priorBoundUsd);
   if (mode === "--run") assert(budgetArg, "A fresh comparison requires --max-additional-usd=<authorized amount>.");
 }
 const feedbackCases = [
@@ -51,7 +56,9 @@ const predictionCases = [
     baseline:join(feedbackBatch,"paper-fold.json")},
   {id:"sock-draw",learner:"There are two blue socks and one yellow sock in a drawer. I’m going to draw one at random without looking. I’d like to guess which colour I’m more likely to pick before you explain."},
 ];
-const cases = prediction ? predictionCases : followup ? feedbackCases : originalCases;
+const cases = flash ? predictionCases.map(sample => ({...sample, baseline:join(predictionBatch, sample.id + ".json")}))
+  : prediction ? predictionCases : followup ? feedbackCases : originalCases;
+const protocolId = flash ? "paired-flash-prediction" : prediction ? "paired-prediction" : "paired-feedback";
 const localAnswers = {
   "paper-fold":{choice:/^(?:4|four)(?: layers?(?: of paper)?)?[.!]?$/iu, answer:"Four layers. The second fold doubles the two layers."},
   "sock-draw":{choice:/^(?:blue|blue socks?|(?:a |the )?blue sock|blue is (?:more|most) likely)[.!]?$/iu,
@@ -66,7 +73,10 @@ const opportunities = {
   "sock-draw":"Invite a guess about the more likely colour without revealing blue. Provide a visible learner-operable Question or equivalent native input. The known answer is blue because two of the three socks are blue.",
 };
 function registeredProtocol() {
-  return {study:prediction ? "paired-prediction" : "paired-feedback", setting:"Local release-worktree Chromium classroom with live Jev and MiniMax",
+  return {study:protocolId, setting:"Local release-worktree Chromium classroom with live Jev and MiniMax",
+    ...(flash && {tutorModel:tutorId, judgeModel:judgeId, comparisonTutor:baselineTutorId,
+      criteria:"Repeat both earlier prediction prompts verbatim. Count each scheduled turn, visible actionable Questions, local submissions, withheld replies and provider failures.",
+      priceSource:"https://www.minimax.io/blog/minimax-m31f", tutorTransport:"MiniMax OpenAI-compatible Chat Completions"}),
     cohort:cases.map(c => ({case:c.id, learner:c.learner, opportunity:opportunities[c.id], historicalReceipt:c.baseline ? relative(repo,c.baseline) : null,
       historicalReceiptSha256:c.baseline ? fileSha(c.baseline) : null, parentQuestionReceiptSha256:c.parent ? fileSha(parentPath) : null})),
     questionAction:prediction ? "On each released Question, select four layers for paper or blue for the sock draw. If the authored control takes text, enter the answer and its reason. Inspect the actual locally saved submission and grading state. Further inference is closed."
@@ -84,6 +94,14 @@ function sourceIdentity() {
   for (const name of readdirSync(join(repo,"packages/learner-contracts/src")).filter(name => name.startsWith("openui-") && name.endsWith(".ts")).sort()) {
     const path = join("packages/learner-contracts/src", name);
     manifest[path] = fileSha(join(repo, path));
+  }
+  if (flash) {
+    for (const file of ["packages/runtime-config/src/index.ts", "packages/runtime-config/src/model-identities.ts",
+      "packages/runtime-config/src/models.ts", "packages/runtime-config/src/services.ts",
+      "scripts/openui-diagnostics/jev-pair-transport.mjs", "scripts/openui-diagnostics/probe-jev-pairs.mjs",
+      "docs/benchmarks/openui-audit-2026-11-18/final-review/classroom/host.mjs", "docs/benchmarks/openui-audit-2026-11-18/final-review/classroom/entry.tsx"]) {
+      manifest[file] = fileSha(join(repo, file));
+    }
   }
   return {gitHead:Bun.spawnSync(["rtk","proxy","git","rev-parse","HEAD"], {cwd:repo}).stdout.toString().trim(),
     files:manifest, sha256:sha(manifest)};
@@ -131,10 +149,10 @@ function makeBridge(sample, transport) {
     async close() { await Promise.allSettled([...pending]); server.stop(true); }};
 }
 
-async function runClassroom(sample, transport) {
+async function runClassroom(sample, transport, classroomModel = transport?.classroomModel) {
   const bridge = makeBridge(sample, transport);
   const host = await startHost({product:repo, useGateDefaults:true, bridge, sample:{
-    provider:"minimax", model:tutorId, learner:sample.parent?.prompt ?? sample.learner,
+    provider:"minimax", model:tutorId, ...(flash && classroomModel && {classroomModel}), learner:sample.parent?.prompt ?? sample.learner,
     followup:!!sample.parent, message:sample.parent?.public.message,
   }});
   try {
@@ -342,7 +360,7 @@ function summarize() {
     const wire = JSON.parse(bytes);
     assert.equal(wire.model, entry.model);
     assert.equal(entry.model, entry.kind === "tutor" ? tutorId : judgeId);
-    assert.equal(entry.accountedUsd, amount(entry.kind, entry.usage));
+    assert.equal(entry.accountedUsd, amount(entry.kind, entry.usage, tutorId));
     wires.set(entry, wire);
   }
   const rows = cases.map(sample => {
@@ -387,6 +405,7 @@ function summarize() {
       assert.deepEqual({text:stripReviewNotice(file.public.text), toolCalls:file.public.toolCalls}, published);
     }
     return {case:sample.id, learner:sample.learner, previousDisposition:file.prior?.disposition ?? null, disposition:file.snapshot.phase,
+      ...(flash && {requestedTutorModel:tutorId, reportedTutorModels:[...new Set(tutors.flatMap(entry => entry.reportedModels ?? []))]}),
       actualTutorRequests:tutors.length, completeTutorMessages:tutors.filter(e => ["stop","toolUse"].includes(e.message?.stopReason)).length,
       fourTutorRequestsOverlapMs:tutors.length === 4 ? overlap(tutors) : null,
       individualReviews:entries.filter(e => e.stage === "review").length, pairRequests:pairCalls.length,
@@ -402,9 +421,10 @@ function summarize() {
           ...(prediction ? {predictionQuestionOnly:a.predictionQuestionOnly === true} : {})})),
         tutorPromptShapes:tutors.map(e => {
         const wire = wires.get(e);
-        return {dispatch:e.request, strategy:candidateStrategy(wire.system), wireSha256:e.wireSha256,
-          toolNames:(wire.tools ?? []).map(t => t.name),
-          ...(prediction ? {hasSingleQuestionGrammar:JSON.stringify(wire.system).includes("root = LearningSurface([response])")} : {})};
+        const system = wire.system ?? wire.messages?.find(message => ["system","developer"].includes(message.role))?.content ?? "";
+        return {dispatch:e.request, strategy:candidateStrategy(system), wireSha256:e.wireSha256,
+          toolNames:(wire.tools ?? []).map(tool => tool.name ?? tool.function?.name),
+          ...(prediction ? {hasSingleQuestionGrammar:JSON.stringify(system).includes("root = LearningSurface([response])")} : {})};
       })} : {})};
   });
   const newBoundUsd = cost(receipt.entries);
@@ -512,6 +532,10 @@ async function replayPredictionRouting() {
 
 if (mode === "--preflight-controls") {
   console.log(JSON.stringify({locallySubmittedForms:await checkOfflineQuestionForms(),newProviderRequests:0}));
+} else if (mode === "--preflight" && flash) {
+  assert.equal(MINIMAX_M31_FLASH_PROFILE.id, flashTutorId);
+  const boot = await runClassroom(cases[0], null, MINIMAX_M31_FLASH_PROFILE);
+  console.log(JSON.stringify({tutor:tutorId, judge:judgeId, cases:cases.map(sample => sample.id), ...boot}));
 } else if (mode === "--preflight" && prediction) {
   await replayPredictionRouting();
 } else if (mode === "--preflight") {
@@ -581,7 +605,7 @@ if (mode === "--preflight-controls") {
   mkdirSync(folder, {mode:0o700});
   const source = sourceIdentity();
   if (followup) save(join(folder,"protocol.json"), registeredProtocol());
-  const transport = await createProbeTransport(repo,folder,source,budget,prediction ? "paired-prediction" : followup ? "paired-feedback" : undefined);
+  const transport = await createProbeTransport(repo,folder,source,budget,followup ? protocolId : undefined,tutorId);
   try {
     for (const sample of cases) {
       assert.equal(sourceIdentity().sha256, source.sha256, "The measured source changed during the comparison.");

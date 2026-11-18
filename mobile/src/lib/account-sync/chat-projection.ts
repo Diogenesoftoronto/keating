@@ -1,8 +1,9 @@
 import { chatSyncCanonical } from "../../../../shared/account-sync/chat-sync-state";
 import type { KeatingPortableSession, SessionUsage } from "../../../../shared/account-sync/types";
 import type { ChatMessage, ChatSession, ProviderId, ProviderSettings } from "../types";
+import { NATIVE_PROVIDER_IDS } from "../types";
 
-const providers = new Set<ProviderId>(["openai", "anthropic", "google", "openrouter", "custom", "litert"]);
+const providers = new Set<ProviderId>(NATIVE_PROVIDER_IDS);
 const zeroUsage = (): SessionUsage => ({ input: 0, output: 0, cacheRead: 0, cacheWrite: 0, totalTokens: 0, cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 } });
 type WireMessage = KeatingPortableSession["data"]["messages"][number];
 type NativeWireMessage = WireMessage & { keatingNative?: Omit<ChatMessage, "content" | "role" | "createdAt"> };

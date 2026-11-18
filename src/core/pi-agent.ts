@@ -1,11 +1,13 @@
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
+import { MINIMAX_M31_FLASH_PROFILE } from "../../packages/runtime-config/src/index.js";
 import { loadKeatingConfig, mergePiDefaultsWithOverrides } from "./config.js";
 import { configDir } from "./paths.js";
 import {
   detectAiRuntime,
   resolveNotOrganicProviderExtensionPath,
-  selectAuthenticatedProvider
+  selectAuthenticatedProvider,
+  syncExtraProviders
 } from "../runtime/pi.js";
 import { withApiRetry } from "./api-retry.js";
 import { classifyObservationError, exportProviderCompletion } from "../observability/arize.js";
@@ -66,6 +68,10 @@ export async function piComplete(cwd: string, prompt: string, options: PiComplet
   const authSelection = selectAuthenticatedProvider(cwd, config, []);
   if (authSelection.missingProvider && authSelection.note) {
     throw new Error(authSelection.note);
+  }
+  if ((authSelection.provider ?? config.pi.defaultProvider) === MINIMAX_M31_FLASH_PROFILE.provider
+    && (authSelection.model ?? config.pi.defaultModel) === MINIMAX_M31_FLASH_PROFILE.id) {
+    await syncExtraProviders(cwd, authSelection.env);
   }
   const finalArgs = mergePiDefaultsWithOverrides(
     config,

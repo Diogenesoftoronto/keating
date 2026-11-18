@@ -4,17 +4,18 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { streamSimple } from "@earendil-works/pi-ai/compat";
+import { MINIMAX_M31_FLASH_PROFILE } from "../../packages/runtime-config/src/index.ts";
 import { createSystemOneCaller } from "../../packages/learner-contracts/src/judgement/system-one.ts";
 import { createBenchmarkRegistry } from "../prompt-adherence/providers.ts";
 import { credential, sanitizeMessage, save, sha, usd } from "../../docs/benchmarks/openui-audit-2026-11-18/final-review/study/common.mjs";
 
 export const tutorId = "MiniMax-M2.7-highspeed";
+export const flashTutorId = "MiniMax-M3.1-Flash";
 export const judgeId = "jev-1.14.0";
 export const phaseCapUsd = 1.25;
 export const priorBoundUsd = 2.77319968;
 export const globalCapUsd = 10;
 const maxTokens = 3072;
-const tutorUrl = "https://api.minimax.io/anthropic/v1/messages";
 const judgeUrl = "https://api.typesafe.ai/v1/systemone";
 // Full 204,800-token MiniMax input at $0.60/M plus capped output at $2.40/M;
 // Jev's 64k input window at $0.042/M. Unknown usage retains its entire reservation.
@@ -22,17 +23,27 @@ const prices = {
   tutor: {input:0.6, output:2.4, reserve:0.14},
   decision: {input:0.042, output:0, reserve:0.003},
 };
-export const amount = (kind, usage) => usage
-  ? usd((usage.input * prices[kind].input + usage.output * prices[kind].output) / 1e6)
-  : prices[kind].reserve;
+// A 1,048,576-token input and 3,072-token output fit under this reservation.
+// Count cached input at the full input rate when calculating the upper estimate.
+const flashPrice = {input:0.15, output:0.60, reserve:0.16};
+const price = (kind, model) => kind === "tutor" && model === flashTutorId ? flashPrice : prices[kind];
+export const amount = (kind, usage, model = tutorId) => {
+  const rate = price(kind, model);
+  return usage ? usd((usage.input * rate.input + usage.output * rate.output) / 1e6) : rate.reserve;
+};
 export const cost = entries => usd(entries.reduce((sum, e) => sum + e.accountedUsd, 0));
 const tokenCounts = (input, output) => [input, output].every(n => Number.isSafeInteger(n) && n >= 0)
   && input + output > 0 ? {input, output} : null;
 
-export async function createProbeTransport(root, folder, source, budget = {priorBoundUsd, phaseCapUsd, globalCapUsd}, protocol) {
+export async function createProbeTransport(root, folder, source, budget = {priorBoundUsd, phaseCapUsd, globalCapUsd}, protocol, requestedTutor = tutorId) {
+  assert([tutorId, flashTutorId].includes(requestedTutor));
+  const useFlash = requestedTutor === flashTutorId;
   const registry = await createBenchmarkRegistry(join(root, ".keating/pi-config"));
-  const model = registry.find("minimax", tutorId);
-  assert(model && model.baseUrl === "https://api.minimax.io/anthropic", "Configured MiniMax model unavailable");
+  const model = useFlash ? MINIMAX_M31_FLASH_PROFILE : registry.find("minimax", requestedTutor);
+  const baseUrl = useFlash ? "https://api.minimax.io/v1" : "https://api.minimax.io/anthropic";
+  const tutorUrl = baseUrl + (useFlash ? "/chat/completions" : "/v1/messages");
+  assert(model?.id === requestedTutor && model.baseUrl === baseUrl, "Configured MiniMax model unavailable");
+  if (useFlash) assert(model.contextWindow > 0 && model.contextWindow <= 1_048_576);
   const auth = await registry.getApiKeyAndHeaders(model);
   const tutorKey = auth.apiKey || credential("MINIMAX_API_KEY", "minimax");
   const judgeKey = credential("TYPESAFE_API_KEY", "typesafe_api_key");
@@ -43,25 +54,29 @@ export async function createProbeTransport(root, folder, source, budget = {prior
   const wireFolder = join(folder, "wire");
   mkdirSync(wireFolder, {mode:0o700});
   assert(budget.priorBoundUsd >= 0 && budget.phaseCapUsd > 0 && budget.priorBoundUsd + budget.phaseCapUsd <= globalCapUsd);
-  const ledger = {version:1, source, ...budget, ...(protocol ? {protocol} : {}), entries:[]};
+  const ledger = {version:1, source, ...budget, ...(protocol ? {protocol} : {}), ...(requestedTutor === flashTutorId && {tutorModel:requestedTutor}), entries:[]};
   const persist = () => save(join(folder, "ledger.json"), ledger);
   persist();
 
   function reserve(cell, kind, stage, url, wire) {
-    assert(!ledger.stop && cost(ledger.entries) + prices[kind].reserve <= ledger.phaseCapUsd, "Paid probe closed or over budget");
+    const reserveUsd = price(kind, requestedTutor).reserve;
+    assert(!ledger.stop && cost(ledger.entries) + reserveUsd <= ledger.phaseCapUsd, "Paid probe closed or over budget");
     assert(!secrets.some(s => wire.includes(s)), "Credential appeared in a request body");
     const rows = ledger.entries.filter(e => e.cell === cell && e.kind === kind);
     assert(rows.length < (kind === "tutor" ? 4 : 8), "Turn request limit reached");
     const body = JSON.parse(wire);
-    assert.equal(body.model, kind === "tutor" ? tutorId : judgeId);
+    assert.equal(body.model, kind === "tutor" ? requestedTutor : judgeId);
     assert.equal(url, kind === "tutor" ? tutorUrl : judgeUrl);
     assert(Buffer.byteLength(wire) <= 200_000);
-    if (kind === "tutor") assert(body.max_tokens > 0 && body.max_tokens <= maxTokens);
+    if (kind === "tutor") {
+      const limit = body.max_completion_tokens ?? body.max_tokens;
+      assert(Number.isSafeInteger(limit) && limit > 0 && limit <= maxTokens);
+    }
     const wireSha256 = sha(wire);
     const path = join(wireFolder, wireSha256 + ".json.gz");
     if (!existsSync(path)) writeFileSync(path, gzipSync(wire), {flag:"wx", mode:0o600});
     const entry = {cell, kind, stage, model:body.model, url, wireSha256, request:rows.length + 1,
-      reservedUsd:prices[kind].reserve, accountedUsd:prices[kind].reserve, usage:null,
+      reservedUsd:reserveUsd, accountedUsd:reserveUsd, usage:null,
       reservedAt:Date.now(), sentAt:null, receivedAt:null, finishedAt:null, http:null, status:"reserved"};
     ledger.entries.push(entry);
     persist();
@@ -71,7 +86,7 @@ export async function createProbeTransport(root, folder, source, budget = {prior
     if (entry.finishedAt !== null) return;
     entry.usage = usage;
     entry.status = status;
-    entry.accountedUsd = amount(entry.kind, usage);
+    entry.accountedUsd = amount(entry.kind, usage, requestedTutor);
     if (entry.accountedUsd > entry.reservedUsd || [401,402,403].includes(entry.http)) ledger.stop = status;
     entry.finishedAt = Date.now();
     persist();
@@ -82,7 +97,8 @@ export async function createProbeTransport(root, folder, source, budget = {prior
       if (!line.startsWith("data:")) continue;
       try {
         const frame = JSON.parse(line.slice(5));
-        if (typeof frame.message?.model === "string") models.add(frame.message.model);
+        const id = frame.message?.model ?? frame.model;
+        if (typeof id === "string") models.add(id);
       } catch { /* Other SSE frames contain no JSON. */ }
     }
     return [...models];
@@ -117,6 +133,7 @@ export async function createProbeTransport(root, folder, source, budget = {prior
       await pending.response;
       assert(pending.entry, "Tutor returned without a reserved HTTP request");
       const message = sanitizeMessage(msg);
+      if (message.stopReason === "error" && pending.entry.http === 429) message.errorMessage = "HTTP 429";
       assert(!secrets.some(s => JSON.stringify(message).includes(s)));
       // The classroom stores distinct public turns by timestamp.
       message.timestamp = Date.now();
@@ -158,5 +175,7 @@ export async function createProbeTransport(root, folder, source, budget = {prior
       }});
     return call(request, signal);
   }
-  return {ledger, tutor, decision, close() { globalThis.fetch = nativeFetch; }};
+  const classroomModel = Object.fromEntries(["id", "name", "provider", "api", "baseUrl", "input", "reasoning", "thinkingLevelMap", "compat", "cost", "contextWindow", "maxTokens"]
+    .map(field => [field, model[field]]));
+  return {ledger, tutor, decision, classroomModel, close() { globalThis.fetch = nativeFetch; }};
 }

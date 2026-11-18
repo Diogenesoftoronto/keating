@@ -85,6 +85,23 @@ describe("gateway model discovery", () => {
 });
 
 describe("chat model fallback selection", () => {
+	it("lists one stable MiniMax Flash per region in both picker and provider settings and retains the explicitly chosen BYOK route", async () => {
+		const { MINIMAX_M31_FLASH_PROFILE, SERVICE_ENDPOINTS } = await import("@keating/runtime-config");
+		const { discoverModels } = await import("../lib/model-catalog");
+		const { getProviderApiKey, resolveAvailableChatModel } = await import("../lib/provider-models");
+		const models = await discoverModels({});
+		for (const [provider, baseUrl] of [["minimax", SERVICE_ENDPOINTS.minimax], ["minimax-cn", SERVICE_ENDPOINTS.minimaxCn]]) {
+			const expected = { ...MINIMAX_M31_FLASH_PROFILE, provider, baseUrl };
+			const choices = models.filter(entry => entry.model.provider === provider && entry.model.id === expected.id);
+			expect(choices).toHaveLength(1);
+			expect(choices[0]).toMatchObject({ key: `${provider}::openai-completions::MiniMax-M3.1-Flash`, group: "cloud", model: expected });
+			expect(modelsDevCatalog.getCloudProviderModels(provider!).filter(model => model.id === expected.id)).toEqual([expected]);
+			expect(await resolveAvailableChatModel(choices[0]!.model, { allowFallback: false })).toEqual(expected);
+		}
+		providerKeys.minimax = "global-fixture";
+		expect(await getProviderApiKey("minimax")).toBe("global-fixture");
+		expect(await getProviderApiKey("minimax-cn")).toBeUndefined();
+	});
 	it.each([false, true])("discovers signed-out Not Organic models unless manually hidden (%s)", async hidden => {
 		const enabled = process.env.VITE_NOTORGANIC_ENABLED;
 		const storageDescriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");

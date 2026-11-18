@@ -141,8 +141,13 @@ function appropriate(row: Row, stage: EvidenceStage): Outcome {
   return present(row[stage]) === false;
 }
 
+/** A request can identify the configured tutor even when the provider returns no draft. */
+export function matchesOpenUiTutor(row: Row, filter?: string): boolean {
+  return !filter || (row.model ?? "unknown") === filter || row.requestedModel === filter;
+}
+
 function selectRows(rows: Row[], filter: OpenUiDiagnosticFilter): Row[] {
-  return rows.filter(row => (!filter.model || (row.model ?? "unknown") === filter.model)
+  return rows.filter(row => matchesOpenUiTutor(row, filter.model)
     && (!filter.decisionModel || (row.decisionModel ?? "unknown") === filter.decisionModel)
     && (!filter.mode || row.mode === filter.mode) && (!filter.cue || row.cue.kind === filter.cue)
     && (!filter.experimentId || row.experiment?.experimentId === filter.experimentId));
