@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS } from "@keating/runtime-config";
+import { DEFAULT_MODELS, GOOGLE_DECISION_PROVIDER } from "@keating/runtime-config";
 import { JudgementCalibrationSettings } from "./JudgementCalibrationSettings";
 import { useEffect, useId, useRef, useState } from "react";
 import {
@@ -46,7 +46,7 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
   keyInput = "", keySaved = false, checkingKey = false, savingKey = false, keyError = "", onKeyInput, onSaveKey, onRemoveKey }: JudgementSettingsViewProps) {
   const id = useId();
   const typesafeSelected = settings.backend === "hosted" && settings.hostedProvider === "typesafe";
-  const googleSelected = settings.backend === "hosted" && settings.hostedProvider === "gemini-decision";
+  const googleSelected = settings.backend === "hosted" && settings.hostedProvider === GOOGLE_DECISION_PROVIDER;
   const providerName = googleSelected ? "Google" : "TypeSafe";
   const [modelInput, setModelInput] = useState(settings.customModel ?? DEFAULT_MODELS.judgement.systemOne);
   const [modelError, setModelError] = useState("");
@@ -92,11 +92,11 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
           const value = event.target.value;
           onChange(value.startsWith("local:")
             ? { ...settings, backend: "local", localModelId: value.slice(6) }
-            : { ...settings, backend: value === "off" ? "off" : "hosted", hostedProvider: value === "typesafe" || value === "gemini-decision" ? value : "notorganic" });
+            : { ...settings, backend: value === "off" ? "off" : "hosted", hostedProvider: value === "typesafe" || value === GOOGLE_DECISION_PROVIDER ? value : "notorganic" });
         }}>
         <option value="hosted">Jev · Not Organic · Recommended</option>
         <option value="typesafe">Jev · your TypeSafe API key</option>
-        <option value="gemini-decision">Gemini Decision 1 (Google API key)</option>
+        <option value={GOOGLE_DECISION_PROVIDER}>Gemini Decision 1 (Google API key)</option>
         <optgroup label="On this device">
           {!desktop && !localModels.some(model => model.id === DESKTOP_OFFLINE_MODEL.id) && <option value={`local:${DESKTOP_OFFLINE_MODEL.id}`} disabled>MiniCPM5 2B · requires desktop app</option>}
           {localModels.map(model => <option key={model.id} value={`local:${model.id}`}
@@ -216,7 +216,7 @@ export function JudgementSettings() {
   const [savingKey, setSavingKey] = useState(false);
   const [keyError, setKeyError] = useState("");
   const keyId = settings.backend !== "hosted" ? null
-    : settings.hostedProvider === "gemini-decision" ? GEMINI_DECISION_KEY_ID
+    : settings.hostedProvider === GOOGLE_DECISION_PROVIDER ? GEMINI_DECISION_KEY_ID
     : settings.hostedProvider === "typesafe" ? TYPESAFE_JUDGEMENT_KEY_ID : null;
   const selectedKey = useRef(keyId);
   selectedKey.current = keyId;

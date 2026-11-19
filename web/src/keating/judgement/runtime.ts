@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS, MODEL_PREFERENCES } from "@keating/runtime-config";
+import { DEFAULT_MODELS, GOOGLE_DECISION_PROVIDER, MODEL_PREFERENCES } from "@keating/runtime-config";
 import { guardCalibrationCall, webJudgementCalibrationStore, type WebJudgementCalibrationStore } from "./calibration";
 /** Settings-to-runtime assembly. No inference, downloads, or learner activation. */
 import {
@@ -103,7 +103,7 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   const settings: JudgementModelSettings = Object.freeze({
     backend: requested.backend === "hosted" || requested.backend === "off" ? requested.backend : "local",
     ...(requested.hostedProvider === "typesafe" ? { hostedProvider: "typesafe" as const, customModel: requested.customModel?.trim() || DEFAULT_MODELS.judgement.systemOne } : {}),
-    ...(requested.hostedProvider === "gemini-decision" ? { hostedProvider: "gemini-decision" as const } : {}),
+    ...(requested.hostedProvider === GOOGLE_DECISION_PROVIDER ? { hostedProvider: GOOGLE_DECISION_PROVIDER } as const : {}),
     localModelId: requested.localModelId,
     gatewayPath: gatewayPath(requested.gatewayPath),
     requestTokens: typeof requested.requestTokens === "number" && Number.isSafeInteger(requested.requestTokens)
@@ -119,7 +119,7 @@ export function createWebJudgementRuntime(options: WebJudgementRuntimeOptions = 
   const generation = installation?.state().generation;
   const tiers: JudgementTier[] = [];
   const entries: Record<string, JudgementThresholds> = {};
-  const google = settings.backend === "hosted" && settings.hostedProvider === "gemini-decision";
+  const google = settings.backend === "hosted" && settings.hostedProvider === GOOGLE_DECISION_PROVIDER;
   const hostedModel = google ? GEMINI_DECISION_MODEL
     : settings.hostedProvider === "typesafe" ? settings.customModel ?? DEFAULT_MODELS.judgement.systemOne
     : options.hosted?.model ?? calibration?.hosted?.backend.model ?? WEB_JUDGEMENT_MODEL_ALIAS;

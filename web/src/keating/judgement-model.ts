@@ -1,4 +1,4 @@
-import { DEFAULT_MODELS } from "@keating/runtime-config";
+import { DEFAULT_MODELS, GOOGLE_DECISION_PROVIDER } from "@keating/runtime-config";
 /**
  * The judgement model is configured separately from the tutor model.
  *
@@ -32,7 +32,7 @@ export interface JudgementModelSettings {
    */
   readonly backend: JudgementBackendPreference;
   /** Direct BYOK is independent of Not Organic account authorization. */
-  readonly hostedProvider?: "notorganic" | "typesafe" | "gemini-decision";
+  readonly hostedProvider?: "notorganic" | "typesafe" | typeof GOOGLE_DECISION_PROVIDER;
   readonly customModel?: string;
   /** Local model id used for judgement, independent of the tutor model. */
   readonly localModelId: string;
@@ -109,7 +109,7 @@ const judgementModelSetting = createLocalSetting<JudgementModelSettings>({
     if (!parsed) return defaults;
     return {
       backend: normalizeBackend(parsed.backend),
-      ...(parsed.hostedProvider === "typesafe" || parsed.hostedProvider === "gemini-decision" ? {
+      ...(parsed.hostedProvider === "typesafe" || parsed.hostedProvider === GOOGLE_DECISION_PROVIDER ? {
         hostedProvider: parsed.hostedProvider,
       } : {}),
       ...(parsed.customModel !== undefined || parsed.hostedProvider === "typesafe" ? { customModel: cleanString(parsed.customModel).slice(0, 200) || DEFAULT_MODELS.judgement.systemOne } : {}),

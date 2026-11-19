@@ -1,4 +1,5 @@
 /** Google's typed Decisions API. The caller supplies both the credential and its transport. */
+import { DEFAULT_MODELS } from "../../../runtime-config/src/index.js";
 import {
   judgementRequestProblem,
   type JudgementAnswer, type JudgementCaller, type JudgementErrorCode, type JudgementOutcome,
@@ -8,7 +9,7 @@ import type { FetchLike } from "./system-one.js";
 import { errorForStatus } from "./wire.js";
 
 export const GEMINI_DECISION_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/decisions";
-export const GEMINI_DECISION_MODEL = "gemini-decision-1";
+export const GEMINI_DECISION_MODEL = DEFAULT_MODELS.judgement.google;
 
 export interface GeminiDecisionReceipt {
   provider: "google";
