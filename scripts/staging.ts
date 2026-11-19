@@ -5,6 +5,7 @@ import { lstat, mkdir, mkdtemp, readFile, rm, writeFile, chmod } from "node:fs/p
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { probeDecisionRelay } from "./openui-diagnostics/probe-decision-relay.js";
+import { filmPath, filmSha256, restoreMarker } from "../web/scripts/restore-staging-film.js";
 
 import { STAGING_PROJECT, STAGING_SERVICE, STAGING_ENVIRONMENT, PROMOTION_SERVICE, PRODUCTION_ENVIRONMENT, STAGING_URL } from "./ops/config.js";
 export { STAGING_PROJECT, STAGING_SERVICE, STAGING_ENVIRONMENT } from "./ops/config.js";
@@ -12,6 +13,7 @@ export { STAGING_PROJECT, STAGING_SERVICE, STAGING_ENVIRONMENT } from "./ops/con
 // Match the Dockerfile's source inputs. Never include local credentials or
 // generated state, even if someone accidentally tracked them in Git.
 export function stagingSourcePath(path: string): boolean {
+  if (path === `web/${restoreMarker}`) return false;
   // Original artwork is only used by offline asset-generation scripts. The
   // prepared runtime images already live in web/public; shipping both exceeded
   // Railway's archive upload limit as the media library grew.
@@ -60,6 +62,14 @@ export async function makeStagingSnapshot(root: string, destination: string) {
     if (!stat.isFile()) continue;
     const content = await readFile(source);
     hash.update(file).update("\0").update(String(stat.mode & 0o777)).update("\0").update(content).update("\0");
+    // Keep the original bytes in the fingerprint, then transport this large,
+    // immutable film by digest so the source archive fits Railway's upload limit.
+    if (file === `web/${filmPath}` && (stat.mode & 0o777) === 0o644 && createHash("sha256").update(content).digest("hex") === filmSha256) {
+      await mkdir(join(destination, "web"), { recursive: true });
+      await writeFile(join(destination, "web", restoreMarker), filmSha256 + "\n");
+      count++;
+      continue;
+    }
     const target = join(destination, file);
     await mkdir(dirname(target), { recursive: true });
     await writeFile(target, content);

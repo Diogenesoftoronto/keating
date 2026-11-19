@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { makeStagingSnapshot, stagingSourcePath } from "../scripts/staging.js";
+import { filmPath, filmSha256, restoreMarker, restoreStagingFilm } from "../web/scripts/restore-staging-film.js";
 
 const temporary: string[] = [];
 afterEach(() => { for (const path of temporary.splice(0)) rmSync(path, { recursive: true, force: true }); });
@@ -39,6 +40,37 @@ function fixture() {
 }
 
 describe("staging upload snapshots", () => {
+  test("restores only the byte-identical film selected by the packer", async () => {
+    const { root, write, snapshot } = fixture();
+    const path = `web/${filmPath}`;
+    const source = join(root, path);
+    write(path, "replacement film");
+    const changed = snapshot("changed-film");
+    await makeStagingSnapshot(root, changed);
+    expect(readFileSync(join(changed, path), "utf8")).toBe("replacement film");
+    expect(existsSync(join(changed, "web", restoreMarker))).toBe(false);
+
+    const original = join(import.meta.dir, "..", path);
+    copyFileSync(original, source);
+    const packed = snapshot("original-film");
+    const web = join(packed, "web");
+    await makeStagingSnapshot(root, packed);
+    expect(readFileSync(join(web, restoreMarker), "utf8").trim()).toBe(filmSha256);
+    expect(existsSync(join(packed, path))).toBe(false);
+    await expect(restoreStagingFilm(web, async () => new Response(null, { status: 503 }))).rejects.toThrow("HTTP 503");
+    await expect(restoreStagingFilm(web, async () => new Response("wrong bytes"))).rejects.toThrow("checksum");
+    expect(existsSync(join(packed, path))).toBe(false);
+    await restoreStagingFilm(web, async () => new Response(Bun.file(original)));
+    expect(readFileSync(join(packed, path)).equals(readFileSync(original))).toBe(true);
+    expect(existsSync(join(web, restoreMarker))).toBe(false);
+
+    rmSync(source);
+    write(`web/${restoreMarker}`, "stale local marker");
+    const deleted = snapshot("deleted-film");
+    await makeStagingSnapshot(root, deleted);
+    await restoreStagingFilm(join(deleted, "web"), async () => { throw new Error("Unexpected download"); });
+    expect(existsSync(join(deleted, path))).toBe(false);
+  });
   test("includes committed and current app work while preserving branch, index, and deletions", async () => {
     const { root, write, git, snapshot } = fixture();
     write("web/src/tracked.ts", "export const state = 'edited';\n");
