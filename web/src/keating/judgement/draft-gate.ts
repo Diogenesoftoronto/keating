@@ -153,22 +153,45 @@ function messageText(message: Context["messages"][number]): string {
 }
 
 const MAX_SEARCH_SOURCES = 16;
+const MAX_SEARCH_SOURCE_CHARS = 12_000;
+const MAX_SEARCH_EXCERPT_CHARS = 600;
 
-/**
- * Search results the tutor received this turn, as checkable sources. Without
- * them the checker judged "link what you used" and "don't invent facts"
- * against raw tool text, and grounded replies were released as unverified.
- */
-function searchSources(messages: Context["messages"]): TeachingPolicyTurn["sources"] {
+/** Keep search findings once in the review state, prioritizing recent results. */
+function projectWebSearchEvidence(messages: Context["messages"], supplied: TeachingPolicyTurn["sources"]) {
   const sources: TeachingPolicyTurn["sources"][number][] = [];
-  for (const message of messages) {
-    if (message.role !== "toolResult" || message.isError || !isWebSearchToolName(message.toolName)) continue;
-    for (const site of parseWebSearchResult(message.content, undefined).sites) {
-      if (sources.length >= MAX_SEARCH_SOURCES || sources.some(source => source.url === site.url)) continue;
-      sources.push({ id: `web-${sources.length + 1}`, url: site.url, text: [site.title, site.snippet].filter(Boolean).join(" — ").slice(0, 2_000) || site.url });
+  const urls = new Set(supplied.map(source => source.url));
+  const outcomes = new Map<string, TeachingPolicyTurn["toolResults"][number]>();
+  let remaining = MAX_SEARCH_SOURCE_CHARS;
+  for (let index = messages.length - 1; index >= 0; index--) {
+    const message = messages[index]!;
+    if (message.role !== "toolResult" || !isWebSearchToolName(message.toolName)) continue;
+    const status = message.isError ? "error" : "success";
+    const key = `${message.toolName}:${status}`;
+    const knownOutcome = outcomes.has(key);
+    if (message.isError) {
+      if (!knownOutcome) outcomes.set(key, { name: message.toolName, status, content: "Web search failed." });
+      continue;
+    }
+    if (knownOutcome && sources.length === MAX_SEARCH_SOURCES) continue;
+    const { sites, text } = parseWebSearchResult(message.content, undefined);
+    if (!knownOutcome) {
+      // Text-only providers may give a useful summary without structured snippets.
+      const excerpt = sites.some(site => site.snippet) ? "" : text.slice(0, MAX_SEARCH_EXCERPT_CHARS);
+      outcomes.set(key, { name: message.toolName, status, content: excerpt || "Web search completed. See the supplied sources." });
+    }
+    for (const site of sites) {
+      if (sources.length === MAX_SEARCH_SOURCES) break;
+      if (urls.has(site.url)) continue;
+      const source = { id: `web-${sources.length + 1}`, url: site.url,
+        text: [site.title?.slice(0, 160), site.snippet].filter(Boolean).join(" — ") || "Linked search result." };
+      const size = JSON.stringify(source).length + 1;
+      if (size > remaining) continue;
+      sources.push(source);
+      urls.add(site.url);
+      remaining -= size;
     }
   }
-  return sources;
+  return { sources, toolResults: [...outcomes.values()] };
 }
 
 function projectedTurn(context: Context, evidence: Partial<TeachingPolicyTurn>, domain?: TeachingPolicyTurn["domain"], sessionId?: string): TeachingPolicyTurn {
@@ -176,8 +199,9 @@ function projectedTurn(context: Context, evidence: Partial<TeachingPolicyTurn>, 
   while (latestIndex >= 0 && context.messages[latestIndex]!.role !== "user") latestIndex--;
   const latest = context.messages[latestIndex];
   const previousQuestion = previousQuestionPresentation(sessionId, context.messages, evidence.activeWork);
+  const search = projectWebSearchEvidence(context.messages, evidence.sources ?? []);
   const results: TeachingPolicyTurn["toolResults"][number][] = context.messages.flatMap((message) => {
-    if (message.role !== "toolResult") return [];
+    if (message.role !== "toolResult" || isWebSearchToolName(message.toolName)) return [];
     const details = message.details === undefined ? "" : `\nStructured tool result: ${JSON.stringify(message.details)}`;
     return [{ name: message.toolName, status: message.isError ? "error" as const : "success" as const, content: messageText(message) + details }];
   });
@@ -185,12 +209,15 @@ function projectedTurn(context: Context, evidence: Partial<TeachingPolicyTurn>, 
     learnerMessage: latest ? messageText(latest) : "",
     conversation: context.messages.flatMap((message, index) => index === latestIndex ? [] : [{
       role: message.role === "toolResult" ? "tool" as const : message.role,
-      content: messageText(message),
+      // Preserve turn positions for checkpoint review without repeating raw search findings.
+      content: message.role === "toolResult" && isWebSearchToolName(message.toolName)
+        ? message.isError ? "Web search failed." : "Web search completed."
+        : messageText(message),
     }]),
     learnerEvidence: (evidence.learnerEvidence ?? []).map(({ kind, content }) => ({ kind, content })),
     availableTools: (context.tools ?? []).map((tool) => tool.name),
-    toolResults: [...(evidence.toolResults ?? []).map(({ name, status, content }) => ({ name, status, content })), ...results],
-    sources: [...(evidence.sources ?? []), ...searchSources(context.messages)].map(({ id, url, text }) => ({ id, url, text })),
+    toolResults: [...(evidence.toolResults ?? []).map(({ name, status, content }) => ({ name, status, content })), ...results, ...search.toolResults],
+    sources: [...(evidence.sources ?? []), ...search.sources].map(({ id, url, text }) => ({ id, url, text })),
     assessment: evidence.assessment ?? "unknown",
     improvementRuns: evidence.improvementRuns ?? null,
     domain: domain ?? evidence.domain ?? "unknown",
