@@ -1,0 +1,849 @@
+{
+  "scope": "Synthetic private candidates. Actual proposals were matched to their pair request and to their durable attempt's observed Jev probabilities. The exact verdict and submitted-question match are shown for a proposed grading tool. Each grade and tool result below comes from the application.",
+  "sourceRawReceiptSha256": "e58c63d18cbccd3004564d9121ef2bce8ef684550fb8fc7093f36528f0c8e7c2",
+  "sourceOperatorSummarySha256": "ba6f16d0f629b6562745216f319200df374a6b6e18ce028fcc342e84eeb78f06",
+  "rounds": [
+    {
+      "round": 1,
+      "phase": "released",
+      "reason": null,
+      "selectedAttempt": 2,
+      "pairs": [
+        {
+          "pair": 1,
+          "candidateAttempts": [
+            1,
+            2
+          ],
+          "status": "compared",
+          "preferredAttempt": 1,
+          "model": "jev-1.14.0",
+          "eligibleAttempts": [
+            2
+          ],
+          "finalistAttempt": 2,
+          "feedbackOnlyAttempts": [],
+          "policyVersion": "keating-teaching-policy/v2.4.4",
+          "predictionQuestionAttempts": [],
+          "gradeOnlyAttempts": [
+            2
+          ],
+          "candidateIssueIds": [
+            {
+              "attempt": 1,
+              "issues": [
+                "artifact_placeholder",
+                "checkpoint_answer_leaked",
+                "checkpoint_repeated",
+                "openui_valid",
+                "quality_scope",
+                "unsolicited_animation"
+              ]
+            },
+            {
+              "attempt": 2,
+              "issues": []
+            }
+          ],
+          "startedAtMs": 28902.224999999627,
+          "finishedAtMs": 29089.455000000075
+        },
+        {
+          "pair": 2,
+          "candidateAttempts": [
+            3,
+            4
+          ],
+          "status": "compared",
+          "preferredAttempt": 3,
+          "model": "jev-1.14.0",
+          "eligibleAttempts": [
+            4
+          ],
+          "finalistAttempt": 4,
+          "feedbackOnlyAttempts": [],
+          "policyVersion": "keating-teaching-policy/v2.4.4",
+          "predictionQuestionAttempts": [],
+          "gradeOnlyAttempts": [
+            4
+          ],
+          "candidateIssueIds": [
+            {
+              "attempt": 3,
+              "issues": [
+                "checkpoint_answer_leaked",
+                "checkpoint_repeated",
+                "openui_valid",
+                "quality_scope"
+              ]
+            },
+            {
+              "attempt": 4,
+              "issues": []
+            }
+          ],
+          "startedAtMs": 28906.665000000037,
+          "finishedAtMs": 29105.959999999963
+        }
+      ],
+      "drafts": [
+        {
+          "attempt": 1,
+          "pair": 1,
+          "status": "fail",
+          "eligible": false,
+          "selected": false,
+          "gradeOnly": false,
+          "reviewed": true,
+          "preferenceGradedProbability": 0.04,
+          "checkpointContinuedProbability": 0.31,
+          "recordedIssues": [
+            "artifact_placeholder",
+            "checkpoint_answer_leaked",
+            "checkpoint_repeated",
+            "openui_valid",
+            "quality_scope",
+            "unsolicited_animation"
+          ],
+          "checks": [
+            {
+              "id": "openui_valid",
+              "source": "deterministic",
+              "status": "fail",
+              "probability": 1
+            },
+            {
+              "id": "checkpoint_answer_leaked",
+              "source": "jev",
+              "status": "fail",
+              "probability": 0.93
+            },
+            {
+              "id": "checkpoint_repeated",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.45
+            },
+            {
+              "id": "checkpoint_continued",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.31
+            },
+            {
+              "id": "unsolicited_animation",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.42
+            },
+            {
+              "id": "preference_graded",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.04
+            },
+            {
+              "id": "artifact_placeholder",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.5
+            },
+            {
+              "id": "quality_scope",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.53
+            }
+          ],
+          "writtenReplyPresent": true,
+          "openUiFencePresent": true,
+          "proposedTools": [],
+          "reviewRequestSha256": [
+            "1440c7f286a0c8c3d62a7679bb514fd21c9f45c6fb15431cfc9da96b34a42282"
+          ],
+          "writtenReplySha256": "57c8672d6de7ab56ea052c41e6454a3b4f5c95b7afa0733013572254a93b99be"
+        },
+        {
+          "attempt": 2,
+          "pair": 1,
+          "status": "pass",
+          "eligible": true,
+          "selected": true,
+          "gradeOnly": true,
+          "reviewed": true,
+          "preferenceGradedProbability": 0.05,
+          "checkpointContinuedProbability": 0.46,
+          "recordedIssues": [],
+          "checks": [
+            {
+              "id": "checkpoint_continued",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.46,
+              "applicability": "submitted-grade-without-text"
+            },
+            {
+              "id": "preference_graded",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.05
+            }
+          ],
+          "writtenReplyPresent": false,
+          "openUiFencePresent": false,
+          "proposedTools": [
+            {
+              "name": "grade_question_checks",
+              "grades": [
+                {
+                  "submittedQuestionMatches": true,
+                  "verdict": "correct"
+                }
+              ],
+              "topic": "Random draw"
+            }
+          ],
+          "reviewRequestSha256": [
+            "8ec7193f1593bd9eaf71b123f2b3d8de2d063a82433f6b66072b87f726a9a7af"
+          ],
+          "writtenReplySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "attempt": 3,
+          "pair": 2,
+          "status": "fail",
+          "eligible": false,
+          "selected": false,
+          "gradeOnly": false,
+          "reviewed": true,
+          "preferenceGradedProbability": 0.05,
+          "checkpointContinuedProbability": 0.25,
+          "recordedIssues": [
+            "checkpoint_answer_leaked",
+            "checkpoint_repeated",
+            "openui_valid",
+            "quality_scope"
+          ],
+          "checks": [
+            {
+              "id": "openui_valid",
+              "source": "deterministic",
+              "status": "fail",
+              "probability": 1
+            },
+            {
+              "id": "checkpoint_answer_leaked",
+              "source": "jev",
+              "status": "fail",
+              "probability": 0.89
+            },
+            {
+              "id": "checkpoint_repeated",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.48
+            },
+            {
+              "id": "checkpoint_continued",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.25
+            },
+            {
+              "id": "preference_graded",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.05
+            },
+            {
+              "id": "quality_scope",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.45999999999999996
+            }
+          ],
+          "writtenReplyPresent": true,
+          "openUiFencePresent": true,
+          "proposedTools": [],
+          "reviewRequestSha256": [
+            "3aba8d6d13908f17e1a2e4364032439deb4a6e9c9580cdbdb1bb88328479d953"
+          ],
+          "writtenReplySha256": "439b7a96e8f336e37af42a371aeff89f35d6bbee5ac56040cafaa9204d0aeb8a"
+        },
+        {
+          "attempt": 4,
+          "pair": 2,
+          "status": "pass",
+          "eligible": true,
+          "selected": false,
+          "gradeOnly": true,
+          "reviewed": true,
+          "preferenceGradedProbability": 0.05,
+          "checkpointContinuedProbability": 0.42,
+          "recordedIssues": [],
+          "checks": [
+            {
+              "id": "checkpoint_continued",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.42,
+              "applicability": "submitted-grade-without-text"
+            },
+            {
+              "id": "preference_graded",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.05
+            }
+          ],
+          "writtenReplyPresent": false,
+          "openUiFencePresent": false,
+          "proposedTools": [
+            {
+              "name": "grade_question_checks",
+              "grades": [
+                {
+                  "submittedQuestionMatches": true,
+                  "verdict": "correct"
+                }
+              ],
+              "topic": "Random draw"
+            }
+          ],
+          "reviewRequestSha256": [
+            "8ec7193f1593bd9eaf71b123f2b3d8de2d063a82433f6b66072b87f726a9a7af"
+          ],
+          "writtenReplySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "physicalRequestsByStage": {
+        "planning": 1,
+        "generation": 4,
+        "review": 4,
+        "pair": 2,
+        "final-choice": 1
+      },
+      "offeredTutorTools": [
+        {
+          "slot": "ordinary-1",
+          "gradeOnly": false,
+          "tools": [
+            "client-web-search",
+            "animate",
+            "interactive_page",
+            "generate_image",
+            "feedback",
+            "grade_question_checks",
+            "remember_learner_profile",
+            "set_learner_goal",
+            "update_goal_step",
+            "revise_study_plan",
+            "knowledge_sources",
+            "knowledge_read_resource",
+            "knowledge_call_tool",
+            "evaluate_teaching",
+            "request_teaching_improvement",
+            "keating_activate_skill",
+            "keating_task"
+          ],
+          "providerMaxOutput": 8192,
+          "sourceModel": "MiniMax-M3.1-Flash",
+          "usageObserved": true
+        },
+        {
+          "slot": "grade-2",
+          "gradeOnly": true,
+          "tools": [
+            "grade_question_checks"
+          ],
+          "providerMaxOutput": 8192,
+          "sourceModel": "MiniMax-M3.1-Flash",
+          "usageObserved": true
+        },
+        {
+          "slot": "ordinary-3",
+          "gradeOnly": false,
+          "tools": [
+            "client-web-search",
+            "animate",
+            "interactive_page",
+            "generate_image",
+            "feedback",
+            "grade_question_checks",
+            "remember_learner_profile",
+            "set_learner_goal",
+            "update_goal_step",
+            "revise_study_plan",
+            "knowledge_sources",
+            "knowledge_read_resource",
+            "knowledge_call_tool",
+            "evaluate_teaching",
+            "request_teaching_improvement",
+            "keating_activate_skill",
+            "keating_task"
+          ],
+          "providerMaxOutput": 8192,
+          "sourceModel": "MiniMax-M3.1-Flash",
+          "usageObserved": true
+        },
+        {
+          "slot": "grade-4",
+          "gradeOnly": true,
+          "tools": [
+            "grade_question_checks"
+          ],
+          "providerMaxOutput": 8192,
+          "sourceModel": "MiniMax-M3.1-Flash",
+          "usageObserved": true
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "phase": "withheld",
+      "reason": "no-approved-draft",
+      "selectedAttempt": null,
+      "pairs": [
+        {
+          "pair": 1,
+          "candidateAttempts": [
+            1,
+            2
+          ],
+          "status": "compared",
+          "preferredAttempt": 1,
+          "model": "jev-1.14.0",
+          "eligibleAttempts": [],
+          "finalistAttempt": null,
+          "feedbackOnlyAttempts": [],
+          "policyVersion": "keating-teaching-policy/v2.4.4",
+          "predictionQuestionAttempts": [],
+          "gradeOnlyAttempts": [],
+          "candidateIssueIds": [
+            {
+              "attempt": 1,
+              "issues": [
+                "checkpoint_answer_leaked",
+                "checkpoint_repeated",
+                "openui_valid",
+                "quality_scope"
+              ]
+            },
+            {
+              "attempt": 2,
+              "issues": [
+                "checkpoint_answer_leaked",
+                "checkpoint_repeated",
+                "quality_scope"
+              ]
+            }
+          ],
+          "startedAtMs": 77907.79499999993,
+          "finishedAtMs": 78099.21999999974
+        },
+        {
+          "pair": 2,
+          "candidateAttempts": [
+            3,
+            4
+          ],
+          "status": "compared",
+          "preferredAttempt": 3,
+          "model": "jev-1.14.0",
+          "eligibleAttempts": [],
+          "finalistAttempt": null,
+          "feedbackOnlyAttempts": [],
+          "policyVersion": "keating-teaching-policy/v2.4.4",
+          "predictionQuestionAttempts": [],
+          "gradeOnlyAttempts": [],
+          "candidateIssueIds": [
+            {
+              "attempt": 3,
+              "issues": [
+                "checkpoint_answer_leaked",
+                "checkpoint_repeated",
+                "quality_scope"
+              ]
+            },
+            {
+              "attempt": 4,
+              "issues": [
+                "checkpoint_answer_leaked",
+                "checkpoint_repeated",
+                "quality_scope",
+                "unsolicited_animation"
+              ]
+            }
+          ],
+          "startedAtMs": 77917.89499999955,
+          "finishedAtMs": 78143.08499999996
+        }
+      ],
+      "drafts": [
+        {
+          "attempt": 1,
+          "pair": 1,
+          "status": "fail",
+          "eligible": false,
+          "selected": false,
+          "gradeOnly": false,
+          "reviewed": true,
+          "preferenceGradedProbability": 0.29,
+          "checkpointContinuedProbability": 0.21,
+          "recordedIssues": [
+            "checkpoint_answer_leaked",
+            "checkpoint_repeated",
+            "openui_valid",
+            "quality_scope"
+          ],
+          "checks": [
+            {
+              "id": "openui_valid",
+              "source": "deterministic",
+              "status": "fail",
+              "probability": 1
+            },
+            {
+              "id": "checkpoint_answer_leaked",
+              "source": "jev",
+              "status": "fail",
+              "probability": 0.89
+            },
+            {
+              "id": "checkpoint_repeated",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.44
+            },
+            {
+              "id": "checkpoint_continued",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.21
+            },
+            {
+              "id": "preference_graded",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.29
+            },
+            {
+              "id": "quality_scope",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.54
+            }
+          ],
+          "writtenReplyPresent": true,
+          "openUiFencePresent": true,
+          "proposedTools": [
+            {
+              "name": "interactive_page"
+            }
+          ],
+          "reviewRequestSha256": [
+            "27f71f21eabd459a796a97c344d3932968f81461be93a347c9e01e1bfbee4ed0"
+          ],
+          "writtenReplySha256": "bf8b2c508abe721726816d0e3b236b196d1bbb2f6716962f2e88214708e297ae"
+        },
+        {
+          "attempt": 2,
+          "pair": 1,
+          "status": "fail",
+          "eligible": false,
+          "selected": false,
+          "gradeOnly": false,
+          "reviewed": true,
+          "preferenceGradedProbability": 0.19,
+          "checkpointContinuedProbability": 0.18,
+          "recordedIssues": [
+            "checkpoint_answer_leaked",
+            "checkpoint_repeated",
+            "quality_scope"
+          ],
+          "checks": [
+            {
+              "id": "checkpoint_answer_leaked",
+              "source": "jev",
+              "status": "fail",
+              "probability": 0.76
+            },
+            {
+              "id": "checkpoint_repeated",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.41
+            },
+            {
+              "id": "checkpoint_continued",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.18
+            },
+            {
+              "id": "preference_graded",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.19
+            },
+            {
+              "id": "quality_scope",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.45999999999999996
+            }
+          ],
+          "writtenReplyPresent": true,
+          "openUiFencePresent": true,
+          "proposedTools": [],
+          "reviewRequestSha256": [
+            "1b1d34ba8442bdbd3dc40b2f85750edad1dad69d535c8602977f3fdd00ea3be3"
+          ],
+          "writtenReplySha256": "92afeb142e62368d1dd2b49d6f508f67877fc9ed8b0ae658973e18f2301ec032"
+        },
+        {
+          "attempt": 3,
+          "pair": 2,
+          "status": "fail",
+          "eligible": false,
+          "selected": false,
+          "gradeOnly": false,
+          "reviewed": true,
+          "preferenceGradedProbability": 0.17,
+          "checkpointContinuedProbability": 0.17,
+          "recordedIssues": [
+            "checkpoint_answer_leaked",
+            "checkpoint_repeated",
+            "quality_scope"
+          ],
+          "checks": [
+            {
+              "id": "checkpoint_answer_leaked",
+              "source": "jev",
+              "status": "fail",
+              "probability": 0.9
+            },
+            {
+              "id": "checkpoint_repeated",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.51
+            },
+            {
+              "id": "checkpoint_continued",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.17
+            },
+            {
+              "id": "preference_graded",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.17
+            },
+            {
+              "id": "quality_scope",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.6
+            }
+          ],
+          "writtenReplyPresent": true,
+          "openUiFencePresent": true,
+          "proposedTools": [],
+          "reviewRequestSha256": [
+            "da6d841341f0577e1b0ea857b116957b16e2feb5e1ad25b3f0b229f7db7055e7"
+          ],
+          "writtenReplySha256": "4ab2e77b2a280ece15deda7bb5052f6f93d53db477f8455591c455172b949838"
+        },
+        {
+          "attempt": 4,
+          "pair": 2,
+          "status": "fail",
+          "eligible": false,
+          "selected": false,
+          "gradeOnly": false,
+          "reviewed": true,
+          "preferenceGradedProbability": 0.14,
+          "checkpointContinuedProbability": 0.23,
+          "recordedIssues": [
+            "checkpoint_answer_leaked",
+            "checkpoint_repeated",
+            "quality_scope",
+            "unsolicited_animation"
+          ],
+          "checks": [
+            {
+              "id": "checkpoint_answer_leaked",
+              "source": "jev",
+              "status": "fail",
+              "probability": 0.83
+            },
+            {
+              "id": "checkpoint_repeated",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.55
+            },
+            {
+              "id": "checkpoint_continued",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.23
+            },
+            {
+              "id": "unsolicited_animation",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.45
+            },
+            {
+              "id": "preference_graded",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.14
+            },
+            {
+              "id": "quality_scope",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.54
+            }
+          ],
+          "writtenReplyPresent": true,
+          "openUiFencePresent": false,
+          "proposedTools": [
+            {
+              "name": "interactive_page"
+            }
+          ],
+          "reviewRequestSha256": [
+            "2a0d1910d4dcecc65a1d9ff89b88dfcccebf700357ebc61008b2e6d43cd1aff9"
+          ],
+          "writtenReplySha256": "3f2e3ac6847253a78395e21e549fc5dc2ced966cf5e728cad93c28d62de63b8b"
+        }
+      ],
+      "physicalRequestsByStage": {
+        "planning": 1,
+        "generation": 4,
+        "review": 4,
+        "pair": 2
+      },
+      "offeredTutorTools": [
+        {
+          "slot": "ordinary-1",
+          "gradeOnly": false,
+          "tools": [
+            "client-web-search",
+            "animate",
+            "interactive_page",
+            "generate_image",
+            "feedback",
+            "remember_learner_profile",
+            "set_learner_goal",
+            "update_goal_step",
+            "revise_study_plan",
+            "knowledge_sources",
+            "knowledge_read_resource",
+            "knowledge_call_tool",
+            "evaluate_teaching",
+            "request_teaching_improvement",
+            "workspace_inspect",
+            "workspace_exec",
+            "workspace_change",
+            "keating_activate_skill",
+            "keating_task"
+          ],
+          "providerMaxOutput": 8192,
+          "sourceModel": "MiniMax-M3.1-Flash",
+          "usageObserved": true
+        },
+        {
+          "slot": "ordinary-2",
+          "gradeOnly": false,
+          "tools": [
+            "client-web-search",
+            "animate",
+            "interactive_page",
+            "generate_image",
+            "feedback",
+            "remember_learner_profile",
+            "set_learner_goal",
+            "update_goal_step",
+            "revise_study_plan",
+            "knowledge_sources",
+            "knowledge_read_resource",
+            "knowledge_call_tool",
+            "evaluate_teaching",
+            "request_teaching_improvement",
+            "workspace_inspect",
+            "workspace_exec",
+            "workspace_change",
+            "keating_activate_skill",
+            "keating_task"
+          ],
+          "providerMaxOutput": 8192,
+          "sourceModel": "MiniMax-M3.1-Flash",
+          "usageObserved": true
+        },
+        {
+          "slot": "ordinary-3",
+          "gradeOnly": false,
+          "tools": [
+            "client-web-search",
+            "animate",
+            "interactive_page",
+            "generate_image",
+            "feedback",
+            "remember_learner_profile",
+            "set_learner_goal",
+            "update_goal_step",
+            "revise_study_plan",
+            "knowledge_sources",
+            "knowledge_read_resource",
+            "knowledge_call_tool",
+            "evaluate_teaching",
+            "request_teaching_improvement",
+            "workspace_inspect",
+            "workspace_exec",
+            "workspace_change",
+            "keating_activate_skill",
+            "keating_task"
+          ],
+          "providerMaxOutput": 8192,
+          "sourceModel": "MiniMax-M3.1-Flash",
+          "usageObserved": true
+        },
+        {
+          "slot": "ordinary-4",
+          "gradeOnly": false,
+          "tools": [
+            "client-web-search",
+            "animate",
+            "interactive_page",
+            "generate_image",
+            "feedback",
+            "remember_learner_profile",
+            "set_learner_goal",
+            "update_goal_step",
+            "revise_study_plan",
+            "knowledge_sources",
+            "knowledge_read_resource",
+            "knowledge_call_tool",
+            "evaluate_teaching",
+            "request_teaching_improvement",
+            "workspace_inspect",
+            "workspace_exec",
+            "workspace_change",
+            "keating_activate_skill",
+            "keating_task"
+          ],
+          "providerMaxOutput": 8192,
+          "sourceModel": "MiniMax-M3.1-Flash",
+          "usageObserved": true
+        }
+      ]
+    }
+  ],
+  "drafts": null
+}

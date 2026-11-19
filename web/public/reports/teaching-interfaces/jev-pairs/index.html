@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="author" content="Claude Fable">
-<meta name="description" content="Keating 4.2.2 writes four private tutor replies per guided turn and lets Jev compare them in two pairs. What reached the learner on nine synthetic classroom turns, and how to inspect one.">
+<meta name="description" content="Keating writes four private tutor replies per guided turn and lets Jev compare them in two pairs. What reached the learner on nine synthetic classroom turns, what the live site did on releases 4.2.2 and 4.2.3, and how to inspect a turn.">
 <title>Four drafts, two pairs, one reply</title>
 <style>
   :root {
@@ -120,13 +120,21 @@
 <main>
   <header>
     <h1>Four drafts, two pairs, one reply</h1>
-    <p class="byline">Follow-up by Claude Fable · 18 November 2026 · Keating 4.2.2, teaching policy v2.4.1</p>
-    <p class="lede">The correct typed answer that twice received a failure notice now gets a confirmation. An incorrect answer to the same Question gets a correction. Two learners who wanted to guess first each got a Question they could answer. These were synthetic classroom turns. <a href="../final-review/field-guide.html">Earlier field guide</a></p>
+    <p class="byline">Follow-up by Claude Fable · 18 November 2026 · Local studies on Keating 4.2.2 · Live-site checks on 4.2.2 and 4.2.3 · Three replays on a built 4.2.4 · Teaching policy v2.4.1, with v2.4.2, v2.4.3 and v2.4.4 for the replays</p>
+    <p class="lede">The correct typed answer that twice received a failure notice now gets a confirmation. An incorrect answer to the same Question gets a correction. Two learners who wanted to guess first each got a Question they could answer. These were synthetic classroom turns. On the live site, one sock request stopped at planning on release 4.2.2, and the same request reached a Question on 4.2.3. In a second 4.2.3 conversation the learner’s correct form answer was saved and the feedback reply was withheld. Three replays of that submission on a built 4.2.4 followed. Two ended with no grade. The third, under policy v2.4.4, saved the correct grade with a score of 1, and its follow-up explanation was withheld. <a href="#production-relay">Go to the live-site result</a> · <a href="#submitted-grade">Go to the saved grade</a> · <a href="../final-review/field-guide.html">Earlier field guide</a></p>
+    <p>How often did a learner who wanted to act get something to act on in the first reply, without asking for an interface by name? In the earlier controlled experiment it was 4 of 5 replies with Jev guidance, 3 of 4 with Gemini Decision and 5 of 6 with no guidance. Each count covers only the replies that arrived, on three tasks run once per condition, so they do not rank the conditions. <a href="../final-review/report.html">Earlier report</a></p>
   </header>
 
   <nav aria-label="Evidence">
     <ul>
-      <li><a href="#production-relay">Hosted planning failure</a></li>
+      <li><a href="#production-relay">Live site, 4.2.2 and 4.2.3</a></li>
+      <li><a href="../diagnostics.html?source=hosted-sock&amp;view=pair-reviews">Inspect the live 4.2.3 turn</a></li>
+      <li><a href="#live-submission">Submitted answer, no feedback</a></li>
+      <li><a href="../diagnostics.html?source=hosted-submission&amp;view=pair-reviews">Inspect the submitted conversation</a></li>
+      <li><a href="#submission-replay">4.2.4 replay of the submission</a></li>
+      <li><a href="#grade-only">Grade-only drafts</a></li>
+      <li><a href="#submitted-grade">Grade saved, explanation withheld</a></li>
+      <li><a href="#first-view">First view of a Question</a></li>
       <li><a href="../diagnostics.html?source=jev-pairs&amp;view=pair-reviews">Inspect the five turns</a></li>
       <li><a href="../diagnostics.html?source=jev-pairs-prediction&amp;view=pair-reviews">Inspect the two predictions</a></li>
       <li><a href="summary.json">Download results</a></li>
@@ -135,12 +143,198 @@
     </ul>
   </nav>
 
-  <section class="gap" aria-labelledby="production-relay">
-    <span class="label">Production classroom · 18 November 2026, 23:17 UTC</span>
-    <h2 id="production-relay" style="margin-top:.35rem">On the live site, the turn stopped before any draft was written</h2>
+  <section aria-labelledby="production-relay">
+    <span class="label">Production classroom · 18 November 2026, 23:17 UTC, and 19 November, 00:09 UTC</span>
+    <h2 id="production-relay" style="margin-top:.35rem">On the live site, the sock request stopped at planning on 4.2.2 and reached a Question on 4.2.3</h2>
+    <p>A script typed the same sock request once into a fresh classroom at <code>https://chat.keating.help</code> on each release. Both times the tutor was chosen with the built-in MiniMax M3.1 Flash option and the reviewer was Jev 1.14.0. Each row below is one scheduled turn on one release. A second 4.2.3 conversation, in which the script submitted an answer, is reported after them under its own heading. All of these are a separate arm from the local studies further down and are not added to their counts.</p>
+    <div class="wide">
+      <table>
+        <caption>One scheduled sock turn per release on the live site</caption>
+        <thead><tr><th scope="col">Release</th><th scope="col">Requests that left the browser</th><th scope="col">Learner saw</th><th scope="col">Wait</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">4.2.2</th><td class="flag">1 planning request, HTTP 403. No tutor, review or pair requests</td><td class="flag">“Couldn’t produce a reply”</td><td class="num">Not timed</td></tr>
+          <tr><th scope="row">4.2.3</th><td>12 requests, all HTTP 200: 1 planning, 4 tutor drafts, 4 individual reviews, 2 pair comparisons, 1 final comparison</td><td>A Question with three choices, on the first reply</td><td class="num">9.5 s</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><a href="../diagnostics.html?source=hosted-sock&amp;view=pair-reviews">Inspect the 4.2.3 turn</a> · <a href="minimax-flash/production-after.json" download>Download the 4.2.3 result</a> · <a href="minimax-flash/production-after-first.json" download>Request ledger</a> · <a href="minimax-flash/production-after-settings.json" download>Settings export, for Import JSON</a></p>
+
+    <h3>From “let me guess first” to a control</h3>
+    <p>The learner wrote: “There are two blue socks and one yellow sock in a drawer. I’m going to draw one at random without looking. I’d like to guess which colour I’m more likely to pick before you explain.” The message never names a question, a quiz or a button. Each step from that sentence to the control on screen is in the Settings export.</p>
+    <div class="wide">
+      <table>
+        <caption>The 4.2.3 turn, step by step</caption>
+        <thead><tr><th scope="col">Step</th><th scope="col">What the record holds</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Intent read</th><td>Cue <code>implicit-action</code>, with targets Question and quiz</td></tr>
+          <tr><th scope="row">Plan</th><td>Jev guidance “create”, target Question, delivered to the tutor</td></tr>
+          <tr><th scope="row">Drafts</th><td>Four requests. Drafts 2 and 4 were asked for a single Question with no tools. Drafts 1 and 3 were ordinary, with 16 tools each</td></tr>
+          <tr><th scope="row">Individual review</th><td>Four Jev reviews. All four drafts were eligible for release</td></tr>
+          <tr><th scope="row">Pairs</th><td>Ordinary draft 1 preferred over Question-only draft 2. Ordinary draft 3 preferred over Question-only draft 4. The two pair requests were in flight together for 121 ms</td></tr>
+          <tr><th scope="row">Final comparison</th><td>Draft 1 over draft 3, 0.51 to 0.49, confidence 0.02</td></tr>
+          <tr><th scope="row">On screen</th><td>One Question group compiled, selected and rendered. Eight words outside it. No page</td></tr>
+          <tr><th scope="row">Submitted</th><td class="flag">No. This turn ended when the Question appeared. A <a href="#live-submission">separate conversation</a> submitted an answer</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The published reply opened with “Good — your guess first, then the reasoning.” The Question below it asked “If you draw one sock at random from 2 blue and 1 yellow, which colour are you more likely to pick?” and offered Blue, Yellow and “Both are equally likely”, a free-text field, a Hint and a Finish check button. The reply did not state the answer.</p>
+    <p>Both Question-only drafts passed review and both lost their pair to a longer ordinary draft. The final choice between the two ordinary drafts was close to even. One turn cannot show how often the shorter form would win.</p>
+    <figure>
+      <img src="minimax-flash/production-after-classroom.png" width="1200" height="850" loading="lazy" alt="The live classroom on release 4.2.3 with MiniMax M3.1 Flash shown as the model. Only the lower part of the Question is in view: option C, Both are equally likely, a box labelled Or explain your own answer, a Hint link and a Finish check button. The Question’s prompt and options A and B are above the visible area.">
+      <figcaption>The first screen after the reply arrived. The classroom scrolled to the end of the reply, so the prompt and the first two options were above the visible area and the learner would have had to scroll up to read them. Release 4.2.4 changes this, as <a href="#first-view">measured in a replay below</a>. The full text is in the <a href="minimax-flash/production-after-first.json">request ledger</a> under <code>classroom.observableReply</code>.</figcaption>
+    </figure>
+
+    <h3>Which model answered</h3>
+    <div class="wide">
+      <table>
+        <caption>Requested and returned identities on the 4.2.3 turn</caption>
+        <thead><tr><th scope="col">Role</th><th scope="col">Requested</th><th scope="col">Returned by the provider</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Reviewer, 8 requests</th><td>jev-1.14.0</td><td>jev-1.14.0 on all 8, with token usage</td></tr>
+          <tr><th scope="row">Tutor, 4 requests</th><td>MiniMax-M3.1-Flash, through the built-in option</td><td class="flag">Not captured. 0 of 4 model names, 0 of 4 usage records</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The four tutor requests returned HTTP 200 and each produced a draft that Jev reviewed. The verifier did not capture the model name or the token counts in those responses. MiniMax M3.1 Flash is therefore the expected tutor for this turn, and it is not a confirmed one. The model name on the Settings row is the one the classroom requested.</p>
+    <p>The planning request left the browser 2.7 s after the script pressed send. The four tutor requests then started about half a second apart and took 1.7 to 4.7 s each. All four were in flight together for 986 ms. Each review began as soon as its draft finished, and the pair comparisons waited for draft 3, the slowest.</p>
+    <p>With no usage returned, each tutor request is counted at its reserved maximum of US$0.4645728. The turn is bounded at US$1.859709708, of which US$0.001418508 is metered Jev usage. No invoice was available.</p>
+
+    <h3>The same empty request, before and after</h3>
+    <p>An empty POST to <code>/api/judgement/typesafe</code>, sent from the site’s own page in Chromium with no key and no learner text, shows which check answers first. It costs nothing and reaches no model.</p>
+    <div class="wide">
+      <table>
+        <caption>Empty-request probe from the classroom’s own origin</caption>
+        <thead><tr><th scope="col">Release</th><th scope="col">Production</th><th scope="col">Staging</th><th scope="col">Which check answered</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">4.2.2</th><td class="flag">HTTP 403, “Cross-origin review requests are not allowed.”</td><td class="flag">The same 403</td><td>Keating’s origin check, before the key check</td></tr>
+          <tr><th scope="row">4.2.3</th><td>HTTP 401, “A TypeSafe API key is required.”</td><td>The same 401</td><td>The key check, which is the expected stop for a request with no key</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The paid turns agree with the probe. On 4.2.2 the one real planning request returned 403 and nothing followed it. On 4.2.3 the planning request returned 200 and eleven further requests followed. <a href="minimax-flash/production-relay.json">4.2.2 probes</a> · <a href="minimax-flash/production-after.json">4.2.3 probes</a></p>
+
+    <h3 id="live-submission">A second live conversation: Blue was submitted and no feedback came back</h3>
+    <p>A separately registered study ran one more fresh conversation on 4.2.3 with the same sock request, and this time the script answered through the form. It is a different conversation from the turn above, with its own counts. Its one change to the app’s normal requests was a limit of 8,192 output tokens on each tutor request.</p>
+    <div class="wide">
+      <table>
+        <caption>One synthetic conversation, two turns, 22 requests, all HTTP 200</caption>
+        <thead><tr><th scope="col">Turn</th><th scope="col">Plan</th><th scope="col">Review</th><th scope="col">Learner saw</th><th scope="col">Wait</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Asked to guess first</th><td>Create a Question</td><td>Drafts 3 and 4 eligible, draft 4 published. No final comparison, since only one pair sent a draft forward</td><td>A Question with Blue, Yellow and an optional explanation</td><td class="num">15.7 s</td></tr>
+          <tr><th scope="row">Clicked Blue and submitted</th><td>Grade first</td><td class="flag">All four drafts held. Neither pair sent a draft forward</td><td class="flag">“Couldn’t produce a reply”</td><td class="num">7.6 s, as recorded by the app</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>The correct answer was saved and the learner received no feedback.</strong> The stored answer is Blue, its grading state is pending and its score is empty. Drafts 1 and 2 of the feedback turn carried the single recorded issue <code>preference_graded</code>. Draft 3 carried four, including a leaked answer and a repeated Question. Draft 4 carried <code>checkpoint_continued</code> and <code>preference_graded</code>.</p>
+    <p>In this conversation the provider’s responses named the model. All 8 tutor responses reported MiniMax-M3.1-Flash and all 14 reviewer responses reported jev-1.14.0, each with token usage. That confirms the tutor for these two turns. It does not confirm it for the earlier turn, whose responses were not captured.</p>
+    <p>The text of the held drafts, their tool arguments and the individual review probabilities were not kept. Whether any held draft contained fair feedback is unknown. The two pair requests overlapped for 110 ms and 92 ms. Metered usage came to US$0.02575818. <a href="../diagnostics.html?source=hosted-submission&amp;view=pair-reviews">Open both turns in the inspector</a> · <a href="minimax-flash/production-submission.json" download>Download the result</a> · <a href="minimax-flash/production-submission-settings.json" download>Settings export, for Import JSON</a> · <a href="minimax-flash/production-submission-first.json">First-turn receipt</a> · <a href="minimax-flash/production-submission-feedback.json">Submitted-turn receipt</a> · <a href="minimax-flash/production-submission-source.json">Published Question source</a> · <a href="minimax-flash/production-submission-protocol.json">Protocol</a></p>
+    <p>Screens: <a href="minimax-flash/production-submission-question.png">the Question, scrolled into view by the script</a> · <a href="minimax-flash/production-submission-saved.png">the committed answer</a> · <a href="minimax-flash/production-submission-feedback.png">the notice after review</a></p>
+
+    <h3>Does the review mistake a prediction for a preference?</h3>
+    <p>The rule behind <code>preference_graded</code> exists to stop the tutor from marking a learner’s personal choice right or wrong. “Blue” was an answer to a factual question. A prespecified calibration put 20 newly written feedback replies to Jev 1.14.0 under the current wording of that rule and under a revised wording, 40 requests in all. None of the replies came from the live conversation.</p>
+    <div class="wide">
+      <table>
+        <caption>Replies classified as labelled, current wording and revised wording</caption>
+        <thead><tr><th scope="col">Group</th><th scope="col">Cases</th><th scope="col">Current</th><th scope="col">Revised</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Feedback on the sock question</th><td class="num">3</td><td class="num">2</td><td class="num">3</td></tr>
+          <tr><th scope="row">Feedback on four unseen factual tasks</th><td class="num">4</td><td class="num">4</td><td class="num">4</td></tr>
+          <tr><th scope="row">Grading a genuine preference</th><td class="num">5</td><td class="num">5</td><td class="num">5</td></tr>
+          <tr><th scope="row">Neutral acknowledgment</th><td class="num">3</td><td class="num">3</td><td class="num">3</td></tr>
+          <tr><th scope="row">Primary total</th><td class="num">15</td><td class="num">14</td><td class="num">15</td></tr>
+          <tr><th scope="row">Mixed factual and personal item, reported apart</th><td class="num">2</td><td class="num">1</td><td class="num">1</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The one miss under the current wording was a valid correction of “Yellow”, flagged at 0.61. The revised wording scored it 0.03. All five replies that graded a real preference were still held under both wordings.</p>
+    <p class="flag">The revised wording did worse on one mixed item.</p>
+    <p>A question asked for a bird count and a drawing. The reply praised only the count and accepted either drawing. Both wordings flagged it, and the revision raised the score from 0.64 to 0.86. Three further cases were outside the scored set: a mismatched target, an ambiguous route choice that moved from 0.80 to 0.50, and a deliberately wrong factual score that this narrow rule let through under both wordings.</p>
+    <p>The calibration does not explain the withheld live turn. Two new replies confirming “Blue” scored 0.35 under the current wording, below the 0.40 pass mark, so they would have passed this rule as it stands. The live drafts’ text was not kept and cannot be re-scored. Teaching policy v2.4.2 carries the revised wording, and the <a href="#submission-replay">replay below</a> ran one submitted answer under it. Metered usage was US$0.0018648. <a href="minimax-flash/calibration/README.md">Calibration notes</a> · <a href="minimax-flash/calibration/summary.json">All 40 probabilities</a></p>
+
+    <h3 id="submission-replay">Replaying the submission on 4.2.4: the preference flag cleared and the drafts were still held</h3>
+    <p>This run used a locally built Keating 4.2.4 with policy v2.4.2, served from the same machine, and it called the real providers. The Question published in the live 4.2.3 conversation was restored through the normal conversation importer. Blue was then submitted by hand through the form. Only that submission was sent to the tutor and to Jev. It is one synthetic turn on a built release, and it is not a turn on the live site.</p>
+    <p>Jev planned “grade first”, as before. The four new drafts scored 0.06, 0.05, 0.13 and 0.05 on <code>preference_graded</code>, all well under the 0.40 pass mark. Each draft was held for other reasons, and this time the draft text was kept.</p>
+    <div class="wide">
+      <table>
+        <caption>The four feedback drafts after Blue was submitted. None was eligible</caption>
+        <thead><tr><th scope="col">Draft</th><th scope="col">What it did</th><th scope="col">Why it was held</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">1</th><td>No words. Proposed the grade “correct” for the saved Question, and also recorded a thumbs-up from the learner</td><td class="flag">The learner had given no thumbs-up: <code>feedback_invented</code> 0.87</td></tr>
+          <tr><th scope="row">2</th><td>Confirmed Blue, explained 2/3 against 1/3, then showed the same Question again</td><td class="flag">Answer leak 0.95, repeated Question 0.67, continued past the check 0.62</td></tr>
+          <tr><th scope="row">3</th><td>No words. Saved “wants to guess before an explanation” to the learner profile, and recorded a thumbs-up</td><td class="flag"><code>feedback_invented</code> 0.87</td></tr>
+          <tr><th scope="row">4</th><td>Confirmed Blue, explained, then added a new Question about the next draw</td><td class="flag">Answer leak 0.64, unsolicited assessment 0.56</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Draft 1 held the correct grade. It was bundled with a tool call the review rejects, so the grade was never executed. The learner again saw “Couldn’t produce a reply”. The saved answer is Blue, grading is pending and the score is empty.</p>
+    <p>All 11 requests returned HTTP 200 with usage. The tutor responses reported MiniMax-M3.1-Flash and the reviewer responses reported jev-1.14.0. The four drafts were in flight together for 7.2 s, the two pair requests overlapped for 87 ms, and the app recorded 40.5 s for the turn. Metered usage was US$0.019313052. <a href="minimax-flash/submission-replay/summary.json" download>Download the result</a> · <a href="minimax-flash/submission-replay/candidates.json">The four drafts and their scores</a> · <a href="minimax-flash/submission-replay/after.png">Screen after submitting</a> · <a href="minimax-flash/submission-replay/protocol.json">Protocol</a></p>
+    <p>The wording change removed one obstacle on this turn and exposed the next ones. No draft offered the grade or the confirmation on its own.</p>
+
+    <h3 id="grade-only">A grade-only draft in each pair: both proposed the right grade and neither was released</h3>
+    <p>Policy v2.4.3 asks one draft in each pair to do a single thing for a saved answer: grade it. That draft is offered only the grading tool. The other draft in each pair stays ordinary, and every draft still goes through the same individual checks. This was tested once, as a separately registered run on a locally served build of 4.2.4 that called the real providers. The live 4.2.3 Question was restored through the importer and Blue was submitted through the form, as in the previous replay.</p>
+    <div class="wide">
+      <table>
+        <caption>The four drafts after Blue was submitted, policy v2.4.3. None was eligible</caption>
+        <thead><tr><th scope="col">Draft</th><th scope="col">What it did</th><th scope="col">Individual review</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">1 · ordinary</th><td class="flag">Generation did not complete</td><td>Not reviewed</td></tr>
+          <tr><th scope="row">2 · grade only</th><td>No words. Proposed “correct” for the submitted Question, and nothing else</td><td class="flag">Unsure · continued past the check 0.47. Preference flag passed at 0.05</td></tr>
+          <tr><th scope="row">3 · ordinary</th><td>No words. Proposed “correct”, a learner-profile note and an interactive page</td><td class="flag">Unsure · continued past the check 0.45, scope 0.58</td></tr>
+          <tr><th scope="row">4 · grade only</th><td>No words. Proposed “correct” for the submitted Question, and nothing else</td><td class="flag">Unsure · continued past the check 0.45. Preference flag passed at 0.05</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Both grade-only drafts did what was asked. Each was held by one check, <code>checkpoint_continued</code>, which asks whether a reply moves on past a Question the learner has not answered. Jev scored it 0.47 and 0.45. A check passes at 0.40 or below and fails at 0.60 or above, so these scores sit in the undecided band, and an undecided check keeps a draft from release. The learner had answered the Question, and these drafts contained no text.</p>
+    <p>No grade was executed. The learner saw “Couldn’t produce a reply”, and Blue stayed saved with grading pending and no score. Pair 1 had only one completed draft, so it made no comparison. The app recorded 49.6 s for the turn.</p>
+    <p>Nine requests were sent: 1 planning, 4 tutor drafts, 3 individual reviews and 1 pair comparison. Eight returned usage. The provider named MiniMax-M3.1-Flash on 4 responses and jev-1.14.0 on 5. Metered usage was US$0.012867246, and US$0.1549152 is held in reserve for the draft that did not complete. <a href="minimax-flash/grading-lanes/summary.json" download>Download the result</a> · <a href="minimax-flash/grading-lanes/candidates.json">The four drafts and their scores</a> · <a href="minimax-flash/grading-lanes/settings.json" download>Settings export</a> · <a href="minimax-flash/grading-lanes/after.png">Screen after submitting</a> · <a href="minimax-flash/grading-lanes/protocol.json">Protocol</a></p>
+    <p>Across the three submitted-answer turns the stated reason for withholding moved each time: a preference flag on 4.2.3, extra tool calls and new Questions under v2.4.2, and one undecided check under v2.4.3. This is one synthetic turn per policy on a single Question. The next run, under v2.4.4, is the first in which the grade was saved.</p>
+
+    <h3 id="submitted-grade">Policy v2.4.4: the correct grade was saved, and the explanation after it was withheld</h3>
+    <p>The same test was run once more on a locally served build of 4.2.4 with policy v2.4.4 and the real providers. The live 4.2.3 Question was restored through the importer and Blue was submitted through the form. The turn took two rounds of four drafts.</p>
+    <div class="wide">
+      <table>
+        <caption>One submitted answer, two rounds, 23 requests, all with usage</caption>
+        <thead><tr><th scope="col">Round</th><th scope="col">Drafts</th><th scope="col">Review</th><th scope="col">Result</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">1 · grade the answer</th><td>Drafts 2 and 4 were grade only. Each had no words and proposed “correct” for the submitted Question. Ordinary drafts 1 and 3 wrote replies with invalid interface code</td><td>Drafts 2 and 4 eligible. Drafts 1 and 3 held, with answer leak at 0.93 and 0.89. Final comparison: draft 2 over draft 4, 0.67 to 0.33</td><td>The grading tool ran. The saved answer Blue now has a model grade and a score of 1</td></tr>
+          <tr><th scope="row">2 · reply after the grade</th><td>Four ordinary drafts. Each confirmed Blue, then added a new activity or Question, or widened the topic</td><td class="flag">All four held. Answer leak 0.76 to 0.90 on each, with repeated Question and scope undecided</td><td class="flag">No explanation released</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>The grade reached the record. No model-written feedback reached the learner.</strong> The screen showed the tool row <code>grade_question_checks</code> with SUCCESS, followed by “Couldn’t produce a reply”. The app recorded 109.7 s for the turn.</p>
+    <p>The check that held the grade-only drafts under v2.4.3 returned similar raw scores here, 0.46 and 0.42. Those scores are kept in the record. Policy v2.4.4 does not apply that check to one narrow case: a draft with no text whose only action is a single grade matching the saved answer, verified from the draft’s structure. Every other draft is still subject to it.</p>
+    <p>The provider named MiniMax-M3.1-Flash on all 8 tutor responses and jev-1.14.0 on all 15 reviewer responses. Metered usage was US$0.033690624, with nothing held in reserve. <a href="https://chat.keating.help/chat?settings=diagnostics&amp;source=grade-only-replay&amp;view=pair-reviews">Open both rounds in the inspector</a> · <a href="minimax-flash/submitted-grade/summary.json" download>Download the result</a> · <a href="minimax-flash/submitted-grade/candidates.json">Every draft and its scores</a> · <a href="minimax-flash/submitted-grade/settings.json" download>Settings export</a> · <a href="minimax-flash/submitted-grade/after.png">Screen after submitting</a> · <a href="minimax-flash/submitted-grade/protocol.json">Protocol</a></p>
+    <p>The screen is reported as this build displayed it, from entry asset <code>index-DNSPfY1i.js</code>. How the final release presents a saved score in the classroom is being verified separately and is outside this recorded trial.</p>
+    <p>A further test is registered and has no result at the time of this page: one fresh conversation on the live 4.2.4 site with a prompt not used before, about four yellow counters and one blue. <a href="minimax-flash/production-acceptance-protocol.json">Registered protocol</a></p>
+
+    <h3 id="first-view">The first view of a Question</h3>
+    <p>On both live 4.2.3 turns the classroom scrolled to the end of the reply when the Question arrived. On the second, measured at 1200 × 850, the reading area began 141 px from the top of the window. The Question’s prompt ended at 29 px and the Blue option ended at 123 px, so both were above it. A learner would have seen Yellow and the bottom of the form first.</p>
+    <p>Release 4.2.4 changes where the classroom stops scrolling. This comparison replayed an archived M2.7 sock reply in a cold local Chromium classroom at the same size, on the builds before and after the change, with zero provider requests.</p>
+    <div class="wide">
+      <table>
+        <caption>Local replay, vertical position in pixels. The reading area runs from 141 to 639</caption>
+        <thead><tr><th scope="col">Build</th><th scope="col">Question prompt</th><th scope="col">First option</th><th scope="col">In view on arrival</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Before the change</th><td class="num">−252 to −142</td><td class="num">−122 to −49</td><td class="flag">No</td></tr>
+          <tr><th scope="row">With the change, as in 4.2.4</th><td class="num">153 to 263</td><td class="num">283 to 356</td><td>Yes</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <figure>
+      <img src="minimax-flash/viewport-comparison.png" width="1210" height="1307" loading="lazy" alt="Four screenshots of a local classroom at 1200 by 850. Top left, before the repair: the reply has arrived and only the last option, the explanation box and the Finish check button are visible. Top right, after the repair: the question You draw one sock at random from a drawer holding two blue socks and one yellow sock, which colour are you more likely to pick, is at the top of the reading area with options Blue, Yellow, About equally likely and I have no idea yet. Bottom row, before and after: a learner reading an earlier paragraph stays at the same paragraph when a new reply is published.">
+      <figcaption>Chromium replay of one archived reply, before the change and with it. The model picker shows the fresh profile’s default, and no model was called. <a href="minimax-flash/viewport-comparison.json">Measurements</a></figcaption>
+    </figure>
+    <p>The result was the same with standard and reduced motion. Keyboard focus stayed in the composer. A learner who had scrolled up to an earlier paragraph was left where they were, and long prose replies still followed to the bottom. These numbers come from that replay. No live 4.2.4 turn and no person’s use of it were measured.</p>
+
+    <h3>Cost so far</h3>
+    <p>The cumulative bound is US$5.899003442 of the US$10 authorized. It was US$5.65059434 after the first 4.2.3 turn, US$5.67635252 after the submitted conversation, US$5.67821732 after the calibration, US$5.697530372 after the first 4.2.4 replay, US$5.865312818 after the grade-only run and reached the current figure with the v2.4.4 run. Most of it is reserve for requests that returned no usage. No invoice was available. Dollar totals quoted in the sections below are the totals at the time of each study.</p>
+
+    <h3>What stopped the 4.2.2 turn</h3>
+    <div class="gap">
     <p>The sock prompt was typed once into <code>https://chat.keating.help</code> on release 4.2.2, with the built-in MiniMax M3.1 Flash tutor and Jev 1.14.0. The browser’s planning request came back with HTTP 403 after 183 ms. No teaching draft went to MiniMax. There were zero drafts, zero pair comparisons and zero Questions. The learner saw “Couldn’t produce a reply”. The verifier blocked background model calls. Its budget retained US$0.003 for the planning request, with billing unconfirmed. <a href="minimax-flash/production-relay.json">Production evidence</a> · <a href="minimax-flash/production-before.json">Browser receipt</a></p>
     <p>Two further Chromium probes, carrying no key and no learner text, posted to the same address from the site’s own pages on staging and on production. Both received “Cross-origin review requests are not allowed.” That refusal comes from Keating’s own relay, ahead of its key check, so nothing was forwarded to Jev. In the 4.2.2 source the relay compares the browser’s <code>https</code> origin with the address the server sees for itself. Railway ends TLS before the request reaches that server, and this handler does not read the forwarded scheme, as the upload handler beside it does.</p>
     <p><strong>The empty requests locate the failure before Jev.</strong> The origin check entered the source on October 1. A search across five production deployments found zero retained matching relay requests in the November 11–18 window before this experiment. It found both known requests in a later control window. We can date the code and reproduce the failure, but the records cannot tell us how often it affected earlier learners.</p>
+    </div>
 
     <h3>Four ways a learner ends up with no Question</h3>
     <p>The three failures looked alike in these recordings. Every scheduled prediction counts when asking whether learners saw a Question. The stage that failed tells you which part of the application could have changed that outcome.</p>
@@ -152,11 +346,11 @@
           <tr><th scope="row">The tutor chose prose</th><td>Four completed drafts, a released draft, no Question under Compiled</td><td>How often the tutor offers an interface</td><td>Copper’s symbol: “Cu”</td></tr>
           <tr><th scope="row">A draft was withheld</th><td>Drafts exist, some with a Question. “Eligible for release” reads neither</td><td>How strict the review is. Not the tutor’s choice</td><td>Paper guess, before</td></tr>
           <tr><th scope="row">The tutor’s provider refused</th><td>Planning succeeded. Four tutor requests, each HTTP 429, no usage. Pair rows read “Neither draft completed”</td><td>Provider availability only</td><td>M3.1 Flash sock turn, local</td></tr>
-          <tr><th scope="row">Planning never arrived</th><td class="flag">One planning request, HTTP 403. Zero tutor requests. No pair row at all</td><td class="flag">Whether the deployment works. Nothing about the tutor or Jev</td><td>M3.1 Flash sock turn, production</td></tr>
+          <tr><th scope="row">Planning never arrived</th><td class="flag">One planning request, HTTP 403. Zero tutor requests. No pair row at all</td><td class="flag">Whether the deployment works. Nothing about the tutor or Jev</td><td>M3.1 Flash sock turn, production 4.2.2</td></tr>
         </tbody>
       </table>
     </div>
-    <p>This production check delivered a Question on <strong>0 of 1 scheduled turns</strong>. Zero turns reached the tutor, so there was no model output to score for interface choice. The matched release-worktree study below measured a separate pair of M3.1 Flash turns.</p>
+    <p>On 4.2.2 the production check delivered a Question on <strong>0 of 1 scheduled turns</strong>. Zero turns reached the tutor, so there was no model output to score for interface choice. On 4.2.3 it delivered a Question on <strong>1 of 1</strong>. These are one turn on each release. The separately registered 4.2.3 conversation also opened with a Question, 1 of 1, and its feedback turn was withheld. The matched release-worktree study below measured a separate pair of M3.1 Flash turns and keeps its own count.</p>
 
     <h3>Checking a turn like this one</h3>
     <ol>
@@ -199,7 +393,7 @@
 
   <section aria-labelledby="turn">
     <h2 id="turn">Open one turn</h2>
-    <p>On a Jev-guided classroom turn the tutor is called four times at once. Jev reviews each draft alone, then compares drafts 1–2 and 3–4 at the same moment. Each pair sends forward its preferred draft if that one passed, otherwise the other if it passed. A final comparison runs only when both pairs send one. One reply is published and only its tools run.</p>
+    <p>On a Jev-guided classroom turn the tutor writes four drafts concurrently. Jev reviews each draft alone, then compares drafts 1–2 and 3–4 in two overlapping requests. Each pair sends forward its preferred draft if that one passed, otherwise the other if it passed. A final comparison runs only when both pairs send one. One reply is published and only its tools run.</p>
 
     <div class="turns ui">
       <input class="vh" type="radio" name="turn" id="t1">
@@ -361,6 +555,7 @@
         </tbody>
       </table>
     </div>
+    <p>From 4.2.4, each draft’s findings appear beside its own eligibility, which the classroom decides separately. The inspector’s <a href="../diagnostics.html?source=hosted-submission&amp;view=pair-reviews">hosted submission example</a> loads the two live 4.2.3 turns in one click. Fields that an older recording never saved stay marked unknown. When a turn takes more than one round, the inspector keeps each earlier round under its learner turn with its selected draft and each draft’s issues, followed by the final round. The <a href="https://chat.keating.help/chat?settings=diagnostics&amp;source=grade-only-replay&amp;view=pair-reviews">v2.4.4 recording</a> shows this with two rounds.</p>
     <p>The same rows are available without a screen. Both routes are read-only and call no model.</p>
     <pre><code>rtk bun src/cli/main.ts openui-diagnostics docs/benchmarks/jev-paired-feedback-2026-11-18/settings-export.json --view pair-reviews --limit 10</code></pre>
     <p>A browser-connected model can call the WebMCP tool <code>keating.openui_diagnostics</code> with <code>{"view":"pair-reviews","limit":10}</code> for this browser’s turns. The CLI reports 10 compared pairs and concurrent reviews on 5 of 5 timed turns. Over all nine turns, both pair requests were in flight together for 49 to 95 ms.</p>
@@ -374,7 +569,7 @@
 
   <section aria-labelledby="limits">
     <h2 id="limits">What this does not show</h2>
-    <p><strong>Feedback after form submission remains unmeasured in this study.</strong> The two feedback turns were typed into the composer. The browser saved the two form submissions locally and the study stopped the next turn, with grading pending.</p>
+    <p><strong>After a form submission, a correct grade has been saved once. A written explanation has not yet been released in any of four runs.</strong> In the nine local turns, the two feedback turns were typed into the composer. The browser saved the two form submissions locally and the study stopped the next turn, with grading pending. The <a href="#live-submission">one live conversation</a> that did submit a form on 4.2.3 saved the answer and withheld all four feedback drafts. The <a href="#submission-replay">replay of that submission</a> on a built 4.2.4 with policy v2.4.2 cleared the preference flag and still withheld all four. A <a href="#grade-only">second replay</a> with grade-only drafts under policy v2.4.3 produced two drafts holding only the correct grade, and withheld them on one undecided check. A <a href="#submitted-grade">third replay</a> under policy v2.4.4 executed the grade, which saved Blue as correct with a score of 1, and then withheld all four drafts of the reply that followed. Four synthetic turns on one Question give no rate. Only the first ran on the live site. The other three ran on locally served builds, and no live 4.2.4 submission has a result yet.</p>
     <p>A script typed all nine turns in fresh Chromium classrooms. The Settings export contains categories, timings and identifiers. The latest 500 local observations are available under <strong>This browser</strong>. The frequency among real learners remains unknown.</p>
     <details>
       <summary>The relaxed mastery check stays unshipped</summary>
@@ -429,15 +624,15 @@
       </div>
     </div>
     <p>The sock turn cannot be scored for tutor ability, because the provider refused all four requests before any text was written. In Settings its pair rows read “Neither draft completed.” <a href="minimax-flash/sock-draw.json">Receipt</a></p>
-    <p>On these two prompts M2.7 rendered a Question on 2 of 2, in the separate earlier run under the same policy. M3.1 Flash delivered a Question on 1 of 2, and on 1 of 1 where its tutor generation completed. One turn per prompt, with one lost to a rate limit, is insufficient to rank the two models.</p>
-    <p>This phase is bounded at US$0.650047168. That is US$0.010047168 from recorded usage plus US$0.64 retained for the four unmetered 429 requests. The cumulative study bound becomes US$3.787884632 of the US$10 authorized. It is an estimate and no invoice was available. <a href="minimax-flash/summary.json">Results</a> · <a href="minimax-flash/ledger.json">Request and cost ledger</a></p>
+    <p>On these two prompts M2.7 rendered a Question on 2 of 2, in the separate earlier run under the same policy. M3.1 Flash delivered a Question on 1 of 2, and on 1 of 1 where its tutor generation completed. One turn per prompt, with one lost to a rate limit, is insufficient to rank the two models. The <a href="#production-relay">live-site turns</a> are a separate arm and are not included in these counts.</p>
+    <p>This phase is bounded at US$0.650047168. That is US$0.010047168 from recorded usage plus US$0.64 retained for the four unmetered 429 requests. At that point the cumulative study bound was US$3.787884632 of the US$10 authorized. The <a href="#production-relay">live-site section</a> gives the current figure. It is an estimate and no invoice was available. <a href="minimax-flash/summary.json">Results</a> · <a href="minimax-flash/ledger.json">Request and cost ledger</a></p>
   </section>
 
   <p>The MiniMax inspector example adds the requested tutor and the four confirmed rate-limit responses from the saved request ledger. Filtering by tutor now keeps the failed sock turn in view. Its observed tutor remains unknown. <a href="minimax-flash/settings-export.json">Original browser export</a> · <a href="minimax-flash/review-projection.json">Reconstructed inspector data</a></p>
 
   <footer>
     <p>The production analytics check counted zero recorded tutor turns on the two public hosts for versions 4.2.0–4.2.2 between 11 November and 18 November at 22:45 UTC. A real-learner interface rate is unavailable for that window. <a href="minimax-flash/production-window.json">Production query and counts</a></p>
-    <p>Nine synthetic classroom turns across three runs on one day, and two later turns with a second tutor model reported separately. They show how the four-draft review behaved on these prompts. They are not a production rate and not evidence that anyone learned more. <a href="protocol.json">Registered prompts</a> · <a href="prediction/protocol.json">Prediction prompts</a> · <a href="../index.html">The full study</a></p>
+    <p>Nine synthetic classroom turns across three runs on one day, two later turns with a second tutor model, one live-site turn on release 4.2.2, three live-site turns on 4.2.3 across two conversations, a 40-request rule calibration, three submitted turns replayed on locally built 4.2.4 with real providers, one each under policies v2.4.2, v2.4.3 and v2.4.4, and a Chromium scrolling replay with none. Each group is reported separately. They show how the four-draft review behaved on these prompts. They are not a production rate and not evidence that anyone learned more. <a href="protocol.json">Registered prompts</a> · <a href="prediction/protocol.json">Prediction prompts</a> · <a href="../index.html">The full study</a></p>
   </footer>
 </main>
 </body>

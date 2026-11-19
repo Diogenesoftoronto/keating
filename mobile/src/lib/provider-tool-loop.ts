@@ -16,6 +16,7 @@ import {
   type MobileToolExecutionResult,
 } from "./mobile-tools";
 import type { ChatMessage, ProviderSettings, ProviderUsage, StudyArtifact } from "./types";
+import { NATIVE_GRADE_TOOL, nativeReviewedGradeResult, type NativeQuestionGrade } from "./judgement/submitted-question";
 
 export const MAX_PROVIDER_TOOL_ROUNDS = 4;
 export const MAX_PROVIDER_CALLS_PER_ROUND = 8;
@@ -43,6 +44,8 @@ export interface RunMobileToolLoopOptions extends Omit<ProviderRequestOptions, "
   createdAt: number;
   /** Custom compatible endpoints default false because tool support is not implied. */
   advertiseTools?: boolean;
+  /** Only the teaching gate can supply a released proposal for this action. */
+  reviewedGrade?: () => NativeQuestionGrade | undefined;
   /** Visible provider deltas in exact arrival order, including final rounds. */
   onTextDelta?: (delta: string, round: number) => void;
   /** Provider-designated reasoning summaries only; private thought is never emitted. */
@@ -124,6 +127,7 @@ export async function runMobileToolLoop(
     triggeringMessageId,
     createdAt,
     advertiseTools = settings.provider !== "custom",
+    reviewedGrade,
     onTextDelta,
     onReasoningDelta,
     onIntermediateText,
@@ -203,14 +207,13 @@ export async function runMobileToolLoop(
       onToolCall?.(call, idempotencyKey);
       const receipt = await lookupToolReceipt?.(idempotencyKey, call) ?? null;
       if (!receipt) await beforeToolExecution?.(call, idempotencyKey);
-      const execution = receipt ?? await executeTool(call.name, call.arguments, {
-          idempotencyKey,
-          createdAt,
-          sessionId,
-          messageId: triggeringMessageId,
-          signal: providerOptions.signal,
-          deadlineAt: Date.now() + TOOL_TIMEOUT_MS,
-        });
+      const context = {
+        idempotencyKey, createdAt, sessionId, messageId: triggeringMessageId,
+        signal: providerOptions.signal, deadlineAt: Date.now() + TOOL_TIMEOUT_MS,
+      };
+      const execution = receipt ?? (call.name === NATIVE_GRADE_TOOL
+        ? nativeReviewedGradeResult(reviewedGrade?.(), call.arguments, context)
+        : await executeTool(call.name, call.arguments, context));
       executionBySemanticKey.set(idempotencyKey, execution);
       await commitToolCall({ call, idempotencyKey, execution, ...(receipt ? { replayed: true } : {}) });
       results.push(providerResult(call, execution));

@@ -1,5 +1,6 @@
 import type { AgentTool } from "@earendil-works/pi-agent-core";
 import type { KeatingStorage } from "../storage";
+import { submittedGradeCommitted, submittedGradeTarget } from "../judgement/submitted-grade-execution";
 import {
 	extractBrowserOutcomes,
 	extractSessionTurnOutcomes,
@@ -275,11 +276,12 @@ export function createAssessmentTools(storage: KeatingStorage, collectRealOutcom
 					},
 				},
 			},
-			async (params) => {
+			async (params, signal) => {
+				const target = submittedGradeTarget(signal, params);
 				const topic = String(params.topic ?? "").trim();
 				const results = Array.isArray(params.results) ? params.results : [];
 				if (!topic || results.length === 0) return "Error: topic and at least one result are required.";
-				const pending = (await storage.getQuestionChecks(topic))
+				const pending = target ? [target] : (await storage.getQuestionChecks(topic))
 					.filter((check) => check.grading === "pending")
 					.sort((left, right) => right.createdAt - left.createdAt);
 				let graded = 0;
@@ -292,10 +294,12 @@ export function createAssessmentTools(storage: KeatingStorage, collectRealOutcom
 					const check = pending.find((candidate) => candidate.question === question);
 					if (!check) continue;
 					const score = verdict === "correct" ? 1 : verdict === "partial" ? 0.5 : 0;
-					await storage.gradeQuestionCheck(check.id, {
+					const updated = await storage.gradeQuestionCheck(check.id, {
 						score,
 						misconception: typeof item.misconception === "string" ? item.misconception : undefined,
-					});
+					}, target);
+					if (target && !updated) return "Error: The reviewed answer is no longer pending or has changed.";
+					if (target && updated) submittedGradeCommitted(signal, verdict, score);
 					graded += 1;
 				}
 				return graded > 0

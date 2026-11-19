@@ -1,3 +1,4 @@
+import type { SubmittedGradeTarget } from "./judgement/submitted-grade-execution";
 /**
  * Browser-compatible Keating storage using IndexedDB
  * Replaces Node.js filesystem operations from src/core/
@@ -518,7 +519,7 @@ function actionQuestion(target: { node: UiDocumentNode; question?: UiQuestion })
 	return target.node.type === "question" ? target.node : target.question ?? null;
 }
 
-function answerText(action: Extract<UiAction, { type: "submit-answer" | "choose-option" }>, question: UiQuestion): string {
+export function answerText(action: Extract<UiAction, { type: "submit-answer" | "choose-option" }>, question: UiQuestion): string {
 	if (action.type === "choose-option") {
 		const labels = new Map(question.choices?.map((choice) => [choice.id, choice.label]));
 		return action.optionIds.map((id) => labels.get(id) ?? id).join(", ");
@@ -576,7 +577,7 @@ function automaticallyGradeValues(
 	return { grading: "pending" };
 }
 
-function questionGroupResponseText(response: UiQuestionGroupResponse, question: UiQuestion): string {
+export function questionGroupResponseText(response: UiQuestionGroupResponse, question: UiQuestion): string {
 	switch (response.type) {
 		case "text": return response.answer;
 		case "choice": {
@@ -2284,18 +2285,28 @@ export class KeatingStorage {
 		}
 	}
 
-	async gradeQuestionCheck(id: string, grade: { score: number; misconception?: string }): Promise<QuestionCheckRecord | null> {
-		const checks = await this.getQuestionChecks();
-		const current = checks.find((check) => check.id === id);
-		if (!current) return null;
-		const updated: QuestionCheckRecord = {
-			...current,
-			score: Math.max(0, Math.min(1, grade.score)),
-			grading: "model",
-			misconception: grade.misconception?.trim() || undefined,
-		};
-		await this.put(STORES.QUESTION_CHECKS, updated);
-		await this.refreshDerivedLearnerProfile();
+	async gradeQuestionCheck(id: string, grade: { score: number; misconception?: string }, expected?: SubmittedGradeTarget): Promise<QuestionCheckRecord | null> {
+		const store = await this.getStore(STORES.QUESTION_CHECKS, "readwrite");
+		const complete = transactionCompletion(store.transaction);
+		let updated: QuestionCheckRecord | null = null;
+		try {
+			const current = await requestValue(store.get(id)) as QuestionCheckRecord | undefined;
+			if (current && (!expected || (id === expected.id && current.sessionId === expected.sessionId && this.currentSessionId === expected.sessionId
+				&& current.topic === expected.topic && current.question === expected.question && current.answer === expected.answer
+				&& current.grading === "pending" && current.score === undefined))) {
+				updated = { ...current, score: Math.max(0, Math.min(1, grade.score)), grading: "model", misconception: grade.misconception?.trim() || undefined };
+				await requestValue(store.put(updated));
+			}
+		} catch (error) {
+			try { store.transaction.abort(); } catch { /* transaction already ended */ }
+			await complete.catch(() => undefined);
+			throw error;
+		}
+		await complete;
+		if (updated) {
+			if (typeof window !== "undefined") window.dispatchEvent(new window.CustomEvent(QUESTION_JUDGEMENT_CHANGED_EVENT, { detail: { id } }));
+			await this.refreshDerivedLearnerProfile();
+		}
 		return updated;
 	}
 

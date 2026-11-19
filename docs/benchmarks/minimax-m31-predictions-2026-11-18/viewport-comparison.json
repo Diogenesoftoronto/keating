@@ -1,0 +1,134 @@
+{
+  "scope": "Cold local Chromium replay. A genuine archived tutor draft was supplied at the model stream boundary. The regular classroom, Flue message events, keyboard composer, renderer and history restoration ran.",
+  "viewport": {
+    "width": 1200,
+    "height": 850
+  },
+  "source": {
+    "entryIndex": 15,
+    "draftSha256": "326d6669c5df486db998fea68d0f9607f6d5e5907d1ed62c47d05be73aaa9b50",
+    "replayHeader": "The cold browser shows its default tutor. Both image pairs replay the same archived MiniMax text.",
+    "repositoryPath": "docs/benchmarks/jev-paired-prediction-2026-11-18/ledger.json",
+    "repositoryUrl": "https://github.com/Diogenesoftoronto/keating/blob/c94a276e11b379ce67351071beaa4c97a4d9410c/docs/benchmarks/jev-paired-prediction-2026-11-18/ledger.json"
+  },
+  "providerRequests": 0,
+  "spendUsd": 0,
+  "question": "You draw one sock at random from a drawer holding two blue socks and one yellow sock. Which colour are you more likely to pick?",
+  "coordinates": "Vertical CSS pixels from the top of the browser window. The sticky composer limits the bottom of the reading area.",
+  "before": {
+    "firstDisplayReducedMotion": {
+      "available": [
+        141,
+        639
+      ],
+      "prompt": [
+        -252,
+        -142
+      ],
+      "firstOption": [
+        -122,
+        -49
+      ],
+      "scrollTop": 1021,
+      "remaining": 0,
+      "focus": "composer"
+    },
+    "firstDisplayStandardMotion": {
+      "available": [
+        141,
+        639
+      ],
+      "prompt": [
+        -252,
+        -142
+      ],
+      "firstOption": [
+        -122,
+        -49
+      ],
+      "scrollTop": 1021,
+      "remaining": 0,
+      "focus": "composer"
+    },
+    "manuallyScrolledTop": [
+      2042,
+      2042
+    ],
+    "ordinaryProseBottomDistance": 0,
+    "restoredBottomDistance": 0
+  },
+  "after": {
+    "firstDisplayReducedMotion": {
+      "available": [
+        141,
+        639
+      ],
+      "prompt": [
+        153,
+        263
+      ],
+      "firstOption": [
+        283,
+        356
+      ],
+      "scrollTop": 616,
+      "remaining": 405,
+      "focus": "composer"
+    },
+    "firstDisplayStandardMotion": {
+      "available": [
+        141,
+        639
+      ],
+      "prompt": [
+        153,
+        263
+      ],
+      "firstOption": [
+        283,
+        356
+      ],
+      "scrollTop": 616,
+      "remaining": 405,
+      "focus": "composer"
+    },
+    "manuallyScrolledTop": [
+      2042,
+      2042
+    ],
+    "ordinaryProseBottomDistance": 0,
+    "restoredBottomDistance": 0
+  },
+  "regression": "bun scripts/openui-diagnostics/probe-question-viewport.mjs <loopback Vite classroom URL> [screenshot directory]",
+  "screenshot": {
+    "file": "viewport-comparison.png",
+    "sha256": "db65d258911bbd7eae534a9cdd656576d7b34f5d11987a75f1bacd64cac4a746",
+    "description": "Labeled local Chromium captures of a new Question and of a reader who had scrolled back. Both image pairs use the same authentic four-choice MiniMax text. The model picker shows the fresh browser’s default."
+  },
+  "sourceArchive": {
+    "measurementFileSha256": "dda042065e7767c7e5cc12c0cbd69d152d9b8c7d8482685423998459ee01bd36",
+    "scope": "The individual PNG names are paths in the sealed capture archive. The combined public image contains all four screenshots.",
+    "captures": {
+      "before": {
+        "arrival": {
+          "sha256": "dea4f2e29be69816a03782decced7568d52fd37e8a3d8980809c914af5573a2d",
+          "archiveRelativeName": "viewport-before/arrival-classroom.png"
+        },
+        "manual": {
+          "sha256": "ce6f5a33f4704034cca4984af0a5f68841bc19ffa496194d44ecd5dc91aa63cb",
+          "archiveRelativeName": "viewport-before/manual-classroom.png"
+        }
+      },
+      "after": {
+        "arrival": {
+          "sha256": "a96b2ee10b811b59e8b74a8105980e4aa3752591a76855b8363744a328d06df2",
+          "archiveRelativeName": "viewport-final/arrival-classroom.png"
+        },
+        "manual": {
+          "sha256": "353cb33697b8c0adb838d1cdb7470fdeee245073e5d6a65d45a13dec129bee9f",
+          "archiveRelativeName": "viewport-final/manual-classroom.png"
+        }
+      }
+    }
+  }
+}

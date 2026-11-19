@@ -1,6 +1,7 @@
 export * from "./assessment.js";
 export * from "./boosting.js";
 export * from "./contracts.js";
+export * from "./gemini-decision.js";
 export * from "./local-backend.js";
 export * from "./projections.js";
 export * from "./pursuit-switch.js";

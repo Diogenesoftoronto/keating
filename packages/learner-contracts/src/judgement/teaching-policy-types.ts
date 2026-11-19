@@ -13,6 +13,8 @@ export interface TeachingPolicyTurn {
   readonly sources: readonly { readonly id: string; readonly url: string; readonly text: string }[];
   readonly assessment: "none" | "practice" | "assessed" | "unknown";
   readonly pendingSubmissions?: readonly { readonly kind: "quiz" | "comprehension"; readonly id: string; readonly questionIds: readonly string[]; readonly topic?: string; readonly questionText?: string }[];
+  /** Host observed a successful tool write for this submitted item immediately before this tutor round. */
+  readonly confirmedQuestionGrade?: { readonly topic: string; readonly question: string; readonly answer: string; readonly verdict: "correct" | "partial" | "incorrect"; readonly score: number };
   readonly improvementRuns: number | null;
   readonly domain: "unknown" | "general" | "mathematics" | "philosophy" | "science" | "code" | "law" | "medicine" | "history" | "psychology" | "politics" | "art";
   /** Record-derived plan position; rebuilt each turn and never evicted by the conversation window. */
@@ -46,7 +48,7 @@ export interface TeachingPolicyPlan {
 export interface TeachingPolicyCheck {
   readonly id: string;
   /** Raw status and probability are retained when independent evidence establishes that no checkpoint is at stake. */
-  readonly applicability?: "standalone-direct-answer" | "debugging-expected-output" | "feedback-on-attempt";
+  readonly applicability?: "standalone-direct-answer" | "debugging-expected-output" | "feedback-on-attempt" | "submitted-grade-without-text";
   readonly status: "pass" | "fail" | "unknown";
   readonly source: "deterministic" | "jev";
   readonly severity: "critical" | "major" | "minor";

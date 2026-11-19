@@ -1,0 +1,728 @@
+{
+  "production": "https://chat.keating.help",
+  "mode": "paid-release-verification",
+  "expectedTeachingPolicy": "keating-teaching-policy/v2.4.1",
+  "priorBoundUsd": 5.65059434,
+  "phaseMaximumUsd": 0.65,
+  "cumulativeMaximumUsd": 6.30059434,
+  "previousPaidTrialSha256": "2825e5c4acaf7ddb0a0fad4529a0885e14a15fe0e5687ab9abc915c45eb3623d",
+  "study": "A new two-turn production sock prediction and form submission",
+  "totalStudyMaximumUsd": 1.95,
+  "nextRoundsMaximumUsd": 1.3,
+  "rateCard": {
+    "model": "MiniMax-M3.1-Flash",
+    "usdPerMillion": {
+      "input": 0.15,
+      "cacheRead": 0.015,
+      "output": 0.6
+    },
+    "contextUpper": 1000000,
+    "outputUpper": 8192,
+    "pricingSource": "https://www.minimax.io/blog/minimax-m31f"
+  },
+  "startedUtc": "2026-11-19T00:18:26.728Z",
+  "settings": {
+    "typeSafeByokSaved": true,
+    "miniMaxByokSaved": true,
+    "personalAccount": false,
+    "entryAttempts": 1,
+    "keyPresence": {
+      "minimax": true,
+      "typesafeJudgement": true
+    },
+    "afterReload": {
+      "minimax": true,
+      "typesafeJudgement": true
+    },
+    "displayedTutor": "Change model. Current model: MiniMax M3.1 Flash",
+    "initialTutor": "Change model. Current model: Inkling 2 Small",
+    "selectionAttempts": 1,
+    "selectedBuiltinTutor": "MiniMax-M3.1-Flash",
+    "api": "openai-completions",
+    "beforeAuthoredTurn": {
+      "minimax": true,
+      "typesafeJudgement": true
+    }
+  },
+  "dispatched": [
+    {
+      "provider": "typesafe",
+      "stage": "planning",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000188076,
+      "startedAt": 1795047515541,
+      "finishedAt": 1795047515742,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 4478,
+        "output": 748
+      },
+      "status": "metered",
+      "originalWireHash": "cc52265be16af816b4b9a6314648e423f1df89d12fcff79f845f2c48085f01d2",
+      "sentWireHash": "cc52265be16af816b4b9a6314648e423f1df89d12fcff79f845f2c48085f01d2",
+      "browserRequestId": "273520.604",
+      "networkEvent": "requestfinished",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "minimax",
+      "stage": "generation",
+      "slot": "ordinary-1",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "reservedUsd": 0.1549152,
+      "accountedUsd": 0.00265077,
+      "startedAt": 1795047515792,
+      "finishedAt": 1795047528500,
+      "http": 200,
+      "reportedModel": "MiniMax-M3.1-Flash",
+      "usage": {
+        "input": 16691,
+        "uncachedInput": 16563,
+        "cacheRead": 128,
+        "output": 274
+      },
+      "status": "metered",
+      "originalWireHash": "6bfc2bc2e2e014f5871efbf0dd287f23c25e158dabab6bd42521c553b2daecd4",
+      "sentWireHash": "693a9bb09fc7df29f58a41905d3ce6518462ec0689ff73376c78a07b4d9ed4c6",
+      "toolCount": 16,
+      "providerBase": "https://api.minimax.io/v1",
+      "webPath": "/api/chat-proxy/chat/completions",
+      "maxOutputTokens": 8192,
+      "originalAppOutputLimit": 524288,
+      "outputBoundSource": "prospectively limited real provider output parameter",
+      "reasoning": "low",
+      "temperature": null,
+      "browserRequestId": "273520.606",
+      "streamEvidence": {
+        "method": "bounded response clone",
+        "doneMarker": true,
+        "limitReached": false
+      },
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "reportedIdentityMatchesRequest": true,
+      "networkEvent": "requestfinished"
+    },
+    {
+      "provider": "minimax",
+      "stage": "generation",
+      "slot": "ordinary-2",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "reservedUsd": 0.1549152,
+      "accountedUsd": 0.00253293,
+      "startedAt": 1795047516269,
+      "finishedAt": 1795047518598,
+      "http": 200,
+      "reportedModel": "MiniMax-M3.1-Flash",
+      "usage": {
+        "input": 16691,
+        "uncachedInput": 16179,
+        "cacheRead": 512,
+        "output": 164
+      },
+      "status": "metered",
+      "originalWireHash": "0bf6699151620a4c0ce2b2364df2f426ebf0b8146f49c1c93df07b871682bc89",
+      "sentWireHash": "1c94671933dd3e168c6ec347c735fb5b60cb80f817de8f3a7647f011c7493bd7",
+      "toolCount": 16,
+      "providerBase": "https://api.minimax.io/v1",
+      "webPath": "/api/chat-proxy/chat/completions",
+      "maxOutputTokens": 8192,
+      "originalAppOutputLimit": 524288,
+      "outputBoundSource": "prospectively limited real provider output parameter",
+      "reasoning": "low",
+      "temperature": null,
+      "browserRequestId": "273520.607",
+      "streamEvidence": {
+        "method": "bounded response clone",
+        "doneMarker": true,
+        "limitReached": false
+      },
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "reportedIdentityMatchesRequest": true,
+      "networkEvent": "requestfinished"
+    },
+    {
+      "provider": "minimax",
+      "stage": "generation",
+      "slot": "ordinary-3",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "reservedUsd": 0.1549152,
+      "accountedUsd": 0.00274074,
+      "startedAt": 1795047516766,
+      "finishedAt": 1795047522282,
+      "http": 200,
+      "reportedModel": "MiniMax-M3.1-Flash",
+      "usage": {
+        "input": 16770,
+        "uncachedInput": 16594,
+        "cacheRead": 176,
+        "output": 415
+      },
+      "status": "metered",
+      "originalWireHash": "32fd135027521d4e24f419bf671641934825b0436069714de01356429193029f",
+      "sentWireHash": "5052c7bd1aa6a05de0a616f482571f630b946b119d43f5eef9be1723482c8a88",
+      "toolCount": 16,
+      "providerBase": "https://api.minimax.io/v1",
+      "webPath": "/api/chat-proxy/chat/completions",
+      "maxOutputTokens": 8192,
+      "originalAppOutputLimit": 524288,
+      "outputBoundSource": "prospectively limited real provider output parameter",
+      "reasoning": "low",
+      "temperature": null,
+      "browserRequestId": "273520.608",
+      "streamEvidence": {
+        "method": "bounded response clone",
+        "doneMarker": true,
+        "limitReached": false
+      },
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "reportedIdentityMatchesRequest": true,
+      "networkEvent": "requestfinished"
+    },
+    {
+      "provider": "minimax",
+      "stage": "generation",
+      "slot": "ordinary-4",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "reservedUsd": 0.1549152,
+      "accountedUsd": 0.00260817,
+      "startedAt": 1795047517269,
+      "finishedAt": 1795047523495,
+      "http": 200,
+      "reportedModel": "MiniMax-M3.1-Flash",
+      "usage": {
+        "input": 16691,
+        "uncachedInput": 16563,
+        "cacheRead": 128,
+        "output": 203
+      },
+      "status": "metered",
+      "originalWireHash": "43330ee5eaa0ecdacd4097c9da729023e529ca7a9ff6748b36661e53627b23ac",
+      "sentWireHash": "a0e70d95c673c31981a4779608c7d324a8805cd55377181779e31a18a86d6482",
+      "toolCount": 16,
+      "providerBase": "https://api.minimax.io/v1",
+      "webPath": "/api/chat-proxy/chat/completions",
+      "maxOutputTokens": 8192,
+      "originalAppOutputLimit": 524288,
+      "outputBoundSource": "prospectively limited real provider output parameter",
+      "reasoning": "low",
+      "temperature": null,
+      "browserRequestId": "273520.609",
+      "streamEvidence": {
+        "method": "bounded response clone",
+        "doneMarker": true,
+        "limitReached": false
+      },
+      "reportedModels": [
+        "MiniMax-M3.1-Flash"
+      ],
+      "reportedIdentityMatchesRequest": true,
+      "networkEvent": "requestfinished"
+    },
+    {
+      "provider": "typesafe",
+      "stage": "review",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000263718,
+      "startedAt": 1795047518606,
+      "finishedAt": 1795047518798,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 6279,
+        "output": 896
+      },
+      "status": "metered",
+      "originalWireHash": "26054e4d97bf64d973f08b6de4ee457f24e69ef5520fe5b517767aa8d02c1db8",
+      "sentWireHash": "26054e4d97bf64d973f08b6de4ee457f24e69ef5520fe5b517767aa8d02c1db8",
+      "browserRequestId": "273520.610",
+      "networkEvent": "requestfinished",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "review",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000265608,
+      "startedAt": 1795047522292,
+      "finishedAt": 1795047522427,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 6324,
+        "output": 896
+      },
+      "status": "metered",
+      "originalWireHash": "ff58e469f0ab4235cc4f86bc5832ec31ddeb6fa5a1d53adbf10377acb22f0492",
+      "sentWireHash": "ff58e469f0ab4235cc4f86bc5832ec31ddeb6fa5a1d53adbf10377acb22f0492",
+      "browserRequestId": "273520.611",
+      "networkEvent": "requestfinished",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "review",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000264432,
+      "startedAt": 1795047523505,
+      "finishedAt": 1795047523651,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 6296,
+        "output": 896
+      },
+      "status": "metered",
+      "originalWireHash": "9b9ab5b4c0a4b104ebd2f0fbe2774c1038e8973a65961fbf4cf5c8949f2d76e1",
+      "sentWireHash": "9b9ab5b4c0a4b104ebd2f0fbe2774c1038e8973a65961fbf4cf5c8949f2d76e1",
+      "browserRequestId": "273520.612",
+      "networkEvent": "requestfinished",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "review",
+      "slot": null,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000264516,
+      "startedAt": 1795047528510,
+      "finishedAt": 1795047528674,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 6298,
+        "output": 896
+      },
+      "status": "metered",
+      "originalWireHash": "29f4b123b06b392245290cdbc29381bbbc5457abdbbb891af784bb57aaba7c7d",
+      "sentWireHash": "29f4b123b06b392245290cdbc29381bbbc5457abdbbb891af784bb57aaba7c7d",
+      "browserRequestId": "273520.613",
+      "networkEvent": "requestfinished",
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "pair",
+      "slot": 1,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000062412,
+      "startedAt": 1795047528694,
+      "finishedAt": 1795047528807,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 1486,
+        "output": 39
+      },
+      "status": "metered",
+      "originalWireHash": "e44e99240fede1ae807344d80fadbde2cafa951f9401d8d8dadaeec61280b06a",
+      "sentWireHash": "e44e99240fede1ae807344d80fadbde2cafa951f9401d8d8dadaeec61280b06a",
+      "browserRequestId": "273520.614",
+      "networkEvent": "requestfinished",
+      "preferredAttempt": 1,
+      "reportedIdentityMatchesRequest": true
+    },
+    {
+      "provider": "typesafe",
+      "stage": "pair",
+      "slot": 2,
+      "requestModel": "jev-1.14.0",
+      "reservedUsd": 0.003,
+      "accountedUsd": 0.000064218,
+      "startedAt": 1795047528697,
+      "finishedAt": 1795047528832,
+      "http": 200,
+      "reportedModel": "jev-1.14.0",
+      "usage": {
+        "input": 1529,
+        "output": 39
+      },
+      "status": "metered",
+      "originalWireHash": "f814aa51d98cc3efe1d1c51df36ab952a08be33c0d9c46a56ac4952492cc5f0e",
+      "sentWireHash": "f814aa51d98cc3efe1d1c51df36ab952a08be33c0d9c46a56ac4952492cc5f0e",
+      "browserRequestId": "273520.615",
+      "networkEvent": "requestfinished",
+      "preferredAttempt": 4,
+      "reportedIdentityMatchesRequest": true
+    }
+  ],
+  "intercepted": {
+    "foreign-origin": 5,
+    "other-background": 23,
+    "unrelated-api": 9,
+    "unrelated-tutor": 2,
+    "provider-before-or-after-turn": 1
+  },
+  "status": "observed",
+  "verifiedWorstCaseUsd": 0.6436608,
+  "release": {
+    "sha": "c94a276e11b379ce67351071beaa4c97a4d9410c",
+    "webVersion": "4.2.3",
+    "chatAsset": "/assets/index-BxmZoxBm.js",
+    "verifiedChatAssetSha256": "cd977fce68871f79bc338d62d66813c55bcbc526b712a6e8809240295800d9dc"
+  },
+  "progress": "learner-turn",
+  "initialPairTurns": 0,
+  "submittedAt": 1795047513475,
+  "interceptedTutorShapes": [
+    {
+      "reason": "unrelated-tutor",
+      "requestModel": "MiniMax-M3.1-Flash",
+      "slotMarker": null,
+      "maxOutput": 800,
+      "userCount": 1,
+      "containsRegisteredPrompt": true,
+      "sessionTitle": false,
+      "topicCategorization": true,
+      "auxiliaryWebSearch": false
+    }
+  ],
+  "query": {
+    "rows": [
+      {
+        "schemaVersion": 1,
+        "conversationId": "ef2eb348-0add-4b0a-a8c2-bca1db2e3070",
+        "turnId": "learner-0",
+        "turnIndex": 0,
+        "model": "minimax/MiniMax-M3.1-Flash",
+        "mode": "guided",
+        "cue": {
+          "kind": "implicit-action",
+          "targets": [
+            "question",
+            "quiz"
+          ]
+        },
+        "reply": "released",
+        "replyElapsedMs": 15304,
+        "attempted": true,
+        "compiled": [
+          "question-group"
+        ],
+        "selected": [
+          "question-group"
+        ],
+        "rendered": [
+          "question-group"
+        ],
+        "guidance": {
+          "source": "jev",
+          "action": "create",
+          "delivered": true,
+          "targets": [
+            "question"
+          ]
+        },
+        "outsideWords": 13,
+        "nativePageRequested": false,
+        "assessment": {
+          "optOut": false,
+          "checkpoints": [
+            "question-interface"
+          ]
+        },
+        "draftAttempts": 4,
+        "gateIssues": [
+          "checkpoint_repeated"
+        ],
+        "decisionModel": "jev-1.14.0",
+        "pairReviews": [
+          {
+            "pair": 1,
+            "candidateAttempts": [
+              1,
+              2
+            ],
+            "status": "compared",
+            "preferredAttempt": 1,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [],
+            "finalistAttempt": null,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.1",
+            "predictionQuestionAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 1,
+                "issues": [
+                  "checkpoint_repeated"
+                ]
+              },
+              {
+                "attempt": 2,
+                "issues": [
+                  "checkpoint_repeated"
+                ]
+              }
+            ],
+            "startedAtMs": 13201.745000000112,
+            "finishedAtMs": 13329.705000000075
+          },
+          {
+            "pair": 2,
+            "candidateAttempts": [
+              3,
+              4
+            ],
+            "status": "compared",
+            "preferredAttempt": 4,
+            "model": "jev-1.14.0",
+            "eligibleAttempts": [
+              3,
+              4
+            ],
+            "finalistAttempt": 4,
+            "feedbackOnlyAttempts": [],
+            "policyVersion": "keating-teaching-policy/v2.4.1",
+            "predictionQuestionAttempts": [],
+            "candidateIssueIds": [
+              {
+                "attempt": 3,
+                "issues": [
+                  "checkpoint_repeated"
+                ]
+              },
+              {
+                "attempt": 4,
+                "issues": [
+                  "checkpoint_repeated"
+                ]
+              }
+            ],
+            "startedAtMs": 13204.160000000149,
+            "finishedAtMs": 13354.839999999851
+          }
+        ],
+        "requestedModel": "minimax/MiniMax-M3.1-Flash",
+        "selection": {
+          "attempt": 4,
+          "review": "verified",
+          "rule": "none"
+        },
+        "codingChallengeLanguages": [],
+        "editableCode": [],
+        "editorOutsideWords": null,
+        "nativePage": {
+          "succeeded": false,
+          "failed": false,
+          "attached": false,
+          "saved": false,
+          "mounted": false,
+          "ready": false,
+          "visible": false,
+          "opened": false,
+          "frameFailed": false
+        }
+      }
+    ],
+    "comparedPairs": 2,
+    "matchingTurns": 1
+  },
+  "observedAt": 1795047529157,
+  "classroom": {
+    "observableReply": "Good instinct to guess first — let's lock it in before any math.\n\nBefore I explain\n\nTwo blue socks, one yellow sock, one random draw.\n\nQuick check\nBefore you start\n1 / 1\nWhich colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.\nA\nBlue\nB\nYellow\nHint\nFinish check",
+    "observerReply": "released",
+    "questionCount": 1,
+    "questionPrompts": [
+      "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence."
+    ],
+    "nativePageCount": 0,
+    "renderedKinds": [
+      "question-group"
+    ],
+    "selectedAfterUserTurns": 1
+  },
+  "untouchedQuestionGeometry": {
+    "browser": {
+      "width": 1200,
+      "height": 850
+    },
+    "scrollViewport": {
+      "top": 141.359375,
+      "left": 360,
+      "bottom": 850,
+      "right": 1200,
+      "width": 840,
+      "height": 708.640625,
+      "scrollTop": 818,
+      "scrollHeight": 1527,
+      "clientHeight": 709
+    },
+    "legend": {
+      "text": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.",
+      "box": {
+        "top": -80.09375,
+        "left": 409.46453857421875,
+        "bottom": 29.40625,
+        "right": 1153.902099609375,
+        "width": 744.4375610351562,
+        "height": 109.5
+      }
+    },
+    "options": [
+      {
+        "text": "A\nBlue",
+        "box": {
+          "top": 50.203125,
+          "left": 409.46453857421875,
+          "bottom": 123,
+          "right": 1153.902099609375,
+          "width": 744.4375610351562,
+          "height": 72.796875
+        }
+      },
+      {
+        "text": "B\nYellow",
+        "box": {
+          "top": 136,
+          "left": 409.46453857421875,
+          "bottom": 208.796875,
+          "right": 1153.902099609375,
+          "width": 744.4375610351562,
+          "height": 72.796875
+        }
+      },
+      {
+        "text": "",
+        "box": {
+          "top": 221.796875,
+          "left": 409.46453857421875,
+          "bottom": 346.59375,
+          "right": 1153.902099609375,
+          "width": 744.4375610351562,
+          "height": 124.796875
+        }
+      }
+    ]
+  },
+  "publicEvidence": {
+    "trace": {
+      "file": "first-trace.json",
+      "sha256": "57bedea9487a651f2946e4cfef34de6b00996542d438f41d5055c99c30565d6f"
+    },
+    "queries": {
+      "file": "first-webmcp.json",
+      "sha256": "1a495cae8a933f32aa53cf5b45f87ba90e148bc1a14154ad34909bde0100c73f"
+    },
+    "screenshot": {
+      "file": "first-classroom.png",
+      "sha256": "06de59dbe8c986b9418ef4709f5028d63010fa1373bf7b7cf7c17f70e908232d"
+    }
+  },
+  "authenticPublicMessage": {
+    "file": "first-public-message.json",
+    "sha256": "c8daffe7e8afb34fcad86956f58c1a0e011681c950e4e1dda1270bf8a6ec4865"
+  },
+  "finishedUtc": "2026-11-19T00:18:49.354Z",
+  "verification": {
+    "count": 11,
+    "knownUsageCount": 11,
+    "checkedAttempts": 4,
+    "fourCandidateHttpOverlapMs": 1329,
+    "twoReviewHttpOverlapMs": 110,
+    "pairCounts": [
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "tutorReturnedIdentities": [
+      "MiniMax-M3.1-Flash"
+    ],
+    "verifiedTutorIdentities": 4,
+    "policyMatches": true,
+    "learnerElapsedMs": 15682
+  },
+  "isolatedContextClosed": false,
+  "additionalBoundUsd": 0.01190559,
+  "cumulativeBoundUsd": 5.66249993,
+  "invoiceUsd": null,
+  "framedQuestionGeometry": {
+    "browser": {
+      "width": 1200,
+      "height": 850
+    },
+    "scrollViewport": {
+      "top": 70.359375,
+      "left": 360,
+      "bottom": 779,
+      "right": 1200,
+      "width": 840,
+      "height": 708.640625,
+      "scrollTop": 297,
+      "scrollHeight": 1527,
+      "clientHeight": 709
+    },
+    "legend": {
+      "text": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.",
+      "box": {
+        "top": 369.90625,
+        "left": 407.78125,
+        "bottom": 479.40625,
+        "right": 1152.21875,
+        "width": 744.4375,
+        "height": 109.5
+      }
+    },
+    "options": [
+      {
+        "text": "A\nBlue",
+        "box": {
+          "top": 500.203125,
+          "left": 407.78125,
+          "bottom": 573,
+          "right": 1152.21875,
+          "width": 744.4375,
+          "height": 72.796875
+        }
+      },
+      {
+        "text": "B\nYellow",
+        "box": {
+          "top": 586,
+          "left": 407.78125,
+          "bottom": 658.796875,
+          "right": 1152.21875,
+          "width": 744.4375,
+          "height": 72.796875
+        }
+      },
+      {
+        "text": "",
+        "box": {
+          "top": 671.796875,
+          "left": 407.78125,
+          "bottom": 796.59375,
+          "right": 1152.21875,
+          "width": 744.4375,
+          "height": 124.796875
+        }
+      }
+    ]
+  },
+  "framedFormEvidence": {
+    "file": "framed-question.png",
+    "sha256": "151c1794b429d7cc26fb66784b92bf708b5fb5998896487bb7717c2f6a3e775c"
+  },
+  "browserDisposition": "One registered answer in the same genuine classroom, within the supplemental study budget."
+}

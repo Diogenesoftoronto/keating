@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 4.2.4
+
+- Settings includes the original production recording of a learner asking to guess a sock colour. Inspect which of four drafts Jev chose, when the Question appeared and how the two pair reviews overlapped. [Open the recorded turn](https://keating.help/reports/teaching-interfaces/diagnostics.html?source=hosted-sock&view=pair-reviews)
+- A new classroom Question opens with its prompt and first choice in view. Learners who scroll back while the tutor writes keep their reading position and keyboard focus.
+- When a saved comprehension question has a stem, Jev checks what the tutor is grading. The review distinguishes a factual prediction from a personal preference, including when the form has no answer key. A paired test across 15 primary examples improved from 14 to 15 correct decisions. One additional mixed question still triggered a false alarm.
+- When Jev asks to grade a saved answer first, one draft in each pair can use only the grading tool for that answer. The other drafts retain their usual teaching tools. Settings and machine-readable diagnostics show which drafts had that scope, the findings on each draft and its release eligibility. [Inspect the submitted answer](https://keating.help/reports/teaching-interfaces/diagnostics.html?source=hosted-submission&view=pair-reviews)
+- A tool-only grade for an already submitted answer keeps Jev’s original scores. Keating marks the check about continuing past an unanswered Question as inapplicable when the qualifying draft has no visible text. The browser applies the chosen grade to the exact saved answer in a single storage transaction.
+- When grading triggers another tutor round, the inspector, CLI and WebMCP keep both rounds under the same learner turn.
+- The web classroom shows the saved verdict beside the submitted answer, including when the tutor’s explanation is withheld. After a successful grade, two of Jev’s four candidates are asked to explain that verdict briefly.
+- On mobile, Jev-guided tutors can grade a factual choice even when the Question has no answer key. The app ties the grade to the saved submission and records the result together with its tool receipt.
+- Web Settings lets a learner select Google Gemini Decision 1 for teaching decisions and use their own Google API key alongside their chosen tutor.
+- Turning decision reviews off in the web classroom sends the learner’s turn directly to the tutor. Previously it could stop at planning before the tutor received the message.
+
 ## 4.2.3
 
 - Fixed a hosted classroom failure that stopped Jev from planning a reply when Railway handled HTTPS. Staging now checks that a browser-origin request reaches the relay’s API key check before promoting a clean build.

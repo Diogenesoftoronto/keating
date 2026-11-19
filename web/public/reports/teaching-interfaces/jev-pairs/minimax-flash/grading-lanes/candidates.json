@@ -1,0 +1,497 @@
+{
+  "scope": "Synthetic private candidates. Actual proposals were matched to their pair request and to their durable attempt's observed Jev probabilities. The exact verdict and submitted-question match are shown for a proposed grading tool. Each grade and tool result below comes from the application.",
+  "sourceRawReceiptSha256": "2bdc681be466cf4b320a0acb2db3ba79969518735636eb1b6da670b7b4c4fede",
+  "sourceOperatorSummarySha256": "887305acc94d3cca7dc212485d68d259b0d99d59db32099f88fff134a64510bc",
+  "rounds": [
+    {
+      "round": 1,
+      "phase": "withheld",
+      "reason": "no-approved-draft",
+      "selectedAttempt": null,
+      "pairs": [
+        {
+          "pair": 1,
+          "candidateAttempts": [
+            2
+          ],
+          "status": "incomplete",
+          "preferredAttempt": null,
+          "model": null,
+          "eligibleAttempts": [],
+          "finalistAttempt": null,
+          "feedbackOnlyAttempts": [],
+          "policyVersion": "keating-teaching-policy/v2.4.3",
+          "predictionQuestionAttempts": [],
+          "gradeOnlyAttempts": [
+            2
+          ],
+          "candidateIssueIds": [
+            {
+              "attempt": 2,
+              "issues": [
+                "checkpoint_continued"
+              ]
+            }
+          ]
+        },
+        {
+          "pair": 2,
+          "candidateAttempts": [
+            3,
+            4
+          ],
+          "status": "compared",
+          "preferredAttempt": 4,
+          "model": "jev-1.14.0",
+          "eligibleAttempts": [],
+          "finalistAttempt": null,
+          "feedbackOnlyAttempts": [],
+          "policyVersion": "keating-teaching-policy/v2.4.3",
+          "predictionQuestionAttempts": [],
+          "gradeOnlyAttempts": [
+            4
+          ],
+          "candidateIssueIds": [
+            {
+              "attempt": 3,
+              "issues": [
+                "checkpoint_continued",
+                "quality_scope"
+              ]
+            },
+            {
+              "attempt": 4,
+              "issues": [
+                "checkpoint_continued"
+              ]
+            }
+          ],
+          "startedAtMs": 46639.87999999989,
+          "finishedAtMs": 46780.985000000335
+        }
+      ],
+      "drafts": [
+        {
+          "attempt": 1,
+          "pair": 1,
+          "status": "generation-error",
+          "eligible": null,
+          "selected": false,
+          "gradeOnly": false,
+          "reviewed": false,
+          "preferenceGradedProbability": null,
+          "checkpointContinuedProbability": null,
+          "recordedIssues": [],
+          "checks": [],
+          "writtenReplyPresent": null,
+          "openUiFencePresent": null,
+          "proposedTools": null,
+          "reviewRequestSha256": [],
+          "writtenReplySha256": null
+        },
+        {
+          "attempt": 2,
+          "pair": 1,
+          "status": "unknown",
+          "eligible": false,
+          "selected": false,
+          "gradeOnly": true,
+          "reviewed": true,
+          "preferenceGradedProbability": 0.05,
+          "checkpointContinuedProbability": 0.47,
+          "recordedIssues": [
+            "checkpoint_continued"
+          ],
+          "checks": [
+            {
+              "id": "checkpoint_continued",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.47
+            },
+            {
+              "id": "preference_graded",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.05
+            }
+          ],
+          "writtenReplyPresent": false,
+          "openUiFencePresent": false,
+          "proposedTools": [
+            {
+              "name": "grade_question_checks",
+              "grades": [
+                {
+                  "submittedQuestionMatches": true,
+                  "verdict": "correct"
+                }
+              ],
+              "topic": "Random draw"
+            }
+          ],
+          "reviewRequestSha256": [
+            "b7f47647dbcc4d1b070a8e8e7dc257c76381f2e9a2d0418507d2c1ac1f030fd5"
+          ],
+          "writtenReplySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "attempt": 3,
+          "pair": 2,
+          "status": "unknown",
+          "eligible": false,
+          "selected": false,
+          "gradeOnly": false,
+          "reviewed": true,
+          "preferenceGradedProbability": 0.1,
+          "checkpointContinuedProbability": 0.45,
+          "recordedIssues": [
+            "checkpoint_continued",
+            "quality_scope"
+          ],
+          "checks": [
+            {
+              "id": "checkpoint_continued",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.45
+            },
+            {
+              "id": "preference_graded",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.1
+            },
+            {
+              "id": "quality_scope",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.5800000000000001
+            }
+          ],
+          "writtenReplyPresent": false,
+          "openUiFencePresent": false,
+          "proposedTools": [
+            {
+              "name": "grade_question_checks",
+              "grades": [
+                {
+                  "submittedQuestionMatches": true,
+                  "verdict": "correct"
+                }
+              ],
+              "topic": "Random draw"
+            },
+            {
+              "name": "remember_learner_profile"
+            },
+            {
+              "name": "interactive_page"
+            }
+          ],
+          "reviewRequestSha256": [
+            "42ca0e1cd7b109eb3fa86b74b4a23545014b49215396bf4be7e40da7eaca8a5a"
+          ],
+          "writtenReplySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "attempt": 4,
+          "pair": 2,
+          "status": "unknown",
+          "eligible": false,
+          "selected": false,
+          "gradeOnly": true,
+          "reviewed": true,
+          "preferenceGradedProbability": 0.05,
+          "checkpointContinuedProbability": 0.45,
+          "recordedIssues": [
+            "checkpoint_continued"
+          ],
+          "checks": [
+            {
+              "id": "checkpoint_continued",
+              "source": "jev",
+              "status": "unknown",
+              "probability": 0.45
+            },
+            {
+              "id": "preference_graded",
+              "source": "jev",
+              "status": "pass",
+              "probability": 0.05
+            }
+          ],
+          "writtenReplyPresent": false,
+          "openUiFencePresent": false,
+          "proposedTools": [
+            {
+              "name": "grade_question_checks",
+              "grades": [
+                {
+                  "submittedQuestionMatches": true,
+                  "verdict": "correct"
+                }
+              ],
+              "topic": "Random draw"
+            }
+          ],
+          "reviewRequestSha256": [
+            "b7f47647dbcc4d1b070a8e8e7dc257c76381f2e9a2d0418507d2c1ac1f030fd5"
+          ],
+          "writtenReplySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "physicalRequestsByStage": {
+        "planning": 1,
+        "generation": 4,
+        "review": 3,
+        "pair": 1
+      },
+      "offeredTutorTools": [
+        {
+          "slot": "ordinary-1",
+          "gradeOnly": false,
+          "tools": [
+            "client-web-search",
+            "animate",
+            "interactive_page",
+            "generate_image",
+            "feedback",
+            "grade_question_checks",
+            "remember_learner_profile",
+            "set_learner_goal",
+            "update_goal_step",
+            "revise_study_plan",
+            "knowledge_sources",
+            "knowledge_read_resource",
+            "knowledge_call_tool",
+            "evaluate_teaching",
+            "request_teaching_improvement",
+            "keating_activate_skill",
+            "keating_task"
+          ],
+          "providerMaxOutput": 8192,
+          "sourceModel": "MiniMax-M3.1-Flash",
+          "usageObserved": false
+        },
+        {
+          "slot": "grade-2",
+          "gradeOnly": true,
+          "tools": [
+            "grade_question_checks"
+          ],
+          "providerMaxOutput": 8192,
+          "sourceModel": "MiniMax-M3.1-Flash",
+          "usageObserved": true
+        },
+        {
+          "slot": "ordinary-3",
+          "gradeOnly": false,
+          "tools": [
+            "client-web-search",
+            "animate",
+            "interactive_page",
+            "generate_image",
+            "feedback",
+            "grade_question_checks",
+            "remember_learner_profile",
+            "set_learner_goal",
+            "update_goal_step",
+            "revise_study_plan",
+            "knowledge_sources",
+            "knowledge_read_resource",
+            "knowledge_call_tool",
+            "evaluate_teaching",
+            "request_teaching_improvement",
+            "keating_activate_skill",
+            "keating_task"
+          ],
+          "providerMaxOutput": 8192,
+          "sourceModel": "MiniMax-M3.1-Flash",
+          "usageObserved": true
+        },
+        {
+          "slot": "grade-4",
+          "gradeOnly": true,
+          "tools": [
+            "grade_question_checks"
+          ],
+          "providerMaxOutput": 8192,
+          "sourceModel": "MiniMax-M3.1-Flash",
+          "usageObserved": true
+        }
+      ]
+    }
+  ],
+  "drafts": [
+    {
+      "attempt": 1,
+      "pair": 1,
+      "status": "generation-error",
+      "eligible": null,
+      "selected": false,
+      "gradeOnly": false,
+      "reviewed": false,
+      "preferenceGradedProbability": null,
+      "checkpointContinuedProbability": null,
+      "recordedIssues": [],
+      "checks": [],
+      "writtenReplyPresent": null,
+      "openUiFencePresent": null,
+      "proposedTools": null,
+      "reviewRequestSha256": [],
+      "writtenReplySha256": null
+    },
+    {
+      "attempt": 2,
+      "pair": 1,
+      "status": "unknown",
+      "eligible": false,
+      "selected": false,
+      "gradeOnly": true,
+      "reviewed": true,
+      "preferenceGradedProbability": 0.05,
+      "checkpointContinuedProbability": 0.47,
+      "recordedIssues": [
+        "checkpoint_continued"
+      ],
+      "checks": [
+        {
+          "id": "checkpoint_continued",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.47
+        },
+        {
+          "id": "preference_graded",
+          "source": "jev",
+          "status": "pass",
+          "probability": 0.05
+        }
+      ],
+      "writtenReplyPresent": false,
+      "openUiFencePresent": false,
+      "proposedTools": [
+        {
+          "name": "grade_question_checks",
+          "grades": [
+            {
+              "submittedQuestionMatches": true,
+              "verdict": "correct"
+            }
+          ],
+          "topic": "Random draw"
+        }
+      ],
+      "reviewRequestSha256": [
+        "b7f47647dbcc4d1b070a8e8e7dc257c76381f2e9a2d0418507d2c1ac1f030fd5"
+      ],
+      "writtenReplySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "attempt": 3,
+      "pair": 2,
+      "status": "unknown",
+      "eligible": false,
+      "selected": false,
+      "gradeOnly": false,
+      "reviewed": true,
+      "preferenceGradedProbability": 0.1,
+      "checkpointContinuedProbability": 0.45,
+      "recordedIssues": [
+        "checkpoint_continued",
+        "quality_scope"
+      ],
+      "checks": [
+        {
+          "id": "checkpoint_continued",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.45
+        },
+        {
+          "id": "preference_graded",
+          "source": "jev",
+          "status": "pass",
+          "probability": 0.1
+        },
+        {
+          "id": "quality_scope",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.5800000000000001
+        }
+      ],
+      "writtenReplyPresent": false,
+      "openUiFencePresent": false,
+      "proposedTools": [
+        {
+          "name": "grade_question_checks",
+          "grades": [
+            {
+              "submittedQuestionMatches": true,
+              "verdict": "correct"
+            }
+          ],
+          "topic": "Random draw"
+        },
+        {
+          "name": "remember_learner_profile"
+        },
+        {
+          "name": "interactive_page"
+        }
+      ],
+      "reviewRequestSha256": [
+        "42ca0e1cd7b109eb3fa86b74b4a23545014b49215396bf4be7e40da7eaca8a5a"
+      ],
+      "writtenReplySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "attempt": 4,
+      "pair": 2,
+      "status": "unknown",
+      "eligible": false,
+      "selected": false,
+      "gradeOnly": true,
+      "reviewed": true,
+      "preferenceGradedProbability": 0.05,
+      "checkpointContinuedProbability": 0.45,
+      "recordedIssues": [
+        "checkpoint_continued"
+      ],
+      "checks": [
+        {
+          "id": "checkpoint_continued",
+          "source": "jev",
+          "status": "unknown",
+          "probability": 0.45
+        },
+        {
+          "id": "preference_graded",
+          "source": "jev",
+          "status": "pass",
+          "probability": 0.05
+        }
+      ],
+      "writtenReplyPresent": false,
+      "openUiFencePresent": false,
+      "proposedTools": [
+        {
+          "name": "grade_question_checks",
+          "grades": [
+            {
+              "submittedQuestionMatches": true,
+              "verdict": "correct"
+            }
+          ],
+          "topic": "Random draw"
+        }
+      ],
+      "reviewRequestSha256": [
+        "b7f47647dbcc4d1b070a8e8e7dc257c76381f2e9a2d0418507d2c1ac1f030fd5"
+      ],
+      "writtenReplySha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}

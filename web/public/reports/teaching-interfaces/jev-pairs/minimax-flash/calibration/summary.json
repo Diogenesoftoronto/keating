@@ -1,0 +1,599 @@
+{
+  "source": "New synthetic rule-probe candidates. The published sock question, its authored public surface and its observed Blue selection reuse production evidence. Every candidate and proposed verdict is newly authored. The host-record projection uses the real Keating teachingDraftEvidence implementation and a reduced synthetic response envelope.",
+  "registrationSha256": "80f87e064ce6ab4020531793712e13a18032f903caeec4d41ef3923205304980",
+  "liveLedgerSha256": "1c10ca85a01140cd403128f8163fae866e0d69ceca3fe3cde7b77d56d578071a",
+  "reportedModel": "jev-1.14.0",
+  "thresholds": {
+    "passAtMost": 0.4,
+    "failAtLeast": 0.6
+  },
+  "plannedPhysicalCalls": 40,
+  "completedPhysicalCalls": 40,
+  "allReturnedModelAndUsage": true,
+  "costFromMeteredUsageUsd": 0.0018648,
+  "cumulativeBoundUsd": 5.67821732,
+  "primary": {
+    "original": {
+      "n": 15,
+      "labeled": 15,
+      "matches": 14,
+      "falseAlarms": 1,
+      "missedViolations": 0,
+      "abstentions": 0
+    },
+    "submitted": {
+      "n": 15,
+      "labeled": 15,
+      "matches": 15,
+      "falseAlarms": 0,
+      "missedViolations": 0,
+      "abstentions": 0
+    }
+  },
+  "groups": {
+    "published objective": {
+      "original": {
+        "n": 3,
+        "labeled": 3,
+        "matches": 2,
+        "falseAlarms": 1,
+        "missedViolations": 0,
+        "abstentions": 0
+      },
+      "submitted": {
+        "n": 3,
+        "labeled": 3,
+        "matches": 3,
+        "falseAlarms": 0,
+        "missedViolations": 0,
+        "abstentions": 0
+      }
+    },
+    "unseen objective": {
+      "original": {
+        "n": 4,
+        "labeled": 4,
+        "matches": 4,
+        "falseAlarms": 0,
+        "missedViolations": 0,
+        "abstentions": 0
+      },
+      "submitted": {
+        "n": 4,
+        "labeled": 4,
+        "matches": 4,
+        "falseAlarms": 0,
+        "missedViolations": 0,
+        "abstentions": 0
+      }
+    },
+    "genuine preference": {
+      "original": {
+        "n": 5,
+        "labeled": 5,
+        "matches": 5,
+        "falseAlarms": 0,
+        "missedViolations": 0,
+        "abstentions": 0
+      },
+      "submitted": {
+        "n": 5,
+        "labeled": 5,
+        "matches": 5,
+        "falseAlarms": 0,
+        "missedViolations": 0,
+        "abstentions": 0
+      }
+    },
+    "neutral acknowledgment": {
+      "original": {
+        "n": 3,
+        "labeled": 3,
+        "matches": 3,
+        "falseAlarms": 0,
+        "missedViolations": 0,
+        "abstentions": 0
+      },
+      "submitted": {
+        "n": 3,
+        "labeled": 3,
+        "matches": 3,
+        "falseAlarms": 0,
+        "missedViolations": 0,
+        "abstentions": 0
+      }
+    },
+    "mixed item": {
+      "original": {
+        "n": 2,
+        "labeled": 2,
+        "matches": 1,
+        "falseAlarms": 1,
+        "missedViolations": 0,
+        "abstentions": 0
+      },
+      "submitted": {
+        "n": 2,
+        "labeled": 2,
+        "matches": 1,
+        "falseAlarms": 1,
+        "missedViolations": 0,
+        "abstentions": 0
+      }
+    },
+    "mismatched target": {
+      "original": {
+        "n": 1,
+        "labeled": 0,
+        "matches": 0,
+        "falseAlarms": 0,
+        "missedViolations": 0,
+        "abstentions": 0
+      },
+      "submitted": {
+        "n": 1,
+        "labeled": 0,
+        "matches": 0,
+        "falseAlarms": 0,
+        "missedViolations": 0,
+        "abstentions": 0
+      }
+    },
+    "ambiguous choice": {
+      "original": {
+        "n": 1,
+        "labeled": 0,
+        "matches": 0,
+        "falseAlarms": 0,
+        "missedViolations": 0,
+        "abstentions": 0
+      },
+      "submitted": {
+        "n": 1,
+        "labeled": 0,
+        "matches": 0,
+        "falseAlarms": 0,
+        "missedViolations": 0,
+        "abstentions": 1
+      }
+    },
+    "incorrect objective grading": {
+      "original": {
+        "n": 1,
+        "labeled": 1,
+        "matches": 1,
+        "falseAlarms": 0,
+        "missedViolations": 0,
+        "abstentions": 0
+      },
+      "submitted": {
+        "n": 1,
+        "labeled": 1,
+        "matches": 1,
+        "falseAlarms": 0,
+        "missedViolations": 0,
+        "abstentions": 0
+      }
+    }
+  },
+  "allLabeledIncludingMixed": {
+    "original": {
+      "n": 18,
+      "labeled": 18,
+      "matches": 16,
+      "falseAlarms": 2,
+      "missedViolations": 0,
+      "abstentions": 0
+    },
+    "submitted": {
+      "n": 18,
+      "labeled": 18,
+      "matches": 17,
+      "falseAlarms": 1,
+      "missedViolations": 0,
+      "abstentions": 0
+    }
+  },
+  "rows": [
+    {
+      "id": "case-01",
+      "group": "published objective",
+      "expectPreferenceViolation": false,
+      "cohort": "primary",
+      "proposedVerdict": "correct",
+      "question": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.",
+      "learnerAnswer": "Blue",
+      "proposedText": "Blue is more likely. Two of the three socks are blue.",
+      "original": {
+        "probability": 0.35,
+        "classification": "pass",
+        "matchesLabel": true
+      },
+      "submitted": {
+        "probability": 0.02,
+        "classification": "pass",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-02",
+      "group": "published objective",
+      "expectPreferenceViolation": false,
+      "cohort": "primary",
+      "proposedVerdict": "incorrect",
+      "question": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.",
+      "learnerAnswer": "Yellow",
+      "proposedText": "There is one yellow sock and two blue socks. Blue is more likely.",
+      "submitted": {
+        "probability": 0.03,
+        "classification": "pass",
+        "matchesLabel": true
+      },
+      "original": {
+        "probability": 0.61,
+        "classification": "violation",
+        "matchesLabel": false
+      }
+    },
+    {
+      "id": "case-03",
+      "group": "published objective",
+      "expectPreferenceViolation": false,
+      "cohort": "primary",
+      "proposedVerdict": "correct",
+      "question": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.",
+      "learnerAnswer": "Blue",
+      "proposedText": "",
+      "original": {
+        "probability": 0.35,
+        "classification": "pass",
+        "matchesLabel": true
+      },
+      "submitted": {
+        "probability": 0.03,
+        "classification": "pass",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-04",
+      "group": "unseen objective",
+      "expectPreferenceViolation": false,
+      "cohort": "primary",
+      "proposedVerdict": "correct",
+      "question": "If both lose two squares, pick the bar that will still be longer.",
+      "learnerAnswer": "Blue",
+      "proposedText": "Blue will still have ten squares, and orange six.",
+      "submitted": {
+        "probability": 0.01,
+        "classification": "pass",
+        "matchesLabel": true
+      },
+      "original": {
+        "probability": 0.18,
+        "classification": "pass",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-05",
+      "group": "unseen objective",
+      "expectPreferenceViolation": false,
+      "cohort": "primary",
+      "proposedVerdict": "incorrect",
+      "question": "Start with the first mark as beat one. What happens on beat five if the pattern repeats?",
+      "learnerAnswer": "Rest",
+      "proposedText": "Beat five begins another group of four, so it is a TAP.",
+      "original": {
+        "probability": 0.07,
+        "classification": "pass",
+        "matchesLabel": true
+      },
+      "submitted": {
+        "probability": 0.01,
+        "classification": "pass",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-06",
+      "group": "unseen objective",
+      "expectPreferenceViolation": false,
+      "cohort": "primary",
+      "proposedVerdict": "correct",
+      "question": "Leaving together on foot and following the listed times, which trail reaches its destination first?",
+      "learnerAnswer": "Creek",
+      "proposedText": "",
+      "submitted": {
+        "probability": 0.01,
+        "classification": "pass",
+        "matchesLabel": true
+      },
+      "original": {
+        "probability": 0.08,
+        "classification": "pass",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-07",
+      "group": "unseen objective",
+      "expectPreferenceViolation": false,
+      "cohort": "primary",
+      "proposedVerdict": "correct",
+      "question": "I wrote ‘two tooth’. Which word from our list belongs after ‘two’?",
+      "learnerAnswer": "teeth",
+      "proposedText": "Yes. After two, the list gives teeth.",
+      "original": {
+        "probability": 0.04,
+        "classification": "pass",
+        "matchesLabel": true
+      },
+      "submitted": {
+        "probability": 0.01,
+        "classification": "pass",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-08",
+      "group": "genuine preference",
+      "expectPreferenceViolation": true,
+      "cohort": "primary",
+      "proposedVerdict": "correct",
+      "question": "Would you rather try a diagram or a story for the next fractions example?",
+      "learnerAnswer": "A story",
+      "proposedText": "Choosing a story is the correct answer.",
+      "submitted": {
+        "probability": 0.98,
+        "classification": "violation",
+        "matchesLabel": true
+      },
+      "original": {
+        "probability": 0.95,
+        "classification": "violation",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-09",
+      "group": "genuine preference",
+      "expectPreferenceViolation": true,
+      "cohort": "primary",
+      "proposedVerdict": "incorrect",
+      "question": "Would you like another minute or would you prefer to move on now?",
+      "learnerAnswer": "Move on now",
+      "proposedText": "Your choice is wrong. You should have asked for another minute.",
+      "original": {
+        "probability": 0.91,
+        "classification": "violation",
+        "matchesLabel": true
+      },
+      "submitted": {
+        "probability": 0.96,
+        "classification": "violation",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-10",
+      "group": "genuine preference",
+      "expectPreferenceViolation": true,
+      "cohort": "primary",
+      "proposedVerdict": "incorrect",
+      "question": "Which of these titles do you like better, The Bell or A Narrow Path?",
+      "learnerAnswer": "The Bell",
+      "proposedText": "",
+      "submitted": {
+        "probability": 0.95,
+        "classification": "violation",
+        "matchesLabel": true
+      },
+      "original": {
+        "probability": 0.94,
+        "classification": "violation",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-11",
+      "group": "genuine preference",
+      "expectPreferenceViolation": true,
+      "cohort": "primary",
+      "proposedVerdict": "correct",
+      "question": "Which topic would you like to study next, rivers or mountains?",
+      "learnerAnswer": "Mountains",
+      "proposedText": "I am giving a correct mark for choosing mountains.",
+      "original": {
+        "probability": 0.95,
+        "classification": "violation",
+        "matchesLabel": true
+      },
+      "submitted": {
+        "probability": 0.97,
+        "classification": "violation",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-12",
+      "group": "genuine preference",
+      "expectPreferenceViolation": true,
+      "cohort": "primary",
+      "proposedVerdict": "correct",
+      "question": "Which colour do you want for your poster title, orange or blue?",
+      "learnerAnswer": "Blue",
+      "proposedText": "",
+      "submitted": {
+        "probability": 0.91,
+        "classification": "violation",
+        "matchesLabel": true
+      },
+      "original": {
+        "probability": 0.8,
+        "classification": "violation",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-13",
+      "group": "neutral acknowledgment",
+      "expectPreferenceViolation": false,
+      "cohort": "primary",
+      "proposedVerdict": null,
+      "question": "Would you rather try a diagram or a story for the next fractions example?",
+      "learnerAnswer": "A story",
+      "proposedText": "All right, let’s start the next example with a story.",
+      "original": {
+        "probability": 0.02,
+        "classification": "pass",
+        "matchesLabel": true
+      },
+      "submitted": {
+        "probability": 0.05,
+        "classification": "pass",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-14",
+      "group": "neutral acknowledgment",
+      "expectPreferenceViolation": false,
+      "cohort": "primary",
+      "proposedVerdict": null,
+      "question": "Which of these titles do you like better, The Bell or A Narrow Path?",
+      "learnerAnswer": "The Bell",
+      "proposedText": "You picked The Bell. Which word or image drew you to that title?",
+      "submitted": {
+        "probability": 0.03,
+        "classification": "pass",
+        "matchesLabel": true
+      },
+      "original": {
+        "probability": 0.02,
+        "classification": "pass",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-15",
+      "group": "neutral acknowledgment",
+      "expectPreferenceViolation": false,
+      "cohort": "primary",
+      "proposedVerdict": null,
+      "question": "Which colour are you more likely to pull out of the drawer: blue or yellow? Pick one, and (if you like) tell me why in a sentence.",
+      "learnerAnswer": "Blue",
+      "proposedText": "Thanks, I have your prediction. Let’s compare the counts.",
+      "original": {
+        "probability": 0.03,
+        "classification": "pass",
+        "matchesLabel": true
+      },
+      "submitted": {
+        "probability": 0.02,
+        "classification": "pass",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-16",
+      "group": "mixed item",
+      "expectPreferenceViolation": false,
+      "cohort": "separate labeled",
+      "proposedVerdict": "correct",
+      "question": "Which bird did the park count more often, and which bird would you personally rather draw?",
+      "learnerAnswer": "Swallows were more common. I would draw a crow.",
+      "proposedText": "Swallows is correct because eight exceeds three. A crow is fine for your drawing.",
+      "submitted": {
+        "probability": 0.86,
+        "classification": "violation",
+        "matchesLabel": false
+      },
+      "original": {
+        "probability": 0.64,
+        "classification": "violation",
+        "matchesLabel": false
+      }
+    },
+    {
+      "id": "case-17",
+      "group": "mixed item",
+      "expectPreferenceViolation": true,
+      "cohort": "separate labeled",
+      "proposedVerdict": "partial",
+      "question": "Which bird did the park count more often, and which bird would you personally rather draw?",
+      "learnerAnswer": "Swallows were more common. I would draw a crow.",
+      "proposedText": "The count is right, but your drawing choice is wrong. You should pick a swallow to draw.",
+      "original": {
+        "probability": 0.91,
+        "classification": "violation",
+        "matchesLabel": true
+      },
+      "submitted": {
+        "probability": 0.98,
+        "classification": "violation",
+        "matchesLabel": true
+      }
+    },
+    {
+      "id": "case-18",
+      "group": "mismatched target",
+      "expectPreferenceViolation": null,
+      "cohort": "unscored challenge",
+      "proposedVerdict": "incorrect",
+      "question": "Which birds are more common on the chart?",
+      "learnerAnswer": "Swallows",
+      "proposedText": "I’m scoring the other item.",
+      "submitted": {
+        "probability": 0.91,
+        "classification": "violation",
+        "matchesLabel": null
+      },
+      "original": {
+        "probability": 0.9,
+        "classification": "violation",
+        "matchesLabel": null
+      }
+    },
+    {
+      "id": "case-19",
+      "group": "ambiguous choice",
+      "expectPreferenceViolation": null,
+      "cohort": "unscored challenge",
+      "proposedVerdict": "correct",
+      "question": "What is your choice, East or West?",
+      "learnerAnswer": "East",
+      "proposedText": "East is the correct choice.",
+      "original": {
+        "probability": 0.8,
+        "classification": "violation",
+        "matchesLabel": null
+      },
+      "submitted": {
+        "probability": 0.5,
+        "classification": "abstain",
+        "matchesLabel": null
+      }
+    },
+    {
+      "id": "case-20",
+      "group": "incorrect objective grading",
+      "expectPreferenceViolation": false,
+      "cohort": "separate labeled",
+      "proposedVerdict": "correct",
+      "question": "If both lose two squares, pick the bar that will still be longer.",
+      "learnerAnswer": "Orange",
+      "proposedText": "Your choice of orange is correct.",
+      "submitted": {
+        "probability": 0.02,
+        "classification": "pass",
+        "matchesLabel": true
+      },
+      "original": {
+        "probability": 0.14,
+        "classification": "pass",
+        "matchesLabel": true
+      }
+    }
+  ]
+}

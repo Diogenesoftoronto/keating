@@ -137,7 +137,7 @@ export function createTeachingConversation({
     activityLearning: activityLearning.select,
     activityLearningState: activityLearning.turnSettings,
     onPublished: activityLearning.published,
-    evidence: async () => {
+    evidence: async latestSubmission => {
       const [profile, activeWork] = await Promise.all([
         loadCompleteLearnerStartupContext(keatingStorage),
         loadActiveWork(keatingStorage, sessionId),
@@ -147,7 +147,7 @@ export function createTeachingConversation({
       const references = intelligence.references().map(reference => ({
         id: reference.id, url: `#${reference.id}`, text: `${reference.kind} passage from this conversation: ${reference.anchor.quote}`,
       }));
-      return { ...teachingDraftEvidence(profile), activeWork, ...(references.length ? { sources: references } : {}) };
+      return { ...teachingDraftEvidence(profile, sessionId, latestSubmission), activeWork, ...(references.length ? { sources: references } : {}) };
     },
     onProgress: snapshot => { publishTeachingDraftStatus(sessionId, snapshot); try { noteTurnDraft(sessionId, snapshot); } catch { /* Diagnostics only. */ } },
     captureDraftContent: () => loadKeatingUiSettings().showDeveloperDetails,

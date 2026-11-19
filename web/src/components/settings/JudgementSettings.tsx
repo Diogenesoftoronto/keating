@@ -1,6 +1,6 @@
 import { DEFAULT_MODELS } from "@keating/runtime-config";
 import { JudgementCalibrationSettings } from "./JudgementCalibrationSettings";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   JEV_REQUEST_TOKEN_LIMIT, JEV_STATE_QUESTION_TOKEN_LIMIT, loadJudgementModelSettings, saveJudgementModelSettings, subscribeJudgementModelSettings,
   type JudgementModelSettings,
@@ -13,6 +13,8 @@ import { JULIA_BROWSER_MODEL_ID, JULIA_MODEL_ID, JULIA_MODEL } from "../../../..
 import type { DesktopOfflineBridge } from "../../lib/desktop-offline";
 import { JuliaLocalModelSettings } from "./JuliaLocalModelSettings";
 import { getAppStorage } from "../../keating/app-storage";
+import { GEMINI_DECISION_KEY_ID, GEMINI_DECISION_INPUT_LIMIT } from "../../keating/judgement/gemini-key";
+import { TYPESAFE_JUDGEMENT_KEY_ID } from "../../keating/judgement/typesafe-key";
 
 interface AccountStatus { configured: boolean; connected: boolean; judgementAuthorized: boolean }
 export interface JudgementSettingsViewProps {
@@ -44,6 +46,8 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
   keyInput = "", keySaved = false, checkingKey = false, savingKey = false, keyError = "", onKeyInput, onSaveKey, onRemoveKey }: JudgementSettingsViewProps) {
   const id = useId();
   const typesafeSelected = settings.backend === "hosted" && settings.hostedProvider === "typesafe";
+  const googleSelected = settings.backend === "hosted" && settings.hostedProvider === "gemini-decision";
+  const providerName = googleSelected ? "Google" : "TypeSafe";
   const [modelInput, setModelInput] = useState(settings.customModel ?? DEFAULT_MODELS.judgement.systemOne);
   const [modelError, setModelError] = useState("");
   useEffect(() => { setModelInput(settings.customModel ?? DEFAULT_MODELS.judgement.systemOne); setModelError(""); }, [settings.customModel]);
@@ -83,15 +87,16 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
     </div>
     <label className="judgement-settings__field" htmlFor={`${id}-backend`}>
       <span>Choose a judgement model</span>
-      <select id={`${id}-backend`} value={settings.backend === "local" ? `local:${settings.localModelId}` : typesafeSelected ? "typesafe" : settings.backend} disabled={connecting}
+      <select id={`${id}-backend`} value={settings.backend === "local" ? `local:${settings.localModelId}` : typesafeSelected || googleSelected ? settings.hostedProvider : settings.backend} disabled={connecting}
         aria-describedby={`${id}-privacy`} onChange={(event) => {
           const value = event.target.value;
           onChange(value.startsWith("local:")
             ? { ...settings, backend: "local", localModelId: value.slice(6) }
-            : { ...settings, backend: value === "off" ? "off" : "hosted", hostedProvider: value === "typesafe" ? "typesafe" : "notorganic" });
+            : { ...settings, backend: value === "off" ? "off" : "hosted", hostedProvider: value === "typesafe" || value === "gemini-decision" ? value : "notorganic" });
         }}>
         <option value="hosted">Jev · Not Organic · Recommended</option>
         <option value="typesafe">Jev · your TypeSafe API key</option>
+        <option value="gemini-decision">Gemini Decision 1 (Google API key)</option>
         <optgroup label="On this device">
           {!desktop && !localModels.some(model => model.id === DESKTOP_OFFLINE_MODEL.id) && <option value={`local:${DESKTOP_OFFLINE_MODEL.id}`} disabled>MiniCPM5 2B · requires desktop app</option>}
           {localModels.map(model => <option key={model.id} value={`local:${model.id}`}
@@ -106,11 +111,12 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
       {settings.backend === "off" ? "Model reviews are off. Built-in checks remain available."
         : settings.backend === "local" ? "Reviews stay on this device."
         : typesafeSelected ? "Reviews go to TypeSafe with your own key. TypeSafe bills you directly. Your key is relayed through Keating only for requests you trigger."
+        : googleSelected ? "Review requests send lesson context and draft replies directly to Google. Google bills the API key you save here."
         : "Reviews go through your Not Organic account and may use credit."}
     </p>
     <p className="judgement-settings__hint">New to this? <a href="https://docs.keating.help/" target="_blank" rel="noopener noreferrer">Read the judgement setup guide</a> for Jev, your own TypeSafe key, and on-device options.</p>
-    {typesafeSelected && <div className="judgement-settings__account">
-      <label className="judgement-settings__field" htmlFor={`${id}-typesafe-model`}>
+    {(typesafeSelected || googleSelected) && <div className="judgement-settings__account">
+      {typesafeSelected && <><label className="judgement-settings__field" htmlFor={`${id}-typesafe-model`}>
         <span>Model ID</span>
         <input id={`${id}-typesafe-model`} type="text" value={modelInput}
           placeholder={DEFAULT_MODELS.judgement.systemOne} maxLength={200} aria-invalid={Boolean(modelError)}
@@ -118,26 +124,27 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
           onChange={(event) => { setModelInput(event.target.value); setModelError(""); }} onBlur={saveModel}
           onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} />
       </label>
-      {modelError && <p id={`${id}-model-error`} role="alert">{modelError}</p>}
-      <label className="judgement-settings__field" htmlFor={`${id}-typesafe-key`}>
-        <span>TypeSafe API key</span>
-        <input id={`${id}-typesafe-key`} type="password" autoComplete="new-password" spellCheck={false}
+      {modelError && <p id={`${id}-model-error`} role="alert">{modelError}</p>}</>}
+      <label className="judgement-settings__field" htmlFor={`${id}-provider-key`}>
+        <span>{providerName} API key</span>
+        <input id={`${id}-provider-key`} type="password" autoComplete="new-password" spellCheck={false}
           value={keyInput} disabled={checkingKey || savingKey}
-          placeholder={keySaved ? "Enter a replacement key" : "Enter your TypeSafe API key"}
+          placeholder={keySaved ? "Enter a replacement key" : `Enter your ${providerName} API key`}
           aria-describedby={`${id}-key-status`} onChange={(event) => onKeyInput?.(event.target.value)} />
       </label>
       <div className="judgement-settings__actions">
         <button type="button" disabled={checkingKey || savingKey || !keyInput.trim()} onClick={onSaveKey}>
-          {savingKey ? "Saving…" : keySaved ? "Update API key" : "Save API key"}
+          {savingKey ? "Saving…" : googleSelected ? (keySaved ? "Update Google key" : "Save Google key") : keySaved ? "Update API key" : "Save API key"}
         </button>
-        {keySaved && <button type="button" disabled={checkingKey || savingKey} onClick={onRemoveKey}>Remove API key</button>}
+        {keySaved && <button type="button" disabled={checkingKey || savingKey} onClick={onRemoveKey}>{googleSelected ? "Remove Google key" : "Remove API key"}</button>}
       </div>
       <p id={`${id}-key-status`} role="status">{checkingKey ? "Checking saved API key…" : savingKey ? "Updating API key…"
-        : keySaved ? "API key saved on this device." : "No TypeSafe API key saved. Save a key to use this judgement model."}</p>
+        : keySaved ? (googleSelected ? "Google API key saved on this device." : "API key saved on this device.")
+        : `No ${providerName} API key saved. Save a key to use this judgement model.`}</p>
       {keyError && <p role="alert">{keyError}</p>}
     </div>}
     {settings.backend !== "off" && <>
-      {settings.backend === "hosted" && <>
+      {settings.backend === "hosted" && !googleSelected && <>
       <label className="judgement-settings__field" htmlFor={`${id}-model`}>
         <span>Local judgement model · fallback</span>
         <select id={`${id}-model`} value={settings.localModelId} disabled={connecting}
@@ -146,14 +153,14 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
         </select>
       </label>
       </>}
-      <p id={`${id}-local-status`} role="status">{localStatus}</p>
-      {juliaSelected && <JuliaLocalModelSettings bridge={juliaBridge} />}
-      {nativeSelected && desktop && scoringAvailable && !offlineStatus?.installed && <a href="#offline-tutor">Set up the offline tutor</a>}
+      {!googleSelected && <p id={`${id}-local-status`} role="status">{localStatus}</p>}
+      {!googleSelected && juliaSelected && <JuliaLocalModelSettings bridge={juliaBridge} />}
+      {!googleSelected && nativeSelected && desktop && scoringAvailable && !offlineStatus?.installed && <a href="#offline-tutor">Set up the offline tutor</a>}
       <details className="judgement-settings__account">
       <summary>Advanced review options</summary>
       <label className="judgement-settings__field" htmlFor={`${id}-request-tokens`}>
         <span>Maximum tokens per judge request</span>
-        <input id={`${id}-request-tokens`} type="number" min={512} max={2_000_000} step={512}
+        <input id={`${id}-request-tokens`} type="number" min={512} max={googleSelected ? GEMINI_DECISION_INPUT_LIMIT : 2_000_000} step={512}
           value={settings.requestTokens ?? (settings.backend === "hosted" ? JEV_REQUEST_TOKEN_LIMIT : "")} disabled={connecting}
           placeholder={juliaSelected ? String(JULIA_MODEL.contextTokens) : nativeSelected ? String(DESKTOP_OFFLINE_MODEL.contextWindow) : "Model default"}
           aria-describedby={`${id}-context-window-help`}
@@ -164,7 +171,7 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
       </label>
       <label className="judgement-settings__field" htmlFor={`${id}-state-question-tokens`}>
         <span>State plus longest question (tokens)</span>
-        <input id={`${id}-state-question-tokens`} type="number" min={512} max={2_000_000} step={512}
+        <input id={`${id}-state-question-tokens`} type="number" min={512} max={googleSelected ? GEMINI_DECISION_INPUT_LIMIT : 2_000_000} step={512}
           value={settings.stateQuestionTokens ?? (settings.backend === "hosted" ? JEV_STATE_QUESTION_TOKEN_LIMIT : "")} disabled={connecting}
           placeholder={juliaSelected ? String(JULIA_MODEL.contextTokens) : nativeSelected ? String(DESKTOP_OFFLINE_MODEL.contextWindow) : "Model default"}
           aria-describedby={`${id}-context-window-help`}
@@ -174,12 +181,13 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
           }} />
       </label>
       <p id={`${id}-context-window-help`}>
-        Leave blank for the model default. Hosted Jev allows 64,000 and 32,000 tokens; long chats drop the oldest turns first. <a href="https://docs.keating.help/" target="_blank" rel="noopener noreferrer">Learn more</a>
+        {googleSelected ? "Keating defaults to 64,000 tokens per review and 32,000 for state plus question. Google accepts up to 262,144 input tokens."
+          : "Leave blank for the model default. Hosted Jev allows 64,000 and 32,000 tokens; long chats drop the oldest turns first."} <a href="https://docs.keating.help/" target="_blank" rel="noopener noreferrer">Learn more</a>
       </p>
       </details>
       <p>Automatic grading stays with the existing checks until calibration and validation are complete.</p>
     </>}
-    {settings.backend === "hosted" && !typesafeSelected && <div className="judgement-settings__account">
+    {settings.backend === "hosted" && !typesafeSelected && !googleSelected && <div className="judgement-settings__account">
       <p role="status">{checkingAccount ? "Checking Not Organic access…"
         : account?.judgementAuthorized ? "Not Organic judgement access is connected."
           : account?.connected ? "Your account is connected. Authorize judgement access to use hosted reviews."
@@ -207,33 +215,47 @@ export function JudgementSettings() {
   const [checkingKey, setCheckingKey] = useState(true);
   const [savingKey, setSavingKey] = useState(false);
   const [keyError, setKeyError] = useState("");
+  const keyId = settings.backend !== "hosted" ? null
+    : settings.hostedProvider === "gemini-decision" ? GEMINI_DECISION_KEY_ID
+    : settings.hostedProvider === "typesafe" ? TYPESAFE_JUDGEMENT_KEY_ID : null;
+  const selectedKey = useRef(keyId);
+  selectedKey.current = keyId;
+  const [loadedKeyId, setLoadedKeyId] = useState<string | null>(null);
   const bridge = desktopOfflineBridge();
   useEffect(() => {
     let active = true;
-    void getAppStorage().providerKeys.get("typesafe-judgement")
+    setKeyInput("");
+    setKeySaved(false);
+    setKeyError("");
+    setSavingKey(false);
+    setCheckingKey(Boolean(keyId));
+    setLoadedKeyId(null);
+    if (!keyId) return;
+    void getAppStorage().providerKeys.get(keyId)
       .then((key) => { if (active) setKeySaved(Boolean(key)); })
       .catch(() => { if (active) setKeyError("Could not check the saved API key. Reopen settings to retry."); })
-      .finally(() => { if (active) setCheckingKey(false); });
+      .finally(() => { if (active) { setCheckingKey(false); setLoadedKeyId(keyId); } });
     return () => { active = false; };
-  }, []);
+  }, [keyId]);
   const updateKey = async (remove: boolean) => {
-    if (savingKey || checkingKey || (!remove && !keyInput.trim())) return;
+    if (!keyId || loadedKeyId !== keyId || savingKey || checkingKey || (!remove && !keyInput.trim())) return;
     setSavingKey(true);
     setKeyError("");
     try {
       const keys = getAppStorage().providerKeys;
-      if (remove) await keys.delete("typesafe-judgement");
-      else await keys.set("typesafe-judgement", keyInput.trim());
+      if (remove) await keys.delete(keyId);
+      else await keys.set(keyId, keyInput.trim());
+      if (selectedKey.current !== keyId) return;
       setKeySaved(!remove);
       setKeyInput("");
-      saveJudgementModelSettings({ ...settings });
+      saveJudgementModelSettings(loadJudgementModelSettings());
     } catch {
-      setKeyError(remove ? "Could not remove the API key. Please try again." : "Could not save the API key. Please try again.");
-    } finally { setSavingKey(false); }
+      if (selectedKey.current === keyId) setKeyError(remove ? "Could not remove the API key. Please try again." : "Could not save the API key. Please try again.");
+    } finally { if (selectedKey.current === keyId) setSavingKey(false); }
   };
   useEffect(() => subscribeJudgementModelSettings(setSettings), []);
   useEffect(() => {
-    if (!bridge || settings.backend === "off" || settings.localModelId !== DESKTOP_OFFLINE_MODEL.id) return;
+    if (!bridge || settings.backend === "off" || keyId === GEMINI_DECISION_KEY_ID || settings.localModelId !== DESKTOP_OFFLINE_MODEL.id) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     const refresh = async () => {
@@ -243,9 +265,9 @@ export function JudgementSettings() {
     };
     void refresh();
     return () => { active = false; clearTimeout(timer); };
-  }, [bridge, settings.backend, settings.localModelId]);
+  }, [bridge, settings.backend, settings.localModelId, keyId]);
   useEffect(() => {
-    if (settings.backend !== "hosted" || settings.hostedProvider === "typesafe") {
+    if (settings.backend !== "hosted" || keyId) {
       setCheckingAccount(false);
       return;
     }
@@ -260,7 +282,7 @@ export function JudgementSettings() {
     const timer = window.setInterval(refresh, 15_000);
     window.addEventListener("focus", refresh);
     return () => { active = false; window.clearInterval(timer); window.removeEventListener("focus", refresh); };
-  }, [settings.backend, settings.hostedProvider]);
+  }, [settings.backend, keyId]);
   const change = (next: JudgementModelSettings) => {
     setError("");
     saveJudgementModelSettings(next);
@@ -274,7 +296,7 @@ export function JudgementSettings() {
     }
   };
   const connect = async () => {
-    if (connecting || settings.backend !== "hosted" || settings.hostedProvider === "typesafe") return;
+    if (connecting || settings.backend !== "hosted" || keyId) return;
     setConnecting(true);
     setError("");
     try {
@@ -291,6 +313,7 @@ export function JudgementSettings() {
     juliaId={bridge?.supportedJudgementModels?.includes(JULIA_MODEL_ID) ? JULIA_MODEL_ID : JULIA_BROWSER_MODEL_ID} juliaBridge={bridge ?? undefined}
     offlineStatus={offlineStatus} account={account} checkingAccount={checkingAccount} connecting={connecting}
     error={error} onChange={change} onConnect={() => void connect()}
-    keyInput={keyInput} keySaved={keySaved} checkingKey={checkingKey} savingKey={savingKey} keyError={keyError}
+    keyInput={loadedKeyId === keyId ? keyInput : ""} keySaved={loadedKeyId === keyId && keySaved}
+    checkingKey={loadedKeyId !== keyId || checkingKey} savingKey={savingKey} keyError={loadedKeyId === keyId ? keyError : ""}
     onKeyInput={setKeyInput} onSaveKey={() => void updateKey(false)} onRemoveKey={() => void updateKey(true)} />;
 }

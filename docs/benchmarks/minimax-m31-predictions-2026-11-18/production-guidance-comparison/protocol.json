@@ -1,0 +1,23 @@
+{
+  "schema": "keating-production-guidance-comparison/v1",
+  "registeredAt": "2026-11-19T01:17:22Z",
+  "origin": "https://chat.keating.help",
+  "release": "4.2.4",
+  "teachingPolicy": "keating-teaching-policy/v2.4.5",
+  "primaryJevProtocolSha256": "e91892dda2ef7864d69f6255471d705f26a52ee77adf5164c3c8e7d07039fef5",
+  "prompt": "A cup has four yellow counters and one blue counter. I will take one without looking. Let me predict which colour is more likely before you explain the chances.",
+  "tutor": { "provider": "minimax", "model": "MiniMax-M3.1-Flash", "inputLimit": 1000000, "outputLimit": 8192, "inputUsdPerMillion": 0.15, "outputUsdPerMillion": 0.60, "maxUsdPerDispatch": 0.1549152 },
+  "arms": [
+    { "id": "gemini", "setting": "Gemini Decision 1", "reviewProvider": "google", "reviewModel": "gemini-decision-1", "maxTutorDispatches": 3, "maxDecisionDispatches": 6 },
+    { "id": "unguided", "setting": "Off", "reviewProvider": null, "reviewModel": null, "maxTutorDispatches": 1, "maxDecisionDispatches": 0 }
+  ],
+  "decisions": { "officialEndpoint": "https://generativelanguage.googleapis.com/v1beta/decisions", "nativeMaxInputTokens": 262144, "inputUsdPerMillion": 0.10, "outputUsdPerMillion": 0, "maxUsdPerDispatch": 0.0262144 },
+  "limitsUsd": { "previousStudyBound": 5.899003442, "separatePrimaryJevReservation": 1.95, "extensionHardLimit": 1.10, "maximumForRegisteredCalls": 0.7769472, "combinedIfAllRegisteredCallsReachMaximum": 8.625950642, "combinedIncludingFullReservations": 8.949003442, "allWorkHardLimit": 10 },
+  "method": "Run the two arms in order once, each in its own fresh anonymous Chromium context on the production classroom. Use the normal Settings tutor and judgement controls. Require verified deployed release and explicit authorization after the separate primary Jev trial is terminal. Both arms end after the first classroom turn. Never submit the form, grade an answer, retry a paid call, or dispatch an auxiliary or follow-up request.",
+  "guidanceVerification": "Gemini requires an actual selectable Google Decisions backend on the production build, its genuine pinned-model outbound planning request, and the genuine review if a candidate reaches review. Do not require four candidates or paired comparison. Stop on a different reviewer. An unavailable product route or credential is unrun with null outcomes. No transport injection, alternative model or TypeSafe model-ID substitution qualifies. Unguided requires Off selected after reload, no decision dispatch, and the chosen MiniMax tutor verified on its authorised wire.",
+  "primaryOutcome": "On the first public reply, was a usable on-screen Question for the learner's own colour prediction rendered before the tutor gave away the answer? Count a Question only when an enabled learner response control is visible. A text invitation, an authored but unrendered fence, another interface, and a reply withholding the Question each have their own labels.",
+  "labels": ["prediction-question-before-answer", "prediction-question-with-early-answer", "prose-invitation", "other-interface", "answer-or-other-prose", "withheld", "failed", "unavailable"],
+  "supportingMeasures": ["Visible learner-facing tutor text outside controls and word count", "Question and other rendered control types; presence of an actionable response control", "Any released OpenUI fence", "The requested and returned model identities, each with its own source", "Planning and review counts, tutor dispatch count, HTTP status, usage and elapsed time", "Actual token-rated spend when available; charge the full pre-dispatch reserve to the upper bound when unavailable"],
+  "stopping": "Write the reservation before forwarding each eligible request. Deny unknown hosts, extra turns, unknown request shapes, background calls and retries. A provider outage or missing authorised path stays visible as a failed or unrun arm. Keep the response of each arm and the earlier Jev result independent until all available arms are terminal.",
+  "scope": "The two sessions use a synthetic prompt and no user data. One observation per available arm supports a matched demonstration only. Record model output, interface use and latency; human learning and general frequency are not measured."
+}

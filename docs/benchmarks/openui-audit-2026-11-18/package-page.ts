@@ -84,7 +84,16 @@ const alongside = [
       .map(id=>"study/receipts/"+id+".json"),
   ].map(name=>"final-review/"+name),
 ];
-const recordings = ["november-audit", "policy-holdout", "decision-models", "terminal-episodes", "paired-benchmark", "policy-v2.2", "policy-v2.3","final-review","final-review-first","assessment-opt-out","jev-pairs-first","jev-pairs","jev-pairs-prediction","jev-pairs-review","flash-prediction"];
+const recordings = ["november-audit", "policy-holdout", "decision-models", "terminal-episodes", "paired-benchmark", "policy-v2.2", "policy-v2.3","final-review","final-review-first","assessment-opt-out","jev-pairs-first","jev-pairs","jev-pairs-prediction","jev-pairs-review","flash-prediction","hosted-sock","hosted-submission","grade-only-replay"];
+for (const [recording, filename] of [
+  ["hosted-sock", "production-after-settings.json"],
+  ["hosted-submission", "production-submission-settings.json"],
+  ["grade-only-replay", "submitted-grade/settings.json"],
+]) {
+  const original = readFileSync(resolve(study, "../minimax-m31-predictions-2026-11-18", filename));
+  const example = readFileSync(resolve(repository, "web/src/keating/openui/examples", recording + ".json"));
+  if (!original.equals(example)) throw new Error("The recording must match its original Settings export: " + recording);
+}
 if (!readFileSync(resolve(study,"final-review/assessment-opt-out/turns.json")).equals(readFileSync(resolve(study,"../../../web/src/keating/openui/examples/assessment-opt-out.json")))) {
   throw new Error("The Settings opt-out example must match the four measured simulation replies.");
 }
@@ -101,6 +110,18 @@ for (const [recording, folder] of [
 const files = new Map<string, string>();
 for (const name of [
   "summary.json", "protocol.json", "ledger.json", "settings-export.json", "review-projection.json", "production-window.json", "production-relay.json", "production-before.json", "paper-fold.json", "sock-draw.json",
+  "production-after.json", "production-after-first.json", "production-after-settings.json", "production-after-classroom.png", "staging-injected-settings.json",
+  "production-submission.json", "production-submission-protocol.json", "production-submission-source.json", "production-submission-settings.json",
+  "production-submission-first.json", "production-submission-feedback.json",
+  "production-submission-question.png", "production-submission-saved.png", "production-submission-feedback.png",
+  "viewport-comparison.json", "viewport-comparison.png",
+  "calibration/README.md", "calibration/registered.json", "calibration/ledger.json", "calibration/summary.json",
+  "submission-replay/summary.json", "submission-replay/protocol.json", "submission-replay/candidates.json", "submission-replay/settings.json", "submission-replay/after.png",
+  "grading-lanes/summary.json", "grading-lanes/protocol.json", "grading-lanes/candidates.json", "grading-lanes/settings.json", "grading-lanes/after.png",
+  "submitted-grade/summary.json", "submitted-grade/protocol.json", "submitted-grade/candidates.json", "submitted-grade/settings.json", "submitted-grade/after.png",
+  "production-acceptance-protocol.json", "production-acceptance-addendum.json",
+  "saved-grade-card.json", "saved-grade-card.png",
+  "production-guidance-comparison/protocol.json", "production-guidance-comparison/off-before.json", "production-guidance-comparison/off-before.png",
   "paper-fold-classroom.png", "paper-fold-after-action.png", "sock-draw-classroom.png",
 ]) files.set(resolve(study, "../minimax-m31-predictions-2026-11-18", name), "jev-pairs/minimax-flash/" + name);
 if (!readFileSync(resolve(study, "../jev-paired-prediction-2026-11-18/review-projection.json")).equals(
@@ -143,13 +164,14 @@ const pages = new Map<string, Buffer>();
 for (const [source, target] of files) {
   let bytes = readFileSync(source);
   if (source === article || target === "final-review/report.html" || target === "final-review/field-guide.html" || target === "jev-pairs/index.html") {
-    const html = bytes.toString("utf8").replace(/href="([^"]+)"/g, (attribute, href: string) => {
-      if (href.startsWith("#") || /^[a-z]+:/i.test(href)) return attribute;
-      const [, localPath, suffix] = /^([^?#]+)(.*)$/.exec(href) ?? [];
+    const html = bytes.toString("utf8").replace(/\b(href|src)="([^"]+)"/g, (attribute, name: string, url: string) => {
+      if (name === "src" && target !== "jev-pairs/index.html") return attribute;
+      if (url.startsWith("#") || /^[a-z]+:/i.test(url)) return attribute;
+      const [, localPath, suffix] = /^([^?#]+)(.*)$/.exec(url) ?? [];
       const published = localPath && files.get(resolve(dirname(source), localPath));
-      if (!published) throw new Error("The article links to an unpackaged source: " + href);
-      const download = source === article && published.endsWith(".md") ? " download" : "";
-      return `href="${relative(dirname(target), published)}${suffix}"${download}`;
+      if (!published) throw new Error("The article references an unpackaged source: " + url);
+      const download = name === "href" && source === article && published.endsWith(".md") ? " download" : "";
+      return `${name}="${relative(dirname(target), published)}${suffix}"${download}`;
     });
     bytes = Buffer.from(html);
   }

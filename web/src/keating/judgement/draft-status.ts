@@ -130,12 +130,14 @@ export function projectTeachingDraftSnapshot(snapshot: TeachingDraftSnapshot): T
     attempts: snapshot.attempts.map(attempt => ({ attempt: attempt.attempt, reasoning: attempt.reasoning, standard: attempt.standard, variant: attempt.variant ?? "default",
       generationMs: attempt.generationMs, judgementMs: attempt.judgementMs, status: attempt.status,
       ...(attempt.status === "generation-error" && attempt.generationFailure === TUTOR_RATE_LIMIT_REASON ? { generationFailure: TUTOR_RATE_LIMIT_REASON } : {}),
+      ...(attempt.gradeOnly === true ? { gradeOnly: true as const } : {}),
       ...(attempt.feedbackOnly === true ? { feedbackOnly: true as const } : {}),
       ...(attempt.predictionQuestionOnly === true ? { predictionQuestionOnly: true as const } : {}),
       ...projectSynthesisSources(attempt.synthesisSourceAttempts, attempt.attempt),
       ...projectToolNames(attempt.unavailableTools),
       checks: attempt.checks.filter(check => isOpenUiDiagnosticGateIssue(check.id) || checkIds.has(check.id)).map(check => ({
         id: check.id, source: check.source, severity: check.severity, status: check.status, probability: check.probability,
+        ...(check.applicability === "submitted-grade-without-text" && check.id === "checkpoint_continued" ? { applicability: check.applicability } : {}),
       })),
     })),
   };

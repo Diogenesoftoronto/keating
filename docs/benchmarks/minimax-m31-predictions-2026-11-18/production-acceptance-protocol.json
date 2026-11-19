@@ -1,0 +1,19 @@
+{
+  "registeredAt": "2026-11-19T01:01:45.538121+00:00",
+  "scope": "Independent deployment acceptance case on a previously untested prompt, real production 4.2.4 with no imported conversation. Run once regardless of the earlier built-case outcome, after the release commit and classroom JS are independently verified.",
+  "origin": "https://chat.keating.help/chat",
+  "tutor": "MiniMax-M3.1-Flash",
+  "decision": "jev-1.14.0",
+  "teachingPolicy": "keating-teaching-policy/v2.4.4",
+  "prompt": "A cup has four yellow counters and one blue counter. I will take one without looking. Let me predict which colour is more likely before you explain the chances.",
+  "expectedFirst": "An actionable prediction Question on the first public reply. Do not ask explicitly for a form.",
+  "followUp": "Only on a newly rendered Question about which colour is more likely, enter or select Yellow and submit exactly once. Save whether the actual response was persisted, graded correctly, and received learner-visible teaching feedback. Mark anything unobserved as unknown. If the form is missing, the wrong question, or the provider fails, stop; do not rerun.",
+  "cost": "Maximum three natural four-draft rounds including initial generation, USD 0.65 worst per round, USD 1.95 maximum. Cumulative experiment cap USD 10. Cap each tutor at 8192 output tokens; no paid retries or unrelated background traffic. Only grant dispatch after actual production verification and the closed prior trial ledger.",
+  "measurements": [
+    "Wire-observed tutor and reviewer IDs, requests, concurrency and usage",
+    "Authoring, release and render on first response; all text outside controls",
+    "Exact real submission and authoritative stored grading/score and any visible feedback",
+    "Durable per-round records, Settings export, WebMCP and artifact digests"
+  ],
+  "subjects": "One synthetic anonymous production conversation. No human learning outcome."
+}

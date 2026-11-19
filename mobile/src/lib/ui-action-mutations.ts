@@ -3,6 +3,7 @@ import {
   compareContractTimestamps,
   dueAtAfterReview,
   parseSystemDesignSubmission,
+  type LearnerQuestionCheck,
   type PortableLearnerData,
   type UiAnswer,
   type UiAction,
@@ -161,6 +162,45 @@ function sameDeckReview(
     && existing.easeAfter === desired.easeAfter;
 }
 
+/** Derive the exact saved record from the canonical action. Shared with the native reviewed-grade binding. */
+export function nativeQuestionRecordsForAction(
+  action: Extract<UiAction, { type: "submit-answer" | "choose-option" | "submit-question-group" }>,
+  document: UiDocument, now: string, sessionId?: string,
+): LearnerQuestionCheck[] {
+  if (action.type === "submit-answer" || action.type === "choose-option") {
+    const target = actionTarget(document, action.nodeId);
+    const answer = answerText(action, document);
+    return [{
+      id: stableId("ui-answer", document.id, action.idempotencyKey),
+      topic: target.node.type === "quiz" ? target.node.title : "Interactive check",
+      question: target.questionPrompt ?? "OpenUI question",
+      answer,
+      createdAt: now,
+      ...((target.node.type === "question" || target.question)
+        ? autoGrade(target.node.type === "question" ? target.node : target.question!, action.type === "choose-option" ? action.optionIds : [answer])
+        : { grading: "pending" as const }),
+      ...(sessionId ? { sessionId } : {}),
+    }];
+  }
+  const target = actionTarget(document, action.nodeId);
+  if (target.node.type !== "question-group") throw new Error("Question-group action target is invalid.");
+  const group = target.node;
+  const responses = new Map(action.responses.map((response) => [response.questionId, response]));
+  return group.questions.map((question) => {
+    const response = responses.get(question.id);
+    if (!response) throw new Error(`Question-group response for ${question.id} is missing.`);
+    return {
+      id: stableId("ui-question-check", document.id, action.idempotencyKey, question.id),
+      topic: group.topic?.trim() || question.header?.trim() || document.title?.trim() || `OpenUI ${document.id}`,
+      question: question.prompt,
+      answer: questionGroupAnswerText(response, question),
+      ...autoGradeQuestionGroupResponse(response, question),
+      createdAt: now,
+      ...(sessionId ? { sessionId } : {}),
+    };
+  });
+}
+
 /** Pure semantic adapter used inside UiActionStore's exclusive transaction. */
 export function applyLocalUiAction(
   current: PortableLearnerData,
@@ -179,19 +219,7 @@ export function applyLocalUiAction(
     }
   }
   if (action.type === "submit-answer" || action.type === "choose-option") {
-    const target = actionTarget(document, action.nodeId);
-    const answer = answerText(action, document);
-    const check = {
-      id: stableId("ui-answer", document.id, action.idempotencyKey),
-      topic: target.node.type === "quiz" ? target.node.title : "Interactive check",
-      question: target.questionPrompt ?? "OpenUI question",
-      answer,
-      createdAt: now,
-      ...((target.node.type === "question" || target.question)
-        ? autoGrade(target.node.type === "question" ? target.node : target.question!, action.type === "choose-option" ? action.optionIds : [answer])
-        : { grading: "pending" as const }),
-      ...(sessionId ? { sessionId } : {}),
-    };
+    const [check] = nativeQuestionRecordsForAction(action, document, now, sessionId);
     const next = current.questionChecks.some((candidate) => candidate.id === check.id)
       ? current
       : { ...current, questionChecks: [...current.questionChecks, check] };
@@ -205,23 +233,7 @@ export function applyLocalUiAction(
   }
 
   if (action.type === "submit-question-group") {
-    const target = actionTarget(document, action.nodeId);
-    if (target.node.type !== "question-group") throw new Error("Question-group action target is invalid.");
-    const group = target.node;
-    const responses = new Map(action.responses.map((response) => [response.questionId, response]));
-    const checks = group.questions.map((question) => {
-      const response = responses.get(question.id);
-      if (!response) throw new Error(`Question-group response for ${question.id} is missing.`);
-      return {
-        id: stableId("ui-question-check", document.id, action.idempotencyKey, question.id),
-        topic: group.topic?.trim() || question.header?.trim() || document.title?.trim() || `OpenUI ${document.id}`,
-        question: question.prompt,
-        answer: questionGroupAnswerText(response, question),
-        ...autoGradeQuestionGroupResponse(response, question),
-        createdAt: now,
-        ...(sessionId ? { sessionId } : {}),
-      };
-    });
+    const checks = nativeQuestionRecordsForAction(action, document, now, sessionId);
     return {
       data: appendQuestionChecks(current, checks, now),
       resultingDocument: nextDocument(document, now),

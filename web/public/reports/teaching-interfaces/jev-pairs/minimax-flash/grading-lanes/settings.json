@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "turns": [
+    {
+      "schemaVersion": 1,
+      "conversationId": "conversation-65d83cd37cfe6eb3",
+      "turnId": "learner-1",
+      "turnIndex": 1,
+      "model": "minimax/MiniMax-M3.1-Flash",
+      "mode": "guided",
+      "cue": {
+        "kind": "none",
+        "targets": []
+      },
+      "reply": "withheld",
+      "replyElapsedMs": 49598,
+      "attempted": false,
+      "compiled": [],
+      "selected": [],
+      "rendered": [],
+      "guidance": {
+        "source": "jev",
+        "action": "grade-first",
+        "delivered": true,
+        "targets": []
+      },
+      "outsideWords": null,
+      "nativePageRequested": null,
+      "draftAttempts": 4,
+      "gateIssues": [
+        "checkpoint_continued",
+        "quality_scope"
+      ],
+      "decisionModel": "jev-1.14.0",
+      "pairReviews": [
+        {
+          "pair": 1,
+          "candidateAttempts": [
+            2
+          ],
+          "status": "incomplete",
+          "preferredAttempt": null,
+          "model": null,
+          "eligibleAttempts": [],
+          "finalistAttempt": null,
+          "feedbackOnlyAttempts": [],
+          "policyVersion": "keating-teaching-policy/v2.4.3",
+          "predictionQuestionAttempts": [],
+          "gradeOnlyAttempts": [
+            2
+          ],
+          "candidateIssueIds": [
+            {
+              "attempt": 2,
+              "issues": [
+                "checkpoint_continued"
+              ]
+            }
+          ]
+        },
+        {
+          "pair": 2,
+          "candidateAttempts": [
+            3,
+            4
+          ],
+          "status": "compared",
+          "preferredAttempt": 4,
+          "model": "jev-1.14.0",
+          "eligibleAttempts": [],
+          "finalistAttempt": null,
+          "feedbackOnlyAttempts": [],
+          "policyVersion": "keating-teaching-policy/v2.4.3",
+          "predictionQuestionAttempts": [],
+          "gradeOnlyAttempts": [
+            4
+          ],
+          "candidateIssueIds": [
+            {
+              "attempt": 3,
+              "issues": [
+                "checkpoint_continued",
+                "quality_scope"
+              ]
+            },
+            {
+              "attempt": 4,
+              "issues": [
+                "checkpoint_continued"
+              ]
+            }
+          ],
+          "startedAtMs": 46639.87999999989,
+          "finishedAtMs": 46780.985000000335
+        }
+      ],
+      "requestedModel": "minimax/MiniMax-M3.1-Flash",
+      "nativePage": {
+        "succeeded": null,
+        "failed": null,
+        "attached": null,
+        "saved": null,
+        "mounted": null,
+        "ready": null,
+        "visible": null,
+        "opened": null,
+        "frameFailed": null
+      }
+    }
+  ]
+}

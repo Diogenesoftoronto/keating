@@ -6,7 +6,7 @@ import { CHECKPOINT_FEEDBACK_ISSUE, TEACHING_POLICY_DETERMINISTIC_RULES, TEACHIN
 export const OPENUI_DIAGNOSTIC_GATE_ISSUES = [...new Set<string>([
   TUTOR_RATE_LIMIT_REASON,
   ...TEACHING_POLICY_DETERMINISTIC_RULES, ...TEACHING_POLICY_RULES.map(rule => rule.id), ...TEACHING_DEBUGGING_ISSUES,
-  CHECKPOINT_FEEDBACK_ISSUE, "question_feedback_format", "prediction_question_format",
+  CHECKPOINT_FEEDBACK_ISSUE, "question_feedback_format", "prediction_question_format", "submitted_grade_scope",
   "quality_progress", "quality_scope", "runtime_tool_schema", "native_tool_schema", "native_ui_schema",
 ])];
 export function isOpenUiDiagnosticGateIssue(id: string): boolean {

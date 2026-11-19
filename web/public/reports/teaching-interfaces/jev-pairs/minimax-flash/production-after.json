@@ -1,0 +1,265 @@
+{
+  "study": "Release verification of a first-turn implicit sock prediction in the hosted classroom",
+  "release": {
+    "version": "4.2.3",
+    "sha": "c94a276e11b379ce67351071beaa4c97a4d9410c",
+    "fingerprint": "f7605a572412bc265ee1455cb4acdcf8d092f67f0b521322d7d1dee82470a13e",
+    "chatAsset": "/assets/index-BxmZoxBm.js",
+    "assetSha256": "cd977fce68871f79bc338d62d66813c55bcbc526b712a6e8809240295800d9dc"
+  },
+  "host": "https://chat.keating.help",
+  "synthetic": true,
+  "measuredAtUtc": "2026-11-19T00:09:04.590Z",
+  "registeredPrompt": "There are two blue socks and one yellow sock in a drawer. I’m going to draw one at random without looking. I’d like to guess which colour I’m more likely to pick before you explain.",
+  "scheduledPredictionTurns": 1,
+  "requestedTutor": "MiniMax-M3.1-Flash",
+  "requestedReviewer": "jev-1.14.0",
+  "initialOutcome": {
+    "status": "observed",
+    "publicReply": "released",
+    "visibleClassroom": {
+      "observableReply": "Good — your guess first, then the reasoning.\n\nBefore we explain\n\nCommit to a prediction first — then we'll see whether your model of chance matches the arithmetic.\n\nQuick check\nBefore you start\n1 / 1\nIf you draw one sock at random from 2 blue and 1 yellow, which colour are you more likely to pick?\nA\nBlue\nB\nYellow\nC\nBoth are equally likely\nHint\nFinish check",
+      "observerReply": "released",
+      "questionCount": 1,
+      "questionPrompts": [
+        "If you draw one sock at random from 2 blue and 1 yellow, which colour are you more likely to pick?"
+      ],
+      "nativePageCount": 0,
+      "renderedKinds": [
+        "question-group"
+      ],
+      "selectedAfterUserTurns": 1
+    },
+    "notice": null,
+    "elapsedFromSubmitToObservedMs": 9539,
+    "requestsByStage": {
+      "planning": {
+        "requests": 1,
+        "responses": {
+          "200": 1
+        }
+      },
+      "generation": {
+        "requests": 4,
+        "responses": {
+          "200": 4
+        }
+      },
+      "review": {
+        "requests": 4,
+        "responses": {
+          "200": 4
+        }
+      },
+      "pair": {
+        "requests": 2,
+        "responses": {
+          "200": 2
+        }
+      },
+      "final-choice": {
+        "requests": 1,
+        "responses": {
+          "200": 1
+        }
+      }
+    },
+    "transport": {
+      "count": 12,
+      "knownUsageCount": 8,
+      "checkedAttempts": 4,
+      "fourCandidateHttpOverlapMs": 986,
+      "twoReviewHttpOverlapMs": 121,
+      "pairCounts": [
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          4
+        ]
+      ],
+      "tutorReturnedIdentities": [],
+      "verifiedTutorIdentities": 0,
+      "policyMatches": true,
+      "learnerElapsedMs": 9539
+    },
+    "selection": {
+      "attempt": 1,
+      "review": "verified",
+      "rule": "none"
+    },
+    "rendered": [
+      "question-group"
+    ],
+    "diagnosticReplyElapsedMs": 9163,
+    "perDraft": [
+      {
+        "pair": 1,
+        "candidateAttempts": [
+          1,
+          2
+        ],
+        "status": "compared",
+        "preferredAttempt": 1,
+        "model": "jev-1.14.0",
+        "eligibleAttempts": [
+          1,
+          2
+        ],
+        "finalistAttempt": 1,
+        "feedbackOnlyAttempts": [],
+        "policyVersion": "keating-teaching-policy/v2.4.1",
+        "predictionQuestionAttempts": [
+          2
+        ],
+        "candidateIssueIds": [
+          {
+            "attempt": 1,
+            "issues": [
+              "checkpoint_repeated"
+            ]
+          },
+          {
+            "attempt": 2,
+            "issues": [
+              "checkpoint_repeated",
+              "direct_answer_missing"
+            ]
+          }
+        ],
+        "startedAtMs": 6262.429999999702,
+        "finishedAtMs": 6415.799999999814
+      },
+      {
+        "pair": 2,
+        "candidateAttempts": [
+          3,
+          4
+        ],
+        "status": "compared",
+        "preferredAttempt": 3,
+        "model": "jev-1.14.0",
+        "eligibleAttempts": [
+          3,
+          4
+        ],
+        "finalistAttempt": 3,
+        "feedbackOnlyAttempts": [],
+        "policyVersion": "keating-teaching-policy/v2.4.1",
+        "predictionQuestionAttempts": [
+          4
+        ],
+        "candidateIssueIds": [
+          {
+            "attempt": 3,
+            "issues": [
+              "checkpoint_repeated"
+            ]
+          },
+          {
+            "attempt": 4,
+            "issues": []
+          }
+        ],
+        "startedAtMs": 6263.504999999888,
+        "finishedAtMs": 6391.6699999999255
+      }
+    ],
+    "finalComparison": {
+      "candidateAttempts": [
+        1,
+        3
+      ],
+      "preferredAttempt": 1,
+      "probabilities": {
+        "draft_1": 0.51,
+        "draft_3": 0.49
+      },
+      "confidence": 0.02,
+      "model": "jev-1.14.0"
+    },
+    "decisionFailure": null
+  },
+  "followup": null,
+  "cost": {
+    "beforeReleaseTrialBoundUsd": 3.790884632,
+    "firstTurnBoundUsd": 1.859709708,
+    "followupBoundUsd": 0,
+    "cumulativeBoundUsd": 5.65059434,
+    "authorizedUsd": 10,
+    "invoiceUsd": null
+  },
+  "noCredentialBrowserProbes": {
+    "staging": {
+      "origin": "https://keating-staging.up.railway.app",
+      "status": 401,
+      "body": "{\n  \"error\": true,\n  \"status\": 401,\n  \"statusText\": \"A TypeSafe API key is required.\",\n  \"message\": \"A TypeSafe API key is required.\"\n}",
+      "requestId": "LoHz3ztPQne7MsRiHn5Ytg",
+      "measuredAt": "2026-11-19T00:04:34.116Z",
+      "browser": "Chromium",
+      "credentials": "omit",
+      "submittedBody": {}
+    },
+    "production": {
+      "origin": "https://chat.keating.help",
+      "status": 401,
+      "body": "{\n  \"error\": true,\n  \"status\": 401,\n  \"statusText\": \"A TypeSafe API key is required.\",\n  \"message\": \"A TypeSafe API key is required.\"\n}",
+      "requestId": "vu5s3R0SQrqDgyNGg4a9AQ",
+      "measuredAt": "2026-11-19T00:08:26.532Z",
+      "browser": "Chromium",
+      "credentials": "omit",
+      "submittedBody": {}
+    }
+  },
+  "injectedPlanningRefusal": {
+    "scope": "Synthetic response generated in Chromium, with dummy configuration and all inference blocked.",
+    "localBefore": {
+      "registeredListeners": [
+        0
+      ],
+      "physicalDiagnosticRows": 0,
+      "matchingWithheldTurns": null,
+      "providerCalls": 0
+    },
+    "localAfter": {
+      "registeredListeners": [
+        3
+      ],
+      "physicalDiagnosticRows": 1,
+      "matchingWithheldTurns": 1,
+      "providerCalls": 0
+    },
+    "staging": {
+      "source": {
+        "sha": "c94a276e11b379ce67351071beaa4c97a4d9410c",
+        "entrySha256": "8d1ea33b4e8e7d6bdad53f99e51a01945833f66df9e4fd3b0cbeb5c4ccf9ada8"
+      },
+      "matchingWithheldTurns": 1,
+      "matchingPairTurns": 0,
+      "settingsExportMatchesWebMcp": true,
+      "providerCalls": 0
+    }
+  },
+  "delayedProviderKeyRead": {
+    "scope": "Locally delayed an older empty storage read while entering dummy MiniMax and Jev keys.",
+    "before": {
+      "typedPresentBeforeBlur": false,
+      "dummyKeysMatch": false,
+      "providerRequestsSent": 0,
+      "reload": false
+    },
+    "after": {
+      "typedPresentBeforeBlur": true,
+      "dummyKeysMatch": true,
+      "providerRequestsSent": 0,
+      "reload": false
+    }
+  },
+  "sourceReceiptsSha256": {
+    "first": "2825e5c4acaf7ddb0a0fad4529a0885e14a15fe0e5687ab9abc915c45eb3623d",
+    "followup": null
+  },
+  "populationInterfaceRate": null
+}

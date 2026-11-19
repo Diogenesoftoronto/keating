@@ -170,11 +170,42 @@ describe("recorded sources in the interface diagnostics panel", () => {
     const html = renderToStaticMarkup(<OpenUiUsageView turns={rows} initialView="pair-reviews" />);
     expect(html).toContain("Compared pairs · 4.");
     expect(html).toContain("Concurrent reviews · 2 of 2 timed turns.");
-    expect(html).toContain("Neither draft was eligible for release.");
+    expect(html).toContain("Draft 1 review · Held from release.");
     expect(html).toContain("None · reply withheld");
     expect(html).toContain("Draft 3 advanced.");
-    const rejected = renderToStaticMarkup(<OpenUiUsageView turns={[{ ...rows[0]!, gateIssues: ["question_feedback_format", "prediction_question_format"] }]} initialView="pair-reviews" />);
+    const rejected = renderToStaticMarkup(<OpenUiUsageView turns={[{ ...rows[0]!, gateIssues: ["question_feedback_format", "prediction_question_format", "submitted_grade_scope"] }]} initialView="pair-reviews" />);
     expect(rejected).toContain("standalone text reply (question_feedback_format)");
     expect(rejected).toContain("one standalone Question without hints or an answer key (prediction_question_format)");
+    expect(rejected).toContain("exceeded the scope of the saved answer (submitted_grade_scope)");
+  });
+  test("reports host eligibility and observed findings independently for each completed draft", () => {
+    const [template] = parseOpenUiDiagnosticExport(audit);
+    const pairReviews = [
+      { pair: 1, status: "compared", model: "jev-fixture", candidateAttempts: [1, 2], preferredAttempt: 1,
+        eligibleAttempts: [2], finalistAttempt: 2, gradeOnlyAttempts: [2],
+        candidateIssueIds: [{ attempt: 1, issues: ["checkpoint_repeated"] }, { attempt: 2, issues: ["checkpoint_repeated"] }] },
+      { pair: 2, status: "compared", model: "jev-fixture", candidateAttempts: [3, 4], preferredAttempt: 3,
+        candidateIssueIds: [{ attempt: 3, issues: [] }] },
+    ];
+    const rows = parseOpenUiDiagnosticExport({ schemaVersion: 1, turns: [{ ...template, draftAttempts: 4, pairReviews }] });
+    const html = renderToStaticMarkup(<OpenUiUsageView turns={rows} initialView="pair-reviews" />);
+    expect(html).toContain("Draft 1 review · Held from release. Findings · checkpoint_repeated.");
+    expect(html).toContain("Grading tool only · 2.");
+    expect(html).toContain("Draft 2 review · Eligible for release. Findings · checkpoint_repeated.");
+    expect(html).toContain("Draft 3 review · Release eligibility unknown. No findings observed.");
+    expect(html).toContain("Draft 4 review · Release eligibility unknown. Findings unrecorded.");
+    const query = queryOpenUiDiagnosticTurns(rows, { view: "pair-reviews" });
+    expect(query).toMatchObject({ matchingTurns: 1, turns: [{ pairReviews }] });
+    expect(rows[0]?.pairReviews?.[1]?.eligibleAttempts).toBeUndefined();
+    expect(rows[0]?.pairReviews?.[1]?.gradeOnlyAttempts).toBeUndefined();
+    const earlier = { round: 1, model: "first-tutor", releasedAttempt: 2, pairReviews };
+    const continued = parseOpenUiDiagnosticExport([{ ...rows[0], earlierPairReviewRounds: [earlier] }]);
+    const continuedHtml = renderToStaticMarkup(<OpenUiUsageView turns={continued} initialView="pair-reviews" />);
+    expect(continuedHtml).toContain("Jev pair reviews · round 1");
+    expect(continuedHtml).toContain("Jev pair reviews · final round");
+    expect(queryOpenUiDiagnosticTurns(continued, { view: "pair-reviews" })).toMatchObject({ matchingTurns: 1, roundsWithPairRecords: 2, comparedPairs: 4 });
+    for (const invalid of [[earlier, earlier], [{ ...earlier, privateText: "unsafe" }], [{ ...earlier, releasedAttempt: 1 }]]) {
+      expect(() => parseOpenUiDiagnosticExport([{ ...rows[0], earlierPairReviewRounds: invalid }])).toThrow("Invalid OpenUI");
+    }
   });
 });

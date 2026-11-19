@@ -27,6 +27,7 @@ import { safeMarkdownUri } from "@/lib/markdown-document";
 import { uiActionLearnerMessage } from "@/lib/ui-action-mutations";
 import { completedDeckAction, completedNodeAction, completedQuestionAction, completedQuestionGroupAction, completedQuizAction, completedUiActions, latestUiDocument, reviewedDeckCardIds } from "@/lib/ui-render-state";
 import { questionResponse, answerForQuizResponse, quizResponseForAnswer } from "@/lib/quiz-responses";
+import { nativeQuestionTurnId } from "@/lib/judgement/submitted-question";
 import { useMobileQuizPerformance } from "./MobileQuizPerformanceEstimate";
 import { MobileJudgementEstimates } from "./MobileJudgementEstimates";
 import { useKeating } from "@/state/KeatingProvider";
@@ -75,7 +76,7 @@ export function UiDocumentRenderer({
 }: {
   sourceDocument: UiDocument;
   sessionId?: string;
-  onLearnerTurn: (text: string) => Promise<void>;
+  onLearnerTurn: (text: string, submittedTurnId?: string) => Promise<void>;
 }) {
   const theme = useKeatingTheme();
   const styles = createStyles(theme);
@@ -120,7 +121,7 @@ export function UiDocumentRenderer({
       const response = learnerTurn ? uiActionLearnerMessage(action, document) : null;
       if (response) {
         try {
-          await onLearnerTurn(response);
+          await onLearnerTurn(response, result.status === "completed" ? nativeQuestionTurnId(sessionId, action) : undefined);
         } catch (cause) {
           setError(cause instanceof Error
             ? `Your progress is saved, but Keating could not respond: ${cause.message}`

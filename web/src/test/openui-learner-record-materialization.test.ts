@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { IDBFactory, IDBObjectStore } from "fake-indexeddb";
 import { UiActionReplayConflictError, type UiAction, type UiDocument } from "@keating/learner-contracts";
 
-import { KeatingStorage } from "../keating/storage";
+import { KeatingStorage, QUESTION_JUDGEMENT_CHANGED_EVENT } from "../keating/storage";
 
 const AT = "2026-08-11T00:00:00.000Z";
 const NEXT = "2026-08-11T00:00:01.000Z";
@@ -73,6 +73,42 @@ describe("canonical OpenUI learner-record materialization", () => {
 		timeouts.push("first");
 		const [restored] = await new KeatingStorage().getQuizResults();
 		expect(restored).toMatchObject({ timing: { totalMs: 64_238, perQuestionMs: { first: 4_238, second: 30_000 } }, timedOutQuestionIds: ["second"], examTimedOut: true });
+	});
+
+	test("notifies the exact submitted card only after a changed grade commits", async () => {
+		const storage = new KeatingStorage();
+		const item = { id: "submitted", topic: "socks", question: "Which colour?", answer: "Blue", sessionId: "saved" };
+		storage.setCurrentSessionId(item.sessionId);
+		await storage.recordQuestionCheck({ ...item, grading: "pending" });
+		const prior = Object.getOwnPropertyDescriptor(globalThis, "window");
+		const observations: Promise<unknown>[] = [];
+		const events = Object.assign(new EventTarget(), { CustomEvent });
+		events.addEventListener(QUESTION_JUDGEMENT_CHANGED_EVENT, event => {
+			const id = (event as CustomEvent<{ id: string }>).detail.id;
+			observations.push(storage.getQuestionChecks().then(rows => [id, rows.find(row => row.id === id)?.score]));
+		});
+		try {
+			Object.defineProperty(globalThis, "window", { configurable: true, value: events });
+			await storage.gradeQuestionCheck(item.id, { score: 1 }, item);
+			await storage.gradeQuestionCheck(item.id, { score: 0 }, item);
+			expect(await Promise.all(observations)).toEqual([[item.id, 1]]);
+		} finally {
+			if (prior) Object.defineProperty(globalThis, "window", prior);
+			else Reflect.deleteProperty(globalThis, "window");
+		}
+	});
+
+	test("a scoped tool cannot change a different session, updated answer, or an earlier grade from another tab", async () => {
+		const storage = new KeatingStorage(), peerTab = new KeatingStorage(), sessionId = "session-grade";
+		storage.setCurrentSessionId(sessionId);
+		const target = { id: "original-check", question: "Which colour is more likely?", topic: "Socks", answer: "Blue", sessionId };
+		await storage.recordQuestionCheck({ ...target, grading: "pending" });
+		for (const altered of [{ answer: "Yellow" }, { sessionId: "other" }, { question: "Another question" }, { topic: "Unrelated" }]) {
+			expect(await storage.gradeQuestionCheck(target.id, { score: 1 }, { ...target, ...altered })).toBeNull();
+		}
+		await peerTab.gradeQuestionCheck(target.id, { score: 0.5 });
+		expect(await storage.gradeQuestionCheck(target.id, { score: 1 }, target)).toBeNull();
+		expect((await storage.getQuestionChecks())[0]).toMatchObject({ id: target.id, grading: "model", score: 0.5 });
 	});
 
 	test("replays the exact action without duplicate learner records", async () => {

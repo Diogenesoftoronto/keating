@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "scope": "Local built Keating 4.2.4 release candidate with genuine provider transports. The original published 4.2.3 Question was restored through the normal ChatML importer. Only the Blue submission was freshly sent to the actual tutor and Jev. All rows are synthetic.",
+  "fingerprint": {
+    "version": "4.2.4",
+    "entry": "/assets/index-DCSzOsUE.js",
+    "entrySha256": "3f69e87eaa159a59a126562ab31f86e7255049307431503953ae51cf0617c609",
+    "variantChunks": [
+      {
+        "file": "shared-renderer-DhDUR5bh.js",
+        "sha256": "dc0c70ff6dcd09cc5fbf9e8ac64d302de883d831287a7ecdd116a9a2f0d4ce62"
+      },
+      {
+        "file": "src-B4uGkvAt.js",
+        "sha256": "d200169effbf1742aec6ffbc273e9dbea22964d63c93c09170ee506427acc8dd"
+      }
+    ],
+    "nitroSha256": "4b866d9c35162f2db07954d82ae8af744af4010b30bf4684f726b3da8deed306",
+    "policy": "keating-teaching-policy/v2.4.2"
+  },
+  "recordedSourceSha256": "c8daffe7e8afb34fcad86956f58c1a0e011681c950e4e1dda1270bf8a6ec4865",
+  "restoredTextSha256": "79fbd9c0cdff5a13942517bcc1483779732c6698b5dd12020483b0452a5c8f92",
+  "conversationId": "conversation-65d83cd37cfe6eb3",
+  "turnId": "learner-1",
+  "reply": "withheld",
+  "visibleLastReply": "Couldn't produce a reply\nTry again\nReload Keating\nIf this keeps happening, reload the page or start a new conversation.",
+  "grading": "pending",
+  "score": null,
+  "savedAnswer": "Blue",
+  "origin": "loopback Nitro release candidate",
+  "firstGeneration": "restored previous genuine production answer",
+  "newFreshProviderRounds": 1,
+  "requests": 11,
+  "allReturnedHTTP200AndUsage": true,
+  "upstreamModels": [
+    "MiniMax-M3.1-Flash",
+    "jev-1.14.0"
+  ],
+  "actualGradeToolExecution": false,
+  "chosenToolResults": [],
+  "selection": null,
+  "guidance": {
+    "source": "jev",
+    "action": "grade-first",
+    "delivered": true,
+    "targets": []
+  },
+  "publicIssueIds": [
+    "checkpoint_answer_leaked",
+    "checkpoint_continued",
+    "checkpoint_repeated",
+    "feedback_invented",
+    "mastery_overclaimed",
+    "quality_progress",
+    "quality_scope",
+    "unsolicited_assessment"
+  ],
+  "pairReviews": [
+    {
+      "pair": 1,
+      "candidateAttempts": [
+        1,
+        2
+      ],
+      "status": "compared",
+      "preferredAttempt": 2,
+      "model": "jev-1.14.0",
+      "eligibleAttempts": [],
+      "finalistAttempt": null,
+      "feedbackOnlyAttempts": [],
+      "policyVersion": "keating-teaching-policy/v2.4.2",
+      "predictionQuestionAttempts": [],
+      "candidateIssueIds": [
+        {
+          "attempt": 1,
+          "issues": [
+            "checkpoint_continued",
+            "feedback_invented"
+          ]
+        },
+        {
+          "attempt": 2,
+          "issues": [
+            "checkpoint_answer_leaked",
+            "checkpoint_continued",
+            "checkpoint_repeated",
+            "quality_scope"
+          ]
+        }
+      ],
+      "startedAtMs": 38055.33499999996,
+      "finishedAtMs": 38171.080000000075
+    },
+    {
+      "pair": 2,
+      "candidateAttempts": [
+        3,
+        4
+      ],
+      "status": "compared",
+      "preferredAttempt": 4,
+      "model": "jev-1.14.0",
+      "eligibleAttempts": [],
+      "finalistAttempt": null,
+      "feedbackOnlyAttempts": [],
+      "policyVersion": "keating-teaching-policy/v2.4.2",
+      "predictionQuestionAttempts": [],
+      "candidateIssueIds": [
+        {
+          "attempt": 3,
+          "issues": [
+            "feedback_invented",
+            "quality_progress",
+            "quality_scope"
+          ]
+        },
+        {
+          "attempt": 4,
+          "issues": [
+            "checkpoint_answer_leaked",
+            "mastery_overclaimed",
+            "unsolicited_assessment"
+          ]
+        }
+      ],
+      "startedAtMs": 38061.66000000015,
+      "finishedAtMs": 38212.51999999955
+    }
+  ],
+  "applicationElapsedMs": 40542,
+  "fourGenerationWireOverlapMs": 7236,
+  "pairWireOverlapMs": 87,
+  "directlyRecordedUsageCostUsd": 0.019313052,
+  "priorBoundUsd": 5.67821732,
+  "cumulativeBoundUsd": 5.697530372,
+  "settingsAndStoredTraceMatch": true,
+  "unrelatedBackground": "Topic categorization, unrelated APIs and external web traffic were blocked before dispatch. All four relevant tutors and both genuine pairs were admitted.",
+  "study": "Scoped preference-grading rule on the submitted production sock Question",
+  "source": {
+    "file": "../production-submission-source.json",
+    "sha256": "c8daffe7e8afb34fcad86956f58c1a0e011681c950e4e1dda1270bf8a6ec4865",
+    "description": "The original MiniMax Question from the separate two-turn production study. Its public text was restored byte-for-byte through the classroom importer."
+  },
+  "related": [
+    {
+      "file": "../production-submission.json",
+      "sha256": "afb9c11f6101710702c5f4c83636c05af5aac243dce718924346325fc154f167",
+      "description": "Independent hosted 4.2.3 study that produced the Question and first observed the submitted Blue outcome."
+    },
+    {
+      "file": "../calibration/summary.json",
+      "sha256": "75ace0bfa46a98a36a01dc176d5b9335c08348db1cda4b1b4463a6867cf24de0",
+      "description": "Independent Jev calibration with newly written candidate answers."
+    }
+  ],
+  "freshRequestCounts": {
+    "planning": 1,
+    "generation": 4,
+    "review": 4,
+    "pair": 2
+  },
+  "sourceArchive": {
+    "rawReceiptSha256": "947f863a9d8009592db65cb98a15c7374e6b2c9feadbe489960ed898e2e4dce7",
+    "operatorSummarySha256": "47179ab344462847d8482f04716b54aa053687a2845cea590b21bec0e2e86f05",
+    "fingerprintPaths": "The fingerprint names identify chunks of the exact locally served build."
+  },
+  "publicFiles": [
+    {
+      "file": "protocol.json",
+      "sha256": "39bea2fcedb0af42ffb2c2cb1d3f5ea2d7ba97dfc6aad5dc4938b50ae6962ffc",
+      "description": "Test registration made before the first fresh provider call."
+    },
+    {
+      "file": "candidates.json",
+      "sha256": "b471660d231306c8101a2991c3f6bdcf347acd2c94a0de638f25c9414edac261",
+      "description": "Jev’s observed probabilities and issue IDs, eligibility and actual proposed tools for each of the four new drafts."
+    },
+    {
+      "file": "settings.json",
+      "sha256": "31488457594d56e23f7cdeb15898e223b0941075d5c9389cd766f987a657bae6",
+      "description": "The original Settings export for the new form submission."
+    },
+    {
+      "file": "after.png",
+      "sha256": "ab7953cea0593ac4391495d1bf398f3a36175998223a6b61c6baeb2b45a5e3b5",
+      "description": "The actual 1200 × 850 local classroom after the form submission, showing the saved Blue response and the final retry notice."
+    }
+  ],
+  "observedOutcome": "Jev’s scoped preference rule cleared for all four candidates. One candidate proposed marking the saved question correct and also proposed recording positive learner feedback. Neither tool executed. All four candidates were ineligible, so Blue remained pending and the classroom displayed a retry notice."
+}

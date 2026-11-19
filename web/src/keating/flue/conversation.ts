@@ -24,6 +24,7 @@ import {
 } from "@earendil-works/pi-ai";
 import { FlueTransport, type FlueConfiguration } from "./transport";
 import { toModelMessages } from "./model-messages";
+import { prepareSubmittedGradeExecution } from "../judgement/submitted-grade-execution";
 
 type MutableState = { -readonly [K in keyof AgentState]: AgentState[K] };
 type Subscriber = (
@@ -215,6 +216,7 @@ export class FlueConversation {
   private bridge?: FlueTransport;
   private bridgeReady?: Promise<void>;
   private lastAssistant?: AssistantMessage;
+  private activeModelSignal?: AbortSignal;
   private turnResults: ToolResultMessage[] = [];
   private toolQueue: Promise<unknown> = Promise.resolve();
   constructor(
@@ -547,6 +549,7 @@ export class FlueConversation {
         this.cancelTimer = undefined;
         this.context.streamingMessage = undefined;
         this.lastAssistant = undefined;
+        this.activeModelSignal = undefined;
         this.turnResults = [];
         (this.context.pendingToolCalls as Set<string>).clear();
         try {
@@ -640,6 +643,7 @@ export class FlueConversation {
     await this.toolQueue;
     if (this.controller !== execution || !this.context.isStreaming) return;
     await this.endTurn();
+    this.activeModelSignal = signal;
     for (const message of this.drain(this.steering, this.steeringMode))
       await this.append(message);
     await this.emit({ type: "turn_start" });
@@ -761,6 +765,7 @@ export class FlueConversation {
           name: toolName,
           arguments: prepared,
         });
+        prepareSubmittedGradeExecution(this.activeModelSignal, signal, toolName, toolCallId, args);
         result = await tool.execute(
           toolCallId,
           args,

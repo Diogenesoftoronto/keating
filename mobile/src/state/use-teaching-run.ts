@@ -30,7 +30,7 @@ export interface TeachingRun {
   setRawGenerationError(message: string | null): void;
   generationBusyRef: MutableRefObject<boolean>;
   generationPromiseRef: MutableRefObject<Promise<void> | null>;
-  sendMessage(content: string, attachments?: ChatAttachment[]): Promise<void>;
+  sendMessage(content: string, attachments?: ChatAttachment[], submittedTurnId?: string): Promise<void>;
   startNewSessionWithMessage(content: string): Promise<string | null>;
   retryLastResponse(): Promise<void>;
   stopGeneration(): void;
@@ -109,11 +109,12 @@ export function useTeachingRun(inputs: TeachingRunInputs): TeachingRun {
     }
   }, []);
 
-  const sendMessage = useCallback(async (content: string, attachments: ChatAttachment[] = []) => {
+  const sendMessage = useCallback(async (content: string, attachments: ChatAttachment[] = [], submittedTurnId?: string) => {
     const trimmed = content.trim();
     if ((!trimmed && attachments.length === 0) || generationBusyRef.current) return;
     const session = activeSessionOf(stateRef.current);
-    const message = buildUserMessage(trimmed, attachments);
+    if (submittedTurnId && session.messages.some(message => message.id === submittedTurnId)) return;
+    const message = buildUserMessage(trimmed, attachments, Date.now(), submittedTurnId);
     const messages = [...session.messages, message];
     const next = updateSession(session.id, (entry) => ({
       ...entry,

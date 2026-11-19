@@ -159,7 +159,14 @@ function TurnDetails({ row, unmet }: {row: OpenUiDiagnosticTurn; unmet: boolean}
     {row.guidance?.reason && <><dt>Decision reason</dt><dd>{row.guidance.reason}</dd></>}
     {row.guidance?.codeLanguage && <><dt>Offered code language</dt><dd>{row.guidance.codeLanguage}</dd></>}
     <dt>Private drafts</dt><dd>{row.draftAttempts ?? "Unobserved"}</dd>
-    {row.pairReviews && <><dt>Jev pair reviews</dt><dd><PairReviewDetails reviews={row.pairReviews} finalComparison={row.finalComparison} /></dd></>}
+    {row.earlierPairReviewRounds?.map(round => <div key={round.round} style={{ display: "contents" }}>
+      <dt>Jev pair reviews · round {round.round}</dt><dd>
+        {round.model && <p>Tutor · {round.model}</p>}
+        <PairReviewDetails reviews={round.pairReviews} finalComparison={round.finalComparison} />
+        {round.releasedAttempt !== undefined && <p>Released draft · {round.releasedAttempt}</p>}
+      </dd>
+    </div>)}
+    {row.pairReviews && <><dt>{row.earlierPairReviewRounds?.length ? "Jev pair reviews · final round" : "Jev pair reviews"}</dt><dd><PairReviewDetails reviews={row.pairReviews} finalComparison={row.finalComparison} /></dd></>}
     <dt>Released draft</dt><dd>{row.selection
       ? `Attempt ${row.selection.attempt} · ${row.selection.review === "verified" ? "Passed review" : "Best effort, unverified"}`
       : row.reply === "withheld" ? "None · reply withheld" : "Unobserved"}</dd>
@@ -185,6 +192,7 @@ function TurnDetails({ row, unmet }: {row: OpenUiDiagnosticTurn; unmet: boolean}
     {row.gateIssues && <><dt>Review issues across all drafts</dt><dd>{row.gateIssues.length ? row.gateIssues.map(issue => {
       if (issue === "question_feedback_format") return "The feedback draft lacked a standalone text reply (" + issue + ")";
       if (issue === "prediction_question_format") return "The prediction draft lacked one standalone Question without hints or an answer key (" + issue + ")";
+      if (issue === "submitted_grade_scope") return "The grading draft exceeded the scope of the saved answer (" + issue + ")";
       return issue;
     }).join(", ") : row.decisionFailure && row.draftAttempts === 0 ? "No draft was available to review" : "None"}</dd></>}
     {row.fit && <><dt>Assessment</dt><dd>{row.fit.passed === null ? "Unknown" : row.fit.passed ? "Passed" : "Failed"} · {row.fit.source}</dd></>}
@@ -231,7 +239,7 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
   }, [loss, turns, filter]);
   const drillRows = unmet?.turns ?? (loss === "all" ? visible : visible.filter(row => {
     if (loss === "native") return row.nativePageRequested === true || NATIVE_PAGE_STAGES.some(key => row.nativePage?.[key] === true);
-    if (loss === "pair-reviews") return row.pairReviews !== undefined;
+    if (loss === "pair-reviews") return row.pairReviews !== undefined || Boolean(row.earlierPairReviewRounds?.length);
     if (loss === "editable-code") return !!row.editableCode?.length;
     if (loss === "assessment-opt-out") return openUiCheckpointAfterOptOut(row) === true;
     if (loss === "combined-unmet" || loss === "action-unmet") return (row.cue.kind === "explicit-interface" || row.cue.kind === "implicit-action")
@@ -325,6 +333,7 @@ export function OpenUiUsageView({ turns, initialStage = "rendered", initialView,
         : loss === "action-unmet" ? <p className="ou-muted">{drillRows.length} missed on this turn out of {summary.overall.learnerActionSelected.denominator} with a known outcome · {summary.overall.learnerActionSelected.unknown} unknown.</p>
         : pairs ? <div className="ou-muted" aria-label="Pair review coverage">
           <p>Compared pairs · {pairs.comparedPairs}. Concurrent reviews · {pairs.turnsWithConcurrentReviews} of {pairs.turnsWithMeasuredOverlap} timed turns.</p>
+          {pairs.roundsWithPairRecords !== undefined && pairs.roundsWithPairRecords > pairs.matchingTurns && <p>{pairs.roundsWithPairRecords} recorded tutor rounds across {pairs.matchingTurns} learner turns.</p>}
           {Boolean(pairs.incompletePairs || pairs.unavailablePairs || pairs.unrecordedPairs || pairs.turnsWithoutPairRecords) &&
             <p>{[
               pairs.incompletePairs && `Incomplete pairs · ${pairs.incompletePairs}`,

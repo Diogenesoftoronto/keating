@@ -5,7 +5,7 @@ import { type JudgementOutcome, type JudgementRequest, judgementRequestProblem }
 import { decodeAnswer } from "./wire.js";
 import { interactionDirectives, recommendInteraction } from "./interaction-affordances.js";
 import { planReviewDirectives, projectPlanReview, type PlanChangeMode, type PlanReviewHostTrigger } from "./plan-review.js";
-import { TEACHING_INTERACTION_FEATURES, TEACHING_PLAN_REVIEW_QUESTIONS, TEACHING_POLICY_DECISIONS, TEACHING_POLICY_RULES, TEACHING_POLICY_DETERMINISTIC_RULES, TEACHING_POLICY_PERMISSION_THRESHOLD, TEACHING_POLICY_THRESHOLDS, TEACHING_POLICY_VERSION, type TeachingPolicyRule } from "./teaching-policy-catalog.js";
+import { SUBMITTED_PREFERENCE_GRADE_QUESTION, TEACHING_INTERACTION_FEATURES, TEACHING_PLAN_REVIEW_QUESTIONS, TEACHING_POLICY_DECISIONS, TEACHING_POLICY_RULES, TEACHING_POLICY_DETERMINISTIC_RULES, TEACHING_POLICY_PERMISSION_THRESHOLD, TEACHING_POLICY_THRESHOLDS, TEACHING_POLICY_VERSION, type TeachingPolicyRule } from "./teaching-policy-catalog.js";
 import type { TeachingPolicyAssessment, TeachingPolicyCheck, TeachingPolicyPlan, TeachingPolicyReply, TeachingPolicyTurn } from "./teaching-policy-types.js";
 import { requestedCodePracticeLanguage, runnableFenceLanguage, type CodePracticeLanguage } from "./code-practice-language.js";
 import { inspectSimulationBrief, protectAssessmentOptOut } from "./assessment-opt-out.js";
@@ -32,6 +32,10 @@ export function teachingPolicyState(turn: TeachingPolicyTurn): { turn: TeachingP
     toolResults: turn.toolResults.map(({ name, status, content }) => ({ name, status, content })),
     sources: turn.sources.map(({ id, url, text }) => ({ id, url, text })),
     assessment: turn.assessment, improvementRuns: turn.improvementRuns, domain: turn.domain,
+    ...(turn.confirmedQuestionGrade ? { confirmedQuestionGrade: {
+      topic: turn.confirmedQuestionGrade.topic, question: turn.confirmedQuestionGrade.question, answer: turn.confirmedQuestionGrade.answer,
+      verdict: turn.confirmedQuestionGrade.verdict, score: turn.confirmedQuestionGrade.score,
+    } } : {}),
     ...(turn.pendingSubmissions ? { pendingSubmissions: turn.pendingSubmissions.map(({ kind, id, questionIds, topic, questionText }) => ({ kind, id, questionIds: [...questionIds], ...(topic ? { topic } : {}), ...(questionText ? { questionText } : {}) })) } : {}),
     ...(turn.activeWork ? { activeWork: structuredClone(turn.activeWork) } : {}),
     ...(turn.previousQuestionPresentation ? { previousQuestionPresentation: {
@@ -187,9 +191,13 @@ function selectedRules(turn: TeachingPolicyTurn, ids?: readonly string[], scope?
 /** This request cannot see the actor model, experiment arm, selected plan, or expected labels. */
 export function teachingPolicyAdherenceRequest(turn: TeachingPolicyTurn, reply: TeachingPolicyReply, ruleIds?: readonly string[], scope?: TeachingPolicyReviewScope): JudgementRequest | null {
   const rules = selectedRules(turn, ruleIds, scope);
+  const questions = Object.fromEntries(rules.map(({ id, question }) => [id, question]));
+  if (questions.preference_graded && turn.pendingSubmissions?.some(item => item.kind === "comprehension" && item.questionText?.trim())) {
+    questions.preference_graded = SUBMITTED_PREFERENCE_GRADE_QUESTION;
+  }
   const request: JudgementRequest = { state: { ...teachingPolicyState(turn), reply: {
     text: reply.text, toolCalls: reply.toolCalls.map(({ name, arguments: args }) => ({ name, arguments: args })),
-  } }, questions: Object.fromEntries(rules.map(({ id, question }) => [id, question])) };
+  } }, questions };
   return judgementRequestProblem(request) === null ? request : null;
 }
 
@@ -320,7 +328,7 @@ export function prepareAssessmentOptOutDraft(turn: TeachingPolicyTurn, plan: Tea
 /** A complete, single conversational item can receive feedback. An assessment or unlinked outstanding record stays on its ordinary path. */
 export function followsSingleFeedbackQuestion(turn: TeachingPolicyTurn): boolean {
   const work = turn.activeWork;
-  if (turn.assessment === "assessed" || turn.assessment === "practice" || turn.pendingSubmissions?.length
+  if (turn.confirmedQuestionGrade || turn.assessment === "assessed" || turn.assessment === "practice" || turn.pendingSubmissions?.length
     || work?.truncated || work?.focus?.evidence.pendingGrade
     || turn.learnerEvidence.some(item => item.kind.startsWith("pending-"))) return false;
   const linked = turn.previousQuestionPresentation;
