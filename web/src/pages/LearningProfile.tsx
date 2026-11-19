@@ -49,6 +49,7 @@ function move<T>(items: T[], index: number, delta: number): T[] {
 
 export function LearningProfile() {
 	const [did, setDid] = useState<string | null>(null);
+	const [handle, setHandle] = useState<string | null>(null);
 	const [publisher, setPublisher] = useState<LearningProfilePublisher | null>(null);
 	// undefined: status unknown. null: confirmed private. Otherwise the published profile.
 	const [published, setPublished] = useState<FullLearningProfile | null | undefined>(undefined);
@@ -72,13 +73,16 @@ export function LearningProfile() {
 			request.current?.abort();
 			request.current = new AbortController();
 			const signal = request.current.signal;
-			setPublisher(null); setDid(null); setPublished(undefined); setConsent(false); setMessage(""); setBusy(true);
+			setPublisher(null); setDid(null); setHandle(null); setPublished(undefined); setConsent(false); setMessage(""); setBusy(true);
 			try {
 				const client = notOrganicPublicClient();
 				const identity = client?.getSession()?.id;
 				// The dedicated callback must finish even if the product login has expired.
-				const [session, account] = await Promise.all([
-					restoreLearningProfileSession(),
+				const [connection, account] = await Promise.all([
+					restoreLearningProfileSession().then(
+						session => ({ session, error: null }),
+						(error: Error) => ({ session: null, error: error.message }),
+					),
 					identity ? getNotOrganicAccount() : Promise.resolve(null),
 				]);
 				if (disposed || current !== generation.current || signal.aborted) return;
@@ -87,11 +91,18 @@ export function LearningProfile() {
 					return;
 				}
 				setDid(account.did);
+				const publicHandle = typeof account.handle === "string" ? account.handle.trim().replace(/^@/, "") : "";
+				setHandle(publicHandle.includes(".") && /^[a-z0-9.-]+$/i.test(publicHandle) && publicHandle.toLowerCase() !== "handle.invalid" ? publicHandle : null);
 				draftOwner.current = account.did;
 				const saved = loadProfileDraft(account.did);
 				if (saved) setDraft(saved);
+				const { session, error: connectionError } = connection;
+				if (connectionError) {
+					setMessage(connectionError);
+					return;
+				}
 				if (!session || session.sub !== account.did) {
-					setMessage(session ? "Reconnect the PDS that belongs to this Not Organic account." : "Connect your PDS to publish. You can write and preview your profile first.");
+					setMessage(session ? "Reconnect using the same AT Protocol account you use with Not Organic." : "Connect your account to publish. You can write and preview your profile first.");
 					return;
 				}
 				const next = new LearningProfilePublisher(session, {
@@ -183,10 +194,10 @@ export function LearningProfile() {
 		<p className="profile-editor__lede">Say what you are learning, show work you are proud of, and choose how the page looks. You decide every word that appears. Conversations, answers, grades and learner records are never added for you.</p>
 
 		<section className="profile-editor__account" aria-label="Account and publishing status">
-			{did ? <p>Publishing identity: <code>{did}</code></p> : !busy && <p>Sign in to connect the identity your profile is published under.</p>}
+			{did ? <p>{handle ? <>Publishing as <strong>@{handle}</strong></> : "Publishing with your Not Organic account"}</p> : !busy && <p>Sign in to connect the identity your profile is published under.</p>}
 			<div className="profile-page__actions" style={{ marginTop: 0 }}>
 				{!did && !busy && <button type="button" className="profile-button profile-button--primary" onClick={() => void perform(() => beginNotOrganicAuthorization("/review/learning-profile"))}>Sign in to Not Organic</button>}
-				{did && <button type="button" className="profile-button" disabled={busy} onClick={() => void perform(async () => { await connectLearningProfile(did); })}>{publisher ? "Reconnect PDS permissions" : "Connect my PDS"}</button>}
+				{did && <button type="button" className="profile-button" disabled={busy} onClick={() => void perform(async () => { await connectLearningProfile(did); })}>{publisher ? "Reconnect account" : "Connect my account"}</button>}
 				{published && did && <a className="profile-button" href={publicProfilePath(did)} target="_blank" rel="noopener">View public page</a>}
 			</div>
 			<p className="profile-editor__status" role="status" aria-live="polite">{busy ? "Working…" : message}</p>
@@ -382,7 +393,7 @@ export function LearningProfile() {
 						}}>{published ? "Discard my edits" : "Clear the form"}</button>
 						<button type="button" className="profile-button profile-button--quiet" disabled={busy} onClick={() => window.location.reload()}>Reload status</button>
 					</div>
-					{!publisher && did && <p className="profile-editor__hint">Connect your PDS above to enable publishing.</p>}
+					{!publisher && did && <p className="profile-editor__hint">Connect your account above to enable publishing.</p>}
 					{published && did && <div className="profile-editor__share">
 						<span>Public page:</span> <code>{publicUrl}</code>
 						<button type="button" className="profile-button" onClick={() => { void navigator.clipboard?.writeText(publicUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); }).catch(() => setCopied(false)); }}>{copied ? "Copied" : "Copy link"}</button>
@@ -395,7 +406,7 @@ export function LearningProfile() {
 			<aside id="profile-panel-preview" role="tabpanel" className="profile-editor__preview" aria-labelledby="profile-tab-preview">
 				<p className="profile-editor__preview-label">Preview: what visitors will see</p>
 				{preview
-					? <PublicProfileView profile={preview} identity={did ?? undefined} preview />
+					? <PublicProfileView profile={preview} identity={handle ? `@${handle}` : did ?? undefined} preview />
 					: <p className="public-profile__empty">Fix the highlighted field to see the preview.</p>}
 			</aside>
 		</div>
