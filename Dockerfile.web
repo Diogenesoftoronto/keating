@@ -34,6 +34,7 @@ COPY shared/ ./shared/
 COPY desktop/src/navigation.ts ./desktop/src/navigation.ts
 COPY web/ ./web/
 WORKDIR /app/web
+RUN bun scripts/restore-staging-film.ts
 # Vite inlines VITE_* env vars at build time. `web/.env.local` is gitignored and
 # not present in CI/Railway builds, so these must be supplied as build args
 # (Railway forwards matching service variables as --build-arg automatically).
