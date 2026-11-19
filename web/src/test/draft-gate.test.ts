@@ -1179,4 +1179,38 @@ describe("draft checker sources", () => {
     const failed: Context = { ...ctx, messages: ctx.messages.map(entry => entry.role === "toolResult" ? { ...entry, isError: true } : entry) };
     expect(await reviewedStates(failed)).toContain('"sources":[]');
   });
+
+  test("five large searches fit the hosted review budget and retain unique recent source links", async () => {
+    const ctx = withSearch();
+    const searches = Array.from({ length: 5 }, (_, index) => ({
+      role: "toolResult" as const, toolName: "client-web-search", toolCallId: `search-${index}`, isError: false, timestamp: index + 2,
+      content: [{ type: "text" as const, text: `UNTRUSTED WEB SEARCH RESULTS\n${JSON.stringify({
+        results: Array.from({ length: 8 }, (_, item) => ({
+          url: item === 0 ? "https://example.test/shared" : `https://example.test/${index}/${item}`,
+          title: `Source ${index}/${item}`,
+          snippet: `Finding ${index}/${item}. ` + "source details ".repeat(111) + "RAW_SEARCH_TAIL",
+        })),
+      })}` }],
+    }));
+    ctx.messages.splice(1, 1, ...searches);
+    const observed: TeachingPolicyTurn[] = [];
+    const { result } = await collect(await gate((_model, draft) => {
+      expect(draft.messages.filter(item => item.role === "toolResult")).toEqual(searches);
+      return streamOf(message("24"));
+    }, {
+      judgementModel: { id: "judgement", requestTokens: 64_000, stateQuestionTokens: 32_000 },
+      makeCaller: () => async request => { observed.push((request.state as { turn: TeachingPolicyTurn }).turn); return answer(request); },
+    })(MODEL, ctx));
+    expect(text(result)).toBe("24");
+    expect(observed.length).toBeGreaterThan(1);
+    const turn = observed[0]!;
+    const urls = turn.sources.map(source => source.url);
+    expect(urls).toHaveLength(16);
+    expect(new Set(urls).size).toBe(urls.length);
+    expect(urls).toContain("https://example.test/4/7");
+    expect(urls).toContain("https://example.test/shared");
+    expect(turn.sources.find(source => source.url.endsWith("/shared"))?.text).toContain("Finding 4/0");
+    expect(turn.toolResults).toHaveLength(1);
+    expect(JSON.stringify(turn)).not.toContain("RAW_SEARCH_TAIL");
+  });
 });
