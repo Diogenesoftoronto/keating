@@ -1,9 +1,8 @@
+import { EmptyState, Loading } from "../../design-system/kit";
 /** Terminal tab of the sandbox runtime dialog: toolbar plus the xterm mount point. */
-import Maximize2 from "reicon-react/icons/Maximize2";
-import RotateCcw from "reicon-react/icons/RotateLeft";
 import type { RefObject } from "react";
 import { css } from "../../../styled-system/css";
-import { KeatingIcon } from "../KeatingIcon";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { styles } from "./sandbox-shared";
 
 export function SandboxShellPanel({
@@ -21,9 +20,7 @@ export function SandboxShellPanel({
 }) {
   if (!nodePodActive) {
     return (
-      <div className={styles.textXsMuted}>
-        Start NodePod to use the shell.
-      </div>
+      <EmptyState heading="Start NodePod to use the shell." />
     );
   }
   return (
@@ -36,7 +33,7 @@ export function SandboxShellPanel({
             onClick={onClear}
             className={styles.outlineButtonSmBg}
           >
-            <KeatingIcon icon={RotateCcw} size={12} />
+            <KeatingGlyph name="undo" size={12} />
             Clear
           </button>
           <button
@@ -44,7 +41,7 @@ export function SandboxShellPanel({
             onClick={onFit}
             className={styles.outlineButtonSmBg}
           >
-            <KeatingIcon icon={Maximize2} size={12} />
+            <KeatingGlyph name="expand" size={12} />
             Fit
           </button>
         </div>
@@ -55,7 +52,7 @@ export function SandboxShellPanel({
         style={{ flex: 1, minHeight: "18rem" }}
       />
       {!terminalReady && (
-        <div className={styles.textXsMuted}>Booting terminal…</div>
+        <Loading label="Booting terminal…" />
       )}
     </div>
   );

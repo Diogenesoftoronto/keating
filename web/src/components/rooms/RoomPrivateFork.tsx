@@ -1,3 +1,4 @@
+import { Loading } from "../../design-system/kit";
 import { useLayoutEffect, useRef, useState } from "react";
 import { css } from "../../../styled-system/css";
 import { getRoomPrivateForkContext } from "../../rooms/client";
@@ -63,7 +64,7 @@ export function RoomPrivateFork({ snapshot, source, offer, onCancel, onOpenChat,
   }
   if (!validNow() || sourceError) return <div className={s.notice} role="status">
     <p>{sourceError || "The source or your room access changed. Choose the source again."}</p>
-    <button type="button" className={s.button} onClick={onCancel}>Close</button>
+    <button type="button" className="k-button k-ghost k-sm" onClick={onCancel}>Close</button>
   </div>;
   return <PrivateForkPanel title={offer ? "Keating offered a private continuation" : "Continue privately"}
     sourceText={source.body} sourceLabel={`From ${source.authorName} in ${snapshot.room.title}`} sourceKind="room"
@@ -134,7 +135,7 @@ export function RoomPrivateForkOffers({ snapshot, mutate, onOpenChat, dependenci
   const activeOffer = chosen && offers.find(offer => offer.id === chosen.offer.id);
   const source = chosen?.context.messages.find(message => message.id === chosen.offer.sourceMessageId);
   return <section aria-label="Your private study offers" className={css({ p: "0.75rem", borderBottom: "1px solid var(--ink)", display: "grid", gap: "0.65rem", maxH: "55vh", overflowY: "auto", flexShrink: 0 })}>
-    <h2 className={s.heading}>Your private study offers</h2>
+    <h2 className="rm-heading">Your private study offers</h2>
     <p className={s.help}>Only you receive these offers. Opening one is your choice.</p>
     {activeOffer && source ? <RoomPrivateFork key={activeOffer.id} snapshot={snapshot} source={source} offer={activeOffer}
       mutate={mutate} onCancel={cancel} onOpenChat={onOpenChat} dependencies={dependencies} />
@@ -147,12 +148,12 @@ export function RoomPrivateForkOffers({ snapshot, mutate, onOpenChat, dependenci
         return <li key={offer.id} className={css({ display: "grid", gap: "0.35rem" })}>
           <p className={css({ fontSize: "0.8rem", whiteSpace: "pre-wrap", overflowWrap: "anywhere", maxH: "6rem", overflowY: "auto" })}>{preview}</p>
           <div className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
-            <button ref={node => { if (node && focusOffer.current === offer.id) { node.focus(); focusOffer.current = null; } }} type="button" className={s.button} disabled={Boolean(busy)} onClick={() => void act(offer, "review")}>{busy === offer.id ? "Checking…" : offer.status === "opened" ? "Reopen private Chat" : "Review private offer"}</button>
-            {offer.status === "pending" ? <button type="button" className={s.button} disabled={Boolean(busy)} onClick={() => void act(offer, "dismiss")}>Dismiss offer</button> : null}
+            <button ref={node => { if (node && focusOffer.current === offer.id) { node.focus(); focusOffer.current = null; } }} type="button" className="k-button k-ghost k-sm" disabled={Boolean(busy)} onClick={() => void act(offer, "review")}>{busy === offer.id ? <Loading size="inline" label="Checking…" /> : offer.status === "opened" ? "Reopen private Chat" : "Review private offer"}</button>
+            {offer.status === "pending" ? <button type="button" className="k-button k-ghost k-sm" disabled={Boolean(busy)} onClick={() => void act(offer, "dismiss")}>Dismiss offer</button> : null}
           </div>
         </li>;
       })}</ul>}
     {error ? <p role="alert" className={s.error}>{error} Review the offer to try again.</p> : null}
-    {busy ? <button type="button" className={s.button} onClick={cancel}>Cancel</button> : null}
+    {busy ? <button type="button" className="k-button k-ghost k-sm" onClick={cancel}>Cancel</button> : null}
   </section>;
 }

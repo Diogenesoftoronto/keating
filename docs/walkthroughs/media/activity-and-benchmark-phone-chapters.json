@@ -1,0 +1,70 @@
+{
+  "title": "Activity, Coming up and the model benchmark",
+  "viewport": "phone",
+  "width": 390,
+  "height": 844,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study",
+    "review"
+  ],
+  "transcript": null,
+  "capturedAt": "2026-11-19T16:03:49.953Z",
+  "viewerNote": "The activity and cards use sample data. Private benchmark results depend on available evidence in the browser.",
+  "duration": 29.74830206298828,
+  "bytes": 615377,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "activity",
+      "title": "Open Learning usage",
+      "start": 0.004000186920166016,
+      "explanation": "Start with your Learning activity.",
+      "alt": "Open Learning usage",
+      "still": "activity"
+    },
+    {
+      "id": "week",
+      "title": "Switch to seven days",
+      "start": 5.851000070571899,
+      "explanation": "See what changed this week.",
+      "alt": "Switch to seven days",
+      "still": "week"
+    },
+    {
+      "id": "coming-up",
+      "title": "Look at the study queue",
+      "start": 9.517000198364258,
+      "explanation": "See what is ready to review next.",
+      "alt": "Look at the study queue",
+      "still": "coming-up"
+    },
+    {
+      "id": "recall",
+      "title": "Review a due card",
+      "start": 13.957000017166138,
+      "explanation": "Recall an answer before rating the card.",
+      "alt": "Review a due card",
+      "still": "recall"
+    },
+    {
+      "id": "private",
+      "title": "Choose private evidence",
+      "start": 20.993000030517578,
+      "explanation": "Switch the benchmark to private evidence.",
+      "alt": "Choose private evidence",
+      "still": "private"
+    },
+    {
+      "id": "case-bank",
+      "title": "Inspect the replay case bank",
+      "start": 26.193000078201294,
+      "explanation": "Check which replay cases are available on this device.",
+      "alt": "Inspect the replay case bank",
+      "still": "case-bank"
+    }
+  ]
+}

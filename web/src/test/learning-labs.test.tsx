@@ -76,9 +76,9 @@ describe("music lab isolation", () => {
 		const html = renderToStaticMarkup(<RunnableCodeBlock code={code} language="js"><pre>{code}</pre></RunnableCodeBlock>);
 		expect(html).toContain("Runs in the Strudel sandbox");
 		expect(html).toContain("Sound starts when you press Play.");
-		expect(html).not.toContain("Run code on this device");
+		expect(html).not.toContain("Runs on this device");
 		const plain = renderToStaticMarkup(<RunnableCodeBlock code="console.log(1)" language="js"><pre>console.log(1)</pre></RunnableCodeBlock>);
-		expect(plain).toContain("Run code on this device");
+		expect(plain).toContain("Runs on this device");
 	});
 	test("renders stable inert markup when a server test has a window stub without location", () => {
 		const previous = Object.getOwnPropertyDescriptor(globalThis, "window");

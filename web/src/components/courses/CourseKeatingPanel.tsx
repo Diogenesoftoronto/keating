@@ -1,14 +1,15 @@
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowUpRight, MessageSquareText, Sparkles } from "lucide-react";
-import { css, cx } from "../../../styled-system/css";
+
 import {
   courseAskActions,
   courseChatSearch,
   type CourseAskView,
 } from "../../courses/course-ask";
 import type { CourseLesson } from "../../courses/contracts";
-import { courseLabelClass, formatCourseRelative } from "./course-ui";
+import { Eyebrow, Note } from "../../design-system/kit";
+import { formatCourseRelative } from "./course-ui";
 
 interface CourseUpdatedDetail {
   courseId?: string;
@@ -53,108 +54,28 @@ export function CourseKeatingPanel({
       ? { lessonTitle: activeLesson.title, lessonId: activeLesson.id }
       : {}),
     view,
-  }).slice(0, 4);
-
-  return (
-    <section
-      className={css({
-        mt: "1.25rem",
-        borderTop: "1px solid var(--ink)",
-        pt: "1rem",
-      })}
-    >
-      <div
-        className={css({
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "0.5rem",
-        })}
-      >
-        <p className={courseLabelClass}>Work with Keating</p>
-        <Sparkles size={14} />
-      </div>
-      <div className={css({ mt: "0.6rem", display: "grid", gap: "0.35rem" })}>
-        {actions.map((action) => (
-          <Link
-            key={action.id}
-            to="/chat"
-            search={courseChatSearch(courseId, action.prompt)}
-            target="_blank"
-            rel="noreferrer"
-            className={css({
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 1fr) 0.9rem",
-              alignItems: "center",
-              gap: "0.4rem",
-              border: "1px solid var(--ink)",
-              bg: "var(--card)",
-              px: "0.55rem",
-              py: "0.45rem",
-              color: "inherit",
-              textDecoration: "none",
-              _hover: { bg: "var(--course-wash, #ddebdd)" },
-            })}
-          >
-            <span className={css({ minW: 0 })}>
-              <strong className={css({ display: "block", fontSize: "0.76rem" })}>
-                {action.label}
-              </strong>
-              <small
-                className={css({
-                  display: "block",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  fontSize: "0.66rem",
-                  color: "var(--ink-soft)",
-                })}
-              >
-                {action.description}
-              </small>
-            </span>
-            <ArrowUpRight size={13} />
-          </Link>
-        ))}
-      </div>
-      <Link
-        to="/chat"
-        search={courseChatSearch(courseId)}
-        className={cx(
-          css({
-            mt: "0.5rem",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.35rem",
-            fontSize: "0.72rem",
-            fontWeight: 700,
-            color: "inherit",
-            textDecoration: "underline",
-          }),
-        )}
-      >
-        <MessageSquareText size={13} /> Open the full conversation
-      </Link>
-      {lastChange ? (
-        <p
-          className={css({
-            mt: "0.6rem",
-            borderLeft: "3px solid var(--course-green)",
-            bg: "var(--course-wash, #ddebdd)",
-            px: "0.5rem",
-            py: "0.4rem",
-            fontSize: "0.7rem",
-            lineHeight: 1.45,
-          })}
-        >
-          {lastChange.change}
-          <small
-            className={css({ display: "block", color: "var(--ink-soft)" })}
-          >
-            Applied {formatCourseRelative(lastChange.at)}
-          </small>
-        </p>
-      ) : null}
-    </section>
+  });
+  const lessonActions = ["lesson-review", "lesson-practice", "lesson-sources"];
+  const primary = activeLesson && (view === "read" || view === "build")
+    ? lessonActions.flatMap(id => actions.filter(action => action.id === id))
+    : actions.slice(0, 3);
+  const actionLink = (action: (typeof actions)[number]) => (
+    <Link key={action.id} to="/chat" search={courseChatSearch(courseId, action.prompt)}
+      target="_blank" rel="noreferrer" title={action.description} className="cw-keating-link">
+      {action.label}<KeatingGlyph name="ext" size={12} />
+    </Link>
   );
+
+  return <section className="cw-keating-actions">
+    <Eyebrow muted>Work with Keating</Eyebrow>
+    {primary.map(actionLink)}
+    <details>
+      <summary>More</summary>
+      {actions.filter(action => !primary.includes(action)).map(actionLink)}
+      <Link to="/chat" search={courseChatSearch(courseId)} className="cw-keating-link">
+        Open the full conversation <KeatingGlyph name="message" size={12} />
+      </Link>
+    </details>
+    {lastChange && <Note role="status">{lastChange.change} <small>Applied {formatCourseRelative(lastChange.at)}</small></Note>}
+  </section>;
 }

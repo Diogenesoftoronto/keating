@@ -1,0 +1,302 @@
+{
+  "slug": "review-a-session-phone",
+  "title": "Reviewing a session",
+  "viewport": "phone",
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study",
+    "review"
+  ],
+  "ready": [
+    {
+      "text": "How recursion returns"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "goto",
+      "path": "/review"
+    },
+    {
+      "kind": "chapter",
+      "id": "queue",
+      "title": "Find a session in Reviews",
+      "explanation": "Find the session in Reviews.",
+      "alt": "Find a session in Reviews"
+    },
+    {
+      "kind": "caption",
+      "text": "Find the session in Reviews."
+    },
+    {
+      "kind": "wait-for",
+      "text": "How recursion returns",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "queue"
+    },
+    {
+      "kind": "chapter",
+      "id": "selection",
+      "title": "Select a passage",
+      "explanation": "Select the part of the reply you want to mark.",
+      "alt": "Select a passage"
+    },
+    {
+      "kind": "caption",
+      "text": "Select the part of the reply you want to mark."
+    },
+    {
+      "kind": "click",
+      "label": "How recursion returns",
+      "contains": true,
+      "ready": [
+        {
+          "selector": ".rv-page-turn[data-role=\"assistant\"] [data-message-text]"
+        }
+      ]
+    },
+    {
+      "kind": "wait-for",
+      "text": "Transcript",
+      "timeout": 7000
+    },
+    {
+      "kind": "select-text",
+      "selector": "article[data-role=\"assistant\"] [data-message-text]",
+      "label": "Before we trace it",
+      "contains": true,
+      "text": "Before we trace it"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "selection"
+    },
+    {
+      "kind": "chapter",
+      "id": "problem",
+      "title": "Record a problem",
+      "explanation": "Mark a specific problem.",
+      "alt": "Record a problem"
+    },
+    {
+      "kind": "caption",
+      "text": "Mark a specific problem."
+    },
+    {
+      "kind": "click",
+      "label": "Problem",
+      "within": ".rv-page-selection",
+      "contains": true
+    },
+    {
+      "kind": "type",
+      "selector": ".rv-note-form textarea",
+      "text": "Introduce the call frame before asking about the print.",
+      "delay": 17
+    },
+    {
+      "kind": "pause",
+      "ms": 1700,
+      "still": "note-draft"
+    },
+    {
+      "kind": "click",
+      "label": "Add note",
+      "within": ".rv-note-form"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "problem"
+    },
+    {
+      "kind": "chapter",
+      "id": "strength",
+      "title": "Record a strength",
+      "explanation": "Use Turn list to open turn 6, then choose Add note to annotate that turn.",
+      "alt": "Record a strength"
+    },
+    {
+      "kind": "caption",
+      "text": "Mark a strength on the whole tutor turn."
+    },
+    {
+      "kind": "click",
+      "label": "Turn list"
+    },
+    {
+      "kind": "click",
+      "label": "Turn 6 · Keating",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Add note",
+      "within": ".rv-bottom"
+    },
+    {
+      "kind": "click",
+      "label": "Strength",
+      "within": ".rv-note-form"
+    },
+    {
+      "kind": "type",
+      "selector": ".rv-note-form textarea",
+      "text": "The example gives the learner a prediction to test.",
+      "delay": 17
+    },
+    {
+      "kind": "click",
+      "label": "Add note",
+      "within": ".rv-note-form"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "strength"
+    },
+    {
+      "kind": "chapter",
+      "id": "suggestion",
+      "title": "Record a suggestion",
+      "explanation": "Use Turn list to open turn 8, then choose Add note to annotate that turn.",
+      "alt": "Record a suggestion"
+    },
+    {
+      "kind": "caption",
+      "text": "Suggest a next move for a tutor turn."
+    },
+    {
+      "kind": "click",
+      "label": "Turn list"
+    },
+    {
+      "kind": "click",
+      "label": "Turn 8 · Keating",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Add note",
+      "within": ".rv-bottom"
+    },
+    {
+      "kind": "click",
+      "label": "Suggestion",
+      "within": ".rv-note-form"
+    },
+    {
+      "kind": "type",
+      "selector": ".rv-note-form textarea",
+      "text": "Ask what changes at the base case.",
+      "delay": 17
+    },
+    {
+      "kind": "click",
+      "label": "Add note",
+      "within": ".rv-note-form"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "suggestion"
+    },
+    {
+      "kind": "chapter",
+      "id": "rubric",
+      "title": "Inspect a rubric score",
+      "explanation": "Read the rubric alongside the transcript.",
+      "alt": "Inspect a rubric score"
+    },
+    {
+      "kind": "caption",
+      "text": "Read the rubric alongside the transcript."
+    },
+    {
+      "kind": "click",
+      "label": "Rubric",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "rubric"
+    },
+    {
+      "kind": "chapter",
+      "id": "pass",
+      "title": "Inspect the pass menu",
+      "explanation": "See what a Socratic pass can propose.",
+      "alt": "Inspect the pass menu"
+    },
+    {
+      "kind": "caption",
+      "text": "See what a Socratic pass can propose."
+    },
+    {
+      "kind": "click",
+      "label": "Notes",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Socratic pass",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 2100,
+      "still": "pass"
+    },
+    {
+      "kind": "press",
+      "key": "Escape"
+    },
+    {
+      "kind": "pause",
+      "ms": 1800
+    },
+    {
+      "kind": "chapter",
+      "id": "export",
+      "title": "Inspect the export sheet",
+      "explanation": "Check what goes into the review export.",
+      "alt": "Inspect the export sheet"
+    },
+    {
+      "kind": "caption",
+      "text": "Check what goes into the review export."
+    },
+    {
+      "kind": "click",
+      "label": "Save review"
+    },
+    {
+      "kind": "click",
+      "label": "More review actions"
+    },
+    {
+      "kind": "click",
+      "label": "Export"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Cancel",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "export"
+    }
+  ],
+  "viewerNote": "The sample rubric ratings and earlier notes are authored. The phone take anchors one note to a selection and uses whole-turn notes for the other two. The pass menu opens without running a model pass."
+}

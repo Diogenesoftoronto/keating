@@ -15,7 +15,7 @@ function renderDesk(variant: Variant): string {
   const { snapshot } = deskFixture();
   const lesson = snapshot.course.modules[0]!.lessons[0]!;
   const base = {
-    snapshot, moduleTitle: "Counterfactuals", completed: false,
+    nextAction: { label: "Lesson 2 · Intervention", run: noop }, snapshot, moduleTitle: "Counterfactuals", completed: false,
     mutate: async () => {}, saving: "", noteText: "draft note", setNoteText: noop,
     sharedNoteVersion: 2, answer: "my answer", setAnswer: noop, shareAnswer: true,
     setShareAnswer: noop, threadCount: 3, onSnapshot: noop, onError: noop,
@@ -87,19 +87,23 @@ describe("DeskView as a teacher", () => {
     expect(text).toContain("Contrast intervention and observation");
   });
 
-  test("offers editing actions and the discussion count", () => {
+  test("keeps the next lesson on the desk and authoring and discussion in the header", () => {
     const names = buttonNames(html);
-    expect(names).toContain("Discuss · 3");
-    expect(names).toContain("Add document");
-    expect(names).toContain("Edit");
-    expect(html).toContain('type="file"');
+    expect(names).not.toContain("Discuss · 3");
+    expect(names).not.toContain("Add document");
+    expect(names).toContain("Lesson 2 · Intervention");
+    expect(html).not.toContain('aria-label="Lesson actions"');
+    expect(names).not.toContain("Edit");
+    expect(html).not.toContain('aria-label="Add document"');
   });
 
   test("shows the lesson answer field with its value and share state", () => {
     expect(textOf(html)).toContain("Worked exercise");
     expect(textareas(html).map((t) => t.value)).toContain("my answer");
     expect(textOf(html)).toContain("Share with peers");
-    expect(/<input type="checkbox" checked=""\/>Share with peers/.test(html)).toBe(true);
+    expect(/<input type="checkbox" checked=""\/>\s*Share with peers/.test(html)).toBe(true);
+    expect(textOf(html)).toContain("Visible after saving · You");
+    expect(textOf(html)).toContain("Continue privately with Keating");
     expect(button(html, "Save work")).toEqual({ name: "Save work", disabled: false });
   });
 
@@ -151,9 +155,9 @@ describe("DeskView as a teacher", () => {
 describe("DeskView as a completed learner", () => {
   const html = renderDesk("learnerComplete");
 
-  test("hides teacher-only editing controls but keeps discussion", () => {
+  test("hides authoring and duplicate discussion controls", () => {
     const names = buttonNames(html);
-    expect(names).toContain("Discuss · 3");
+    expect(names).not.toContain("Discuss · 3");
     expect(names).not.toContain("Edit");
     expect(names).not.toContain("Add document");
     expect(/<input type="file"\/>/.test(html)).toBe(false);
@@ -182,14 +186,15 @@ describe("DeskView with a bare lesson", () => {
 
   test("explains that the lesson has no reading and omits summary and objectives", () => {
     const text = textOf(html);
-    expect(text).toContain("This lesson has no reading yet. Open Build → Lesson to write it.");
+    expect(text).toContain("Nothing to read yet. Open Build Lesson to write it.");
+    expect(html).toMatch(/Open Build <svg[^>]*data-glyph="chevr"/);
     expect(text).not.toContain("By the end");
     expect(text).not.toContain("Seeing versus doing.");
     expect(text).not.toContain("Correlation observes.");
   });
 
   test("omits the discussion count when there are no threads", () => {
-    expect(buttonNames(html)).toContain("Discuss");
+    expect(buttonNames(html)).not.toContain("Discuss");
     expect(buttonNames(html).some((n) => n.startsWith("Discuss ·"))).toBe(false);
   });
 
@@ -197,21 +202,21 @@ describe("DeskView with a bare lesson", () => {
     expect(headings(html, 2)).toEqual(["Correlation"]);
     expect(buttonNames(html)).toContain("Mark complete");
     expect(button(html, "Save work")?.disabled).toBe(false);
-    expect(links(html)).toHaveLength(1);
+    expect(links(html)).toContainEqual({ href: "/chat", text: "Continue privately with Keating", target: "_blank" });
   });
 });
 
 describe("DeskView for a course with no lessons", () => {
   const html = renderDesk("empty");
 
-  test("shows the empty-state message and a way to build the outline", () => {
+  test("points authors at Build without duplicating the header actions", () => {
     expect(headings(html, 2)).toEqual(["Nothing to read yet."]);
     const text = textOf(html);
     expect(text).toContain("Reading desk");
     expect(text).toContain("This course has no lessons.");
-    expect(text).toContain("That is a valid state");
-    expect(buttonNames(html)).toContain("Build the outline");
-    expect(buttonNames(html)).toContain("Add document");
+    expect(text).toContain("Open Build");
+    expect(buttonNames(html)).not.toContain("Build the outline");
+    expect(buttonNames(html)).not.toContain("Add document");
   });
 
   test("still surfaces course-level documents and assignments", () => {

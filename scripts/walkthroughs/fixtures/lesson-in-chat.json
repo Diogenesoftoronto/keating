@@ -1,0 +1,69 @@
+{
+  "turns": [
+    {
+      "match": "Teach me how recursion returns.",
+      "thinking": "Start with a concrete call. Ask Alex to predict what happens before explaining the stack.",
+      "reply": "Consider a countdown from **2**. The call for 2 starts a new call for 1. Before we trace the return, make a prediction.\n\n```openui lifecycle=ephemeral id=recursion-check\nroot = LearningSurface([activity], \"\", \"\", \"ephemeral\")\nactivity = Question([{\"question\": \"What happens to the first call when the next one starts?\", \"type\": \"choice\", \"choices\": [\"The first call is replaced\", \"The first call waits\"], \"hint\": \"Imagine where the first call will continue after the second one returns.\"}], \"ephemeral\", \"Recursion\")\n```",
+      "delayMs": 55
+    },
+    {
+      "match": "\"value\":\"The first call is replaced\"",
+      "reply": "Think about a line after the recursive call. If the first call were gone, that line would never run. Try the same idea from the return side.\n\n```openui lifecycle=ephemeral id=recursion-recheck\nroot = LearningSurface([activity], \"\", \"\", \"ephemeral\")\nactivity = Question([{\"question\": \"What happens to that first call while the second one returns?\", \"type\": \"choice\", \"choices\": [\"The first call is replaced\", \"The first call waits\"], \"hint\": \"Imagine where the first call will continue after the second one returns.\"}], \"ephemeral\", \"Recursion\")\n```"
+    },
+    {
+      "match": "\"value\":\"The first call waits\"",
+      "reply": "Yes. The first call keeps its place. Each call returns to its caller, starting with the base case.\n\n```openui lifecycle=resumable id=recursion-cards\nroot = LearningSurface([activity], \"\", \"\", \"resumable\")\nactivity = Flashcards(\"recursion-cards\", \"Recursion\", \"Recursion cards\", [{\"id\": \"pause\", \"front\": \"What happens to a call while its recursive call runs?\", \"back\": \"It waits at the call site with its own local variables.\"}, {\"id\": \"base\", \"front\": \"What is the base case?\", \"back\": \"A branch that returns without making another recursive call.\"}], \"resumable\")\n```\n\n```openui lifecycle=workspace id=recursion-code\nroot = LearningSurface([activity], \"\", \"\", \"workspace\")\nactivity = CodingChallenge(\"recursion-code\", \"Run a countdown\", \"Predict the array, then run the sample tests.\", \"javascript\", \"function countdown(n) {\\n  if (n === 0) return [];\\n  return [n, ...countdown(n - 1)];\\n}\", \"countdown\", [{\"id\": \"base\", \"label\": \"Base case\", \"args\": [0], \"expected\": []}, {\"id\": \"nested\", \"label\": \"Count down from 3\", \"args\": [3], \"expected\": [3, 2, 1]}], \"workspace\", \"Follow each return from the base case back out.\")\n```\n\nThe call stack gives each call a place to wait.\n\nSources: [MDN · Recursion](<https://developer.mozilla.org/en-US/docs/Glossary/Recursion>) [MDN · Call stack](<https://developer.mozilla.org/en-US/docs/Glossary/Call_stack>)"
+    },
+    {
+      "match": "What happens to the first call when the next one starts?",
+      "reply": "Think about a line after the recursive call. If the first call were gone, that line would never run. Try the same idea from the return side.\n\n```openui lifecycle=ephemeral id=recursion-recheck\nroot = LearningSurface([activity], \"\", \"\", \"ephemeral\")\nactivity = Question([{\"question\": \"What happens to that first call while the second one returns?\", \"type\": \"choice\", \"choices\": [\"The first call is replaced\", \"The first call waits\"], \"hint\": \"Imagine where the first call will continue after the second one returns.\"}], \"ephemeral\", \"Recursion\")\n```"
+    },
+    {
+      "match": "What happens to that first call while the second one returns?",
+      "reply": "Yes. The first call keeps its place. Each call returns to its caller, starting with the base case.\n\n```openui lifecycle=resumable id=recursion-cards\nroot = LearningSurface([activity], \"\", \"\", \"resumable\")\nactivity = Flashcards(\"recursion-cards\", \"Recursion\", \"Recursion cards\", [{\"id\": \"pause\", \"front\": \"What happens to a call while its recursive call runs?\", \"back\": \"It waits at the call site with its own local variables.\"}, {\"id\": \"base\", \"front\": \"What is the base case?\", \"back\": \"A branch that returns without making another recursive call.\"}], \"resumable\")\n```\n\n```openui lifecycle=workspace id=recursion-code\nroot = LearningSurface([activity], \"\", \"\", \"workspace\")\nactivity = CodingChallenge(\"recursion-code\", \"Run a countdown\", \"Predict the array, then run the sample tests.\", \"javascript\", \"function countdown(n) {\\n  if (n === 0) return [];\\n  return [n, ...countdown(n - 1)];\\n}\", \"countdown\", [{\"id\": \"base\", \"label\": \"Base case\", \"args\": [0], \"expected\": []}, {\"id\": \"nested\", \"label\": \"Count down from 3\", \"args\": [3], \"expected\": [3, 2, 1]}], \"workspace\", \"Follow each return from the base case back out.\")\n```\n\nThe call stack gives each call a place to wait.\n\nSources: [MDN · Recursion](<https://developer.mozilla.org/en-US/docs/Glossary/Recursion>) [MDN · Call stack](<https://developer.mozilla.org/en-US/docs/Glossary/Call_stack>)"
+    },
+    {
+      "match": "The first call is replaced",
+      "reply": "Think about a line after the recursive call. If the first call were gone, that line would never run. Try the same idea from the return side.\n\n```openui lifecycle=ephemeral id=recursion-recheck\nroot = LearningSurface([activity], \"\", \"\", \"ephemeral\")\nactivity = Question([{\"question\": \"What happens to that first call while the second one returns?\", \"type\": \"choice\", \"choices\": [\"The first call is replaced\", \"The first call waits\"], \"hint\": \"Imagine where the first call will continue after the second one returns.\"}], \"ephemeral\", \"Recursion\")\n```"
+    },
+    {
+      "match": "The first call waits",
+      "reply": "Yes. The first call keeps its place. Each call returns to its caller, starting with the base case.\n\n```openui lifecycle=resumable id=recursion-cards\nroot = LearningSurface([activity], \"\", \"\", \"resumable\")\nactivity = Flashcards(\"recursion-cards\", \"Recursion\", \"Recursion cards\", [{\"id\": \"pause\", \"front\": \"What happens to a call while its recursive call runs?\", \"back\": \"It waits at the call site with its own local variables.\"}, {\"id\": \"base\", \"front\": \"What is the base case?\", \"back\": \"A branch that returns without making another recursive call.\"}], \"resumable\")\n```\n\n```openui lifecycle=workspace id=recursion-code\nroot = LearningSurface([activity], \"\", \"\", \"workspace\")\nactivity = CodingChallenge(\"recursion-code\", \"Run a countdown\", \"Predict the array, then run the sample tests.\", \"javascript\", \"function countdown(n) {\\n  if (n === 0) return [];\\n  return [n, ...countdown(n - 1)];\\n}\", \"countdown\", [{\"id\": \"base\", \"label\": \"Base case\", \"args\": [0], \"expected\": []}, {\"id\": \"nested\", \"label\": \"Count down from 3\", \"args\": [3], \"expected\": [3, 2, 1]}], \"workspace\", \"Follow each return from the base case back out.\")\n```\n\nThe call stack gives each call a place to wait.\n\nSources: [MDN · Recursion](<https://developer.mozilla.org/en-US/docs/Glossary/Recursion>) [MDN · Call stack](<https://developer.mozilla.org/en-US/docs/Glossary/Call_stack>)"
+    },
+    {
+      "match": "Explain the current topic another way, with a concrete example.",
+      "error": 400,
+      "times": 1
+    },
+    {
+      "match": "Explain the current topic another way, with a concrete example.",
+      "reply": "A folder tree is another example. When a folder has a subfolder, finish walking the subfolder before continuing with the next item in its parent."
+    },
+    {
+      "match": "Make a study plan",
+      "reply": "```openui lifecycle=workspace id=recursion-path\nroot = LearningSurface([activity], \"\", \"\", \"workspace\")\nactivity = StudyPlan(\"recursion-path\", \"Learn recursion\", [{\"id\": \"trace\", \"title\": \"Trace a countdown\", \"detail\": \"Follow the calls down to the base case.\", \"estimatedMinutes\": 5}, {\"id\": \"tree\", \"title\": \"Trace a folder tree\", \"detail\": \"Predict the order in which folders finish.\", \"estimatedMinutes\": 10, \"dependsOn\": [\"trace\"]}], \"workspace\")\n```"
+    },
+    {
+      "match": "Give me a quiz",
+      "reply": "```openui lifecycle=resumable id=recursion-quiz\nroot = LearningSurface([activity], \"Recursion quiz\", \"\", \"resumable\")\nactivity = Quiz(\"recursion-quiz\", \"Recursion\", [{\"id\": \"base-case\", \"type\": \"multiple_choice\", \"level\": \"comprehension\", \"question\": \"What stops a simple countdown from recursing forever?\", \"options\": [\"The base case returns\", \"The first call replaces all later calls\"], \"correctAnswer\": \"The base case returns\", \"explanation\": \"The base case does not make another call.\"}], \"resumable\", 0)\n```"
+    },
+    {
+      "match": "Show me a simulation",
+      "reply": "```openui lifecycle=workspace id=recursion-depth\nroot = LearningSurface([activity], \"\", \"\", \"workspace\")\nactivity = Simulation(\"recursion-depth\", \"Change the starting number\", [{\"id\": \"start\", \"label\": \"Starting number\", \"min\": 0, \"max\": 8, \"step\": 1, \"value\": 3}], [{\"id\": \"depth\", \"label\": \"Calls at the deepest point\", \"expr\": \"start + 1\", \"precision\": 0, \"emphasis\": true}], \"workspace\", \"Predict the depth, then move Starting number.\")\n```"
+    },
+    {
+      "match": "flashcards on Recursion",
+      "reply": "Check the next card by predicting what stays on the stack."
+    },
+    {
+      "match": "sample tests",
+      "reply": "Compare the base case with the return from 3. Each call adds its own number to what the smaller call returned."
+    },
+    {
+      "match": "I finished the quiz on Recursion",
+      "reply": "The key question is which call returns without calling itself again."
+    }
+  ],
+  "auxiliaryReply": "How recursion returns",
+  "topicCategory": "computing"
+}

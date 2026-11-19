@@ -7,6 +7,7 @@ import {
 	DEFAULT_PROFILE_APPEARANCE,
 	PROFILE_ACCENTS,
 	PROFILE_LAYOUTS,
+	isProfileAvatar,
 	PROFILE_SECTIONS,
 	WORK_KINDS,
 	type ProfileAccent,
@@ -19,6 +20,7 @@ import {
 
 export interface ProfileDraft {
 	displayName: string;
+	avatar: string;
 	headline: string;
 	about: string;
 	learning: Array<{ topic: string; goal: string }>;
@@ -36,7 +38,7 @@ export interface ProfileDraft {
 }
 
 export const EMPTY_PROFILE_DRAFT: ProfileDraft = {
-	displayName: "", headline: "", about: "", learning: [], topics: "", work: [], nextSteps: "", links: [],
+	displayName: "", avatar: "", headline: "", about: "", learning: [], topics: "", work: [], nextSteps: "", links: [],
 	appearance: { accent: DEFAULT_PROFILE_APPEARANCE.accent, layout: DEFAULT_PROFILE_APPEARANCE.layout },
 	sectionOrder: [...PROFILE_SECTIONS], hiddenSections: [], includeCount: false,
 };
@@ -48,6 +50,7 @@ const blank = (value: string): boolean => !value.trim();
 export function draftToInput(draft: ProfileDraft, savedSessions?: number): PublicProfileInput {
 	return {
 		displayName: draft.displayName,
+		avatar: draft.avatar,
 		headline: draft.headline,
 		about: draft.about,
 		learning: draft.learning.filter((item) => !blank(item.topic) || !blank(item.goal)),
@@ -68,6 +71,7 @@ export function draftFromProfile(profile: PublicProfileContent): ProfileDraft {
 	const shown = profile.appearance.sections;
 	return {
 		displayName: profile.displayName ?? "",
+		avatar: profile.avatar ?? "",
 		headline: profile.headline ?? "",
 		about: profile.about ?? "",
 		learning: profile.learning.map((item) => ({ topic: item.topic, goal: item.goal ?? "" })),
@@ -99,6 +103,7 @@ function coerceDraft(value: unknown): ProfileDraft | null {
 	const order = sections(raw.sectionOrder);
 	return {
 		displayName: text(raw.displayName, 200),
+		avatar: isProfileAvatar(raw.avatar) ? raw.avatar : "",
 		headline: text(raw.headline, 400),
 		about: text(raw.about, 4_000),
 		learning: rows(raw.learning, 20).map((row) => ({ topic: text(row.topic, 200), goal: text(row.goal, 600) })),

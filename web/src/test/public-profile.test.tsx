@@ -13,12 +13,15 @@ import {
 	visibleProfileSections,
 } from "../keating/public-profile-contract";
 import { EMPTY_PROFILE_DRAFT, clearProfileDraft, draftFromProfile, draftToInput, loadProfileDraft, saveProfileDraft, type ProfileDraft } from "../keating/public-profile-draft";
+import { LearningProfile } from "../pages/LearningProfile";
+import { renderWithRouter } from "./course-render";
 import { fetchPublicProfile } from "../pages/PublicProfile";
 import { clearPublicProfileCache, loadPublicProfile, PublicProfileError, publicHttpsOrigin, type ProfileFetch } from "../../server/utils/public-profile";
 import { isModerator, parseProfileReport } from "../../server/utils/public-profile-moderation";
 
 const DID = "did:plc:abcdefghijklmnopqrstuvwx";
 const PDS = "https://pds.example.com";
+const AVATAR = "/9j/4AAQSkZJRgABAgAAAQABAAD//gAPTGF2YzYzLjEuMTAyAP/bAEMACAQEBAQEBQUFBQUFBgYGBgYGBgYGBgYGBgcHBwgICAcHBwYGBwcICAgICQkJCAgICAkJCgoKDAwLCw4ODhERFP/EAEwAAQEAAAAAAAAAAAAAAAAAAAAGAQEBAAAAAAAAAAAAAAAAAAAEBRABAAAAAAAAAAAAAAAAAAAAABEBAAAAAAAAAAAAAAAAAAAAAP/AABEIABAAEAMBIgACEQADEQD/2gAMAwEAAhEDEQA/AJcABLf/2Q==";
 
 const full = {
 	displayName: "Ada",
@@ -26,7 +29,7 @@ const full = {
 	about: "I study in the evenings.\n\nMostly ML papers.",
 	learning: [{ topic: "Attention", goal: "Implement it from scratch" }, { topic: "Optimisers" }],
 	topics: ["Linear algebra", "Bayesian reasoning"],
-	work: [{ kind: "assignment", title: "Attention write-up", url: "https://chat.keating.help/s/abc12345", note: "My first one.", tutorFeedback: "Clear derivation; check the scaling factor." }],
+	work: [{ kind: "assignment" as const, title: "Attention write-up", url: "https://chat.keating.help/s/abc12345", note: "My first one.", tutorFeedback: "Clear derivation; check the scaling factor." }],
 	nextSteps: ["Read the BERT paper"],
 	links: [{ label: "Blog", url: "https://ada.example.com/blog" }],
 	appearance: { accent: "tide", layout: "cards", sections: ["work", "learning", "about", "topics", "next", "links"] },
@@ -65,6 +68,21 @@ describe("profile content validation", () => {
 		expect(problem({ savedSessions: -1 })).toBe("savedSessions");
 	});
 
+	test("publication omits every hidden field and unhiding restores the local draft", () => {
+		const draft = draftFromProfile(publicProfileContent(full));
+		draft.hiddenSections = [...draft.sectionOrder];
+		expect(() => publicProfileRecord(draftToInput(draft))).toThrow(/at least one thing/);
+		draft.includeCount = true;
+		const record = publicProfileRecord(draftToInput(draft, 0));
+		for (const field of ["displayName", "headline", "about", "learning", "topics", "work", "nextSteps", "links"]) {
+			expect(record).not.toHaveProperty(field);
+		}
+		expect(readPublicProfile(record).work).toEqual([]);
+		expect(readPublicProfile({ ...record, work: full.work }).work).toEqual([]);
+		draft.hiddenSections = [];
+		expect(publicProfileRecord(draftToInput(draft)).work).toEqual(full.work);
+	});
+
 	test("an empty profile cannot be published", () => {
 		expect(() => publicProfileRecord({})).toThrow(/at least one thing/);
 		expect(publicProfileRecord({ topics: ["Algebra"] }).visibility).toBe("public");
@@ -78,6 +96,24 @@ describe("profile content validation", () => {
 });
 
 describe("record compatibility", () => {
+	test("hiding the About section withholds the profile image with the name and headline", () => {
+		const shown = publicProfileContent({ displayName: "Ada", avatar: AVATAR, headline: "Proofs" });
+		expect(shown.avatar).toBe(AVATAR);
+		const sections = shown.appearance.sections.filter(section => section !== "about");
+		const hidden = publicProfileContent({ displayName: "Ada", avatar: AVATAR, headline: "Proofs", appearance: { ...shown.appearance, sections } });
+		expect(hidden.avatar).toBeUndefined();
+		expect(hidden.displayName).toBeUndefined();
+		expect(hidden.headline).toBeUndefined();
+	});
+
+	test("a profile image round-trips through the draft, public record, and renderer", () => {
+		const record = readPublicProfile(publicProfileRecord({ avatar: AVATAR }));
+		expect(draftToInput(draftFromProfile(record)).avatar).toBe(AVATAR);
+		expect(renderToStaticMarkup(<PublicProfileView profile={record} />)).toContain(`src="data:image/jpeg;base64,${AVATAR}"`);
+		expect(publicProfileRecord({ displayName: "Ada", avatar: "" }).avatar).toBeUndefined();
+		expect(() => publicProfileContent({ avatar: "https://example.test/image.jpg" })).toThrow(ProfileValidationError);
+	});
+
 	test("a record written before profiles grew still reads, with only its topics", () => {
 		const legacy = { $type: LEARNING_PROFILE_COLLECTION, schemaVersion: 1, visibility: "public", publicationId: "p1", topics: ["Algebra"], activity: { savedSessions: 3 }, updatedAt: "2026-10-01T00:00:00.000Z" };
 		const profile = readPublicProfile(legacy);
@@ -90,7 +126,7 @@ describe("record compatibility", () => {
 	test("a published record round-trips, and an older reader still sees its topics", () => {
 		const record = publicProfileRecord(full, new Date("2026-11-10T12:00:00Z"));
 		expect(record.schemaVersion).toBe(1);
-		expect(readPublicProfile(JSON.parse(JSON.stringify(record)))).toEqual(record);
+		expect(record).toEqual(readPublicProfile(JSON.parse(JSON.stringify(record))));
 		expect(record.topics).toEqual(["Linear algebra", "Bayesian reasoning"]);
 	});
 
@@ -116,9 +152,20 @@ describe("rendering", () => {
 		expect(markup).toContain("Keating has not verified these claims");
 	});
 
+	test("the saved-session plant only appears when the learner includes a count", () => {
+		const render = (savedSessions?: number) => renderToStaticMarkup(<PublicProfileView profile={publicProfileContent({topics: ["Logic"], savedSessions})}/>);
+		expect(render(0)).toContain('aria-label="Has saved no sessions"');
+		for (const [start, end] of [[1, 4], [5, 14], [15, 39], [40, 99]] as const) {
+			for (const count of [start, end]) expect(render(count)).toContain(`aria-label="Has saved between ${start} and ${end} sessions"`);
+		}
+		expect(render(100)).toContain("Has saved 100 or more sessions");
+		expect(render()).not.toContain('data-state="plant"');
+	});
+
 	test("the preview says so when there is nothing to show", () => {
 		const markup = renderToStaticMarkup(<PublicProfileView profile={publicProfileContent({})} preview />);
 		expect(markup).toContain("Nothing to show yet");
+		expect(markup).toContain("Draft, not published yet");
 	});
 });
 
@@ -292,4 +339,11 @@ describe("the public page's loader", () => {
 		expect((await fetchPublicProfile(DID, respond(429))).status).toBe("unavailable");
 		expect((await fetchPublicProfile(DID, (async () => { throw new Error("offline"); }) as never)).status).toBe("unavailable");
 	});
+});
+
+test("the editor opens About and Look independently and puts the photo first", async () => {
+	const html = await renderWithRouter(<LearningProfile/>);
+	for (const section of ["about", "look"]) expect(html).toContain(`aria-expanded="true" aria-controls="pf-body-${section}"`);
+	expect(html.indexOf("Profile image")).toBeLessThan(html.indexOf("Name to show"));
+	expect(html.indexOf("Add a link")).toBeLessThan(html.indexOf('id="pf-body-links"'));
 });

@@ -1,0 +1,317 @@
+<div class="wrap">
+<p class="lede"><b>Onboarding, benchmark and activity.</b> The same pass applied to three more surfaces, with the Keating glyphs, Motion and the shader layer. Sample data throughout. Frames are a 1120px viewport scaled to fit; open full screen to use them at size.</p>
+<div class="controls">
+  <label>Theme <span class="tog" data-tog="theme"><button data-v="paper" aria-pressed="true">Paper</button><button data-v="dark" aria-pressed="false">Terminal</button></span></label>
+  <label>Motion <span class="tog" data-tog="motion"><button data-v="full" aria-pressed="true">Full</button><button data-v="reduced" aria-pressed="false">Reduced</button></span></label>
+  <label>Shaders <span class="tog" data-tog="fx"><button data-v="on" aria-pressed="true">On</button><button data-v="off" aria-pressed="false">Off</button></span></label>
+</div>
+
+<!-- ═══════════════ O1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">O1</span><h2>Onboarding: start with the question</h2><p>Four stages instead of eight screens. The first thing asked is the thing a learner came to do.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr ob" style="height:620px" data-enter="onb">
+    <header class="top">
+      <i class="logo" role="img" aria-label="Keating"></i>
+      <span class="mono soft" style="font-size:11px;margin-left:4px">Welcome to Keating</span>
+      <span class="sp"></span>
+      <ol class="steps"><li class="on"><b>1</b>Question</li><li><b>2</b>Model</li><li><b>3</b>You</li><li><b>4</b>Ready</li></ol>
+      <span class="sp"></span>
+      <a class="lnk">Go straight to chat</a>
+    </header>
+    <div class="ob-b m1-question">
+      <aside class="stage hero m1-onboard-stage">
+        <i class="bot" style="width:92px;height:92px"></i>
+        <h1 style="font-size:22px">Keating teaches<br>by asking.</h1>
+        <p style="font-size:13px;max-width:30ch">Rather than hand you answers, Keating works through a question with you, then checks what stuck.</p>
+      </aside>
+      <main class="ob-m">
+        <span class="eb" data-w>1 of 4 &middot; Your question</span>
+        <h2 data-w>What would you like to understand?</h2>
+        <p class="soft" data-w style="font-size:13px;max-width:54ch">A starting point, not a contract. It goes into the composer for you to review and send.</p>
+        <div class="inp" data-w style="min-height:84px;font-size:15px;border-color:var(--line)">I want to understand recursion well enough to explain it to someone else.</div>
+        <div class="row" data-w style="flex-wrap:wrap;gap:6px"><span class="mono faint" style="font-size:10px">or try</span><span class="chip">How do vaccines train the immune system?</span><span class="chip">How does a bill become law?</span><span class="chip">Quiz me on the Krebs cycle</span></div>
+        <div class="fld" data-w style="margin-top:10px"><label>How should Keating get to know you?</label>
+          <div class="opts two" data-pick>
+            <div class="opt on"><i class="rad"></i><div><b>A few quick choices</b><span>One screen. Everything on it is optional.</span></div></div>
+            <div class="opt"><i class="rad"></i><div><b>Talk it through</b><span>Four open questions, typed or spoken. I read your answers back before keeping anything.</span></div></div>
+          </div>
+        </div>
+        <div class="row ob-f" data-w><span class="mono faint" style="font-size:10px">{{i:lock:s}} Stored only in this browser</span><span class="sp"></span><button class="b pri" style="height:32px">Continue {{i:right:s}}</button></div>
+      </main>
+    </div>
+  </div></div></div>
+  <ol class="pts">
+    <li>Onboarding opens on the question. It carries into the composer for review and sending.</li>
+    <li>Question, Model, You and Ready are the four stages.</li>
+    <li>The first stage also asks whether you want quick choices or a conversation.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ O2 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">O2</span><h2>Onboarding: the other three stages</h2><p>Model access, optional teaching preferences and the handoff to chat.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt panes" data-enter="panes">
+    <div class="pane"><span class="cap">2 &middot; Model</span><div class="ob-p">
+      <h3>How would you like to chat?</h3>
+      <p class="soft">You can change this later from the header.</p>
+      <div class="opts" data-pick>
+        <div class="opt on"><i class="rad"></i><div><b>Use Keating</b><span>Inkling 2 Small &middot; Hosted &middot; Needs an account</span>
+          <div class="opt-x"><button class="b sm pri">Sign in or create an account</button><span class="mono faint" style="font-size:10px">Not signed in yet</span></div></div></div>
+        <div class="opt"><i class="rad"></i><div><b>Bring your own key</b><span>Your provider, your choice of model</span></div></div>
+      </div>
+      <span class="lnk" style="align-self:flex-start">Skip sign-in for now</span>
+      <span class="faint" style="font-size:11px;line-height:1.45">Keating asks again when you send your first message.</span>
+      <div class="row ob-f"><button class="b ln">Back</button><span class="sp"></span><button class="b pri">Continue {{i:right:s}}</button></div>
+    </div></div>
+    <div class="pane"><span class="cap">3 &middot; You</span><div class="ob-p">
+      <h3>How should Keating teach you?</h3>
+      <p class="soft">Preferences, not a test. Keating follows them.</p>
+      <div class="two-c"><div class="fld"><label>What should Keating call you?</label><div class="inp">Sam</div></div><div class="fld"><label>Explain things in</label><div class="inp" style="display:flex;align-items:center">English<span class="sp"></span>{{i:chev:s}}</div></div></div>
+      <div class="fld"><label>How much should Keating ask before it tells?</label><div class="seg wide" data-pick><span>Mostly explain</span><span class="on">A balance</span><span>Keep asking</span></div></div>
+      <div class="fld"><label>When you are stuck</label><div class="seg wide" data-pick><span>Let me struggle</span><span class="on">Nudge me</span><span>Clear hint</span></div></div>
+      <div class="fld"><label>Tone</label><div class="seg wide" data-pick><span class="on">Warm</span><span>Neutral</span><span>Direct</span><span>Playful</span></div></div>
+      <div class="fld"><label>Anything that would make this easier?</label><div class="row" style="flex-wrap:wrap;gap:5px" data-multi><span class="chip">Plain language</span><span class="chip">Screen reader</span><span class="chip">Captions</span><span class="chip">Dyslexia-friendly reading and speech</span><span class="chip">Reduce motion</span><span class="chip">Higher contrast</span></div></div>
+      <div class="two-c"><div class="fld"><label>Text size</label><div class="inp">Not answered</div></div><div class="fld"><label>Age range</label><div class="inp">Not answered</div></div></div>
+      <span class="faint" style="font-size:11px;line-height:1.45">Pronouns, schedule and interests are in Settings &rarr; Learning.</span>
+      <details><summary class="lnk">Use Anki? Bring your decks</summary></details>
+      <div class="row ob-f"><button class="b ln">Back</button><span class="lnk">Talk it through instead</span><span class="sp"></span><button class="b pri">Continue {{i:right:s}}</button></div>
+    </div></div>
+    <div class="pane"><span class="cap">4 &middot; Ready</span><div class="ob-p">
+      <div class="row" style="gap:12px"><i class="bot" style="width:52px;height:52px"></i><div><h3>You are set, Sam.</h3><p class="soft">Saved on this device. Change any of it in Settings &rarr; Learning.</p></div></div>
+      <dl class="dlist"><dt>Model</dt><dd>Inkling 2 Small</dd><dt>Explains in</dt><dd>English</dd><dt>Teaching</dt><dd>A balance of asking and telling &middot; nudges &middot; warm</dd></dl>
+      <div class="nt g prop" style="gap:6px"><div class="nh"><b>From your decks</b><em>nothing is saved until you say so</em></div><span>Things you are into: <b>music theory</b></span><div class="row"><button class="b sm pri">{{i:check:s}}Keep</button><button class="b sm ln">Drop</button></div></div>
+      <div class="fld m1-grid" data-glyph-host style="padding:8px"><label for="ob-first-message">Your question is waiting in the composer</label>
+        <textarea id="ob-first-message" class="inp" rows="3" readonly>I want to understand recursion well enough to explain it to someone else.</textarea><div class="row" aria-hidden="true">{{i:clip}}{{i:mic}}<span class="sp"></span>{{i:send}}</div></div>
+      <div class="row ob-f"><button class="b ln">Show me around first</button><span class="sp"></span><button class="b pri">Start chatting</button></div>
+    </div></div>
+  </div></div></div>
+  <div class="kt m2-frame"><button class="b ln" type="button" aria-haspopup="dialog" onclick="this.nextElementSibling.showModal()">Open model picker</button>
+  <dialog aria-label="Choose a model" class="m2-model-dialog hardc"><div class="m2-picker m2-stack"><div class="m2-row"><label class="find">{{i:search:s}}<input placeholder="Choose a model…" autofocus aria-label="Choose a model"></label><button type="button" class="ib sm" aria-label="Close model picker" title="Close model picker" onclick="this.closest('dialog').close()">{{i:x:s}}</button></div><div class="m2-row"><label class="fld">Provider<select class="inp"><option>All providers</option></select></label><label class="fld">Use it for<select class="inp"><option>Any conversation</option></select></label></div>
+    <div class="m2-stack"><span class="m2-label">Provider default</span><button class="m2-picker-row" aria-pressed="false" onclick="this.closest('dialog').close()"><b>Keating default</b><small class="m2-meta">Not Organic</small></button><span class="m2-label">Selected model</span><button class="m2-picker-row" aria-pressed="true" onclick="this.closest('dialog').close()"><b>Claude Sonnet 5.5</b><small class="m2-meta">Anthropic · Step-by-step reasoning</small></button><span class="m2-label">OpenAI</span><button class="m2-picker-row" aria-pressed="false" onclick="this.closest('dialog').close()"><b>GPT-5.4</b><small class="m2-meta">OpenAI · Understands images</small></button></div><small class="m2-meta">↑ ↓ to browse · Enter to choose · Esc to close</small></div></dialog></div><ol class="pts">
+    <li>Model setup depends on the selected provider. Offline tutor requires the desktop bridge.</li>
+    <li>The quick profile choices are optional. Ready shows the draft before handing off to chat.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ B1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">B1</span><h2>Model benchmark</h2><p>The page answers one question first: can the evidence tell these models apart?</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr" style="height:auto" data-enter="dash">
+    <header class="top">
+      <a class="b sm gh">{{i:left:s}}Chat</a><span class="vr"></span><i class="logo" role="img" aria-label="Keating"></i>
+      <div class="ttl" style="margin-left:4px"><b>Learning</b><span>From sessions on this device</span></div>
+      <span class="sp"></span><button class="ib" title="More">{{i:more}}</button>
+    </header>
+    <div class="sub">
+      <div class="tabs"><span>{{i:route:s}}Activity</span><span>{{i:calendar:s}}Coming up</span><span class="on">{{i:ruler:s}}Benchmark</span></div>
+      <span class="sp"></span>
+      <span class="mono faint" style="font-size:10px">Evidence from</span>
+      <div class="seg" data-pick><span class="on">Shared</span><span>Private</span><span>Both</span></div>
+      <button class="b sm ln">{{i:export:s}}Export results</button>
+    </div>
+    <div class="dash">
+      <div class="drow">
+        <div class="card hardc" data-w style="flex:1.6"><span class="eb">Ranking</span>
+          <h2 style="margin-top:4px">The top 2 models overlap.</h2>
+          <p class="soft" style="font-size:12.5px;max-width:62ch">The current evidence cannot separate them. Claude Sonnet 5.5 is ahead on PROSPER by 3.4, which is inside the uncertainty of both scores.</p>
+          <div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px"><span class="chip">4 models</span><span class="chip">2 ranked</span><span class="chip">307 signals</span><span class="chip">41 graded quizzes</span></div>
+          <div class="note">{{i:alert:s}}<span>Each model is scored on the sessions it happened to teach, with different learners and topics. A gap may come from who and what it taught.</span></div>
+        </div>
+        <div class="card" data-w style="flex:1"><span class="eb mu">How much evidence a model needs</span>
+          <div class="ready" title="Readiness thresholds in signals"><i style="left:5%"></i><i style="left:20%"></i><i style="left:50%"></i><i style="left:100%"></i>
+            <b data-grow style="width:100%"></b></div>
+          <div class="ready-l"><span style="left:5%">5<br>sparse</span><span style="left:20%">20<br>ranked</span><span style="left:50%">50<br>rankable</span><span style="left:100%;transform:translateX(-100%);text-align:right">100<br>stable</span></div>
+          <p class="faint" style="font-size:11px;line-height:1.45;margin-top:34px">A model is placed once it has 20 signals. Graded quizzes are the strongest evidence; inferred signals are the weakest.</p>
+        </div>
+      </div>
+
+      <div class="card" data-w style="padding:0">
+        <div class="lb lb-h"><span>#</span><span>Model</span><span>PROSPER</span><span class="ax"><em>Outcome, with its 95% range</em><i>0</i><i>50</i><i>100</i></span><span>Quizzes</span><span>Signals</span><span>Status</span></div>
+        <div class="lb open" data-tip="Claude Sonnet 5.5: outcome 74, likely 66 to 82"><span class="rk">1</span><span><b>Claude Sonnet 5.5</b><small>anthropic</small></span><span class="pv"><b>71.4</b><i class="hb"><u data-grow style="width:71%"></u></i></span>
+          <span class="iv"><i class="band" style="left:66%;width:16%"></i><i class="rg" data-grow style="left:66%;width:16%"></i><i class="pt" style="left:74%"></i><em style="left:84%">74</em></span>
+          <span><b>81%</b><small>22 graded</small></span><span class="sg"><b>148</b><i class="st3"><u style="flex:22"></u><u style="flex:31"></u><u style="flex:95"></u></i></span><span><span class="chip">Rankable</span></span></div>
+        <div class="lbx">
+          <div class="dims"><span class="eb mu" style="grid-column:1/-1">PROSPER dimensions</span>
+            <span>Performance</span><i class="hb"><u data-grow style="width:74%"></u></i><b>74</b>
+            <span>Robustness</span><i class="hb"><u data-grow style="width:69%"></u></i><b>69</b>
+            <span>Outcome lift</span><i class="hb"><u data-grow style="width:66%"></u></i><b>66</b>
+            <span>Sparse caution</span><i class="hb"><u data-grow style="width:90%"></u></i><b>90</b>
+            <span>Personalization</span><i class="hb"><u data-grow style="width:58%"></u></i><b>58</b>
+            <span>Evidence quality</span><i class="hb"><u data-grow style="width:77%"></u></i><b>77</b>
+            <span>Transfer</span><i class="hb"><u data-grow style="width:63%"></u></i><b>63</b>
+          </div>
+          <dl class="dlist" style="align-self:start"><dt>Sessions</dt><dd>14 &middot; 9 shared, 5 private</dd><dt>Signals</dt><dd>22 quiz &middot; 31 explicit &middot; 95 inferred</dd><dt>Replay mix</dt><dd>confusion-recovery 12 &middot; correction 9 &middot; transfer 6 &middot; retention 22</dd><dt>Tokens</dt><dd>412,880</dd><dt>Cost</dt><dd>$1.84</dd><dt>Latest</dt><dd>Nov 18</dd></dl>
+        </div>
+        <div class="lb" data-tip="MiniMax-M2.7: outcome 70, likely 61 to 79"><span class="rk">2<small>tied with 1</small></span><span><b>MiniMax-M2.7</b><small>minimax</small></span><span class="pv"><b>68.0</b><i class="hb"><u data-grow style="width:68%"></u></i></span>
+          <span class="iv"><i class="band" style="left:66%;width:16%"></i><i class="rg" data-grow style="left:61%;width:18%"></i><i class="pt" style="left:70%"></i><em style="left:81%">70</em></span>
+          <span><b>76%</b><small>12 graded</small></span><span class="sg"><b>96</b><i class="st3"><u style="flex:12"></u><u style="flex:20"></u><u style="flex:64"></u></i></span><span><span class="chip">Rankable</span></span></div>
+        <div class="lb" data-tip="Inkling 2 Small: outcome 63, likely 50 to 76"><span class="rk">3</span><span><b>Inkling 2 Small</b><small>notorganic</small></span><span class="pv"><b>61.2</b><i class="hb"><u data-grow style="width:61%"></u></i></span>
+          <span class="iv"><i class="band" style="left:66%;width:16%"></i><i class="rg" data-grow style="left:50%;width:26%"></i><i class="pt" style="left:63%"></i><em style="left:78%">63</em></span>
+          <span><b>70%</b><small>7 graded</small></span><span class="sg"><b>52</b><i class="st3"><u style="flex:7"></u><u style="flex:9"></u><u style="flex:36"></u></i></span><span><span class="chip">Provisional</span></span></div>
+        <div class="lb dim" data-tip="gemma-3-27b: 11 signals, needs 9 more to be ranked"><span class="rk">&ndash;</span><span><b>gemma-3-27b</b><small>google</small></span><span class="pv"><b>54.9</b><i class="hb"><u data-grow style="width:55%"></u></i></span>
+          <span class="iv"><i class="band" style="left:66%;width:16%"></i><i class="pt hollow" style="left:58%"></i><em style="left:auto;right:46%">Too few signals for a range</em></span>
+          <span><b>&mdash;</b><small>No quizzes yet</small></span><span class="sg"><b>11</b><i class="st3"><u style="flex:0"></u><u style="flex:3"></u><u style="flex:8"></u></i></span><span><span class="chip">Sparse</span><small>9 more signals to rank</small></span></div>
+        <div class="lb-f"><span class="lg"><i style="background:var(--c1)"></i>quiz</span><span class="lg"><i style="background:var(--c2)"></i>explicit</span><span class="lg"><i style="background:var(--c3)"></i>inferred</span><span class="sp"></span><span class="lg"><i class="bandk"></i>the leader's range: a row that touches it is tied</span></div>
+      </div>
+
+      <div class="drow">
+        <div class="card" data-w style="flex:1.5"><div class="row"><b class="ch">Replay case bank</b><span class="faint" style="font-size:11px">Learner moments the scores are built from</span><span class="sp"></span><div class="row" style="gap:4px" data-single><span class="chip on">All</span><span class="chip">confusion-recovery</span><span class="chip">correction</span><span class="chip">transfer</span><span class="chip">retention</span></div></div>
+          <div class="case"><span class="chip">correction</span><div><b>Recursion: pause and resume, not replace</b><span>before 2, before 1, after 1, after 2. Oh. So the after lines come out backwards because each call is still waiting.</span></div><span class="num"><b>85%</b><small>outcome</small></span><span class="num"><b>78.2</b><small>PROSPER</small></span></div>
+          <div class="case"><span class="chip">confusion-recovery</span><div><b>Bayes' theorem with a medical test</b><span>Wait, so most of the positives are healthy people? That feels backwards.</span></div><span class="num"><b>35%</b><small>outcome</small></span><span class="num"><b>61.0</b><small>PROSPER</small></span></div>
+          <div class="case"><span class="chip">transfer</span><div><b>Why a derivative is a slope</b><span>So the speedometer is the derivative of the odometer reading?</span></div><span class="num"><b>85%</b><small>outcome</small></span><span class="num"><b>80.4</b><small>PROSPER</small></span></div>
+        </div>
+        <div class="card" data-w style="flex:1"><b class="ch">How to read this</b>
+          <dl class="dlist" style="margin-top:8px"><dt>Outcome</dt><dd>A learner signal from 0 to 100: thumbs, confusion, and graded quizzes.</dd><dt>PROSPER</dt><dd>A weighted mix of seven dimensions. Mostly keyword patterns, so treat it as a rough ordering.</dd><dt>Not built</dt><dd>Sending the same learner moment to every model for a like-for-like comparison.</dd></dl>
+          <span class="lnk" style="margin-top:8px;display:inline-block">How these scores are computed, and what they cannot show {{i:chev:s}}</span>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+  <ol class="pts">
+    <li>The ranking summary reports what the available evidence can establish.</li>
+    <li>The evidence selector can show shared, private or combined results.</li>
+    <li>Readiness and replay cases have separate panels.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ U1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">U1</span><h2>Learning activity</h2><p>Four questions in order: how much am I learning, about what, at what cost, and is Keating getting better at it.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr" style="height:auto" data-enter="dash">
+    <header class="top">
+      <a class="b sm gh">{{i:left:s}}Chat</a><span class="vr"></span><i class="logo" role="img" aria-label="Keating"></i>
+      <div class="ttl" style="margin-left:4px"><b>Learning</b><span>From sessions on this device</span></div>
+      <span class="sp"></span><button class="ib" title="More">{{i:more}}</button>
+    </header>
+    <div class="sub">
+      <div class="tabs"><span class="on">{{i:route:s}}Activity</span><span>{{i:calendar:s}}Coming up</span><span>{{i:ruler:s}}Benchmark</span></div>
+      <span class="sp"></span>
+      <span class="mono faint" style="font-size:10px">Period</span>
+      <div class="seg" data-pick><span>7 days</span><span class="on">30 days</span><span>90 days</span><span>All time</span></div>
+    </div>
+    <div class="dash">
+      <p class="mono faint">Sessions last active in the past 30 days, on this device.</p>
+      <div class="drow">
+        <div class="card" data-w style="flex:1.7"><div class="row"><b class="ch">Daily activity</b><span class="faint" style="font-size:11px">14 sessions across 9 active days</span><span class="sp"></span><span class="lg">Less<i class="h1"></i><i class="h2"></i><i class="h3"></i><i class="h4"></i>More</span></div>
+          <div class="hm" id="hm"></div>
+          <details><summary>View as table</summary><p>Nov 17 · 2 sessions</p></details>
+          <div class="day"><span class="eb mu">Tue, Nov 17</span><a class="ses" style="padding:5px 0;border:0"><b>Why a derivative is a slope</b><span>Sonnet 5.5 &middot; 22 turns</span></a><a class="ses" style="padding:5px 0;border:0"><b>Pass&eacute; compos&eacute; vs imparfait</b><span>Inkling 2 Small &middot; 9 turns</span></a></div>
+        </div>
+        <div class="tiles" style="flex:1">
+          <div class="tile" data-w><span>Learning sessions</span><b>14</b><small>9 active days &middot; 27% more than the previous 30 days</small></div>
+          <div class="tile" data-w><span>Turns</span><b>312</b><small>34.7 per active day &middot; about the same as before</small></div>
+          <div class="tile" data-w><span>Estimated spend</span><b>$2.41</b><small>From the usage each provider reported</small></div>
+        </div>
+      </div>
+      <div class="drow">
+        <div class="card" data-w style="flex:1.2"><div class="row"><b class="ch">Recent learning</b><span class="sp"></span><span class="lnk">Deepest dives</span></div>
+          <a class="q2"><b>Recursion: pause and resume, not replace</b><span>I keep mixing up when recursion is the right tool versus a plain loop.</span><em>Today &middot; 8 turns</em></a>
+          <a class="q2"><b>SQL joins by example</b><span>Why does my LEFT JOIN return more rows than the table I started with?</span><em>Today &middot; 14 turns</em></a>
+          <a class="q2"><b>Bayes' theorem with a medical test</b><span>Why is a positive test not 99% likely to mean I am sick?</span><em>Nov 18 &middot; 6 turns</em></a>
+          <a class="q2"><b>Why a derivative is a slope</b><span>I can do the power rule but I do not know what the number means.</span><em>Nov 17 &middot; 22 turns</em></a>
+        </div>
+        <div class="card" data-w style="flex:1"><div class="row"><b class="ch">Topics</b><span class="sp"></span><span class="chip">all time</span></div>
+          <div class="bars"><span>Computing</span><i class="hb"><u data-grow style="width:100%"></u></i><b>9</b><span>Mathematics</span><i class="hb"><u data-grow style="width:67%"></u></i><b>6</b><span>Language</span><i class="hb"><u data-grow style="width:44%"></u></i><b>4</b><span>Life sciences</span><i class="hb"><u data-grow style="width:33%"></u></i><b>3</b><span>Society</span><i class="hb"><u data-grow style="width:11%"></u></i><b>1</b></div>
+          <span class="faint" style="font-size:10.5px">Teaching materials by domain. Open a bar to see its topics.</span>
+        </div>
+      </div>
+      <div class="drow">
+        <div class="card" data-w style="flex:1.6;padding:0"><div class="row" style="padding:12px 14px 8px"><b class="ch">Models and cost</b><span class="faint" style="font-size:11px">Your provider's own bill is the authority</span></div>
+          <div class="mt mt-h"><span>Model</span><span>Sessions</span><span>Tokens</span><span>Est. cost</span><span>Share of spend</span></div>
+          <div class="mt"><span><b>Claude Sonnet 5.5</b></span><span>9</span><span>412,880</span><span>$1.84</span><span class="pv"><i class="hb"><u data-grow style="width:76%"></u></i><b>76%</b></span></div>
+          <div class="mt"><span><b>MiniMax-M2.7</b></span><span>3</span><span>188,204</span><span>$0.57</span><span class="pv"><i class="hb"><u data-grow style="width:24%"></u></i><b>24%</b></span></div>
+          <div class="mt"><span><b>Inkling 2 Small</b></span><span>2</span><span>61,390</span><span class="faint">Not priced</span><span class="pv"><i class="hb"><u style="width:0"></u></i><b>&ndash;</b></span></div>
+        </div>
+        <div class="card" data-w style="flex:1"><div class="row"><b class="ch">Keating credits</b><span class="sp"></span><button class="b sm ln">{{i:refresh:s}}Refresh</button></div>
+          <div class="row" style="gap:18px;margin-top:8px"><div class="tile bare"><span>Available now</span><b>$4.20</b></div><div class="tile bare"><span>Last 12 requests</span><b>$0.38</b></div></div>
+          <span class="faint" style="font-size:11px;line-height:1.45">Credits are a balance to spend; they do not change your plan.</span>
+          <span class="lnk" style="align-self:flex-start">Recent charges {{i:chev:s}}</span>
+        </div>
+      </div>
+      <div class="drow">
+        <div class="card" data-w style="flex:1"><div class="row"><b class="ch">How sessions are landing</b><span class="sp"></span><span class="chip">all time</span></div>
+          <div class="stk"><u data-grow style="flex:41;background:var(--c1)"></u><u data-grow style="flex:12;background:var(--c3)"></u><u data-grow style="flex:5;background:var(--c2)"></u></div>
+          <div class="row" style="gap:14px;flex-wrap:wrap"><span class="lg"><i style="background:var(--c1)"></i>Confident <b>41</b></span><span class="lg"><i style="background:var(--c3)"></i>Confused <b>12</b></span><span class="lg"><i style="background:var(--c2)"></i>Off-track <b>5</b></span></div>
+        </div>
+        <div class="card" data-w style="flex:1.4"><div class="row"><b class="ch">Is Keating improving?</b><span class="sp"></span><span class="lg"><i style="background:var(--c1)"></i>Benchmark</span><span class="lg"><i style="background:var(--c2)"></i>Evolved policy</span></div>
+          <svg class="lchart" viewBox="0 0 400 96" preserveAspectRatio="none" role="img" aria-label="Benchmark scores rose from 58 to 71 and evolved policy scores from 61 to 74 over seven runs">
+            <path class="gr" d="M0 12h400M0 48h400M0 84h400"/>
+            <path class="s1" data-draw d="M10 62L73 58L136 60L199 50L262 46L325 40L390 36"/>
+            <path class="s2" data-draw d="M10 56L73 54L136 49L199 47L262 39L325 36L390 30"/>
+            <rect class="m1" x="386" y="32" width="8" height="8"/><rect class="m2" x="386" y="26" width="8" height="8"/>
+          </svg>
+          <div class="row" style="justify-content:space-between"><span class="mono faint" style="font-size:9.5px">Oct 2</span><span class="mono faint" style="font-size:9.5px">7 runs &middot; 5 kept, 2 rejected</span><span class="mono faint" style="font-size:9.5px">Nov 18</span></div>
+        </div>
+      </div>
+      <div class="foot" data-w>{{i:lock:s}}<span>Your data</span><button class="b sm ln">{{i:export:s}}Export portable JSON</button><button class="b sm ln">Import portable JSON</button><span class="chip on">{{i:check:s}}Include sandbox code history</span><span class="sp"></span><a class="lnk">Prepare a training dataset {{i:right:s}}</a></div>
+    </div>
+  </div></div></div>
+  <ol class="pts">
+    <li>The period selector sits alongside the learning tabs.</li>
+    <li>Daily activity, recent learning, topics and model costs use the selected period where available.</li>
+    <li>Estimated cost relies on provider-reported usage.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ M1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">M1</span><h2>On a phone</h2><p>The first question, benchmark and activity at phone width.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt phones" data-enter="phones">
+    <div class="ph-w"><span class="cap">Onboarding</span><div class="ph ob">
+      <header class="top"><i class="logo" role="img" aria-label="Keating"></i><span class="sp"></span><ol class="steps mini"><li class="on"><b>1</b></li><li><b>2</b></li><li><b>3</b></li><li><b>4</b></li></ol><span class="sp"></span><a class="lnk" style="font-size:10px">Skip</a></header>
+      <div class="ob-p" style="padding:16px 14px;flex:1">
+        <div class="row" style="gap:10px"><i class="bot" style="width:44px;height:44px"></i><b style="font-family:var(--display);font-size:15px;line-height:1.2">Keating teaches<br>by asking.</b></div>
+        <span class="eb">1 of 4 &middot; Your question</span>
+        <h3 style="font-size:18px">What would you like to understand?</h3>
+        <div class="inp" style="min-height:92px;font-size:14px;border-color:var(--line)">I want to understand recursion well enough to explain it to someone else.</div>
+        <div class="opts" data-pick><div class="opt on"><i class="rad"></i><div><b>A few quick choices</b><span>One screen, all optional.</span></div></div><div class="opt"><i class="rad"></i><div><b>Talk it through</b><span>Four questions, typed or spoken.</span></div></div></div>
+        <span class="sp"></span>
+        <button class="b pri" style="height:38px;justify-content:center">Continue {{i:right:s}}</button>
+      </div>
+    </div></div>
+    <div class="ph-w"><span class="cap">Benchmark</span><div class="ph">
+      <header class="top"><a class="ib">{{i:left:l}}</a><div class="ttl"><b>Learning</b></div><span class="sp"></span><button class="ib">{{i:export}}</button></header>
+      <div class="sub" style="padding:0 4px"><div class="tabs" style="flex:1"><span style="flex:1;justify-content:center">Activity</span><span style="flex:1;justify-content:center">Coming up</span><span class="on" style="flex:1;justify-content:center">Benchmark</span></div></div>
+      <div class="dash" style="padding:10px 12px;gap:10px">
+        <div class="seg wide" data-pick><span class="on">Shared</span><span>Private</span><span>Both</span></div>
+        <div class="card hardc" style="padding:10px 12px"><span class="eb">Ranking</span><b style="font-size:15px;line-height:1.25;display:block;margin-top:3px">The top 2 models overlap.</b><span class="soft" style="font-size:11.5px">The current evidence cannot separate them.</span></div>
+        <div class="card" style="padding:10px 12px;gap:6px"><div class="row"><span class="rk">1</span><b style="font-size:13px">Claude Sonnet 5.5</b><span class="sp"></span><span class="chip">Rankable</span></div><span class="iv"><i class="band" style="left:66%;width:16%"></i><i class="rg" style="left:66%;width:16%"></i><i class="pt" style="left:74%"></i></span><span class="mono faint" style="font-size:10px">PROSPER 71.4 &middot; outcome 74 (66 to 82) &middot; 148 signals</span></div>
+        <div class="card" style="padding:10px 12px;gap:6px"><div class="row"><span class="rk">2</span><b style="font-size:13px">MiniMax-M2.7</b><span class="sp"></span><span class="chip">tied with 1</span></div><span class="iv"><i class="band" style="left:66%;width:16%"></i><i class="rg" style="left:61%;width:18%"></i><i class="pt" style="left:70%"></i></span><span class="mono faint" style="font-size:10px">PROSPER 68.0 &middot; outcome 70 (61 to 79) &middot; 96 signals</span></div>
+        <div class="card" style="padding:10px 12px;gap:6px"><div class="row"><span class="rk">3</span><b style="font-size:13px">Inkling 2 Small</b><span class="sp"></span><span class="chip">Provisional</span></div><span class="iv"><i class="band" style="left:66%;width:16%"></i><i class="rg" style="left:50%;width:26%"></i><i class="pt" style="left:63%"></i></span><span class="mono faint" style="font-size:10px">PROSPER 61.2 &middot; outcome 63 (50 to 76) &middot; 52 signals</span></div>
+      </div>
+    </div></div>
+    <div class="ph-w"><span class="cap">Activity</span><div class="ph">
+      <header class="top"><a class="ib">{{i:left:l}}</a><div class="ttl"><b>Learning</b></div><span class="sp"></span><button class="ib">{{i:more}}</button></header>
+      <div class="sub" style="padding:0 4px"><div class="tabs" style="flex:1"><span class="on" style="flex:1;justify-content:center">Activity</span><span style="flex:1;justify-content:center">Coming up</span><span style="flex:1;justify-content:center">Benchmark</span></div></div>
+      <div class="dash" style="padding:10px 12px;gap:10px">
+        <div class="seg wide" data-pick><span>7d</span><span class="on">30d</span><span>90d</span><span>All</span></div>
+        <div class="row" style="gap:8px"><div class="tile" style="flex:1"><span>Sessions</span><b>14</b><small>27% more</small></div><div class="tile" style="flex:1"><span>Turns</span><b>312</b><small>about the same</small></div><div class="tile" style="flex:1"><span>Spend</span><b>$2.41</b><small>estimated</small></div></div>
+        <div class="card" style="padding:10px 12px"><div class="row"><b class="ch">Daily activity</b></div><div class="hm" id="hm2"></div></div>
+        <div class="card" style="padding:10px 12px"><b class="ch">Recent learning</b><a class="q2"><b>Recursion: pause and resume&hellip;</b><em>Today &middot; 8 turns</em></a><a class="q2"><b>SQL joins by example</b><em>Today &middot; 14 turns</em></a><a class="q2"><b>Bayes' theorem with a medical test</b><em>Nov 18 &middot; 6 turns</em></a></div>
+      </div>
+    </div></div>
+  </div></div></div>
+  <ol class="pts">
+    <li>Onboarding preserves the question and the two profile paths on a phone.</li>
+    <li>Activity, Coming up and Benchmark share the Learning tabs.</li>
+  </ol>
+</section>
+
+<section class="board">
+  <div class="board-h"><span class="n">U2</span><h2>Coming up</h2><p>See due reviews, assignments and your priorities on one page.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt m1-spec"><header class="top"><span class="b gh">{{i:left:s}}Chat</span><i class="logo" role="img" aria-label="Keating"></i><div class="ttl"><b>Learning</b><span>From sessions on this device</span></div></header>
+<div class="sub"><div class="tabs"><span>{{i:route:s}}Activity</span><span class="on">{{i:calendar:s}}Coming up</span><span>{{i:ruler:s}}Benchmark</span></div></div>
+<div class="dash m1-coming">
+  <div class="m1-kpis"><div class="tile"><span>Cards due now</span><b>0</b><small>Nothing overdue by more than a day</small></div><div class="tile"><span>Review time</span><b>~0 min</b><small>Estimated from the due cards</small></div><div class="tile"><span>Learning items</span><b>0</b><small>0 decks · 0 open checks</small></div></div>
+  <div class="card m1-halftone"><div class="row"><h3><i class="bot"></i> Review runway is clear</h3><span class="sp"></span><button class="b pri" disabled>Start due review</button></div><p>You can still reorganize priorities or import another deck below.</p></div>
+  <div class="sec"><div class="sec-h"><h3>Open assignments</h3></div><div class="sr"><p>No open assignments. Homework your tutor gives you in a session appears here.</p></div></div>
+  <div class="card"><h3>Readiness for your due decks</h3><p>Uses saved answers and prerequisites from known topics or a bound saved study plan.</p></div>
+  <div class="sec"><div class="sec-h"><h3>Priority board</h3></div><div class="sr"><p>Move a card between lanes to change its priority. Review dates stay as set.</p></div><div class="m1-priorities"><div><b>Focus</b><p>What matters most now</p></div><div><b>Maintain</b><p>Keep knowledge available</p></div><div><b>Low priority</b><p>Keep visible, spend less time</p></div></div></div>
+</div></div></div></div>
+  <ol class="pts">
+    <li>Start due review becomes available when a card is due.</li>
+    <li>Moving an item changes its priority. Its review date is set separately.</li>
+  </ol>
+</section>
+
+</div>

@@ -1,5 +1,8 @@
+import { Loading } from "../../design-system/kit";
+import { ProviderCredentialForm } from "./CloudProviderKeysSection";
+import { NOTORGANIC_PROVIDER_ID } from "../../notorganic-provider";
 import { useCallback, useEffect, useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { ChatSyncStatus } from "./ChatSyncStatus";
 import { css, cx } from "../../../styled-system/css";
 import { loadDeclaredProfile, saveDeclaredProfile } from "../../keating/learner-profile-store";
@@ -9,7 +12,6 @@ import { getNotOrganicAccount, getNotOrganicWallet, notOrganicPublicClient } fro
 import { formatCreditBalance, normalizeCreditWallet } from "../../notorganic-provider/credit-wallet";
 import { extractNotOrganicProfile, fetchImageAsDataUrl, notOrganicAccountUrl, type NotOrganicProfile } from "../../notorganic-provider/profile";
 
-const cardClass = css({ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem", borderRadius: "0.5rem", border: "1px solid var(--border)" });
 const rowClass = css({ display: "flex", alignItems: "center", gap: "0.75rem", minWidth: 0 });
 const avatarClass = css({ width: "3rem", height: "3rem", flexShrink: 0, borderRadius: "0.375rem", border: "1px solid var(--border)", objectFit: "cover", backgroundColor: "var(--muted)" });
 const nameClass = css({ fontSize: "0.9375rem", fontWeight: 600, color: "var(--foreground)" });
@@ -67,12 +69,14 @@ export function NotOrganicAccountCard() {
 		return () => window.removeEventListener(PROVIDER_CREDENTIALS_CHANGED_EVENT, load);
 	}, [load]);
 
-	if (state === "signed-out" || state === "loading") return null;
-	if (state === "error") return <div className={cardClass}><p className={mutedClass}>Couldn't load your Not Organic account right now.</p></div>;
+	const connection = notOrganicPublicClient() ? <ProviderCredentialForm provider={NOTORGANIC_PROVIDER_ID}/> : <p>Not Organic connections are not configured on this Keating deployment.</p>;
+	if (state === "loading") return <Loading label="Checking account" size="inline"/>;
+	if (state === "signed-out") return <div id="model-account" className="s2-pane">{connection}</div>;
+	if (state === "error") return <div id="model-account" className="s2-pane">{connection}<p className={mutedClass}>Couldn't load your Not Organic account right now.</p></div>;
 
 	const { profile, balance } = state;
 	return (
-		<div className={cardClass}>
+		<div id="model-account" className="s2-pane">{connection}
 			<div className={rowClass}>
 				{profile.imageUrl ? <img src={profile.imageUrl} alt="" referrerPolicy="no-referrer" className={avatarClass} /> : <div className={avatarClass} />}
 				<div className={css({ minWidth: 0 })}>
@@ -87,7 +91,7 @@ export function NotOrganicAccountCard() {
 				<a className={buttonClass} href="/review/learning-profile">Public learning profile</a>
 				{accountUrl && (
 					<a className={buttonClass} href={accountUrl} target="_blank" rel="noopener noreferrer">
-						Credits &amp; account details <ExternalLink size={12} />
+						Credits &amp; account details <KeatingGlyph name="ext" size={12} />
 					</a>
 				)}
 				<button
@@ -100,7 +104,7 @@ export function NotOrganicAccountCard() {
 				</button>
 			</div>
 			{note && <p role="status" className={mutedClass}>{note}</p>}
-			<ChatSyncStatus className={mutedClass} buttonClassName={buttonClass} />
+			<div id="model-chat-sync"><ChatSyncStatus className={mutedClass} buttonClassName={buttonClass} /></div>
 		</div>
 	);
 }

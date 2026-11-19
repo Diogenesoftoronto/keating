@@ -10,6 +10,7 @@ import { inferBrowserLearnerTurnSignal, type QuizQuestionGrade } from "./core";
 import { deriveLearnerProfile, type LearnerTopicProfile } from "./learner-profile";
 import type { Flashcard, FlashcardDeck, FlashcardSrsState } from "./flashcard-types";
 import { applyReview, initialSrsState } from "./srs";
+import { isPresentationTwin, withoutPresentationTwins } from "./openui/presentation-twins";
 import { browserQuestionGradeInput, isSemanticAssessmentQuestion, reviewBrowserQuestionChecks,
 	type BrowserQuestionJudgement } from "./judgement/browser-grading";
 import { createWebJudgementRuntime, type WebJudgementRuntime } from "./judgement/runtime";
@@ -419,8 +420,9 @@ export interface OpenUiPresentationRecord {
 	planRef: { documentId: string; itemId: string } | null;
 	/**
 	 * Presented snapshot, kept for study plans (so the plan is known before any
-	 * learner action) and concept maps (so the session workspace can show them
-	 * after reload). Other components omit it.
+	 * learner action) and for the materials the session panel lists (concept
+	 * maps, quizzes, decks, tasks, notes, goals, simulations, media…). Records
+	 * written before that, and question nodes, omit it.
 	 */
 	document?: UiDocument;
 }
@@ -2229,7 +2231,12 @@ export class KeatingStorage {
 		for (const record of records) {
 			const existing = await requestValue(store.get(record.id));
 			if (existing) continue;
-			await requestValue(store.put(record));
+			// The same node, presented moments ago under the reply's earlier message id: this record replaces it
+			// and keeps its first link.
+			const stored = record.sessionId ? await requestValue(store.getAll()) as OpenUiPresentationRecord[] : [];
+			const twins = stored.filter((other) => isPresentationTwin(other, record)).sort((a, b) => a.createdAt - b.createdAt);
+			for (const twin of twins) await requestValue(store.delete(twin.id));
+			await requestValue(store.put(twins[0] ? { ...record, createdAt: twins[0].createdAt, planRef: twins[0].planRef } : record));
 			added += 1;
 		}
 		if (added && typeof window !== "undefined") {
@@ -2240,7 +2247,8 @@ export class KeatingStorage {
 	}
 
 	async getOpenUiPresentations(sessionId?: string): Promise<OpenUiPresentationRecord[]> {
-		const records = await this.getAll<OpenUiPresentationRecord>(STORES.OPENUI_PRESENTATIONS);
+		// Twins stored before records replaced each other on write are read as one.
+		const records = withoutPresentationTwins(await this.getAll<OpenUiPresentationRecord>(STORES.OPENUI_PRESENTATIONS));
 		return sessionId ? records.filter((record) => record.sessionId === sessionId) : records;
 	}
 

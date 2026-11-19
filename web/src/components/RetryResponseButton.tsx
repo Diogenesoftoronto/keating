@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { RotateCcw } from "lucide-react";
-import { css, cx } from "../../styled-system/css";
-import { Spinner } from "./Spinner";
+import { Button } from "../design-system/kit";
 
 interface RetryResponseButtonProps {
 	onRetry: () => void | Promise<void>;
@@ -10,34 +8,6 @@ interface RetryResponseButtonProps {
 	label?: string;
 	variant?: "quiet" | "primary";
 }
-
-const buttonClass = css({
-	display: "inline-flex",
-	minHeight: "2.75rem",
-	width: "auto",
-	alignItems: "center",
-	justifyContent: "center",
-	gap: "0.375rem",
-	borderRadius: "0.375rem",
-	paddingInline: "0.75rem",
-	fontSize: "0.8125rem",
-	color: "var(--muted-foreground)",
-	_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
-	_focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" },
-	_disabled: { cursor: "not-allowed", opacity: 0.6 },
-});
-const primaryButtonClass = css({
-	borderRadius: "0.5rem",
-	backgroundColor: "var(--primary)",
-	paddingInline: "0.75rem",
-	fontWeight: 600,
-	color: "var(--primary-foreground)",
-	_hover: {
-		backgroundColor: "color-mix(in srgb, var(--primary) 88%, var(--background))",
-		color: "var(--primary-foreground)",
-	},
-	sm: { minHeight: "2.5rem" },
-});
 
 export function RetryResponseButton({
 	onRetry,
@@ -59,17 +29,7 @@ export function RetryResponseButton({
 		}
 	};
 
-	return (
-		<button
-			type="button"
-			className={cx(buttonClass, variant === "primary" && primaryButtonClass, className)}
-			title="Retry the same prompt"
-			onClick={() => void retry()}
-			disabled={busy}
-			aria-label={label}
-		>
-			{busy ? <Spinner size={13} /> : <RotateCcw size={13} />}
-			<span>{busy ? "Retrying" : label}</span>
-		</button>
-	);
+  return <Button className={className} size="sm" variant={variant === "primary" ? "primary" : "outline"}
+    title="Retry the same prompt" onClick={() => void retry()} busy={busy}
+    glyph={busy ? "spin" : "refresh"} aria-label={label}>{busy ? "Retrying" : label}</Button>;
 }

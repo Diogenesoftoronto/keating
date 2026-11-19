@@ -1,0 +1,66 @@
+.ct-tab {
+  width: 100%;
+  max-width: 45rem;
+  margin-inline: auto;
+  display: grid;
+  gap: 1.15rem;
+  min-width: 0;
+  font: .625rem/1.48 var(--font-ui);
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.ct-tab h2 { margin: .24rem 0 0; font: 600 1.15rem/1.18 var(--font-ui); letter-spacing: -.025em; }
+.ct-tab .k-find { width: 100%; max-width: none; }
+.ct-tab .k-find input { min-width: 0; }
+.ct-row, .ct-footer, .ct-actions, .ct-reactions, .ct-access, .ct-filter {
+  display: flex; align-items: center; flex-wrap: wrap; gap: .34rem;
+}
+.ct-reactions .k-menu { inset-inline: 0 auto; }
+.ct-byline { display: grid; gap: .05rem; }
+.ct-byline small, .ct-work small, .ct-mobile-label { color: var(--ink-soft); font: .5rem/1.45 var(--mono-body); }
+.ct-actions, .ct-filter { margin-inline-start: auto; }
+.ct-actions { gap: .1rem; }
+.ct-danger { color: var(--destructive); }
+.ct-stack, .ct-replies, .ct-comment, .ct-composer, .ct-work { display: grid; min-width: 0; gap: .48rem; }
+.ct-tools { display: flex; align-items: end; flex-wrap: wrap; gap: .65rem; }
+.ct-tools > * { flex: 1 1 12rem; min-width: 0; }
+.ct-tools > :first-child { flex-grow: 2; }
+.ct-tools .k-seg { flex-wrap: wrap; width: fit-content; max-width: 100%; }
+.ct-tools .k-seg button { white-space: normal; overflow-wrap: anywhere; }
+.ct-comment, .ct-composer, .ct-work { padding: .68rem; }
+.ct-composer textarea { resize: vertical; }
+.ct-composer .ct-footer { justify-content: space-between; }
+.ct-footer { justify-content: flex-end; }
+.ct-replies { border-inline-start: 1px solid var(--line); margin: .4rem 0 0 .6rem; padding-inline-start: .5rem; }
+.ct-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.ct-roster { border-collapse: collapse; width: 100%; font-size: .625rem; }
+.ct-roster th, .ct-roster td { padding: .44rem; text-align: start; border-block-end: 1px solid var(--line); }
+.ct-roster thead, .ct-filter { color: var(--ink-soft); font: .52rem/1.45 var(--mono-body); }
+.ct-roster td:nth-child(2) { min-width: 4rem; }
+.ct-filter { cursor: pointer; }
+.ct-filter input { accent-color: var(--ink); }
+.ct-mobile-label { display: none; }
+.ct-judgement { display: grid; gap: .45rem; border-block-start: 1px solid var(--line); margin-block: .35rem; padding-block-start: .55rem; font: .6rem/1.5 var(--font-ui); color: var(--ink-soft); }
+.ct-findings { display: grid; gap: .4rem; }
+.ct-source { white-space: pre-wrap; overflow-wrap: anywhere; padding-inline-start: .5rem; border-inline-start: 2px solid var(--line); }
+@media (max-width: 650px) {
+  .ct-roster, .ct-roster tbody, .ct-roster tr { display: grid; gap: .4rem; min-width: 0; }
+  .ct-roster thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .ct-roster tbody tr { padding: .58rem; border: 1px solid var(--line); border-radius: .1923rem; background: var(--paper); }
+  .ct-roster td, .ct-roster th { border: 0; padding: 0; }
+  .ct-roster td { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); align-items: center; gap: .3rem; }
+  .ct-mobile-label { display: block; }
+  .ct-filter { margin-inline-start: 0; }
+}
+@media (pointer: coarse) {
+  .ct-reactions button, .ct-tab button, .ct-filter, .ct-tools .k-find, .ct-judgement summary { min-height: 44px; }
+  .ct-reactions button, .ct-tab .k-icon { min-width: 44px; }
+}
+
+.ct-tab > header { padding-block: .38rem; }
+.ct-tab > header h2 { font-size: .96rem; }
+.ct-reactions { gap: .0962rem; margin-inline-start: -.2885rem; }
+.ct-tab .k-seg { border-color: var(--line); }
+.ct-tab .k-input { border-color: var(--line); }
+.cw-secondary-empty.k-empty { min-height: 2.4rem; padding: .48rem; }
+.cw-secondary-empty > .keating-fx-surface { display: none; }

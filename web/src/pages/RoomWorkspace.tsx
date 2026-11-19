@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { AppBar, AvatarStack, Button, Chip, Loading, Sheet, StatusDot, Tabs, TabPanel } from "../design-system/kit";
+import { useMediaQuery } from "../hooks/use-media-query";
+import "../components/rooms/rooms.css";
 import { css } from "../../styled-system/css";
 import { Nav } from "../components/Nav";
 import { CoursesAccessGate } from "../components/courses/CoursesAccessGate";
 import { RoomComposer } from "../components/rooms/RoomComposer";
 import { RoomInvitesPanel } from "../components/rooms/RoomInvitesPanel";
-import { RoomDraftReview, RoomKeatingPanel } from "../components/rooms/RoomKeatingPanel";
+import { RoomKeatingPanel } from "../components/rooms/RoomKeatingPanel";
 import { RoomPeoplePanel } from "../components/rooms/RoomPeoplePanel";
-import { RoomSettingsPanel, RoomTranscriptExport } from "../components/rooms/RoomSettingsPanel";
+import { RoomLifecycle, RoomSettingsPanel, RoomTranscriptExport } from "../components/rooms/RoomSettingsPanel";
 import { RoomTranscript } from "../components/rooms/RoomTranscript";
 import { RoomPrivateFork, RoomPrivateForkOffers } from "../components/rooms/RoomPrivateFork";
 import { ROLE_LABELS, roomStyles as s } from "../components/rooms/room-ui";
@@ -19,11 +21,10 @@ import { useRoomSession, type RoomConnectionStatus } from "../rooms/useRoomSessi
 import { useCoursesAccess } from "../courses/useCoursesAccess";
 import { useSeo } from "../hooks/useSeo";
 
-export type RoomSideTab = "keating" | "people" | "invite" | "settings";
+export type RoomSideTab = "people" | "invite" | "settings";
 
 export function roomSideTabs(snapshot: RoomViewerSnapshot): Array<{ id: RoomSideTab; label: string }> {
   const tabs: Array<{ id: RoomSideTab; label: string }> = [
-    { id: "keating", label: "Keating" },
     { id: "people", label: "People" },
   ];
   if (snapshot.permissions.canInvite || snapshot.permissions.canOversee) tabs.push({ id: "invite", label: "Invite" });
@@ -40,65 +41,15 @@ const CONNECTION_LABEL: Record<RoomConnectionStatus, string> = {
 function StatusScreen({ title, body, action }: { title: string; body: string; action?: ReactNode }) {
   return (
     <main className={css({ mx: "auto", maxW: "36rem", px: "1rem", py: "4rem" })}>
-      <section className={css({ border: "2px solid var(--ink)", bg: "var(--card)", p: "1.5rem" })}>
-        <h1 className={css({ fontFamily: "Georgia, serif", fontSize: "1.6rem" })}>{title}</h1>
+      <section className="k-card rm-unavailable">
+        <h1 className="rm-heading">{title}</h1>
         <p className={css({ mt: "0.6rem", color: "var(--ink-soft)", lineHeight: 1.6 })}>{body}</p>
         <div className={css({ mt: "1.25rem", display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
           {action}
-          <Link to="/rooms" className={s.button}>Open your rooms</Link>
+          <Link to="/rooms" className="k-button k-ghost k-sm">Open your rooms</Link>
         </div>
       </section>
     </main>
-  );
-}
-
-function SideTabs({ tabs, active, onSelect }: { tabs: Array<{ id: RoomSideTab; label: string }>; active: RoomSideTab; onSelect: (tab: RoomSideTab) => void }) {
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const index = tabs.findIndex((tab) => tab.id === active);
-    const target = event.key === "ArrowRight" ? (index + 1) % tabs.length
-      : event.key === "ArrowLeft" ? (index - 1 + tabs.length) % tabs.length
-        : event.key === "Home" ? 0
-          : event.key === "End" ? tabs.length - 1
-            : -1;
-    if (target < 0) return;
-    event.preventDefault();
-    const next = tabs[target]!;
-    onSelect(next.id);
-    document.getElementById(`room-tab-${next.id}`)?.focus();
-  };
-  return (
-    <div role="tablist" aria-label="Room panels" onKeyDown={onKeyDown} className={css({ display: "flex", borderBottom: "2px solid var(--ink)", overflowX: "auto" })}>
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          id={`room-tab-${tab.id}`}
-          type="button"
-          role="tab"
-          aria-selected={active === tab.id}
-          aria-controls="room-side-panel"
-          tabIndex={active === tab.id ? 0 : -1}
-          onClick={() => onSelect(tab.id)}
-          className={css({
-            flex: 1,
-            borderBottom: "3px solid transparent",
-            px: "0.6rem",
-            py: "0.6rem",
-            fontFamily: "var(--mono-display)",
-            fontSize: "0.66rem",
-            fontWeight: 700,
-            letterSpacing: "0.05em",
-            textTransform: "uppercase",
-            color: "var(--ink-soft)",
-            whiteSpace: "nowrap",
-            _hover: { color: "var(--ink)" },
-            _selected: { color: "var(--ink)", borderBottomColor: "var(--course-green, #1e9b50)" },
-            _focusVisible: { outline: "2px solid var(--peer-blue, #3468b3)", outlineOffset: "-2px" },
-          })}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
   );
 }
 
@@ -118,7 +69,10 @@ function Workspace({ roomId }: { roomId: string }) {
   const facilitator = useRoomFacilitator(roomId, session);
   const { state, status, error, loadError, setError, mutate, send, loadEarlier, refresh } = session;
   const snapshot = state.snapshot;
-  const [tab, setTab] = useState<RoomSideTab>("keating");
+  const [tab, setTab] = useState<RoomSideTab>("people");
+  const wide = useMediaQuery("(min-width: 64em)");
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const openTools = (next: RoomSideTab) => { setTab(next); setToolsOpen(true); };
   const [replyTo, setReplyTo] = useState<RoomMessage | null>(null);
   const [privateSource, setPrivateSource] = useState<RoomMessage | null>(null);
   const openPrivateChat = (sessionId: string, question: string) => navigate({ to: "/chat", search: { session: sessionId, ...(question ? { ask: question } : {}) } });
@@ -144,7 +98,7 @@ function Workspace({ roomId }: { roomId: string }) {
 
   const tabs = useMemo(() => (snapshot ? roomSideTabs(snapshot) : []), [snapshot]);
   useEffect(() => {
-    if (tabs.length && !tabs.some((candidate) => candidate.id === tab)) setTab("keating");
+    if (tabs.length && !tabs.some((candidate) => candidate.id === tab)) setTab("people");
   }, [tab, tabs]);
 
   // A reply target that was hidden or disappeared is no longer valid.
@@ -168,67 +122,65 @@ function Workspace({ roomId }: { roomId: string }) {
     );
   }
   if (!snapshot) {
-    return <p role="status" className={css({ py: "5rem", textAlign: "center", color: "var(--ink-soft)" })}>Opening the room…</p>;
+    return <Loading size="page" label="Opening the room…" />;
   }
 
   const { room, viewer, permissions } = snapshot;
   const nameOf = new Map(room.members.map((member) => [member.accountId, member.displayName]));
   const typingNames = typingAccountIds(state, now, viewer.accountId).map((accountId) => nameOf.get(accountId)).filter((name): name is string => Boolean(name));
   const preview = facilitator.localPreview?.text ?? state.preview?.text ?? null;
-  const pendingDrafts = permissions.canOversee ? room.drafts : [];
-
+  const present = room.members.filter(member => state.presentAccountIds.includes(member.accountId));
+  const activeTab = tabs.some(item => item.id === tab) ? tab : "people";
+  const goal = [room.topic, room.goal && `Goal: ${room.goal}`].filter(Boolean).join(" · ");
+  const context = <>
+    {room.context.courseId && <Link className="rm-course" to="/courses/$courseId" params={{ courseId: room.context.courseId }}>
+      {room.context.courseTitle ?? "Course"}{room.context.lessonTitle && ` · ${room.context.lessonTitle}`}
+    </Link>}
+    <Chip>You: {ROLE_LABELS[viewer.role]}</Chip>{room.status === "ended" && <Chip>Ended</Chip>}
+    <span role="status" className={`rm-connection rm-${status}`}><StatusDot tone={status === "connected" ? "ok" : "warn"} />{CONNECTION_LABEL[status]}</span>
+  </>;
+  const rail = <>
+    {!wide && <div className="rm-sheet-context">{context}</div>}
+    <Tabs className="k-halftone" label="Room panels" items={tabs.map(item => item.id === "people" ? { ...item, count: room.members.length } : item)}
+      value={activeTab} onChange={id => setTab(id as RoomSideTab)} stretch />
+    <TabPanel id={activeTab} active className="rm-panel">
+      {activeTab === "people" ? <RoomPeoplePanel snapshot={snapshot} presentAccountIds={state.presentAccountIds} mutate={run} onLeft={() => void navigate({ to: "/rooms" })} />
+        : activeTab === "invite" ? <RoomInvitesPanel snapshot={snapshot} />
+        : <RoomSettingsPanel snapshot={snapshot} mutate={run} onDeleted={() => void navigate({ to: "/rooms", replace: true })} />}
+    </TabPanel>
+    <footer className="rm-rail-footer"><RoomTranscriptExport roomId={room.id} />
+      {activeTab === "people" && permissions.canOversee && room.status === "open" && <RoomLifecycle snapshot={snapshot} mutate={run} endOnly />}
+    </footer>
+  </>;
   return (
-    <main className={css({ mx: "auto", w: "100%", maxW: "90rem", px: { base: 0, md: "1rem" }, py: { base: 0, md: "1rem" } })}>
-      <header className={css({ display: "grid", gap: "0.35rem", borderBottom: "2px solid var(--ink)", px: "1rem", py: "0.85rem", md: { border: "2px solid var(--ink)", borderBottom: 0, bg: "var(--card)" } })}>
-        <div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", fontSize: "0.72rem" })}>
-          <Link to="/rooms" className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", color: "var(--ink-soft)", _hover: { color: "var(--ink)" } })}>
-            <ArrowLeft size={13} aria-hidden="true" /> Rooms
-          </Link>
-          {room.context.courseId ? (
-            <Link to="/courses/$courseId" params={{ courseId: room.context.courseId }} className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", color: "var(--ink-soft)", _hover: { color: "var(--ink)" } })}>
-              <BookOpen size={13} aria-hidden="true" /> {room.context.courseTitle ?? "Course"}{room.context.lessonTitle ? ` · ${room.context.lessonTitle}` : ""}
-            </Link>
-          ) : null}
-          <span className={s.chip}>You: {ROLE_LABELS[viewer.role]}</span>
-          {room.status === "ended" ? <span className={s.chip}>Ended</span> : null}
-          <span role="status" className={css({ ml: "auto", display: "inline-flex", alignItems: "center", gap: "0.3rem", color: "var(--ink-soft)" })}>
-            <span aria-hidden="true" className={css({ h: "0.5rem", w: "0.5rem", borderRadius: "50%" })} style={{ background: status === "connected" ? "var(--phosphor, #4be388)" : "#c9a227" }} />
-            {CONNECTION_LABEL[status]}
-          </span>
-        </div>
-        <h1 className={css({ fontFamily: "Georgia, serif", fontSize: { base: "1.45rem", md: "1.8rem" }, lineHeight: 1.15, overflowWrap: "anywhere" })}>{room.title}</h1>
-        {room.topic || room.goal ? (
-          <p className={css({ maxW: "75ch", fontSize: "0.82rem", lineHeight: 1.5, color: "var(--ink-soft)" })}>
-            {room.topic}
-            {room.topic && room.goal ? " · " : ""}
-            {room.goal ? <><strong className={css({ color: "var(--ink)" })}>Goal:</strong> {room.goal}</> : null}
-          </p>
-        ) : null}
-      </header>
-
+    <main className="rm-workspace">
+      <AppBar back={{ label: "Rooms", to: "/rooms" }} title={<h1>{room.title}</h1>}
+        subtitle={wide && goal ? goal : undefined}>
+        {wide && context}
+        <button type="button" className="rm-presence" aria-label={`People, ${present.length} here`} onClick={() => openTools("people")}>
+          <AvatarStack names={present.map(member => member.displayName)} /><span>{wide ? `${present.length} here` : `People · ${present.length}`}</span>
+        </button>
+        {wide && tabs.some(item => item.id === "invite") && <Button variant="line" glyph="share" size="sm" onClick={() => openTools("invite")}>Invite</Button>}
+      </AppBar>
+      {!wide && goal && <p className="rm-mobile-goal">{goal}</p>}
+      <RoomKeatingPanel snapshot={snapshot} facilitator={facilitator} mutate={run} />
       {error ? (
         <div role="alert" className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", px: "1rem", py: "0.5rem", md: { borderInline: "2px solid var(--ink)" } })}>
           <p className={`${s.error} ${css({ flex: 1 })}`}>{error}</p>
           <button type="button" className={s.quiet} onClick={() => setError("")}>Dismiss</button>
         </div>
       ) : null}
-      {room.status === "ended" ? (
-        <p className={`${s.notice} ${css({ mx: { base: "1rem", md: 0 }, my: "0.5rem" })}`}>
-          This room has ended. The transcript stays readable{permissions.canOversee ? "; reopen it from Settings to continue" : ""}.
-        </p>
-      ) : null}
-
-      <div className={css({ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", lg: { gridTemplateColumns: "minmax(0, 1fr) 22rem" }, md: { border: "2px solid var(--ink)" }, bg: "var(--card)" })}>
+      <div className="rm-desk">
         <div className={css({ gridColumn: "1 / -1", minW: 0 })}>
-          {privateSource ? <div className={css({ p: "0.75rem", maxH: "65vh", overflowY: "auto", flexShrink: 0 })}>
+          {privateSource ? <div className="rm-source-pane" data-glyph-host>
             <RoomPrivateFork key={`${room.id}:${viewer.accountId}:${privateSource.id}`} snapshot={snapshot} source={privateSource} mutate={run}
               onCancel={() => { setPrivateSource(null); document.getElementById(`room-message-${privateSource.id}`)?.focus(); }} onOpenChat={openPrivateChat} />
           </div> : <RoomPrivateForkOffers key={`${room.id}:${viewer.accountId}`} snapshot={snapshot} mutate={run} onOpenChat={openPrivateChat} />}
         </div>
-        <section aria-label="Conversation" className={css({ display: "flex", flexDir: "column", minW: 0, h: { base: "70vh", lg: "calc(100vh - 13rem)" }, minH: "26rem" })}>
-          <RoomDraftReview drafts={pendingDrafts} members={room.members} messages={room.messages} roomOpen={room.status === "open"} mutate={run} />
+        <section aria-label="Conversation" className="rm-conversation">
           <RoomTranscript
             snapshot={snapshot}
+            mutate={run}
             preview={preview}
             typingNames={typingNames}
             onLoadEarlier={loadEarlier}
@@ -244,23 +196,9 @@ function Workspace({ roomId }: { roomId: string }) {
             onTyping={() => send({ type: "typing" })}
           />
         </section>
-        <aside aria-label="Room tools" className={css({ minW: 0, borderTop: "2px solid var(--ink)", bg: "var(--paper-deep, #e9e2d2)", lg: { borderTop: 0, borderLeft: "2px solid var(--ink)", h: "calc(100vh - 13rem)", minH: "26rem", overflowY: "auto" } })}>
-          <SideTabs tabs={tabs} active={tab} onSelect={setTab} />
-          <div id="room-side-panel" role="tabpanel" aria-labelledby={`room-tab-${tab}`} className={css({ p: "1rem" })}>
-            {tab === "keating" ? (
-              <>
-                <RoomKeatingPanel snapshot={snapshot} facilitator={facilitator} mutate={run} />
-                <div className={s.section}><RoomTranscriptExport roomId={room.id} /></div>
-              </>
-            ) : tab === "people" ? (
-              <RoomPeoplePanel snapshot={snapshot} presentAccountIds={state.presentAccountIds} mutate={run} onLeft={() => void navigate({ to: "/rooms" })} />
-            ) : tab === "invite" ? (
-              <RoomInvitesPanel snapshot={snapshot} />
-            ) : (
-              <RoomSettingsPanel snapshot={snapshot} mutate={run} onDeleted={() => void navigate({ to: "/rooms", replace: true })} />
-            )}
-          </div>
-        </aside>
+        {wide ? <aside aria-label="Room tools" className="rm-rail">{rail}</aside> :
+          <Sheet open={toolsOpen} title="Room tools" side="right" onClose={() => setToolsOpen(false)}>{toolsOpen && rail}</Sheet>}
+
       </div>
     </main>
   );
@@ -271,7 +209,7 @@ export function RoomWorkspace() {
   const [access, retry] = useCoursesAccess();
   return (
     <div className={css({ minH: "100vh", bg: "var(--paper)", color: "var(--ink)" })}>
-      <Nav />
+      {access.status !== "ready" && <Nav />}
       {access.status === "ready" ? <Workspace key={roomId} roomId={roomId} /> : <CoursesAccessGate state={access} onRetry={retry} />}
     </div>
   );

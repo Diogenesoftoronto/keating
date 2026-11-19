@@ -2,7 +2,14 @@ import { KeatingBot } from "../components/KeatingBot";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { usePostHog } from "@posthog/react";
-import { ArrowLeft, Download, Upload, ChevronRight } from "lucide-react";
+import { AppBar, Button, Chip, DefinitionList, EmptyState, Loading, Segmented, Sheet } from "../design-system/kit";
+import { KeatingGlyph } from "../design-system/glyphs";
+import { animate } from "motion";
+import { DURATION, EASE, useMotionAllowed } from "../design-system/motion";
+import { ExportSheet } from "../components/export/ExportSheet";
+import { Progress } from "../design-system/charts";
+import { DatasetFigures } from "../components/training/DatasetFigures";
+
 import { getModel, getSupportedThinkingLevels, type ModelThinkingLevel, type Api, type Model } from "@earendil-works/pi-ai/compat";
 import { getInitPromise } from "../hooks/keating-storage";
 import { buildWebFineTuneExportFromSources, loadWebExportSources, type WebFineTuneExportResult, type WebExportSource, type WebFineTuneFormat } from "../keating/export";
@@ -11,7 +18,6 @@ import { buildWebTrainingArchive } from "../keating/training-archive";
 import type { CanonicalTrainingRecord } from "../keating/training-schema";
 import { downloadFile, downloadTextFile } from "../lib/browser-download";
 import { ModelSelectorDialog } from "../components/ModelSelector";
-import { Nav } from "../components/Nav";
 import { useSeo } from "../hooks/useSeo";
 import { createRuntimeExportJudge, type JudgeProgress, type JudgeCheckpoint, type JudgeScorerConfig } from "../keating/export-judge";
 import { createWebJudgementRuntime } from "../keating/judgement/runtime";
@@ -22,10 +28,20 @@ import { TrainingDatasetShare } from "../components/training/TrainingDatasetShar
 import { TrainingDatasetSummary } from "../components/training/TrainingDatasetSummary";
 import "./training-data.css";
 import "../components/keating-interaction-motion.css";
-const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
+
 function TrainingWorkspace() {
 	const posthog = usePostHog();
-	const [settingsTab, setSettingsTab] = useState("data");
+	const [step, setStep] = useState("shape");
+	const panelRef = useRef<HTMLFormElement>(null);
+	const allowed = useMotionAllowed();
+	useEffect(() => {
+		if (!allowed || !panelRef.current) return;
+		const animation = animate(panelRef.current, { opacity: [0.65, 1] }, { duration: DURATION.quick, ease: EASE });
+		return () => { animation.cancel(); };
+	}, [step, allowed]);
+	const [importOpen, setImportOpen] = useState(false);
+	const [shareOpen, setShareOpen] = useState(false);
+	const shareRef = useRef<HTMLDivElement>(null);
 	const [progress, setProgress] = useState<JudgeProgress | null>(null);
 	const [restored, setRestored] = useState(false);
 	const [loadingJob, setLoadingJob] = useState(true);
@@ -188,12 +204,46 @@ function TrainingWorkspace() {
 		const timer = window.setTimeout(() => setCelebrating(false), 2400);
 		return () => window.clearTimeout(timer);
 	}, [preparationComplete]);
-	return <div className="training-workspace">
-		<div className="training-run-status" aria-live="polite"><KeatingBot state={exporting || loadingJob ? "thinking" : preparationComplete ? "success" : "idle"} size={40} animated={exporting || loadingJob || celebrating} label="" />{loadingJob ? "Loading saved preparation…" : restored ? "Restored your saved dataset. Resume reuses completed scores." : "Dataset and scores are checkpointed in this browser."}{progress && <span>{progress.completed}/{progress.total} checked · {progress.scored} scored · {progress.cached} reused · {progress.fallbackScored} fallback · {progress.failed} failed{progress.paused ? " · Paused" : ""}</span>}{exporting && <button type="button" className="training-secondary" onClick={() => abortRef.current?.abort()}>Pause scoring</button>}</div>
+	const steps = [
+		{ id: "source", name: "Choose your data", detail: ({ all: "All sources", sessions: "Conversations", artifacts: "Teaching artifacts", sandbox: "Sandbox work" })[source] + " · " + ({ both: "ChatML + Alpaca", chatml: "ChatML", alpaca: "Alpaca" })[format] },
+		{ id: "shape", name: "Shape the dataset", detail: keepAllResponses ? "Keep everything" : "Filter for training" },
+		{ id: "score", name: "Score it", detail: judgeScoring ? (scoreAll ? "All eligible responses" : `Up to ${maxJudgeExamples} responses`) : "Optional · off" },
+		{ id: "download", name: "Download or share", detail: "ZIP, JSONL" },
+	];
+	const [downloadBundle, setDownloadBundle] = useState<WebFineTuneExportResult | null>(null);
+	const [downloadError, setDownloadError] = useState("");
+	const [downloadedSnapshot, setDownloadedSnapshot] = useState<string | null>(null);
+	const completedSteps = [
+		step !== "source" || Boolean(bundle),
+		Boolean(bundle),
+		preparationComplete,
+		Boolean(bundle && downloadedSnapshot === manifest.generatedAt),
+	];
+	const completedCount = completedSteps.filter(Boolean).length;
+	return <main className="training-workspace">
+		<AppBar back={{ label: "Activity", to: "/usage" }} title={<h1>Training data</h1>} subtitle="Turn your teaching work into a dataset you can inspect and use.">
+			{loadingJob ? <Loading size="inline" label="Loading saved preparation…"/> : <span className="training-checkpoint" role="status" data-glyph-host><KeatingGlyph name="save" size={14}/> {restored ? "Restored your saved dataset. Resume reuses completed scores." : "Dataset and scores are checkpointed in this browser."}</span>}
+			<Button variant="ghost" onClick={() => setImportOpen(true)}>Bring existing data in</Button>
+		</AppBar>
+		{(progress || exporting) && <div className="training-run-status" role="status">
+			<KeatingBot state={exporting ? "thinking" : preparationComplete ? "success" : "idle"} animated={exporting || celebrating} size={40} label=""/>
+			{progress && <span>{progress.completed}/{progress.total} checked · {progress.scored} scored · {progress.cached} reused · {progress.fallbackScored} fallback · {progress.failed} failed{progress.paused ? " · Paused" : ""}</span>}
+			{exporting && <Button onClick={() => abortRef.current?.abort()}>Pause scoring</Button>}
+		</div>}
 		<div className="training-columns">
-		<form className="training-config" onSubmit={(event) => { event.preventDefault(); void handleExport(); }}>
-		<div className="training-tabs" role="tablist" aria-label="Dataset settings">{["data", "scorers", "readme", "import"].map(tab => <button type="button" role="tab" aria-selected={settingsTab === tab} key={tab} onClick={() => setSettingsTab(tab)}>{tab === "data" ? "Data" : tab === "scorers" ? "Scorers" : tab === "readme" ? "README" : "Import"}</button>)}</div>
-		<fieldset hidden={settingsTab !== "data"} disabled={exporting || loadingJob}>
+		<nav className="training-steps k-halftone" aria-label="Dataset steps">
+			{steps.map(({ id, name, detail }, i) => <button type="button" key={id} aria-current={step === id ? "step" : undefined} aria-controls="training-step" onClick={() => setStep(id)}>
+				<b aria-hidden="true">{completedSteps[i] ? <KeatingGlyph name="check" size={14}/> : i + 1}</b>{completedSteps[i] && <span className="training-sr">done </span>}<span><strong>{name}</strong><small>{detail}</small></span>
+			</button>)}
+			<div className="training-step-progress"><Progress done={completedCount} total={steps.length} label="Dataset steps completed"/></div>
+			<p className="training-note">{judgeScoring ? `${scoreAll ? "All eligible responses" : `Up to ${maxJudgeExamples} responses`} use your judgement settings. Unknown scores remain empty.` : "Preparation runs locally. No model calls while scoring is off."}</p>
+		</nav>
+		<form ref={panelRef} id="training-step" className="training-config" onSubmit={event => { event.preventDefault(); void handleExport(); }}
+			onInvalid={event => {
+				const input = event.target as HTMLInputElement;
+				if (input.closest("fieldset[hidden]")) { setStep("shape"); requestAnimationFrame(() => input.focus()); }
+			}}>
+		<fieldset hidden={step !== "source"} disabled={exporting || loadingJob}>
 		<legend>Choose your data</legend>
 		<p>Build from sessions, teaching artifacts, or sandbox work saved in this browser.</p>
 		<div className="training-fields">
@@ -201,9 +251,17 @@ function TrainingWorkspace() {
 		<label>Training format<select value={format} onChange={e => setFormat(e.target.value as WebFineTuneFormat)}><option value="both">ChatML + Alpaca</option><option value="chatml">ChatML · conversations</option><option value="alpaca">Alpaca · instruction pairs</option></select></label>
 		</div>
 		</fieldset>
-		<fieldset hidden={settingsTab !== "data"} disabled={exporting || loadingJob}>
+		<fieldset hidden={step !== "shape"} disabled={exporting || loadingJob}>
 		<legend>Shape the dataset</legend>
-		<div className="training-presets" role="group" aria-label="Retention preset"><button type="button" aria-pressed={!keepAllResponses} onClick={() => { setKeepAllResponses(false); setMinAssistantChars(200); setDeduplicate(true); }}>Filter for training</button><button type="button" aria-pressed={keepAllResponses} onClick={() => { setKeepAllResponses(true); setSource("all"); setMinAssistantChars(1); setMaxAssistantChars(0); setMaxRecords(0); setDeduplicate(false); }}>Keep everything</button></div>
+		<Segmented wide label="Retention preset" value={keepAllResponses ? "all" : "filtered"}
+			options={[{ value: "filtered", label: "Filter for training" }, { value: "all", label: "Keep everything" }]}
+			onChange={value => {
+				const keepAll = value === "all";
+				setKeepAllResponses(keepAll);
+				setMinAssistantChars(keepAll ? 1 : 200);
+				setDeduplicate(!keepAll);
+				if (keepAll) { setSource("all"); setMaxAssistantChars(0); setMaxRecords(0); }
+			}}/>
 		{keepAllResponses && <p>Retain short, duplicate, low-scoring, and error responses. Include a source snapshot with original message types and metadata. Secret redaction remains your choice below.</p>}
 		<p>Lengths are in characters. Records outside the range are excluded, not truncated.</p>
 		<div className="training-fields">
@@ -212,15 +270,19 @@ function TrainingWorkspace() {
 		<label>Record limit<input disabled={keepAllResponses} type="number" min="0" value={maxRecords} onChange={e => setMaxRecords(Math.max(0, Number(e.target.value)))} /><small>0 includes all matching records; limits follow source order</small></label>
 		<label>Validation share (%)<input type="number" min="0" max="50" value={validationPercent} onChange={e => setValidationPercent(Math.min(50, Math.max(0, Number(e.target.value))))} /><small>Labels canonical records by source group. Actual share varies.</small></label>
 		</div>
-		<label className="training-check"><input disabled={keepAllResponses} type="checkbox" checked={deduplicate} onChange={e => setDeduplicate(e.target.checked)} /><span>Remove duplicate examples<small>Keep one copy of repeated training content.</small></span></label>
-		<label className="training-check"><input type="checkbox" checked={redact} onChange={e => setRedact(e.target.checked)} /><span>Redact detected secrets<small>Remove recognized credentials and email addresses. Inspect source data in Review before sharing.</small></span></label>
+		<div className="training-toggles">
+			<div><Chip as="button" selected={deduplicate} disabled={keepAllResponses} aria-describedby="td-dedup" onClick={() => setDeduplicate(!deduplicate)}>{deduplicate && <KeatingGlyph name="check" size={14}/>}Remove duplicate examples</Chip>
+			<small id="td-dedup">Keep one copy of repeated training content.</small></div>
+			<div><Chip as="button" selected={redact} aria-describedby="td-redact" onClick={() => setRedact(!redact)}>{redact && <KeatingGlyph name="check" size={14}/>}Redact detected secrets</Chip>
+			<small id="td-redact">Remove recognized credentials and email addresses. Inspect source data in Review before sharing.</small></div>
+		</div>
 		</fieldset>
-		<fieldset hidden={settingsTab !== "scorers"} disabled={exporting || loadingJob}>
-		<legend>Optional scoring</legend>
+		<fieldset hidden={step !== "score"} disabled={exporting || loadingJob}>
+		<legend>Score it</legend>
 		<label className="training-check"><input type="checkbox" checked={judgeScoring} onChange={e => setJudgeScoring(e.target.checked)} /><span>Add teaching estimates<small>Uses your independent judgement setting. Hosted scoring uses account credits when enabled.</small></span></label>
 		{judgeScoring && <div className="training-judge">
 		<p>Judgement: <strong>{judgementSettings.backend === "off" ? "Off — responses remain unscored" : judgementSettings.backend === "hosted" ? "Local first, then Not Organic" : "On this device"}</strong>{judgementSettings.backend !== "off" && <> · {judgementSettings.localModelId}</>}.</p>
-		<a className="training-secondary" href="/chat?settings=judgement" target="_blank" rel="noopener noreferrer">Judgement settings (new tab)<ChevronRight size={16}/></a>
+		<a className="training-secondary" href="/chat?settings=judgement" target="_blank" rel="noopener noreferrer">Judgement settings (new tab)<KeatingGlyph name="ext"/></a>
 		<label>Scoring scope<select value={scoreAll ? "all" : "limited"} onChange={e => setScoreAll(e.target.value === "all")}><option value="limited">Limit the number of responses</option><option value="all">Score all eligible responses</option></select></label>
 		{!scoreAll && <label>Maximum responses to score<input type="number" min="1" value={maxJudgeExamples} onChange={e => setMaxJudgeExamples(Math.max(1, Number(e.target.value)))} /></label>}
 		{scoreAll && <p>Every eligible conversation response will be checked. Time and any hosted charges scale with the dataset.</p>}
@@ -228,41 +290,76 @@ function TrainingWorkspace() {
 		<p>Uncalibrated scores are estimates of teaching behavior. They do not establish learning gains. Unavailable models and uncertain answers leave responses unscored.</p>
 		</div>}
 		</fieldset>
-				<section className="training-import" hidden={settingsTab !== "import"}><div><h2>Bring existing data in</h2><p>Import ChatML or Alpaca JSONL as local sessions, then prepare them with the same controls.</p><p aria-live="polite">{importResult && `${importResult.examplesImported} examples imported into ${importResult.sessionsImported} sessions · ${importResult.skipped} skipped`}</p></div><label className="training-secondary"><Upload size={16}/>Choose JSONL files<input className="training-file-input" type="file" accept=".jsonl,application/jsonl,application/x-ndjson" multiple disabled={exporting} onChange={e => { void handleImport(e.target.files); e.target.value = ""; }}/></label></section>
-		<div hidden={settingsTab !== "readme"}><button type="button" className="training-secondary" disabled={exporting} onClick={() => setJudgePickerOpen(true)}>README model: {judgeModel.name}<ChevronRight size={16}/></button>		{bundle && <TrainingDatasetSummary bundle={bundle} model={judgeModel} thinkingLevel={judgeThinkingLevel} disabled={exporting} onChange={readmeSummary => {
+		<div hidden={step !== "download"}><h2>Download or share</h2>
+			{bundle?.sourceDataJson && <Button onClick={() => downloadTextFile("source-snapshot.json", bundle.sourceDataJson!, "application/json")}>Source snapshot</Button>}
+			{bundle && !exporting && <div ref={shareRef} tabIndex={-1}>
+				<TrainingDatasetShare key={manifest.generatedAt} archive={archive} recordCount={bundle.recordCount}
+					redacted={manifest.redactionEnabled} expanded={shareOpen} onExpandedChange={setShareOpen}/>
+			</div>}
+			<button type="button" className="training-secondary" disabled={exporting} onClick={() => setJudgePickerOpen(true)}>README model: {judgeModel.name}<KeatingGlyph name="chevr"/></button>		{bundle && <TrainingDatasetSummary bundle={bundle} model={judgeModel} thinkingLevel={judgeThinkingLevel} disabled={exporting} onChange={readmeSummary => {
 			setBundle(previous => previous ? { ...previous, readmeSummary } : previous);
 			if (jobRef.current) { jobRef.current.bundle = { ...jobRef.current.bundle, readmeSummary }; void saveTrainingExportJob(jobRef.current).catch(() => setError("The summary is in this session, but could not be checkpointed.")); }
 		}}/>}{!bundle && <p className="training-note">Prepare a dataset to add an optional summary to its README.</p>}</div>
-		<div className="training-prepare-actions">
-		<button className="training-primary" disabled={exporting || loadingJob} type="submit">{exporting ? "Preparing dataset…" : judgeScoring ? "Score / resume missing" : "Prepare dataset"}<ChevronRight size={16}/></button>
-		<button type="button" className="training-secondary" disabled={exporting || loadingJob} onClick={() => void handleExport(true)}>Refresh source data</button>
-		</div>
-		<p className="training-note">{judgeScoring ? `${scoreAll ? "All eligible responses" : `Up to ${maxJudgeExamples} responses`} use your judgement settings. Unknown scores remain empty.` : "Preparation runs locally. No model calls while scoring is off."}</p>
-
+		{(step === "shape" || step === "score") && <div className="training-prepare-actions">
+			<Button variant="ghost" onClick={() => setStep(step === "shape" ? "source" : "shape")}>Back</Button>
+			<Button variant="ghost" disabled={exporting || loadingJob} onClick={() => void handleExport(true)}>Refresh source data</Button>
+			<Button variant="primary" busy={exporting} disabled={exporting || loadingJob} type="submit">{exporting ? "Preparing dataset…" : judgeScoring ? "Score / resume missing" : "Prepare dataset"}</Button>
+		</div>}
 		</form>
 		<section className="training-review" aria-label="Dataset overview" aria-busy={exporting}>
-		<header><h2>Dataset overview</h2><p>{bundle ? `Prepared snapshot · ${manifest.source} · ${manifest.redactionEnabled ? "redaction on" : "unredacted"}. Controls apply on the next preparation.` : "Prepare, score, and export the complete dataset."}</p></header>
-		{!bundle && <div className="training-empty"><KeatingBot variant="body" state={exporting || loadingJob ? "thinking" : "idle"} size={136} label="" /><h3>{exporting ? "Preparing your records" : "Your dataset starts here"}</h3><p>{exporting ? "Filtering data and assembling training files. Scoring can take longer." : "Choose your sources and filters, then prepare a dataset to see dataset composition, quality counts, and included files."}</p></div>}
-		{bundle && <>
-		<dl className="training-counts"><div><dt>Records</dt><dd>{formatNumber(bundle.recordCount)}</dd></div><div><dt>SFT examples</dt><dd>{formatNumber(bundle.exampleCount)}</dd></div><div><dt>Validation</dt><dd>{manifest.counts.validationRecords}</dd></div></dl>
-		<div className="training-quality"><h3>Quality breakdown</h3><p>{Object.entries(manifest.quality).map(([key, value]) => `${value} ${key}`).join(" · ")}</p><p>{bundle.skippedCount} skipped · {bundle.redactionCount} redactions · {manifest.counts.duplicatesRemoved} duplicates removed</p></div>
-		<div className="training-composition"><h3>Dataset composition</h3><dl>{Object.entries(sourceCounts).map(([source, count]) => <div key={source}><dt>{source === "session" ? "Conversation responses" : source === "artifact" ? "Teaching artifacts" : "Sandbox records"}</dt><dd>{formatNumber(count)}</dd></div>)}</dl></div>
-		<details className="training-session-list"><summary>Source sessions · {datasetSessions.length}</summary><p>Open Review for detailed annotations, summaries, and response-level work.</p>{datasetSessions.length ? <ul>{datasetSessions.map(session => <li key={session.id}><span>{session.title}<small>{session.count} records</small></span><Link to="/review/sessions/$sessionId" params={{ sessionId: session.id }} target="_blank" rel="noopener noreferrer">Open in Review ↗</Link></li>)}</ul> : <p>No source sessions in this dataset.</p>}</details>
-		<details className="training-files"><summary>Included files & quality notes</summary><ul>{(archive?.files ?? []).map(file => <li key={file.path}><strong>{file.path}</strong> — {file.purpose}</li>)}</ul><p>Canonical records preserve provenance, quality flags, and train/validation labels. Compatibility files combine both partitions: split from canonical records before training and evaluation. Review unscored data before use.</p></details>
-		<div className="training-downloads"><button className="training-primary" onClick={() => { try { const ready = archive ?? buildWebTrainingArchive(bundle); downloadFile(ready.filename, ready.bytes, "application/zip"); } catch { setError("ZIP download failed. Use the JSONL download or try again; no rescoring is required."); } }}><Download size={16}/>Download current ZIP</button><button className="training-secondary" onClick={() => downloadTextFile("keating.training.jsonl", bundle.canonicalJsonl ?? "", "application/x-ndjson")}>Records JSONL</button>{bundle.sourceDataJson && <button className="training-secondary" onClick={() => downloadTextFile("source-snapshot.json", bundle.sourceDataJson!, "application/json")}>Source snapshot</button>}</div>{packaging.error && <p role="alert">{packaging.error}</p>}{!exporting && <TrainingDatasetShare key={manifest.generatedAt} archive={archive} recordCount={bundle.recordCount} redacted={manifest.redactionEnabled}/> }
-		</>}
-		<div aria-live="polite">{result && !bundle && <p>{result.records} records · {result.skipped} skipped</p>}{exportWarnings.map(warning => <p className="training-warning" key={warning}>{warning}</p>)}{error && <p role="alert" className="training-warning">{error}</p>}</div>
+			<header className="k-halftone"><h2>Dataset overview</h2>{bundle && <span>Prepared snapshot · {manifest.source} · {manifest.redactionEnabled ? "redaction on" : "unredacted"}</span>}</header>
+			<p>{bundle ? "Controls apply on the next preparation." : "Prepare, score, and export the complete dataset."}</p>
+			{!bundle && (exporting || loadingJob ? <div className="training-empty">
+				<KeatingBot variant="body" state="thinking" size={96} label=""/>
+				<Loading label={exporting ? "Preparing your records" : "Your dataset starts here"}/>
+				<p>{exporting ? "Filtering data and assembling training files. Scoring can take longer." : "Choose your sources and filters, then prepare a dataset to see dataset composition, quality counts, and included files."}</p>
+			</div> : <EmptyState heading={<><KeatingBot variant="body" state="idle" size={96} label=""/>Your dataset starts here</>}>
+				Choose your sources and filters, then prepare a dataset to see dataset composition, quality counts, and included files.
+			</EmptyState>)}
+			{bundle && <>
+				<DatasetFigures records={bundle.recordCount} examples={bundle.exampleCount} validation={manifest.counts.validationRecords} counts={sourceCounts}/>
+				<div className="training-quality"><p>{bundle.skippedCount} skipped · {bundle.redactionCount} redactions · {manifest.counts.duplicatesRemoved} duplicates removed</p><h3>Quality breakdown</h3><p>{Object.entries(manifest.quality).map(([key, value]) => `${value} ${key}`).join(" · ")}</p></div>
+				<details className="training-session-list"><summary>Source sessions · {datasetSessions.length}</summary><p>Open Review for detailed annotations, summaries, and response-level work.</p>{datasetSessions.length ? <ul>{datasetSessions.map(session => <li key={session.id}><span>{session.title}<small>{session.count} records</small></span><Link to="/review/sessions/$sessionId" params={{ sessionId: session.id }} target="_blank" rel="noopener noreferrer">Open in Review <KeatingGlyph name="ext" size={13} /></Link></li>)}</ul> : <EmptyState heading="No source sessions in this dataset."/>}</details>
+				<div className="training-files"><h3>In the ZIP</h3><DefinitionList items={(archive?.files ?? []).map(file => ({ term: file.path, detail: file.purpose }))}/>
+				<p>Canonical records preserve provenance, quality flags, and train/validation labels. Compatibility files combine both partitions: split from canonical records before training and evaluation. Review unscored data before use.</p></div>
+
+				<div className="training-export-row"><KeatingBot state="letter" animated={celebrating} size={44} label=""/>
+				{!exporting && <button type="button" disabled={!archive} className="training-share-link" onClick={() => {
+					setStep("download");
+					setShareOpen(true);
+					requestAnimationFrame(() => shareRef.current?.focus());
+				}}>Share with Keating…</button>}
+					<Button onClick={() => {
+						downloadTextFile("keating.training.jsonl", bundle.canonicalJsonl ?? "", "application/x-ndjson");
+						setDownloadedSnapshot(manifest.generatedAt);
+					}}>Records JSONL</Button>
+					<Button variant="primary" glyph="export" onClick={() => { setDownloadError(""); setDownloadBundle(bundle); }}>Download ZIP</Button>
+				</div>
+				{packaging.error && <p role="alert">{packaging.error}</p>}
+			</>}
+			<div aria-live="polite">{result && !bundle && <p>{result.records} records · {result.skipped} skipped</p>}{exportWarnings.map(warning => <p className="training-warning" key={warning}>{warning}</p>)}{error && <p role="alert" className="training-warning">{error}</p>}</div>
 		</section>
 		</div>
-
+		{downloadBundle && <ExportSheet open onClose={() => setDownloadBundle(null)} title="Download dataset"
+			included={`${downloadBundle.recordCount} canonical records, ${downloadBundle.exampleCount} training examples, manifest, schema and README.${downloadBundle.sourceDataJson ? " Includes the selected source snapshot." : ""}`}
+			excluded={downloadBundle.sourceDataJson ? "Data outside the prepared source snapshot." : "The original source snapshot and data outside this preparation."}
+			format="ZIP archive with JSONL training files" destination="Your downloads folder. Nothing is uploaded."
+			confirmLabel="Download ZIP" error={downloadError || undefined} onConfirm={() => {
+				try {
+					const ready = (downloadBundle === bundle && archive) || buildWebTrainingArchive(downloadBundle);
+					downloadFile(ready.filename, ready.bytes, "application/zip");
+					setDownloadedSnapshot(JSON.parse(downloadBundle.manifestJson).generatedAt);
+					setDownloadBundle(null);
+				} catch { setDownloadError("ZIP download failed. Use the JSONL download or try again; no rescoring is required."); }
+			}}/>}
+		<Sheet open={importOpen} onClose={() => setImportOpen(false)} title="Bring existing data in"><section className="training-import"><div><p>Import ChatML or Alpaca JSONL as local sessions, then prepare them with the same controls.</p><p aria-live="polite">{importResult && `${importResult.examplesImported} examples imported into ${importResult.sessionsImported} sessions · ${importResult.skipped} skipped`}</p></div><label className="training-secondary"><KeatingGlyph name="import"/>Choose JSONL files<input className="training-file-input" type="file" accept=".jsonl,application/jsonl,application/x-ndjson" multiple disabled={exporting} onChange={e => { void handleImport(e.target.files); e.target.value = ""; }}/></label>{error && <p role="alert">{error}</p>}</section></Sheet>
 		<ModelSelectorDialog open={judgePickerOpen} currentModel={judgeModel} onClose={() => setJudgePickerOpen(false)} onSelect={model => { setJudgeModel(model); const levels = getSupportedThinkingLevels(model); if (!levels.includes(judgeThinkingLevel)) setJudgeThinkingLevel(levels.includes("minimal") ? "minimal" : levels[0] ?? "off"); setJudgePickerOpen(false); }} title="README model" description="Writes the dataset summary. This does not change your judgement model." actionLabel="Use for README" preloadBrowserModel={false}/>
-	</div>;
+	</main>;
 }
 function ScorerSettings({ value, onChange }: { value: { maxTokens: number; temperature: number; timeoutMs: number; retries: number }; onChange: (patch: Partial<JudgeScorerConfig>) => void }) {
 	return <details className="training-scorer-details"><summary>Request settings</summary><div className="training-fields"><label>Timeout (seconds)<input type="number" min="5" max="600" value={value.timeoutMs / 1000} onChange={e => onChange({ timeoutMs: Math.min(600, Math.max(5, Number(e.target.value))) * 1000 })}/></label><label>Retries per response<input type="number" min="0" max="3" value={value.retries} onChange={e => onChange({ retries: Math.min(3, Math.max(0, Number(e.target.value))) })}/></label></div><p>Retries may use credits. Resume reuses scores only for the same concrete model and calibration. A hosted alias must resolve its version again before cached scores can be reused.</p></details>;
 }
-function BookPreview() { return <Download size={28} aria-hidden="true"/>; }
 export function TrainingData() {
 	useSeo({ title: "Training data — Keating", description: "Prepare, inspect, import, and export training datasets from your Keating work.", canonical: "https://keating.help/training-data" });
-	return <div className="retro-layout retro-page training-page"><Nav/><main><Link className="training-back" to="/usage"><ArrowLeft size={14}/>Usage</Link><header className="training-heading"><h1>Training data</h1><p>Turn your teaching work into a dataset you can inspect and use.</p></header><TrainingWorkspace/></main></div>;
+	return <div className="retro-layout retro-page training-page"><TrainingWorkspace/></div>;
 }

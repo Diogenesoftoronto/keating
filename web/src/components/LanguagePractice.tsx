@@ -1,5 +1,9 @@
+import { Loading } from "../design-system/kit";
+import { LessonFrame } from "./lesson/LessonFrame";
+import { Progress, Stat } from "../design-system/charts";
+import "./specialist-lessons.css";
 import { useEffect, useId, useRef, useState } from "react";
-import { ArrowRight, Check, Headphones, Languages, Mic, RotateCcw, Send, SkipForward, Square, Volume2 } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import type { UiActionReceipt, UiLanguagePracticeNode, UiLanguageRound, UiLanguageRoundResult } from "@keating/learner-contracts";
 import type { SharedUiActionEvent } from "../keating/openui/shared-renderer";
 import { formatQuizDuration } from "./quiz/game";
@@ -27,7 +31,7 @@ function LanguageRun({ node, receipt, disabled = false, onAction }: LanguagePrac
   const [error, setError] = useState("");
   const started = useRef(Date.now());
   const entered = useRef(started.current);
-  const heading = useRef<HTMLHeadingElement>(null);
+  const heading = useRef<HTMLSpanElement>(null);
   const saved = receipt?.state === "completed" && receipt.action.type === "complete-language-practice" ? receipt.action : undefined;
   const terminal = Boolean(saved || delivered);
   const completion = saved ?? pending;
@@ -57,28 +61,25 @@ function LanguageRun({ node, receipt, disabled = false, onAction }: LanguagePrac
     else { entered.current = at; setIndex(index + 1); }
   };
 
-  return <section className="language-game" data-language-practice={node.id} data-language-phase={terminal ? "completed" : pending ? "saving" : "playing"}>
-    <header className="language-game__header">
-      <div><p className="language-game__eyebrow"><Languages size={15} aria-hidden="true" />{node.language}</p><h3 ref={heading} tabIndex={-1}>{terminal ? "Practice complete" : pending ? "Ready to save" : node.title}</h3></div>
-      {terminal ? <Check size={26} aria-hidden="true" /> : <span className="language-game__position">{pending ? node.rounds.length : index + 1}<span> / {node.rounds.length}</span></span>}
-    </header>
-    <div className="language-game__progress" role="progressbar" aria-label="Rounds completed" aria-valuemin={0} aria-valuemax={node.rounds.length} aria-valuenow={completion ? node.rounds.length : rounds.length}>
-      <span style={{ transform: `scaleX(${(completion ? node.rounds.length : rounds.length) / Math.max(1, node.rounds.length)})` }} />
-    </div>
+  return <LessonFrame className="language-game" glyph="globe" kind={node.language}
+    title={<span role="heading" aria-level={3} ref={heading} tabIndex={-1}>{terminal ? "Practice complete" : pending ? "Ready to save" : node.title}</span>}
+    tools={terminal ? <KeatingGlyph name="check" size={15} /> : <span>{pending ? node.rounds.length : index + 1} / {node.rounds.length}</span>}
+    data-language-practice={node.id} data-language-phase={terminal ? "completed" : pending ? "saving" : "playing"}>
+    <Progress label="Rounds completed" done={completion ? node.rounds.length : rounds.length} total={node.rounds.length} />
     {completion ? <>
       <div className="language-game__results" role="status">
-        {completion.objectiveTotal ? <div><strong>{completion.correct}/{completion.objectiveTotal}</strong><span>answers correct</span></div> : null}
-        {node.rounds.some((round) => round.kind === "pronunciation") ? <div><strong>{completion.pronunciationPracticed}</strong><span>pronunciation practiced</span></div> : null}
+        {completion.objectiveTotal ? <Stat value={`${completion.correct}/${completion.objectiveTotal}`} label="answers correct" /> : null}
+        {node.rounds.some((round) => round.kind === "pronunciation") ? <Stat value={completion.pronunciationPracticed} label="pronunciation practiced" /> : null}
       </div>
       <p className="language-game__duration">{formatQuizDuration(completion.totalMs)} total</p>
       <ol className="language-game__recap">{completion.rounds.map((result) => {
         const round = node.rounds.find((item) => item.id === result.roundId)!;
-        return <li key={result.roundId}><span>{round.kind === "word-order" ? languageReferenceAnswer(round) : round.text}<small>{result.outcome === "practiced" ? "Practiced · not scored" : result.outcome === "skipped" ? "Skipped" : `${result.outcome === "correct" ? "Correct" : "Keep practicing"} · ${result.attempts} ${result.attempts === 1 ? "attempt" : "attempts"}`}</small></span><time>{formatQuizDuration(result.timeMs)}</time></li>;
+        return <li key={result.roundId}><span>{round.kind === "word-order" ? languageReferenceAnswer(round) : round.text}<small>{result.outcome === "practiced" ? "Practiced · not scored" : result.outcome === "skipped" ? "Skipped" : `${result.outcome === "correct" ? "Correct" : "Not quite"} · ${result.attempts} ${result.attempts === 1 ? "attempt" : "attempts"}`}</small></span><time>{formatQuizDuration(result.timeMs)}</time></li>;
       })}</ol>
-      {!terminal ? <button className="language-game__primary" type="button" disabled={disabled} onClick={() => deliver(completion)}><Send size={17} aria-hidden="true" />Retry save practice</button> : null}
+      {!terminal ? <button className="language-game__primary k-lift" type="button" disabled={disabled} onClick={() => deliver(completion)}><KeatingGlyph name="refresh" size={17} />Retry save practice</button> : null}
       {error ? <p className="language-game__error" role="alert">{error}</p> : null}
     </> : current ? <LanguageRound key={current.id} round={current} language={node.language} disabled={disabled} last={index + 1 === node.rounds.length} onFinish={finishRound} /> : <p role="alert">This practice has no rounds.</p>}
-  </section>;
+  </LessonFrame>;
 }
 
 function LanguageRound({ round, language, disabled, last, onFinish }: { round: UiLanguageRound; language: string; disabled: boolean; last: boolean; onFinish: (result: Omit<UiLanguageRoundResult, "timeMs">) => void }) {
@@ -137,7 +138,7 @@ function LanguageRound({ round, language, disabled, last, onFinish }: { round: U
     {round.kind === "translation" || round.kind === "pronunciation" ? <p className="language-round__phrase">{round.text}</p> : null}
     {isAudio ? <>
       <div className="language-audio">
-        <button type="button" className="language-audio__listen" disabled={disabled || recordingBusy} onClick={() => void listen(false)} aria-label={playing ? "Stop reference audio" : "Listen to reference"}>{playing ? <Square size={24} aria-hidden="true" /> : <Volume2 size={28} aria-hidden="true" />}<span>{playing ? "Stop" : "Listen"}</span></button>
+        <button type="button" className="language-audio__listen" disabled={disabled || recordingBusy} onClick={() => void listen(false)} aria-label={playing ? "Stop reference audio" : "Listen to reference"}>{playing ? <KeatingGlyph name="stop" size={24} /> : <KeatingGlyph name="speaker" size={24} />}<span>{playing ? "Stop" : "Listen"}</span></button>
         {round.referenceAudioUrl ? <button type="button" className="language-game__quiet" disabled={disabled || recordingBusy || playing} onClick={() => void listen(true)}>Slower</button> : null}
       </div>
       {round.audioCreditUrl ? <a className="language-audio__credit" href={round.audioCreditUrl} target="_blank" rel="noreferrer">Audio credit</a> : null}
@@ -153,23 +154,23 @@ function LanguageRound({ round, language, disabled, last, onFinish }: { round: U
       <input id={`${id}-answer`} value={text} onChange={(event) => setText(event.currentTarget.value)} disabled={locked} autoComplete="off" autoCapitalize="sentences" spellCheck={false} placeholder={round.kind === "listening" ? "What did you hear?" : "Your translation"} />
     </form> : <div className="language-pronunciation">
       <button type="button" className="language-pronunciation__record" data-recording={recording.state === "recording" || undefined} disabled={disabled || playing || recording.state === "opening" || recording.state === "saving"} onClick={() => { playback.current?.pause(); if (recording.state === "recording") void recording.stop(); else void recording.start(); }}>
-        {recording.state === "recording" ? <Square size={19} aria-hidden="true" /> : <Mic size={19} aria-hidden="true" />}
-        {recording.state === "recording" ? `Stop · ${(recording.elapsedMs / 1000).toFixed(1)}s` : recording.state === "opening" ? "Opening microphone…" : recording.state === "saving" ? "Saving recording…" : recording.url ? "Record again" : "Record yourself"}
+        {recording.state === "recording" ? <KeatingGlyph name="stop" size={19} /> : <KeatingGlyph name="mic" size={19} />}
+        {recording.state === "recording" ? `Stop · ${(recording.elapsedMs / 1000).toFixed(1)}s` : recording.state === "opening" ? <Loading size="inline" label="Opening microphone…" /> : recording.state === "saving" ? <Loading size="inline" label="Saving recording…" /> : recording.url ? "Record again" : "Record yourself"}
       </button>
-      {recording.url ? <div className="language-pronunciation__playback"><label htmlFor={`${id}-recording`}><Headphones size={15} aria-hidden="true" />Your recording</label><audio ref={playback} id={`${id}-recording`} controls src={recording.url} onPlay={() => controller.current?.abort()} onEnded={() => setCompared(true)} onError={() => setAudioError("Your recording could not play. Record it again.")} /></div> : null}
+      {recording.url ? <div className="language-pronunciation__playback"><label htmlFor={`${id}-recording`}><KeatingGlyph name="headphones" size={15} />Your recording</label><audio ref={playback} id={`${id}-recording`} controls src={recording.url} onPlay={() => controller.current?.abort()} onEnded={() => setCompared(true)} onError={() => setAudioError("Your recording could not play. Record it again.")} /></div> : null}
       <p className="language-pronunciation__note">{recording.url ? "Compare your rhythm and sounds with the reference." : "Listen, then make a short recording."} Your recording stays here.</p>
       {recording.error ? <p className="language-game__error" role="alert">{recording.error}</p> : null}
     </div>}
     {feedback ? <div className="language-feedback" role="status" data-correct={feedback === "correct" || undefined}>
-      <strong>{feedback === "correct" ? <><Check size={19} aria-hidden="true" />Got it!</> : "One to practice"}</strong>
+      <strong>{feedback === "correct" ? <><KeatingGlyph name="check" size={19} />Correct</> : <><KeatingGlyph name="x" size={19} />Not quite</>}</strong>
       {feedback === "retry" ? <p>{languageReferenceAnswer(round)}</p> : null}
       <div className="language-game__actions">
-        {feedback === "retry" ? <button type="button" className="language-game__quiet" disabled={disabled} onClick={() => { setFeedback(undefined); setText(""); setSelected([]); }}><RotateCcw size={16} aria-hidden="true" />Try again</button> : null}
-        <button type="button" className="language-game__primary" disabled={disabled} onClick={() => finish(feedback)}>{last ? "Finish practice" : "Continue"}<ArrowRight size={17} aria-hidden="true" /></button>
+        {feedback === "retry" ? <button type="button" className="language-game__quiet" disabled={disabled} onClick={() => { setFeedback(undefined); setText(""); setSelected([]); }}><KeatingGlyph name="refresh" size={17} />Try again</button> : null}
+        <button type="button" className="language-game__primary k-lift" disabled={disabled} onClick={() => finish(feedback)}>{last ? "Finish practice" : "Continue"}<KeatingGlyph name="right" size={17} /></button>
       </div>
     </div> : <div className="language-game__actions">
-      <button type="button" className="language-game__quiet" disabled={disabled || recordingBusy || playing} onClick={() => finish("skipped")}><SkipForward size={15} aria-hidden="true" />Skip</button>
-      <button type="button" className="language-game__primary" disabled={disabled || recordingBusy || (round.kind === "pronunciation" ? !(heard && compared) : !canCheck)} onClick={() => round.kind === "pronunciation" ? finish("practiced") : check()}>{round.kind === "pronunciation" ? last ? "Finish practice" : "Compared" : "Check"}<Check size={17} aria-hidden="true" /></button>
+      <button type="button" className="language-game__quiet" disabled={disabled || recordingBusy || playing} onClick={() => finish("skipped")}><KeatingGlyph name="skip" size={17} />Skip</button>
+      <button type="button" className="language-game__primary k-lift" disabled={disabled || recordingBusy || (round.kind === "pronunciation" ? !(heard && compared) : !canCheck)} onClick={() => round.kind === "pronunciation" ? finish("practiced") : check()}>{round.kind === "pronunciation" ? last ? "Finish practice" : "Compared" : "Check"}<KeatingGlyph name="check" size={17} /></button>
     </div>}
     {round.hint && !feedback ? <details className="language-game__hint"><summary>Hint</summary><p>{round.hint}</p></details> : null}
   </div>;

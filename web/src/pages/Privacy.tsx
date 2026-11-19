@@ -1,12 +1,27 @@
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
 import { DIAGNOSTIC_SUPPORT_EMAIL } from "../lib/diagnostics";
-import { DownloadPdfButton } from "../components/DownloadPdfButton";
+import { LegalContents, LegalDocumentHeader } from "../components/LegalDocumentHeader";
 import { useSeo } from "../hooks/useSeo";
-import { cx } from "../../styled-system/css";
-import { eyebrow, paperCard } from "../../styled-system/recipes";
 
 const LAST_UPDATED = "August 4, 2026";
+
+const SECTIONS = [
+  ["overview", "The short version"],
+  ["device-storage", "Device storage"],
+  ["provider-keys", "Provider keys and requests"],
+  ["speech", "Speech features"],
+  ["shared-sessions", "Shared sessions"],
+  ["peer-sync", "Peer-to-peer sync"],
+  ["analytics", "Analytics and diagnostics"],
+  ["infrastructure-logs", "Infrastructure logs"],
+  ["cookies", "Cookies and storage"],
+  ["third-party", "Third-party services"],
+  ["your-rights", "Your choices and rights"],
+  ["children", "Children"],
+  ["changes", "Changes to this policy"],
+  ["contact", "Contact"],
+] as const;
 
 export function Privacy() {
   useSeo({
@@ -17,16 +32,25 @@ export function Privacy() {
   });
 
   return (
-    <div className={cx("retro-layout", "retro-page", "legal-layout")}>
-      <Nav />
-      <main className={cx("legal-page")}>
-        <article className={cx("wrap", "legal-doc", paperCard())}>
-          <div className={cx(eyebrow(), "prompt")}>cat PRIVACY_POLICY.txt</div>
-          <h1>Privacy Policy</h1>
-          <p className={cx("legal-updated")}>Last updated: {LAST_UPDATED}</p>
-          <DownloadPdfButton label="Privacy Policy" />
+    <div className="retro-layout retro-page public-page legal-layout legal-privacy">
+      <Nav publication />
+      <main className="legal-page public-texture-paper">
+        <article className="wrap legal-doc">
+          <LegalDocumentHeader
+            title="Privacy Policy"
+            updated={LAST_UPDATED}
+            glyph="lock"
+            topics={[
+              ["device-storage", "Device storage"],
+              ["your-rights", "Your rights"],
+              ["contact", "Contact"],
+            ]}
+          />
 
-          <section>
+          <div className="legal-reading-room">
+            <LegalContents sections={SECTIONS} />
+            <div className="legal-copy">
+          <section id="overview">
             <h2>1. The short version</h2>
             <p>
               Keating is local-first. Your conversations, study artifacts, settings, and provider
@@ -38,7 +62,7 @@ export function Privacy() {
             </p>
           </section>
 
-          <section>
+          <section id="device-storage">
             <h2>2. Data stored on your device</h2>
             <p>The app keeps its working data in browser storage (localStorage and IndexedDB) or, in the desktop app, in its local data directory. This includes:</p>
             <ul>
@@ -55,7 +79,7 @@ export function Privacy() {
             </p>
           </section>
 
-          <section>
+          <section id="provider-keys">
             <h2>3. Provider keys and AI requests</h2>
             <p>
               When you chat, the prompts, attached files, relevant session context, and your
@@ -72,7 +96,7 @@ export function Privacy() {
             </p>
           </section>
 
-          <section>
+          <section id="speech">
             <h2>4. Speech features</h2>
             <p>
               If you enable speech, audio for text-to-speech or transcription is sent to the speech
@@ -82,7 +106,7 @@ export function Privacy() {
             </p>
           </section>
 
-          <section>
+          <section id="shared-sessions">
             <h2>5. Shared sessions and public links</h2>
             <p>
               Creating a session share publishes the visible conversation, selected safe artifacts,
@@ -95,7 +119,7 @@ export function Privacy() {
             </p>
           </section>
 
-          <section>
+          <section id="peer-sync">
             <h2>6. Peer-to-peer sync (desktop)</h2>
             <p>
               The desktop app can replicate your data between your own devices using peer-to-peer
@@ -105,7 +129,7 @@ export function Privacy() {
             </p>
           </section>
 
-          <section>
+          <section id="analytics">
             <h2>7. Analytics and diagnostics</h2>
             <p>
               Hosted web pages use product analytics (currently PostHog) to understand feature
@@ -132,7 +156,7 @@ export function Privacy() {
 			</p>
           </section>
 
-          <section>
+          <section id="infrastructure-logs">
             <h2>8. Hosted infrastructure logs</h2>
             <p>
               Like any website, the hosted pages and share-link backend produce short-lived
@@ -142,7 +166,7 @@ export function Privacy() {
             </p>
           </section>
 
-          <section>
+          <section id="cookies">
             <h2>9. Cookies and similar technologies</h2>
             <p>
               Keating does not use advertising cookies. Browser storage is used for the app data
@@ -151,7 +175,7 @@ export function Privacy() {
             </p>
           </section>
 
-          <section>
+          <section id="third-party">
             <h2>10. Third-party services</h2>
             <p>
               Keating links to and integrates with third parties — AI providers, model hosts,
@@ -161,7 +185,7 @@ export function Privacy() {
             </p>
           </section>
 
-          <section>
+          <section id="your-rights">
             <h2>11. Your choices and rights</h2>
             <ul>
               <li>Delete local data at any time via browser site-data controls or by removing the desktop app’s data directory.</li>
@@ -178,7 +202,7 @@ export function Privacy() {
             </p>
           </section>
 
-          <section>
+          <section id="children">
             <h2>12. Children</h2>
             <p>
               The hosted Service is not directed at children under 13 (or the higher minimum age
@@ -188,7 +212,7 @@ export function Privacy() {
             </p>
           </section>
 
-          <section>
+          <section id="changes">
             <h2>13. Changes to this policy</h2>
             <p>
               We may update this policy as the Service evolves. We will update the “Last updated”
@@ -197,13 +221,15 @@ export function Privacy() {
             </p>
           </section>
 
-          <section>
+          <section id="contact">
             <h2>14. Contact</h2>
             <p>
               For privacy questions about Keating or the hosted site, email{" "}
               <a href={`mailto:${DIAGNOSTIC_SUPPORT_EMAIL}`}>{DIAGNOSTIC_SUPPORT_EMAIL}</a>.
             </p>
           </section>
+            </div>
+          </div>
         </article>
       </main>
       <Footer />

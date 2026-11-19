@@ -1,0 +1,74 @@
+{
+  "title": "Settings",
+  "viewport": "desktop",
+  "width": 1280,
+  "height": 800,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "sessions"
+  ],
+  "transcript": null,
+  "capturedAt": "2026-11-19T16:01:37.780Z",
+  "duration": 50.430999994277954,
+  "bytes": 1044039,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "groups",
+      "title": "Find Settings",
+      "start": 0.004000186920166016,
+      "explanation": "Start with the Settings groups.",
+      "alt": "Find Settings",
+      "still": "groups"
+    },
+    {
+      "id": "providers",
+      "title": "Open Providers and keys",
+      "start": 4.651000022888184,
+      "explanation": "Find the available model connections.",
+      "alt": "Open Providers and keys",
+      "still": "providers"
+    },
+    {
+      "id": "search",
+      "title": "Find visual effects",
+      "start": 9.162000179290771,
+      "explanation": "Search for visual effects in Settings.",
+      "alt": "Find visual effects",
+      "still": "search"
+    },
+    {
+      "id": "effects",
+      "title": "Turn effects off",
+      "start": 13.794000148773193,
+      "explanation": "Turn off decorative visual effects.",
+      "alt": "Turn effects off",
+      "still": "effects"
+    },
+    {
+      "id": "theme",
+      "title": "Try the Terminal theme",
+      "start": 20.622000217437744,
+      "explanation": "Switch the theme and keep your place.",
+      "alt": "Try the Terminal theme",
+      "still": "theme"
+    },
+    {
+      "id": "data",
+      "title": "Open Your data",
+      "start": 35.705000162124634,
+      "explanation": "Find export controls under Data and support.",
+      "alt": "Open Your data",
+      "still": "data"
+    },
+    {
+      "id": "live",
+      "title": "Inspect Live setup",
+      "start": 44.473000049591064,
+      "explanation": "See the voice choices before starting Live.",
+      "alt": "Inspect Live setup",
+      "still": "live"
+    }
+  ]
+}

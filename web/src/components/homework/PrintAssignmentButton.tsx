@@ -1,5 +1,7 @@
+import { Menu, IconButton, Sheet } from "../../design-system/kit";
+import { SaveTaskToCourse } from "../courses/SaveTaskToCourse";
 import { useId, useState } from "react";
-import { FileDown, Printer } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import type { UiTaskNode } from "@keating/learner-contracts";
 import { css } from "../../../styled-system/css";
 import { downloadTextFile } from "../../lib/browser-download";
@@ -27,15 +29,17 @@ function hasAnswers(answers: AssignmentAnswers | undefined): boolean {
  * learner has already written something, both a blank copy and a copy with
  * their answers are offered.
  */
-export function PrintAssignmentButton({ node, answers, sessionTitle, print = printHtmlDocument }: {
+export function PrintAssignmentButton({ node, answers, sessionTitle, menu = false, print = printHtmlDocument }: {
 	node: UiTaskNode;
 	answers?: AssignmentAnswers;
 	sessionTitle?: string;
+	menu?: boolean;
 	/** Injectable for tests. */
 	print?: (html: string) => Promise<void>;
 }) {
 	const statusId = useId();
 	const [status, setStatus] = useState("");
+	const [courseOpen, setCourseOpen] = useState(false);
 	const written = hasAnswers(answers);
 	const run = (mode: "blank" | "answers") => {
 		setStatus("");
@@ -50,15 +54,25 @@ export function PrintAssignmentButton({ node, answers, sessionTitle, print = pri
 			setStatus("Could not save the file. Try again.");
 		}
 	};
+	if (menu) return <>
+		<Menu label="Assignment actions" trigger={<IconButton glyph="more" label="More assignment actions"/>} items={[
+			{id:"print",label:written ? "Print blank" : "Print",glyph:"print",onSelect:()=>run("blank")},
+			...(written ? [{id:"answers",label:"Print with my answers",onSelect:()=>run("answers")}] : []),
+			{id:"markdown",label:"Download as Markdown",glyph:"export",onSelect:download},
+			{id:"course",label:"Save to course",glyph:"book",onSelect:()=>setCourseOpen(true)}
+		]}/>
+		<Sheet title="Save to course" open={courseOpen} onClose={()=>setCourseOpen(false)}><SaveTaskToCourse task={node}/></Sheet>
+		<span role="status">{status}</span>
+	</>;
 	return <div className={group} role="group" aria-label={`Print or save ${node.title}`} aria-describedby={status ? statusId : undefined} data-print-assignment={node.id}>
 		<button type="button" className={control} onClick={() => run("blank")}>
-			<Printer aria-hidden="true" />{written ? "Print blank" : "Print"}
+			<KeatingGlyph name="print" size={24} />{written ? "Print blank" : "Print"}
 		</button>
 		{written ? <button type="button" className={control} onClick={() => run("answers")}>
-			<Printer aria-hidden="true" />Print with my answers
+			<KeatingGlyph name="print" size={24} />Print with my answers
 		</button> : null}
 		<button type="button" className={control} onClick={download}>
-			<FileDown aria-hidden="true" />Download as Markdown
+			<KeatingGlyph name="export" size={24} />Download as Markdown
 		</button>
 		<span id={statusId} role="status" aria-live="polite" className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{status}</span>
 	</div>;

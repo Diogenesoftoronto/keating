@@ -3,11 +3,10 @@
  * storage persistence warning and the share-link status. Each is presentational;
  * the page owns the state and passes the callbacks.
  */
-import { BookOpen, X } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css, cx } from "../../../styled-system/css";
 import { AppLink as Link } from "../../components/AppLink";
 import type { CourseChatContext } from "../../keating/course-collaboration";
-import type { ShareState } from "./session-sharing";
 
 const iconButtonClass = css({
   display: "inline-flex",
@@ -59,7 +58,7 @@ export function CourseContextBanner({
             gap: "0.55rem",
           })}
         >
-          <BookOpen size={16} aria-hidden="true" />
+          <KeatingGlyph name="book" size={16} />
           <div className={css({ minWidth: 0 })}>
             <p className={css({ fontSize: "0.8rem", fontWeight: 650 })}>
               {courseContext.mode === "create"
@@ -120,194 +119,12 @@ export function PersistentStorageBanner({
   onRetry: () => void;
   onDismiss: () => void;
 }) {
-  return (
-    <div
-      className={css({
-        flexShrink: 0,
-        borderBottom: "1px solid var(--border)",
-        backgroundColor: "rgb(245 158 11 / 0.1)",
-        paddingInline: "0.75rem",
-        paddingBlock: "0.5rem",
-      })}
-    >
-      <div
-        className={css({
-          marginInline: "auto",
-          display: "flex",
-          maxWidth: "48rem",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "0.75rem",
-        })}
-      >
-        <div
-          className={css({
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            fontSize: "0.75rem",
-            fontWeight: 500,
-            color: "rgb(146 64 14)",
-            _dark: { color: "rgb(253 230 138)" },
-          })}
-        >
-          <span
-            className={css({ display: "none", sm: { display: "inline" } })}
-          >
-            Browser storage persistence is not enabled. Sessions still save
-            locally, but the browser may clear them under storage pressure.
-          </span>
-          <span className={css({ sm: { display: "none" } })}>
-            Storage persistence is not enabled.
-          </span>
-        </div>
-        <div
-          className={css({
-            display: "flex",
-            flexShrink: 0,
-            alignItems: "center",
-            gap: "0.5rem",
-          })}
-        >
-          <button
-            type="button"
-            className={css({
-              display: "inline-flex",
-              height: "1.5rem",
-              alignItems: "center",
-              borderRadius: "0.25rem",
-              backgroundColor: "var(--primary)",
-              paddingInline: "0.5rem",
-              fontSize: "10px",
-              fontWeight: 500,
-              color: "var(--primary-foreground)",
-              _hover: {
-                backgroundColor:
-                  "color-mix(in srgb, var(--primary) 90%, transparent)",
-              },
-            })}
-            onClick={onRetry}
-          >
-            Try again
-          </button>
-          <button
-            type="button"
-            className={cx(
-              iconButtonClass,
-              css({ width: "1.5rem", height: "1.5rem" }),
-            )}
-            onClick={onDismiss}
-            aria-label="Dismiss persistence warning"
-          >
-            <X size={12} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  const description = "Browser storage persistence is not enabled. Sessions still save locally, but the browser may clear them under storage pressure.";
+  return <div className="ch-storage" data-glyph-host>
+    <KeatingGlyph name="alert" size={16} /> Storage is not persistent
+    <button type="button" aria-description={description} title={description} onClick={onRetry}>Fix</button>
+    <button type="button" aria-label="Dismiss persistence warning" onClick={onDismiss}><KeatingGlyph name="x" size={12}/></button>
+  </div>;
 }
 
-export function ShareStatusBanner({
-  shareState,
-  shareUrl,
-  shareMessage,
-  onConfirm,
-  onDismiss,
-}: {
-  shareState: ShareState;
-  shareUrl: string | null;
-  shareMessage: string | null;
-  onConfirm: () => Promise<void>;
-  onDismiss: () => void;
-}) {
-  return (
-    <div
-      className={css({
-        borderTop: "1px solid var(--border)",
-        backgroundColor: "var(--background)",
-        paddingInline: "1rem",
-        paddingBlock: "0.75rem",
-        fontSize: "0.875rem",
-      })}
-    >
-      <div
-        className={css({
-          marginInline: "auto",
-          display: "flex",
-          maxWidth: "56rem",
-          flexDirection: "column",
-          gap: "0.5rem",
-          sm: { flexDirection: "row", alignItems: "center" },
-        })}
-      >
-        <span
-          className={
-            shareState === "error"
-              ? css({ color: "var(--destructive)" })
-              : css({ color: "var(--muted-foreground)" })
-          }
-        >
-          {shareMessage}
-        </span>
-        {shareUrl && (
-          <input
-            className={css({
-              minWidth: 0,
-              flex: 1,
-              borderRadius: "0.375rem",
-              border: "1px solid var(--border)",
-              backgroundColor: "var(--muted)",
-              paddingInline: "0.75rem",
-              paddingBlock: "0.5rem",
-              fontFamily: "var(--mono-body)",
-              fontSize: "0.75rem",
-              color: "var(--foreground)",
-            })}
-            readOnly
-            value={shareUrl}
-            onFocus={(event) => event.currentTarget.select()}
-          />
-        )}
-        {shareState === "confirm" && (
-          <button
-            className={css({
-              display: "inline-flex",
-              height: "2rem",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "0.375rem",
-              border: "1px solid var(--border)",
-              backgroundColor: "var(--primary)",
-              paddingInline: "0.75rem",
-              fontSize: "0.75rem",
-              color: "var(--primary-foreground)",
-              _hover: {
-                backgroundColor:
-                  "color-mix(in srgb, var(--primary) 90%, transparent)",
-              },
-            })}
-            onClick={onConfirm}
-          >
-            Share publicly
-          </button>
-        )}
-        <button
-          className={css({
-            display: "inline-flex",
-            height: "2rem",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: "0.375rem",
-            border: "1px solid var(--border)",
-            paddingInline: "0.75rem",
-            fontSize: "0.75rem",
-            _hover: { backgroundColor: "var(--accent)" },
-          })}
-          onClick={onDismiss}
-        >
-          {shareState === "confirm" ? "Cancel" : "Dismiss"}
-        </button>
-      </div>
-    </div>
-  );
-}
+export { ShareSheet as ShareStatusBanner } from "../../components/export/ShareSheet";

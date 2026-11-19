@@ -27,7 +27,7 @@ export const CompleteMixedPractice: Story = {
     const canvas = within(canvasElement);
     await userEvent.type(canvas.getByRole("textbox", { name: "Your translation" }), "Buenas noches");
     await userEvent.click(canvas.getByRole("button", { name: "Check" }));
-    await waitFor(() => expect(canvas.getByText("One to practice")).toBeVisible());
+    await waitFor(() => expect(canvas.getByText("Not quite")).toBeVisible());
     await userEvent.click(canvas.getByRole("button", { name: "Try again" }));
     await userEvent.type(canvas.getByRole("textbox", { name: "Your translation" }), "Buenos días");
     await userEvent.click(canvas.getByRole("button", { name: "Check" }));

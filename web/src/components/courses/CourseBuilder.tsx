@@ -1,30 +1,10 @@
+import "./course-builder.css";
+import { CourseAddMenu } from "./CourseAddMenu";
+import { KeatingGlyph } from "../../design-system/glyphs";
+import { Button, Card, EmptyState, Loading, Chip, Eyebrow, TextArea, TextInput, Sheet, Switch, ConfirmDialog, StatusDot, Note, Meter, IconButton } from "../../design-system/kit";
 import { Select } from "../Select";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { CourseJudgementPanel } from "./CourseJudgementPanel";
-import {
-  ArrowDown,
-  ArrowUp,
-  BookOpen,
-  BookUp,
-  CreditCard,
-  ExternalLink,
-  FilePlus2,
-  FileQuestion,
-  FileText,
-  Image as ImageIcon,
-  Layers3,
-  Link2,
-  Plus,
-  RefreshCw,
-  Save,
-  Settings2,
-  Shapes,
-  Share2,
-  SlidersHorizontal,
-  Trash2,
-  Upload,
-  Users,
-} from "lucide-react";
 import { css, cx } from "../../../styled-system/css";
 import {
   ANKI_FILE_ACCEPT,
@@ -55,16 +35,6 @@ import type {
 import { getInitPromise, keatingStorage } from "../../hooks/keating-storage";
 import type { FlashcardDeck } from "../../keating/flashcard-types";
 import { ArtifactManager, AssignmentManager } from "./CourseContentManagers";
-import {
-  courseButtonClass,
-  courseCardClass,
-  courseCountChipClass,
-  courseDangerButtonClass,
-  courseEmptyClass,
-  courseInputClass,
-  courseLabelClass,
-  coursePrimaryButtonClass,
-} from "./course-ui";
 
 export type CourseBuilderSection =
   | "details"
@@ -85,6 +55,7 @@ interface BuilderProps {
   snapshot: CourseViewerSnapshot;
   activeLesson?: CourseLesson;
   section: CourseBuilderSection;
+  error?: string;
   saving: string;
   onSectionChange(section: CourseBuilderSection): void;
   mutate: Mutate;
@@ -104,9 +75,7 @@ function operationBase(
   };
 }
 
-function confirmRemoval(message: string): boolean {
-  return typeof window === "undefined" || window.confirm(message);
-}
+const RemovalContext = createContext<(message: string, remove: () => void) => void>(() => {});
 
 function lines(value: string, limit: number): string[] {
   return value
@@ -126,48 +95,13 @@ function SectionHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div
-      className={css({
-        display: "flex",
-        flexWrap: "wrap",
-        alignItems: "end",
-        justifyContent: "space-between",
-        gap: "0.75rem",
-        mb: "0.9rem",
-      })}
-    >
-      <div>
-        <h3
-          className={css({
-            fontFamily: "Georgia, serif",
-            fontSize: "1.4rem",
-            lineHeight: 1.15,
-          })}
-        >
-          {title}
-        </h3>
-        <p
-          className={css({
-            mt: "0.25rem",
-            maxW: "58ch",
-            fontSize: "0.8rem",
-            lineHeight: 1.5,
-            color: "var(--ink-soft)",
-          })}
-        >
-          {description}
-        </p>
-      </div>
-      {actions ? (
-        <div className={css({ display: "flex", gap: "0.4rem" })}>{actions}</div>
-      ) : null}
-    </div>
+    <header className="cb-heading k-halftone"><div><h3>{title}</h3><p>{description}</p></div>{actions}</header>
   );
 }
 
 function FieldLabel({ children }: { children: ReactNode }) {
   return (
-    <span className={cx(courseLabelClass, css({ display: "block", mb: "0.25rem" }))}>
+    <span className={cx("k-eyebrow", css({ display: "block", mb: "0.25rem" }))}>
       {children}
     </span>
   );
@@ -207,38 +141,35 @@ function DetailsSection({
       <div className={css({ display: "grid", gap: "0.75rem", maxW: "46rem" })}>
         <label>
           <FieldLabel>Title</FieldLabel>
-          <input
+          <TextInput
             value={title}
             maxLength={240}
             onChange={(event) => setTitle(event.target.value)}
-            className={courseInputClass}
           />
         </label>
         <label>
           <FieldLabel>Description</FieldLabel>
-          <textarea
+          <TextArea
             value={description}
             maxLength={4_000}
             rows={4}
             onChange={(event) => setDescription(event.target.value)}
-            className={courseInputClass}
             placeholder="Who it is for, what it covers, and where it ends."
           />
         </label>
         <label>
           <FieldLabel>Outcomes · one per line</FieldLabel>
-          <textarea
+          <TextArea
             value={outcomes}
             rows={5}
             onChange={(event) => setOutcomes(event.target.value)}
-            className={courseInputClass}
             placeholder={"Distinguish intervention from observation\nCritique a causal diagram"}
           />
         </label>
         <div className={css({ display: "flex", justifyContent: "flex-end" })}>
-          <button
+          <Button
             type="button"
-            className={cx(courseButtonClass, coursePrimaryButtonClass)}
+            variant="primary"
             disabled={!title.trim() || !dirty || saving === "course-details"}
             onClick={() =>
               void mutate(
@@ -255,9 +186,9 @@ function DetailsSection({
               )
             }
           >
-            <Save size={13} />
-            {saving === "course-details" ? "Saving…" : "Save course details"}
-          </button>
+            <KeatingGlyph name="save" size={13} />
+            {saving === "course-details" ? <Loading size="inline" label="Saving…" /> : "Save course details"}
+          </Button>
         </div>
       </div>
     </>
@@ -281,6 +212,9 @@ function ModuleCard({
   mutate: Mutate;
   onSelectLesson(lessonId: string): void;
 }) {
+  const requestRemoval = useContext(RemovalContext);
+  const moduleIndex = snapshot.course.modules.findIndex(item => item.id === module.id);
+  const offset = snapshot.course.modules.slice(0, moduleIndex).reduce((sum, item) => sum + item.lessons.length, 0);
   const [title, setTitle] = useState(module.title);
   const [description, setDescription] = useState(module.description);
   const [lessonTitle, setLessonTitle] = useState("");
@@ -339,45 +273,23 @@ function ModuleCard({
   };
 
   return (
-    <section className={courseCardClass}>
-      <header
-        className={css({
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "0.5rem",
-          borderBottom: "1px solid var(--ink)",
-          bg: "var(--paper-deep, #e9e2d2)",
-          px: "0.7rem",
-          py: "0.5rem",
-        })}
-      >
-        <span
-          className={css({
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.45rem",
-            fontSize: "0.85rem",
-            fontWeight: 800,
-          })}
-        >
-          <Layers3 size={14} /> {module.title}
-          <span className={courseCountChipClass}>{module.lessons.length}</span>
-        </span>
+    <section className="cb-module">
+      <header data-glyph-host className="cb-module-head k-halftone">
+        <KeatingGlyph name="grip" size={14}/><strong>{moduleIndex + 1} · {module.title}</strong>
+        <small>{module.lessons.length} {module.lessons.length === 1 ? "lesson" : "lessons"}</small>
         <span className={css({ display: "flex", gap: "0.3rem" })}>
-          <button
+          <Button
             type="button"
-            className={courseButtonClass}
+            variant="ghost"
             onClick={() => setEditing((value) => !value)}
           >
-            <Settings2 size={12} /> {editing ? "Done" : "Rename"}
-          </button>
-          <button
+            <KeatingGlyph name={editing ? "check" : "edit"} size={15} /> {editing ? "Done" : "Rename"}
+          </Button>
+          <IconButton glyph="trash"
             type="button"
-            className={cx(courseButtonClass, courseDangerButtonClass)}
+            className="cb-danger"
             onClick={() => {
-              if (confirmRemoval(`Remove “${module.title}” and its lessons?`))
+              requestRemoval(`Remove “${module.title}” and its lessons?`, () =>
                 void mutate(
                   {
                     ...operationBase(snapshot),
@@ -385,11 +297,9 @@ function ModuleCard({
                     moduleId: module.id,
                   },
                   `module-delete-${module.id}`,
-                );
+                ));
             }}
-          >
-            <Trash2 size={12} />
-          </button>
+            label={`Remove ${module.title}`} />
         </span>
       </header>
       {editing ? (
@@ -397,121 +307,65 @@ function ModuleCard({
           className={css({
             display: "grid",
             gap: "0.4rem",
-            borderBottom: "1px solid var(--ink)",
+            borderBottom: "1px solid var(--line-soft)",
             bg: "var(--paper)",
             p: "0.6rem",
           })}
         >
-          <input
+          <TextInput
             value={title}
             maxLength={240}
             onChange={(event) => setTitle(event.target.value)}
-            className={courseInputClass}
             aria-label="Module title"
           />
-          <textarea
+          <TextArea
             value={description}
             maxLength={2_000}
             rows={2}
             onChange={(event) => setDescription(event.target.value)}
-            className={courseInputClass}
             placeholder="What this module is for"
             aria-label="Module description"
           />
-          <button
+          <Button
             type="button"
-            className={courseButtonClass}
+            variant="line"
             disabled={!title.trim() || saving === `module-${module.id}`}
             onClick={() => void saveModule().then(() => setEditing(false))}
           >
-            <Save size={12} /> Save module
-          </button>
+            <KeatingGlyph name="save" size={12} /> Save module
+          </Button>
         </div>
       ) : null}
       <ol className={css({ listStyle: "none" })}>
         {module.lessons.map((lesson, index) => (
           <li
             key={lesson.id}
-            className={css({
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 1fr) auto",
-              alignItems: "center",
-              gap: "0.5rem",
-              borderBottom: "1px solid color-mix(in srgb, var(--ink) 18%, transparent)",
-              px: "0.6rem",
-              py: "0.45rem",
-            })}
-            style={
-              lesson.id === activeLessonId
-                ? { background: "var(--course-wash, #ddebdd)" }
-                : undefined
-            }
-          >
-            <button
-              type="button"
-              className={css({
-                display: "flex",
-                minW: 0,
-                alignItems: "center",
-                gap: "0.45rem",
-                textAlign: "left",
-                cursor: "pointer",
-              })}
-              onClick={() => onSelectLesson(lesson.id)}
-            >
-              <span
-                className={css({
-                  fontFamily: "var(--mono-display)",
-                  fontSize: "0.65rem",
-                  color: "var(--ink-soft)",
-                })}
-              >
-                {String(index + 1).padStart(2, "0")}
-              </span>
-              <span
-                className={css({
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  fontSize: "0.82rem",
-                  fontWeight: 650,
-                })}
-              >
-                {lesson.title}
-              </span>
-            </button>
-            <span className={css({ display: "flex", gap: "0.15rem" })}>
-              <button
+            data-glyph-host className="cb-lesson-row" data-selected={lesson.id === activeLessonId}>
+            <KeatingGlyph name="grip" size={13}/>
+            <small>{offset + index + 1}</small>
+            <button className="cb-lesson-link" type="button" onClick={() => onSelectLesson(lesson.id)}>{lesson.title}</button>
+            <span className="cb-row-actions">
+              <IconButton glyph="rise"
                 type="button"
-                aria-label={`Move ${lesson.title} up`}
-                className={courseButtonClass}
+                label={`Move ${lesson.title} up`}
+                size="sm"
                 disabled={index === 0 || saving === `module-order-${module.id}`}
-                onClick={() => move(index, -1)}
-              >
-                <ArrowUp size={12} />
-              </button>
-              <button
+                onClick={() => move(index, -1)} />
+              <IconButton glyph="down"
                 type="button"
-                aria-label={`Move ${lesson.title} down`}
-                className={courseButtonClass}
+                label={`Move ${lesson.title} down`}
+                size="sm"
                 disabled={
                   index === module.lessons.length - 1 ||
                   saving === `module-order-${module.id}`
                 }
-                onClick={() => move(index, 1)}
-              >
-                <ArrowDown size={12} />
-              </button>
-              <button
+                onClick={() => move(index, 1)} />
+              <IconButton glyph="trash"
                 type="button"
-                aria-label={`Remove ${lesson.title}`}
-                className={cx(courseButtonClass, courseDangerButtonClass)}
+                label={`Remove ${lesson.title}`}
+                className="cb-danger"
                 onClick={() => {
-                  if (
-                    confirmRemoval(
-                      `Remove “${lesson.title}”? Its notes, work, and discussion go with it.`,
-                    )
-                  )
+                  requestRemoval(`Remove “${lesson.title}”? Its notes, work, and discussion go with it.`, () =>
                     void mutate(
                       {
                         ...operationBase(snapshot),
@@ -520,42 +374,31 @@ function ModuleCard({
                         lessonId: lesson.id,
                       },
                       `lesson-delete-${lesson.id}`,
-                    );
-                }}
-              >
-                <Trash2 size={12} />
-              </button>
+                    ));
+                }} />
             </span>
           </li>
         ))}
       </ol>
-      <div
-        className={css({
-          display: "flex",
-          alignItems: "stretch",
-          gap: "0.35rem",
-          p: "0.6rem",
-        })}
-      >
-        <input
+      <div className="cb-add-lesson">
+        <TextInput
           value={lessonTitle}
           maxLength={240}
           onChange={(event) => setLessonTitle(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === "Enter") void addLesson();
+            if (event.key === "Enter" && saving !== `lesson-add-${module.id}`) void addLesson();
           }}
-          className={courseInputClass}
           placeholder={`New lesson in ${module.title}`}
           aria-label={`New lesson in ${module.title}`}
         />
-        <button
+        <Button
           type="button"
-          className={courseButtonClass}
+          variant="line"
           disabled={!lessonTitle.trim() || saving === `lesson-add-${module.id}`}
           onClick={() => void addLesson()}
         >
-          <Plus size={12} /> Lesson
-        </button>
+          <KeatingGlyph name="plus" size={12} /> Lesson
+        </Button>
       </div>
     </section>
   );
@@ -598,35 +441,6 @@ function OutlineSection({
         title="The spine"
         description="Modules hold lessons in the order a learner meets them. Reorder freely; nothing is inserted for you."
       />
-      <div
-        className={css({
-          display: "flex",
-          alignItems: "stretch",
-          gap: "0.35rem",
-          mb: "0.85rem",
-          maxW: "34rem",
-        })}
-      >
-        <input
-          value={moduleTitle}
-          maxLength={240}
-          onChange={(event) => setModuleTitle(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") void addModule();
-          }}
-          className={courseInputClass}
-          placeholder="New module title"
-          aria-label="New module title"
-        />
-        <button
-          type="button"
-          className={cx(courseButtonClass, coursePrimaryButtonClass)}
-          disabled={!moduleTitle.trim() || saving === "module-add"}
-          onClick={() => void addModule()}
-        >
-          <Plus size={13} /> Module
-        </button>
-      </div>
       {snapshot.course.modules.length ? (
         <div className={css({ display: "grid", gap: "0.7rem" })}>
           {snapshot.course.modules.map((module) => (
@@ -642,12 +456,32 @@ function OutlineSection({
           ))}
         </div>
       ) : (
-        <p className={courseEmptyClass}>
-          A blank course is valid. Add the first module when the shape is clear —
+        <EmptyState heading="A blank course is valid.">
+          Add the first module when the shape is clear —
           or add documents, assignments, and cards first and shape the outline
           around them.
-        </p>
+        </EmptyState>
       )}
+      <div className="cb-new-module">
+        <TextInput
+          value={moduleTitle}
+          maxLength={240}
+          onChange={(event) => setModuleTitle(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && saving !== "module-add") void addModule();
+          }}
+          placeholder="New module title"
+          aria-label="New module title"
+        />
+        <Button
+          type="button"
+          variant="primary"
+          disabled={!moduleTitle.trim() || saving === "module-add"}
+          onClick={() => void addModule()}
+        >
+          <KeatingGlyph name="plus" size={13} /> Module
+        </Button>
+      </div>
     </>
   );
 }
@@ -660,13 +494,20 @@ function LessonSection({
   saving,
   mutate,
   onSectionChange,
+  attach,
+  sheet,
+  error,
 }: {
+  sheet?: {open: boolean; close(): void};
+  error?: string;
+  attach: ReactNode;
   snapshot: CourseViewerSnapshot;
   lesson?: CourseLesson;
   saving: string;
   mutate: Mutate;
   onSectionChange(section: CourseBuilderSection): void;
 }) {
+  const requestRemoval = useContext(RemovalContext);
   const module = snapshot.course.modules.find((candidate) =>
     candidate.lessons.some((item) => item.id === lesson?.id),
   );
@@ -687,7 +528,7 @@ function LessonSection({
   const [rubric, setRubric] = useState(
     lesson?.exercise?.rubric.join("\n") ?? "",
   );
-  useEffect(() => {
+  const discard = () => {
     setTitle(lesson?.title ?? "");
     setSummary(lesson?.summary ?? "");
     setMinutes(lesson?.estimatedMinutes ? String(lesson.estimatedMinutes) : "");
@@ -697,7 +538,9 @@ function LessonSection({
     setPrompt(lesson?.exercise?.prompt ?? "");
     setPlaceholder(lesson?.exercise?.placeholder ?? "");
     setRubric(lesson?.exercise?.rubric.join("\n") ?? "");
-  }, [lesson]);
+  };
+  useEffect(discard, [lesson?.id, lesson?.title, lesson?.summary, lesson?.estimatedMinutes, lesson?.reading,
+    lesson?.objectives.join("\n"), lesson?.exercise?.id, lesson?.exercise?.prompt, lesson?.exercise?.placeholder, lesson?.exercise?.rubric.join("\n")]);
 
   if (!lesson || !module) {
     return (
@@ -706,17 +549,23 @@ function LessonSection({
           title="No lesson open"
           description="Choose a lesson in the outline to edit its reading, objectives, and practice question."
         />
-        <button
+        <Button
           type="button"
-          className={courseButtonClass}
+          variant="line"
           onClick={() => onSectionChange("outline")}
         >
-          <Layers3 size={13} /> Go to the outline
-        </button>
+          <KeatingGlyph name="tree" size={13} /> Go to the outline
+        </Button>
       </>
     );
   }
 
+  const changes = [title !== lesson.title, summary !== lesson.summary, reading !== lesson.reading,
+    minutes !== String(lesson.estimatedMinutes ?? ""), objectives !== lesson.objectives.join("\n"),
+    hasQuestion !== Boolean(lesson.exercise), hasQuestion && prompt !== (lesson.exercise?.prompt ?? ""),
+    hasQuestion && placeholder !== (lesson.exercise?.placeholder ?? ""), hasQuestion && rubric !== (lesson.exercise?.rubric.join("\n") ?? "")].filter(Boolean).length;
+  const validation = !title.trim() ? "Enter a lesson title to save." : hasQuestion && !prompt.trim() ? "Enter a question prompt to save." : "";
+  const busy = saving === `lesson-edit-${lesson.id}`;
   const attachedMaterials = snapshot.course.materials.filter(
     (material) => material.lessonId === lesson.id,
   ).length;
@@ -764,21 +613,17 @@ function LessonSection({
       `lesson-edit-${lesson.id}`,
     );
 
-  return (
+  const content = (
     <>
       <SectionHeader
         title={lesson.title}
         description={`In ${module.title}. Everything a learner reads and answers on the desk.`}
         actions={
-          <button
+          <Button
             type="button"
-            className={cx(courseButtonClass, courseDangerButtonClass)}
+            variant="ghost" className="cb-danger"
             onClick={() => {
-              if (
-                confirmRemoval(
-                  `Remove “${lesson.title}”? Its notes, work, and discussion go with it.`,
-                )
-              )
+              requestRemoval(`Remove “${lesson.title}”? Its notes, work, and discussion go with it.`, () =>
                 void mutate(
                   {
                     ...operationBase(snapshot),
@@ -787,75 +632,65 @@ function LessonSection({
                     lessonId: lesson.id,
                   },
                   `lesson-delete-${lesson.id}`,
-                );
+                ));
             }}
           >
-            <Trash2 size={12} /> Remove lesson
-          </button>
+            <KeatingGlyph name="trash" size={12} /> Remove lesson
+          </Button>
         }
       />
-      <div className={css({ display: "grid", gap: "0.75rem", maxW: "48rem" })}>
-        <div
-          className={css({
-            display: "grid",
-            gap: "0.6rem",
-            sm: { gridTemplateColumns: "minmax(0, 1fr) 9rem" },
-          })}
-        >
+      <div className="cb-editor-fields">
+        <div className="cb-title-fields">
           <label>
             <FieldLabel>Title</FieldLabel>
-            <input
+            <TextInput
               value={title}
               maxLength={240}
               onChange={(event) => setTitle(event.target.value)}
-              className={courseInputClass}
             />
           </label>
           <label>
             <FieldLabel>Minutes</FieldLabel>
-            <input
+            <TextInput
               type="number"
               min="1"
               max="1440"
               value={minutes}
               onChange={(event) => setMinutes(event.target.value)}
-              className={courseInputClass}
               placeholder="Self paced"
             />
           </label>
         </div>
         <label>
           <FieldLabel>Summary</FieldLabel>
-          <textarea
+          <TextArea
             value={summary}
             maxLength={2_000}
             rows={2}
             onChange={(event) => setSummary(event.target.value)}
-            className={courseInputClass}
             placeholder="One sentence a learner reads under the title."
           />
         </label>
         <label>
-          <FieldLabel>Objectives · one per line</FieldLabel>
-          <textarea
+          <FieldLabel>By the end, a learner can · one per line</FieldLabel>
+          <TextArea
             value={objectives}
             rows={3}
             onChange={(event) => setObjectives(event.target.value)}
-            className={courseInputClass}
           />
         </label>
         <label>
           <FieldLabel>Reading</FieldLabel>
-          <textarea
+          <TextArea
             value={reading}
             maxLength={120_000}
-            rows={12}
+            rows={5}
             onChange={(event) => setReading(event.target.value)}
-            className={cx(courseInputClass, css({ lineHeight: 1.6 }))}
+            className="cb-reading"
             placeholder="The lesson itself: explanation, worked examples, instructions."
           />
         </label>
-        <div className={cx(courseCardClass, css({ p: "0.7rem" }))}>
+        <div className={cx("cb-card", css({ p: "0.7rem" }))}>
           <div
             className={css({
               display: "flex",
@@ -865,7 +700,7 @@ function LessonSection({
               gap: "0.5rem",
             })}
           >
-            <span
+            <span data-glyph-host
               className={css({
                 display: "inline-flex",
                 alignItems: "center",
@@ -874,51 +709,44 @@ function LessonSection({
                 fontWeight: 750,
               })}
             >
-              <FileQuestion size={14} /> Practice question
+              <KeatingGlyph name="quiz" size={14} /> Practice question
             </span>
-            <button
+            <Button
               type="button"
-              className={courseButtonClass}
+              variant="line"
               onClick={() => setHasQuestion((value) => !value)}
             >
               {hasQuestion ? "Remove question" : "Add question"}
-            </button>
+            </Button>
           </div>
           {hasQuestion ? (
             <div className={css({ mt: "0.55rem", display: "grid", gap: "0.4rem" })}>
-              <textarea
+              <TextArea
                 value={prompt}
                 maxLength={30_000}
                 rows={4}
                 onChange={(event) => setPrompt(event.target.value)}
-                className={courseInputClass}
+                aria-invalid={!prompt.trim()}
+                aria-label="Question prompt"
                 placeholder="What should the learner work out here?"
               />
-              <input
+              <TextInput
                 value={placeholder}
                 maxLength={240}
                 onChange={(event) => setPlaceholder(event.target.value)}
-                className={courseInputClass}
+                aria-label="Answer field hint (optional)"
                 placeholder="Answer field hint (optional)"
               />
-              <textarea
+              <TextArea
                 value={rubric}
                 rows={3}
                 onChange={(event) => setRubric(event.target.value)}
-                className={courseInputClass}
+                aria-label="Rubric"
                 placeholder="One rubric point per line"
               />
             </div>
           ) : (
-            <p
-              className={css({
-                mt: "0.4rem",
-                fontSize: "0.75rem",
-                color: "var(--ink-soft)",
-              })}
-            >
-              This lesson has no question. Add one when practice belongs here.
-            </p>
+            <EmptyState className="cb-question-empty k-halftone" heading="This lesson has no question.">Add one when practice belongs here.</EmptyState>
           )}
         </div>
         <div
@@ -930,61 +758,48 @@ function LessonSection({
             gap: "0.5rem",
           })}
         >
-          <span
-            className={css({
-              display: "flex",
-              flexWrap: "wrap",
-              gap: "0.4rem",
-              fontSize: "0.72rem",
-              color: "var(--ink-soft)",
-            })}
-          >
-            <button
+          <div className="cb-attachments">
+            <Chip as="button"
               type="button"
-              className={courseButtonClass}
               onClick={() => onSectionChange("documents")}
             >
-              <FileText size={12} /> {attachedMaterials} documents
-            </button>
-            <button
+              <KeatingGlyph name="doc" size={12} /> {attachedMaterials} documents
+            </Chip>
+            <Chip as="button"
               type="button"
-              className={courseButtonClass}
               onClick={() => onSectionChange("artifacts")}
             >
-              <Shapes size={12} /> {attachedArtifacts} artifacts
-            </button>
-            <button
+              <KeatingGlyph name="shapes" size={12} /> {attachedArtifacts} artifacts
+            </Chip>
+            <Chip as="button"
               type="button"
-              className={courseButtonClass}
               onClick={() => onSectionChange("assignments")}
             >
-              <BookUp size={12} /> {attachedAssignments} assignments
-            </button>
-            <button
+              <KeatingGlyph name="checklist" size={12} /> {attachedAssignments} assignments
+            </Chip>
+            <Chip as="button"
               type="button"
-              className={courseButtonClass}
               onClick={() => onSectionChange("cards")}
             >
-              <CreditCard size={12} /> {attachedCards} cards
-            </button>
-          </span>
-          <button
-            type="button"
-            className={cx(courseButtonClass, coursePrimaryButtonClass)}
-            disabled={
-              !title.trim() ||
-              (hasQuestion && !prompt.trim()) ||
-              saving === `lesson-edit-${lesson.id}`
-            }
-            onClick={() => void save()}
-          >
-            <Save size={13} />
-            {saving === `lesson-edit-${lesson.id}` ? "Saving…" : "Save lesson"}
-          </button>
+              <KeatingGlyph name="layers" size={12} /> {attachedCards} cards
+            </Chip>
+            <Chip count={hasQuestion ? 1 : 0}>Questions</Chip>
+            {attach}
+          </div>
         </div>
+        <footer className="cb-unsaved">
+          {error && <Note tone="warn" role="alert">{error}</Note>}
+          {validation && <small id="cb-save-reason" role="status">{validation}</small>}
+          <span role="status">{changes} unsaved</span>
+          <Button variant="ghost" disabled={!changes || busy} onClick={discard}>Discard</Button>
+          <Button variant="primary" busy={busy} aria-describedby={validation ? "cb-save-reason" : undefined} disabled={!changes || !!validation} onClick={() => void save()}>{busy ? <Loading size="inline" label="Saving…" /> : "Save lesson"}</Button>
+        </footer>
       </div>
     </>
   );
+  return sheet
+    ? <Sheet className="cb-sheet" open={sheet.open} title="Edit lesson" onClose={sheet.close}>{content}</Sheet>
+    : <aside className="cb-editor" aria-label="Lesson editor">{content}</aside>;
 }
 
 /* ---------------------------------------------------------------- documents */
@@ -1000,6 +815,7 @@ function DocumentRow({
   onSnapshot(snapshot: CourseViewerSnapshot): void;
   onError(message: string): void;
 }) {
+  const requestRemoval = useContext(RemovalContext);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState(material.title);
   const [lessonId, setLessonId] = useState(material.lessonId ?? "");
@@ -1010,15 +826,15 @@ function DocumentRow({
   }, [material]);
   const lessons = snapshot.course.modules.flatMap((module) => module.lessons);
   const href = material.url ?? courseMaterialUrl(snapshot.course.id, material.id);
-  const Icon =
+  const glyph =
     material.kind === "image"
-      ? ImageIcon
+      ? "image"
       : material.kind === "link"
-        ? Link2
-        : FileText;
+        ? "link"
+        : "doc";
 
   return (
-    <div className={courseCardClass}>
+    <div className="cb-card">
       <div
         className={css({
           display: "grid",
@@ -1029,8 +845,8 @@ function DocumentRow({
           py: "0.5rem",
         })}
       >
-        <Icon size={15} />
-        <button
+        <KeatingGlyph name={glyph} size={15} />
+        <Button
           type="button"
           className={css({
             minW: 0,
@@ -1042,9 +858,7 @@ function DocumentRow({
           <strong
             className={css({
               display: "block",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
+              overflowWrap: "anywhere",
               fontSize: "0.82rem",
             })}
           >
@@ -1061,24 +875,22 @@ function DocumentRow({
                 "Lesson")
               : "Course-wide"}
           </small>
-        </button>
+        </Button>
         <span className={css({ display: "flex", gap: "0.25rem" })}>
           <a
             href={href}
             target="_blank"
             rel="noreferrer"
             aria-label={`Open ${material.title}`}
-            className={cx(courseButtonClass, css({ color: "inherit", textDecoration: "none" }))}
+            className={cx("k-button k-line", css({ color: "inherit", textDecoration: "none" }))}
           >
-            <ExternalLink size={12} />
+            <KeatingGlyph name="ext" size={15} />
           </a>
-          <button
+          <IconButton glyph="edit"
             type="button"
-            className={courseButtonClass}
+            size="sm"
             onClick={() => setOpen((value) => !value)}
-          >
-            <Settings2 size={12} />
-          </button>
+            label={`Edit ${material.title}`} />
         </span>
       </div>
       {open ? (
@@ -1086,21 +898,20 @@ function DocumentRow({
           className={css({
             display: "grid",
             gap: "0.4rem",
-            borderTop: "1px solid var(--ink)",
+            borderTop: "1px solid var(--line-soft)",
             bg: "var(--paper)",
             p: "0.6rem",
           })}
         >
-          <input
+          <TextInput
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            className={courseInputClass}
             aria-label={`Title for ${material.title}`}
           />
           <Select
             value={lessonId}
             onValueChange={(value) => setLessonId(value)}
-            className={courseInputClass}
+            className="k-input"
             aria-label={`Attach ${material.title} to a lesson`}
           >
             <option value="">Course-wide</option>
@@ -1117,9 +928,9 @@ function DocumentRow({
               gap: "0.4rem",
             })}
           >
-            <button
+            <Button
               type="button"
-              className={courseButtonClass}
+              variant="line"
               disabled={busy || !title.trim()}
               onClick={() => {
                 setBusy(true);
@@ -1142,14 +953,14 @@ function DocumentRow({
                   .finally(() => setBusy(false));
               }}
             >
-              <Save size={12} /> Save
-            </button>
-            <button
+              <KeatingGlyph name="save" size={12} /> Save
+            </Button>
+            <Button
               type="button"
-              className={cx(courseButtonClass, courseDangerButtonClass)}
+              className="cb-danger"
               disabled={busy}
               onClick={() => {
-                if (!confirmRemoval(`Remove “${material.title}”?`)) return;
+                requestRemoval(`Remove “${material.title}”?`, () => {
                 setBusy(true);
                 void deleteCourseMaterial(snapshot.course.id, material.id)
                   .then(onSnapshot)
@@ -1161,10 +972,11 @@ function DocumentRow({
                     ),
                   )
                   .finally(() => setBusy(false));
+              });
               }}
             >
-              <Trash2 size={12} /> Remove
-            </button>
+              <KeatingGlyph name="trash" size={12} /> Remove
+            </Button>
           </div>
         </div>
       ) : null}
@@ -1244,19 +1056,12 @@ function DocumentsSection({
             const file = event.dataTransfer.files?.[0];
             if (file) upload(file);
           }}
-          className={css({
-            display: "grid",
-            gap: "0.5rem",
-            border: "2px dashed color-mix(in srgb, var(--ink) 45%, transparent)",
-            bg: "var(--paper)",
-            p: "1rem",
-            textAlign: "center",
-          })}
+          className="cb-drop k-grid"
           style={
             dragging
               ? {
-                  borderColor: "var(--course-green, #1e9b50)",
-                  background: "var(--course-wash, #ddebdd)",
+                  borderColor: "var(--green-deep)",
+                  backgroundColor: "var(--k-wash)",
                 }
               : undefined
           }
@@ -1271,9 +1076,8 @@ function DocumentsSection({
               if (file) upload(file);
             }}
           />
-          <p className={css({ fontSize: "0.85rem", fontWeight: 700 })}>
-            {busy ? "Uploading…" : "Drop a file here, or choose one"}
-          </p>
+          {busy ? <Meter live progress indeterminate max={1} label="Uploading document" valueText="Uploading…"/> :
+            <p className={css({ fontSize: "0.85rem", fontWeight: 700 })}>Drop a file here, or choose one</p>}
           <p className={css({ fontSize: "0.72rem", color: "var(--ink-soft)" })}>
             PDFs, slides, notes, and images up to 25 MB
           </p>
@@ -1286,18 +1090,18 @@ function DocumentsSection({
               gap: "0.4rem",
             })}
           >
-            <button
+            <Button
               type="button"
-              className={cx(courseButtonClass, coursePrimaryButtonClass)}
+              variant="primary"
               disabled={busy}
               onClick={() => fileRef.current?.click()}
             >
-              {busy ? <RefreshCw size={13} /> : <Upload size={13} />} Choose file
-            </button>
+              <KeatingGlyph name="import" size={13} /> Choose file
+            </Button>
             <Select
               value={target}
               onValueChange={(value) => setTarget(value)}
-              className={cx(courseInputClass, css({ w: "auto", maxW: "16rem" }))}
+              className={cx("k-input", css({ w: "auto", maxW: "16rem" }))}
               aria-label="Attach new sources to"
             >
               <option value="">Course-wide</option>
@@ -1313,30 +1117,27 @@ function DocumentsSection({
           className={css({
             display: "grid",
             gap: "0.4rem",
-            border: "1px solid var(--ink)",
             bg: "var(--paper)",
             p: "0.6rem",
             sm: { gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr) auto" },
           })}
         >
-          <input
+          <TextInput
             value={linkTitle}
             onChange={(event) => setLinkTitle(event.target.value)}
-            className={courseInputClass}
             placeholder="Link title"
             aria-label="Link title"
           />
-          <input
+          <TextInput
             value={linkUrl}
             type="url"
             onChange={(event) => setLinkUrl(event.target.value)}
-            className={courseInputClass}
             placeholder="https://…"
             aria-label="Link address"
           />
-          <button
+          <Button
             type="button"
-            className={courseButtonClass}
+            variant="line"
             disabled={
               !linkTitle.trim() || !linkUrl.trim() || saving === "material-link"
             }
@@ -1360,14 +1161,13 @@ function DocumentsSection({
               })
             }
           >
-            <Link2 size={13} /> Add link
-          </button>
+            <KeatingGlyph name="link" size={13} /> Add link
+          </Button>
         </div>
         {snapshot.course.materials.length > 4 ? (
-          <input
+          <TextInput
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            className={courseInputClass}
             placeholder="Filter sources…"
             aria-label="Filter sources"
           />
@@ -1385,11 +1185,9 @@ function DocumentsSection({
             ))}
           </div>
         ) : (
-          <p className={courseEmptyClass}>
-            {snapshot.course.materials.length
+          <EmptyState heading={snapshot.course.materials.length
               ? "No source matches that filter."
-              : "No documents, images, or links yet."}
-          </p>
+              : "No documents, images, or links yet."} />
         )}
       </div>
     </>
@@ -1409,6 +1207,7 @@ function CardEditor({
   saving: string;
   mutate: Mutate;
 }) {
+  const requestRemoval = useContext(RemovalContext);
   const lessons = snapshot.course.modules.flatMap((module) => module.lessons);
   const [front, setFront] = useState(card.front);
   const [back, setBack] = useState(card.back);
@@ -1421,13 +1220,11 @@ function CardEditor({
     setLessonId(card.lessonId ?? "");
   }, [card]);
   return (
-    <details className={courseCardClass}>
+    <Card as="details">
       <summary
         className={css({
           cursor: "pointer",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
+          overflowWrap: "anywhere",
           px: "0.6rem",
           py: "0.5rem",
           fontSize: "0.78rem",
@@ -1439,34 +1236,31 @@ function CardEditor({
         className={css({
           display: "grid",
           gap: "0.4rem",
-          borderTop: "1px solid var(--ink)",
+          borderTop: "1px solid var(--line-soft)",
           p: "0.6rem",
         })}
       >
-        <textarea
+        <TextArea
           value={front}
           onChange={(event) => setFront(event.target.value)}
-          className={courseInputClass}
           rows={2}
           placeholder="Front"
         />
-        <textarea
+        <TextArea
           value={back}
           onChange={(event) => setBack(event.target.value)}
-          className={courseInputClass}
           rows={3}
           placeholder="Back"
         />
-        <input
+        <TextInput
           value={tags}
           onChange={(event) => setTags(event.target.value)}
-          className={courseInputClass}
           placeholder="tags, separated, by commas"
         />
         <Select
           value={lessonId}
           onValueChange={(value) => setLessonId(value)}
-          className={courseInputClass}
+          className="k-input"
           aria-label="Attach card to lesson"
         >
           <option value="">Course-wide card</option>
@@ -1483,9 +1277,9 @@ function CardEditor({
             gap: "0.4rem",
           })}
         >
-          <button
+          <Button
             type="button"
-            className={courseButtonClass}
+            variant="line"
             disabled={!front.trim() || !back.trim() || saving === `card-${card.id}`}
             onClick={() =>
               void mutate(
@@ -1508,13 +1302,13 @@ function CardEditor({
               )
             }
           >
-            <Save size={12} /> Save
-          </button>
-          <button
+            <KeatingGlyph name="save" size={12} /> Save
+          </Button>
+          <Button
             type="button"
-            className={cx(courseButtonClass, courseDangerButtonClass)}
+            className="cb-danger"
             onClick={() => {
-              if (confirmRemoval("Remove this card?"))
+              requestRemoval("Remove this card?", () =>
                 void mutate(
                   {
                     ...operationBase(snapshot),
@@ -1522,14 +1316,14 @@ function CardEditor({
                     cardId: card.id,
                   },
                   `card-delete-${card.id}`,
-                );
+                ));
             }}
           >
-            <Trash2 size={12} /> Remove
-          </button>
+            <KeatingGlyph name="trash" size={12} /> Remove
+          </Button>
         </div>
       </div>
-    </details>
+    </Card>
   );
 }
 
@@ -1676,19 +1470,12 @@ function AnkiImportPanel({
         const file = event.dataTransfer.files?.[0];
         if (file) read(file);
       }}
-      className={css({
-        display: "grid",
-        minW: 0,
-        gap: "0.55rem",
-        border: "2px dashed color-mix(in srgb, var(--ink) 45%, transparent)",
-        bg: "var(--paper)",
-        p: "0.85rem",
-      })}
+      className="cb-drop k-grid"
       style={
         dragging
           ? {
-              borderColor: "var(--course-green, #1e9b50)",
-              background: "var(--course-wash, #ddebdd)",
+              borderColor: "var(--green-deep)",
+              backgroundColor: "var(--k-wash)",
             }
           : undefined
       }
@@ -1714,7 +1501,7 @@ function AnkiImportPanel({
         })}
       >
         <span className={css({ minW: 0 })}>
-          <strong
+          <strong data-glyph-host
             className={css({
               display: "flex",
               alignItems: "center",
@@ -1722,35 +1509,33 @@ function AnkiImportPanel({
               fontSize: "0.84rem",
             })}
           >
-            <Upload size={14} /> Import from Anki
+            <KeatingGlyph name="import" size={14} /> Import from Anki
           </strong>
           <small className={css({ color: "var(--ink-soft)" })}>
             Drop an .apkg export here, or a .txt, .tsv, or .csv card file
           </small>
         </span>
-        <button
+        <Button
           type="button"
-          className={cx(courseButtonClass, coursePrimaryButtonClass)}
+          variant="primary"
           disabled={reading || importing}
           onClick={() => fileRef.current?.click()}
         >
-          {reading ? <RefreshCw size={13} /> : <Upload size={13} />}
-          {reading ? "Reading…" : "Choose Anki file"}
-        </button>
+          {reading ? <Loading size="inline" label="Reading…" /> : <><KeatingGlyph name="import" size={13} /> Choose Anki file</>}
+        </Button>
       </div>
       {imported ? (
         <div
           className={css({
             display: "grid",
             gap: "0.5rem",
-            border: "1px solid var(--ink)",
             bg: "var(--card)",
             p: "0.65rem",
           })}
         >
           <p
             className={cx(
-              courseLabelClass,
+              "k-eyebrow",
               css({ overflowWrap: "anywhere" }),
             )}
           >
@@ -1784,15 +1569,13 @@ function AnkiImportPanel({
                 <span className={css({ minW: 0, flex: 1 })}>
                   <span
                     className={css({
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      overflowWrap: "anywhere",
                     })}
                   >
                     {deck.title}
                   </span>
                 </span>
-                <span className={courseCountChipClass}>{deck.cards.length}</span>
+                <Chip>{deck.cards.length}</Chip>
               </label>
             ))}
           </div>
@@ -1856,9 +1639,9 @@ function AnkiImportPanel({
               gap: "0.4rem",
             })}
           >
-            <button
+            <Button
               type="button"
-              className={courseButtonClass}
+              variant="line"
               disabled={importing}
               onClick={() => {
                 setImported(null);
@@ -1866,18 +1649,18 @@ function AnkiImportPanel({
               }}
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className={cx(courseButtonClass, coursePrimaryButtonClass)}
+              variant="primary"
               disabled={importing || !selection.cards.length}
               onClick={() => void runImport()}
             >
-              {importing ? <RefreshCw size={13} /> : <Plus size={13} />}
+              {!importing && <KeatingGlyph name="plus" size={13} />}
               {importing
-                ? "Importing…"
+                ? <Loading size="inline" label="Importing…" />
                 : `Add ${selection.cards.length} card${selection.cards.length === 1 ? "" : "s"}`}
-            </button>
+            </Button>
           </div>
         </div>
       ) : null}
@@ -1999,40 +1782,36 @@ function CardsSection({
           className={css({
             display: "grid",
             gap: "0.4rem",
-            border: "1px solid var(--ink)",
             bg: "var(--paper)",
             p: "0.6rem",
           })}
         >
-          <textarea
+          <TextArea
             value={front}
             onChange={(event) => setFront(event.target.value)}
-            className={courseInputClass}
             rows={2}
             placeholder="New card front"
           />
-          <textarea
+          <TextArea
             value={back}
             onChange={(event) => setBack(event.target.value)}
-            className={courseInputClass}
             rows={2}
             placeholder="New card back"
           />
-          <button
+          <Button
             type="button"
-            className={courseButtonClass}
+            variant="line"
             disabled={!front.trim() || !back.trim() || saving === "card-add"}
             onClick={() => void addCard()}
           >
-            <Plus size={13} /> Add card{activeLesson ? " to this lesson" : ""}
-          </button>
+            <KeatingGlyph name="plus" size={13} /> Add card{activeLesson ? " to this lesson" : ""}
+          </Button>
         </div>
         {decks.length ? (
           <div
             className={css({
               display: "grid",
               gap: "0.4rem",
-              border: "1px solid var(--ink)",
               bg: "var(--paper)",
               p: "0.6rem",
             })}
@@ -2040,7 +1819,7 @@ function CardsSection({
             <Select
               value={deckId}
               onValueChange={(value) => setDeckId(value)}
-              className={courseInputClass}
+              className="k-input"
               aria-label="Saved deck to import"
             >
               <option value="">Choose one of your saved decks…</option>
@@ -2067,21 +1846,20 @@ function CardsSection({
                 Attach imported cards to this lesson
               </label>
             ) : null}
-            <button
+            <Button
               type="button"
-              className={courseButtonClass}
+              variant="line"
               disabled={!deckId || saving.startsWith("deck-import-")}
               onClick={importDeck}
             >
-              <Upload size={12} /> Import saved deck
-            </button>
+              <KeatingGlyph name="import" size={12} /> Import saved deck
+            </Button>
           </div>
         ) : null}
         {snapshot.course.cards.length > 6 ? (
-          <input
+          <TextInput
             value={filter}
             onChange={(event) => setFilter(event.target.value)}
-            className={courseInputClass}
             placeholder="Filter cards…"
             aria-label="Filter cards"
           />
@@ -2099,11 +1877,9 @@ function CardsSection({
             ))}
           </div>
         ) : (
-          <p className={courseEmptyClass}>
-            {snapshot.course.cards.length
+          <EmptyState heading={snapshot.course.cards.length
               ? "No card matches that filter."
-              : "No cards yet."}
-          </p>
+              : "No cards yet."} />
         )}
       </div>
     </>
@@ -2137,56 +1913,24 @@ function AccessSection({
         description="Who is in the room, what peers may change, and what stays private until a learner says otherwise."
         actions={
           permissions.canInvite ? (
-            <button
+            <Button
               type="button"
-              className={cx(courseButtonClass, coursePrimaryButtonClass)}
+              variant="primary"
               onClick={onInvite}
             >
-              <Share2 size={13} /> Invite
-            </button>
+              <KeatingGlyph name="share" size={13} /> Invite
+            </Button>
           ) : undefined
         }
       />
       <div className={css({ display: "grid", gap: "0.7rem", maxW: "46rem" })}>
-        <div className={cx(courseCardClass, css({ p: "0.7rem" }))}>
-          <p className={courseLabelClass}>Collaboration rules</p>
+        <div className={cx("cb-card", css({ p: "0.7rem" }))}>
+          <Eyebrow>Collaboration rules</Eyebrow>
           <div className={css({ mt: "0.5rem", display: "grid", gap: "0.5rem" })}>
-            <label
-              className={css({
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                fontSize: "0.8rem",
-              })}
-            >
-              <input
-                type="checkbox"
-                checked={course.settings.allowPeerComments}
-                disabled={saving === "course-settings"}
-                onChange={(event) =>
-                  setSettings({ allowPeerComments: event.target.checked })
-                }
-              />
-              Peers can comment and react
-            </label>
-            <label
-              className={css({
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                fontSize: "0.8rem",
-              })}
-            >
-              <input
-                type="checkbox"
-                checked={course.settings.allowPeerDeckEdits}
-                disabled={saving === "course-settings"}
-                onChange={(event) =>
-                  setSettings({ allowPeerDeckEdits: event.target.checked })
-                }
-              />
-              Peers can edit the recall deck
-            </label>
+            <Switch label="Peers can comment and react" checked={course.settings.allowPeerComments}
+              disabled={saving === "course-settings"} onChange={allowPeerComments => setSettings({allowPeerComments})}/>
+            <Switch label="Peers can edit the recall deck" checked={course.settings.allowPeerDeckEdits}
+              disabled={saving === "course-settings"} onChange={allowPeerDeckEdits => setSettings({allowPeerDeckEdits})}/>
             <label className={css({ fontSize: "0.8rem" })}>
               <FieldLabel>Teacher access policy</FieldLabel>
               <Select
@@ -2197,7 +1941,7 @@ function AccessSection({
                     teacherAccessPolicy: value as typeof course.settings.teacherAccessPolicy,
                   })
                 }
-                className={courseInputClass}
+                className="k-input"
               >
                 <option value="request">
                   Ask each learner before reading their work
@@ -2209,8 +1953,8 @@ function AccessSection({
             </label>
           </div>
         </div>
-        <div className={courseCardClass}>
-          <p className={cx(courseLabelClass, css({ px: "0.7rem", pt: "0.6rem" }))}>
+        <div className="cb-card">
+          <p className={cx("k-eyebrow", css({ px: "0.7rem", pt: "0.6rem" }))}>
             Members · {course.members.length}
           </p>
           <div className={css({ mt: "0.35rem" })}>
@@ -2231,9 +1975,7 @@ function AccessSection({
                   <strong
                     className={css({
                       display: "block",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
+                      overflowWrap: "anywhere",
                       fontSize: "0.82rem",
                     })}
                   >
@@ -2249,7 +1991,7 @@ function AccessSection({
                   <Select
                     value={member.role}
                     disabled={saving === `role-${member.accountId}`}
-                    className={cx(courseInputClass, css({ w: "auto" }))}
+                    className={cx("k-input", css({ w: "auto" }))}
                     aria-label={`Role for ${member.displayName}`}
                     onValueChange={(value) =>
                       void mutate(
@@ -2293,17 +2035,6 @@ function AccessSection({
 
 /* ------------------------------------------------------------------ builder */
 
-const SECTION_ICON: Record<CourseBuilderSection, typeof BookOpen> = {
-  details: SlidersHorizontal,
-  outline: Layers3,
-  lesson: BookOpen,
-  documents: FilePlus2,
-  assignments: BookUp,
-  artifacts: Shapes,
-  cards: CreditCard,
-  access: Users,
-};
-
 /**
  * The single place a course is edited. Everything that used to live in a
  * collapsed strip above the desk and a second copy in the right rail is here,
@@ -2312,7 +2043,8 @@ const SECTION_ICON: Record<CourseBuilderSection, typeof BookOpen> = {
 export function CourseBuilder({
   snapshot,
   activeLesson,
-  section,
+  section: requestedSection,
+  error,
   saving,
   onSectionChange,
   mutate,
@@ -2321,6 +2053,21 @@ export function CourseBuilder({
   onInvite,
   onError,
 }: BuilderProps) {
+  const section = requestedSection === "lesson" ? "outline" : requestedSection;
+  const [removal, setRemoval] = useState<{message: string; remove(): void}>();
+  const [mobile, setMobile] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [localError, setLocalError] = useState("");
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 760px)");
+    const update = () => setMobile(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  useEffect(() => { setLocalError(""); setSheetOpen(requestedSection === "lesson"); }, [requestedSection]);
+  const reportError = (message: string) => { setLocalError(message); onError(message); };
+  useEffect(() => { setLocalError(""); }, [saving, snapshot.course.revision]);
   const canEdit = snapshot.permissions.canEditCourse;
   const canCards = snapshot.permissions.canEditDeck;
   const lessonCount = useMemo(
@@ -2339,7 +2086,6 @@ export function CourseBuilder({
       items.push(
         { id: "details", label: "Details" },
         { id: "outline", label: "Outline", count: lessonCount },
-        { id: "lesson", label: "Lesson" },
         { id: "documents", label: "Documents", count: snapshot.course.materials.length },
         {
           id: "assignments",
@@ -2385,63 +2131,30 @@ export function CourseBuilder({
 
   if (!sections.length) return null;
 
+  const icons = {details:"info", outline:"tree", lesson:"book", documents:"doc", assignments:"checklist", artifacts:"shapes", cards:"layers", access:"people"} as const;
+  const editor = activeLesson && <LessonSection key={activeLesson.id} lesson={activeLesson} snapshot={snapshot} saving={saving} mutate={mutate}
+    {...(mobile ? {sheet:{open:sheetOpen, close:() => setSheetOpen(false)}} : {})}
+    {...(error ? {error} : {})}
+    onSectionChange={onSectionChange} attach={<CourseAddMenu triggerLabel="Attach" activeLessonId={activeLesson.id} snapshot={snapshot} saving={saving}
+      mutate={mutate} onSnapshot={onSnapshot} onError={reportError} onOpenBuilder={onSectionChange}/>}/>;
   return (
-    <div className={css({ mx: "auto", maxW: "60rem" })}>
-      <nav
-        aria-label="Course builder sections"
-        className={css({
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.3rem",
-          borderBottom: "2px solid var(--ink)",
-          pb: "0.7rem",
-          mb: "1.1rem",
-        })}
-      >
-        {sections.map((item) => {
-          const Icon = SECTION_ICON[item.id];
-          const current = item.id === section;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              aria-current={current}
-              onClick={() => onSectionChange(item.id)}
-              className={css({
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.35rem",
-                border: "1px solid var(--ink)",
-                px: "0.6rem",
-                py: "0.4rem",
-                fontSize: "0.74rem",
-                fontWeight: 750,
-                cursor: "pointer",
-                _hover: { bg: "var(--course-wash, #ddebdd)" },
-              })}
-              style={
-                current
-                  ? { background: "var(--ink)", color: "var(--paper)" }
-                  : undefined
-              }
-            >
-              <Icon size={13} /> {item.label}
-              {typeof item.count === "number" ? (
-                <span
-                  className={css({
-                    fontFamily: "var(--mono-display)",
-                    fontSize: "0.62rem",
-                    opacity: 0.75,
-                  })}
-                >
-                  {item.count}
-                </span>
-              ) : null}
-            </button>
-          );
-        })}
-      </nav>
-      {canEdit && <CourseJudgementPanel snapshot={snapshot} />}
+    <RemovalContext.Provider value={(message, remove) => setRemoval({message, remove})}>
+    <div className="cb-builder">
+      <header className="cb-toolbar">
+        <span className="cb-last-save" role="status"><StatusDot tone={saving ? "idle" : "ok"}/>
+          {saving ? "Saving…" : <>Saved <time dateTime={snapshot.course.updatedAt}>{new Date(snapshot.course.updatedAt).toLocaleTimeString([], {hour:"numeric", minute:"2-digit"})}</time></>}
+        </span>
+        {canEdit && <Note data-glyph-host glyph="verified" className="cb-review"><CourseJudgementPanel snapshot={snapshot}/></Note>}
+      </header>
+      <div className="cb-layout">
+        <nav aria-label="Course builder sections" className="cb-nav">
+          {sections.map(item => <button type="button" key={item.id} aria-current={section === item.id ? "page" : undefined}
+            onClick={() => onSectionChange(item.id)}><KeatingGlyph name={icons[item.id]} size={14}/>{item.label}
+            {item.count !== undefined && <small>{item.count}</small>}</button>)}
+        </nav>
+        <div className="cb-body" data-outline={section === "outline" && Boolean(editor)}>
+        <section className="cb-work">
+        {(error || localError) && <Note role="alert">{error || localError}</Note>}
       {section === "details" && canEdit ? (
         <DetailsSection snapshot={snapshot} saving={saving} mutate={mutate} />
       ) : null}
@@ -2451,16 +2164,7 @@ export function CourseBuilder({
           {...(activeLesson ? { activeLesson } : {})}
           saving={saving}
           mutate={mutate}
-          onSelectLesson={onSelectLesson}
-        />
-      ) : null}
-      {section === "lesson" && canEdit ? (
-        <LessonSection
-          snapshot={snapshot}
-          {...(activeLesson ? { lesson: activeLesson } : {})}
-          saving={saving}
-          mutate={mutate}
-          onSectionChange={onSectionChange}
+          onSelectLesson={id => { onSelectLesson(id); setSheetOpen(mobile); }}
         />
       ) : null}
       {section === "documents" && canEdit ? (
@@ -2470,7 +2174,7 @@ export function CourseBuilder({
           saving={saving}
           mutate={mutate}
           onSnapshot={onSnapshot}
-          onError={onError}
+          onError={reportError}
         />
       ) : null}
       {section === "assignments" && canEdit ? (
@@ -2508,7 +2212,7 @@ export function CourseBuilder({
           saving={saving}
           mutate={mutate}
           onSnapshot={onSnapshot}
-          onError={onError}
+          onError={reportError}
         />
       ) : null}
       {section === "access" && canEdit ? (
@@ -2519,6 +2223,14 @@ export function CourseBuilder({
           onInvite={onInvite}
         />
       ) : null}
+        </section>
+        {requestedSection === "lesson" && !activeLesson && canEdit && <LessonSection attach={null} snapshot={snapshot} saving={saving} mutate={mutate} onSectionChange={onSectionChange}/>}
+        {section === "outline" && canEdit && editor}
+        </div>
+      </div>
+      {removal && <ConfirmDialog open title="Confirm removal" description={removal.message} confirmLabel="Remove"
+        onCancel={() => setRemoval(undefined)} onConfirm={() => { setRemoval(undefined); removal.remove(); }}/>}
     </div>
+    </RemovalContext.Provider>
   );
 }

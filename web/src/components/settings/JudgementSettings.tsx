@@ -1,3 +1,5 @@
+import { ConfirmDialog, Loading } from "../../design-system/kit";
+import { checkingChoice,openModelSection } from "./models/model-choices";
 import { DEFAULT_MODELS, GOOGLE_DECISION_PROVIDER } from "@keating/runtime-config";
 import { JudgementCalibrationSettings } from "./JudgementCalibrationSettings";
 import { useEffect, useId, useRef, useState } from "react";
@@ -45,6 +47,7 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
   checkingAccount, connecting, error, onChange, onConnect, juliaId, juliaBridge,
   keyInput = "", keySaved = false, checkingKey = false, savingKey = false, keyError = "", onKeyInput, onSaveKey, onRemoveKey }: JudgementSettingsViewProps) {
   const id = useId();
+  const [removing,setRemoving] = useState(false);
   const typesafeSelected = settings.backend === "hosted" && settings.hostedProvider === "typesafe";
   const googleSelected = settings.backend === "hosted" && settings.hostedProvider === GOOGLE_DECISION_PROVIDER;
   const providerName = googleSelected ? "Google" : "TypeSafe";
@@ -78,11 +81,11 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
       ? "This app build does not provide local judgement scoring."
       : !offlineStatus ? "Checking the local model…"
         : !offlineStatus.available ? "The local scoring runtime is unavailable in this build."
-          : !offlineStatus.installed ? "Install the offline tutor above to use this model for judgement."
+          : !offlineStatus.installed ? "Install the offline tutor to use this model for judgement."
             : "The local model is installed. Matching verified calibration can be installed below.";
   return <section id="settings-section-judgement" className="judgement-settings" aria-labelledby={`${id}-title`}>
     <div>
-      <h3 id={`${id}-title`}>Judgement model</h3>
+      <h3 id={`${id}-title`} className="s2-checking-heading">Checking replies</h3>
       <p>Choose how Keating reviews work. This choice is separate from your tutor model.</p>
     </div>
     <label className="judgement-settings__field" htmlFor={`${id}-backend`}>
@@ -90,11 +93,9 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
       <select id={`${id}-backend`} value={settings.backend === "local" ? `local:${settings.localModelId}` : typesafeSelected || googleSelected ? settings.hostedProvider : settings.backend} disabled={connecting}
         aria-describedby={`${id}-privacy`} onChange={(event) => {
           const value = event.target.value;
-          onChange(value.startsWith("local:")
-            ? { ...settings, backend: "local", localModelId: value.slice(6) }
-            : { ...settings, backend: value === "off" ? "off" : "hosted", hostedProvider: value === "typesafe" || value === GOOGLE_DECISION_PROVIDER ? value : "notorganic" });
+          onChange(checkingChoice(settings,value));
         }}>
-        <option value="hosted">Jev · Not Organic · Recommended</option>
+        <option value="hosted">Hosted Jev (recommended) · Not Organic</option>
         <option value="typesafe">Jev · your TypeSafe API key</option>
         <option value={GOOGLE_DECISION_PROVIDER}>Gemini Decision 1 (Google API key)</option>
         <optgroup label="On this device">
@@ -115,7 +116,7 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
         : "Reviews go through your Not Organic account and may use credit."}
     </p>
     <p className="judgement-settings__hint">New to this? <a href="https://docs.keating.help/" target="_blank" rel="noopener noreferrer">Read the judgement setup guide</a> for Jev, your own TypeSafe key, and on-device options.</p>
-    {(typesafeSelected || googleSelected) && <div className="judgement-settings__account">
+    {(typesafeSelected || googleSelected) && <div id="checking-key" className="judgement-settings__account">
       {typesafeSelected && <><label className="judgement-settings__field" htmlFor={`${id}-typesafe-model`}>
         <span>Model ID</span>
         <input id={`${id}-typesafe-model`} type="text" value={modelInput}
@@ -136,11 +137,11 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
         <button type="button" disabled={checkingKey || savingKey || !keyInput.trim()} onClick={onSaveKey}>
           {savingKey ? "Saving…" : googleSelected ? (keySaved ? "Update Google key" : "Save Google key") : keySaved ? "Update API key" : "Save API key"}
         </button>
-        {keySaved && <button type="button" disabled={checkingKey || savingKey} onClick={onRemoveKey}>{googleSelected ? "Remove Google key" : "Remove API key"}</button>}
+        {keySaved && <button type="button" disabled={checkingKey || savingKey} onClick={()=>setRemoving(true)}>{googleSelected ? "Remove Google key" : "Remove API key"}</button>}
       </div>
-      <p id={`${id}-key-status`} role="status">{checkingKey ? "Checking saved API key…" : savingKey ? "Updating API key…"
-        : keySaved ? (googleSelected ? "Google API key saved on this device." : "API key saved on this device.")
-        : `No ${providerName} API key saved. Save a key to use this judgement model.`}</p>
+      <ConfirmDialog open={removing} title={"Remove the "+providerName+" key?"} description="Reviews using this key will need a replacement credential." confirmLabel="Remove key" onCancel={()=>setRemoving(false)} onConfirm={()=>{setRemoving(false);onRemoveKey?.();}}/>
+      {checkingKey || savingKey ? <Loading id={`${id}-key-status`} size="inline" label={checkingKey ? "Checking saved API key…" : "Updating API key…"}/> : <p id={`${id}-key-status`} role="status">{keySaved ? (googleSelected ? "Google API key saved on this device." : "API key saved on this device.")
+        : `No ${providerName} API key saved. Save a key to use this judgement model.`}</p>}
       {keyError && <p role="alert">{keyError}</p>}
     </div>}
     {settings.backend !== "off" && <>
@@ -155,9 +156,9 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
       </>}
       {!googleSelected && <p id={`${id}-local-status`} role="status">{localStatus}</p>}
       {!googleSelected && juliaSelected && <JuliaLocalModelSettings bridge={juliaBridge} />}
-      {!googleSelected && nativeSelected && desktop && scoringAvailable && !offlineStatus?.installed && <a href="#offline-tutor">Set up the offline tutor</a>}
+      {!googleSelected && nativeSelected && desktop && scoringAvailable && !offlineStatus?.installed && <a href="#offline-tutor" onClick={e=>{e.preventDefault();openModelSection("offline");}}>Set up the offline tutor</a>}
       <details className="judgement-settings__account">
-      <summary>Advanced review options</summary>
+      <summary id="checking-advanced">Advanced review options</summary>
       <label className="judgement-settings__field" htmlFor={`${id}-request-tokens`}>
         <span>Maximum tokens per judge request</span>
         <input id={`${id}-request-tokens`} type="number" min={512} max={googleSelected ? GEMINI_DECISION_INPUT_LIMIT : 2_000_000} step={512}
@@ -188,17 +189,16 @@ export function JudgementSettingsView({ settings, desktop, scoringAvailable, off
       <p>Automatic grading stays with the existing checks until calibration and validation are complete.</p>
     </>}
     {settings.backend === "hosted" && !typesafeSelected && !googleSelected && <div className="judgement-settings__account">
-      <p role="status">{checkingAccount ? "Checking Not Organic access…"
-        : account?.judgementAuthorized ? "Not Organic judgement access is connected."
+      {checkingAccount ? <Loading label="Checking Not Organic access…" size="inline"/> : <p role="status">{account?.judgementAuthorized ? "Not Organic judgement access is connected."
           : account?.connected ? "Your account is connected. Authorize judgement access to use hosted reviews."
             : account?.configured ? "Connect or renew your Not Organic account to use hosted reviews."
-              : "Not Organic account access is unavailable in this app configuration."}</p>
+              : "Not Organic account access is unavailable in this app configuration."}</p>}
       {!account?.judgementAuthorized && <button type="button" disabled={checkingAccount || connecting || !account?.configured}
         onClick={onConnect}>
         {connecting ? "Opening authorization…" : account?.connected ? "Authorize judgement access" : "Connect Not Organic"}
       </button>}
     </div>}
-    <details className="judgement-settings__account"><summary>Calibration</summary><JudgementCalibrationSettings /></details>
+    <details className="judgement-settings__account"><summary id="checking-calibration">Calibration</summary><JudgementCalibrationSettings /></details>
     {error && <p role="alert">{error}</p>}
   </section>;
 }

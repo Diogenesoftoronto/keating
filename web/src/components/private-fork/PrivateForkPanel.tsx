@@ -1,3 +1,4 @@
+import { Button, Note } from "../../design-system/kit";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import { css } from "../../../styled-system/css";
 import { resolvePrivateForkPassage } from "../../keating/private-fork-provenance";
@@ -84,9 +85,9 @@ export function PrivateForkPanel({ title, sourceText, sourceLabel, sourceKind, i
       onKeyDown={(event) => { if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); cancel(); } }}
       className={css({ minW: 0, border: "1px solid var(--ink)", bg: "var(--card)", p: "0.85rem", display: "grid", gap: "0.65rem", _focusVisible: { outline: "2px solid var(--peer-blue, #3468b3)", outlineOffset: "2px" } })}>
       <h3 id={`${id}-title`} className={s.heading}>{title}</h3>
-      <p id={`${id}-privacy`} className={s.help}>
+      <Note glyph="lock" id={`${id}-privacy`}>
         The source stays {sourceKind === "room" ? "in the shared room" : "in the lesson"}. Your continuation is a separate Chat, outside room and teacher oversight, and does not complete course progress.
-      </p>
+      </Note>
       <div>
         <p className={s.fieldLabel}>{sourceLabel}</p>
         {passage ? <pre className={css({ mt: "0.35rem", maxH: "10rem", overflow: "auto", whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontFamily: "inherit", fontSize: "0.82rem", lineHeight: 1.55 })}>{passage.selectedText}</pre>
@@ -116,8 +117,8 @@ export function PrivateForkPanel({ title, sourceText, sourceLabel, sourceKind, i
       <p className={s.help}>Saved in normal Chat history, with your usual storage, sync, export, and sharing settings.</p>
       {error ? <p role="alert" className={s.error}>{error}</p> : null}
       <div className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
-        <button type="button" className={s.primary} disabled={busy || !passage} onClick={() => void open()}>{busy ? "Opening…" : error ? "Try again" : "Open private Chat"}</button>
-        <button type="button" className={s.button} onClick={cancel}>Cancel</button>
+        <Button onClick={cancel}>Cancel</Button>
+        <Button variant="primary" disabled={busy || !passage} busy={busy} onClick={() => void open()}>{busy ? "Opening…" : error ? "Try again" : "Open private Chat"}</Button>
       </div>
       {busy ? <p role="status" className={s.help}>Checking the source and saving your continuation…</p> : null}
     </section>

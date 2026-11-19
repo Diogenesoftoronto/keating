@@ -50,13 +50,13 @@ test("duplicate other languages are detected ignoring case and spacing", () => {
 test("onboarding resumes on a stable step id with its access and intake choices", () => {
 	const saved = memoryStorage();
 	markChatOnboarding("in-progress", saved, 3, { stepId: "setup", access: "byok", mode: "conversation" });
-	// Conversation track is shorter, so the id, not the number, decides.
-	expect(readChatOnboardingResume(saved)).toEqual({ step: 2, access: "byok", mode: "conversation" });
+	// The old setup id maps to Model on both tracks.
+	expect(readChatOnboardingResume(saved)).toEqual({ step: 1, access: "byok", mode: "conversation" });
 });
 
 test("a legacy numeric record still resumes on the form track", () => {
 	const saved = memoryStorage(JSON.stringify({ version: 2, outcome: "in-progress", step: 4 }));
-	expect(readChatOnboardingResume(saved)).toEqual({ step: 4, access: "keating", mode: "form" });
+	expect(readChatOnboardingResume(saved)).toEqual({ step: 2, access: "keating", mode: "form" });
 	expect(readChatOnboardingResume(memoryStorage(JSON.stringify({ version: 2, outcome: "in-progress", stepId: "gone", step: 99, access: "x" }))))
-		.toEqual({ step: 7, access: "keating", mode: "form" });
+		.toEqual({ step: 3, access: "keating", mode: "form" });
 });

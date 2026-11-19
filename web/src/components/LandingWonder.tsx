@@ -1,3 +1,4 @@
+import { KeatingGlyph } from "../design-system/glyphs";
 import {
   useEffect,
   useRef,
@@ -412,7 +413,7 @@ export function LearningJourney() {
               disabled={activeIndex === 0}
               aria-label="Previous learning stage"
             >
-              ←
+              <KeatingGlyph name="left" />
             </button>
             <span aria-live="polite">
               {String(activeIndex + 1).padStart(2, "0")} / {String(LEARNING_STAGES.length).padStart(2, "0")}
@@ -423,7 +424,7 @@ export function LearningJourney() {
               disabled={activeIndex === LEARNING_STAGES.length - 1}
               aria-label="Next learning stage"
             >
-              →
+              <KeatingGlyph name="right" />
             </button>
           </div>
         </div>

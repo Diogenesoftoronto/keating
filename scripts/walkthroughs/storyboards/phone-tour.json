@@ -1,0 +1,223 @@
+{
+  "slug": "phone-tour",
+  "title": "Phone tour",
+  "viewport": "phone",
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study",
+    "review",
+    "course"
+  ],
+  "ready": [
+    {
+      "label": "Open sessions panel"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "goto",
+      "path": "/chat?session=11111111-2222-4333-8444-555555555555"
+    },
+    {
+      "kind": "chapter",
+      "id": "sessions",
+      "title": "Open the sessions sheet",
+      "explanation": "Open Sessions on your phone.",
+      "alt": "Open the sessions sheet"
+    },
+    {
+      "kind": "caption",
+      "text": "Open Sessions on your phone."
+    },
+    {
+      "kind": "click",
+      "label": "Open sessions panel"
+    },
+    {
+      "kind": "wait-for",
+      "text": "How recursion returns",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "sessions"
+    },
+    {
+      "kind": "chapter",
+      "id": "search",
+      "title": "Reopen a lesson",
+      "explanation": "Find an earlier lesson.",
+      "alt": "Reopen a lesson"
+    },
+    {
+      "kind": "caption",
+      "text": "Find an earlier lesson."
+    },
+    {
+      "kind": "type",
+      "selector": "input[placeholder=\"Find a session\"]",
+      "text": "recursion",
+      "delay": 27
+    },
+    {
+      "kind": "click",
+      "label": "Open session How recursion returns"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "search"
+    },
+    {
+      "kind": "chapter",
+      "id": "make",
+      "title": "Make flashcards",
+      "explanation": "Make flashcards from your lesson.",
+      "alt": "Make flashcards"
+    },
+    {
+      "kind": "caption",
+      "text": "Make flashcards from your lesson."
+    },
+    {
+      "kind": "click",
+      "label": "Make flashcards"
+    },
+    {
+      "kind": "click",
+      "label": "Send message"
+    },
+    {
+      "kind": "click",
+      "label": "Reveal answer"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "make"
+    },
+    {
+      "kind": "chapter",
+      "id": "materials",
+      "title": "Open Materials",
+      "explanation": "Open the same materials alongside Chat.",
+      "alt": "Open Materials"
+    },
+    {
+      "kind": "caption",
+      "text": "Open the same materials alongside Chat."
+    },
+    {
+      "kind": "click",
+      "label": "Open materials",
+      "contains": true
+    },
+    {
+      "kind": "wait-for",
+      "text": "Learn recursion",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "materials"
+    },
+    {
+      "kind": "wait-for",
+      "timeout": 7000,
+      "condition": "(async () => {\n  const sessionId = new URL(location.href).searchParams.get(\"session\") ?? \"11111111-2222-4333-8444-555555555555\";\n  const rows = [...document.querySelectorAll(\"[data-material-key]\")].filter(row => row.getClientRects().length && row.querySelector(\".h1-material-name\")?.textContent.trim() === \"Recursion cards\" && /\\b1 card\\b/.test(row.innerText)).map(row => ({ key: row.dataset.materialKey, label: row.innerText }));\n  if (!rows.length) return false;\n  console.log(\"[keating:materials] \" + JSON.stringify({ action: \"Inspect Materials\", count: rows.length }));\n  if (rows.length > 1) {\n    const { sessions, keatingStorage } = await import(\"/src/hooks/keating-storage.ts\");\n    const presentations = (await keatingStorage.getOpenUiPresentations(sessionId)).map(({ id, documentId, nodeId, createdAt }) => ({ id, documentId, nodeId, createdAt }));\n    const stored = await sessions.loadSession(sessionId);\n    const messages = (stored?.messages ?? []).map(({ id, timestamp, role }) => ({ id: id ?? null, timestamp, role }));\n    const transcriptIds = [...document.querySelectorAll(\"[data-learning-message-ids], [data-message-id]\")].map(row => row.dataset.learningMessageIds ?? row.dataset.messageId);\n    const data = JSON.stringify({ sessionId, at: Date.now(), rows, presentations, messages, transcriptIds });\n    const chunks = data.match(/.{1,225}/gs);\n    chunks.forEach((part, index) => console.log(\"[keating:w3-duplicate] \" + JSON.stringify({ index, count: chunks.length, part })));\n    throw new Error(\"Expected one new deck in Materials, saw \" + rows.length);\n  }\n  return true;\n})()"
+    },
+    {
+      "kind": "chapter",
+      "id": "review",
+      "title": "Switch review panels",
+      "explanation": "Move between transcript notes and the rubric.",
+      "alt": "Switch review panels"
+    },
+    {
+      "kind": "caption",
+      "text": "Move between transcript notes and the rubric."
+    },
+    {
+      "kind": "click",
+      "label": "Close materials",
+      "selector": "[aria-label=\"Close materials\"]"
+    },
+    {
+      "kind": "click",
+      "label": "More menu"
+    },
+    {
+      "kind": "click",
+      "label": "Review session",
+      "ready": [
+        {
+          "text": "Transcript"
+        }
+      ]
+    },
+    {
+      "kind": "click",
+      "label": "Notes",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 1700
+    },
+    {
+      "kind": "click",
+      "label": "Rubric",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "review"
+    },
+    {
+      "kind": "chapter",
+      "id": "settings",
+      "title": "Find Interface settings",
+      "explanation": "Find appearance controls in phone Settings.",
+      "alt": "Find Interface settings"
+    },
+    {
+      "kind": "caption",
+      "text": "Find appearance controls in phone Settings."
+    },
+    {
+      "kind": "goto",
+      "path": "/chat?session=11111111-2222-4333-8444-555555555555",
+      "ready": [
+        {
+          "label": "More menu"
+        }
+      ]
+    },
+    {
+      "kind": "click",
+      "label": "More menu"
+    },
+    {
+      "kind": "click",
+      "label": "Settings"
+    },
+    {
+      "kind": "click",
+      "label": "Interface",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "settings"
+    }
+  ],
+  "transcript": "phone-tour",
+  "viewerNote": "This is the responsive web app with a scripted local tutor."
+}

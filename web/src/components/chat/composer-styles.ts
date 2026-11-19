@@ -9,27 +9,28 @@ export const srInteractiveClass = css({
   transitionDuration: "150ms",
 });
 
+/* Quiet icon buttons, as drawn: no box at rest. The glyph carries the hover (its accent part
+   lights and moves) and `k-bloom` puts a halftone bloom behind it. */
 export const composerIconButtonStyles = css.raw({
+  position: "relative",
   display: "inline-flex",
-  width: "2rem",
-  height: "2rem",
+  width: "1.3462rem",
+  height: "1.3462rem",
   flexShrink: 0,
   alignItems: "center",
   justifyContent: "center",
-  borderRadius: "0.375rem",
-  border: "1px solid var(--border)",
-  color: "var(--muted-foreground)",
-  _hover: {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
-  },
+  borderRadius: "0.1923rem",
+  border: "1px solid transparent",
+  backgroundColor: "transparent",
+  color: "var(--ink-soft)",
+  _hover: { color: "var(--ink)" },
   _disabled: {
-    color: "var(--muted-foreground)",
-    opacity: 0.72,
+    color: "var(--ink-soft)",
+    opacity: 0.5,
   },
-  sm: { width: "2.25rem", height: "2.25rem" },
 });
 export const composerIconButtonClass = cx(
   srInteractiveClass,
+  "k-bloom",
   css(composerIconButtonStyles),
 );

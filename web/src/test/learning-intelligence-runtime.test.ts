@@ -55,6 +55,8 @@ test("completed turns ground lesson and memory evidence, and forecast numeric hi
   const prompt = await f.runtime.prompt();
   expect(prompt).toContain("I enjoy astronomy."); expect(prompt).toContain("lesson-fact"); expect(prompt).toContain("unvalidated-model-proposal");
   const forecasts = f.diagnostics.find(event => event.kind === "forecast")!;
+  expect(forecasts.messageId).toBe("teacher");
+  expect(f.diagnostics.filter(event => event.kind === "extraction").map(event => event.messageId)).toEqual(["learner", "teacher"]);
   expect(forecasts.forecast?.[0]?.observedCount).toBe(8); expect(forecasts.forecast?.[0]?.median).toBe(.4);
   expect(forecasts.reasons.join(" ")).toContain("spaced repetition due dates remain authoritative");
   await f.runtime.update(); expect(f.calls()).toBe(3);

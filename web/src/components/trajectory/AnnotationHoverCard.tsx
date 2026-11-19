@@ -3,8 +3,7 @@ import { isRevisionAnnotation } from "../../keating/trajectory-review";
 import { authorshipLabel } from "../../keating/annotation-provenance";
 import { css, cx } from "../../../styled-system/css";
 import { eyebrow } from "../../../styled-system/recipes";
-import { KeatingIcon } from "../KeatingIcon";
-import { reviewIcon } from "./review-icons";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { annotationKindColor, annotationKindLabel, severityLabel } from "./review-vocabulary";
 import { metaTextClass } from "./styles";
 
@@ -64,8 +63,7 @@ export function AnnotationHoverCard({
 						<div className={css({ display: "flex", alignItems: "center", gap: "0.4rem", marginBottom: "0.35rem" })}>
 							<span
 								aria-hidden="true"
-								className={css({ width: "0.5rem", height: "0.5rem", flex: "0 0 auto", borderRadius: "9999px" })}
-								style={{ background: tone }}
+								className="rv-kind" data-kind={annotation.kind}
 							/>
 							<span
 								className={css({ fontSize: "0.625rem", fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" })}
@@ -137,7 +135,7 @@ export function AnnotationHoverCard({
 							{readOnly ? null : (
 								<>
 									<button type="button" className={actionClass} onClick={() => onEdit?.(annotation.id)}>
-										<KeatingIcon icon={reviewIcon.annotate} size={12} />
+										<KeatingGlyph name="edit" size={12} />
 										Edit
 									</button>
 									<button
@@ -145,8 +143,8 @@ export function AnnotationHoverCard({
 										className={cx(actionClass, css({ borderColor: "transparent", color: "var(--muted-foreground)" }))}
 										onClick={() => onDelete?.(annotation.id)}
 									>
-										<KeatingIcon icon={reviewIcon.discard} size={12} />
-										Delete
+										<KeatingGlyph name="trash" size={12} />
+										Delete note
 									</button>
 								</>
 							)}

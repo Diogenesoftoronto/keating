@@ -259,7 +259,7 @@ describe("share control markup", () => {
 		expect(html).toContain('data-simulation-share="base-rate"');
 		expect(html).toContain("Share what I found");
 		expect(html).toMatch(/role="status"[^>]*>Sends your settings and readouts to your tutor\./);
-		expect(html).toContain("prefers-reduced-motion");
+		expect(html).toMatch(/<footer[^>]*>[\s\S]*aria-describedby="[^"]+-share-status"/);
 	});
 
 	test("omits the control when nothing can deliver it", () => {

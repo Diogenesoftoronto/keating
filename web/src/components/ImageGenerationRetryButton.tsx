@@ -1,4 +1,4 @@
-import { RefreshCw } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css } from "../../styled-system/css";
 
 export function ImageGenerationRetryButton({ onRetry }: { onRetry: () => void }) {
@@ -20,7 +20,7 @@ export function ImageGenerationRetryButton({ onRetry }: { onRetry: () => void })
 				_focusVisible: { outline: "2px solid currentColor", outlineOffset: "2px" },
 			})}
 		>
-			<RefreshCw size={12} aria-hidden="true" />
+			<KeatingGlyph name="refresh" size={12} />
 			Choose model and retry
 		</button>
 	);

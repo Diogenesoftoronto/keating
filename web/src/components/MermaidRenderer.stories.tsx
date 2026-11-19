@@ -47,3 +47,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const ExpandableWideDiagram: Story = {};
+
+export const NarrowReply: Story = {
+  ...ExpandableWideDiagram,
+  decorators: [Story => <div style={{ width: "min(320px, 100%)" }}><Story /></div>],
+};

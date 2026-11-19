@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useState, type FormEvent } from "react";
-import { Download } from "lucide-react";
+import { Loading, Button } from "../../design-system/kit";
+import { ExportSheet } from "../export/ExportSheet";
 import { css } from "../../../styled-system/css";
 import { allowRemovedRoomMember, deleteRoom, listRemovedRoomMembers, roomTranscriptUrl, type RoomRemovedMember } from "../../rooms/client";
 import type { RoomOperationInput, RoomSettings, RoomViewerSnapshot } from "../../rooms/contracts";
@@ -9,11 +10,22 @@ import { errorMessage, roomStyles as s } from "./room-ui";
 type Mutate = (operation: RoomOperationInput) => Promise<unknown>;
 
 export function RoomTranscriptExport({ roomId }: { roomId: string }) {
-  return (
-    <a href={roomTranscriptUrl(roomId)} download className={s.button}>
-      <Download size={13} aria-hidden="true" /> Export transcript
-    </a>
-  );
+  const [open, setOpen] = useState(false);
+  const download = () => {
+    const link = document.createElement("a");
+    link.href = roomTranscriptUrl(roomId);
+    link.download = "";
+    link.click();
+    setOpen(false);
+  };
+  return <>
+    <Button variant="line" size="sm" glyph="export" onClick={() => setOpen(true)}>Export transcript</Button>
+    <ExportSheet open={open} onClose={() => setOpen(false)} title="Export transcript"
+      included="The full transcript you can see in this room, including earlier messages."
+      excluded="Private guidance outside your role’s audience and conversations in other rooms."
+      format="Markdown (.md)" destination="A file downloaded to your device."
+      confirmLabel="Download transcript" onConfirm={download} />
+  </>;
 }
 
 function DetailsForm({ snapshot, mutate }: { snapshot: RoomViewerSnapshot; mutate: Mutate }) {
@@ -46,18 +58,18 @@ function DetailsForm({ snapshot, mutate }: { snapshot: RoomViewerSnapshot; mutat
     <form onSubmit={(event) => void save(event)} className={css({ mt: "0.55rem", display: "grid", gap: "0.6rem" })}>
       <label className={s.field}>
         <span className={s.fieldLabel}>Title</span>
-        <input className={s.input} value={title} maxLength={160} required onChange={(event) => { setTitle(event.target.value); setSaved(false); }} />
+        <input className="k-input" value={title} maxLength={160} required onChange={(event) => { setTitle(event.target.value); setSaved(false); }} />
       </label>
       <label className={s.field}>
         <span className={s.fieldLabel}>Topic</span>
-        <textarea className={s.input} rows={2} maxLength={2_000} value={topic} onChange={(event) => { setTopic(event.target.value); setSaved(false); }} />
+        <textarea className="k-input" rows={2} maxLength={2_000} value={topic} onChange={(event) => { setTopic(event.target.value); setSaved(false); }} />
       </label>
       <label className={s.field}>
         <span className={s.fieldLabel}>Goal</span>
-        <textarea className={s.input} rows={2} maxLength={2_000} value={goal} onChange={(event) => { setGoal(event.target.value); setSaved(false); }} />
+        <textarea className="k-input" rows={2} maxLength={2_000} value={goal} onChange={(event) => { setGoal(event.target.value); setSaved(false); }} />
       </label>
       <div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" })}>
-        <button type="submit" className={s.primary} disabled={busy || !dirty || !title.trim()}>{busy ? "Saving…" : "Save details"}</button>
+        <button type="submit" className={s.primary} disabled={busy || !dirty || !title.trim()}>{busy ? <Loading size="inline" label="Saving…" /> : "Save details"}</button>
         {saved ? <span role="status" className={s.help}>Saved.</span> : null}
       </div>
       {error ? <p role="alert" className={s.error}>{error}</p> : null}
@@ -106,7 +118,7 @@ function SettingsForm({ snapshot, mutate }: { snapshot: RoomViewerSnapshot; muta
   );
 }
 
-function Lifecycle({ snapshot, mutate, onDeleted }: { snapshot: RoomViewerSnapshot; mutate: Mutate; onDeleted: () => void }) {
+export function RoomLifecycle({ snapshot, mutate, onDeleted, endOnly = false }: { snapshot: RoomViewerSnapshot; mutate: Mutate; onDeleted?: () => void; endOnly?: boolean }) {
   const { room, viewer } = snapshot;
   const [confirm, setConfirm] = useState<"end" | "delete" | null>(null);
   const [busy, setBusy] = useState(false);
@@ -132,22 +144,22 @@ function Lifecycle({ snapshot, mutate, onDeleted }: { snapshot: RoomViewerSnapsh
             <p>End the room for everyone? Keating stops, posting closes, and invites stop working. You can reopen it later.</p>
             <div className={css({ display: "flex", gap: "0.35rem" })}>
               <button type="button" className={s.danger} disabled={busy} onClick={() => void run(() => mutate({ type: "room.status", status: "ended" }))}>End room</button>
-              <button type="button" className={s.button} onClick={() => setConfirm(null)}>Cancel</button>
+              <button type="button" className="k-button k-ghost k-sm" onClick={() => setConfirm(null)}>Cancel</button>
             </div>
           </div>
         ) : (
-          <button type="button" className={s.danger} onClick={() => setConfirm("end")}>End room…</button>
+          <button type="button" className={endOnly ? s.quiet : s.danger} onClick={() => setConfirm("end")}>End room…</button>
         )
       ) : (
         <button type="button" className={s.primary} disabled={busy} onClick={() => void run(() => mutate({ type: "room.status", status: "open" }))}>Reopen room</button>
       )}
-      {viewer.role === "host" ? (
+      {!endOnly && viewer.role === "host" ? (
         confirm === "delete" ? (
           <div className={css({ display: "grid", gap: "0.4rem", fontSize: "0.76rem" })}>
             <p>Delete the room and its transcript for every member? This cannot be undone. Export the transcript first if you need it.</p>
             <div className={css({ display: "flex", gap: "0.35rem" })}>
               <button type="button" className={s.danger} disabled={busy} onClick={() => void run(() => deleteRoom(room.id), onDeleted)}>Delete permanently</button>
-              <button type="button" className={s.button} onClick={() => setConfirm(null)}>Cancel</button>
+              <button type="button" className="k-button k-ghost k-sm" onClick={() => setConfirm(null)}>Cancel</button>
             </div>
           </div>
         ) : (
@@ -189,13 +201,13 @@ function RemovedPeople({ snapshot }: { snapshot: RoomViewerSnapshot }) {
   if (!removed?.length && !error) return null;
   return (
     <section aria-labelledby="room-removed-heading" className={s.section}>
-      <h2 id="room-removed-heading" className={s.heading}>Removed people</h2>
+      <h2 id="room-removed-heading" className="rm-heading">Removed people</h2>
       <p className={s.help}>Removed people cannot rejoin. Letting someone back in means they can join again with a new invitation.</p>
       <ul className={css({ mt: "0.45rem", display: "grid", gap: "0.35rem", listStyle: "none", p: 0 })}>
         {removed?.map((person) => (
           <li key={person.accountId} className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", fontSize: "0.78rem" })}>
             <span>{person.displayName} <span className={css({ color: "var(--ink-soft)" })}>· {person.role}</span></span>
-            <button type="button" className={s.button} disabled={busy === person.accountId} onClick={() => void allow(person.accountId)}>Let back in</button>
+            <button type="button" className="k-button k-ghost k-sm" disabled={busy === person.accountId} onClick={() => void allow(person.accountId)}>Let back in</button>
           </li>
         ))}
       </ul>
@@ -208,18 +220,17 @@ export function RoomSettingsPanel({ snapshot, mutate, onDeleted }: { snapshot: R
   return (
     <>
       <section aria-labelledby="room-details-heading" className={s.section}>
-        <h2 id="room-details-heading" className={s.heading}>Room details</h2>
+        <h2 id="room-details-heading" className="rm-heading">Room details</h2>
         <DetailsForm key={snapshot.room.id} snapshot={snapshot} mutate={mutate} />
       </section>
       <section aria-labelledby="room-settings-heading" className={s.section}>
-        <h2 id="room-settings-heading" className={s.heading}>Keating settings</h2>
+        <h2 id="room-settings-heading" className="rm-heading">Keating settings</h2>
         <SettingsForm snapshot={snapshot} mutate={mutate} />
       </section>
       {snapshot.permissions.canOversee ? <RemovedPeople snapshot={snapshot} /> : null}
       <section aria-labelledby="room-lifecycle-heading" className={s.section}>
-        <h2 id="room-lifecycle-heading" className={s.heading}>Session</h2>
-        <div className={css({ mt: "0.5rem" })}><RoomTranscriptExport roomId={snapshot.room.id} /></div>
-        <Lifecycle snapshot={snapshot} mutate={mutate} onDeleted={onDeleted} />
+        <h2 id="room-lifecycle-heading" className="rm-heading">Session</h2>
+        <RoomLifecycle snapshot={snapshot} mutate={mutate} onDeleted={onDeleted} />
       </section>
     </>
   );

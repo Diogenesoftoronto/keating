@@ -1,29 +1,17 @@
-/**
- * Share-link decisions for the chat page.
- *
- * Rich session shares publish more than the old transcript-only links, so the
- * first public share needs fresh consent. These helpers keep that decision and
- * the learner-facing wording out of the share hook so they can be tested.
- */
+/** Consent and result wording for chat session links. */
 import type { SharedSessionUrlResult } from "../../keating/shared-sessions";
 import {
   shareModeExposesDataPublicly,
   type KeatingUiSettings,
 } from "../../keating/ui-settings";
 
-export type ShareState = "idle" | "confirm" | "sharing" | "copied" | "error";
+export type ShareState = "idle" | "confirm" | "sharing" | "ready" | "error";
 
-export const PUBLIC_SHARE_CONSENT_MESSAGE =
-  "This link publishes the visible conversation, safe session artifacts, and any finalized review feedback. It excludes drafts, hidden tool traffic, and unsupported or oversized artifacts. Anyone with the link can read it. Share again to confirm.";
-
-/** Local links stay on-device; public modes need the trajectory acknowledgement. */
+/** Every public link requires fresh consent. */
 export function shareNeedsConsent(
   settings: Pick<KeatingUiSettings, "shareLinkMode" | "trajectoryShareWarningAcknowledged">,
 ): boolean {
-  return (
-    shareModeExposesDataPublicly(settings.shareLinkMode) &&
-    !settings.trajectoryShareWarningAcknowledged
-  );
+  return shareModeExposesDataPublicly(settings.shareLinkMode);
 }
 
 /** Settings to save once the learner confirms, or null when nothing changes. */
@@ -45,9 +33,9 @@ export function shareReadyMessage(
     result.mode === "portable-short"
       ? "Portable share link"
       : result.mode === "compressed-hash"
-        ? "Snapshot share link"
+        ? "Compressed share link"
         : "Local share link";
-  return `${linkType} ready${result.fallback ? " after portable storage was unavailable" : ""}. It was copied if your browser allowed clipboard access.`;
+  return `${linkType} ready${result.fallback ? " after portable storage was unavailable" : ""}.`;
 }
 
 export function shareFailureMessage(error: unknown): string {

@@ -159,8 +159,8 @@ export const RestoredPreciseTiming: Story = {
 	},
 	play: async ({ canvasElement }) => {
 		const canvas = within(canvasElement);
-		await expect(canvas.getByLabelText("Total quiz time: 64238 milliseconds")).toHaveTextContent("1:04.238");
-		await userEvent.click(canvas.getByRole("button", { name: "Show breakdown" }));
+		await expect(canvas.getByText("1:04.238", {exact:true})).toHaveTextContent("1:04.238");
+		await userEvent.click(canvas.getByRole("button", { name: "All answers" }));
 		await expect(canvas.getByLabelText("Time on question: 4238 milliseconds")).toHaveTextContent("4.238s");
 		await expect(canvas.getByLabelText("Time on question: 3125 milliseconds")).toHaveTextContent("3.125s");
 		await expect(canvas.getAllByText("Quick answer")).toHaveLength(2);

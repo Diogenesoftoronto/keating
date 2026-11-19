@@ -1,6 +1,7 @@
+import { Meter } from "../../design-system/charts";
 /** Post-quiz feedback panels: per-level remediation and benchmark comparison against past sessions. */
 import { useMemo, useState } from "react";
-import { GraduationCap, TrendingUp } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css, cx } from "../../../styled-system/css";
 import type { Quiz } from "../../keating/core";
 import type { TopicStats } from "../QuizRenderer";
@@ -39,14 +40,13 @@ export function RemediationDashboard({
 	return (
 		<div className={quizStyles.section}>
 			<div className={quizStyles.sectionTitle}>
-				<GraduationCap size={14} className={css({ color: "var(--primary)" })} />
+				<KeatingGlyph name="book" size={14} className={css({ color: "var(--primary)" })} />
 				<span>Review these</span>
 			</div>
 			<div className={css({ display: "grid", gap: "0.875rem" })}>
 				{levels.map((level) => {
 					const s = stats[level];
 					if (!s || s.missed === 0) return null;
-					const pct = s.total > 0 ? s.missed / s.total : 0;
 					return (
 						<div key={level} className={shared.stack1}>
 							<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.75rem" })}>
@@ -54,12 +54,7 @@ export function RemediationDashboard({
 								<span className={shared.mutedText}>{s.missed}/{s.total} missed</span>
 							</div>
 							<div className={shared.rowCenter2}>
-								<div className={css({ height: "0.5rem", flex: 1, overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
-									<div
-										className={css({ height: "100%", borderRadius: "9999px", background: "var(--destructive)" })}
-										style={{ width: `${pct * 100}%` }}
-									/>
-								</div>
+								<Meter value={s.missed} max={s.total} label={level + " missed"}/>
 								<button
 									type="button"
 									disabled={requested.has(level)}
@@ -69,7 +64,7 @@ export function RemediationDashboard({
 									}}
 									className={css({ flexShrink: 0, fontSize: "0.625rem", fontWeight: 500, color: "var(--primary)", _hover: { textDecoration: "underline" }, _disabled: { color: "var(--muted-foreground)", textDecoration: "none" } })}
 								>
-									{requested.has(level) ? "Requested ✓" : "Review"}
+									{requested.has(level) ? <>Requested <KeatingGlyph name="check" size={14} /></> : "Review"}
 								</button>
 							</div>
 						</div>
@@ -100,14 +95,14 @@ export function BenchmarkComparison({
 	return (
 		<div className={quizStyles.section}>
 			<div className={quizStyles.sectionTitle}>
-				<TrendingUp size={14} className={css({ color: "var(--primary)" })} />
+				<KeatingGlyph name="trend" size={14} className={css({ color: "var(--primary)" })} />
 				<span>vs {stats.count} past sessions</span>
 			</div>
 			<div className={shared.stack2}>
 				{[
-					{ label: "Your score", value: pct, color: "var(--primary)" },
-					{ label: "Session avg", value: avgPct, color: "var(--muted-foreground)" },
-					{ label: "Top quartile", value: qPct, color: "#10b981" },
+					{ label: "Your score", value: pct },
+					{ label: "Session avg", value: avgPct },
+					{ label: "Top quartile", value: qPct },
 				].map((row) => (
 					<div key={row.label} className={shared.stack1}>
 						<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "0.75rem" })}>
@@ -116,12 +111,7 @@ export function BenchmarkComparison({
 								{Math.round(row.value)}%
 							</span>
 						</div>
-						<div className={css({ height: "0.5rem", overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
-							<div
-								className={css({ height: "100%", borderRadius: "9999px", background: row.color, transition: "all 150ms" })}
-								style={{ width: `${(row.value / maxBar) * 100}%` }}
-							/>
-						</div>
+						<Meter value={row.value} max={maxBar} label={row.label}/>
 					</div>
 				))}
 			</div>

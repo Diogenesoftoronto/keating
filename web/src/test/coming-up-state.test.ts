@@ -1,5 +1,8 @@
 import { describe, expect, mock, test } from "bun:test";
 
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import type { ComingUpQueue } from "../keating/coming-up";
 import type { LearnerState } from "../keating/storage";
 
 // ComingUp's browser storage singleton touches window during module evaluation;
@@ -8,7 +11,7 @@ mock.module("../hooks/keating-storage", () => ({
 	getInitPromise: () => Promise.resolve(),
 	keatingStorage: {},
 }));
-const { comingUpPageReducer, initialComingUpPageState } = await import("../pages/ComingUp");
+const { comingUpPageReducer, initialComingUpPageState, DueReviewSummary } = await import("../pages/ComingUp");
 mock.restore();
 
 function learnerState(): LearnerState {
@@ -78,4 +81,17 @@ describe("Coming Up page state", () => {
 		state = comingUpPageReducer(state, { type: "review.advanced" });
 		expect(state.review).toEqual({ deckIds: [], index: 0 });
 	});
+});
+
+test("the due summary keeps the review action, overdue count and empty companion in their respective states", () => {
+  const queue: ComingUpQueue = { items:[],lanes:{focus:[],maintain:[],low:[]},dueCardCount:0,overdueCardCount:0,estimatedMinutes:0,dueDeckIds:[] };
+  const render = (value:ComingUpQueue) => renderToStaticMarkup(createElement(DueReviewSummary,{queue:value,deckCount:1,openChecks:0,onStart() {}}));
+  const empty = render(queue);
+  expect(empty).toContain("Review runway is clear");
+  expect(empty).toContain("keating-bot");
+  expect(empty).toMatch(/<button[^>]*disabled/);
+  const due = render({...queue,dueCardCount:4,overdueCardCount:2,estimatedMinutes:5});
+  expect(due).toContain("4 cards are ready");
+  expect(due).toContain("2 overdue by more than a day");
+  expect(due).not.toMatch(/<button[^>]*disabled/);
 });

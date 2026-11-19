@@ -1,9 +1,21 @@
+import "../pages/chat/chat-surface.css";
+import { createPortal } from "react-dom";
+import { useMediaQuery } from "../hooks/use-media-query";
+import { animate } from "motion";
+import { EASE, SPRING, motionAllowed } from "../design-system/motion";
+import { ShaderSurface } from "../design-system/shaders";
+import { KeatingBot } from "./KeatingBot";
+import { Chip, Prose } from "../design-system/kit";
+import { KeatingGlyph, playGlyph } from "../design-system/glyphs";
+import { ChatStorageLine } from "./chat/storage-line";
 import { clearPendingChatTurn } from "../notorganic-provider/pending-chat-turn";
 import { LearningSourcePassage } from "./LearningIntelligenceDiagnostics";
+import { MessageDiagnostics } from "./JudgementDiagnostics";
+import type { TeachingAdjustmentController } from "../keating/judgement/teaching-adjustment";
 import { LearningReferenceScope } from "./LearningReferenceLink";
 import { ConstraintPlanChips } from "./ConstraintPlanChips";
 import { PLAN_AROUND_CONSTRAINT_EVENT } from "../keating/learning-intelligence/outlook";
-import { learningRowSourceIds } from "../keating/learning-intelligence/source-navigation";
+import { learningMessageId, learningRowSourceIds } from "../keating/learning-intelligence/source-navigation";
 import { observeOpenUIRenderedRow } from "../keating/openui/render-diagnostics";
 import { observeNativeToolCards } from "../keating/openui/native-page-render";
 import { nativeRowOrigins } from "../keating/openui/native-page-evidence";
@@ -30,7 +42,7 @@ import { useQuestionViewport } from "./chat/question-viewport";
 import { ChatMascotMenu } from "./ChatMascotMenu";
 import "./chat-mascot.css";
 import { DraftReviewStatus } from "./DraftReviewStatus";
-import { DraftProgressCard } from "./DraftProgress";
+import { TurnProcessSummary, TurnProgressCard, useSearchStepCovered } from "./TurnProgress";
 import { clearTeachingDraftContents, getTeachingDraftStatus, subscribeTeachingDraftStatus, teachingDraftIsActive } from "../keating/judgement/draft-status";
 import { prepareAudioAttachment } from "../lib/audio-attachment";
 import type { FlueConversation } from "../keating/flue/conversation";
@@ -49,6 +61,7 @@ import {
 } from "react";
 import type { Key, ReactNode } from "react";
 const DeveloperChatDetails = createContext(false);
+const ActiveDraftStatus = createContext<ReturnType<typeof getTeachingDraftStatus>>(null);
 import type {
   AgentMessage,
   ThinkingLevel,
@@ -75,28 +88,7 @@ import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css";
 import { css, cx } from "../../styled-system/css";
-import {
-  Cpu,
-  Plus,
-  ChevronRight,
-  CircleAlert,
-  CircleCheck,
-  Check,
-  Copy,
-  CopyPlus,
-  LibraryBig,
-  Lightbulb,
-  Loader2,
-  Paperclip,
-  Send,
-  Server,
-  Square,
-  ThumbsDown,
-  ThumbsUp,
-  User,
-  Wrench,
-  X,
-} from "lucide-react";
+
 import type {
   ChatPanelHandle,
   ChatPanelSetupCallbacks,
@@ -159,8 +151,10 @@ import {
   type AnimationProgressDetail,
 } from "../keating/tool-arg-stream";
 import { JsonCrackBlock } from "./JsonCrackBlock";
-import { WebSearchPart } from "./WebSearchPart";
+import { MessageSearchCitations, MessageWebSearchPart, WebSearchCitations } from "./WebSearchPart";
 import { isWebSearchToolName, splitSearchSources } from "./web-search-result";
+import { RetryResponseButton } from "./RetryResponseButton";
+import { Button as RecoveryButton } from "../design-system/kit";
 import { FailedResponseRecovery } from "./FailedResponseRecovery";
 import { NotOrganicCreditRecovery } from "./NotOrganicCreditRecovery";
 import { ProviderAuthRecovery } from "./ProviderAuthRecovery";
@@ -220,21 +214,20 @@ const foregroundTextClass = css({ color: "var(--foreground)" });
 const pulseClass = css({
   animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
 });
-const iconButtonClass = css({
+// Quiet icon buttons: no box and no fill on hover. The glyph's accent part lights and moves,
+// and `k-bloom` adds the halftone bloom behind it.
+const iconButtonClass = cx("k-bloom", css({
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
-  borderRadius: "0.375rem",
-  color: "var(--muted-foreground)",
-  _hover: {
-    backgroundColor: "var(--accent)",
-    color: "var(--accent-foreground)",
-  },
+  borderRadius: "0.1923rem",
+  color: "var(--ink-soft)",
+  _hover: { color: "var(--ink)" },
   _disabled: {
-    color: "var(--muted-foreground)",
-    opacity: 0.72,
+    color: "var(--ink-soft)",
+    opacity: 0.5,
   },
-});
+}));
 const dialogButtonClass = cx(
   "dialog-compact-button",
   css({
@@ -486,6 +479,7 @@ const keatingAttachmentAdapter: AttachmentAdapter = {
 };
 
 interface AssistantChatPanelProps {
+  teachingAdjustment?: TeachingAdjustmentController | null;
   className?: string;
   speechEnabled?: boolean;
   responseComparison?: ReactNode;
@@ -529,7 +523,7 @@ function StreamingTextPart({
   const messageCreatedAt = useAuiState(({ message }) => message.createdAt);
 	const sessionId = useContext(OpenUISessionScopeContext);
   const developerMode = useContext(DeveloperChatDetails);
-  const handledFailure = useAuiState(({ message }) => Boolean(message.metadata.custom?.keatingLlmFailure && message.metadata.custom?.keatingRetryable));
+  const handledFailure = useAuiState(({ message }) => Boolean(message.metadata.custom?.keatingLlmFailure || (message.status?.type === "incomplete" && message.metadata.custom?.keatingRetryable)));
   // The learner turn this reply answers, only when the reply is one text part
   // with nothing else beside it. Used solely to order a requested simulation.
   const answeredLearnerRequest = useAuiState(({ thread, message }) => {
@@ -653,10 +647,10 @@ function StreamingTextPart({
     : undefined;
   if (notice?.kind === "withheld") {
     return (
-      <>
-        <div data-openui-diagnostic-part={diagnosticPart}><ReviewNoticeCard kind="withheld" reason={withheldSummary(notice.text)} /></div>
+      <div data-openui-diagnostic-part={diagnosticPart} className="turn-failure" data-chat-recovery="">
+        <ReviewNoticeCard kind="withheld" reason={withheldSummary(notice.text)} />
         {messageRole === "assistant" && <WithheldReplyRecovery />}
-      </>
+      </div>
     );
   }
   const searchContent = splitSearchSources(notice ? notice.text : visibleText);
@@ -669,7 +663,7 @@ function StreamingTextPart({
       isRunning={status?.type === "running"}
       learnerRequest={diagnosticPart === "ready" && !notice ? answeredLearnerRequest : undefined}
     />
-    {searchContent.sites.length > 0 && <WebSearchPart toolName="web_search" result={{ citations: searchContent.sites }} status={{ type: "complete" }} />}
+    {searchContent.sites.length > 0 && <WebSearchCitations sites={searchContent.sites} />}
     </>
   );
   return notice ? <ReviewNoticeCard kind="unverified">{reply}</ReviewNoticeCard> : reply;
@@ -692,7 +686,6 @@ function ErrorBadge({
 }) {
   const developerMode = useContext(DeveloperChatDetails);
   if (!developerMode) return <p role="alert">This request could not finish. Please try again.</p>;
-  const ErrorIcon = classified.icon;
   return (
     <div className={css({ display: "grid", gap: "0.375rem" })}>
       <div
@@ -703,7 +696,7 @@ function ErrorBadge({
           fontWeight: 500,
         })}
       >
-        <ErrorIcon size={13} />
+        <KeatingGlyph name={classified.icon} size={13} />
         <span>{classified.title}</span>
         {classified.statusCode && (
           <span
@@ -739,7 +732,7 @@ function ErrorBadge({
               _hover: { color: "var(--foreground)" },
             })}
           >
-            <ChevronRight size={13} />
+            <KeatingGlyph name="chevr" size={13} />
             Raw details
           </summary>
           <pre
@@ -831,7 +824,7 @@ function FilePart({
         fontSize: "0.75rem",
       })}
     >
-      <Paperclip
+      <KeatingGlyph name="clip"
         size={13}
         className={css({ flexShrink: 0, color: "var(--muted-foreground)" })}
       />
@@ -877,7 +870,7 @@ function ComposerAttachmentChip({
         color: "var(--foreground)",
       })}
     >
-      <Paperclip
+      <KeatingGlyph name="clip"
         size={12}
         className={css({ flexShrink: 0, color: "var(--muted-foreground)" })}
       />
@@ -910,7 +903,7 @@ function ComposerAttachmentChip({
         aria-label={`Remove ${attachment.name}`}
         title="Remove attachment"
       >
-        <X size={12} />
+        <KeatingGlyph name="x" size={12} />
       </AttachmentPrimitive.Remove>
     </div>
   );
@@ -985,7 +978,7 @@ function ArtifactChips({ text }: { text: string }) {
             }
             title={`View ${label}`}
           >
-            <LibraryBig size={12} />
+            <KeatingGlyph name="book" size={12} />
             <span className={css({ textTransform: "capitalize" })}>
               {label}
             </span>
@@ -1316,6 +1309,11 @@ function CopyButton({
   variant?: "outline" | "ghost";
 }) {
   const [copied, setCopied] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const glyph = button.current?.querySelector("svg");
+    if (copied && glyph) playGlyph(glyph);
+  }, [copied]);
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text);
@@ -1341,17 +1339,14 @@ function CopyButton({
   return (
     <button
       type="button"
+      ref={button}
       onClick={copy}
       data-copy-on-hover
       className={cx(srInteractiveClass, iconButtonClass, base, className)}
       aria-label={copied ? "Copied" : label}
       title={copied ? "Copied" : label}
     >
-      {copied ? (
-        <Check size={13} className={css({ color: "rgb(34 197 94)" })} />
-      ) : (
-        <Copy size={13} />
-      )}
+      <KeatingGlyph name={copied ? "check" : "copy"} size={13} />
     </button>
   );
 }
@@ -1974,11 +1969,12 @@ const MarkdownText = memo(function MarkdownText({
               `${i}-${legacyIndex}`,
             );
             if (card !== null) return card;
-            return <MarkdownBlock
-              key={`${i}-${legacyIndex}`}
+            return <Prose className="ch-reading" key={`${i}-${legacyIndex}`}>
+              <MarkdownBlock
               content={legacy.type === "text" ? legacy.content : ""}
               streaming={isRunning}
-            />;
+              />
+            </Prose>;
           });
   });
   // One flat keyed list in both orders, so the control keeps its identity and
@@ -1994,6 +1990,7 @@ const MarkdownText = memo(function MarkdownText({
     : rendered.flat();
   return (
     <div
+      data-chat-prose=""
       data-openui-diagnostic-part={diagnosticPart}
       data-hands-on-first={handsOnFirst ? "" : undefined}
       className={css({
@@ -2065,9 +2062,8 @@ export function ReasoningPart({
             gap: "0.375rem",
           })}
         >
-          <ChevronRight
+          <KeatingGlyph name="chevr"
             size={13}
-            aria-hidden="true"
             className={css({
               flexShrink: 0,
               transitionProperty: "transform",
@@ -2192,12 +2188,6 @@ function ToolPart({
             color: "rgb(4 120 87)",
             _dark: { color: "rgb(110 231 183)" },
           });
-  const StateIcon =
-    state === "error"
-      ? CircleAlert
-      : state === "running"
-        ? Loader2
-        : CircleCheck;
   const classifiedError = state === "error" ? classifyError(resultText) : null;
   return (
     <div
@@ -2223,8 +2213,8 @@ function ToolPart({
           gap: "0.5rem",
         })}
       >
-        {state === "running" ? <Spinner size={14} /> : <StateIcon size={14} />}
-        <Wrench size={13} />
+        {state === "running" ? <Spinner size={14} /> : <KeatingGlyph name={state === "error" ? "alert" : "check"} size={14} />}
+        <KeatingGlyph name="tool" size={13} />
         <span className={css({ fontWeight: 500 })}>Tool</span>
         <span
           className={css({
@@ -2287,7 +2277,7 @@ function ToolPart({
                 gap: "0.25rem",
               })}
             >
-              <ChevronRight size={13} />
+              <KeatingGlyph name="chevr" size={13} />
               Arguments
             </span>
             <CopyButton text={JSON.stringify(args, null, 2)} label="Copy" />
@@ -2372,7 +2362,7 @@ function messagePartComponents(
     tools: {
       Fallback: (props: Parameters<typeof ToolPart>[0]) => <div data-quote-exclude="" style={{ display: "contents" }}>{
         isWebSearchToolName(props.toolName) ? (
-          <WebSearchPart {...props} />
+          <MessageWebSearchPart {...props} />
         ) : (
           <ToolPart
             {...props}
@@ -2851,7 +2841,7 @@ function messagesFromLiveTranscript(
   return messages;
 }
 
-function makePrefillStatusMessage(agent: FlueConversation, step: number): AgentMessage {
+function makePrefillStatusMessage(agent: FlueConversation, step: number, timestamp: number): AgentMessage {
   return {
     role: "assistant",
     content: [
@@ -2877,9 +2867,17 @@ function makePrefillStatusMessage(agent: FlueConversation, step: number): AgentM
         total: 0,
       },
     },
-    timestamp: Date.now(),
+    timestamp,
     __keatingPrefillStatus: true,
   } as unknown as AgentMessage;
+}
+
+function enterStarter(element: HTMLButtonElement | null) {
+  if (!element || !motionAllowed()) return;
+  const index = Number(element.dataset.position);
+  const animation = animate(element, { scale: [.96, 1], opacity: [.7, 1] },
+    { ...SPRING, delay: .035 * index });
+  return () => animation.stop();
 }
 
 export function SuggestedPrompts({
@@ -2887,7 +2885,7 @@ export function SuggestedPrompts({
   initialPrompts,
   model,
   heading,
-  description,
+  description, cardsHost, seated = false,
 }: {
   onSelect: (
     text: string,
@@ -2898,14 +2896,16 @@ export function SuggestedPrompts({
   model?: Model<Api> | null;
   heading?: string;
   description?: string;
+  cardsHost?: HTMLDivElement | null;
+  seated?: boolean;
 }) {
   const [prompts, setPrompts] = useState(() =>
     initialPrompts
       ? [...initialPrompts]
-      : pickDiverseStarterPrompts(STARTER_PROMPTS, 3),
+      : pickDiverseStarterPrompts(STARTER_PROMPTS, 6),
   );
   const [greeting, setGreeting] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+
   const posthog = usePostHog();
   const exposureCapturedRef = useRef(false);
 
@@ -2952,473 +2952,49 @@ export function SuggestedPrompts({
     };
   }, [initialPrompts, model?.provider, model?.id, posthog]);
 
-  const remaining = STARTER_PROMPTS.filter(
-    (p) => !prompts.some((existing) => existing.text === p.text),
-  );
-  const exhausted = remaining.length === 0;
-
-  const appendMore = (count = 3) => {
-    if (remaining.length === 0) return false;
-    setPrompts((prev) => [
-      ...prev,
-      ...pickDiverseStarterPrompts(remaining, count),
-    ]);
-    return true;
+  const phone = useMediaQuery("(max-width: 639px)");
+  const visible = prompts.slice(0, phone ? 4 : 6);
+  const refresh = () => {
+    const pool = [...prompts.slice(visible.length), ...(initialPrompts ?? []), ...STARTER_PROMPTS];
+    const unused = [...new Map(pool.map(prompt => [prompt.text, prompt])).values()]
+      .filter(prompt => !visible.some(shown => shown.text === prompt.text));
+    setPrompts(pickDiverseStarterPrompts(unused, 6));
   };
-
-  const scroll = (dir: "left" | "right") => {
-    const el = scrollRef.current;
-    if (!el) return;
-    if (dir === "right") {
-      const atEnd = el.scrollLeft + el.clientWidth >= el.scrollWidth - 4;
-      if (atEnd && appendMore()) {
-        requestAnimationFrame(() => {
-          scrollRef.current?.scrollBy({ left: 220, behavior: "smooth" });
-        });
-        return;
-      }
-    }
-    el.scrollBy({
-      left: dir === "left" ? -220 : 220,
-      behavior: "smooth",
-    });
-  };
-
-  const refresh = () => appendMore();
-
-  return (
-    <div
-      className={css({
-        marginInline: "auto",
-        display: "flex",
-        height: "100%",
-        width: "100%",
-        minWidth: 0,
-        maxWidth: "48rem",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "0.75rem",
-        paddingInline: "0.25rem",
-        sm: { paddingInline: "1rem" },
-      })}
-    >
-      <div className={css({ maxWidth: "36rem", textAlign: "center" })}>
-        <h1
-          className={css({
-            fontSize: "1rem",
-            fontWeight: 600,
-            lineHeight: 1.35,
-            color: "var(--foreground)",
-          })}
-        >
-          {heading ?? greeting ?? "What do you want to understand?"}
-        </h1>
-        <p
-          className={css({
-            marginTop: "0.25rem",
-            fontSize: "0.8125rem",
-            lineHeight: 1.5,
-            color: "var(--muted-foreground)",
-          })}
-        >
-          {description ??
-            "Ask in your own words or choose a starting point. Keating will begin from what you already know."}
-        </p>
-      </div>
-      <div
-        className={css({
-          display: "flex",
-          width: "100%",
-          minWidth: 0,
-          alignItems: "center",
-          gap: "0.25rem",
-        })}
-      >
-        <button
-          type="button"
-          onClick={() => scroll("left")}
-          className={cx(
-            iconButtonClass,
-            srInteractiveClass,
-            css({
-              width: "2rem",
-              height: "2rem",
-              flexShrink: 0,
-              borderRadius: "9999px",
-              border: "1px solid var(--border)",
-            }),
-          )}
-          aria-label="Scroll left"
-        >
-          <ChevronRight
-            size={14}
-            className={css({ transform: "rotate(180deg)" })}
-          />
-        </button>
-        <div
-          ref={scrollRef}
-          className={css({
-            display: "flex",
-            minWidth: 0,
-            flex: 1,
-            gap: "0.5rem",
-            overflowX: "auto",
-            scrollBehavior: "smooth",
-            scrollSnapType: "x mandatory",
-            paddingBlock: "0.25rem",
-            scrollbarWidth: "none",
-          })}
-          style={{ scrollbarWidth: "none" }}
-        >
-          {prompts.map((p, position) => (
-            <button
-              key={p.text}
-              type="button"
-              onClick={() =>
-                onSelect(p.text, { label: p.label, domain: p.domain, position })
-              }
-              className={cx(
-                srInteractiveClass,
-                css({
-                  width: "min(13rem, calc(100vw - 7rem))",
-                  flexShrink: 0,
-                  scrollSnapAlign: "start",
-                  borderRadius: "0.5rem",
-                  border: "1px solid var(--border)",
-                  backgroundColor:
-                    "color-mix(in srgb, var(--muted) 30%, transparent)",
-                  paddingInline: "0.75rem",
-                  paddingBlock: "0.625rem",
-                  textAlign: "left",
-                  _hover: {
-                    borderColor: "var(--primary)",
-                    backgroundColor:
-                      "color-mix(in srgb, var(--primary) 10%, transparent)",
-                    color: "var(--primary)",
-                    boxShadow: "var(--shadow-card)",
-                  },
-                  _active: { transform: "scale(0.98)" },
-                }),
-              )}
-            >
-              <span
-                className={css({
-                  marginBottom: "0.25rem",
-                  display: "block",
-                  fontSize: "10px",
-                  fontWeight: 600,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.05em",
-                  color: "var(--muted-foreground)",
-                })}
-              >
-                {p.label}
-              </span>
-              <span
-                className={css({
-                  display: "block",
-                  fontSize: "0.75rem",
-                  lineHeight: 1.375,
-                })}
-              >
-                {p.text}
-              </span>
-            </button>
-          ))}
-          {!exhausted && (
-            <button
-              type="button"
-              onClick={refresh}
-              className={cx(
-                srInteractiveClass,
-                css({
-                  display: "flex",
-                  width: "5rem",
-                  flexShrink: 0,
-                  scrollSnapAlign: "start",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "0.5rem",
-                  border: "1px dashed var(--border)",
-                  color: "var(--muted-foreground)",
-                  _hover: {
-                    borderColor: "var(--primary)",
-                    backgroundColor:
-                      "color-mix(in srgb, var(--primary) 5%, transparent)",
-                    color: "var(--primary)",
-                  },
-                }),
-              )}
-            >
-              <span className={css({ fontSize: "0.75rem" })}>More</span>
-            </button>
-          )}
-        </div>
-        <button
-          type="button"
-          onClick={() => scroll("right")}
-          title={exhausted ? "No more suggestions" : "Scroll right"}
-          className={cx(
-            iconButtonClass,
-            srInteractiveClass,
-            css({
-              width: "2rem",
-              height: "2rem",
-              flexShrink: 0,
-              borderRadius: "9999px",
-              border: "1px solid var(--border)",
-            }),
-          )}
-          aria-label="Scroll right"
-        >
-          <ChevronRight size={14} />
-        </button>
-      </div>
+  const cards = <>
+    <div className="ch-starters">
+      {visible.map((p, position) => <button type="button" key={p.text} data-position={position} ref={enterStarter}
+        onClick={() => onSelect(p.text, { label: p.label, domain: p.domain, position })}>
+        <small>{p.label}</small>{p.text}
+      </button>)}
     </div>
-  );
+    <div className="ch-empty-footer">
+      <button type="button" className="ch-other" onClick={refresh}><KeatingGlyph name="refresh" size={14} /> Other suggestions</button>
+      <span>keating won&apos;t give you the answer — <em>that&apos;s the point</em></span>
+    </div>
+  </>;
+  return <section className="ch-empty">
+    <ShaderSurface effect="field" />
+    <div className="ch-greeting">
+      {!seated && <KeatingBot state="greeting" size={52} label="" />}
+      <h1>{heading ?? greeting ?? "What do you want to understand?"}</h1>
+      <p>{description ?? <>Ask in your own words or choose a starting point.{!phone && " Keating will begin from what you already know."}</>}</p>
+    </div>
+    {phone || cardsHost === undefined ? cards : cardsHost ? createPortal(cards, cardsHost) : null}
+  </section>;
 }
 
 const REASONING_OPTIONS: {
   value: ThinkingLevel;
   label: string;
-  short: string;
 }[] = [
-  { value: "off", label: "Off", short: "Off" },
-  { value: "minimal", label: "Minimal", short: "Min" },
-  { value: "low", label: "Low", short: "Low" },
-  { value: "medium", label: "Medium", short: "Med" },
-  { value: "high", label: "High", short: "High" },
-  { value: "xhigh", label: "Extra high", short: "XHigh" },
-  { value: "max", label: "Maximum", short: "Max" },
+  { value: "off", label: "Off" },
+  { value: "minimal", label: "Minimal" },
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+  { value: "xhigh", label: "Extra high" },
+  { value: "max", label: "Maximum" },
 ];
-
-/**
- * The composer's "+" menu.
- *
- * The action row had grown to a model button, a reasoning button, a paperclip
- * and two voice controls, which on a phone left almost no room for the thing
- * you are actually there to do. Everything that is a setting rather than an
- * action folds in here; only voice and send stay on the row.
- */
-function ComposerActionsMenu({
-  modelLabel,
-  onModelSelect,
-  thinkingLevel,
-  onThinkingLevelChange,
-  thinkingDisabled,
-}: {
-  modelLabel: string;
-  onModelSelect?: () => void;
-  thinkingLevel: ThinkingLevel;
-  onThinkingLevelChange: (level: ThinkingLevel) => void;
-  thinkingDisabled?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const [reasoningOpen, setReasoningOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const reasoning =
-    REASONING_OPTIONS.find((option) => option.value === thinkingLevel) ??
-    REASONING_OPTIONS[3];
-
-  useEffect(() => {
-    if (!open) return;
-    const handlePointer = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) {
-        setOpen(false);
-        setReasoningOpen(false);
-      }
-    };
-    const handleKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      // Escape backs out one level at a time rather than closing everything,
-      // so a mis-tap on the submenu does not lose the menu too.
-      if (reasoningOpen) setReasoningOpen(false);
-      else setOpen(false);
-    };
-    document.addEventListener("mousedown", handlePointer);
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handlePointer);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [open, reasoningOpen]);
-
-  const itemClass = css({
-    display: "flex",
-    width: "100%",
-    alignItems: "center",
-    gap: "0.625rem",
-    borderRadius: "0.375rem",
-    paddingInline: "0.625rem",
-    paddingBlock: "0.5rem",
-    textAlign: "left",
-    fontSize: "0.8125rem",
-    color: "var(--foreground)",
-    cursor: "pointer",
-    _hover: {
-      backgroundColor: "var(--accent)",
-      color: "var(--accent-foreground)",
-    },
-    _disabled: { opacity: 0.5, cursor: "not-allowed" },
-  });
-  const trailingClass = css({
-    marginLeft: "auto",
-    fontSize: "0.75rem",
-    color: "var(--muted-foreground)",
-    maxWidth: "7rem",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  });
-
-  return (
-    <div ref={ref} className={css({ position: "relative", flexShrink: 0 })}>
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        title="More actions"
-        aria-label="More actions"
-        className={cx(
-          composerIconButtonClass,
-          open
-            ? css({
-                backgroundColor: "var(--accent)",
-                color: "var(--accent-foreground)",
-              })
-            : undefined,
-        )}
-      >
-        <Plus size={17} />
-      </button>
-
-      {open ? (
-        <div
-          role="menu"
-          className={cx(
-            "font-terminal",
-            css({
-              position: "absolute",
-              left: 0,
-              bottom: "100%",
-              zIndex: 50,
-              marginBottom: "0.375rem",
-              minWidth: "14rem",
-              borderRadius: "0.5rem",
-              border: "1px solid var(--border)",
-              backgroundColor: "var(--background)",
-              boxShadow: "var(--shadow-card, 0 8px 24px rgba(0,0,0,0.18))",
-              padding: "0.25rem",
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.125rem",
-            }),
-          )}
-        >
-          {/*
-           * The attachment trigger has to be the library's own element —
-           * it owns the hidden file input — so it is styled to match the
-           * neighbouring items rather than reimplemented.
-           */}
-          <ComposerPrimitive.AddAttachment
-            className={itemClass}
-            onClick={() => setOpen(false)}
-          >
-            <Paperclip
-              size={15}
-              className={css({
-                flexShrink: 0,
-                color: "var(--muted-foreground)",
-              })}
-            />
-            Attach files
-          </ComposerPrimitive.AddAttachment>
-
-          {onModelSelect ? (
-            <button
-              type="button"
-              role="menuitem"
-              className={itemClass}
-              onClick={() => {
-                setOpen(false);
-                onModelSelect();
-              }}
-            >
-              <Cpu
-                size={15}
-                className={css({
-                  flexShrink: 0,
-                  color: "var(--muted-foreground)",
-                })}
-              />
-              Model
-              <span className={trailingClass}>{modelLabel}</span>
-            </button>
-          ) : null}
-
-          <button
-            type="button"
-            role="menuitem"
-            aria-haspopup="menu"
-            aria-expanded={reasoningOpen}
-            disabled={thinkingDisabled}
-            className={itemClass}
-            onClick={() => setReasoningOpen((value) => !value)}
-          >
-            <Lightbulb
-              size={15}
-              className={css({
-                flexShrink: 0,
-                color: "var(--muted-foreground)",
-              })}
-            />
-            Reasoning
-            <span className={trailingClass}>{reasoning.short}</span>
-          </button>
-
-          {reasoningOpen ? (
-            <div
-              className={css({
-                display: "flex",
-                flexDirection: "column",
-                gap: "0.125rem",
-                paddingLeft: "1.5rem",
-              })}
-            >
-              {REASONING_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="menuitemradio"
-                  aria-checked={option.value === thinkingLevel}
-                  className={itemClass}
-                  onClick={() => {
-                    onThinkingLevelChange(option.value);
-                    setReasoningOpen(false);
-                    setOpen(false);
-                  }}
-                >
-                  {option.label}
-                  {option.value === thinkingLevel ? (
-                    <Check
-                      size={14}
-                      className={css({
-                        marginLeft: "auto",
-                        color: "var(--primary)",
-                      })}
-                    />
-                  ) : null}
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
-  );
-}
 
 function WebGroundingHint({
   hasUrl,
@@ -3496,22 +3072,33 @@ function projectThreadMessages(
   speechEnabled: boolean,
   provider: string | undefined,
 ): ThreadMessageLike[] {
+  const native = agent?.getSnapshot().conversation;
   const decorate = (rows: ThreadMessageLike[]): ThreadMessageLike[] => {
     const originals = agent?.context.messages ?? messages;
-    const sourceIds = learningRowSourceIds(rows, originals);
-    const native = nativeRowOrigins(rows, originals);
+    const nativeParts = new Map(native?.messages.map(message => [message.id, message.parts] as const));
+    const sourceRows = rows.map(row => {
+      const parts = row.id && row.role === "assistant" ? nativeParts.get(row.id) : undefined;
+      return parts ? { ...row, content: parts } : row;
+    });
+    const sourceIds = learningRowSourceIds(sourceRows, originals);
+    const timestamps = new Map(originals.flatMap((message, index) =>
+      "timestamp" in message && typeof message.timestamp === "number" ? [[learningMessageId(message, index), message.timestamp] as const] : []));
+    const nativeOrigins = nativeRowOrigins(rows, originals);
     return rows.map((row, index) => {
-      const origins = native.size && Array.isArray(row.content) ? row.content.flatMap(part => {
+      const origins = nativeOrigins.size && Array.isArray(row.content) ? row.content.flatMap(part => {
         if (part.type !== "tool-call" || part.toolName !== "interactive_page") return [];
-        const source = native.get(part.toolCallId);
+        const source = nativeOrigins.get(part.toolCallId);
         return source ? [[part.toolCallId, source]] : [];
       }) : [];
       return { ...row, metadata: { ...row.metadata, custom: {
         ...row.metadata?.custom, keatingLearningSourceIds: sourceIds[index], ...(origins.length ? { keatingNativeOrigins: origins } : {}),
+        keatingDiagnosticTimestamps: sourceIds[index]?.flatMap(id => {
+          const timestamp = timestamps.get(id);
+          return timestamp === undefined ? [] : [timestamp];
+        }),
       } } };
     });
   };
-  const native = agent?.getSnapshot().conversation;
   if (!native || !agent) return decorate(messages.map((message, index) => toAssistantMessage(message, index, messages.length, isRunning, provider)));
   const legacy = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent.legacyMessages, speechEnabled)));
   const local = mergeConsecutiveAssistantMessages(foldToolResults(filterSpeechMessages(agent.localMessages, speechEnabled)));
@@ -3543,6 +3130,7 @@ function projectThreadMessages(
 function AssistantThread({
   agent,
   callbacks,
+  teachingAdjustment,
   version,
   speechEnabled,
   responseComparison,
@@ -3553,6 +3141,7 @@ function AssistantThread({
 }: {
   agent: FlueConversation | null;
   callbacks: ChatPanelSetupCallbacks;
+  teachingAdjustment?: TeachingAdjustmentController | null;
   version: number;
   speechEnabled: boolean;
   responseComparison?: ReactNode;
@@ -3603,13 +3192,11 @@ function AssistantThread({
   const messages = useMemo(() => {
     const visibleMessages = visibleAgentMessages(agent, speechEnabled);
     const lastMessage = visibleMessages.at(-1) as any;
-    // A running draft shows its own progress card (learners) or review panel
-    // (developers) below the thread instead of the rotating status line.
-    if (agent && isRunning && !draftActive && lastMessage?.role === "user") {
-      return [...visibleMessages, makePrefillStatusMessage(agent, loadingStep)];
+    if (agent && isRunning && !(draftActive && uiSettings.showDeveloperDetails) && lastMessage?.role === "user") {
+      return [...visibleMessages, makePrefillStatusMessage(agent, loadingStep, (lastMessage.timestamp ?? 0) + 1)];
     }
     return visibleMessages;
-  }, [agent, version, localVersion, speechEnabled, isRunning, loadingStep, draftActive]);
+  }, [agent, version, localVersion, speechEnabled, isRunning, loadingStep, draftActive, uiSettings.showDeveloperDetails]);
   const activeQuestion = useMemo(
     () => extractActiveQuestion(messages),
     [messages],
@@ -3642,6 +3229,37 @@ function AssistantThread({
     () => projectThreadMessages(agent, messages, isRunning, speechEnabled, modelRef.current?.provider),
     [agent, version, localVersion, messages, isRunning, speechEnabled],
   );
+  const sentFrom = useRef<{ top: number; previous: string | undefined } | null>(null);
+  const lastUserId = [...threadMessages].reverse().find(message => message.role === "user")?.id;
+  useEffect(() => {
+    const from = sentFrom.current;
+    if (!from || from.previous === lastUserId) return;
+    sentFrom.current = null;
+    const bubbles = viewport.current?.querySelectorAll<HTMLElement>(".you-bubble");
+    const bubble = bubbles?.[bubbles.length - 1];
+    if (!bubble || !motionAllowed()) return;
+    const lift = Math.max(10, Math.min(100, from.top - bubble.getBoundingClientRect().top));
+    const animation = animate(bubble, { y: [lift, 0], opacity: [.65, 1] }, SPRING);
+    return () => animation.stop();
+  }, [lastUserId, viewport]);
+  useEffect(() => {
+    sentFrom.current = null;
+    const root = viewport.current;
+    if (!root || !motionAllowed()) return;
+    const shell = root.closest(".chat-page-shell");
+    const rail = shell?.querySelector<HTMLElement>(".session-panel");
+    const replies = root.querySelectorAll<HTMLElement>(".keating-bubble");
+    const reply = replies[replies.length - 1];
+    const chips = root.querySelector<HTMLElement>(".ch-study");
+    const composer = root.querySelector<HTMLElement>(".composer-root");
+    const animations = [
+      rail && animate(rail, { x: [-8, 0] }, { duration: .2, ease: EASE }),
+      reply && animate(reply, { y: [8, 0], opacity: [.75, 1] }, { duration: .22, delay: .07, ease: EASE }),
+      chips && animate(chips, { y: [5, 0], opacity: [.7, 1] }, { duration: .2, delay: .13, ease: EASE }),
+      composer && animate(composer, { y: [12, 0] }, { ...SPRING, delay: .17 }),
+    ];
+    return () => animations.forEach(animation => animation?.stop());
+  }, [callbacks.sessionId, viewport]);
   const mascotState = chatMascotState({ messages: threadMessages, running: isRunning, recording: micRecording });
   const convertMessage = useCallback((message: ThreadMessageLike) => message, []);
 
@@ -3671,7 +3289,12 @@ function AssistantThread({
     callbacks,
     isRunning,
     onLocalMessagesShown: () => setLocalVersion((current) => current + 1),
-    onSendStarted: () => { followNextQuestion(); setComposerHasUrl(false); },
+    onSendStarted: () => {
+      const composer = viewport.current?.querySelector(".composer-root");
+      if (composer && motionAllowed()) sentFrom.current = { top: composer.getBoundingClientRect().top, previous: lastUserId };
+      followNextQuestion();
+      setComposerHasUrl(false);
+    },
   });
   useQuizConversationEvents({ agent, submitLearnerTurn });
   // "Plan around this" on a learner message sends their request in this chat.
@@ -3702,7 +3325,7 @@ function AssistantThread({
   );
 
   const runtime = useExternalStoreRuntime<ThreadMessageLike>(storeAdapter);
-  const modelLabel = modelRef.current?.name ?? modelRef.current?.id ?? "Model";
+
   const selectedProvider = modelRef.current?.provider;
   const usingGoogleModel = selectedProvider === "google";
 
@@ -3728,13 +3351,14 @@ function AssistantThread({
     () => (
       <AssistantMessage
         components={components}
+        teachingAdjustment={teachingAdjustment}
         selectedProvider={selectedProvider}
         onFork={callbacks.onFork}
         onModelSelect={callbacks.onModelSelect}
         onRetry={callbacks.onRetry}
       />
     ),
-    [components, selectedProvider, callbacks.onFork, callbacks.onModelSelect, callbacks.onRetry],
+    [components, selectedProvider, callbacks.onFork, callbacks.onModelSelect, callbacks.onRetry, teachingAdjustment],
   );
   const threadComponents = useMemo(
     () => ({
@@ -3744,6 +3368,49 @@ function AssistantThread({
     [UserMessageComponent, AssistantMessageComponent],
   );
 
+  const [seated, setSeated] = useState(false);
+  const [cardsHost, setCardsHost] = useState<HTMLDivElement | null>(null);
+  const footer = (
+    <ThreadPrimitive.ViewportFooter
+      className={css({
+        position: "sticky",
+        bottom: 0,
+        minWidth: 0,
+        // Keep text and controls on one stable semantic surface.
+        // A translucent footer let the decorative glow and scrolled
+        // content change contrast underneath the helper row.
+        backgroundColor: "var(--background)",
+        paddingTop: "0.75rem",
+        paddingBottom: "1rem",
+        sm: { paddingBottom: "1.5rem" },
+      })}
+    >
+      <AuiIf condition={state => !state.thread.isEmpty}><LatestReplyControl key={callbacks.sessionId} viewport={viewport} /></AuiIf>
+      {responseComparison}
+      <ActiveInteractionPanels
+        visibleActiveQuiz={visibleActiveQuiz}
+        activeQuestion={activeQuestion}
+        onDismissQuiz={setDismissedQuizId}
+      />
+      <ChatMascotMenu onSeatedChange={setSeated} state={mascotState} busy={isRunning || micRecording} />
+      <ThreadComposer
+        pendingPrompt={pendingPrompt}
+        composerHasUrl={composerHasUrl}
+        onComposerHasUrlChange={setComposerHasUrl}
+        hasGoogleKey={hasGoogleKey}
+        groundingEnabled={uiSettings.webSearch === "auto"}
+        usingGoogleModel={usingGoogleModel}
+        callbacks={callbacks}
+        thinkingLevel={selectedThinkingLevel}
+        onThinkingLevelChange={handleThinkingLevelChange}
+        isRunning={isRunning}
+        voiceComposerOpen={voiceComposerOpen}
+        onVoiceComposerOpenChange={setVoiceComposerOpen}
+        onMicRecordingChange={setMicRecording}
+        onConversationComplete={preserveLiveConversation}
+      />
+    </ThreadPrimitive.ViewportFooter>
+  );
   return (
     <AuthErrorContext.Provider
       value={callbacks.onAuthError ?? (() => Promise.resolve(false))}
@@ -3752,6 +3419,7 @@ function AssistantThread({
 		<OpenUISessionScopeContext.Provider value={callbacks.sessionId}>
 		<LearningReferenceScope.Provider value={callbacks.sessionId}>
 			<KeatingOpenUIActionProvider onAction={handleOpenUIAction}>
+          <ActiveDraftStatus.Provider value={draftStatus}>
           <DeveloperChatDetails.Provider value={uiSettings.showDeveloperDetails}>
           <AssistantRuntimeProvider runtime={runtime}>
             <ThreadPrimitive.Root
@@ -3765,8 +3433,14 @@ function AssistantThread({
               })}
             >
               <ThreadPrimitive.Viewport
+                autoScroll={false}
+                scrollToBottomOnRunStart={false}
                 ref={viewport}
                 className={css({
+                  // The containing block for everything inside the thread. Without it, the visually hidden
+                  // status spans in each reply are placed against the page, make the document taller than
+                  // the window, and anything that scrolls a lesson into view drags the whole shell with it.
+                  position: "relative",
                   display: "flex",
                   minHeight: 0,
                   flex: 1,
@@ -3774,8 +3448,10 @@ function AssistantThread({
                   overflowY: "auto",
                   overflowX: "hidden",
                   paddingInline: "0.75rem",
-                  paddingBlock: "1rem",
-                  sm: { paddingInline: "1rem", paddingBlock: "1.5rem" },
+                  // No bottom padding here: the sticky footer carries it, so the thread cannot show through a
+                  // strip under the composer while it scrolls.
+                  paddingTop: "1rem",
+                  sm: { paddingInline: "1rem", paddingTop: "1.5rem" },
                 })}
               >
                 <div
@@ -3786,7 +3462,7 @@ function AssistantThread({
                   })}
                 >
                   <AuiIf condition={(state) => state.thread.isEmpty}>
-                    <SuggestedPrompts
+                    <SuggestedPrompts seated={seated} cardsHost={cardsHost}
                       model={agent?.context.model ?? null}
                       initialPrompts={initialPrompts}
                       heading={emptyStateTitle}
@@ -3811,50 +3487,15 @@ function AssistantThread({
                     />
                   </AuiIf>
                   <ThreadPrimitive.Messages components={threadComponents} />
-                  {agent && !uiSettings.showDeveloperDetails && <DraftProgressCard status={draftStatus} />}
                   {agent && <DraftReviewStatus sessionId={agent.sessionId} status={draftStatus} showDeveloperDetails={uiSettings.showDeveloperDetails} />}
                 </div>
-                <ThreadPrimitive.ViewportFooter
-                  className={css({
-                    position: "sticky",
-                    bottom: 0,
-                    minWidth: 0,
-                    // Keep text and controls on one stable semantic surface.
-                    // A translucent footer let the decorative glow and scrolled
-                    // content change contrast underneath the helper row.
-                    backgroundColor: "var(--background)",
-                    paddingTop: "0.75rem",
-                  })}
-                >
-                  {responseComparison}
-                  <ActiveInteractionPanels
-                    visibleActiveQuiz={visibleActiveQuiz}
-                    activeQuestion={activeQuestion}
-                    onDismissQuiz={setDismissedQuizId}
-                  />
-                  <ChatMascotMenu state={mascotState} busy={isRunning || micRecording} />
-                  <ThreadComposer
-                    pendingPrompt={pendingPrompt}
-                    composerHasUrl={composerHasUrl}
-                    onComposerHasUrlChange={setComposerHasUrl}
-                    hasGoogleKey={hasGoogleKey}
-                    groundingEnabled={uiSettings.webSearch === "auto"}
-                    usingGoogleModel={usingGoogleModel}
-                    modelLabel={modelLabel}
-                    callbacks={callbacks}
-                    thinkingLevel={selectedThinkingLevel}
-                    onThinkingLevelChange={handleThinkingLevelChange}
-                    isRunning={isRunning}
-                    voiceComposerOpen={voiceComposerOpen}
-                    onVoiceComposerOpenChange={setVoiceComposerOpen}
-                    onMicRecordingChange={setMicRecording}
-                    onConversationComplete={preserveLiveConversation}
-                  />
-                </ThreadPrimitive.ViewportFooter>
+                {footer}
+                <AuiIf condition={state => state.thread.isEmpty}><div className="ch-empty-cards" ref={setCardsHost} /></AuiIf>
               </ThreadPrimitive.Viewport>
             </ThreadPrimitive.Root>
           </AssistantRuntimeProvider>
           </DeveloperChatDetails.Provider>
+          </ActiveDraftStatus.Provider>
 			</KeatingOpenUIActionProvider>
 		</LearningReferenceScope.Provider>
 		</OpenUISessionScopeContext.Provider>
@@ -3940,7 +3581,67 @@ function ActiveInteractionPanels({
   );
 }
 
+function LatestReplyControl({ viewport }: { viewport: { current: HTMLDivElement | null } }) {
+  const [away, setAway] = useState(false);
+  const [unread, setUnread] = useState(false);
+  const pill = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!unread || !pill.current || !motionAllowed()) return;
+    const animation = animate(pill.current, { y: [6, 0], scale: [.93, 1], opacity: [0, 1] },
+      { ...SPRING, delay: .12 });
+    return () => animation.stop();
+  }, [unread]);
+  useEffect(() => {
+    const el = viewport.current;
+    if (!el) return;
+    let reading = false;
+    const measure = () => {
+      reading = el.scrollHeight - el.scrollTop - el.clientHeight > 4;
+      setAway(reading);
+      if (!reading) setUnread(false);
+    };
+    const observer = new MutationObserver(records => {
+      measure();
+      if (!reading) return;
+      const reply = el.querySelectorAll(".keating-bubble");
+      const latest = reply[reply.length - 1];
+      if (!latest || latest.getBoundingClientRect().bottom <= (el.lastElementChild?.getBoundingClientRect().top ?? el.getBoundingClientRect().bottom)) return;
+      if (records.some(record => latest.contains(record.target) || Array.from(record.addedNodes).some(node => node.contains(latest)))) setUnread(true);
+    });
+    observer.observe(el, { childList: true, characterData: true, subtree: true });
+    const resize = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measure);
+    resize?.observe(el);
+    if (el.firstElementChild) resize?.observe(el.firstElementChild);
+    measure();
+    el.addEventListener("scroll", measure, { passive: true });
+    return () => { observer.disconnect(); resize?.disconnect(); el.removeEventListener("scroll", measure); };
+  }, [viewport]);
+  if (!away) return null;
+  return <div className="ch-latest" data-unread={unread || undefined}>
+    <button ref={pill} type="button" onClick={() => viewport.current?.scrollTo({ top: viewport.current.scrollHeight, behavior: "instant" })}>
+      <KeatingGlyph name="down" />{unread ? "New reply below" : "Jump to latest"}
+    </button>
+  </div>;
+}
+
 /** The message composer: attachments, actions menu, voice control, input and send/stop. */
+function sendSparks(button: HTMLElement) {
+  if (!motionAllowed()) return;
+  const rect = button.getBoundingClientRect();
+  for (let i = 0; i < 8; i++) {
+    const pixel = document.createElement("i");
+    pixel.className = "ch-spark";
+    pixel.setAttribute("aria-hidden", "true");
+    pixel.style.left = `${rect.left + rect.width / 2}px`;
+    pixel.style.top = `${rect.top + rect.height / 2}px`;
+    document.body.append(pixel);
+    const angle = -Math.PI / 2 + (Math.random() - .5) * 2.2;
+    const distance = 18 + Math.random() * 26;
+    animate(pixel, { x: Math.cos(angle) * distance, y: Math.sin(angle) * distance, opacity: 0, scale: .4 },
+      { duration: .5, ease: EASE }).then(() => pixel.remove());
+  }
+}
+
 function ThreadComposer({
   pendingPrompt,
   composerHasUrl,
@@ -3948,7 +3649,6 @@ function ThreadComposer({
   hasGoogleKey,
   groundingEnabled,
   usingGoogleModel,
-  modelLabel,
   callbacks,
   thinkingLevel,
   onThinkingLevelChange,
@@ -3964,7 +3664,6 @@ function ThreadComposer({
   hasGoogleKey: boolean | null;
   groundingEnabled: boolean;
   usingGoogleModel: boolean;
-  modelLabel: string;
   callbacks: ChatPanelSetupCallbacks;
   thinkingLevel: ThinkingLevel;
   onThinkingLevelChange: (level: ThinkingLevel) => void;
@@ -3974,8 +3673,25 @@ function ThreadComposer({
   onMicRecordingChange: (recording: boolean) => void;
   onConversationComplete: (turns: LiveTranscriptTurn[]) => void | Promise<void>;
 }) {
+  const composer = useAui().composer;
+  const input = useRef<HTMLTextAreaElement>(null);
   return (
     <>
+      <AuiIf condition={state => !state.thread.isEmpty}><div className="ch-study">
+        {[
+          ["Explain another way", "Explain the current topic another way, with a concrete example."],
+          ["Quiz me", "Quiz me on the current topic, one question at a time."],
+          ["Make flashcards", "Make flashcards to help me review the current topic."],
+        ].map(([label, prompt]) => <Chip as="button" key={label} onClick={() => {
+          const draft = composer.getState().text;
+          composer.setText(draft.trim() ? `${draft}\n\n${prompt}` : prompt);
+          input.current?.focus();
+          if (!draft && input.current && motionAllowed()) {
+            animate(input.current, { clipPath: ["inset(0 100% 0 0)", "inset(0 0% 0 0)"] },
+              { duration: .24, ease: EASE });
+          }
+        }}>{label}</Chip>)}
+      </div></AuiIf>
       <ComposerPrimitive.Root
         className={cx(
           "composer-root",
@@ -4009,39 +3725,15 @@ function ThreadComposer({
             <ComposerAttachmentChip attachment={attachment} />
           )}
         </ComposerPrimitive.Attachments>
-        <div
-          className={css({
-            display: "flex",
-            width: "100%",
-            minWidth: 0,
-            alignItems: "center",
-            gap: "0.375rem",
-            sm: { gap: "0.5rem" },
-          })}
-        >
-          <ComposerActionsMenu
-            modelLabel={modelLabel}
-            onModelSelect={callbacks.onModelSelect}
-            thinkingLevel={thinkingLevel}
-            onThinkingLevelChange={onThinkingLevelChange}
-            thinkingDisabled={isRunning}
-          />
-          <SpeechComposerControl
-            expanded={voiceComposerOpen}
-            onExpandedChange={onVoiceComposerOpenChange}
-            onRecordingChange={onMicRecordingChange}
-            onConversationComplete={onConversationComplete}
-            onRequestCredential={callbacks.onApiKeyRequired}
-          />
           {voiceComposerOpen ? null : (
-            <ComposerPrimitive.Input
+            <ComposerPrimitive.Input ref={input}
               className={css({
                 maxHeight: "10rem",
                 minHeight: "2rem",
                 minWidth: 0,
                 flex: 1,
                 resize: "none",
-                alignSelf: "center",
+                width: "100%",
                 backgroundColor: "transparent",
                 paddingInline: "0.25rem",
                 paddingBlock: "0.375rem",
@@ -4066,55 +3758,46 @@ function ThreadComposer({
               }
             />
           )}
+        <div className="ch-toolbar">
+          <ComposerPrimitive.AddAttachment className={composerIconButtonClass} aria-label="Attach files" title="Attach files"><KeatingGlyph name="clip" /></ComposerPrimitive.AddAttachment>
+          <SpeechComposerControl
+            expanded={voiceComposerOpen}
+            onExpandedChange={onVoiceComposerOpenChange}
+            onRecordingChange={onMicRecordingChange}
+            onConversationComplete={onConversationComplete}
+            onRequestCredential={callbacks.onApiKeyRequired}
+          />
+          <span className="ch-spacer" />
+          <label className="ch-reason" data-glyph-host title="Reasoning level"><KeatingGlyph name="bulb" size={13} /><select aria-label="Reasoning" disabled={isRunning} value={thinkingLevel}
+            onChange={event => onThinkingLevelChange(event.target.value as ThinkingLevel)}>
+            {REASONING_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select></label>
           {/* Only show Send OR Cancel — never both */}
           {isRunning ? (
             <ComposerPrimitive.Cancel
               aria-label="Stop generating"
               title="Stop generating"
-              className={cx(
-                composerIconButtonClass,
-                pulseClass,
-                css({
-                  borderWidth: "2px",
-                  borderColor: "var(--destructive)",
-                  color: "var(--destructive)",
-                  _hover: {
-                    backgroundColor: "var(--destructive)",
-                    color: "var(--destructive-foreground)",
-                  },
-                }),
-              )}
+              className={cx(composerIconButtonClass, pulseClass, "ch-stop")}
             >
-              <Square
+              <KeatingGlyph name="stop"
                 size={15}
-                className={css({
-                  sm: { width: "1rem", height: "1rem" },
-                })}
               />
             </ComposerPrimitive.Cancel>
           ) : voiceComposerOpen ? null : (
             <ComposerPrimitive.Send
+              onClick={event => sendSparks(event.currentTarget)}
               aria-label="Send message"
               title="Send message"
-              className={cx(
-                composerIconButtonClass,
-                css({
-                  borderColor: "transparent",
-                  backgroundColor: "var(--primary)",
-                  color: "var(--primary-foreground)",
-                }),
-              )}
+              className={cx(composerIconButtonClass, "ch-send")}
             >
-              <Send
+              <KeatingGlyph name="send"
                 size={15}
-                className={css({
-                  sm: { width: "1rem", height: "1rem" },
-                })}
               />
             </ComposerPrimitive.Send>
           )}
         </div>
       </ComposerPrimitive.Root>
+      <ChatStorageLine.Consumer>{line => line}</ChatStorageLine.Consumer>
       <div
         className={cx(
           "composer-hint",
@@ -4147,6 +3830,17 @@ function ThreadComposer({
   );
 }
 
+function MessageTime() {
+  const timestamp = useAuiState(({ message }) => {
+    const metadata = message.metadata.custom;
+    return metadata?.timestamp ?? (metadata?.keatingDiagnosticTimestamps as number[] | undefined)?.at(-1);
+  });
+  if (typeof timestamp !== "number" || !Number.isFinite(timestamp)) return null;
+  const date = new Date(timestamp);
+  if (!Number.isFinite(date.getTime())) return null;
+  return <time dateTime={date.toISOString()}>{date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</time>;
+}
+
 function UserMessage({
   components,
   profileImage,
@@ -4156,6 +3850,7 @@ function UserMessage({
 }) {
   const sessionId = useContext(OpenUISessionScopeContext);
   const sourceIds = useAuiState(({ message }) => message.metadata.custom?.keatingLearningSourceIds as string[] | undefined);
+  const diagnosticTimestamps = useAuiState(({ message }) => message.metadata.custom?.keatingDiagnosticTimestamps as number[] | undefined);
   const ownText = useAuiState(({ message }) => message.content.filter(part => part.type === "text").map(part => part.type === "text" ? part.text : "").join("\n\n"));
   const provenance = useAuiState(({ message }) => message.metadata.custom?.keatingPrivateFork);
   if (isPrivateForkContextMessage({ keatingPrivateFork: provenance })) {
@@ -4225,7 +3920,7 @@ function UserMessage({
           {profileImage ? (
             <img src={profileImage} alt="You" />
           ) : (
-            <User
+            <KeatingGlyph name="person"
               className={css({ width: "1rem", height: "1rem", flexShrink: 0 })}
             />
           )}
@@ -4243,7 +3938,7 @@ function UserMessage({
           })}
         >
           <div className="msg-meta">
-            <b>YOU</b>
+            <b>YOU</b> <MessageTime />
             {ownText && <CopyButton text={passageQuoteDisplayText(ownText)} label="Copy your message" variant="ghost" />}
           </div>
           <div
@@ -4261,6 +3956,7 @@ function UserMessage({
             <MessagePrimitive.Content components={components} />
           </div>
           <LearningSourcePassage sessionId={sessionId} sourceIds={sourceIds ?? []} />
+          <MessageDiagnostics role="learner" sessionId={sessionId} sourceIds={sourceIds} timestamps={diagnosticTimestamps} />
           <ConstraintPlanChips sessionId={sessionId} messageIds={sourceIds ?? []} messageText={ownText} />
         </div>
       </div>
@@ -4341,7 +4037,7 @@ function FeedbackModal({
             onClick={onClose}
             aria-label="Close"
           >
-            <X size={14} />
+            <KeatingGlyph name="x" size={14} />
           </button>
         </div>
         <textarea
@@ -4421,7 +4117,7 @@ function ClaimCheckNote({ sessionId, sourceIds, alreadyUnverified }: { sessionId
   if (!check) return null;
   return (
     <>
-      {check.sources.length > 0 && <WebSearchPart toolName="web_search" result={{ citations: check.sources.map(source => ({ url: source.url, title: source.title })) }} status={{ type: "complete" }} />}
+      {check.sources.length > 0 && <WebSearchCitations sites={check.sources.map(source => ({ url: source.url, title: source.title }))} />}
       {check.status === "unsupported" && !alreadyUnverified && <UnverifiedBadge tip={unsourcedClaimTip(check.unsupported)} />}
     </>
   );
@@ -4429,12 +4125,14 @@ function ClaimCheckNote({ sessionId, sourceIds, alreadyUnverified }: { sessionId
 
 function AssistantMessage({
   components,
+  teachingAdjustment,
   selectedProvider,
   onFork,
   onModelSelect,
   onRetry,
 }: {
   components: ReturnType<typeof messagePartComponents>;
+  teachingAdjustment?: TeachingAdjustmentController | null;
   selectedProvider?: string;
   onFork?: (forkPoint?: number) => void | Promise<void>;
   onModelSelect?: () => void;
@@ -4447,6 +4145,8 @@ function AssistantMessage({
   const developerMode = useContext(DeveloperChatDetails);
   const learningSessionId = useContext(OpenUISessionScopeContext);
   const learningSourceIds = useAuiState(({ message }) => message.metadata.custom?.keatingLearningSourceIds as string[] | undefined);
+  const diagnosticTimestamps = useAuiState(({ message }) => message.metadata.custom?.keatingDiagnosticTimestamps as number[] | undefined);
+  const searchStepCovered = useSearchStepCovered(developerMode ? undefined : learningSessionId);
   const diagnosticRoot = useRef<HTMLDivElement>(null);
   const textPartCount = useAuiState(({ message }) => message.content.filter(part => part.type === "text").length);
   const diagnosticSourceId = learningSourceIds?.length === 1 ? learningSourceIds[0] : undefined;
@@ -4462,10 +4162,11 @@ function AssistantMessage({
   const canRetry = useAuiState(
     ({ message }) => message.metadata.custom?.keatingRetryable === true,
   );
-  const llmFailure = useAuiState(
-    ({ message }) =>
-      message.metadata.custom?.keatingLlmFailure as LlmErrorDetails | undefined,
-  );
+  const storedFailure = useAuiState(({ message }) => message.metadata.custom?.keatingLlmFailure as LlmErrorDetails | undefined);
+  const incompleteReason = useAuiState(({ message }) => message.status?.type === "incomplete" ? message.status.reason : undefined);
+  const isLastMessage = useAuiState(({ message }) => message.isLast);
+  const llmFailure = storedFailure ?? (canRetry && incompleteReason
+    ? classifyLlmError(incompleteReason === "cancelled" ? "Request aborted" : "Assistant response failed") : undefined);
   const provider = useAuiState(({ message }) => message.metadata.custom?.keatingProvider as string | undefined);
   const failureMessage = useAuiState(({ message }) => message.metadata.custom?.keatingFailureMessage as string | undefined);
   const failedLastTurn = useAuiState(({ message }) => message.metadata.custom?.keatingFailedLastTurn === true);
@@ -4533,9 +4234,14 @@ function AssistantMessage({
     }
   };
 
-  if (isPrefillStatus) {
-    return <KeatingThinkingIndicator status={messageText} />;
-  }
+  const live = useAuiState(({ thread, message }) => message.isLast && thread.isRunning);
+  const draftStatus = useContext(ActiveDraftStatus);
+  const progress = live && !developerMode ? <TurnProgressCard status={draftStatus} prefill={isPrefillStatus ? messageText : undefined} /> : null;
+  const retry = canRetry && isLastMessage ? onRetry : undefined;
+  const chooseModel = llmFailure?.category !== "aborted" ? onModelSelect : undefined;
+  const diagnostics = developerMode && llmFailure ? diagnosticsSummaryForFailure(llmFailure) : undefined;
+  if (isPrefillStatus) return developerMode ? <KeatingThinkingIndicator status={messageText} /> : progress;
+  if (searchStepCovered) return progress;
 
   return (
     <>
@@ -4566,9 +4272,9 @@ function AssistantMessage({
           })}
         >
           <div className={css({ minWidth: 0, flex: 1, lineHeight: "1.5rem" })}>
-            <div className="msg-meta">
-              <b>KEATING</b>
-            </div>
+            {progress ?? (<div className="msg-meta">
+              <b>KEATING</b> <MessageTime />
+            </div>)}
             <div
               className={cx("keating-bubble", foregroundTextClass)}
               {...(!isPrefillStatus && !llmFailure ? {
@@ -4577,31 +4283,26 @@ function AssistantMessage({
                 "data-quote-source-label": "Keating's reply",
               } : {})}
             >
-              {creditFailure ? failedLastTurn ? <NotOrganicCreditRecovery
-                onRetry={onRetry}
-                onModelSelect={onModelSelect}
-                details={failureMessage}
-              /> : <p>This response paused because credits were unavailable.</p> : <MessagePrimitive.Content components={components} />}
-              {authError && <ProviderAuthRecovery
-                selectedProvider={selectedProvider}
-                failedProvider={authError.provider}
-                recovery={llmFailure?.recovery}
-                onRecover={onAuthError}
-              />}
+              {!creditFailure && <>
+                <MessagePrimitive.Content components={components} />
+                <div data-quote-exclude=""><MessageSearchCitations /></div>
+              </>}
             </div>
             <LearningSourcePassage sessionId={learningSessionId} sourceIds={learningSourceIds ?? []} />
             <ClaimCheckNote sessionId={learningSessionId} sourceIds={learningSourceIds} alreadyUnverified={parseReviewNotice(messageText)?.kind === "unverified"} />
-            {llmFailure && canRetry && onRetry && (
-              <FailedResponseRecovery
-                recovery={developerMode ? llmFailure.recovery : undefined}
-                onRetry={onRetry}
-                diagnosticsSummary={developerMode ? diagnosticsSummaryForFailure(llmFailure) : undefined}
-              />
-            )}
-            {/* A reportable failure with no retry control still needs a way out. */}
-            {developerMode && llmFailure && !(canRetry && onRetry) && diagnosticsSummaryForFailure(llmFailure) && (
-              <ErrorDiagnosticsActions summary={diagnosticsSummaryForFailure(llmFailure)!} />
-            )}
+            {creditFailure && failedLastTurn ? <NotOrganicCreditRecovery
+              onRetry={onRetry} onModelSelect={onModelSelect} details={failureMessage}
+              diagnostics={diagnostics && <ErrorDiagnosticsActions summary={diagnostics} />}
+            /> : authError ? <ProviderAuthRecovery selectedProvider={selectedProvider} failedProvider={authError.provider}
+              recovery={llmFailure?.recovery} onRecover={onAuthError} secondaryActions={<>
+                {retry && <RetryResponseButton onRetry={retry} />}
+                {chooseModel && <RecoveryButton size="sm" onClick={chooseModel}>Choose model</RecoveryButton>}
+              </>} diagnostics={diagnostics && <ErrorDiagnosticsActions summary={diagnostics} />}
+            /> : llmFailure ? <FailedResponseRecovery
+              recovery={creditFailure ? "This response paused because credits were unavailable." : developerMode || !retry ? llmFailure.recovery : undefined}
+              onRetry={retry} onModelSelect={chooseModel} preferModel={llmFailure.category === "model-unavailable"}
+              diagnosticsSummary={diagnostics}
+            /> : null}
             {developerMode && llmFailure && retryAttempts && retryAttempts > 1 && (
               <p
                 className={css({
@@ -4616,14 +4317,7 @@ function AssistantMessage({
                   : `Keating made ${retryAttempts} recovery attempts before preserving this error.`}
               </p>
             )}
-            <div
-              className={css({
-                marginTop: "0.5rem",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.25rem",
-              })}
-            >
+            <div className="ch-actions">
               {copyText && (
                 <CopyButton
                   variant="ghost"
@@ -4632,26 +4326,6 @@ function AssistantMessage({
                 />
               )}
               {copyText && !llmFailure && <QuoteMessageButton sessionId={learningSessionId} />}
-              {llmFailure &&
-                llmFailure.category !== "aborted" &&
-                onModelSelect && (
-                  <button
-                    type="button"
-                    className={cx(
-                      messageActionButtonClass,
-                      css({
-                        width: "auto",
-                        gap: "0.375rem",
-                        paddingInline: "0.5rem",
-                      }),
-                    )}
-                    onClick={onModelSelect}
-                    title="Choose a different model"
-                  >
-                    <Server size={13} />
-                    <span>Choose model</span>
-                  </button>
-                )}
               <button
                 type="button"
                 className={cx(
@@ -4668,7 +4342,7 @@ function AssistantMessage({
                 onClick={() => handleFeedbackClick("up")}
                 aria-pressed={feedback === "up"}
               >
-                <ThumbsUp size={13} />
+                <KeatingGlyph name="up" size={13} />
               </button>
               <button
                 type="button"
@@ -4686,7 +4360,7 @@ function AssistantMessage({
                 onClick={() => handleFeedbackClick("down")}
                 aria-pressed={feedback === "down"}
               >
-                <ThumbsDown size={13} />
+                <KeatingGlyph name="dn" size={13} />
               </button>
               {onFork && (
                 <button
@@ -4694,15 +4368,18 @@ function AssistantMessage({
                   data-fork-action
                   className={cx(
                     messageActionButtonClass,
-                    css({ opacity: 0, _focus: { opacity: 1 } }),
+
                   )}
                   title="Fork session from here"
                   onClick={handleFork}
                   aria-label="Fork session from here"
                 >
-                  <CopyPlus size={13} />
+                  <KeatingGlyph name="fork" size={13} />
                 </button>
               )}
+              {!creditFailure && !developerMode && <TurnProcessSummary sessionId={learningSessionId} />}
+            <MessageDiagnostics role="tutor" sessionId={learningSessionId} sourceIds={learningSourceIds}
+              timestamps={diagnosticTimestamps} teachingAdjustment={teachingAdjustment} />
             </div>
           </div>
         </div>
@@ -4770,6 +4447,7 @@ export const AssistantChatPanel = forwardRef<
   (
     {
       className,
+      teachingAdjustment,
       speechEnabled = false,
       responseComparison,
       initialPrompts,
@@ -4803,6 +4481,7 @@ export const AssistantChatPanel = forwardRef<
         <AssistantThread
           agent={agent}
           callbacks={callbacks}
+          teachingAdjustment={teachingAdjustment}
           version={version}
           speechEnabled={speechEnabled}
           responseComparison={responseComparison}

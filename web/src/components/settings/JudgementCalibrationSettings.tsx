@@ -1,3 +1,4 @@
+import { ConfirmDialog, Loading } from "../../design-system/kit";
 import { useEffect, useId, useState } from "react";
 import { getWebJudgementCalibrationState, installWebJudgementCalibration, loadWebJudgementCalibration,
   MAX_CALIBRATION_BYTES, removeWebJudgementCalibration, subscribeWebJudgementCalibration, type WebCalibrationState } from "../../keating/judgement/calibration";
@@ -7,13 +8,13 @@ export function JudgementCalibrationSettingsView({ state, file, sha256, busy, er
   onFile: (file: File | null) => void; onSha256: (sha: string) => void; onInstall: () => void; onRemove: () => void;
 }) {
   const id = useId();
+  const [confirmRemove,setConfirmRemove]=useState(false);
   return <details className="judgement-settings__account">
     <summary>Validated calibration</summary>
     <p>Install measured question thresholds for this device. Your review mode stays unchanged. Only matching models and questions can use them.</p>
-    <p role="status">{state.status === "loading" || state.status === "unloaded" ? "Verifying saved calibration…"
-      : state.status === "ready" ? "Calibration verified on this device."
+    {state.status === "loading" || state.status === "unloaded" ? <Loading size="inline" label="Verifying saved calibration…"/> : <p role="status">{state.status === "ready" ? "Calibration verified on this device."
         : state.status === "error" ? "Calibration is unavailable. Existing built-in checks remain available."
-          : "No calibration installed. Model estimates remain uncalibrated."}</p>
+          : "No calibration installed. Model estimates remain uncalibrated."}</p>}
     {state.status === "ready" && state.fileSha256 && <p>Installed file SHA-256: <code className="judgement-settings__hash">{state.fileSha256}</code></p>}
     {state.status === "ready" && <ul>{state.models.map(model => <li key={`${model.backend}:${model.model}`}>{model.model}: {model.questions} validated question{model.questions === 1 ? "" : "s"} ({model.backend === "local" ? "on this device" : "hosted"})</li>)}</ul>}
     <label className="judgement-settings__field" htmlFor={`${id}-file`}><span>Calibration file</span>
@@ -23,7 +24,8 @@ export function JudgementCalibrationSettingsView({ state, file, sha256, busy, er
         aria-describedby={`${id}-help`} onChange={event => onSha256(event.target.value.trim())} /></label>
     <p id={`${id}-help`}>Use the 64-character hash supplied with the fitted artifact. The file is checked and stored locally; importing it sends no learner data.</p>
     <button type="button" disabled={busy || !file || !/^[a-f0-9]{64}$/.test(sha256)} onClick={onInstall}>{busy ? "Verifying calibration…" : "Install calibration"}</button>
-    {state.status !== "empty" && state.status !== "unloaded" && <button type="button" disabled={busy} onClick={onRemove}>Remove calibration</button>}
+    {state.status !== "empty" && state.status !== "unloaded" && <button type="button" disabled={busy} onClick={()=>setConfirmRemove(true)}>Remove calibration</button>}
+    {confirmRemove && <ConfirmDialog open title="Remove calibration?" description="Clears the verified thresholds saved on this device. Model estimates will be uncalibrated." confirmLabel="Remove calibration" onCancel={()=>setConfirmRemove(false)} onConfirm={()=>{setConfirmRemove(false);onRemove();}}/>}
     {(error || state.error) && <p role="alert">{error || state.error}</p>}
   </details>;
 }

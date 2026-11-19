@@ -58,6 +58,7 @@ describe("draft review receipt", () => {
 		expect(html).toContain("Draft review · released draft 2 · 2 drafts checked");
 		expect(html).toContain("Draft 1 · rejected");
 		expect(html).toContain("0.810");
+		expect(html).toContain('role="meter"');
 		expect(html).toContain("jev-latest");
 		expect(html).toContain("Current focus: Equal parts");
 	});

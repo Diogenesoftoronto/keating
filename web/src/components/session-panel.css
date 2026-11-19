@@ -92,8 +92,7 @@
   outline-offset: 2px;
 }
 .session-panel__tools {
-  padding: 0 20px 14px;
-  border-bottom: 1px solid var(--border);
+  padding: 0 20px 10px;
 }
 .session-panel__search {
   display: flex;
@@ -127,29 +126,13 @@
   color: var(--session-quiet);
   opacity: 1;
 }
-.session-panel__filters {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 12px;
-  margin-top: 16px;
-}
-.session-panel__filters label {
-  min-width: 0;
-}
-.session-panel__filters label > span {
-  display: block;
-  color: var(--session-quiet);
-  font-size: 10px;
-  letter-spacing: 0.035em;
-}
-.session-panel__filters .keating-select { margin-top: 4px; }
 .session-panel__scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  padding: 12px 12px 24px;
+  padding: 4px 10px 24px;
 }
 .session-panel .session-panel__tree {
   list-style: none;
@@ -157,15 +140,77 @@
   padding: 0;
   outline: none;
 }
+.session-panel .session-panel__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.session-panel__section + .session-panel__section {
+  margin-top: 14px;
+}
+.session-panel .session-panel__section-label {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 10px;
+  color: var(--session-quiet);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.session-panel .session-panel__earlier {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: calc(100% + 20px);
+  min-height: 36px;
+  margin: 0 -10px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--session-quiet);
+  font-size: 11px;
+  font-weight: 600;
+}
+.session-panel .session-panel__earlier:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+.session-panel__earlier > svg {
+  transform: rotate(-90deg);
+  transition: transform 160ms ease-out;
+}
+.session-panel__earlier > svg[data-expanded] {
+  transform: rotate(0);
+}
+.session-panel__count {
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+.session-panel .session-panel__more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 36px;
+  margin-top: 2px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--session-quiet);
+  font-size: 12px;
+}
+.session-panel .session-panel__more:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
 .session-panel__row {
   position: relative;
   content-visibility: auto;
-  contain-intrinsic-size: auto 168px;
-  padding: 4px 0 10px;
-  border-bottom: 1px solid var(--border);
-}
-.session-panel__row:last-child {
-  border-bottom: 0;
+  contain-intrinsic-size: auto 78px;
+  padding: 1px 0;
 }
 .session-panel__row[data-branch] {
   border-left: 1px solid var(--border);
@@ -175,52 +220,35 @@
   content: "";
   position: absolute;
   left: 0;
-  top: 35px;
+  top: 39px;
   width: 8px;
   height: 1px;
   background: var(--border);
 }
 .session-panel__row[data-cursor] > .session-entry {
   outline: 2px solid var(--ring, var(--primary));
-  outline-offset: 1px;
+  outline-offset: -2px;
 }
 .session-panel .session-entry__open {
-  padding: 12px 0 10px 8px;
+  padding: 9px 2px 9px 10px;
+  min-height: 76px;
 }
 .session-panel .session-entry__title {
-  font-size: 15px;
-  line-height: 1.35;
+  font-size: 14px;
+  line-height: 20px;
 }
-.session-panel .session-entry__description {
-  margin-top: 6px;
-  font-size: 12px;
-  line-height: 1.55;
+.session-panel .session-entry__eyeline,
+.session-panel .session-entry__meta {
+  line-height: 18px;
 }
-.session-panel .session-entry__eyeline {
-  gap: 5px;
-  margin-bottom: 6px;
-}
-.session-panel .session-entry__category {
-  font-size: 10px;
+.session-panel .session-entry__category,
+.session-panel .session-entry__time,
+.session-panel .session-entry__meta {
+  font-size: 11px;
 }
 .session-panel .session-entry__current,
 .session-panel .session-entry__context {
   font-size: 9px;
-}
-.session-panel .session-entry__parent {
-  font-size: 10px;
-  margin-top: 5px;
-}
-.session-panel .session-entry__meta {
-  margin-top: 9px;
-  gap: 4px 8px;
-  font-size: 10px;
-}
-.session-panel .session-entry__side {
-  padding: 0 0 12px;
-}
-.session-panel .session-entry__open-mark {
-  display: none;
 }
 .session-panel .session-panel__forks {
   display: flex;
@@ -229,7 +257,7 @@
   width: auto;
   min-height: 36px;
   padding: 0 8px;
-  margin: 0 0 0 8px;
+  margin: 0 0 2px 2px;
   border: 0;
   border-radius: 6px;
   background: transparent;
@@ -319,6 +347,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .session-panel__forks > svg,
+  .session-panel__earlier > svg,
   .session-panel__resize::after {
     transition: none;
   }
@@ -326,3 +355,110 @@
     transform: none;
   }
 }
+
+.session-subjects {display:flex;gap:.22rem;overflow-x:auto;overscroll-behavior-x:contain;padding:.28rem .1rem;align-items:center}
+.session-subjects > button {flex:none}
+.session-panel__search .k-kbd {margin-inline-end:.35rem}
+
+/* ── Rail, as drawn on board C1 ───────────────────────────────────────────
+   Board pixels are app pixels. One quiet column: an ink "New", a light search field, small subject chips,
+   mono section labels, and rows with a sans title over one line of metadata. The selected row is a card-coloured
+   band with a green bar on its leading edge; row actions arrive on hover and never take width from the title. */
+.session-panel {
+  --session-quiet: var(--ink-faint);
+  border-right: 1px solid var(--line);
+  background: var(--paper-deep);
+  color: var(--ink);
+  font: 12.5px/1.4 var(--font-ui);
+}
+.session-panel .session-panel__header { gap: 8px; padding: 10px 8px 8px 12px; }
+.session-panel__header h2 { display: flex; align-items: center; gap: 8px; font: 400 10px/1 var(--mono-body); letter-spacing: 0; }
+.session-panel__header h2 > span { margin: 0; color: var(--ink-soft); font-size: 10px; opacity: .8; }
+.session-panel .session-panel__icon { width: 28px; height: 28px; min-height: 28px; border-radius: 4px; color: var(--ink-soft); }
+.session-panel .session-panel__icon:hover { background: transparent; color: var(--ink); }
+.session-panel .session-panel__new,
+.session-panel .session-panel__new:hover {
+  width: auto; height: 24px; min-height: 24px; gap: 5px; padding: 0 8px; border-radius: 4px;
+  background: var(--ink); color: var(--paper); box-shadow: none;
+  font: 500 10.5px/1 var(--mono-body);
+}
+.session-panel .session-panel__new { --k-lift-shadow: var(--green-deep); }
+.session-panel .session-panel__new:hover { box-shadow: 2px 2px 0 var(--k-lift-shadow); }
+.session-panel .session-panel__new:active { transform: translate(1px, 1px); box-shadow: none; }
+.session-panel--collapsed .session-panel__new,
+.session-panel--collapsed .session-panel__new:hover { width: 28px; height: 28px; min-height: 28px; padding: 0; }
+.session-panel--collapsed .session-panel__new > span { display: none; }
+.session-panel__tools { padding: 0 12px 6px; }
+.session-panel__search { gap: 7px; height: 30px; padding-left: 9px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); color: var(--ink-faint); }
+.session-panel__search > svg { width: 13px; height: 13px; }
+.session-panel__search:focus-within { outline: 2px solid var(--green-deep); outline-offset: 1px; }
+.session-panel .session-panel__search input { font: 12px/1.4 var(--font-ui); color: var(--ink); }
+.session-panel .session-subjects { display: flex; flex-wrap: nowrap; gap: 5px; padding: 8px 0 0; overflow-x: auto; scrollbar-width: none; -webkit-mask: linear-gradient(90deg, #000 calc(100% - 18px), transparent); mask: linear-gradient(90deg, #000 calc(100% - 18px), transparent); }
+.session-panel .session-subjects::-webkit-scrollbar { display: none; }
+.session-panel .session-subjects .k-chip { flex: none; gap: 5px; height: 22px; min-height: 22px; padding: 0 6px; font: 10.5px/1 var(--mono-body); }
+.session-panel .session-subjects .k-chip b { font-weight: 500; opacity: .65; }
+.session-panel .session-entry__category-dot { width: 7px; height: 7px; border-radius: 1px; }
+.session-panel__scroll { padding: 0 0 16px; }
+.session-panel .session-panel__tree, .session-panel .session-panel__rows { gap: 0; }
+.session-panel__section + .session-panel__section { margin-top: 0; }
+.session-panel .session-panel__section-label,
+.session-panel .session-panel__earlier { padding: 10px 12px 4px; font: 600 9.5px/1.4 var(--mono-body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+.session-panel .session-panel__section-label:has(> .session-panel__earlier) { padding: 0; }
+.session-panel .session-panel__earlier { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 0; border: 0; border-radius: 0; background: transparent; }
+.session-panel .session-panel__earlier:hover { background: transparent; color: var(--ink); }
+.session-panel .session-panel__earlier > svg { order: 3; width: 13px; height: 13px; }
+.session-panel__count { opacity: .65; font-weight: 500; }
+.session-panel .session-panel__more { margin: 4px 12px 0; padding: 0; min-height: 22px; border: 0; background: transparent; color: var(--ink-soft); font: 10px/1.4 var(--mono-body); text-decoration: underline; text-underline-offset: 2px; }
+.session-panel__row { margin: 0; padding: 0; }
+.session-panel .session-entry { --session-row-bg: var(--paper-deep); border-left: 3px solid transparent; border-radius: 0; }
+.session-panel .session-entry:hover,
+.session-panel .session-entry:focus-within { --session-row-bg: color-mix(in srgb, var(--card) 55%, var(--paper-deep)); }
+.session-panel .session-entry[data-active] { --session-row-bg: var(--card); border-left-color: var(--green); }
+.session-panel .session-entry .session-entry__open { gap: 2px; min-height: 0; padding: 7px 12px 7px 9px; border-radius: 0; }
+.session-panel .session-entry__title { overflow: hidden; font: 600 12.5px/1.3 var(--font-ui); letter-spacing: 0; white-space: nowrap; text-overflow: ellipsis; color: var(--ink); }
+.session-panel .session-entry__meta,
+.session-panel .session-entry__eyeline { display: flex; align-items: center; gap: 5px; min-width: 0; overflow: hidden; font: 10px/1.4 var(--mono-body); color: var(--ink-faint); white-space: nowrap; }
+.session-panel .session-entry__eyeline { flex: none; overflow: visible; }
+.session-panel .session-entry__category,
+.session-panel .session-entry__time,
+.session-panel .session-entry__meta > span { flex: none; overflow: visible; font: inherit; color: inherit; }
+.session-panel .session-entry__category { display: inline-flex; align-items: center; gap: 5px; max-width: 9em; }
+.session-panel .session-entry__meta > span + span::before,
+.session-panel .session-entry__time::before { content: "\00B7"; margin-right: 5px; }
+/* The band and the bar already say which session is open; assistive tech has aria-current. */
+.session-panel .session-entry__current { display: none; }
+.session-panel .session-entry__context { padding: 0 4px; border-radius: 2px; background: transparent; box-shadow: inset 0 0 0 1px var(--line); font: 9px/1.5 var(--mono-body); color: var(--ink-soft); }
+.session-panel .session-entry__pinned svg { width: 10px; height: 10px; }
+/* Pin, move and "more" float over the row's trailing edge on hover or focus. */
+.session-panel .session-entry__quick { right: 28px; padding-left: 18px; background: linear-gradient(to right, transparent, var(--session-row-bg) 16px); }
+.session-panel .session-entry__side { position: absolute; top: 50%; right: 4px; padding: 0; transform: translateY(-50%); background: var(--session-row-bg); opacity: 0; transition: opacity 120ms ease-out; }
+.session-panel .session-entry:hover .session-entry__side,
+.session-panel .session-entry__row:focus-within .session-entry__side,
+.session-panel .session-entry__side:has([aria-expanded="true"]) { opacity: 1; }
+.session-panel .session-entry .session-library__icon-button,
+.session-panel .session-entry .session-entry__quick .session-library__icon-button { width: 22px; min-width: 22px; height: 22px; min-height: 22px; border-radius: 4px; color: var(--ink-soft); }
+.session-panel .session-entry .session-library__icon-button:hover { background: transparent; color: var(--ink); }
+.session-panel .session-entry .session-library__icon-button svg { width: 13px; height: 13px; }
+.session-panel .session-panel__forks { min-height: 22px; margin: 0 0 2px 24px; padding: 0; gap: 5px; border: 0; background: transparent; color: var(--ink-faint); font: 10px/1.4 var(--mono-body); }
+.session-panel .session-panel__forks:hover { background: transparent; color: var(--ink); }
+.session-panel .session-panel__forks > svg { width: 12px; height: 12px; }
+.session-panel__row[data-branch] .session-entry .session-entry__open { padding-left: 21px; }
+.session-panel__results { padding: 8px 12px 4px; font: 10px/1.4 var(--mono-body); color: var(--ink-faint); }
+.session-panel__empty { padding: 16px 12px; }
+.session-panel__empty h3 { font: 600 12.5px/1.3 var(--font-ui); }
+.session-panel__empty p { font: 11.5px/1.5 var(--font-ui); color: var(--ink-soft); }
+@media (hover: none) {
+  .session-panel .session-entry__side { position: static; transform: none; opacity: 1; background: transparent; }
+  .session-panel .session-entry .session-library__icon-button, .session-panel .session-panel__icon { width: 44px; min-width: 44px; height: 44px; min-height: 44px; }
+}
+.session-panel .session-entry__time { margin: 0; padding: 0; }
+.session-panel .session-entry__category { max-width: none; overflow: visible; }
+/* Actions ride the metadata line, as the board's "more" does, so the title is never covered. */
+.session-panel .session-entry__quick { top: auto; bottom: 4px; right: 26px; transform: none; }
+.session-panel .session-entry__side { top: auto; bottom: 4px; transform: none; }
+.session-panel .session-entry:hover .session-entry__time,
+.session-panel .session-entry__row:focus-within .session-entry__time { visibility: visible; }
+/* A long subject gives way before the date and the count do. */
+.session-panel .session-entry__eyeline { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+.session-panel .session-entry__category { display: block; flex: 0 1 auto; min-width: 2.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.session-panel .session-entry__category-dot { margin-right: 5px; }

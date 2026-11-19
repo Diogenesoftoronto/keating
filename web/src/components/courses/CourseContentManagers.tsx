@@ -1,15 +1,8 @@
+import { KeatingGlyph } from "../../design-system/glyphs";
+import { Button, Card, EmptyState, Loading, ConfirmDialog, Field, TextArea, TextInput } from "../../design-system/kit";
 import { Select } from "../Select";
 import { useEffect, useState } from "react";
-import {
-  BookUp,
-  FileQuestion,
-  Plus,
-  RefreshCw,
-  Save,
-  Trash2,
-  Upload,
-} from "lucide-react";
-import { css, cx } from "../../../styled-system/css";
+import { css } from "../../../styled-system/css";
 import {
   createBlankCourseQuiz,
   newCourseQuizQuestion,
@@ -30,31 +23,6 @@ import type {
   CourseViewerSnapshot,
 } from "../../courses/contracts";
 import type { Quiz, QuizQuestion } from "../../keating/core";
-
-const inputClass = css({
-  w: "100%",
-  border: "1px solid var(--ink)",
-  bg: "var(--paper)",
-  px: "0.65rem",
-  py: "0.55rem",
-  fontSize: "0.8rem",
-  outline: 0,
-  _focus: { boxShadow: "0 0 0 2px var(--peer-blue, #3468b3)" },
-});
-const buttonClass = css({
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "0.35rem",
-  border: "1px solid var(--ink)",
-  px: "0.65rem",
-  py: "0.45rem",
-  fontSize: "0.72rem",
-  fontWeight: 750,
-  _hover: { bg: "var(--course-wash, #ddebdd)" },
-  _disabled: { opacity: 0.55 },
-});
-const cardClass = css({ border: "1px solid var(--ink)", bg: "var(--card)" });
 
 type Mutate = (
   operation: Parameters<typeof applyCourseOperation>[0],
@@ -81,7 +49,7 @@ function targetSelect(
     <Select
       value={value}
       onValueChange={(value) => onChange(value)}
-      className={inputClass}
+      className="k-input"
       aria-label={label}
     >
       <option value="">Course-wide</option>
@@ -131,7 +99,7 @@ function QuizQuestionFields({
       className={css({
         display: "grid",
         gap: "0.4rem",
-        border: "1px solid var(--ink)",
+        borderTop: "1px solid var(--line-soft)",
         bg: "var(--paper)",
         p: "0.6rem",
       })}
@@ -147,18 +115,19 @@ function QuizQuestionFields({
         <strong className={css({ fontSize: "0.72rem" })}>
           Question {index + 1}
         </strong>
-        <button
+        <Button
           type="button"
-          className={cx(buttonClass, css({ color: "var(--destructive)" }))}
+          className="cb-danger"
           disabled={!canRemove}
           onClick={onRemove}
         >
-          <Trash2 size={11} /> Remove
-        </button>
+          <KeatingGlyph name="trash" size={11} /> Remove
+        </Button>
       </div>
       <Select
+        aria-label="Question type"
         value={question.type}
-        className={inputClass}
+        className="k-input"
         onValueChange={(value) => {
           const type = value as QuizQuestion["type"];
           onChange({
@@ -185,19 +154,18 @@ function QuizQuestionFields({
         <option value="dropdown">Dropdown</option>
         <option value="slider">Slider</option>
       </Select>
-      <textarea
+      <Field label="Question prompt"><TextArea
         value={question.question}
         onChange={(event) =>
           onChange({ ...question, question: event.target.value })
         }
-        className={inputClass}
         rows={3}
         placeholder="Question prompt"
-      />
+      /></Field>
       {question.type === "multiple_choice" ||
       question.type === "multi_select" ||
       question.type === "dropdown" ? (
-        <textarea
+        <Field label="One option per line"><TextArea
           value={options}
           onChange={(event) =>
             onChange({
@@ -208,29 +176,26 @@ function QuizQuestionFields({
                 .filter(Boolean),
             })
           }
-          className={inputClass}
           rows={3}
           placeholder="One option per line"
-        />
+        /></Field>
       ) : null}
-      <textarea
+      <Field label="Expected answer"><TextArea
         value={question.correctAnswer}
         onChange={(event) =>
           onChange({ ...question, correctAnswer: event.target.value })
         }
-        className={inputClass}
         rows={2}
         placeholder="Expected answer"
-      />
-      <textarea
+      /></Field>
+      <Field label="Explanation shown after answering"><TextArea
         value={question.explanation}
         onChange={(event) =>
           onChange({ ...question, explanation: event.target.value })
         }
-        className={inputClass}
         rows={2}
         placeholder="Explanation shown after answering"
-      />
+      /></Field>
     </div>
   );
 }
@@ -290,14 +255,13 @@ function ArtifactEditor({
       },
       `artifact-${artifact.id}`,
     );
+  const [removing, setRemoving] = useState(false);
   return (
-    <details className={cardClass}>
+    <Card as="details">
       <summary
         className={css({
           cursor: "pointer",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
+          overflowWrap: "anywhere",
           px: "0.65rem",
           py: "0.55rem",
           fontSize: "0.74rem",
@@ -313,25 +277,23 @@ function ArtifactEditor({
         className={css({
           display: "grid",
           gap: "0.45rem",
-          borderTop: "1px solid var(--ink)",
+          borderTop: "1px solid var(--line-soft)",
           p: "0.65rem",
         })}
       >
-        <input
+        <Field label="Artifact title"><TextInput
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           maxLength={240}
-          className={inputClass}
           placeholder="Artifact title"
-        />
-        <textarea
+        /></Field>
+        <Field label="Short description"><TextArea
           value={description}
           onChange={(event) => setDescription(event.target.value)}
           maxLength={2_000}
-          className={inputClass}
           rows={2}
           placeholder="Short description"
-        />
+        /></Field>
         {targetSelect(
           lessons,
           lessonId,
@@ -366,9 +328,9 @@ function ArtifactEditor({
                 }
               />
             ))}
-            <button
+            <Button
               type="button"
-              className={buttonClass}
+              variant="line"
               disabled={quiz.questions.length >= 20}
               onClick={() =>
                 setQuiz((current) =>
@@ -385,14 +347,13 @@ function ArtifactEditor({
                 )
               }
             >
-              <Plus size={12} /> Add question
-            </button>
+              <KeatingGlyph name="plus" size={12} /> Add question
+            </Button>
           </div>
         ) : (
-          <textarea
+          <TextArea
             value={content}
             onChange={(event) => setContent(event.target.value)}
-            className={inputClass}
             rows={
               artifact.format === "openui" || artifact.format === "json" ? 9 : 6
             }
@@ -406,36 +367,33 @@ function ArtifactEditor({
             gap: "0.4rem",
           })}
         >
-          <button
+          <Button
             type="button"
-            className={buttonClass}
+            variant="line"
             disabled={!title.trim() || saving === `artifact-${artifact.id}`}
             onClick={() => void save()}
           >
-            <Save size={12} /> Save
-          </button>
-          <button
+            <KeatingGlyph name="save" size={12} /> Save
+          </Button>
+          <Button
             type="button"
-            className={cx(buttonClass, css({ color: "var(--destructive)" }))}
-            onClick={() => {
-              if (
-                window.confirm(`Remove “${artifact.title}” from this course?`)
-              )
-                void mutate(
-                  {
-                    ...operationBase(snapshot),
-                    type: "artifact.delete",
-                    artifactId: artifact.id,
-                  },
-                  `artifact-delete-${artifact.id}`,
-                );
-            }}
-          >
-            <Trash2 size={12} /> Remove
-          </button>
+            className="cb-danger"
+            onClick={() => setRemoving(true)}>
+            <KeatingGlyph name="trash" size={12}/> Remove
+          </Button>
+          <ConfirmDialog open={removing} title="Confirm removal" description={`Remove “${artifact.title}” from this course?`} confirmLabel="Remove"
+            onCancel={() => setRemoving(false)}
+            onConfirm={() => {
+              setRemoving(false);
+              void mutate({
+                ...operationBase(snapshot),
+                type: "artifact.delete",
+                artifactId: artifact.id,
+              }, `artifact-delete-${artifact.id}`);
+            }}/>
         </div>
       </div>
-    </details>
+    </Card>
   );
 }
 
@@ -530,7 +488,7 @@ export function ArtifactManager({
         className={css({
           display: "grid",
           gap: "0.4rem",
-          border: "1px solid var(--ink)",
+          borderTop: "1px solid var(--line-soft)",
           bg: "var(--paper)",
           p: "0.6rem",
         })}
@@ -542,15 +500,13 @@ export function ArtifactManager({
           "Attach imported artifact to lesson",
         )}
         {loading ? (
-          <p className={css({ fontSize: "0.72rem", color: "var(--ink-soft)" })}>
-            Looking through saved work…
-          </p>
+          <Loading label="Looking through saved work…" />
         ) : (
           <>
             <Select
               value={sourceId}
               onValueChange={(value) => setSourceId(value)}
-              className={inputClass}
+              className="k-input"
             >
               <option value="">Choose a saved artifact…</option>
               {sources.map((source) => (
@@ -559,14 +515,14 @@ export function ArtifactManager({
                 </option>
               ))}
             </Select>
-            <button
+            <Button
               type="button"
-              className={buttonClass}
+              variant="line"
               disabled={!sourceId || saving.startsWith("artifact-import-")}
               onClick={importSource}
             >
-              <Upload size={12} /> Import artifact
-            </button>
+              <KeatingGlyph name="import" size={12} /> Import artifact
+            </Button>
           </>
         )}
         {error ? (
@@ -582,9 +538,9 @@ export function ArtifactManager({
             })}
           >
             <span>{error}</span>
-            <button type="button" className={buttonClass} onClick={load}>
-              <RefreshCw size={11} /> Retry
-            </button>
+            <Button type="button" variant="line" onClick={load}>
+              <KeatingGlyph name="refresh" size={11} /> Retry
+            </Button>
           </div>
         ) : null}
       </div>
@@ -593,25 +549,24 @@ export function ArtifactManager({
           display: "flex",
           alignItems: "stretch",
           gap: "0.35rem",
-          border: "1px solid var(--ink)",
+          borderTop: "1px solid var(--line-soft)",
           bg: "var(--paper)",
           p: "0.6rem",
         })}
       >
-        <input
+        <Field label="New quiz title"><TextInput
           value={quizTitle}
           onChange={(event) => setQuizTitle(event.target.value)}
-          className={inputClass}
           placeholder="New quiz title"
-        />
-        <button
+        /></Field>
+        <Button
           type="button"
-          className={buttonClass}
+          variant="line"
           disabled={!quizTitle.trim() || saving === "quiz-add"}
           onClick={addQuiz}
         >
-          <FileQuestion size={12} /> Quiz
-        </button>
+          <KeatingGlyph name="quiz" size={12} /> Quiz
+        </Button>
       </div>
       {snapshot.course.artifacts.length ? (
         <div className={css({ display: "grid", gap: "0.4rem" })}>
@@ -626,9 +581,7 @@ export function ArtifactManager({
           ))}
         </div>
       ) : (
-        <p className={css({ fontSize: "0.7rem", color: "var(--ink-soft)" })}>
-          No artifacts in this course yet.
-        </p>
+        <EmptyState heading="No artifacts in this course yet." />
       )}
     </div>
   );
@@ -674,8 +627,9 @@ function AssignmentEditor({
     setDueAt(assignment.dueAt ? assignment.dueAt.slice(0, 16) : "");
     setHours(assignment.estimatedHours?.toString() ?? "");
   }, [assignment]);
+  const [removing, setRemoving] = useState(false);
   return (
-    <details className={cardClass}>
+    <Card as="details">
       <summary
         className={css({
           cursor: "pointer",
@@ -691,46 +645,43 @@ function AssignmentEditor({
         className={css({
           display: "grid",
           gap: "0.4rem",
-          borderTop: "1px solid var(--ink)",
+          borderTop: "1px solid var(--line-soft)",
           p: "0.65rem",
         })}
       >
-        <input
+        <TextInput
+          aria-label="Assignment title"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          className={inputClass}
         />
-        <label>Work type<Select value={taskKind} onValueChange={(value) => setTaskKind(value as typeof taskKind)} className={inputClass}>
+        <label>Work type<Select value={taskKind} onValueChange={(value) => setTaskKind(value as typeof taskKind)} className="k-input">
           <option value="assignment">Assignment</option><option value="practice">Practice</option><option value="draft">Draft</option><option value="fieldwork">Fieldwork</option>
         </Select></label>
-        <label>Available from<input type="datetime-local" className={inputClass} value={availableFrom} onChange={(event) => setAvailableFrom(event.target.value)} /></label>
+        <label>Available from<TextInput type="datetime-local" value={availableFrom} onChange={(event) => setAvailableFrom(event.target.value)} /></label>
         {taskItems.map((item, index) => <div key={item.id}>
-          <input aria-label={`Step ${index + 1}`} className={inputClass} value={item.title} onChange={(event) => { const title = event.target.value; setTaskItems((items) => items.map((entry, i) => i === index ? { ...entry, title } : entry)); }} />
-          <textarea aria-label={`Step ${index + 1} detail`} className={inputClass} value={item.detail ?? ""} onChange={(event) => { const detail = event.target.value; setTaskItems((items) => items.map((entry, i) => i === index ? { ...entry, detail } : entry)); }} />
-          <button type="button" onClick={() => setTaskItems((items) => items.filter((entry) => entry.id !== item.id))}>Remove step</button>
+          <TextInput aria-label={`Step ${index + 1}`} value={item.title} onChange={(event) => { const title = event.target.value; setTaskItems((items) => items.map((entry, i) => i === index ? { ...entry, title } : entry)); }} />
+          <TextArea aria-label={`Step ${index + 1} detail`} value={item.detail ?? ""} onChange={(event) => { const detail = event.target.value; setTaskItems((items) => items.map((entry, i) => i === index ? { ...entry, detail } : entry)); }} />
+          <Button type="button" onClick={() => setTaskItems((items) => items.filter((entry) => entry.id !== item.id))}>Remove step</Button>
         </div>)}
-        <button type="button" onClick={() => setTaskItems((items) => [...items, { id: `step_${crypto.randomUUID().replaceAll("-", "")}`, title: "New step" }])}>Add step</button>
-        <textarea
+        <Button type="button" onClick={() => setTaskItems((items) => [...items, { id: `step_${crypto.randomUUID().replaceAll("-", "")}`, title: "New step" }])}>Add step</Button>
+        <Field label="Assignment brief"><TextArea
           value={brief}
           onChange={(event) => setBrief(event.target.value)}
-          className={inputClass}
           rows={5}
           placeholder="Assignment brief"
-        />
-        <textarea
+        /></Field>
+        <Field label="One deliverable per line"><TextArea
           value={deliverables}
           onChange={(event) => setDeliverables(event.target.value)}
-          className={inputClass}
           rows={3}
           placeholder="One deliverable per line"
-        />
-        <textarea
+        /></Field>
+        <Field label="One rubric point per line"><TextArea
           value={rubric}
           onChange={(event) => setRubric(event.target.value)}
-          className={inputClass}
           rows={3}
           placeholder="One rubric point per line"
-        />
+        /></Field>
         {targetSelect(
           lessons,
           lessonId,
@@ -746,22 +697,20 @@ function AssignmentEditor({
         >
           <label className={css({ fontSize: "0.68rem" })}>
             Due date
-            <input
+            <TextInput
               type="datetime-local"
               value={dueAt}
               onChange={(event) => setDueAt(event.target.value)}
-              className={inputClass}
             />
           </label>
           <label className={css({ fontSize: "0.68rem" })}>
             Estimated hours
-            <input
+            <TextInput
               type="number"
               min="0.25"
               step="0.25"
               value={hours}
               onChange={(event) => setHours(event.target.value)}
-              className={inputClass}
             />
           </label>
         </div>
@@ -772,9 +721,9 @@ function AssignmentEditor({
             gap: "0.4rem",
           })}
         >
-          <button
+          <Button
             type="button"
-            className={buttonClass}
+            variant="line"
             disabled={
               !title.trim() ||
               !brief.trim() ||
@@ -813,32 +762,27 @@ function AssignmentEditor({
               )
             }
           >
-            <Save size={12} /> Save
-          </button>
-          <button
+            <KeatingGlyph name="save" size={12} /> Save
+          </Button>
+          <Button
             type="button"
-            className={cx(buttonClass, css({ color: "var(--destructive)" }))}
-            onClick={() => {
-              if (
-                window.confirm(
-                  `Remove “${assignment.title}” and its submissions?`,
-                )
-              )
-                void mutate(
-                  {
-                    ...operationBase(snapshot),
-                    type: "assignment.delete",
-                    assignmentId: assignment.id,
-                  },
-                  `assignment-delete-${assignment.id}`,
-                );
-            }}
-          >
-            <Trash2 size={12} /> Remove
-          </button>
+            className="cb-danger"
+            onClick={() => setRemoving(true)}>
+            <KeatingGlyph name="trash" size={12}/> Remove
+          </Button>
+          <ConfirmDialog open={removing} title="Confirm removal" description={`Remove “${assignment.title}” and its submissions?`} confirmLabel="Remove"
+            onCancel={() => setRemoving(false)}
+            onConfirm={() => {
+              setRemoving(false);
+              void mutate({
+                ...operationBase(snapshot),
+                type: "assignment.delete",
+                assignmentId: assignment.id,
+              }, `assignment-delete-${assignment.id}`);
+            }}/>
         </div>
       </div>
-    </details>
+    </Card>
   );
 }
 
@@ -887,40 +831,39 @@ export function AssignmentManager({
         className={css({
           display: "grid",
           gap: "0.4rem",
-          border: "1px solid var(--ink)",
+          borderTop: "1px solid var(--line-soft)",
           bg: "var(--paper)",
           p: "0.6rem",
         })}
       >
-        <input
+        <Field label="Assignment title"><TextInput
+          aria-label="Assignment title"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
-          className={inputClass}
           placeholder="Assignment title"
-        />
-        <textarea
+        /></Field>
+        <Field label="What should the learner make, investigate, or submit over time?"><TextArea
           value={brief}
           onChange={(event) => setBrief(event.target.value)}
-          className={inputClass}
           rows={3}
           placeholder="What should the learner make, investigate, or submit over time?"
-        />
+        /></Field>
         {targetSelect(
           lessons,
           lessonId,
           setLessonId,
           "Attach assignment to lesson",
         )}
-        <button
+        <Button
           type="button"
-          className={buttonClass}
+          variant="line"
           disabled={
             !title.trim() || !brief.trim() || saving === "assignment-add"
           }
           onClick={add}
         >
-          <BookUp size={12} /> Add assignment
-        </button>
+          <KeatingGlyph name="checklist" size={12} /> Add assignment
+        </Button>
       </div>
       {snapshot.course.assignments.length ? (
         <div className={css({ display: "grid", gap: "0.4rem" })}>
@@ -935,9 +878,7 @@ export function AssignmentManager({
           ))}
         </div>
       ) : (
-        <p className={css({ fontSize: "0.7rem", color: "var(--ink-soft)" })}>
-          No long-range assignments yet.
-        </p>
+        <EmptyState heading="No long-range assignments yet." />
       )}
     </div>
   );

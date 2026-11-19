@@ -1,21 +1,14 @@
+import { EmptyState, Loading } from "../../design-system/kit";
 /**
  * Files tab of the sandbox runtime dialog: directory listing, create-item row,
  * and the selected-file editor with baseline diff. State comes from
  * useSandboxFiles.
  */
-import ChevronLeft from "reicon-react/icons/ChevronLeft";
-import FileCode from "reicon-react/icons/CodeFile";
-import FolderOpen from "reicon-react/icons/FolderOpen";
-import GitCompare from "reicon-react/icons/Code2";
-import Home from "reicon-react/icons/Home";
-import Plus from "reicon-react/icons/Plus";
-import Save from "reicon-react/icons/Save";
-import Trash2 from "reicon-react/icons/Trash2";
 import { css, cx } from "../../../styled-system/css";
-import { KeatingIcon } from "../KeatingIcon";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { Select } from "../Select";
 import { fmtBytes } from "./sandbox-helpers";
-import { RuntimeSpinner, styles } from "./sandbox-shared";
+import { styles } from "./sandbox-shared";
 import type { SandboxFiles } from "./useSandboxFiles";
 
 export function SandboxFilesPanel({ files, nodePodActive }: { files: SandboxFiles; nodePodActive: boolean }) {
@@ -44,29 +37,27 @@ export function SandboxFilesPanel({ files, nodePodActive }: { files: SandboxFile
   } = files;
   if (!nodePodActive) {
     return (
-      <div className={styles.textXsMuted}>
-        Start NodePod to use the file system.
-      </div>
+      <EmptyState heading="Start NodePod to use the file system." />
     );
   }
   return (
     <div className={styles.grid3}>
       <div className={styles.flexCenter}>
-        <button type="button" onClick={() => openDir("/workspace")} className={css({ display: "inline-flex", height: "1.75rem", width: "1.75rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", _hover: { background: "var(--accent)" } })} aria-label="Go to workspace" title="Go to /workspace"><KeatingIcon icon={Home} size={13} /></button>
-        <button type="button" onClick={goUp} className={css({ display: "inline-flex", height: "1.75rem", width: "1.75rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", _hover: { background: "var(--accent)" } })} aria-label="Go to parent folder" title="Go up"><KeatingIcon icon={ChevronLeft} size={13} /></button>
+        <button type="button" onClick={() => openDir("/workspace")} className="runtime-icon-button k-bloom" aria-label="Go to workspace" title="Go to /workspace"><KeatingGlyph name="folder" size={13} /></button>
+        <button type="button" onClick={goUp} className="runtime-icon-button k-bloom" aria-label="Go to parent folder" title="Go up"><KeatingGlyph name="chevl" size={13} /></button>
         <span className="runtime-file-path runtime-mono-xs">{vfsPath}</span>
       </div>
 
       {vfsLoading ? (
-        <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}><RuntimeSpinner size={13} /> Loading…</div>
+        <Loading size="inline" label="Loading…" />
       ) : (
         <div className={styles.card}>
           {vfsEntries.length === 0 ? (
-            <div className={css({ padding: "0.75rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Empty directory</div>
+            <EmptyState heading="Empty directory" />
           ) : (
             vfsEntries.map((entry) => (
               <div key={entry.path} data-file-row className={css({ display: "flex", alignItems: "center", gap: "0.5rem", borderBottomWidth: "1px", borderColor: "var(--border)", padding: "0.5rem 0.75rem", fontSize: "0.75rem", _last: { borderBottomWidth: 0 }, _hover: { background: "rgb(from var(--muted) r g b / 0.3)" } })}>
-                <span className={css({ flexShrink: 0 })}>{entry.isDir ? <KeatingIcon icon={FolderOpen} size={14} className={css({ color: "var(--primary)" })} /> : <KeatingIcon icon={FileCode} size={14} className={css({ color: "var(--muted-foreground)" })} />}</span>
+                <span className={css({ flexShrink: 0 })}>{entry.isDir ? <KeatingGlyph name="folder" size={14} className={css({ color: "var(--primary)" })} /> : <KeatingGlyph name="code" size={14} className={css({ color: "var(--muted-foreground)" })} />}</span>
                 <button
                   type="button"
                   className={css({ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "left", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", _hover: { color: "var(--primary)" } })}
@@ -75,7 +66,7 @@ export function SandboxFilesPanel({ files, nodePodActive }: { files: SandboxFile
                   {entry.name}
                 </button>
                 <span className={css({ marginLeft: "auto", flexShrink: 0, fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{entry.isDir ? "dir" : fmtBytes(entry.size)}</span>
-                <button type="button" className={css({ flexShrink: 0, color: "rgb(from var(--destructive) r g b / 0.7)", _hover: { color: "var(--destructive)" } })} aria-label={`Delete ${entry.name}`} onClick={() => deleteSelected(entry.path, entry.isDir)}><KeatingIcon icon={Trash2} size={12} /></button>
+                <button type="button" className="runtime-icon-button k-bloom" aria-label={`Delete ${entry.name}`} onClick={() => deleteSelected(entry.path, entry.isDir)}><KeatingGlyph name="trash" size={12} /></button>
               </div>
             ))
           )}
@@ -96,7 +87,7 @@ export function SandboxFilesPanel({ files, nodePodActive }: { files: SandboxFile
           <option value="dir">Folder</option>
         </Select>
         <button type="button" onClick={createItem} className={css({ display: "inline-flex", height: "2rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", _hover: { background: "var(--accent)" } })}>
-          <KeatingIcon icon={Plus} size={12} /> Add
+          <KeatingGlyph name="plus" size={12} /> Add
         </button>
       </div>
 
@@ -116,18 +107,18 @@ export function SandboxFilesPanel({ files, nodePodActive }: { files: SandboxFile
                     : css({ borderColor: "var(--border)", _hover: { background: "var(--accent)" } })
                 )}
               >
-                <KeatingIcon icon={GitCompare} size={12} /> {showDiff ? "Hide diff" : "Show diff"}
+                <KeatingGlyph name="compare" size={12} /> {showDiff ? "Hide diff" : "Show diff"}
               </button>
-              <button type="button" onClick={saveFile} className={styles.primaryButtonSm}><KeatingIcon icon={Save} size={12} /> Save</button>
+              <button type="button" onClick={saveFile} className={styles.primaryButtonSm}><KeatingGlyph name="save" size={12} /> Save</button>
             </div>
           </div>
 
           {showDiff ? (
             <div className={css({ minHeight: "12rem", width: "100%", overflow: "auto", background: "var(--background)", padding: "0.5rem 0.75rem", fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace)", fontSize: "0.75rem", lineHeight: 1.625 })}>
               {diffLoading ? (
-                <div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--muted-foreground)" })}><RuntimeSpinner size={13} /> Computing diff…</div>
+                <Loading size="inline" label="Computing diff…" />
               ) : diffLines.length === 0 ? (
-                <div className={css({ color: "var(--muted-foreground)" })}>No changes — file matches baseline.</div>
+                <EmptyState heading="No changes — file matches baseline." />
               ) : (
                 <div className={css({ display: "grid", gap: 0 })}>
                   {diffLines.map((line, idx) => (

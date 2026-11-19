@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { z } from "zod";
 import {
   RouterProvider,
+  useRouterState,
   useRouter,
   type ErrorComponentProps,
   createRouter,
@@ -145,8 +146,16 @@ import { blogRedirectBeforeLoad } from "./lib/blog-redirect";
 import { AppStatusScreen, RouteLoadingScreen, RouteNotFoundScreen } from "./components/AppStatusScreen";
 import { BrowserModelDownloadStatus } from "./components/ModelDownloadBar";
 
+const PaperGlassOverlay = lazy(() => import("./design-system/shaders/PaperGlassOverlay"));
+
+function AppShellOverlay() {
+  const path = useRouterState({ select: (state) => state.location.pathname });
+  if (!APP_ONLY && desktopMarketingUrl(path)) return null;
+  return <Suspense fallback={null}><PaperGlassOverlay /></Suspense>;
+}
+
 const rootRoute = createRootRoute({
-  component: () => <Outlet />,
+  component: () => <><Outlet /><AppShellOverlay /></>,
   beforeLoad: ({ location, preload }) => {
     if (!APP_ONLY && typeof window !== "undefined" && window.location.hostname === "keating.help") {
       const destination = hostedNavigationHref(location.href, window.location.hostname, false);

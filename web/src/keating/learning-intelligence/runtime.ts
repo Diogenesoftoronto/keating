@@ -9,7 +9,7 @@ import { LEARNING_EVIDENCE_CHANGED_EVENT, LEARNING_HISTORY_REPLACEMENT_EVENT, QU
 import { learningIntelligenceAccount, learningIntelligenceEnabled, subscribeLearningIntelligence } from "./account";
 import { requestLearningExtraction, type ExtractionRequest, type ExtractionOutcome } from "./provider";
 import { recordLearningDiagnostic, type LearningDiagnosticInput } from "./diagnostics";
-import { learningMessageSource, resolveLearningSource } from "./source-navigation";
+import { learningMessageId, learningMessageSource, resolveLearningSource } from "./source-navigation";
 import { buildLearningForecastBatch, learningHistoryId, readLearningForecasts, type LearningForecastProposal, type LearningHistory } from "./forecasts";
 
 interface SavedEvidence { scope: string; items: GroundedLearningExtraction[] }
@@ -139,15 +139,18 @@ export function createLearningIntelligence(options: LearningIntelligenceOptions)
     if (!current()) return;
     options.reviewMemory([{ id: Array.from(new Uint8Array(bytes), byte => byte.toString(16).padStart(2, "0")).join(""), evidence: item.evidence.quote,
       sessionId: options.sessionId, messageId, message: content, start, end: start + item.evidence.quote.length }], model, current);
-    diagnostic({ kind: "memory", sessionId: options.sessionId, status: "completed", model, evidence: [item.evidence],
+    diagnostic({ kind: "memory", sessionId: options.sessionId, messageId: item.evidence.messageId, status: "completed", model, evidence: [item.evidence],
       reasons: ["Exact candidate submitted to the existing memory review. Retention still requires calibrated admission and memory opt-in."] });
   }
   async function update(): Promise<void> {
     controller?.abort();
     if (!active() || options.ready && !options.ready()) return;
+    const messages = options.messages();
+    const lastMessageIndex = messages.findLastIndex(row => object(row) && ["user", "user-with-attachments", "assistant"].includes(String(row.role)));
+    const messageId = lastMessageIndex < 0 ? undefined : learningMessageId(messages[lastMessageIndex], lastMessageIndex);
     const scope = accountScope();
     if (!scope) {
-      diagnostic({ kind: "extraction", sessionId: options.sessionId, status: "unavailable", reasons: ["Connect an account with extraction permission to run extraction and forecasts."] }); return;
+      diagnostic({ kind: "extraction", sessionId: options.sessionId, messageId, status: "unavailable", reasons: ["Connect an account with extraction permission to run extraction and forecasts."] }); return;
     }
     const epoch = ++generation, abort = new AbortController(); controller = abort;
     const capturedRevision = revision();
@@ -178,7 +181,7 @@ export function createLearningIntelligence(options: LearningIntelligenceOptions)
           if (!result.ok) {
             const status = result.error === "unavailable" || result.error === "unauthorized" ? "unavailable" as const : "failed" as const;
             diagnostic({ kind: "extraction", status,
-              sessionId: options.sessionId, elapsedMs: now() - started, reasons: [result.error] });
+              sessionId: options.sessionId, messageId: source.messageId, elapsedMs: now() - started, reasons: [result.error] });
             report({ status, elapsedMs: now() - started, items: [], reasons: [result.error] });
             if (result.error === "rate-limited") return;
             continue;
@@ -192,7 +195,7 @@ export function createLearningIntelligence(options: LearningIntelligenceOptions)
           const grounded = groundLearningExtractions(source, candidates);
           const items = [...evidence.items.filter(item => item.evidence.messageId !== source.messageId), ...grounded.items];
           persist(scope, items);
-          diagnostic({ kind: "extraction", status: grounded.items.length ? "completed" : "abstained", sessionId: options.sessionId,
+          diagnostic({ kind: "extraction", status: grounded.items.length ? "completed" : "abstained", sessionId: options.sessionId, messageId: source.messageId,
             model: result.model, elapsedMs: now() - started, evidence: grounded.items.map(item => item.evidence),
             reasons: [grounded.items.length ? "Exact source spans verified. Extracted claims remain evidence, not correctness or mastery judgments." : "No sufficiently supported exact passage returned.",
               ...grounded.items.map(item => `Extracted ${item.kind}.`), ...grounded.abstentions.map(item => item.reason)] });
@@ -212,7 +215,7 @@ export function createLearningIntelligence(options: LearningIntelligenceOptions)
         if (!current()) return;
         if (historyId(await options.history()) !== capturedHistory || !current()) {
           forecasts = []; forecastsAt = 0;
-          diagnostic({ kind: "forecast", status: "abstained", sessionId: options.sessionId, reasons: ["Learning history or review dates changed while the forecast was running. The stale proposal was discarded."] }); return;
+          diagnostic({ kind: "forecast", status: "abstained", sessionId: options.sessionId, messageId, reasons: ["Learning history or review dates changed while the forecast was running. The stale proposal was discarded."] }); return;
         }
         if (result?.ok || !batch.request) lastForecast = identity;
         forecasts = readLearningForecasts(batch.targets, result?.ok ? result.answers : undefined); forecastsAt = now(); forecastHistoryId = capturedHistory;
@@ -226,7 +229,7 @@ export function createLearningIntelligence(options: LearningIntelligenceOptions)
         saveLearningOutlook({ at: now(), historyId: capturedHistory, forecasts,
           revisit: priorityQuestions.map(item => ({ question: item.evidence.quote, missedCount: item.challengeCount, attempts: item.observedCount })) }, storage ?? undefined);
         diagnostic({ kind: "forecast", status: result && !result.ok ? "failed" : batch.request ? "completed" : "abstained",
-          sessionId: options.sessionId, model: result?.ok ? result.model : undefined,
+          sessionId: options.sessionId, messageId, model: result?.ok ? result.model : undefined,
           forecast: forecasts.map(row => ({ target: `${row.label} (${row.measure === "self-reported-card-rating" ? "rating 0–3" : "score 0–1"})`,
             status: row.status, baseline: row.baseline ?? undefined, p10: row.p10, median: row.median, p90: row.p90, observedCount: row.observedCount, dueAt: row.dueAt })),
           evidence: questions.slice(0, 3).map(item => item.evidence),
@@ -235,7 +238,7 @@ export function createLearningIntelligence(options: LearningIntelligenceOptions)
             ...(!batch.request ? ["At least eight distinct recorded outcomes are required for a numeric series forecast."] : []),
             ...(result && !result.ok ? [result.error] : [])] });
       } catch {
-        if (current()) diagnostic({ kind: "extraction", status: "failed", sessionId: options.sessionId, reasons: ["Learning evidence could not be checked. The usual teaching flow remains available."] });
+        if (current()) diagnostic({ kind: "extraction", status: "failed", sessionId: options.sessionId, messageId, reasons: ["Learning evidence could not be checked. The usual teaching flow remains available."] });
       } finally { if (controller === abort) controller = null; }
     })();
     return pending;

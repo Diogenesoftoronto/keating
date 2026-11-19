@@ -1,5 +1,6 @@
+import { Button } from "../../design-system/kit";
 import { useState } from "react";
-import { ChevronDown, Code2 } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css } from "../../../styled-system/css";
 import {
 	INTERACTIVE_SHARED_EVENT,
@@ -12,7 +13,7 @@ const styles = {
 	wrap: css({ display: "grid", gap: "0.5rem", minW: 0 }),
 	bar: css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }),
 	title: css({ fontSize: "0.8125rem", fontWeight: "600", minW: 0, overflowWrap: "anywhere" }),
-	button: css({ display: "inline-flex", alignItems: "center", gap: "0.35rem", minH: "2.75rem", px: "0.7rem", border: "1.5px solid var(--line)", borderRadius: "{radii.keating}", fontSize: "0.8125rem", fontWeight: "600", cursor: "pointer", transitionProperty: "background-color, border-color", transitionDuration: "{durations.fast}", transitionTimingFunction: "{easings.standard}", _hover: { borderColor: "var(--ink)" }, _active: { bg: "var(--accent)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } }),
+
 	source: css({ maxH: "22rem", overflow: "auto", border: "1px solid var(--border)", borderRadius: "{radii.keating}", p: "0.75rem", fontSize: "0.75rem", lineHeight: "1.5", whiteSpace: "pre-wrap", overflowWrap: "anywhere", bg: "var(--muted)" }),
 	note: css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }),
 	status: css({ fontSize: "0.8125rem" }),
@@ -33,9 +34,9 @@ export function TutorInteractivePage({ payloadText }: { payloadText: string }) {
 	return <div className={styles.wrap}>
 		<div className={styles.bar}>
 			<span className={styles.title}>{payload.title}</span>
-			<button type="button" className={styles.button} aria-expanded={showSource} aria-controls={sourceId} onClick={() => setShowSource((open) => !open)}>
-				<Code2 size={14} aria-hidden="true" /> {showSource ? "Hide the code" : "View the code"} <ChevronDown className="k-chevron" size={14} aria-hidden="true" />
-			</button>
+			<Button type="button" variant="ghost" aria-expanded={showSource} aria-controls={sourceId} onClick={() => setShowSource((open) => !open)}>
+				<KeatingGlyph name="code" size={14} /> {showSource ? "Hide the code" : "View the code"} <KeatingGlyph name="chev" className="k-chevron" size={14} />
+			</Button>
 		</div>
 		<InteractivePage
 			pageId={payload.id}

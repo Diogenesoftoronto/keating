@@ -4,10 +4,6 @@
 .flashcard-timer-setting .keating-select { min-width: 0; min-height: 2.75rem; border: 0; background: transparent; border-radius: .375rem; padding: .375rem .25rem; font: inherit; font-weight: 600; color: var(--foreground); cursor: pointer; }
 .flashcard-timer-setting option { color: var(--foreground); background: var(--background); }
 .flashcard-timer-countdown { display: flex; align-items: center; gap: .5rem; min-width: 0; }
-.flashcard-timer-track { display: block; width: 3rem; height: 3px; overflow: hidden; background: var(--muted); border-radius: 2px; }
-.flashcard-timer-track > span { display: block; width: 100%; height: 100%; background: var(--primary); transform-origin: left center; transition: transform 110ms linear; }
-.flashcard-timer-countdown[data-paused="true"] .flashcard-timer-track > span { background: var(--muted-foreground); }
-.flashcard-timer-seconds { min-width: 2ch; text-align: right; font-variant-numeric: tabular-nums; }
 .flashcard-timer-countdown button { display: inline-flex; align-items: center; justify-content: center; gap: .3rem; min-height: 2.75rem; border: 0; border-radius: .375rem; padding: .375rem .25rem; font: inherit; font-weight: 600; color: var(--foreground); cursor: pointer; }
 .flashcard-timer :is(.keating-select,button):hover { background: var(--muted); }
 .flashcard-timer :is(.keating-select,button):disabled { cursor: default; opacity: .6; }
@@ -24,9 +20,10 @@
 	.shared-activity .flashcard-timer-countdown button { width: 44px; min-width: 44px; padding: 0; }
 	.recall-game .flashcard-timer-countdown button > span,
 	.shared-activity .flashcard-timer-countdown button > span { display: none; }
-	.flashcard-timer-track { width: 2rem; }
 	.flashcard-timer-countdown { gap: .375rem; }
 }
-@media (prefers-reduced-motion: reduce) { .flashcard-timer-track > span { transition: none; } }
 
 .flashcard-timer .flashcard-timer-setting .keating-select { width: auto; min-width: 4.5rem; flex: 0 0 auto; }
+
+.flashcard-timer-clock .kc-meter {width:2rem}
+.flashcard-timer-clock{font:.54rem var(--font-mono)}

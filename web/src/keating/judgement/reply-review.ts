@@ -6,7 +6,7 @@ import { beginDiagnosticReply, endDiagnosticReply, getJudgementDiagnostics, onJu
 import { createJudgementOperationCaller } from "./operation";
 import { createWebJudgementRuntime } from "./runtime";
 
-type Message = { role?: unknown; content?: unknown; stopReason?: unknown };
+type Message = { role?: unknown; content?: unknown; stopReason?: unknown; timestamp?: unknown };
 function plainText(message: Message): string {
   if (typeof message.content === "string") return message.content;
   if (!Array.isArray(message.content)) return "";
@@ -41,7 +41,7 @@ export function createReplyJudgementObserver(sessionId: string, makeCaller?: (re
       replyId = undefined;
       const last = [...messages.slice(messageStart)].reverse().find(message => message.role === "assistant");
       const cancelled = last?.stopReason === "aborted" || last?.stopReason === "error";
-      endDiagnosticReply(id, cancelled);
+      endDiagnosticReply(id, cancelled, typeof last?.timestamp === "number" ? last.timestamp : undefined);
       if (disposed || !id || cancelled || !getJudgementDiagnostics().enabled || !getJudgementDiagnostics().reviewReplies) return;
       let assistant = -1;
       for (let index = messages.length - 1; index >= 0; index--) if (messages[index]?.role === "assistant") { assistant = index; break; }

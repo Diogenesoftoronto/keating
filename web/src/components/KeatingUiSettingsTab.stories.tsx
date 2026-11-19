@@ -33,6 +33,13 @@ export const ResponseComparisonsEnabled: Story = {
 	},
 };
 
+export const VisualEffectsOff: Story = {
+	play: async ({ canvasElement }) => {
+		const toggle = within(canvasElement).getByRole("checkbox", { name: "Visual effects" }) as HTMLInputElement;
+		if (toggle.checked) await fireEvent.click(toggle);
+	},
+};
+
 export const Mobile: Story = {
 	parameters: { viewport: { defaultViewport: "mobile1" } },
 	globals: { viewport: { value: "mobile1", isRotated: false } },

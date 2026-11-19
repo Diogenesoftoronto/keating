@@ -39,10 +39,10 @@ function buttons(html: string): Array<Row & { label: string }> {
     return {
       label: textOf(inner),
       text: textOf(inner),
-      done: /<svg/.test(inner.split("</span>")[0]!),
+      done: /aria-label="Completed"/.test(inner),
       // Assistive technology learns which lesson is open from aria-current.
       active: /\saria-current="page"/.test(m[1]!),
-      badge: /title="(\d+) comments"/.exec(inner)?.[1],
+      badge: /aria-label="(\d+) unread comments"/.exec(inner)?.[1],
     };
   });
 }
@@ -60,11 +60,11 @@ const moduleTitles = (html: string) =>
 describe("CourseOutline", () => {
   test("lists modules and lessons in course order with numbers", () => {
     const html = render("teacherWithProgress");
-    expect(textOf(html)).toContain("Course outline");
-    expect(moduleTitles(html)).toEqual(["Counterfactuals", "Empty module"]);
+    expect(textOf(html)).toContain("Course outline 1/2");
+    expect(moduleTitles(html)).toEqual(["1 · Counterfactuals", "2 · Empty module"]);
     const rows = lessonRows(html);
     expect(rows.map((r) => r.text.replace(/\s*\d+$/, ""))).toEqual([
-      "Correlation",
+      "1 Correlation",
       "2 Intervention",
     ]);
   });
@@ -72,7 +72,7 @@ describe("CourseOutline", () => {
   test("marks completed lessons with a check and leaves others numbered", () => {
     const [first, second] = lessonRows(render("teacherWithProgress"));
     expect(first!.done).toBe(true);
-    expect(first!.text).not.toMatch(/^1\b/);
+    expect(first!.text).toMatch(/^1\b/);
     expect(second!.done).toBe(false);
     expect(second!.text).toMatch(/^2 Intervention/);
     const none = lessonRows(render("learnerBuildView"));
@@ -85,7 +85,7 @@ describe("CourseOutline", () => {
     expect(lessonRows(render("learnerBuildView")).map((r) => r.active)).toEqual([true, false]);
   });
 
-  test("shows a comment count only for lessons that have threads", () => {
+  test("shows a count only for lessons with unread comments", () => {
     const rows = lessonRows(render("teacherWithProgress"));
     expect(rows.map((r) => r.badge)).toEqual(["3", undefined]);
     expect(lessonRows(render("learnerBuildView")).map((r) => r.badge)).toEqual([undefined, undefined]);
@@ -106,29 +106,19 @@ describe("CourseOutline", () => {
   test("shows the course shelf with counts", () => {
     const html = render("teacherWithProgress");
     expect(textOf(html)).toContain("Course shelf");
-    expect(
-      ["Documents", "Assignments", "Artifacts", "Cards", "Course thread"].map(
-        (l) => shelfRow(html, l)?.text,
-      ),
-    ).toEqual([
-      "Documents 0",
-      "Assignments 0",
-      "Artifacts 0",
-      "Cards 0",
-      "Course thread 2",
-    ]);
-  });
-
-  test("only editors see the edit link", () => {
-    expect(buttons(render("teacherWithProgress")).map((b) => b.label)).toContain("edit");
-    expect(buttons(render("learnerBuildView")).map((b) => b.label)).not.toContain("edit");
-  });
-
-  test("shelf rows are actionable for editors, read-only for learners", () => {
-    const teacher = render("teacherWithProgress");
-    for (const l of ["Documents", "Assignments", "Artifacts", "Cards", "Course thread"]) {
-      expect(shelfRow(teacher, l)).toBeDefined();
+    for (const name of ["Documents", "Assignments", "Artifacts", "Cards"]) {
+      expect(textOf(html)).toContain(name + " 0");
+      expect(shelfRow(html, name)).toBeUndefined();
     }
+    expect(shelfRow(html, "Course thread")?.text).toBe("Course thread 2");
+  });
+
+  test("keeps authoring out of the Read outline", () => {
+    expect(buttons(render("teacherWithProgress")).map(b => b.label)).not.toContain("edit");
+    expect(buttons(render("learnerBuildView")).map(b => b.label)).not.toContain("edit");
+  });
+
+  test("learners have a static shelf and a course thread", () => {
     const learner = render("learnerBuildView");
     for (const l of ["Documents", "Assignments", "Artifacts", "Cards"]) {
       expect(shelfRow(learner, l)).toBeUndefined();

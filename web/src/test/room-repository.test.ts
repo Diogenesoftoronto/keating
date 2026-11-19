@@ -9,6 +9,41 @@ import {
   revokeRoomInvite, withRoomRepositoryStorage,
 } from "../../server/utils/room-repository";
 
+import type { Peer } from "crossws";
+import { connectRoomPeer, disconnectRoomPeer } from "../../server/utils/room-realtime";
+
+test("joined list items count distinct present members and keep live details out of join previews", async () => {
+  const store = newStore();
+  await seedCourse(store);
+  await withRoomRepositoryStorage(store, async () => {
+    const id = (await createRoom("host", "Sam", { title: "Study" }, linkedContext)).room.id;
+    const [empty] = await listRoomsForAccount("host");
+    expect(empty).toMatchObject({ keating: "off" });
+    for (const key of ["present", "presentCount", "viewerIsFacilitator"]) expect(empty).not.toHaveProperty(key);
+    const invite = await createRoomInvite(id, "host", "learner", 5, 10);
+    const ids = ["host", "one", "two", "three", "four", "five"];
+    for (const member of ids.slice(1)) await joinRoomWithInvite(invite.token, member, member);
+    await change(id, "host", { type: "facilitator.claim", facilitatorId: "browser_sam", modelLabel: "m", takeOver: false });
+    const peers = [...ids, "five"].map((accountId, index) => {
+      const peer = { id: String(index), send() {} } as unknown as Peer;
+      connectRoomPeer(id, accountId, peer);
+      return peer;
+    });
+    try {
+      const [item] = await listRoomsForAccount("five");
+      expect(item).toMatchObject({ presentCount: 6, keating: "running", facilitatorName: "Sam", viewerIsFacilitator: false });
+      expect(item?.present).toHaveLength(5);
+      expect(item?.present?.[0]).toEqual({ accountId: "five", displayName: "five", role: "learner" });
+      expect((await listRoomsForCourse("course_test", "host"))[0]?.viewerIsFacilitator).toBe(true);
+      const [preview] = await listRoomsForCourse("course_test", "other");
+      expect(preview?.joined).toBe(false);
+      for (const key of ["present", "presentCount", "keating", "viewerIsFacilitator"]) expect(preview).not.toHaveProperty(key);
+    } finally {
+      for (const peer of peers) disconnectRoomPeer(id, peer);
+    }
+  });
+});
+
 const T0 = Date.parse("2026-10-24T12:00:00.000Z");
 const newStore = () => createStorage({ driver: memoryDriver() });
 let nextId = 0;

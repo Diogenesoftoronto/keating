@@ -1,0 +1,63 @@
+.sd-table { border-block: 1px solid var(--line); }
+.sd-table table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.sd-what { width: 23%; }
+.sd-sent { width: 39%; }
+.sd-table :is(th, td) { padding: .45rem .55rem; vertical-align: middle; text-align: start; }
+.sd-table th { font: .49rem var(--font-mono); color: var(--ink-soft); }
+.sd-table tbody tr { border-top: 1px solid var(--line-soft); }
+.sd-table td:first-child { padding-inline: 0; }
+.sd-table .st-row { display: block; padding: 0; border: 0; background: transparent; }
+.sd-table .st-row > div:first-child { display: grid; grid-template-columns: 23fr 39fr; align-items: center; }
+.sd-table .st-row strong, .sd-table .st-scope, .sd-table .st-row p { padding-inline: .55rem; }
+.sd-table .st-row strong { grid-column: 1; grid-row: 1; align-self: end; }
+.sd-table .st-scope { grid-column: 1; grid-row: 2; align-self: start; margin: 0; }
+.sd-table .st-row p { grid-column: 2; grid-row: 1 / span 2; }
+.sd-destination, .sd-choice { min-width: 0; overflow-wrap: anywhere; font: .53rem/1.45 var(--font-mono); }
+.sd-destination > span { display: none; }
+.sd-choice { display: grid; justify-items: start; gap: .25rem; }
+.sd-choice > span[id]:empty { display: block; height: 0; }
+.sd-choice button, .sd-choice .k-select-field { max-width: 100%; }
+.sd-sharing-note, .sd-footnote { padding: .4rem .6rem; font-size: .55rem; line-height: 1.5; color: var(--ink-soft); }
+.sd-footnote a { text-decoration: underline; }
+.sd-sharing-note { border-top: 1px solid var(--line-soft); }
+.sd-dev .st-row { border: 0; border-bottom: 1px solid var(--line-soft); background: transparent; }
+.sd-dependents { margin-inline-start: .85rem; }
+.sd-fold { border-top: 1px solid var(--line); }
+.sd-fold > summary { padding: .6rem .25rem; cursor: pointer; font: 600 .625rem/1.45 var(--font-ui); }
+.sd-fold > summary small { display: block; margin-inline-start: .65rem; font: .55rem/1.5 var(--font-ui); color: var(--ink-soft); }
+.sd-fold > section { padding: .5rem; min-width: 0; overflow-wrap: anywhere; }
+.sd-health ul { list-style: none; padding: 0; }
+.sd-health h4 { font-weight: 600; }
+.sd-health { font: .625rem/1.5 var(--font-ui); display: grid; gap: .65rem; }
+.sd-health-check { display: grid; grid-template-columns: auto minmax(4rem,1fr) minmax(5rem,1.4fr); align-items: center; gap: .4rem; padding: .46rem 0; border-bottom: 1px solid var(--line-soft); }
+.sd-health-check small { font: .52rem/1.45 var(--font-mono); text-align: end; }
+.sd-health-check button { grid-column: 2 / -1; justify-self: end; }
+.sd-health-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; }
+@media (max-width: 700px) {
+ .sd-table :is(table, tbody, tr, td) { display: block; }
+ .sd-table :is(colgroup, thead) { position: absolute; clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; }
+ .sd-table tbody tr { padding: .55rem .65rem; }
+ .sd-table td, .sd-table td:first-child { padding: .1rem 0; }
+ .sd-table .st-row > div:first-child { display: block; }
+ .sd-table .st-row strong, .sd-table .st-scope, .sd-table .st-row p { padding: 0; }
+ .sd-table .st-row p { margin-top: .2rem; }
+ .sd-table .st-scope { margin-inline-start: .25rem; }
+ .sd-destination > span { display: inline; color: var(--ink-soft); }
+ .sd-fold > summary { min-height: 44px; }
+}
+
+.sd-inspector-block { display: grid; gap: .45rem; padding: .5rem 0; border-top: 1px solid var(--line-soft); }
+.sd-muted { font-size: .56rem; line-height: 1.5; color: var(--ink-soft); overflow-wrap: anywhere; }
+.sd-extraction-account { font: .52rem/1.45 var(--font-ui); }
+.sd-extraction-account summary { cursor: pointer; }
+.sd-extraction-account .sd-footnote { padding: 0; }
+.sd-extraction-account button, .sd-choice .k-button { white-space: normal; }
+
+.sd-inspector-title { font: 600 .67rem/1.45 var(--font-ui); color: var(--ink); }
+
+.sd-choice .k-select-field { display: block; width: 100%; }
+.sd-choice .k-select-field label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.sd-choice .keating-select { width: 100%; background: transparent; color: var(--ink); font: .57rem/1.4 var(--font-ui); border: 0; }
+.sd-choice .keating-select__value { white-space: normal; }
+.sd-choice .k-button { padding-inline: 0; text-align: start; justify-content: start; }
+@media (pointer: coarse) { .sd-choice summary { min-height: 44px; display: list-item; align-content: center; } }

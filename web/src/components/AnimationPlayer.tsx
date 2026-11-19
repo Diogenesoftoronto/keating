@@ -1,5 +1,9 @@
+import { Stat } from "../design-system/charts";
+import { Button, EmptyState, IconButton } from "../design-system/kit";
+import { PlaybackPosition } from "./PlaybackPosition";
+import { useMotionAllowed } from "../design-system/motion";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Pause, Play, RotateCcw } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css, cx } from "../../styled-system/css";
 import { SceneRenderer, parseStoryboard, type StoryboardScene } from "./SceneRenderer";
 import { HyperframesPlayer } from "./HyperframesPlayer";
@@ -55,7 +59,9 @@ function AnimatedStoryboardStage({
 	totalDuration: number;
 }) {
 	const [activeIdx, setActiveIdx] = useState(0);
-	const [playing, setPlaying] = useState(true);
+	const motion = useMotionAllowed();
+	const [playing, setPlaying] = useState(motion);
+	useEffect(() => { if (!motion) setPlaying(false); }, [motion]);
 	const [elapsed, setElapsed] = useState(0);
 	const active = scenes[activeIdx];
 	const duration = active ? sceneDuration(active) : 1;
@@ -96,8 +102,8 @@ function AnimatedStoryboardStage({
 
 	return (
 		<div className={css({ display: "grid", gap: "0.75rem" })}>
-			<div className={css({ position: "relative", aspectRatio: "16 / 9", overflow: "hidden", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "#0a0a0a", color: "white" })}>
-				<div className={css({ position: "absolute", inset: 0, background: "radial-gradient(circle at 20% 20%, rgba(34,197,94,0.24), transparent 32%), radial-gradient(circle at 80% 30%, rgba(245,158,11,0.28), transparent 30%), linear-gradient(135deg, #050505, #111827 52%, #1f1305)" })} />
+			<div className={css({ position: "relative", aspectRatio: "16 / 9", overflow: "hidden", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "var(--paper-deep)", color: "var(--ink)" })}>
+				<div aria-hidden="true" className="specialist-stage-grid k-grid" />
 				<div
 					key={active.number}
 					className={css({
@@ -112,27 +118,27 @@ function AnimatedStoryboardStage({
 				>
 					<div className={css({ position: "relative", display: "flex", minWidth: 0, flexDirection: "column", justifyContent: "space-between" })}>
 						<div>
-							<div className={cx("font-terminal", css({ marginBottom: "0.75rem", display: "inline-flex", borderRadius: "0.25rem", border: "1px solid rgb(251 191 36 / 0.5)", background: "rgb(0 0 0 / 0.3)", padding: "0.25rem 0.5rem", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.025em", color: "#fde68a" }))}>
+							<div className={cx("font-terminal", css({ marginBottom: "0.75rem", display: "inline-flex", borderRadius: "0.25rem", border: "1px solid var(--line)", background: "var(--card)", padding: "0.25rem 0.5rem", fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.025em", color: "var(--ink)" }))}>
 								Scene {active.number} / {scenes.length}
 							</div>
-							<h3 className={css({ maxWidth: "18rem", fontSize: "1.25rem", fontWeight: 600, lineHeight: 1.25, color: "white", "@media (min-width: 640px)": { fontSize: "1.875rem" } })}>
+							<h3 className={css({ maxWidth: "18rem", fontSize: "1.25rem", fontWeight: 600, lineHeight: 1.25, color: "var(--ink)", "@media (min-width: 640px)": { fontSize: "1.875rem" } })}>
 								{active.title}
 							</h3>
 						</div>
-						<p className={css({ maxWidth: "28rem", fontSize: "0.75rem", lineHeight: "1.25rem", color: "#e5e5e5", "@media (min-width: 640px)": { fontSize: "0.875rem" } })}>
+						<p className={css({ maxWidth: "28rem", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--ink-soft)", "@media (min-width: 640px)": { fontSize: "0.875rem" } })}>
 							{active.visual}
 						</p>
 					</div>
 					<div className={css({ position: "relative", minHeight: 0 })}>
-						<div className={css({ position: "absolute", left: "50%", top: "50%", height: "10rem", width: "10rem", transform: "translate(-50%, -50%)", borderRadius: "9999px", border: "1px solid rgb(110 231 183 / 0.5)", background: "rgb(110 231 183 / 0.1)", "@media (min-width: 640px)": { height: "14rem", width: "14rem" }, "@media (prefers-reduced-motion: no-preference)": { animation: "pulse 2s cubic-bezier(0.4,0,0.6,1) infinite" } })} />
+						<div className={css({ position: "absolute", left: "50%", top: "50%", height: "10rem", width: "10rem", transform: "translate(-50%, -50%)", borderRadius: "9999px", border: "1px solid var(--line)", background: "var(--card)", "@media (min-width: 640px)": { height: "14rem", width: "14rem" }, "@media (prefers-reduced-motion: no-preference)": { animation: "pulse 2s cubic-bezier(0.4,0,0.6,1) infinite" } })} />
 						<div
-							className={css({ position: "absolute", left: "50%", top: "50%", height: "6rem", width: "6rem", borderRadius: "9999px", border: "2px solid rgb(252 211 77 / 0.8)", background: "rgb(0 0 0 / 0.35)", boxShadow: "0 0 36px rgba(245,158,11,0.35)", transitionProperty: "transform", transitionDuration: "300ms" })}
+							className={css({ position: "absolute", left: "50%", top: "50%", height: "6rem", width: "6rem", borderRadius: "9999px", border: "2px solid var(--series-3)", background: "var(--card)", transitionProperty: "transform", transitionDuration: "300ms" })}
 							style={{ transform: `translate(-50%, -50%) rotate(${progress * 180}deg) scale(${1 + progress * 0.08})` }}
 						>
-							<div className={css({ position: "absolute", left: "50%", top: 0, height: "50%", width: "0.125rem", transform: "translateX(-50%)", background: "#fcd34d" })} />
-							<div className={css({ position: "absolute", bottom: 0, left: "50%", height: "50%", width: "0.125rem", transform: "translateX(-50%)", background: "#6ee7b7" })} />
-							<div className={css({ position: "absolute", left: 0, top: "50%", height: "0.125rem", width: "50%", transform: "translateY(-50%)", background: "#7dd3fc" })} />
-							<div className={css({ position: "absolute", right: 0, top: "50%", height: "0.125rem", width: "50%", transform: "translateY(-50%)", background: "#fda4af" })} />
+							<div className={css({ position: "absolute", left: "50%", top: 0, height: "50%", width: "0.125rem", transform: "translateX(-50%)", background: "var(--series-3)" })} />
+							<div className={css({ position: "absolute", bottom: 0, left: "50%", height: "50%", width: "0.125rem", transform: "translateX(-50%)", background: "var(--series-1)" })} />
+							<div className={css({ position: "absolute", left: 0, top: "50%", height: "0.125rem", width: "50%", transform: "translateY(-50%)", background: "var(--series-2)" })} />
+							<div className={css({ position: "absolute", right: 0, top: "50%", height: "0.125rem", width: "50%", transform: "translateY(-50%)", background: "var(--ink-soft)" })} />
 						</div>
 						{tokens.map((token, index) => {
 							const angle = (index / Math.max(1, tokens.length)) * Math.PI * 2 + progress * Math.PI * 0.65;
@@ -142,7 +148,7 @@ function AnimatedStoryboardStage({
 							return (
 								<div
 									key={`${active.number}-${token}-${index}`}
-									className={css({ position: "absolute", maxWidth: "7rem", borderRadius: "0.25rem", border: "1px solid rgb(255 255 255 / 0.15)", background: "rgb(0 0 0 / 0.45)", padding: "0.25rem 0.5rem", textAlign: "center", fontSize: "10px", fontWeight: 500, color: "white", boxShadow: "var(--shadow-sm, 0 1px 2px rgb(0 0 0 / 0.05))", backdropFilter: "blur(8px)" })}
+									className={css({ position: "absolute", maxWidth: "7rem", borderRadius: "0.25rem", border: "1px solid var(--line)", background: "var(--card)", padding: "0.25rem 0.5rem", textAlign: "center", fontSize: "10px", fontWeight: 500, color: "var(--ink)", boxShadow: "var(--shadow-sm, 0 1px 2px rgb(0 0 0 / 0.05))", backdropFilter: "blur(8px)" })}
 									style={{ left: `${x}%`, top: `${y}%`, transform: "translate(-50%, -50%)" }}
 								>
 									{token}
@@ -151,10 +157,10 @@ function AnimatedStoryboardStage({
 						})}
 					</div>
 				</div>
-				<div className={css({ position: "absolute", bottom: 0, left: 0, right: 0, height: "0.25rem", background: "rgb(255 255 255 / 0.15)" })}>
-					<div className={css({ height: "100%", background: "#fcd34d", transitionProperty: "width" })} style={{ width: `${progress * 100}%` }} />
-				</div>
+
 			</div>
+
+			<PlaybackPosition label="Scene position" value={elapsed} max={duration} onSeek={value=>{setElapsed(value);setPlaying(false);}} />
 
 			<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" })}>
 				<div className={css({ minWidth: 0 })}>
@@ -164,19 +170,13 @@ function AnimatedStoryboardStage({
 					</div>
 				</div>
 				<div className={css({ display: "flex", alignItems: "center", gap: "0.25rem" })}>
-					<button type="button" onClick={() => goTo(activeIdx - 1)} className={css({ display: "inline-flex", height: "2rem", width: "2rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "1px solid var(--border)", _hover: { background: "var(--accent)" } })} aria-label="Previous scene">
-						<ChevronLeft size={15} />
-					</button>
-					<button type="button" onClick={() => setPlaying((value) => !value)} className={css({ display: "inline-flex", height: "2rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid var(--border)", paddingInline: "0.5rem", fontSize: "0.75rem", fontWeight: 500, _hover: { background: "var(--accent)" } })}>
-						{playing ? <Pause size={14} /> : <Play size={14} />}
+					<IconButton onClick={() => goTo(activeIdx - 1)} label="Previous scene" glyph="chevl" />
+					<Button variant="ghost" onClick={() => setPlaying(value => !value)}>
+						{playing ? <KeatingGlyph name="pause" size={14} /> : <KeatingGlyph name="play" size={14} />}
 						{playing ? "Pause" : "Play"}
-					</button>
-					<button type="button" onClick={() => { setElapsed(0); setPlaying(true); }} className={css({ display: "inline-flex", height: "2rem", width: "2rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "1px solid var(--border)", _hover: { background: "var(--accent)" } })} aria-label="Restart scene">
-						<RotateCcw size={14} />
-					</button>
-					<button type="button" onClick={() => goTo(activeIdx + 1)} className={css({ display: "inline-flex", height: "2rem", width: "2rem", alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", border: "1px solid var(--border)", _hover: { background: "var(--accent)" } })} aria-label="Next scene">
-						<ChevronRight size={15} />
-					</button>
+					</Button>
+					<IconButton onClick={() => { setElapsed(0); setPlaying(true); }} label="Restart scene" glyph="refresh" />
+					<IconButton onClick={() => goTo(activeIdx + 1)} label="Next scene" glyph="chevr" />
 				</div>
 			</div>
 
@@ -186,21 +186,8 @@ function AnimatedStoryboardStage({
 						key={scene.number}
 						type="button"
 						onClick={() => goTo(index)}
-						className={css({
-							minWidth: 0,
-							borderRadius: "0.375rem",
-							border: "1px solid",
-							borderColor: index === activeIdx ? "var(--primary)" : "var(--border)",
-							background: index === activeIdx ? "color-mix(in srgb, var(--primary) 10%, transparent)" : "var(--background)",
-							padding: "0.375rem 0.5rem",
-							textAlign: "left",
-							fontSize: "11px",
-							color: index === activeIdx ? "var(--primary)" : undefined,
-							transitionProperty: "color, background-color, border-color",
-							_hover: index === activeIdx ? undefined : { background: "var(--accent)" },
-						})}
-					>
-						<span className={css({ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{scene.title}</span>
+						className="specialist-scene-choice" aria-current={index === activeIdx ? "step" : undefined}>
+						<span>{scene.title}</span>
 					</button>
 				))}
 			</div>
@@ -232,16 +219,17 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 		// One surface: no card fill, no tinted header/footer bands. The topic is the
 		// heading, and the renderer name is dropped — it repeated the footer and
 		// means nothing to a learner.
-		<div className={cx("animation-player", css({ display: "grid", gap: "1rem" }), className)}>
+		<div className={cx("specialist-frame animation-player", css({ display: "grid", gap: "1rem" }), className)}>
 			<div className={css({ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "1rem" })}>
 				<div className={css({ minWidth: 0 })}>
-					<h3 className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 600 })}>
+					<h3 className="specialist-scene-heading">
 						{manifestData?.topic ?? "Animation"}
 					</h3>
 					{manifestData && (
-						<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-							{manifestData.duration ?? 0}s · {Array.isArray(manifestData.scenes) ? manifestData.scenes.length : 0} scenes
-						</p>
+						<div className="specialist-stats">
+							{Number.isFinite(manifestData.duration) && <Stat label="Duration" value={`${manifestData.duration}s`} />}
+							<Stat label="Scenes" value={Array.isArray(manifestData.scenes) ? manifestData.scenes.length : 0} />
+						</div>
 					)}
 				</div>
 				<button
@@ -257,7 +245,7 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 				{canRenderHyperframes && scene ? (
 					<HyperframesPlayer
 						title={`${manifestData?.topic ?? "Keating"} Hyperframes composition`}
-						html={scene}
+						html={scene} duration={manifestData?.duration}
 					/>
 				) : storyboardData?.scenes.length ? (
 					<div className={css({ display: "grid", gap: "0.75rem" })}>
@@ -266,7 +254,7 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 							scenes={storyboardData.scenes}
 							totalDuration={storyboardData.totalDuration}
 						/>
-						<details className={css({ borderRadius: "0.375rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--background) 70%, transparent)", padding: "0.75rem" })}>
+						<details className="specialist-notes">
 							<summary className={css({ cursor: "pointer", fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" })}>
 								Storyboard notes
 							</summary>
@@ -281,7 +269,7 @@ export function AnimationPlayer({ scene, manifest, storyboard, renderer: storedR
 						</pre>
 					</div>
 				) : (
-					<div className={css({ paddingBlock: "2rem", textAlign: "center", color: "var(--muted-foreground)" })}>No animation loaded</div>
+					<EmptyState heading="No animation loaded" glyph="play" />
 				)}
 
 				{showSource && storyboard && (

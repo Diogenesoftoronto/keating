@@ -1,4 +1,8 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { KeatingGlyph, type GlyphName } from "../../design-system/glyphs";
+import { Button, Loading, EmptyState, Switch } from "../../design-system/kit";
+import { ConfirmAction } from "./data/ConfirmAction";
+import { DeveloperTools } from "./data/DeveloperTools";
+import { useState, useSyncExternalStore } from "react";
 import { css, cx } from "../../../styled-system/css";
 import { downloadTextFile } from "../../lib/browser-download";
 import {
@@ -15,43 +19,21 @@ import {
 	subscribeSessionDebug,
 	type SessionDebugEvent,
 } from "../../lib/session-debug";
-import { loadKeatingUiSettings, saveKeatingUiSettings, subscribeKeatingUiSettings } from "../../keating/ui-settings";
-import { Toggle } from "../Toggle";
+
 import { JudgementDiagnostics } from "../JudgementDiagnostics";
 import { ModelRequestLog } from "./ModelRequestLog";
 import { OpenUiDiagnosticsPanel } from "./OpenUiDiagnosticsPanel";
 import { CopyDiagnosticButton } from "./CopyDiagnosticButton";
 import { explainDiagnostic, buildHealthChecks, buildHealthText, groupProblems, overallStatus, type CheckStatus } from "../../lib/diagnostics-insights";
 import { diagnosticReportMailto, readDiagnosticRuntimeSnapshot, sendDiagnosticReport } from "../../lib/diagnostics";
-import { PROVIDER_CREDENTIALS_CHANGED_EVENT } from "../../keating/model-prefs";
 import { useProviderConnectionState } from "./ProviderConnectPanel";
 import { getProviders } from "@earendil-works/pi-ai/compat";
 
-const stackClass = css({ display: "flex", flexDirection: "column", gap: "1.5rem" });
 const sectionClass = css({ display: "flex", flexDirection: "column", gap: "0.75rem" });
-const headingClass = css({ fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" });
-const mutedClass = css({ fontSize: "0.75rem", color: "var(--muted-foreground)" });
-const cardClass = css({
-	display: "flex",
-	flexDirection: "column",
-	gap: "0.75rem",
-	borderRadius: "0.5rem",
-	border: "1px solid var(--border)",
-	padding: "1rem",
-});
-const buttonClass = css({
-	display: "inline-flex",
-	height: "2.25rem",
-	alignItems: "center",
-	justifyContent: "center",
-	borderRadius: "0.375rem",
-	border: "1px solid var(--border)",
-	paddingInline: "0.75rem",
-	fontSize: "0.75rem",
-	fontWeight: 500,
-	_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
-	_disabled: { cursor: "not-allowed", opacity: 0.5 },
-});
+const headingClass = "sd-inspector-title";
+const mutedClass = "sd-muted";
+const cardClass = "sd-inspector-block";
+
 const preClass = css({
 	maxHeight: "24rem",
 	overflow: "auto",
@@ -107,7 +89,7 @@ function SessionInspector() {
 					</p>
 				</div>
 				<div>
-					<Toggle aria-label="Sensitive session debug mode" checked={snapshot.enabled} onChange={setSessionDebugEnabled} />
+					<Switch label="Sensitive session debug mode" checked={snapshot.enabled} onChange={setSessionDebugEnabled} />
 				</div>
 			</div>
 
@@ -165,7 +147,7 @@ function SessionInspector() {
 									<pre className={preClass}>{displayJson(context.tools)}</pre>
 								</details>
 							</>
-						) : <p className={mutedClass}>No provider-bound context yet. Send or retry a message while debug mode is on.</p>}
+						) : <EmptyState heading="No provider-bound context yet">Send or retry a message while debug mode is on.</EmptyState>}
 					</div>
 
 					<div className={cardClass}>
@@ -174,7 +156,7 @@ function SessionInspector() {
               <CopyDiagnosticButton label="Copy failed tools" disabled={failedTools === 0} text={() => displayJson({ sessionId: snapshot.sessionId, transport: snapshot.transport, failures: snapshot.toolRuns.filter(run => run.status === "failed") })} />
             </div>
             <p className={mutedClass}>Copied tool details include captured arguments and results.</p>
-						{snapshot.toolRuns.length === 0 ? <p className={mutedClass}>No tool calls captured.</p> : (
+						{snapshot.toolRuns.length === 0 ? <EmptyState heading="No tool calls captured."/> : (
 							<ol className={css({ display: "flex", maxHeight: "28rem", flexDirection: "column", gap: "0.5rem", overflowY: "auto" })}>
 								{[...snapshot.toolRuns].reverse().map((run) => (
 									<li key={run.callId} className={css({ borderTop: "1px solid var(--border)", paddingTop: "0.5rem" })}>
@@ -193,7 +175,7 @@ function SessionInspector() {
 
 					<div className={cardClass}>
 						<h4 className={headingClass}>Hook and runtime timeline</h4>
-						{snapshot.events.length === 0 ? <p className={mutedClass}>No debug events captured.</p> : (
+						{snapshot.events.length === 0 ? <EmptyState heading="No debug events captured."/> : (
 							<ol className={css({ display: "flex", maxHeight: "24rem", flexDirection: "column", gap: "0.4rem", overflowY: "auto" })}>
 								{[...snapshot.events].reverse().map((entry) => (
 									<li key={entry.id} className={css({ fontSize: "0.7rem", color: "var(--foreground)" })}>
@@ -206,8 +188,8 @@ function SessionInspector() {
 							</ol>
 						)}
 						<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
-							<button type="button" className={buttonClass} disabled={!context && snapshot.events.length === 0} onClick={downloadRaw}>Download raw session report</button>
-							<button type="button" className={buttonClass} onClick={() => { clearSessionDebug(); setStatus("Sensitive session data cleared from memory."); }}>Clear session capture</button>
+							<Button variant="ghost" disabled={!context && snapshot.events.length === 0} onClick={downloadRaw}>Download raw session report</Button>
+							<ConfirmAction label="Clear session capture" description="Remove the raw session context, events and tool payloads from this tab’s memory." onConfirm={() => { clearSessionDebug(); setStatus("Sensitive session data cleared from memory."); }}/>
 						</div>
 						{status && <p role="status" className={mutedClass}>{status}</p>}
 					</div>
@@ -239,12 +221,12 @@ function SanitizedDiagnostics() {
 					<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
 						<CopyDiagnosticButton label="Copy failures" disabled={errorCount === 0} text={() => buildDiagnosticReport({ entries: entries.filter(entry => entry.level === "error") })} />
             <CopyDiagnosticButton label="Copy safe report" text={() => buildDiagnosticReport()} />
-						<button type="button" className={buttonClass} onClick={() => { downloadTextFile("keating-diagnostics.json", buildDiagnosticReport()); setStatus("Sanitized report downloaded."); }}>Download safe report</button>
-						<button type="button" className={buttonClass} disabled={entries.length === 0} onClick={() => { clearDiagnostics(); setStatus("Safe diagnostics cleared."); }}>Clear</button>
+						<Button variant="ghost" onClick={() => { downloadTextFile("keating-diagnostics.json", buildDiagnosticReport()); setStatus("Sanitized report downloaded."); }}>Download safe report</Button>
+						<ConfirmAction label="Clear safe diagnostics" description="Remove all sanitized runtime events from this tab’s memory." disabled={!entries.length} onConfirm={() => { clearDiagnostics(); setStatus("Safe diagnostics cleared."); }}/>
 					</div>
 				</div>
 				{status && <p role="status" className={mutedClass}>{status}</p>}
-				{recentEntries.length === 0 ? <p className={mutedClass}>No safe diagnostic events recorded in this page session.</p> : (
+				{recentEntries.length === 0 ? <EmptyState heading="No safe diagnostic events recorded in this page session." glyph="check"/> : (
 					<ol className={css({ display: "flex", maxHeight: "24rem", flexDirection: "column", gap: "0.5rem", overflowY: "auto" })}>
 						{recentEntries.map((entry) => (
 							<li key={entry.id} className={css({ borderTop: "1px solid var(--border)", paddingTop: "0.5rem", fontSize: "0.7rem" })}>
@@ -262,8 +244,7 @@ function SanitizedDiagnostics() {
 	);
 }
 
-const STATUS_TONE: Record<CheckStatus, string> = { ok: "var(--success, #16a34a)", warning: "#d97706", problem: "var(--destructive)" };
-const STATUS_GLYPH: Record<CheckStatus, string> = { ok: "✓", warning: "!", problem: "✕" };
+const STATUS_GLYPH: Record<CheckStatus, GlyphName> = { ok: "check", warning: "alert", problem: "alert" };
 const BANNER: Record<CheckStatus, string> = {
 	ok: "Everything looks healthy",
 	warning: "Working, with a few things worth a look",
@@ -272,7 +253,7 @@ const BANNER: Record<CheckStatus, string> = {
 const openTab = (tab: string) => window.dispatchEvent(new CustomEvent("keating:settings-tab", { detail: tab }));
 const PROVIDER_LIST = [...getProviders(), "notorganic"];
 
-function HealthSummary() {
+export function HealthSummary() {
 	const entries = useSyncExternalStore(subscribeDiagnostics, getDiagnosticsSnapshot, getDiagnosticsSnapshot);
 	const { connected, checked } = useProviderConnectionState(PROVIDER_LIST);
 	const [status, setStatus] = useState("");
@@ -297,32 +278,27 @@ function HealthSummary() {
 	};
 
 	return (
-		<section className={sectionClass} aria-labelledby="health-heading">
-			<div className={cx(cardClass, css({ flexDirection: "row", alignItems: "center", gap: "0.75rem" }))}>
-				<span aria-hidden className={css({ fontSize: "1.25rem", fontWeight: 700 })} style={{ color: STATUS_TONE[overall] }}>{STATUS_GLYPH[overall]}</span>
-				<div>
-					<h3 id="health-heading" className={headingClass}>{BANNER[overall]}</h3>
-					<p className={mutedClass}>A quick check of the things that most often stop Keating from working.</p>
+		<section className="sd-health" aria-labelledby="health-heading">
+			<h4 id="health-heading">{BANNER[overall]}</h4>
+			<ul>{checks.map(c => <li key={c.id} id={"sd-health-" + c.id} tabIndex={-1} className="sd-health-check">
+				<span data-glyph-host aria-label={c.status}><KeatingGlyph name={STATUS_GLYPH[c.status]} size={16}/></span>
+				<strong>{c.label}</strong><small>{c.id === "provider" && c.status === "warning" ? <Loading size="inline" label={c.detail}/> : c.detail}</small>
+				{c.fix && <Button variant="ghost" onClick={() => c.fix!.reload ? window.location.reload() : openTab("models.providers")}>{c.fix.label}</Button>}
+			</li>)}</ul>
+			<div id="sd-report" tabIndex={-1}>
+				<p>Send a sanitized report. It never includes your prompts, replies or keys.</p>
+				<div className="sd-health-actions">
+					<CopyDiagnosticButton label="Copy report" showLabel text={() => buildDiagnosticReport()}/>
+					<Button variant="ghost" glyph="send" disabled={sending} onClick={() => void sendReport()}>{sending ? <Loading size="inline" label="Sending report"/> : "Send to Keating"}</Button>
 				</div>
-				<div className={css({ marginLeft: "auto" })}>
-					<CopyDiagnosticButton label="Copy summary" text={() => buildHealthText({ checks, problems })} />
-				</div>
+				<details className="sd-fold"><summary>Other copy options</summary>
+					<CopyDiagnosticButton label="Copy summary" showLabel text={() => buildHealthText({ checks, problems })}/>
+					<CopyDiagnosticButton label="Copy errors only" showLabel disabled={!entries.some(e => e.level === "error")} text={() => buildDiagnosticReport({ entries: entries.filter(e => e.level === "error") })}/>
+				</details>
+				{status && <p role="status" className={mutedClass}>{status}</p>}
 			</div>
-			<ul className={cx(cardClass, css({ listStyle: "none", gap: "0.5rem" }))}>
-				{checks.map((c) => (
-					<li key={c.id} className={css({ display: "flex", alignItems: "center", gap: "0.625rem", flexWrap: "wrap" })}>
-						<span aria-hidden style={{ color: STATUS_TONE[c.status], width: "1rem", textAlign: "center", fontWeight: 700 }}>{STATUS_GLYPH[c.status]}</span>
-						<div className={css({ flex: 1, minWidth: "12rem" })}>
-							<div className={css({ fontSize: "0.8125rem", fontWeight: 500 })}>{c.label}</div>
-							<div className={mutedClass}>{c.detail}</div>
-						</div>
-						{c.fix && <button type="button" className={buttonClass} onClick={() => (c.fix!.reload ? window.location.reload() : c.fix!.tab && openTab(c.fix!.tab))}>{c.fix.label}</button>}
-					</li>
-				))}
-			</ul>
 			{problems.length > 0 && (
-				<div className={cardClass}>
-					<h4 className={headingClass}>What happened</h4>
+				<details className="sd-fold"><summary>What happened</summary>
 					<ul className={css({ listStyle: "none", display: "flex", flexDirection: "column", gap: "0.75rem" })}>
 						{problems.map((g) => (
 							<li key={`${g.level}-${g.explanation.title}-${g.lastSeen}`} className={css({ display: "flex", flexDirection: "column", gap: "0.25rem" })}>
@@ -334,44 +310,27 @@ function HealthSummary() {
 									<CopyDiagnosticButton label="Copy details" text={() => buildDiagnosticReport({ entries: entries.filter((e) => e.level === g.level && explainDiagnostic(e).title === g.explanation.title) })} />
 								</div>
 								<div className={cx(mutedClass, css({ overflowWrap: "anywhere" }))}>{g.explanation.meaning}</div>
-								{g.explanation.fix && <button type="button" className={cx(buttonClass, css({ alignSelf: "flex-start", marginTop: "0.25rem" }))} onClick={() => (g.explanation.fix!.reload ? window.location.reload() : g.explanation.fix!.tab && openTab(g.explanation.fix!.tab))}>{g.explanation.fix.label}</button>}
+								{g.explanation.fix && <Button variant="ghost" onClick={() => (g.explanation.fix!.reload ? window.location.reload() : g.explanation.fix!.tab && openTab(g.explanation.fix!.label === "Choose a model" ? "models.jobs" : "models.providers"))}>{g.explanation.fix.label}</Button>}
 							</li>
 						))}
 					</ul>
-				</div>
+				</details>
 			)}
-			<div className={cardClass}>
-				<h4 className={headingClass}>Still stuck?</h4>
-				<p className={mutedClass}>Send us a sanitized report. It never includes your prompts, replies, or keys.</p>
-				<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
-					<button type="button" className={buttonClass} disabled={sending} onClick={() => void sendReport()}>{sending ? "Sending…" : "Send report to Keating"}</button>
-					<CopyDiagnosticButton label="Copy errors only" disabled={!entries.some((e) => e.level === "error")} text={() => buildDiagnosticReport({ entries: entries.filter((e) => e.level === "error") })} />
-					<CopyDiagnosticButton label="Copy everything" text={() => buildDiagnosticReport()} />
-				</div>
-				{status && <p role="status" className={mutedClass}>{status}</p>}
-			</div>
+
 		</section>
 	);
 }
 
 export function DiagnosticsTab() {
-	const [uiSettings, setUiSettings] = useState(loadKeatingUiSettings);
-	useEffect(() => subscribeKeatingUiSettings(setUiSettings), []);
-	return (
-		<div className={stackClass}>
-			<OpenUiDiagnosticsPanel />
-			<HealthSummary />
-			<section className={sectionClass} aria-labelledby="developer-chat-heading">
-				<h3 id="developer-chat-heading" className={headingClass}>Developer chat details</h3>
-				<p className={mutedClass}>Show draft reviews, reasoning, and technical tool details in chat. Off by default.</p>
-				<Toggle aria-label="Show developer chat details" checked={uiSettings.showDeveloperDetails} onChange={enabled => saveKeatingUiSettings({ ...loadKeatingUiSettings(), showDeveloperDetails: enabled })} />
-			</section>
-			<details>
-				<summary className={summaryClass}>Advanced: technical logs and session inspector</summary>
-				<div className={cx(stackClass, css({ marginTop: "1rem" }))}>
-					<JudgementDiagnostics controls /><SessionInspector /><ModelRequestLog /><SanitizedDiagnostics />
-				</div>
-			</details>
-		</div>
-	);
+	return <div className="sd-dev">
+		<DeveloperTools/>
+		<details className="sd-fold" open={typeof window !== "undefined" && new URLSearchParams(window.location?.search).has("source") || undefined}>
+			<summary id="sd-explorer">Interface use<small>Inspect browser observations or import a recording into this view.</small></summary>
+			<OpenUiDiagnosticsPanel/>
+		</details>
+		<details className="sd-fold"><summary id="sd-capture">Judgement capture and inspectors<small>Optional hosted reviews send bounded, redacted turn text.</small></summary><JudgementDiagnostics controls/></details>
+		<details className="sd-fold"><summary id="sd-request-log">Model request log<small>Private draft and review requests can contain conversation text and provider payloads.</small></summary><ModelRequestLog/></details>
+		<details className="sd-fold"><summary id="sd-session">Sensitive session inspector<small>Raw captures can include system prompts, conversations and tool payloads.</small></summary><SessionInspector/></details>
+		<details className="sd-fold"><summary id="sd-safe">Safe runtime diagnostics<small>Sanitized events stay in this page session.</small></summary><SanitizedDiagnostics/></details>
+	</div>;
 }

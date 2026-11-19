@@ -3,7 +3,7 @@
  * free text, slider, dropdown) and the revealed-answer note. Each is a small
  * stateless component driven by QuestionCard.
  */
-import { Lightbulb } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import type { ReactNode } from "react";
 import { css, cx } from "../../../styled-system/css";
 import type { QuizQuestion } from "../../keating/core";
@@ -95,7 +95,7 @@ export function RevealedAnswerNote({ q, afterAnswer, afterExplanation }: {
 }) {
 	return (
 		<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", borderTop: "1px solid var(--border)", paddingTop: "0.625rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-			<Lightbulb size={14} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--accent)" })} />
+			<KeatingGlyph name="bulb" size={14} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--accent)" })} />
 			<div className={shared.stack1}>
 				<p>
 					<span className={css({ fontWeight: 600, color: "var(--foreground)" })}>{q.correctAnswer}</span>

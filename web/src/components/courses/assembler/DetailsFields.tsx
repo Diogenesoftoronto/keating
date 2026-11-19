@@ -1,6 +1,6 @@
 /** Course title, description, and the optional post-save review opt-in. */
 import { css } from "../../../../styled-system/css";
-import { inputClass } from "./styles";
+import { TextInput, TextArea } from "../../../design-system/kit";
 
 export function DetailsFields({
   title,
@@ -28,11 +28,10 @@ export function DetailsFields({
   })}
 >
   Course title
-  <input
+  <TextInput
     value={title}
     maxLength={240}
     onChange={(event) => onTitleChange(event.target.value)}
-    className={inputClass}
     autoFocus
   />
 </label>
@@ -46,11 +45,10 @@ export function DetailsFields({
   })}
 >
   What this course is for{" "}
-  <textarea
+  <TextArea
     value={description}
     maxLength={4_000}
     onChange={(event) => onDescriptionChange(event.target.value)}
-    className={inputClass}
     rows={3}
     placeholder="Optional. You can change this later."
   />

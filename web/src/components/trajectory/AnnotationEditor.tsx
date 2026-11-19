@@ -3,10 +3,10 @@ import { useId, useState, type FormEvent, type KeyboardEvent, type ReactNode } f
 import type { AnnotationKind, ReviewSeverity, TrajectoryReviewTarget } from "../../keating/trajectory-review";
 import { css, cx } from "../../../styled-system/css";
 import { eyebrow } from "../../../styled-system/recipes";
-import { KeatingIcon } from "../KeatingIcon";
-import { reviewIcon } from "./review-icons";
-import { annotationKindColor, reviewTargetLabel } from "./review-vocabulary";
-import { compactButtonClass, inputClass, metaTextClass, primaryButtonClass, sectionHeadingClass, textareaClass } from "./styles";
+import { reviewIcon, ReviewIcon } from "./review-icons";
+import { Segmented, Button, Loading } from "../../design-system/kit";
+import { reviewTargetLabel } from "./review-vocabulary";
+import { inputClass, metaTextClass, textareaClass } from "./styles";
 import type { TrajectoryAnnotationDraft } from "./types";
 
 const KIND_OPTIONS: Array<{ value: AnnotationKind; label: string }> = [
@@ -61,23 +61,8 @@ const fieldLabelClass = css({
 	color: "var(--foreground)",
 });
 
-const addChipClass = css({
-	display: "inline-flex",
-	alignItems: "center",
-	gap: "0.2rem",
-	borderRadius: "0.25rem",
-	border: "1px dashed var(--border)",
-	background: "transparent",
-	paddingInline: "0.4rem",
-	paddingBlock: "0.15rem",
-	fontSize: "0.6875rem",
-	fontWeight: 600,
-	color: "var(--muted-foreground)",
-	_hover: { borderStyle: "solid", borderColor: "var(--ink)", color: "var(--foreground)" },
-	_focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
-});
-
 export interface AnnotationEditorProps {
+	turnNumber?: number;
 	draft: TrajectoryAnnotationDraft;
 	onChange: (draft: TrajectoryAnnotationDraft) => void;
 	onSave: (draft: TrajectoryAnnotationDraft) => void;
@@ -95,6 +80,7 @@ export interface AnnotationEditorProps {
 
 export function AnnotationEditor({
 	draft,
+	turnNumber,
 	onChange,
 	onSave,
 	onCancel,
@@ -134,22 +120,14 @@ export function AnnotationEditor({
 	}
 
 	return (
-		<form onSubmit={submit} onKeyDown={saveShortcut} className={css({ display: "flex", flexDirection: "column", gap: "0.75rem" })}>
-			<div className={css({ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem" })}>
-				<div>
-					<div className={sectionHeadingClass}>
-						{draft.id ? "Edit annotation" : revising ? "Revise this text" : "New annotation"}
-					</div>
-				<div className={cx(metaTextClass, css({ marginTop: "0.125rem" }))}>{reviewTargetLabel(draft.target, "editor")}</div>
-				</div>
-				<button type="button" className={compactButtonClass} onClick={onCancel}>
-					<KeatingIcon icon={reviewIcon.dismiss} size={13} /> Cancel
-				</button>
+		<form onSubmit={submit} onKeyDown={saveShortcut} className="rv-note-form" data-kind={draft.kind}>
+			<div className="rv-note-heading"><b>{draft.id ? "Edit note" : revising ? "Revise this text" : "New note"}</b>
+				<small>{turnNumber ? `Turn ${turnNumber}` : reviewTargetLabel(draft.target, "editor")}</small>
 			</div>
 
 			{quote && !revising ? (
 				<blockquote className={css({ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr)", gap: "0.5rem", borderLeft: "2px solid var(--accent-dim)", background: "var(--muted)", padding: "0.625rem", fontSize: "0.75rem", lineHeight: 1.45, color: "var(--foreground)" })}>
-					<KeatingIcon icon={reviewIcon.quote} size={13} className={css({ marginTop: "0.125rem", color: "var(--ink-soft)" })} />
+					<ReviewIcon icon={reviewIcon.quote} size={13} className={css({ marginTop: "0.125rem", color: "var(--ink-soft)" })} />
 					<span className={css({ display: "block", maxHeight: "4.4rem", overflow: "auto", whiteSpace: "pre-wrap" })}>{quote}</span>
 				</blockquote>
 			) : null}
@@ -164,43 +142,10 @@ export function AnnotationEditor({
 				</div>
 			) : null}
 
-			<fieldset>
-				<legend className={css({ marginBottom: "0.375rem", fontSize: "0.75rem", fontWeight: 650, color: "var(--foreground)" })}>Signal</legend>
-				<div className={css({ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "0.25rem" })}>
-					{KIND_OPTIONS.map((option) => {
-						const selected = draft.kind === option.value;
-						return (
-							<label
-								key={option.value}
-								className={css({
-									cursor: "pointer",
-									borderRadius: "0.375rem",
-									border: "1px solid",
-									borderColor: selected ? "var(--ink)" : "var(--border)",
-									background: selected ? "var(--ink)" : "var(--background)",
-									padding: "0.375rem 0.25rem",
-									textAlign: "center",
-									fontSize: "0.6875rem",
-									fontWeight: 650,
-									color: selected ? "var(--paper)" : "var(--foreground)",
-									_focusWithin: { outline: "3px solid var(--accent-dim)", outlineOffset: "1px" },
-								})}
-								style={selected ? { borderColor: annotationKindColor(option.value) } : undefined}
-							>
-								<input
-									type="radio"
-									name="annotation-kind"
-									value={option.value}
-									checked={selected}
-									className={css({ position: "absolute", opacity: 0, pointerEvents: "none" })}
-									onChange={() => onChange({ ...draft, kind: option.value })}
-								/>
-								{option.label}
-							</label>
-						);
-					})}
-				</div>
-			</fieldset>
+			<Segmented label="Note kind" size="sm" value={draft.kind}
+				options={KIND_OPTIONS.map(option => ({ value: option.value, label: <><i aria-hidden="true" className={`rv-kind rv-${option.value}`}/>{option.label}</> }))}
+				onChange={kind => onChange({ ...draft, kind })}/>
+
 
 			{/* The one field the record cannot do without. */}
 			<div>
@@ -294,20 +239,34 @@ export function AnnotationEditor({
 				</>
 			))}
 
-			{closed.length > 0 || onExpand ? (
+			{closed.length > 0 ? (
 				<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.3rem" })}>
+					{closed.length > 0 && <span className={metaTextClass}>Add</span>}
 					{closed.map((field) => (
-						<button key={field} type="button" className={addChipClass} onClick={() => open(field)}>
-							<KeatingIcon icon={reviewIcon.add} size={11} /> {OPTIONAL_LABELS[field]}
+						<button key={field} type="button" aria-label={`Add ${field}`} className="rv-desk-link" onClick={() => open(field)}>
+							{OPTIONAL_LABELS[field]}
 						</button>
 					))}
-					{/* Writing out the impact and the alternative is the tedious half of a
-					    note. The pass drafts both from what has already been typed, keeping
-					    the teacher's judgement and only filling in the prose. */}
-					{onExpand ? (
+				</div>
+			) : null}
+
+			{draft.id && <details className="rv-desk-details"><summary>Note details</summary>
+				<label className={css({ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
+					Status
+					<Select aria-label="Note status" value={draft.status} className={cx(inputClass, css({ width: "auto", minHeight: "2rem", paddingInline: "0.375rem" }))} onValueChange={(value) => onChange({ ...draft, status: value as TrajectoryAnnotationDraft["status"] })}>
+						<option value="draft">Draft</option>
+						<option value="final">Final</option>
+					</Select>
+				</label>
+				<span className={cx(eyebrow(), css({ fontSize: "9px" }))}>
+						{draft.authorship === "pass-drafted" ? "pass · accepted" : draft.authorship === "pass-edited" ? "pass · edited" : "human"}
+					</span>
+					</details>}
+			<div className="rv-desk-actions">
+				{onExpand ? (
 						<button
 							type="button"
-							className={cx(compactButtonClass, css({ marginLeft: "auto", minHeight: "1.75rem" }))}
+							className="rv-finish-note"
 							disabled={isExpanding || draft.note.trim().length === 0}
 							title={draft.note.trim().length === 0 ? "Write the note first." : undefined}
 							onClick={() => {
@@ -315,29 +274,13 @@ export function AnnotationEditor({
 								onExpand();
 							}}
 						>
-							<KeatingIcon icon={reviewIcon.expand} size={13} active={isExpanding} />
-							{isExpanding ? "Drafting…" : "Finish this note"}
+							<ReviewIcon icon={reviewIcon.expand} size={13} active={isExpanding} />
+							{isExpanding ? <Loading size="inline" label="Drafting…" /> : "Finish this note"}
 						</button>
 					) : null}
-				</div>
-			) : null}
 
-			<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderTop: "1px solid var(--border)", paddingTop: "0.75rem" })}>
-				<label className={css({ display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
-					Status
-					<Select aria-label="Annotation status" value={draft.status} className={cx(inputClass, css({ width: "auto", minHeight: "2rem", paddingInline: "0.375rem" }))} onValueChange={(value) => onChange({ ...draft, status: value as TrajectoryAnnotationDraft["status"] })}>
-						<option value="draft">Draft</option>
-						<option value="final">Final</option>
-					</Select>
-				</label>
-				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
-					<span className={cx(eyebrow(), css({ fontSize: "9px" }))}>
-						{draft.authorship === "pass-drafted" ? "pass · accepted" : draft.authorship === "pass-edited" ? "pass · edited" : "human"}
-					</span>
-					<button type="submit" className={primaryButtonClass} disabled={!canSave}>
-						<KeatingIcon icon={reviewIcon.save} size={13} /> {isSaving ? "Saving..." : draft.id ? "Update" : "Add annotation"}
-					</button>
-				</div>
+				<Button size="sm" onClick={onCancel}>Cancel</Button>
+				<Button size="sm" variant="primary" type="submit" disabled={!canSave}>{isSaving ? <Loading size="inline" label="Saving..." /> : draft.id ? "Update" : "Add note"}</Button>
 			</div>
 			<div className={metaTextClass}>Tip: press Ctrl+Enter or Command+Enter to save.</div>
 		</form>

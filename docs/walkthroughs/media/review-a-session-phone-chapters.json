@@ -1,0 +1,86 @@
+{
+  "title": "Reviewing a session",
+  "viewport": "phone",
+  "width": 390,
+  "height": 844,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study",
+    "review"
+  ],
+  "transcript": null,
+  "capturedAt": "2026-11-19T17:10:34.505Z",
+  "viewerNote": "The sample rubric ratings and earlier notes are authored. The phone take anchors one note to a selection and uses whole-turn notes for the other two. The pass menu opens without running a model pass.",
+  "duration": 49.30999994277954,
+  "bytes": 1112807,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "queue",
+      "title": "Find a session in Reviews",
+      "start": 0.003999948501586914,
+      "explanation": "Find the session in Reviews.",
+      "alt": "Find a session in Reviews",
+      "still": "queue"
+    },
+    {
+      "id": "selection",
+      "title": "Select a passage",
+      "start": 3.1630001068115234,
+      "explanation": "Select the part of the reply you want to mark.",
+      "alt": "Select a passage",
+      "still": "selection"
+    },
+    {
+      "id": "problem",
+      "title": "Record a problem",
+      "start": 9.377000093460083,
+      "explanation": "Mark a specific problem.",
+      "alt": "Record a problem",
+      "still": "problem"
+    },
+    {
+      "id": "strength",
+      "title": "Record a strength",
+      "start": 19.39400005340576,
+      "explanation": "Use Turn list to open turn 6, then choose Add note to annotate that turn.",
+      "alt": "Record a strength",
+      "still": "strength"
+    },
+    {
+      "id": "suggestion",
+      "title": "Record a suggestion",
+      "start": 28.138999938964844,
+      "explanation": "Use Turn list to open turn 8, then choose Add note to annotate that turn.",
+      "alt": "Record a suggestion",
+      "still": "suggestion"
+    },
+    {
+      "id": "rubric",
+      "title": "Inspect a rubric score",
+      "start": 36.07299995422363,
+      "explanation": "Read the rubric alongside the transcript.",
+      "alt": "Inspect a rubric score",
+      "still": "rubric"
+    },
+    {
+      "id": "pass",
+      "title": "Inspect the pass menu",
+      "start": 39.71300005912781,
+      "explanation": "See what a Socratic pass can propose.",
+      "alt": "Inspect the pass menu",
+      "still": "pass"
+    },
+    {
+      "id": "export",
+      "title": "Inspect the export sheet",
+      "start": 44.74000000953674,
+      "explanation": "Check what goes into the review export.",
+      "alt": "Inspect the export sheet",
+      "still": "export"
+    }
+  ]
+}

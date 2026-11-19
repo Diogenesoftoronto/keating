@@ -1,20 +1,9 @@
+import { useCardBookmarks } from "./flashcards/useCardBookmarks";
+import { LessonFrame } from "./lesson/LessonFrame";
+import { Meter } from "../design-system/charts";
+import { IconButton, Kbd } from "../design-system/kit";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-	Bookmark,
-	ChevronLeft,
-	ChevronRight,
-	CircleDot,
-	Flame,
-	Lightbulb,
-	Pause,
-	ScanLine,
-	Sparkles,
-	Star,
-	Sun,
-	Volume2,
-	VolumeX,
-	Zap,
-} from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import {
 	applyReview,
 	formatInterval,
@@ -52,28 +41,7 @@ import {
 
 const storage = new KeatingStorage();
 
-const BOOKMARK_KEY = "keating:card-bookmarks";
 const SHADER_PRESET_KEY = "keating:flashcard-shader-preset";
-
-function loadBookmarkIds(): Set<string> {
-	try {
-		const raw = localStorage.getItem(BOOKMARK_KEY);
-		if (!raw) return new Set();
-		const parsed = JSON.parse(raw);
-		if (!Array.isArray(parsed)) return new Set();
-		return new Set(parsed.filter((s): s is string => typeof s === "string"));
-	} catch {
-		return new Set();
-	}
-}
-
-function saveBookmarkIds(ids: Set<string>) {
-	try {
-		localStorage.setItem(BOOKMARK_KEY, JSON.stringify([...ids]));
-	} catch {
-		/* ignore */
-	}
-}
 
 function loadShaderPreset(fallback?: FlashcardShaderPreset): FlashcardShaderPreset {
 	if (fallback) return normalizeFlashcardShaderPreset(fallback);
@@ -674,13 +642,13 @@ function RatingButton({
 }
 
 function ShaderPresetIcon({ preset }: { preset: FlashcardShaderPreset }) {
-	if (preset === "solar") return <Sun size={13} aria-hidden="true" />;
-	if (preset === "orbit") return <CircleDot size={13} aria-hidden="true" />;
-	if (preset === "prism") return <Sparkles size={13} aria-hidden="true" />;
-	if (preset === "current") return <Zap size={13} aria-hidden="true" />;
-	if (preset === "contour") return <Star size={13} aria-hidden="true" />;
-	if (preset === "still") return <Pause size={13} aria-hidden="true" />;
-	return <ScanLine size={13} aria-hidden="true" />;
+	if (preset === "solar") return <KeatingGlyph name="sun" size={13} />;
+	if (preset === "orbit") return <KeatingGlyph name="target" size={13} />;
+	if (preset === "prism") return <KeatingGlyph name="spark" size={13} />;
+	if (preset === "current") return <KeatingGlyph name="spark" size={13} />;
+	if (preset === "contour") return <KeatingGlyph name="spark" size={13} />;
+	if (preset === "still") return <KeatingGlyph name="pause" size={13} />;
+	return <KeatingGlyph name="scan" size={13} />;
 }
 
 function ShaderPresetPicker({
@@ -724,7 +692,7 @@ function SwipeCue({
 	active: boolean;
 }) {
 	const meta = RATING_META[rating];
-	const arrow = rating === 0 ? "←" : rating === 1 ? "↓" : rating === 2 ? "→" : "↑";
+	const arrow = rating === 0 ? "left" : rating === 1 ? "down" : rating === 2 ? "right" : "rise";
 	return (
 		<span
 			aria-hidden="true"
@@ -734,7 +702,7 @@ function SwipeCue({
 			style={{ "--cue-color": meta.accent } as React.CSSProperties}
 			title={meta.gesture}
 		>
-			{arrow} {meta.label}
+			<KeatingGlyph name={arrow} size={14} /> {meta.label}
 		</span>
 	);
 }
@@ -769,8 +737,9 @@ export function FlashcardRenderer({
 	autoFocusKeyboard = false,
 	defaultShaderPreset,
 }: FlashcardRendererProps) {
+	const [arena, setArena] = useState(autoFocusKeyboard || defaultShaderPreset !== undefined);
 	const [revealed, setRevealed] = useState(false);
-	const [bookmarkIds, setBookmarkIds] = useState<Set<string>>(() => loadBookmarkIds());
+	const [bookmarkIds, toggleBookmark] = useCardBookmarks();
 	const [reviewedCount, setReviewedCount] = useState(0);
 	const [lapseCount, setLapseCount] = useState(0);
 	const [streak, setStreak] = useState(0);
@@ -847,15 +816,6 @@ export function FlashcardRenderer({
 		saveShaderPreset(normalized);
 	}, []);
 
-	const toggleBookmark = useCallback((cardId: string) => {
-		setBookmarkIds((previous) => {
-			const next = new Set(previous);
-			if (next.has(cardId)) next.delete(cardId);
-			else next.add(cardId);
-			saveBookmarkIds(next);
-			return next;
-		});
-	}, []);
 
 	const toggleReveal = useCallback(() => {
 		setRevealed((wasRevealed) => {
@@ -1012,12 +972,16 @@ export function FlashcardRenderer({
 	);
 
 	if (finished) {
+		if (!arena) return <LessonFrame glyph="layers" kind="Flashcards" title={deck.title}>
+			<CompletionMark detail={reviewedCount ? `${reviewedCount} reviewed · ${lapseCount} to revisit` : "No cards in this round."}>Round complete</CompletionMark>
+			{reviewedCount > 0 && <small>{score} points · {bestStreak} best combo · Your next review is scheduled.</small>}
+		</LessonFrame>;
 		return (
 			<div className={cx(gameStyles.shell, "activity-game recall-game")}>
 				<div className={cx(gameStyles.inner, "recall-inner")}>
 					<RoundProgress current={cards.length} total={cards.length} complete label="Flashcard run progress" />
 					<CompletionMark detail={reviewedCount > 0 ? `${reviewedCount} reviewed${lapseCount ? ` · ${lapseCount} to revisit` : " · all recalled"}` : "No cards in this round."}>{reviewedCount > 0 && lapseCount === 0 ? "Clean sweep" : "Round complete"}</CompletionMark>
-					{reviewedCount > 0 ? <div className="recall-finish-stats"><span><Zap size={16} aria-hidden="true" />{score.toLocaleString()} points</span><span><Flame size={16} aria-hidden="true" />{bestStreak} best combo</span></div> : null}
+					{reviewedCount > 0 ? <div className="recall-finish-stats"><span><KeatingGlyph name="spark" size={16} />{score.toLocaleString()} points</span><span><KeatingGlyph name="spark" size={16} />{bestStreak} best combo</span></div> : null}
 					{reviewedCount > 0 ? <p className={css({ fontSize: "0.8125rem", color: "var(--muted-foreground)" })}>Your next review is scheduled.</p> : null}
 				</div>
 			</div>
@@ -1044,6 +1008,31 @@ export function FlashcardRenderer({
 	const arenaStyle = {
 		"--arena-accent": shaderAccent(shaderPreset),
 	} as React.CSSProperties;
+
+	if (!arena) return <div ref={containerRef} role="group" tabIndex={0} aria-label={`Flashcard recall run: ${deck.title}`} onKeyDown={handleKeyDown}>
+		<LessonFrame glyph="layers" title={deck.title} kind="Flashcards" footer={<>
+			<IconButton glyph={soundOn ? "speaker" : "mute"} label={soundOn ? "Mute flashcard sounds" : "Enable flashcard sounds"} pressed={soundOn} onClick={()=>updateSettings({flashcardSoundEnabled:!soundOn})}/>
+			<IconButton glyph="bookmark" label={bookmarkIds.has(current.id) ? "Remove bookmark" : "Bookmark card"} pressed={bookmarkIds.has(current.id)} onClick={()=>toggleBookmark(current.id)}/>
+			<button disabled={index === 0 || Boolean(exiting)} onClick={()=>goTo(-1)}>Back</button>
+			<button disabled={index >= cards.length-1 || Boolean(exiting)} onClick={()=>goTo(1)}>Skip</button>
+			{!revealed && <button className="lesson-primary k-lift" onClick={toggleReveal}>Reveal <Kbd>Space</Kbd></button>}
+		</>}>
+			<Meter label="Card position" tone="ink" value={index+1} max={cards.length} valueText={`${index+1} of ${cards.length}`}/>
+			<button className="lesson-face" {...gestureHandlers} aria-pressed={revealed} onClick={event=>{if(event.detail === 0) toggleReveal();}} style={{touchAction:revealed ? "none" : "pan-y"}}>
+				<small>{revealed ? "Answer" : "Recall the answer"}</small><strong aria-live="polite">{revealed ? current.back : current.front}</strong>
+			</button>
+			<div className="shared-activity__ratings">{(["again","hard","good","easy"] as const).map((key,i)=><button className="shared-activity__rating" key={key} disabled={!revealed || Boolean(exiting)} onClick={()=>handleRate(i as SrsRating)}>
+				{RATING_META[i as SrsRating].label}<small>{formatInterval(nextIntervals[key])}</small><Kbd>{i+1}</Kbd>
+			</button>)}</div>
+			<details><summary>Card details &amp; appearance</summary>
+				<FlashcardTimer timer={autoReveal} disabled={Boolean(exiting)}/>
+				<p>{current.tags?.join(" · ")} · Reps {current.srs.reps} · Ease {current.srs.ease.toFixed(2)} · Lapses {current.srs.lapses}</p>
+				{current.srs.reps > 0 && <p>Next {formatDueIn(current.srs.dueAt)}</p>}
+				<p>{score} points · {streak} combo</p>
+				<button onClick={()=>setArena(true)}>Open practice arena</button>
+			</details>
+		</LessonFrame>
+	</div>;
 
 	return (
 		<div
@@ -1091,7 +1080,7 @@ export function FlashcardRenderer({
 										)}
 										title={`${streak} consecutive Good or Easy recalls`}
 									>
-										<Flame size={13} /> {streak} combo
+										<KeatingGlyph name="spark" size={16} /> {streak} combo
 									</span>
 								) : null}
 								<button
@@ -1101,7 +1090,7 @@ export function FlashcardRenderer({
 									aria-label={soundOn ? "Mute flashcard sounds" : "Enable flashcard sounds"}
 									title={soundOn ? "Sounds on" : "Sounds off"}
 								>
-									{soundOn ? <Volume2 size={16} /> : <VolumeX size={16} />}
+									{soundOn ? <KeatingGlyph name="speaker" size={16} /> : <KeatingGlyph name="mute" size={16} />}
 								</button>
 							</div>
 						</header>
@@ -1110,8 +1099,8 @@ export function FlashcardRenderer({
 				) : null}
 
 				<div className="recall-progress">
-					<RoundProgress current={index} total={cards.length} label="Flashcard run progress" />
-					{score > 0 ? <span className="recall-score" key={score} aria-live="polite"><Zap size={14} aria-hidden="true" />{score.toLocaleString()} points</span> : null}
+					<Meter label="Flashcard run progress" value={index+1} max={cards.length} valueText={`${index+1} of ${cards.length}`}/>
+					{score > 0 ? <span className="recall-score" key={score} aria-live="polite"><KeatingGlyph name="spark" size={14} />{score.toLocaleString()} points</span> : null}
 				</div>
 				<FlashcardTimer timer={autoReveal} disabled={Boolean(exiting)} />
 				<span className="activity-sr-only" role="status" aria-live="polite" aria-atomic="true">{revealed ? `Answer: ${current.back}` : ""}</span>
@@ -1213,13 +1202,13 @@ export function FlashcardRenderer({
 				{!revealed ? (
 					<div className={gameStyles.controls}>
 						<button type="button" onClick={() => goTo(-1)} disabled={index === 0} className={cx(gameStyles.controlButton, "activity-back-action")}>
-							<ChevronLeft size={15} /> Back
+							<KeatingGlyph name="chevl" size={16} /> Back
 						</button>
 						<button type="button" onClick={toggleReveal} className={cx(gameStyles.controlButton, gameStyles.revealButton, "activity-main-action recall-reveal")}>
-							<Lightbulb size={16} /> Reveal answer
+							<KeatingGlyph name="bulb" size={16} /> Reveal answer
 						</button>
 						<button type="button" onClick={() => goTo(1)} disabled={index >= cards.length - 1} className={cx(gameStyles.controlButton, "activity-back-action")}>
-							Skip <ChevronRight size={15} />
+							Skip <KeatingGlyph name="chevr" size={16} />
 						</button>
 					</div>
 				) : (
@@ -1234,7 +1223,7 @@ export function FlashcardRenderer({
 					</div>
 				)}
 
-				<details className="activity-review recall-details"><summary>Card details & appearance</summary>
+				<details className="activity-review recall-details"><summary>Card details & appearance<KeatingGlyph name="plus" size={24} /><KeatingGlyph name="minus" size={24} /></summary>
 				<div className={gameStyles.reviewMeta}>
 					<div className={gameStyles.metaBits}>
 						<span>Reps {current.srs.reps}</span>
@@ -1254,9 +1243,10 @@ export function FlashcardRenderer({
 						aria-label={bookmarkIds.has(current.id) ? "Remove bookmark" : "Bookmark card"}
 						title={bookmarkIds.has(current.id) ? "Bookmarked" : "Bookmark for review"}
 					>
-						<Bookmark size={16} fill={bookmarkIds.has(current.id) ? "currentColor" : "none"} />
+						<KeatingGlyph name="bookmark" size={16} active={bookmarkIds.has(current.id)} />
 					</button>
 				</div>
+					{!autoFocusKeyboard && <button onClick={()=>setArena(false)}>Compact cards</button>}
 					<ShaderPresetPicker value={shaderPreset} onChange={changeShaderPreset} />
 				</details>
 				{keyboardHint ? (
@@ -1300,7 +1290,7 @@ export function DeckSummary({ deck, now = Date.now(), onStart }: DeckSummaryProp
 		<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderRadius: "0.5rem", border: "1px solid var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
 			<div className={css({ minWidth: 0 })}>
 				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
-					<Star size={14} className={css({ flexShrink: 0, color: "#f59e0b" })} />
+					<KeatingGlyph name="spark" size={14} className={css({ flexShrink: 0, color: "#f59e0b" })} />
 					<p className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.875rem", fontWeight: 500 })}>{deck.title}</p>
 				</div>
 				<p className={cx("font-terminal", css({ marginTop: "0.125rem", fontSize: "0.6875rem", color: "var(--muted-foreground)" }))}>

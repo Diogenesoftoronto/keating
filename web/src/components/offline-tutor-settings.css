@@ -1,9 +1,13 @@
 .offline-tutor-settings { display: flex; flex-direction: column; gap: .75rem; scroll-margin-top: 5rem; color: var(--foreground); }
-.offline-tutor-settings h3 { font-size: .875rem; font-weight: 600; margin: 0; }
-.offline-tutor-settings p { font-size: .875rem; margin: 0; max-width: 65ch; }
-.offline-tutor-settings progress { width: 100%; accent-color: var(--primary); }
+.offline-tutor-settings h3 { font-size: .625rem; font-weight: 600; margin: 0; }
+.offline-tutor-settings p { font-size: .625rem; margin: 0; max-width: 65ch; }
+
 .offline-tutor-settings__actions { display: flex; flex-wrap: wrap; gap: .75rem; }
-.offline-tutor-settings button { font: inherit; font-size: .875rem; border: 1px solid var(--border); border-radius: .375rem; padding: .625rem .875rem; color: var(--foreground); background: var(--background); cursor: pointer; }
+.offline-tutor-settings button:not(.k-button) { font: inherit; font-size: .625rem; border: 1px solid var(--border); border-radius: .375rem; padding: .625rem .625rem; color: var(--foreground); background: var(--background); cursor: pointer; }
 .offline-tutor-settings button:hover { background: var(--accent); color: var(--accent-foreground); }
 .offline-tutor-settings button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; }
 .offline-tutor-settings button:disabled { opacity: .55; cursor: default; }
+
+@media(pointer:coarse){.offline-tutor-settings :is(button,select){min-height:2.116rem}}
+
+.st-main .offline-tutor-settings h3{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}

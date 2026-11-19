@@ -1,4 +1,4 @@
-import { publicProfileRecord, readPublicProfile, type FullLearningProfile, type PublicProfileInput } from "./public-profile-contract";
+import { PROFILE_LIMITS, publicProfileRecord, readPublicProfile, type FullLearningProfile, type PublicProfileInput, type PublishedProfileRecord } from "./public-profile-contract";
 
 /** Public, owner-authored summary. Never pass a learner record or transcript here. */
 export const LEARNING_PROFILE_COLLECTION = "app.keating.learningProfile";
@@ -55,7 +55,8 @@ export function readLearningProfile(value: unknown): PublicLearningProfile {
   if (record.activity !== undefined && (!record.activity || typeof record.activity !== "object" || !Object.hasOwn(record.activity, "savedSessions"))) {
     throw new Error("The public activity summary is invalid.");
   }
-  return { ...learningProfileRecord(record.topics, (record.activity as { savedSessions?: unknown } | undefined)?.savedSessions, new Date(record.updatedAt)), publicationId: record.publicationId };
+  const topics = record.appearance === undefined ? record.topics : readPublicProfile(record).topics;
+  return { ...learningProfileRecord(topics, (record.activity as { savedSessions?: unknown } | undefined)?.savedSessions, new Date(record.updatedAt)), publicationId: record.publicationId };
 }
 
 export interface LearningProfileSession {
@@ -75,7 +76,7 @@ export class LearningProfilePublisher {
     }
   }
 
-  private async request(method: "GET" | "POST", record?: PublicLearningProfile | FullLearningProfile | PrivateLearningProfile, signal?: AbortSignal, swapRecord?: string | null) {
+  private async request(method: "GET" | "POST", record?: PublicLearningProfile | PublishedProfileRecord | PrivateLearningProfile, signal?: AbortSignal, swapRecord?: string | null) {
     this.assertOwner();
     const token = await this.session.getTokenInfo().catch(() => {
       throw new Error("Keating couldn’t check your account’s publishing permission. Try again or reconnect your account.");
@@ -102,7 +103,7 @@ export class LearningProfilePublisher {
     }
     const text = await response.text().catch(() => { throw failure(); });
     this.assertOwner();
-    if (text.length > 32_000) throw failure();
+    if (text.length > 32_000 + PROFILE_LIMITS.avatar) throw failure();
     let body: { error?: string; value?: unknown; cid?: string; uri?: string };
     try {
       const parsed: unknown = JSON.parse(text || "{}");
@@ -145,12 +146,12 @@ export class LearningProfilePublisher {
   /** Publishes exactly the reviewed content. Unknown fields never leave the device. */
   publishProfile(input: PublicProfileInput & { consent: boolean }, signal?: AbortSignal): Promise<FullLearningProfile> {
     if (input.consent !== true) return Promise.reject(new Error("Confirm that everything in the preview may be public."));
-    let record: FullLearningProfile;
+    let record: PublishedProfileRecord;
     try { record = publicProfileRecord(input); } catch (error) { return Promise.reject(error); }
     return this.serialize(async () => {
       const cid = await this.currentCid(signal);
       await this.request("POST", record, signal, cid);
-      return record;
+      return readPublicProfile(record);
     });
   }
 

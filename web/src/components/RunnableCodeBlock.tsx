@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AlertCircle, Check, Copy, Pencil, Play, RotateCcw, Terminal } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css, cx } from "../../styled-system/css";
-import { Spinner } from "./Spinner";
+import "./runnable-code-figure.css";
+import { Button, IconButton, Loading } from "../design-system/kit";
 
 import {
 	bootNodePod,
@@ -215,52 +216,26 @@ export function RunnableCodeBlock({
 	return (
 		// One frame: the code surface. The toolbar sits on open space above it and
 		// the output below it, separated by rules rather than nested boxes.
-		<div className={css({ marginBlock: "1rem", display: "grid", gap: "0.5rem" })}>
-			<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" })}>
-				<div className={css({ display: "flex", minWidth: 0, alignItems: "center", gap: "0.5rem" })}>
-					<Terminal size={12} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
-					<span className={css({ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)" })}>
-						{strudel ? "Strudel" : language || "text"}
-					</span>
-					<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "11px", color: "var(--muted-foreground)" })}>
-						{streaming && <span className={css({ animation: "pulse 1.4s ease-in-out infinite", color: "var(--primary)" })}>●</span>}
-						{status}
-					</span>
+		<div className="ch-code">
+			<div className="ch-code-toolbar">
+				<div className="ch-code-caption" data-glyph-host>
+					<KeatingGlyph name="terminal" size={13} />
+					<b>{strudel ? "Strudel" : language || "text"}</b>
+					{running || streaming ? <Loading size="inline" label={status} /> : <span role="status">{status}</span>}
 				</div>
-				<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.375rem", opacity: streaming ? 0 : 1, pointerEvents: streaming ? "none" : "auto", transition: "opacity 200ms" })}>
-					<button
-						type="button"
-						onClick={() => {
-							setEditing((value) => !value);
+				{!streaming && <div className="ch-code-actions">
+					<IconButton size="sm" label={editing ? "Preview code" : "Edit code"} pressed={editing}
+						glyph={editing ? "eye" : "edit"} onClick={() => {
+							setEditing(value => !value);
 							setError("");
-						}}
-						className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.5rem", paddingBlock: "0.25rem", fontSize: "11px", fontWeight: 500, color: "var(--foreground)", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { background: "var(--accent)" } })}
-						aria-pressed={editing}
-					>
-						<Pencil size={11} />
-						{editing ? "Preview" : "Edit"}
-					</button>
-					<button
-						type="button"
-						onClick={copyCode}
-						className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid var(--border)", backgroundColor: "var(--background)", paddingInline: "0.5rem", paddingBlock: "0.25rem", fontSize: "11px", fontWeight: 500, color: "var(--foreground)", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { background: "var(--accent)" } })}
-					>
-						{copied ? <Check size={11} /> : <Copy size={11} />}
-						{copied ? "Copied" : "Copy"}
-					</button>
-					{!strudel && (
-						<button
-							type="button"
-							onClick={run}
-							disabled={!runnable || running || streaming}
-							title={pending ? "Check the existing cloud run for output" : runnable ? (hosted ? "Run in the Cloudflare CPU sandbox" : "Run code on this device") : isRunnableCodeLanguage(language) ? "This language needs a network connection" : "Only JavaScript, TypeScript, and Python blocks can run here"}
-							className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid var(--primary)", backgroundColor: "var(--primary)", paddingInline: "0.5rem", paddingBlock: "0.25rem", fontSize: "11px", fontWeight: 500, color: "var(--primary-foreground)", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, black)" }, _disabled: { cursor: "not-allowed", borderColor: "var(--border)", backgroundColor: "var(--muted)", color: "var(--muted-foreground)" } })}
-						>
-							{running ? <Spinner size={11} /> : <Play size={11} />}
-							{pending ? "Refresh output" : "Run"}
-						</button>
-					)}
-				</div>
+						}} />
+					<IconButton size="sm" label={copied ? "Copied" : "Copy code"} glyph={copied ? "check" : "copy"} onClick={copyCode} />
+					{!strudel && <Button size="sm" variant="outline" glyph="play"
+						onClick={run} disabled={!runnable || running} aria-busy={running}
+						title={pending ? "Check the existing cloud run for output" : status}>
+						{pending ? "Refresh output" : "Run"}
+					</Button>}
+				</div>}
 			</div>
 
 			{editing ? (
@@ -284,7 +259,7 @@ export function RunnableCodeBlock({
 								}}
 								className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, white 15%, transparent)", paddingInline: "0.5rem", paddingBlock: "0.25rem", fontSize: "11px", fontWeight: 500, color: "#c9d1d9", transitionProperty: "color, background-color, border-color", transitionDuration: "150ms", _hover: { backgroundColor: "color-mix(in srgb, white 10%, transparent)" } })}
 							>
-								<RotateCcw size={11} />
+								<KeatingGlyph name="undo" size={11} />
 								Reset code
 							</button>
 						</div>
@@ -307,7 +282,7 @@ export function RunnableCodeBlock({
 			{(result || hostedResult || error) && (
 				<div className={css({ display: "grid", gap: "0.375rem", borderTop: "1px solid var(--border)", paddingTop: "0.5rem" })}>
 					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--muted-foreground)" })}>
-						{error || result?.ok === false || hostedResult?.status === "failed" || hostedResult?.status === "cancelled" ? <AlertCircle size={12} className={css({ color: "var(--destructive)" })} /> : hostedResult && isPendingNotebookRun(hostedResult) ? <Terminal size={12} /> : <Check size={12} />}
+						{error || result?.ok === false || hostedResult?.status === "failed" || hostedResult?.status === "cancelled" ? <KeatingGlyph name="alert" size={12} className={css({ color: "var(--destructive)" })} /> : hostedResult && isPendingNotebookRun(hostedResult) ? <KeatingGlyph name="terminal" size={12} /> : <KeatingGlyph name="check" size={12} />}
 						Output
 					</div>
 					<pre className={css({ maxHeight: "16rem", overflow: "auto", whiteSpace: "pre-wrap", fontFamily: "var(--mono-display)", fontSize: "0.75rem", lineHeight: "1.625" })}>

@@ -1,17 +1,11 @@
+import { EmptyState } from "../../design-system/kit";
 /**
  * History tab of the sandbox runtime dialog: branch/commit controls, portable
  * export/import, commit list and commit diff. State and actions come from
  * useSandboxHistory.
  */
-import Download from "reicon-react/icons/Download";
-import GitBranch from "reicon-react/icons/BranchUp";
-import GitCommit from "reicon-react/icons/Save";
-import GitCompare from "reicon-react/icons/Code2";
-import RefreshCw from "reicon-react/icons/Refresh";
-import RotateCcw from "reicon-react/icons/RotateLeft";
-import Upload from "reicon-react/icons/Upload";
 import { css, cx } from "../../../styled-system/css";
-import { KeatingIcon } from "../KeatingIcon";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { visibleChanges } from "./sandbox-helpers";
 import { styles } from "./sandbox-shared";
 import type { SandboxHistory } from "./useSandboxHistory";
@@ -41,9 +35,7 @@ export function SandboxHistoryPanel({ history, nodePodActive }: { history: Sandb
   } = history;
   if (!nodePodActive) {
     return (
-      <div className={styles.textXsMuted}>
-        Start NodePod to use version control.
-      </div>
+      <EmptyState heading="Start NodePod to use version control." />
     );
   }
   return (
@@ -71,7 +63,7 @@ export function SandboxHistoryPanel({ history, nodePodActive }: { history: Sandb
             disabled={portableBusy}
             className={styles.outlineButtonSmBg}
           >
-            <KeatingIcon icon={Download} size={12} /> Export
+            <KeatingGlyph name="export" size={12} /> Export
           </button>
           <button
             type="button"
@@ -79,14 +71,14 @@ export function SandboxHistoryPanel({ history, nodePodActive }: { history: Sandb
             disabled={portableBusy}
             className={styles.outlineButtonSmBg}
           >
-            <KeatingIcon icon={Upload} size={12} /> Import
+            <KeatingGlyph name="import" size={12} /> Import
           </button>
           <button
             type="button"
             onClick={refreshVc}
             className={styles.outlineButtonSmBg}
           >
-            <KeatingIcon icon={RefreshCw} size={12} /> Refresh
+            <KeatingGlyph name="refresh" size={12} /> Refresh
           </button>
         </div>
       </div>
@@ -105,7 +97,7 @@ export function SandboxHistoryPanel({ history, nodePodActive }: { history: Sandb
           disabled={vcLoading || !vcNewBranchName.trim()}
           className={styles.primaryButton}
         >
-          <KeatingIcon icon={GitBranch} size={13} /> Branch
+          <KeatingGlyph name="fork" size={13} /> Branch
         </button>
       </div>
 
@@ -123,7 +115,7 @@ export function SandboxHistoryPanel({ history, nodePodActive }: { history: Sandb
           disabled={vcLoading}
           className={styles.primaryButton}
         >
-          <KeatingIcon icon={GitCommit} size={13} /> Commit
+          <KeatingGlyph name="save" size={13} /> Commit
         </button>
       </div>
 
@@ -141,7 +133,7 @@ export function SandboxHistoryPanel({ history, nodePodActive }: { history: Sandb
                   disabled={vcLoading}
                   className={css({ display: "inline-flex", height: "1.5rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "10px", _hover: { background: "var(--accent)" }, _disabled: { opacity: 0.5 } })}
                 >
-                  <KeatingIcon icon={RotateCcw} size={10} /> Switch
+                  <KeatingGlyph name="undo" size={10} /> Switch
                 </button>
               )}
             </div>
@@ -168,7 +160,7 @@ export function SandboxHistoryPanel({ history, nodePodActive }: { history: Sandb
                     onClick={() => diffCommitsAction(c.id, vcCommits[i + 1].id)}
                     className={css({ display: "inline-flex", height: "1.5rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "10px", _hover: { background: "var(--accent)" } })}
                   >
-                    <KeatingIcon icon={GitCompare} size={10} /> Diff with next
+                    <KeatingGlyph name="compare" size={10} /> Diff with next
                   </button>
                 )}
                 <button
@@ -178,16 +170,14 @@ export function SandboxHistoryPanel({ history, nodePodActive }: { history: Sandb
                   title="Write this commit's files back into the sandbox"
                   className={css({ display: "inline-flex", height: "1.5rem", alignItems: "center", gap: "0.25rem", borderRadius: "0.375rem", borderWidth: "1px", borderColor: "var(--border)", paddingInline: "0.5rem", fontSize: "10px", _hover: { background: "var(--accent)" }, _disabled: { opacity: 0.5 } })}
                 >
-                  <KeatingIcon icon={RotateCcw} size={10} /> Restore
+                  <KeatingGlyph name="undo" size={10} /> Restore
                 </button>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className={styles.textXsMuted}>
-          No commits yet. Edit a file, then commit to save a version.
-        </div>
+        <EmptyState heading="No commits yet.">Edit a file, then commit to save a version.</EmptyState>
       )}
 
       {/* Diff view */}
@@ -213,7 +203,7 @@ export function SandboxHistoryPanel({ history, nodePodActive }: { history: Sandb
               </div>
             ))}
             {visibleChanges(vcDiff.changes).length === 0 && (
-              <div className={styles.textXsMuted}>No changes</div>
+              <EmptyState heading="No changes" />
             )}
           </div>
         </div>

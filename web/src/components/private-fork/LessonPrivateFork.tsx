@@ -1,12 +1,11 @@
+import { Button, Note } from "../../design-system/kit";
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { LockKeyhole } from "lucide-react";
 import { css } from "../../../styled-system/css";
 import {
   createLessonPrivateForkSession,
   type LessonPrivateForkContext,
 } from "../../courses/private-fork-session";
-import { roomStyles } from "../rooms/room-ui";
 import { PrivateForkPanel } from "./PrivateForkPanel";
 
 export type LessonPrivateForkNavigation = {
@@ -44,17 +43,16 @@ function LessonPrivateForkAction(props: LessonPrivateForkProps) {
   };
   if (!props.context.reading.trim()) return null;
   return (
-    <div className={css({ mt: "1rem" })}>
-      <button
+    <Note glyph="lock">
+      <Button
         ref={trigger}
         type="button"
-        className={roomStyles.button}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         onClick={() => open ? close() : setOpen(true)}
       >
-        <LockKeyhole size={14} aria-hidden="true" /> Continue privately
-      </button>
+        Continue privately
+      </Button>
       {open && (
         <div id={panelId} className={css({ mt: "0.75rem" })}>
           {props.onNavigate ? (
@@ -64,7 +62,7 @@ function LessonPrivateForkAction(props: LessonPrivateForkProps) {
           )}
         </div>
       )}
-    </div>
+    </Note>
   );
 }
 

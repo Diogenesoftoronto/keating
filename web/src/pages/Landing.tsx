@@ -1,70 +1,43 @@
-import { useState } from "react";
-import { AppLink as Link } from "../components/AppLink";
-import { LandingIntro } from "../components/LandingIntro";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
-import { LandingOverload } from "../components/LandingOverload";
-import { LANDING_EXAMPLES, type LandingExampleId } from "../components/landing-examples";
-import { LandingPractice } from "../components/LandingPractice";
-import { LandingTeacherScene } from "../components/LandingTeacherScene";
-import { FrustrationClip } from "../components/FrustrationClip";
-import { LandingClosing } from "../components/LandingClosing";
+import { LandingOpening } from "../components/LandingOpening";
+import { LandingStudy } from "../components/LandingStudy";
+import { LandingIntro } from "../components/LandingIntro";
+import { LandingLesson } from "../components/LandingLesson";
 import { LandingLearning } from "../components/LandingLearning";
+import { LandingWalkthroughs } from "../components/LandingWalkthroughs";
+import { LandingClosing } from "../components/LandingClosing";
+import { Eyebrow } from "../design-system/kit";
+import { KeatingGlyph, type GlyphName } from "../design-system/glyphs";
 import { useLandingAnalytics } from "../hooks/useLandingAnalytics";
 import { useSeo } from "../hooks/useSeo";
 import { DOCUMENTATION_URL } from "../lib/tutorial-links";
 import "./landing-page.css";
 
+const options: [GlyphName, string, string][] = [
+  ["chip", "Choose your model", "Use the hosted teacher, bring a provider key, or download a model to run locally in a compatible browser."],
+  ["folder", "Your data", "Keep a copy of your work. Export sessions and learning records. Hosted models receive the context they need for a reply."],
+  ["code", "Open source", "Read the source, change the teacher, or host it yourself."],
+];
+
 export function Landing() {
-  const [exampleId, setExampleId] = useState<LandingExampleId>("recursion");
-  const { root, posthog } = useLandingAnalytics();
-  const selectExample = (id: LandingExampleId) => {
-    setExampleId(id);
-    posthog?.capture("landing_lesson_selected", { example_id: id });
-  };
+  const { root } = useLandingAnalytics();
   useSeo({
-    title: "Keating — Ready to think for yourself?",
-    description: "An answer is not the whole lesson. Keating works with your goals and learning history, then helps you reconstruct ideas through practice. Start a session or download your own AI teacher.",
+    title: "Keating: it made sense yesterday",
+    description: "A chatbot explains it and you nod. The next day it is gone. Keating is an AI teacher that asks before it tells, checks what stuck, and remembers where you are. Start in the browser or download it.",
     canonical: "https://keating.help/",
   });
-  return (
-    <div className="retro-layout retro-page landing-page">
-      <Nav />
-      <main ref={root}>
-        <section id="seen-this-before" className="landing-overload-act" aria-labelledby="landing-title">
-          <div className="landing-wrap landing-opening">
-            <h1 id="landing-title" data-landing-section="overload">Seen this before?</h1>
-            <div className="landing-opening-actions">
-              <Link to="/download" className="landing-opening-download" onClick={() => posthog?.capture("download_intent", { source: "landing_opening", destination: "download_page" })}>Download Keating</Link>
-              <Link to="/chat" className="landing-opening-browser" onClick={() => posthog?.capture("start_session_clicked", { source: "landing_opening", intent: "open_browser" })}>Open Keating in the browser <span aria-hidden="true">→</span></Link>
-            </div>
-            <LandingOverload exampleId={exampleId} onExampleChange={selectExample} />
-          </div>
-          <figure className="landing-frustration landing-wrap">
-            <FrustrationClip />
-            <figcaption><h2>You asked to learn.<br />You got more to read.</h2></figcaption>
-          </figure>
-        </section>
-
-        <LandingIntro />
-
-        <section id="keating-lesson" className="landing-response" aria-labelledby="landing-response-title">
-          <div className="landing-wrap landing-response-grid">
-            <div className="landing-response-copy">
-              <h2 id="landing-response-title" data-landing-section="lesson">You do the thinking.<br /><span>Keating helps it click.</span></h2>
-              <p>A teacher that starts with your goals and builds on what you know.</p>
-              <LandingTeacherScene />
-              <div className="landing-deeper">
-                <details><summary>Make it your own</summary><p>Choose your model, shape your teacher, and take your data with you. It’s open source—build as deeply as you want.</p><div><a href={`${DOCUMENTATION_URL}start-here/`}>Setup guide</a><a href="https://github.com/Diogenesoftoronto/keating" target="_blank" rel="noreferrer">Explore the source</a></div></details>
-              </div>
-            </div>
-            <div className="landing-response-example"><div className="landing-example-picker" role="group" aria-label="Choose a lesson subject">{LANDING_EXAMPLES.map(example => <button type="button" key={example.id} data-example={example.id} aria-pressed={exampleId === example.id} onClick={() => selectExample(example.id)}>{example.label}</button>)}</div><LandingPractice key={exampleId} exampleId={exampleId} /></div>
-          </div>
-        </section>
-        <LandingLearning />
-        <LandingClosing />
-      </main>
-      <Footer />
-    </div>
-  );
+  return <div className="retro-layout retro-page landing-page"><Nav/>
+    <main className="lp" ref={root}>
+      <LandingOpening/><LandingStudy/><LandingIntro/><LandingLesson/><LandingLearning/>
+      <section className="lp-own"><Eyebrow>Yours to keep</Eyebrow><h2 data-landing-section="setup">Make it your own.</h2>
+        <div className="lp-tiles">{options.map(([glyph, title, copy]) => <div key={title} data-glyph-host>
+          <KeatingGlyph name={glyph} size={22}/><b>{title}</b><p>{copy}</p>
+        </div>)}</div>
+        <div className="lp-cta"><a href={`${DOCUMENTATION_URL}start-here/`}>Setup guide</a>
+          <a href="https://github.com/Diogenesoftoronto/keating" target="_blank" rel="noreferrer">Explore the source</a></div>
+      </section>
+      <LandingWalkthroughs/><LandingClosing/>
+    </main><Footer/>
+  </div>;
 }

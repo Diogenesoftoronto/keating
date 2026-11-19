@@ -1,0 +1,278 @@
+{
+  "slug": "courses",
+  "title": "Courses",
+  "viewport": "desktop",
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "local-account"
+  ],
+  "ready": [
+    {
+      "label": "Or assemble manually"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "goto",
+      "path": "/courses"
+    },
+    {
+      "kind": "chapter",
+      "id": "assemble",
+      "title": "Open the course assembler",
+      "explanation": "Open the course assembler.",
+      "alt": "Open the course assembler"
+    },
+    {
+      "kind": "caption",
+      "text": "Open the course assembler."
+    },
+    {
+      "kind": "click",
+      "label": "Or assemble manually"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Course title",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "assemble"
+    },
+    {
+      "kind": "chapter",
+      "id": "create",
+      "title": "Create Recursion Workshop",
+      "explanation": "Create a course you can fill in.",
+      "alt": "Create Recursion Workshop"
+    },
+    {
+      "kind": "caption",
+      "text": "Create a course you can fill in."
+    },
+    {
+      "kind": "click",
+      "selector": ".cb-assembly-details input:not([type=checkbox])"
+    },
+    {
+      "kind": "press",
+      "key": "a",
+      "ctrl": true
+    },
+    {
+      "kind": "type",
+      "selector": ".cb-assembly-details input:not([type=checkbox])",
+      "text": "Recursion Workshop",
+      "delay": 27
+    },
+    {
+      "kind": "click",
+      "label": "Create blank course"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Build",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "create"
+    },
+    {
+      "kind": "chapter",
+      "id": "outline",
+      "title": "See the sample course outline",
+      "explanation": "Organise lessons into modules.",
+      "alt": "See the sample course outline"
+    },
+    {
+      "kind": "caption",
+      "text": "Organise lessons into modules."
+    },
+    {
+      "kind": "seed",
+      "fixtures": [
+        "course"
+      ],
+      "reload": true,
+      "ready": [
+        {
+          "text": "Why the base case matters"
+        }
+      ]
+    },
+    {
+      "kind": "wait-for",
+      "text": "Why the base case matters",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "outline"
+    },
+    {
+      "kind": "chapter",
+      "id": "reading",
+      "title": "Read the base-case lesson",
+      "explanation": "Open the lesson and its reading.",
+      "alt": "Read the base-case lesson"
+    },
+    {
+      "kind": "caption",
+      "text": "Open the lesson and its reading."
+    },
+    {
+      "kind": "click",
+      "label": "Why the base case matters",
+      "contains": true
+    },
+    {
+      "kind": "wait-for",
+      "text": "For countdown(2)",
+      "timeout": 7000
+    },
+    {
+      "kind": "hover",
+      "label": "Countdown trace",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 1600
+    },
+    {
+      "kind": "pause",
+      "ms": 900
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "reading"
+    },
+    {
+      "kind": "chapter",
+      "id": "complete",
+      "title": "Mark the lesson complete",
+      "explanation": "Mark this lesson complete.",
+      "alt": "Mark the lesson complete"
+    },
+    {
+      "kind": "caption",
+      "text": "Mark this lesson complete."
+    },
+    {
+      "kind": "click",
+      "label": "Mark complete"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Lesson complete",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "complete"
+    },
+    {
+      "kind": "chapter",
+      "id": "discussion",
+      "title": "Post a lesson comment",
+      "explanation": "Keep the question with the lesson.",
+      "alt": "Post a lesson comment"
+    },
+    {
+      "kind": "caption",
+      "text": "Keep the question with the lesson."
+    },
+    {
+      "kind": "wait-for",
+      "timeout": 7000,
+      "condition": "(() => {\n  const tab = [...document.querySelectorAll('button,[role=\"tab\"],a')].find(el => el.innerText.trim() === \"Discuss\" && el.getClientRects().length);\n  if (!tab) return false;\n  const rect = tab.getBoundingClientRect();\n  return tab.contains(document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2));\n})()"
+    },
+    {
+      "kind": "click",
+      "label": "Discuss"
+    },
+    {
+      "kind": "type",
+      "selector": "textarea[aria-label=\"Write a comment\"]",
+      "text": "Could we trace what happens at zero?",
+      "delay": 22
+    },
+    {
+      "kind": "click",
+      "label": "Post comment"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Could we trace what happens at zero?",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "discussion"
+    },
+    {
+      "kind": "chapter",
+      "id": "review",
+      "title": "Inspect reviewable work",
+      "explanation": "See which learner work awaits review.",
+      "alt": "Inspect reviewable work"
+    },
+    {
+      "kind": "caption",
+      "text": "See which learner work awaits review."
+    },
+    {
+      "kind": "click",
+      "label": "Review"
+    },
+    {
+      "kind": "click",
+      "label": "Only work awaiting review"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "review"
+    },
+    {
+      "kind": "chapter",
+      "id": "self-paced",
+      "title": "Find self-paced courses",
+      "explanation": "Find self-paced courses and any plans saved here.",
+      "alt": "Find self-paced courses"
+    },
+    {
+      "kind": "caption",
+      "text": "Find self-paced courses and any plans saved here."
+    },
+    {
+      "kind": "goto",
+      "path": "/learn",
+      "ready": [
+        {
+          "text": "Self-paced courses"
+        }
+      ]
+    },
+    {
+      "kind": "wait-for",
+      "text": "Self-paced courses",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "self-paced"
+    }
+  ],
+  "viewerNote": "The outline and sample submission are seeded after blank-course creation. The course owner entered the sample submission."
+}

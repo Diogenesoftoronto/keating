@@ -1,4 +1,4 @@
-import { GitBranch } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css } from "../../styled-system/css";
 
 export interface ForkBannerProps {
@@ -64,7 +64,7 @@ export function ForkBanner({ parentTitle, onOpenOriginal }: ForkBannerProps) {
 		<div className={rootClass}>
 			<div className={rowClass}>
 				<div className={labelStackClass}>
-					<GitBranch size={13} className={iconClass} />
+					<KeatingGlyph name="fork" size={13} className={iconClass} />
 					<span className={truncateClass}>
 						Forked from{" "}
 						<span className={parentTitleClass}>

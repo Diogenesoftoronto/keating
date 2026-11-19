@@ -1,3 +1,4 @@
+import { Loading } from "../design-system/kit";
 /**
  * Runtime dialog ("sandbox") for the in-browser NodePod workspace. This file
  * owns the dialog/tab chrome, boot and teardown, and wires the per-concern
@@ -5,15 +6,7 @@
  */
 import { Select } from "./Select";
 import { useEffect, useMemo, useRef, useState, useCallback, useTransition } from "react";
-import Activity from "reicon-react/icons/Activity";
-import Cpu from "reicon-react/icons/Cpu";
-import FolderOpen from "reicon-react/icons/FolderOpen";
-import Play from "reicon-react/icons/Play";
-import PowerOff from "reicon-react/icons/PowerOff";
-import RefreshCw from "reicon-react/icons/Refresh";
-import Terminal from "reicon-react/icons/TerminalSquare";
-import X from "reicon-react/icons/X";
-import { KeatingIcon } from "./KeatingIcon";
+import { KeatingGlyph } from "../design-system/glyphs";
 import "./sandbox-view.css";
 import { DesktopWorkspacePanel } from "./DesktopWorkspacePanel";
 import { isDesktopNativeRuntime } from "../lib/desktop-native";
@@ -29,7 +22,7 @@ import { SandboxShellPanel } from "./sandbox/SandboxShellPanel";
 import { SandboxSnapshotsPanel } from "./sandbox/SandboxSnapshotsPanel";
 import { SandboxStatusPanel } from "./sandbox/SandboxStatusPanel";
 import { errorMessage, isAdvancedTab, runtimeLabel, runtimeStatusLabel } from "./sandbox/sandbox-helpers";
-import { RuntimeSpinner, styles } from "./sandbox/sandbox-shared";
+import { styles } from "./sandbox/sandbox-shared";
 import { useSandboxActivityLog } from "./sandbox/useSandboxActivityLog";
 import { useSandboxFiles } from "./sandbox/useSandboxFiles";
 import { useSandboxHistory } from "./sandbox/useSandboxHistory";
@@ -74,10 +67,10 @@ export function SandboxView({
   const { events, pushEvent, logRef } = useSandboxActivityLog();
 
   const availableTabs = useMemo(() => [
-    { id: "status" as const, label: "Overview", icon: <KeatingIcon icon={Cpu} size={17} /> },
-    { id: "vfs" as const, label: "Files", icon: <KeatingIcon icon={FolderOpen} size={17} />, disabled: !nodePodActive },
-    { id: "shell" as const, label: "Terminal", icon: <KeatingIcon icon={Terminal} size={17} />, disabled: !nodePodActive },
-    { id: "log" as const, label: "Activity", icon: <KeatingIcon icon={Activity} size={17} /> },
+    { id: "status" as const, label: "Overview", icon: <KeatingGlyph name="chip" size={17} /> },
+    { id: "vfs" as const, label: "Files", icon: <KeatingGlyph name="folder" size={17} />, disabled: !nodePodActive },
+    { id: "shell" as const, label: "Terminal", icon: <KeatingGlyph name="terminal" size={17} />, disabled: !nodePodActive },
+    { id: "log" as const, label: "Activity", icon: <KeatingGlyph name="signal" size={17} /> },
   ], [nodePodActive]);
 
   useEffect(() => {
@@ -150,13 +143,13 @@ export function SandboxView({
       <div className={styles.panel}>
         <header className={styles.header}>
           <div className="runtime-heading">
-            <span className="runtime-mark"><KeatingIcon icon={Cpu} size={24} active={nodePodActive} /></span>
+            <span className="runtime-mark" data-glyph-host><KeatingGlyph name="chip" size={24} /></span>
             <div className={styles.minW0}>
               <h2 id="runtime-title">{isDesktopNativeRuntime(runtime) ? "Desktop workspace" : "Runtime"}</h2>
               <p>{runtimeError ? "Workspace unavailable" : isDesktopNativeRuntime(runtime) ? "Native files and processes" : runtime ? runtimeLabel(runtime.mode) : "Loading environment…"}</p>
             </div>
           </div>
-          <button type="button" className="runtime-icon-button" aria-label="Close runtime" onClick={requestClose} autoFocus><KeatingIcon icon={X} size={20} /></button>
+          <button type="button" className="runtime-icon-button k-bloom" aria-label="Close runtime" onClick={requestClose} autoFocus><KeatingGlyph name="x" size={20} /></button>
         </header>
 
         {confirmNativeClose && <div className="desktop-workspace-close" role="alert"><p>Your file has unsaved edits.</p><div><button type="button" onClick={() => setConfirmNativeClose(false)}>Keep editing</button><button type="button" onClick={() => { setConfirmNativeClose(false); setNativeDirty(false); onClose(); }}>Discard and close</button></div></div>}
@@ -164,12 +157,12 @@ export function SandboxView({
         <div className="runtime-control-bar">
           <span className="runtime-state" data-running={nodePodActive} role="status"><span className="runtime-state-dot" />{status}</span>
           <div className="runtime-controls">
-            <button type="button" onClick={refreshAll} className="runtime-icon-button" aria-label="Refresh runtime" title="Refresh runtime"><KeatingIcon icon={RefreshCw} size={18} /></button>
+            <button type="button" onClick={refreshAll} className="runtime-icon-button k-bloom" aria-label="Refresh runtime" title="Refresh runtime"><KeatingGlyph name="refresh" size={18} /></button>
             {nodePodAction === "stop" ? (
-              <button type="button" onClick={handleTeardown} className="runtime-stop"><KeatingIcon icon={PowerOff} size={17} />Stop</button>
+              <button type="button" onClick={handleTeardown} className="runtime-stop"><KeatingGlyph name="power" size={17} />Stop</button>
             ) : nodePodAction === "boot" ? (
               <button type="button" onClick={handleBoot} disabled={booting} aria-label={booting ? "Starting NodePod" : "Start NodePod"} className={styles.primaryButton}>
-                {booting ? <RuntimeSpinner /> : <KeatingIcon icon={Play} size={17} />}{booting ? "Starting…" : <><span className="runtime-start-full">Start NodePod</span><span className="runtime-start-short">Start</span></>}
+                {booting ? <Loading size="inline" label="Starting…" /> : <><KeatingGlyph name="play" size={17} /><span className="runtime-start-full">Start NodePod</span><span className="runtime-start-short">Start</span></>}
               </button>
             ) : null}
           </div>

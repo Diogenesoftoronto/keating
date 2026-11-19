@@ -224,8 +224,8 @@ describe("turn helpers", () => {
 describe("page events", () => {
   test("settings deep links resolve tabs and model sections", () => {
     expect(parseSettingsDeepLink("learning")).toEqual({ tabId: "learning", sectionId: null });
-    expect(parseSettingsDeepLink("nonsense")).toEqual({ tabId: "models", sectionId: null });
-    expect(parseSettingsDeepLink("learning-unknown")).toEqual({ tabId: "learning", sectionId: null });
+    expect(parseSettingsDeepLink("nonsense")).toEqual({ tabId: "models", sectionId: "nonsense" });
+    expect(parseSettingsDeepLink("learning-unknown")).toEqual({ tabId: "learning", sectionId: "unknown" });
     expect(requestedSettingsTab("diagnostics")).toBe("diagnostics");
     expect(requestedSettingsTab(42)).toBe("models");
   });

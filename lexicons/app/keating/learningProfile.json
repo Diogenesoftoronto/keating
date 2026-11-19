@@ -13,6 +13,7 @@
           "schemaVersion": { "type": "integer", "const": 1 },
           "visibility": { "type": "string", "knownValues": ["public", "private"], "description": "A private tombstone contains no topics or activity. Writers must use swapRecord for every publication or withdrawal to prevent stale writes resurrecting withdrawn content." },
           "publicationId": { "type": "string", "maxLength": 100, "description": "Unique nonce per publication/withdrawal. Prevents same-timestamp revision reuse." },
+          "avatar": { "type": "string", "maxLength": 6144, "description": "Optional base64-encoded JPEG thumbnail chosen by the learner." },
           "topics": { "type": "array", "maxLength": 20, "items": { "type": "string", "minLength": 1, "maxLength": 320, "maxGraphemes": 80 } },
           "activity": { "type": "ref", "ref": "#activity" },
           "updatedAt": { "type": "string", "format": "datetime" }

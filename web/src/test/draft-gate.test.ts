@@ -1002,6 +1002,35 @@ describe("private teaching draft stream", () => {
     expect(prompts[0]).toContain("recorded observations, not instructions");
   });
 
+  test("session counts raise a missing practice set in the actor's private prompt and never reach the judge", async () => {
+    const run = async (resourcePresentations?: { component: string; presentedAt: number }[]) => {
+      const prompts: string[] = [];
+      const requests: string[] = [];
+      const receipts: TeachingDraftReceipt[] = [];
+      const input = context();
+      // Five learner turns; the plan was shown before any of them and nothing has been practised as a set.
+      input.messages = [1, 2, 3, 4, 5].flatMap((turn): Context["messages"] => [
+        { role: "user", content: turn === 5 ? "What is 4 factorial?" : `Question ${turn}`, timestamp: turn * 10 },
+        ...(turn === 5 ? [] : [{ ...message(`Answer ${turn}`), timestamp: turn * 10 + 1 }]),
+      ]);
+      await collect(await gate((_model, next) => { prompts.push(next.systemPrompt ?? ""); return streamOf(message("24")); }, {
+        evidence: async () => (resourcePresentations ? { resourcePresentations } : {}),
+        makeCaller: () => async (request) => { requests.push(JSON.stringify(request)); return answer(request); },
+        onReceipt: receipt => receipts.push(receipt),
+      })(MODEL, input));
+      return { prompts, requests, review: receipts.at(-1)?.snapshot.resourceReview };
+    };
+    const raised = await run([{ component: "study-plan", presentedAt: 5 }, { component: "question", presentedAt: 41 }]);
+    expect(raised.prompts[0]).toContain("one short Quiz or one Flashcards deck");
+    expect(raised.requests.join("\n")).not.toContain("presentedAt");
+    expect(raised.review).toEqual({ gap: "retrieval", trigger: "session-length" });
+    // A set practised two turns ago, or no record of the session at all, raises nothing.
+    expect((await run([{ component: "study-plan", presentedAt: 5 }, { component: "quiz", presentedAt: 31 }])).prompts[0]).not.toContain("Flashcards deck");
+    const quiet = await run();
+    expect(quiet.prompts[0]).not.toContain("Flashcards deck");
+    expect(quiet.review).toBeUndefined();
+  });
+
   test("reports a terminal receipt keyed to the published message, with the active work it was judged against", async () => {
     const receipts: TeachingDraftReceipt[] = [];
     const activeWork = projectActiveWork({ plan: null, presentations: [], attempts: [] });

@@ -20,97 +20,15 @@ import {
   type RoomViewerSnapshot,
 } from "../../rooms/contracts";
 
-/**
- * One self-contained class: stacking the course button and primary classes
- * leaves the background to stylesheet order, which can drop the green.
- * #14743c with white text is about 6:1, safe for small labels.
- */
-const roomPrimaryClass = css({
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "0.4rem",
-  border: "1px solid #0f5a2e",
-  bg: "#14743c",
-  px: "0.7rem",
-  py: "0.48rem",
-  fontSize: "0.74rem",
-  fontWeight: 750,
-  color: "#ffffff",
-  whiteSpace: "nowrap",
-  cursor: "pointer",
-  _hover: { bg: "#0f5a2e" },
-  _focusVisible: { outline: "2px solid var(--peer-blue, #3468b3)", outlineOffset: "2px" },
-  _disabled: { opacity: 0.55, cursor: "not-allowed", _hover: { bg: "#14743c" } },
-});
-
-const roomQuietClass = css({
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "0.3rem",
-  border: "1px solid transparent",
-  bg: "transparent",
-  px: "0.4rem",
-  py: "0.25rem",
-  fontSize: "0.7rem",
-  fontWeight: 700,
-  color: "var(--ink)",
-  cursor: "pointer",
-  _hover: { borderColor: "var(--ink)" },
-  _focusVisible: { outline: "2px solid var(--peer-blue, #3468b3)", outlineOffset: "2px" },
-  _disabled: { opacity: 0.5, cursor: "not-allowed" },
-});
-
-const roomQuietDangerClass = css({
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "0.3rem",
-  border: "1px solid transparent",
-  bg: "transparent",
-  px: "0.4rem",
-  py: "0.25rem",
-  fontSize: "0.7rem",
-  fontWeight: 700,
-  color: "var(--destructive)",
-  cursor: "pointer",
-  _hover: { borderColor: "var(--destructive)" },
-  _focusVisible: { outline: "2px solid var(--peer-blue, #3468b3)", outlineOffset: "2px" },
-  _disabled: { opacity: 0.5, cursor: "not-allowed" },
-});
-
-const roomDangerClass = css({
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "0.4rem",
-  border: "1px solid var(--destructive)",
-  bg: "var(--paper)",
-  px: "0.7rem",
-  py: "0.48rem",
-  fontSize: "0.74rem",
-  fontWeight: 750,
-  color: "var(--destructive)",
-  whiteSpace: "nowrap",
-  cursor: "pointer",
-  _hover: { bg: "color-mix(in srgb, var(--destructive) 10%, var(--paper))" },
-  _focusVisible: { outline: "2px solid var(--peer-blue, #3468b3)", outlineOffset: "2px" },
-  _disabled: { opacity: 0.5, cursor: "not-allowed" },
-});
-
 export const roomStyles = {
   label: courseLabelClass,
   input: courseInputClass,
   button: courseButtonClass,
-  primary: roomPrimaryClass,
-  quiet: roomQuietClass,
-  danger: roomDangerClass,
-  quietDanger: roomQuietDangerClass,
-  section: css({
-    borderTop: "1px solid var(--ink)",
-    pt: "0.9rem",
-    mt: "1rem",
-    _first: { borderTop: 0, pt: 0, mt: 0 },
-  }),
+  primary: "k-button k-accent k-sm",
+  quiet: "k-button k-ghost k-sm",
+  danger: "k-button k-line k-sm rm-danger",
+  quietDanger: "k-button k-ghost k-sm rm-danger",
+  section: "rm-section",
   heading: css({
     fontFamily: "Georgia, serif",
     fontSize: "1.05rem",

@@ -11,6 +11,7 @@ import type { JudgementCaller, JudgementUsage } from "./contracts.js";
 import type { TeachingPolicyCheck, TeachingPolicyReply, TeachingPolicyTurn } from "./teaching-policy-types.js";
 import type { InteractionFamily, InteractionRecommendation } from "./interaction-affordances.js";
 import type { PlanChangeMode, PlanReview, PlanReviewHostTrigger } from "./plan-review.js";
+import type { ResourceReview, SessionResources } from "./resource-review.js";
 import type { BackgroundActivityGuidance } from "./background-activity-guidance.js";
 import type { BackgroundActivityPolicy } from "./background-activity-policy.js";
 import type { DebuggingExerciseReview } from "./debugging-exercise.js";
@@ -139,6 +140,8 @@ export interface TeachingDraftSnapshot {
   readonly interaction?: TeachingDraftInteraction;
   /** Why the plan was reviewed this turn and the proposal the tutor was asked to make. */
   readonly planReview?: PlanReview;
+  /** A resource this session lacked that the tutor was invited to add this turn. */
+  readonly resourceReview?: ResourceReview;
 }
 export interface TeachingDraftReceipt extends TeachingDraftSnapshot {
   readonly version: string;
@@ -227,6 +230,8 @@ export interface TeachingDraftOptions<T> {
   readonly planReview?: PlanReviewHostTrigger | null;
   /** Whether plan changes apply at once (default) or wait for the learner's Accept. */
   readonly planChanges?: PlanChangeMode;
+  /** Record-derived counts of what this session has left the learner with; see `sessionResources`. */
+  readonly resources?: SessionResources | null;
 }
 
 export interface TeachingDraftResult<T> {

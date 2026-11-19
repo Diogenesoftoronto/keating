@@ -1,12 +1,11 @@
 import { KeatingBot } from "../components/KeatingBot";
-import { Select } from "../components/Select";
+import { AppBar, Button, ButtonLink, Loading, Note, Segmented, SelectField, StatusDot } from "../design-system/kit";
+import "./live.css";
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Camera, ImagePlus, Mic, MonitorUp, Settings2 } from "lucide-react";
+import { liveReadiness, startOptions } from "../components/live/preflight";
 
-import { Nav } from "../components/Nav";
 import { AssistantChatPanel } from "../components/AssistantChatPanel";
-import { css, cx } from "../../styled-system/css";
+
 import { useKeatingAgent } from "../hooks/useKeatingAgent";
 import { loadWebSpeechSettings, primeSpeechAudio, resolveSpeechRealtimeTier, saveWebSpeechSettings, usesProviderHostedLiveSurface } from "../keating/speech";
 import { describeLiveModel, isLiveProviderId, liveModelsFor, recommendedLiveModel } from "../keating/live-models";
@@ -46,6 +45,20 @@ export function Live() {
 	const [hasKey, setHasKey] = useState<boolean | null>(null);
 	const [started, setStarted] = useState(false);
 	const [gptLiveConsentGranted, setGptLiveConsentGranted] = useState(false);
+
+	const [microphone, setMicrophone] = useState<PermissionState | null>(null);
+	useEffect(() => {
+		let active = true;
+		let permission: PermissionStatus | undefined;
+		const sync = () => { if (active && permission) setMicrophone(permission.state); };
+		void navigator.permissions?.query({ name: "microphone" as PermissionName }).then(result => {
+			if (!active) return;
+			permission = result;
+			sync();
+			result.addEventListener("change", sync);
+		}).catch(() => {});
+		return () => { active = false; permission?.removeEventListener("change", sync); };
+	}, []);
 
 	const model = useMemo(
 		() => describeLiveModel(settings.providerId, settings.model),
@@ -94,6 +107,12 @@ export function Live() {
 		setSettings(next);
 	};
 
+	useEffect(() => {
+		const closed = () => setStarted(false);
+		window.addEventListener("keating:live-overlay-closed", closed);
+		return () => window.removeEventListener("keating:live-overlay-closed", closed);
+	}, []);
+
 	const start = () => {
 		// Unlock audio playback from this gesture; browsers will not let the
 		// session do it later on its own.
@@ -111,320 +130,67 @@ export function Live() {
 			: "Google";
 	const notInCatalog = !models.some((entry) => entry.value === model.value);
 
-	return (
-		<div className={css({ minHeight: "100dvh", backgroundColor: "var(--background)", color: "var(--foreground)" })}>
-			<Nav />
+	const readiness = liveReadiness({hasKey, accountLiveSelected, accountLiveConfigured, accountLiveName,
+		providerName, credentialProvider: Boolean(credentialProvider), microphone: providerHostedLive ? null : microphone,
+		needsConsent: settings.providerId === "gpt-live" && !gptLiveConsentGranted});
+	const startMode = !providerHostedLive && liveTier.video && settings.videoEnabled ? settings.videoSource : "voice";
+	const hint = providerHostedLive
+		? "Video PAL and Magic Canvas. The Tavus call requests camera and microphone access inside its own secure video surface. Interactive activities appear beside KeatingBot."
+		: liveTier.video ? "Voice stays on. You can turn camera or screen sharing on or off during the conversation."
+		: liveTier.image ? "Add an image once the conversation starts. This model accepts still images, but it does not receive live video."
+		: "This session uses audio only. Choose a provider with visual input to share images or video.";
 
-			{/*
-			 * The chat panel is mounted but not shown: it owns the agent, the tool
-			 * bridge, the live surface, and the transcript that a finished
-			 * conversation is folded back into. Hiding it rather than skipping it is
-			 * what makes /live a door into the same conversation instead of a
-			 * parallel one.
-			 */}
-			<div aria-hidden="true" className={css({ display: "none" })}>
-				<AssistantChatPanel ref={chatPanelRef} />
+	return <div className="lv-page">
+		<AppBar back={{ label: "Conversation", to: "/chat" }} title="Live with Keating" />
+		<div hidden><AssistantChatPanel ref={chatPanelRef} /></div>
+		{dialogs}
+		<main className="lv-setup">
+			<header className="lv-intro k-halftone k-green">
+				<KeatingBot variant="body" size={64} state={hasKey === null ? "thinking" : "waving"} animated={false} label="" />
+				<div><h1>Talk it through out loud</h1><p>Keating listens, asks, and can look at what you show it.</p></div>
+			</header>
+			<div className="lv-choices">
+				<div className="lv-choice">
+					<SelectField label="Who you talk to" aria-label="Live provider" value={settings.providerId} onValueChange={value => {
+						if (isLiveProviderId(value)) update({providerId: value, model: recommendedLiveModel(value)?.value ?? "",
+							...(value === "gpt-live" ? {voiceName: "marin", videoEnabled: false} : {})});
+					}}>
+						{!isLiveProviderId(settings.providerId) && <option value={settings.providerId}>{settings.providerId}</option>}
+						<option value="tavus">Tavus KeatingBot</option><option value="gpt-live">GPT Live (Not Organic)</option>
+						<option value="gemini-live">Gemini Live</option><option value="openai-realtime">OpenAI Realtime</option>
+					</SelectField>
+				</div>
+				<div className="lv-choice">
+					<SelectField label="Model" aria-label="Live model" value={model.value} onValueChange={model => update({model})}>
+						{notInCatalog && <option value={model.value}>{model.label}</option>}
+						{models.map(entry => <option key={entry.value} value={entry.value}>{entry.label}{entry.grade === "recommended" ? " · recommended" : ""}</option>)}
+					</SelectField>
+					{model.note && <p>{model.note}</p>}
+					{settings.providerId === "gpt-live" && <p>Session spending ceiling: ${(gptLiveMaxCostMicrousd() / 1_000_000).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 6})} USD. Live audio uses your Not Organic balance and requires your account's live consent.</p>}
+				</div>
+				<div className="lv-choice"><div className="lv-row"><b>Start with</b>
+					<Segmented label="Start with" value={startMode} options={startOptions(!providerHostedLive && liveTier.video)}
+						onChange={value => update(value === "voice" ? {videoEnabled: false} : {videoEnabled: true, videoSource: value})} />
+				</div><p>{hint}</p></div>
 			</div>
-			{dialogs}
-
-			<main
-				className={css({
-					maxWidth: "34rem",
-					marginInline: "auto",
-					paddingInline: "1.25rem",
-					paddingTop: "3rem",
-					paddingBottom: "4rem",
-					display: "flex",
-					flexDirection: "column",
-					gap: "1.5rem",
-				})}
-			>
-				<div className={css({ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", textAlign: "center" })}>
-					<KeatingBot variant="body" size={160} state={hasKey === null ? "thinking" : "waving"} label="" />
-					<h1 className={css({ fontSize: "1.75rem", fontWeight: 700, lineHeight: 1.15 })}>Live with Keating</h1>
-					<p className={css({ color: "var(--muted-foreground)", fontSize: "0.9375rem", maxWidth: "26rem" })}>
-						Talk out loud and get answers out loud. Depending on the live model, show Keating your work with
-						a camera, a shared screen, or a still image.
-					</p>
-				</div>
-
-				{hasKey === false ? (
-					<div
-						className={css({
-							borderRadius: "0.875rem",
-							border: "1px solid color-mix(in srgb, var(--destructive) 40%, transparent)",
-							backgroundColor: "color-mix(in srgb, var(--destructive) 8%, var(--background))",
-							padding: "1rem 1.125rem",
-						})}
-					>
-						<p className={css({ fontWeight: 600, fontSize: "0.9375rem" })}>
-							{accountLiveSelected
-								? accountLiveConfigured ? "Not Organic account needed" : `${accountLiveName} is unavailable`
-								: credentialProvider ? `${providerName} key needed` : "No live provider selected"}
-						</p>
-						<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)", marginTop: "0.25rem" })}>
-							{accountLiveSelected
-								? accountLiveConfigured
-									? `Connect your Not Organic account before starting ${accountLiveName}. The call uses your device-bound live access.`
-									: `This deployment has not enabled the Not Organic account service required by ${accountLiveName}.`
-								: credentialProvider
-								? `Live mode talks to ${providerName} straight from this browser, and there is no key stored for it yet.`
-								: "The current speech provider only synthesizes speech; it cannot hold a conversation."}
-						</p>
-						{!accountLiveSelected || accountLiveConfigured ? <button
-							type="button"
-							onClick={() => {
-								if (accountLiveSelected) {
-									void beginNotOrganicAuthorization("/live");
-									return;
-								}
-								window.dispatchEvent(new CustomEvent("keating:open-settings", {
-									detail: { tab: credentialProvider ? "models" : "learning" },
-								}));
-							}}
-							className={cx("dialog-compact-button", css({
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "0.375rem",
-								marginTop: "0.75rem",
-								borderRadius: "0.5rem",
-								border: "1px solid var(--border)",
-								paddingInline: "0.75rem",
-								paddingBlock: "0.4375rem",
-								fontSize: "0.8125rem",
-								cursor: "pointer",
-								_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
-							}))}
-						>
-							<Settings2 size={14} /> {accountLiveSelected ? "Connect Not Organic" : credentialProvider ? "Add a key" : "Choose a live model"}
-						</button> : null}
-					</div>
-				) : null}
-
-				<div
-					className={css({
-						borderRadius: "0.875rem",
-						border: "1px solid var(--border)",
-						backgroundColor: "color-mix(in srgb, var(--foreground) 3%, var(--background))",
-						padding: "1rem 1.125rem",
-						display: "flex",
-						flexDirection: "column",
-						gap: "0.875rem",
-					})}
-				>
-					<label className={css({ display: "flex", flexDirection: "column", gap: "0.375rem" })}>
-						<span className={css({ fontSize: "0.8125rem", fontWeight: 600 })}>Provider</span>
-						<Select aria-label="Live provider"
-							value={settings.providerId}
-							onValueChange={(value) => {
-								if (!isLiveProviderId(value)) return;
-								const providerId = value;
-								update({
-									providerId,
-									model: recommendedLiveModel(providerId)?.value ?? "",
-									...(providerId === "gpt-live" ? { voiceName: "marin", videoEnabled: false } : {}),
-								});
-							}}
-							className={css({
-								width: "100%",
-								borderRadius: "0.5rem",
-								border: "1px solid var(--border)",
-								backgroundColor: "var(--background)",
-								color: "var(--foreground)",
-								paddingInline: "0.625rem",
-								paddingBlock: "0.5rem",
-								fontSize: "0.875rem",
-							})}
-						>
-							<option value="tavus">Tavus KeatingBot</option>
-							<option value="gpt-live">GPT Live (Not Organic)</option>
-							<option value="gemini-live">Gemini Live</option>
-							<option value="openai-realtime">OpenAI Realtime</option>
-						</Select>
-					</label>
-
-					<label className={css({ display: "flex", flexDirection: "column", gap: "0.375rem" })}>
-						<span className={css({ fontSize: "0.8125rem", fontWeight: 600 })}>Model</span>
-						<Select aria-label="Live model"
-							value={model.value}
-							onValueChange={(value) => update({ model: value })}
-							className={css({
-								width: "100%",
-								borderRadius: "0.5rem",
-								border: "1px solid var(--border)",
-								backgroundColor: "var(--background)",
-								color: "var(--foreground)",
-								paddingInline: "0.625rem",
-								paddingBlock: "0.5rem",
-								fontSize: "0.875rem",
-							})}
-						>
-							{notInCatalog ? <option value={model.value}>{model.label}</option> : null}
-							{models.map((entry) => (
-								<option key={entry.value} value={entry.value}>
-									{entry.label}
-									{entry.grade === "recommended" ? " · recommended" : ""}
-								</option>
-							))}
-						</Select>
-						{model.note ? (
-							<span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{model.note}</span>
-						) : null}
-						{settings.providerId === "gpt-live" ? (
-							<span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-								Session spending ceiling: ${(gptLiveMaxCostMicrousd() / 1_000_000).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USD. Live audio uses your Not Organic balance and requires your account's live consent.
-							</span>
-						) : null}
-					</label>
-
-					{settings.providerId === "gpt-live" ? <GptLiveConsentSettings onGrantedChange={setGptLiveConsentGranted} /> : null}
-
-					<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
-						<span className={css({ fontSize: "0.8125rem", fontWeight: 600 })}>Start with</span>
-						<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem" })}>
-							<StartToggle
-								icon={<Mic size={15} />}
-								label="Voice"
-								active
-								disabled
-								hint="Always on"
-							/>
-							{providerHostedLive ? (
-								<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.4375rem", color: "var(--foreground)", fontSize: "0.8125rem" })}>
-									<Camera size={15} /> Video PAL and Magic Canvas
-								</span>
-							) : liveTier.video ? (
-								<>
-									<StartToggle
-										icon={<Camera size={15} />}
-										label="Camera"
-										active={settings.videoEnabled && settings.videoSource === "camera"}
-										onClick={() => update(
-											settings.videoEnabled && settings.videoSource === "camera"
-												? { videoEnabled: false }
-												: { videoEnabled: true, videoSource: "camera" },
-										)}
-									/>
-									<StartToggle
-										icon={<MonitorUp size={15} />}
-										label="Screen"
-										active={settings.videoEnabled && settings.videoSource === "screen"}
-										onClick={() => update(
-											settings.videoEnabled && settings.videoSource === "screen"
-												? { videoEnabled: false }
-												: { videoEnabled: true, videoSource: "screen" },
-										)}
-									/>
-								</>
-							) : liveTier.image ? (
-								<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.4375rem", color: "var(--foreground)", fontSize: "0.8125rem" })}>
-									<ImagePlus size={15} /> Add an image once the conversation starts
-								</span>
-							) : null}
-						</div>
-						<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-							{providerHostedLive
-								? "The Tavus call requests camera and microphone access inside its own secure video surface. Interactive activities appear beside KeatingBot."
-								: liveTier.video
-								? "You can turn camera or screen sharing on or off at any point during the conversation."
-								: liveTier.image
-									? "This model accepts still images, but it does not receive live video."
-									: "This session uses audio only. Choose a provider with visual input to share images or video."}
-						</p>
-					</div>
-				</div>
-
-				<button
-					type="button"
-					onClick={start}
-					disabled={started || hasKey !== true || (settings.providerId === "gpt-live" && !gptLiveConsentGranted)}
-					className={cx("dialog-compact-button", css({
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: "0.5rem",
-						width: "100%",
-						borderRadius: "9999px",
-						border: "1px solid color-mix(in srgb, var(--primary) 84%, black)",
-						backgroundColor: "color-mix(in srgb, var(--primary) 84%, black)",
-						color: "var(--primary-foreground)",
-						paddingBlock: "0.875rem",
-						fontSize: "1rem",
-						fontWeight: 600,
-						cursor: "pointer",
-						transition: "background-color 120ms ease, border-color 120ms ease",
-						_hover: {
-							backgroundColor: "color-mix(in srgb, var(--primary) 72%, black)",
-							borderColor: "color-mix(in srgb, var(--primary) 72%, black)",
-							color: "var(--primary-foreground)",
-						},
-						_focusVisible: { outline: "3px solid var(--ring)", outlineOffset: "3px" },
-						_disabled: { opacity: 0.5, cursor: "not-allowed" },
-					}))}
-				>
-					<Mic size={18} /> {started ? "Connecting…" : "Start talking"}
-				</button>
-
-				<Link
-					to="/chat"
-					className={css({
-						display: "inline-flex",
-						alignItems: "center",
-						justifyContent: "center",
-						gap: "0.375rem",
-						fontSize: "0.8125rem",
-						color: "var(--muted-foreground)",
-						_hover: { color: "var(--foreground)" },
-					})}
-				>
-					<ArrowLeft size={14} /> Back to the conversation
-				</Link>
-			</main>
-		</div>
-	);
-}
-
-function StartToggle({
-	icon,
-	label,
-	active,
-	disabled,
-	hint,
-	onClick,
-}: {
-	icon: React.ReactNode;
-	label: string;
-	active?: boolean;
-	disabled?: boolean;
-	hint?: string;
-	onClick?: () => void;
-}) {
-	return (
-		<button
-			type="button"
-			onClick={onClick}
-			disabled={disabled}
-			aria-pressed={active}
-			title={hint}
-			className={cx("dialog-compact-button", css({
-				display: "inline-flex",
-				alignItems: "center",
-				gap: "0.4375rem",
-				borderRadius: "9999px",
-				border: "1px solid",
-				borderColor: active ? "var(--primary)" : "var(--border)",
-				backgroundColor: active ? "color-mix(in srgb, var(--primary) 14%, transparent)" : "transparent",
-				color: active ? "var(--foreground)" : "var(--muted-foreground)",
-				paddingInline: "0.875rem",
-				paddingBlock: "0.5rem",
-				fontSize: "0.8125rem",
-				cursor: "pointer",
-				_disabled: { opacity: 0.45, cursor: "not-allowed" },
-			}))}
-		>
-			{icon} {label}
-		</button>
-	);
+			<Note data-glyph-host glyph="info"><strong>What is kept</strong>
+				<p>Your transcript is saved to this conversation when you end.</p>
+				{settings.providerId === "gpt-live" ? <GptLiveConsentSettings onGrantedChange={setGptLiveConsentGranted} />
+					: <p>{providerName} handles the audio and any visual input you share. Keating has no retention period to display for this provider.</p>}
+			</Note>
+			<div className={readiness.reason ? "lv-failure" : "lv-status"}>
+				{hasKey === null ? <Loading size="inline" label={readiness.label}/> : <div role="status"><span className="lv-state"><StatusDot aria-hidden="true" tone={readiness.ready ? "ok" : readiness.reason ? "bad" : "idle"}/>{readiness.label}</span>
+					{readiness.reason && <p>{readiness.reason}</p>}</div>}
+				{readiness.action && <Button variant="primary" onClick={() => {
+					if (readiness.action === "Connect Not Organic") void beginNotOrganicAuthorization("/live");
+					else window.dispatchEvent(new CustomEvent("keating:open-settings", {detail: {tab: readiness.action === "Add a key" ? "models" : "learning"}}));
+				}}>{readiness.action}</Button>}
+			</div>
+			<footer className="lv-footer"><ButtonLink variant="ghost" glyph="left" to="/chat">Back to the conversation</ButtonLink>
+				<Button variant="primary" glyph="wave" disabled={started || !readiness.ready} onClick={start}>{started ? <Loading size="inline" label="Connecting…" /> : "Start talking"}</Button>
+			</footer>
+		</main>
+	</div>;
 }
 
 export default Live;

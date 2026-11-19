@@ -3,7 +3,7 @@
  * chips), the answer input for its type, and the partial-credit badge. Used both
  * for the live question and for each revealed question in the review list.
  */
-import { AlertTriangle, Bookmark, Clock, Volume2 } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { useMemo } from "react";
 import { css, cx } from "../../../styled-system/css";
 import type { QuizQuestion } from "../../keating/core";
@@ -20,7 +20,7 @@ import { QuizResultBadge } from "./QuizResultBadge";
 import { ReframeToggle } from "./ReframeToggle";
 import { showsBinaryResult } from "./quiz-presentation";
 import { isCorrect, questionCredit } from "./quiz-scoring";
-import { dark, quizStyles, shared, sm } from "./quiz-styles";
+import { quizStyles, shared, sm } from "./quiz-styles";
 
 export interface QuestionCardProps {
 	q: QuizQuestion;
@@ -80,7 +80,7 @@ function QuestionActions({ q, revealed, timeMs, timedOut, answer, bookmarked, on
 				aria-label="Read question aloud"
 				title="Read aloud"
 			>
-				<Volume2 size={14} />
+				<KeatingGlyph name="speaker" size={14} />
 			</button>
 			<button
 				type="button"
@@ -92,13 +92,13 @@ function QuestionActions({ q, revealed, timeMs, timedOut, answer, bookmarked, on
 				aria-label={bookmarked ? "Remove bookmark" : "Bookmark question"}
 				title={bookmarked ? "Bookmarked" : "Bookmark for review"}
 			>
-				<Bookmark size={14} fill={bookmarked ? "currentColor" : "none"} />
+				<KeatingGlyph name="bookmark" size={14} active={bookmarked} />
 			</button>
 			{revealed && timedOut ? <span className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Timed out</span> : null}
 			{revealed && isQuickQuizAnswer({ timeMs, timeLimitSeconds: q.timeLimit, answered: Boolean(answer.trim()), timedOut }) ? <span title="Answered within the first quarter of the time budget. Timing does not indicate correctness." className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Quick answer</span> : null}
 			{revealed && typeof timeMs === "number" && (
 				<span className={cx("font-terminal", css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", fontSize: "0.625rem", color: "var(--muted-foreground)" }))}>
-					<Clock size={11} aria-hidden="true" />
+					<KeatingGlyph name="clock" size={14} />
 					<span aria-label={`Time on question: ${timeMs} milliseconds`}>{formatQuizDuration(timeMs)}</span>
 				</span>
 			)}
@@ -167,7 +167,7 @@ export function QuestionCard({
 						) : (
 							<p className="activity-prompt">{displayQuestion}</p>
 						)}
-						{revealed && showsBinaryResult(q) && <QuizResultBadge correct={binaryCorrect} />}
+						{revealed && (credit === 0 || credit === 1) && showsBinaryResult(q) && <QuizResultBadge correct={binaryCorrect} />}
 					</div>
 					{reframeModes.length > 0 && !revealed && onReframe && (
 						<ReframeToggle
@@ -223,10 +223,7 @@ export function QuestionCard({
 
 			{/* Partial credit badge */}
 			{revealed && credit < 1 && credit > 0 && (
-				<div className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "9999px", background: "rgba(245, 158, 11, 0.1)", padding: "0.25rem 0.625rem", fontSize: "0.6875rem", fontWeight: 500, color: "#d97706", [dark]: { color: "#f59e0b" } })}>
-					<AlertTriangle size={12} />
-					Partial credit: {Math.round(credit * 100)}%
-				</div>
+				<div className="lesson-verdict" data-result="partial"><KeatingGlyph name="minus" size={13}/>Partly · {Math.round(credit * 100)}%</div>
 			)}
 		</div>
 	);

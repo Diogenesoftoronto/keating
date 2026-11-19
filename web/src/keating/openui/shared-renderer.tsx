@@ -1,11 +1,16 @@
+import { Plan } from "../../components/lesson/StudyPlan";
+import { useCardBookmarks } from "../../components/flashcards/useCardBookmarks";
+import { useKeatingUiSettings } from "../../hooks/use-ui-settings";
+import { playReviewSound, ratingSound } from "../../components/flashcards/review-feedback";
+import { IconButton } from "../../design-system/kit";
+import { LessonFrame, LessonCallout, LessonScore } from "../../components/lesson/LessonFrame";
+import { Meter } from "../../design-system/charts";
 import { questionResponse as responseForQuestion } from "@keating/learner-contracts";
 import { openUiDiagnosticComponentForNode } from "../../../../packages/learner-contracts/src/openui-diagnostic-turn";
 import { useQuizPerformance } from "../../components/QuizPerformanceEstimate";
 import { ResponseCapture } from "../../components/ResponseCapture";
-import { LessonPlanJudgementReview } from "../../components/LessonPlanJudgementReview";
 import { localRead, localWrite } from "../../submissions/local-store";
 import { SubmissionAttachments, AttachmentLinks } from "../../components/SubmissionAttachments";
-import { SaveTaskToCourse } from "../../components/courses/SaveTaskToCourse";
 import { EarlierRounds, useEarlierRounds } from "../../components/homework/EarlierRounds";
 import { PrintAssignmentButton } from "../../components/homework/PrintAssignmentButton";
 import { taskDraftKey, taskSubmissionKey, type SavedTaskDraft } from "../homework/task-storage";
@@ -13,7 +18,7 @@ import { Select } from "../../components/Select";
 import type { UiSubmissionAttachment } from "@keating/learner-contracts";
 import type React from "react";
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Clock, Flag, GripVertical, Lightbulb, RotateCcw, ThumbsUp, Zap } from "lucide-react";
+import { KeatingGlyph, type GlyphName } from "../../design-system/glyphs";
 import { CompletionMark, RoundProgress } from "../../components/quiz/ActivityGame";
 import { QuizCountdown } from "../../components/quiz/QuizCountdown";
 import { QuizTimingTracker } from "../../components/quiz/timing";
@@ -21,7 +26,7 @@ import { formatQuizDuration, isQuickQuizAnswer } from "../../components/quiz/gam
 import { FlashcardTimer } from "../../components/flashcards/FlashcardTimer";
 import { useFlashcardAutoReveal } from "../../components/flashcards/useFlashcardAutoReveal";
 import "./activity.css";
-import type { UiActionReceipt, UiDocument, UiDocumentNode, UiQuestion, UiQuestionGroupResponse, UiQuizTiming, UiStudyPlanItem, UiTaskNode } from "@keating/learner-contracts";
+import type { UiActionReceipt, UiDocument, UiDocumentNode, UiQuestion, UiQuestionGroupResponse, UiQuizTiming, UiTaskNode } from "@keating/learner-contracts";
 import { SimulationRenderer } from "../../components/SimulationRenderer";
 import { SystemDesignWorkbench } from "../../components/SystemDesignWorkbench";
 import { ExamRenderer } from "../../components/ExamRenderer";
@@ -33,7 +38,7 @@ import { MarkdownBlock } from "../../components/MarkdownBlock";
 import { parseQuestionTemplate } from "../../components/question-template";
 import { MermaidRenderer } from "../../components/MermaidRenderer";
 import { QuizGradesContext } from "../../components/quiz-grades-context";
-import { applyReview, initialSrsState } from "../srs";
+import { applyReview, formatInterval, initialSrsState } from "../srs";
 import { objectiveCredit, type QuizOutcome, quizOutcome, summarizeQuiz } from "./quiz-progress";
 import type { SharedUiActionIntent } from "./shared-actions";
 
@@ -42,7 +47,7 @@ export interface SharedUiActionEvent {
 	humanFriendlyMessage: string;
 }
 
-const panel = css({ marginBlock: "0.75rem", display: "grid", gap: "0.75rem", border: "1px solid var(--border)", borderRadius: "0.75rem", background: "var(--background)", padding: "1rem" });
+const panel = "lesson-document";
 const section = css({ display: "grid", gap: "0.625rem", borderTop: "1px solid var(--border)", paddingTop: "0.75rem", _first: { borderTop: "none", paddingTop: 0 } });
 const button = css({ minHeight: "2.5rem", border: "1px solid var(--border)", borderRadius: "0.5rem", paddingInline: "0.75rem", fontSize: "0.8125rem", fontWeight: 600, cursor: "pointer", _hover: { background: "var(--muted)" }, _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "2px" } });
 const input = css({ width: "100%", minHeight: "2.5rem", border: "1px solid var(--border)", borderRadius: "0.5rem", background: "var(--background)", padding: "0.625rem", color: "var(--foreground)" });
@@ -74,17 +79,15 @@ export function SharedUiDocumentRenderer({ document, receipts = [], onAction }: 
 
 function SharedNode({ documentId, documentRevision, persistent = true, node, receipts, disabled, onAction }: { documentId: string; documentRevision: number; persistent?: boolean; node: UiDocumentNode; receipts: UiActionReceipt[]; disabled: boolean; onAction?: (event: SharedUiActionEvent) => boolean }) {
 	if (node.type === "markdown") return <div className={section}><MarkdownBlock content={node.markdown} /></div>;
-	if (node.type === "callout") return <aside className={css({ display: "grid", gap: "0.625rem", borderTop: "1px solid var(--border)", borderLeft: "3px solid var(--primary)", paddingTop: "0.75rem", paddingLeft: "0.75rem" })} data-callout-tone={node.tone}>
-		<strong>{node.title ?? node.tone}</strong><MarkdownBlock content={node.markdown} />
-	</aside>;
-	if (node.type === "question") return <Question node={node} receipt={completedNodeReceipt(receipts, node.id, ["submit-answer", "choose-option"])} disabled={disabled} onAction={onAction} />;
+	if (node.type === "callout") return <LessonCallout tone={node.tone} title={node.title}><MarkdownBlock content={node.markdown}/></LessonCallout>;
+	if (node.type === "question") return <LessonFrame glyph="help" kind="Quick check"><Question node={node} receipt={completedNodeReceipt(receipts, node.id, ["submit-answer", "choose-option"])} disabled={disabled} onAction={onAction} /></LessonFrame>;
 	if (node.type === "question-group") return <QuestionGroup node={node} receipt={completedNodeReceipt(receipts, node.id, ["submit-question-group"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "quiz") return node.mode === "exam"
 		? <ExamRenderer documentId={documentId} node={node} receipt={completedNodeReceipt(receipts, node.id, ["complete-quiz"])} disabled={disabled} onAction={onAction} />
 		: <Quiz documentId={documentId} documentRevision={documentRevision} node={node} receipt={completedNodeReceipt(receipts, node.id, ["complete-quiz"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "goal") return <Checklist title={node.title} nodeId={node.id} items={node.steps.map((step) => ({ id: step.id, title: step.title, done: step.status === "done" }))} actionType="complete-goal-step" disabled={disabled} onAction={onAction} />;
 	if (node.type === "deck") return <Deck node={node} receipts={receipts.filter((receipt) => receipt.state === "completed" && ((receipt.action.type === "rate-card" || receipt.action.type === "complete-deck") && receipt.action.nodeId === node.id))} disabled={disabled} onAction={onAction} />;
-	if (node.type === "study-plan") return node.items ? <Plan nodeId={node.id} title={node.title ?? "Study plan"} overview={node.overview} items={node.items} disabled={disabled} onAction={onAction} /> : <Resource nodeId={node.id} title={node.resource?.title ?? "Study plan"} content={node.resource?.content} uri={node.resource?.uri} receipt={completedNodeReceipt(receipts, node.id, ["save-artifact"])} disabled={disabled} onAction={onAction} />;
+	if (node.type === "study-plan") return node.items ? <Plan receipt={completedNodeReceipt(receipts, node.id, ["save-artifact"])} persistent={persistent} nodeId={node.id} title={node.title ?? "Study plan"} overview={node.overview} items={node.items} disabled={disabled} onAction={onAction} /> : <Resource nodeId={node.id} title={node.resource?.title ?? "Study plan"} content={node.resource?.content} uri={node.resource?.uri} receipt={completedNodeReceipt(receipts, node.id, ["save-artifact"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "artifact") return <Resource nodeId={node.id} title={node.resource.title} content={node.resource.content} uri={node.resource.uri} markdown={node.resource.format === "markdown"} receipt={completedNodeReceipt(receipts, node.id, ["save-artifact"])} disabled={disabled} onAction={onAction} />;
 	if (node.type === "concept-map") return <div className={section}>{node.title ? <h4 className={css({ fontWeight: 700 })}>{node.title}</h4> : null}<MermaidRenderer content={node.source} /></div>;
 	if (node.type === "notes") return <Notes node={node} disabled={disabled} onAction={onAction} />;
@@ -132,7 +135,7 @@ export function quizResponseForAnswer(question: UiQuestion, answer: string): UiQ
 	return { questionId: question.id, type: "text", answer };
 }
 
-export function Question({ node, receipt, disabled, onAction, groupResponse, hideSubmit = false, completed: completedOverride = false, onResponseChange, onHint }: { node: UiQuestion; receipt?: UiActionReceipt; disabled: boolean; onAction?: (event: SharedUiActionEvent) => boolean; groupResponse?: UiQuestionGroupResponse; hideSubmit?: boolean; completed?: boolean; onResponseChange?: (response: UiQuestionGroupResponse, ready: boolean) => void; onHint?: () => void }) {
+export function Question({ node, receipt, disabled, onAction, groupResponse, hideSubmit = false, completed: completedOverride = false, onResponseChange, onHint, checked = false, onAdvance }: { node: UiQuestion; receipt?: UiActionReceipt; disabled: boolean; onAction?: (event: SharedUiActionEvent) => boolean; groupResponse?: UiQuestionGroupResponse; hideSubmit?: boolean; completed?: boolean; onResponseChange?: (response: UiQuestionGroupResponse, ready: boolean) => void; onHint?: () => void; checked?: boolean; onAdvance?: () => void }) {
 	const savedAction = receipt?.action;
 	const savedAnswer = savedAction?.type === "submit-answer" ? savedAction.answer : undefined;
 	const initialRows = groupResponse?.type === "rows" ? groupResponse.rows : undefined;
@@ -176,7 +179,18 @@ export function Question({ node, receipt, disabled, onAction, groupResponse, hid
 	// A cloze question carries its prompt inside the inline blanks, so repeating
 	// it above would show the sentence twice.
 	const inlineBlanks = blanks && blankCount > 0 && parseQuestionTemplate(node.prompt).some((part) => part.isBlank);
-	return <fieldset className="shared-activity shared-activity__question" data-question-kind={node.kind ?? "text"}>
+	return <fieldset className="shared-activity shared-activity__question" data-question-kind={node.kind ?? "text"} onKeyDown={event => {
+		const target = event.target as HTMLElement;
+		if (disabled || completed || event.repeat || event.ctrlKey || event.altKey || event.metaKey || target.closest("textarea,select,input:not([type=radio]):not([type=checkbox]),summary,button")) return;
+		if (event.key === "Enter" && ready) {
+			event.preventDefault();
+			if (hideSubmit) onAdvance?.(); else submit();
+		} else if (node.choices && !checked && !rows && !ordering && /^[a-z1-9]$/i.test(event.key)) {
+			const i = /[1-9]/.test(event.key) ? Number(event.key)-1 : event.key.toUpperCase().charCodeAt(0)-65;
+			const input = event.currentTarget.querySelectorAll<HTMLInputElement>(".shared-activity__choice input")[i];
+			if (input) { event.preventDefault(); input.focus(); input.click(); }
+		}
+	}}>
 		<legend>{inlineBlanks ? node.header ?? "Fill in the blanks" : node.prompt}</legend>
 		{ordering ? <OrderingList
 			node={node}
@@ -201,11 +215,11 @@ export function Question({ node, receipt, disabled, onAction, groupResponse, hid
 			: blanks ? inlineBlanks
 				? <InlineBlanks node={node} values={blankAnswers} disabled={disabled || completed} onChange={(index, value) => setBlankAnswers((current) => current.map((entry, entryIndex) => entryIndex === index ? value : entry))} />
 				: <div className={css({ display: "grid", gap: "0.375rem" })}>{blankAnswers.map((value, index) => <input disabled={disabled || completed} key={`${node.id}-blank-${index}`} className={input} aria-label={`Blank ${index + 1}`} value={value} onChange={(event) => setBlankAnswers((current) => current.map((entry, entryIndex) => entryIndex === index ? event.currentTarget.value : entry))} placeholder={node.blanks?.[index]?.placeholder ?? `Blank ${index + 1}`} />)}</div>
-				: node.choices ? <div className="shared-activity__choices">{multiple ? <small className="shared-activity__meta">Choose all that fit</small> : null}{node.choices.map((choice, choiceIndex) => <label key={choice.id} className="shared-activity__choice"><input disabled={disabled || completed} type={multiple ? "checkbox" : "radio"} name={node.id} checked={selected.includes(choice.id)} onChange={() => setSelected((current) => multiple ? current.includes(choice.id) ? current.filter((id) => id !== choice.id) : [...current, choice.id] : [choice.id])} /><span className="shared-activity__letter" aria-hidden="true">{String.fromCharCode(65 + choiceIndex)}</span><span>{choice.label}</span>{selected.includes(choice.id) ? <Check size={18} aria-hidden="true" /> : null}</label>)}{node.allowText ? <textarea aria-label="Your own answer" disabled={disabled || completed} className={input} value={answer} onChange={(event) => setAnswer(event.currentTarget.value)} placeholder="Or explain your own answer" /> : null}</div>
+				: node.choices ? <div className="shared-activity__choices">{multiple ? <small className="shared-activity__meta">Choose all that fit</small> : null}{node.choices.map((choice, choiceIndex) => <label key={choice.id} className="shared-activity__choice" data-state={checked ? (node.correctAnswers ?? [node.correctAnswer]).includes(choice.id) ? "correct" : selected.includes(choice.id) ? "wrong" : undefined : undefined}><input disabled={disabled || completed} type={multiple ? "checkbox" : "radio"} name={node.id} checked={selected.includes(choice.id)} onChange={() => setSelected((current) => multiple ? current.includes(choice.id) ? current.filter((id) => id !== choice.id) : [...current, choice.id] : [choice.id])} /><span className="shared-activity__letter" aria-hidden="true">{String.fromCharCode(65 + choiceIndex)}</span><span>{choice.label}</span>{checked && ((node.correctAnswers ?? [node.correctAnswer]).includes(choice.id) || selected.includes(choice.id)) ? <span className="lesson-verdict"><KeatingGlyph name={(node.correctAnswers ?? [node.correctAnswer]).includes(choice.id) ? "check" : "x"} size={13}/>{(node.correctAnswers ?? [node.correctAnswer]).includes(choice.id) ? "Correct" : "Your answer"}</span> : null}</label>)}{node.allowText ? <textarea aria-label="Your own answer" disabled={disabled || completed} className={input} value={answer} onChange={(event) => setAnswer(event.currentTarget.value)} placeholder="Or explain your own answer" /> : null}</div>
 					: node.kind === "slider" ? <div className={css({ display: "grid", gap: "0.375rem" })}><input disabled={disabled || completed} type="range" min={node.min ?? 0} max={node.max ?? 100} step={node.step ?? 1} value={answer || node.min || 0} onChange={(event) => setAnswer(event.currentTarget.value)} /><output>{answer || node.min || 0}</output></div>
 						: <textarea aria-label="Your answer" disabled={disabled || completed} className={input} value={answer} onChange={(event) => setAnswer(event.currentTarget.value)} placeholder="Type your answer" />}
-		{node.hint ? <details className="shared-activity__hint" onToggle={(event) => { if (event.currentTarget.open) onHint?.(); }}><summary onClick={onHint}><Lightbulb size={15} aria-hidden="true" />Hint</summary><p>{node.hint}</p></details> : null}
-		{completed ? !hideSubmit ? <p role="status">Answer saved.</p> : null : !hideSubmit ? <button className="shared-activity__primary" type="button" disabled={disabled || !ready} onClick={submit}>Send answer <ArrowRight size={17} aria-hidden="true" /></button> : null}
+		{node.hint ? <details className="shared-activity__hint" onToggle={(event) => { if (event.currentTarget.open) onHint?.(); }}><summary onClick={onHint}><KeatingGlyph name="bulb" size={15} />Hint</summary><p>{node.hint}</p></details> : null}
+		{completed ? !hideSubmit ? <p role="status">Answer saved.</p> : null : !hideSubmit ? <button className="shared-activity__primary" type="button" disabled={disabled || !ready} onClick={submit}>Send answer <KeatingGlyph name="send" size={17} /></button> : null}
 	</fieldset>;
 }
 
@@ -260,11 +274,11 @@ function OrderingList({ node, order, disabled, onReorder }: { node: UiQuestion; 
 				borderColor: over === index && dragging !== index ? "var(--primary)" : undefined,
 			}}
 		>
-			<GripVertical aria-hidden="true" size={13} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
+			<KeatingGlyph name="grip" size={13} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
 			<span className={css({ width: "1.25rem", flexShrink: 0, color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" })}>{index + 1}</span>
 			<span className={css({ flex: 1, overflowWrap: "anywhere" })}>{item}</span>
-			<button type="button" disabled={disabled || index === 0} className={stepButton} aria-label={`Move ${item} up`} onClick={() => move(index, index - 1)}>↑</button>
-			<button type="button" disabled={disabled || index === order.length - 1} className={stepButton} aria-label={`Move ${item} down`} onClick={() => move(index, index + 1)}>↓</button>
+			<button type="button" disabled={disabled || index === 0} className={stepButton} aria-label={`Move ${item} up`} onClick={() => move(index, index - 1)}><KeatingGlyph name="rise" size={13} /></button>
+			<button type="button" disabled={disabled || index === order.length - 1} className={stepButton} aria-label={`Move ${item} down`} onClick={() => move(index, index + 1)}><KeatingGlyph name="down" size={13} /></button>
 		</li>)}
 	</ol>;
 }
@@ -326,7 +340,7 @@ function RowAssignment({ node, selections, reasons, disabled, onAssign, onReason
 		}}
 		onDragEnd={() => { setDragging(undefined); setOver(undefined); }}
 	>
-		<GripVertical aria-hidden="true" size={13} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
+		<KeatingGlyph name="grip" size={13} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
 		<span className={css({ overflowWrap: "anywhere" })}>{item}</span>
 		<Select
 			disabled={disabled}
@@ -428,22 +442,24 @@ function QuestionGroup({ node, receipt, disabled, onAction }: { node: Extract<Ui
 	const current = node.questions[index];
 	const focusRound = useRef<HTMLDivElement>(null);
 	const move = (next: number) => { setIndex(next); requestAnimationFrame(() => focusRound.current?.focus()); };
-	return <div className="shared-activity" data-question-group={node.id}>
-		<div className="shared-activity__head"><h4>{node.title ?? "Quick check"}</h4></div>
+	const finish = () => {
+		if (disabled || !canSubmit) return;
+		const attempt = retryableAggregateAttempt(pendingSubmission, () => ({ type: "submit-question-group" as const, nodeId: node.id, responses: ordered }), (intent) => Boolean(onAction?.({ intent, humanFriendlyMessage: `Answered ${node.questions.length} questions${node.topic ? ` about ${node.topic}` : ""}` })));
+		setDelivered(attempt.delivered);
+		setPendingSubmission(attempt.pending);
+	};
+	return <LessonFrame glyph="help" title={node.title} kind="Quick check" data-question-group={node.id}>
 		{node.intro ? <details className="shared-activity__hint"><summary>Before you start</summary><p>{node.intro}</p></details> : null}
 		{finished ? <><CompletionMark detail="Answers saved.">Check complete</CompletionMark><details className="shared-activity__review"><summary>Your answers</summary>{node.questions.map((question) => <Question key={question.id} node={question} disabled hideSubmit completed groupResponse={responses[question.id]} />)}</details></> : current ? <>
 			<RoundProgress current={index} total={node.questions.length} resolved={Object.values(ready).filter(Boolean).length} label="Question progress" />
-			<div className="shared-activity__round" key={current.id} ref={focusRound} tabIndex={-1}><Question node={current} disabled={locked} hideSubmit groupResponse={responses[current.id]} onResponseChange={update} /></div>
+			<div className="shared-activity__round" key={current.id} ref={focusRound} tabIndex={-1}><Question node={current} disabled={locked} hideSubmit groupResponse={responses[current.id]} onResponseChange={update} onAdvance={index < node.questions.length - 1 ? () => move(index + 1) : finish} /></div>
 			<div className="shared-activity__nav">
-				<button className="shared-activity__quiet" type="button" disabled={locked || index === 0} onClick={() => move(index - 1)} aria-label="Previous question"><ArrowLeft size={18} /></button>
-				{index < node.questions.length - 1 ? <button className="shared-activity__primary" type="button" disabled={locked || !ready[current.id]} onClick={() => move(index + 1)}>Next <ArrowRight size={18} /></button> : <button className="shared-activity__primary" type="button" disabled={disabled || !canSubmit} onClick={() => {
-					const attempt = retryableAggregateAttempt(pendingSubmission, () => ({ type: "submit-question-group" as const, nodeId: node.id, responses: ordered }), (intent) => Boolean(onAction?.({ intent, humanFriendlyMessage: `Answered ${node.questions.length} questions${node.topic ? ` about ${node.topic}` : ""}` })));
-					setDelivered(attempt.delivered); setPendingSubmission(attempt.pending);
-				}}>{pendingSubmission ? "Retry save answers" : "Finish check"}<Check size={18} /></button>}
+				<button className="shared-activity__quiet" type="button" disabled={locked || index === 0} onClick={() => move(index - 1)} aria-label="Previous question"><KeatingGlyph name="left" size={18} /></button>
+				{index < node.questions.length - 1 ? <button className="shared-activity__primary" type="button" disabled={locked || !ready[current.id]} onClick={() => move(index + 1)}>Next <KeatingGlyph name="right" size={18} /></button> : <button className="shared-activity__primary" type="button" disabled={disabled || !canSubmit} onClick={finish}>{pendingSubmission ? "Retry save answers" : "Finish check"}<KeatingGlyph name="check" size={18} /></button>}
 			</div>
 			{pendingSubmission ? <p role="status">Your answers are ready. Try saving again.</p> : null}
 		</> : <p>No questions in this check.</p>}
-	</div>;
+	</LessonFrame>;
 }
 
 /**
@@ -459,6 +475,10 @@ function Quiz({ documentId, documentRevision, node, receipt, disabled, onAction 
 	})));
 	const [ready, setReady] = useState<Record<string, boolean>>(() => Object.fromEntries((saved?.answers ?? []).map((answer) => [answer.questionId, true])));
 	const [index, setIndex] = useState(0);
+	const [showAll,setShowAll] = useState(false);
+	const [reviewMisses,setReviewMisses] = useState(false);
+	const grades = useContext(QuizGradesContext).grades[`${node.id}-result`] ?? [];
+	const [checkedAnswer,setCheckedAnswer] = useState<{id:string;answer:string}>();
 	const [reviewing, setReviewing] = useState(false);
 	const [skipped, setSkipped] = useState<string[]>(() => [...(saved?.skippedQuestionIds ?? [])]);
 	const [flagged, setFlagged] = useState<string[]>(() => [...(saved?.flaggedQuestionIds ?? [])]);
@@ -541,6 +561,12 @@ function Quiz({ documentId, documentRevision, node, receipt, disabled, onAction 
 		setIndex(index + 1);
 		setRemaining(remainingFor(index + 1, now));
 	};
+	const credit = current?.choices && ready[current.id] ? objectiveCredit(current,answerText[current.id] ?? "") : undefined;
+	const checked = Boolean(current && checkedAnswer?.id === current.id && checkedAnswer.answer === answerText[current.id]);
+	const checkOrAdvance = () => {
+		if (!locked && current && credit !== undefined && !checked) setCheckedAnswer({id:current.id, answer:answerText[current.id]!});
+		else advance();
+	};
 	const advanceRef = useRef(advance);
 	advanceRef.current = advance;
 	const skip = () => {
@@ -571,14 +597,20 @@ function Quiz({ documentId, documentRevision, node, receipt, disabled, onAction 
 		advanceRef.current();
 	}, [running, remaining, index, node.questions]);
 
-	if (terminal) return <div className="shared-activity" data-quiz={node.id}>
-		<CompletionMark detail={node.title}>Round complete</CompletionMark>
+	const revisit = terminal ? node.questions.filter(question => {
+		const outcome = quizOutcome(question,answerText[question.id],{skipped:skipped.includes(question.id),grades});
+		return flagged.includes(question.id) || outcome.kind === "skipped" || outcome.kind === "objective" && !outcome.correct || outcome.kind === "graded" && outcome.verdict !== "correct";
+	}) : [];
+	if (terminal) return <LessonFrame glyph="quiz" title={node.title} kind="Quiz result" data-quiz={node.id} footer={<>
+		<button type="button" aria-expanded={showAll} onClick={()=>{setShowAll(!showAll);setReviewMisses(false);}}>All answers <KeatingGlyph name={showAll ? "chevu" : "chev"} size={13}/></button>
+		{revisit.length > 0 && <button type="button" className="lesson-primary" aria-expanded={reviewMisses} onClick={()=>{setReviewMisses(!reviewMisses);setShowAll(false);}}>{reviewMisses ? "Close review" : `Review ${revisit.length}`}</button>}
+	</>}>
+		<CompletionMark>Round complete</CompletionMark>
 		{prediction.controls}
-		<QuizResults node={node} answers={answerText} skipped={skipped} flagged={flagged} timedOut={timedOut} timing={saved?.timing ?? finalTiming} />
-		<details className="shared-activity__review"><summary>Your answers</summary>{node.questions.map((question) => <Question key={question.id} node={question} disabled hideSubmit completed groupResponse={responses[question.id]} />)}</details>
-	</div>;
-	return <div
-		className="shared-activity"
+		<QuizResults node={node} answers={answerText} skipped={skipped} flagged={flagged} timedOut={timedOut} timing={saved?.timing ?? finalTiming} showAll={showAll}/>
+		{(showAll || reviewMisses) && <div className="shared-activity__review">{(showAll ? node.questions : revisit).map(question => <Question key={question.id} node={question} disabled hideSubmit completed groupResponse={responses[question.id]}/>)}</div>}
+	</LessonFrame>;
+	return <LessonFrame glyph="quiz" kind="Quiz" title={node.title} tools={remaining !== undefined && <QuizCountdown key={current?.id} remaining={remaining} total={questionSeconds(node, index) ?? remaining}/>}
 		data-quiz={node.id}
 		data-quiz-phase={reviewing ? "review" : "answering"}
 		onKeyDown={(event) => {
@@ -591,11 +623,7 @@ function Quiz({ documentId, documentRevision, node, receipt, disabled, onAction 
 			if (event.key === "ArrowLeft") { event.preventDefault(); reviewing ? goTo(node.questions.length - 1) : goTo(index - 1); }
 		}}
 	>
-		<div className="shared-activity__quiz-head">
-			<h4>{node.title}</h4>
-			{remaining !== undefined ? <QuizCountdown key={current?.id} remaining={remaining} total={questionSeconds(node, index) ?? remaining} /> : null}
-			{reviewing ? <small role="status">Review answers</small> : null}
-		</div>
+		{reviewing ? <small role="status">Review answers</small> : null}
 		{prediction.controls}
 		<RoundProgress current={reviewing ? Math.max(0, node.questions.length - 1) : index} total={node.questions.length} resolved={resolved} label="Quiz progress" />
 
@@ -619,8 +647,8 @@ function Quiz({ documentId, documentRevision, node, receipt, disabled, onAction 
 					</li>;
 				})}
 			</ol>
-			<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.375rem" })}>
-				<button className={button} type="button" disabled={locked} onClick={() => goTo(node.questions.length - 1)}>Back to questions</button>
+			<div className="shared-activity__nav">
+				<button className="shared-activity__quiet" type="button" disabled={locked} onClick={() => goTo(node.questions.length - 1)}>Back to questions</button>
 				<button className="shared-activity__primary" type="button" disabled={disabled || (!pendingCompletion && !canSubmit)} onClick={submit}>{pendingCompletion ? "Retry save quiz" : "Submit quiz"}</button>
 			</div>
 			{!canSubmit && !pendingCompletion ? <small className={css({ color: "var(--muted-foreground)" })}>Answer or skip every question to submit.</small> : null}
@@ -628,29 +656,16 @@ function Quiz({ documentId, documentRevision, node, receipt, disabled, onAction 
 		</> : current ? <>
 			{timedOut.includes(current.id) ? <p role="status" className={css({ color: "var(--destructive)", fontSize: "0.75rem" })}>Time ran out here — you can still answer it.</p> : null}
 			{flagged.includes(current.id) ? <p role="status" className={css({ color: "var(--muted-foreground)", fontSize: "0.75rem" })}>Flagged for review.</p> : null}
-			<div className="shared-activity__round" key={current.id} onPointerDownCapture={prediction.touch} onKeyDownCapture={prediction.touch} onInputCapture={prediction.touch}><Question node={current} disabled={locked} hideSubmit groupResponse={responses[current.id]} onResponseChange={update} onHint={() => prediction.hint(current.id)} /></div>
+			<div className="shared-activity__round" key={current.id} onPointerDownCapture={prediction.touch} onKeyDownCapture={prediction.touch} onInputCapture={prediction.touch}><Question node={current} disabled={locked} hideSubmit groupResponse={responses[current.id]} onResponseChange={update} onHint={() => prediction.hint(current.id)} checked={checked} onAdvance={checkOrAdvance} /></div>
+			{checked && <div className="lesson-feedback" role="status" data-result={credit === 1 ? "correct" : "wrong"}><KeatingGlyph name={credit === 1 ? "check" : "x"} size={14}/><b>{credit === 1 ? "Correct" : "Not quite"}.</b> {current.explanation}</div>}
 			<div className="shared-activity__nav">
-				<button className="shared-activity__quiet" data-icon type="button" disabled={locked || index === 0} onClick={() => goTo(index - 1)} aria-label="Previous question"><ArrowLeft size={18} /></button>
-				<button className="shared-activity__quiet" data-icon type="button" disabled={locked} onClick={toggleFlag} aria-label={flagged.includes(current.id) ? "Unflag" : "Flag for review"} aria-pressed={flagged.includes(current.id)}><Flag size={17} /></button>
+				<button className="shared-activity__quiet" data-icon type="button" disabled={locked || index === 0} onClick={() => goTo(index - 1)} aria-label="Previous question"><KeatingGlyph name="left" size={18} /></button>
+				<button className="shared-activity__quiet" data-icon type="button" disabled={locked} onClick={toggleFlag} aria-label={flagged.includes(current.id) ? "Unflag" : "Flag for review"} aria-pressed={flagged.includes(current.id)}><KeatingGlyph name="flag" size={18} /></button>
 				<button className="shared-activity__quiet" type="button" disabled={locked} onClick={skip}>Skip</button>
-				<button className="shared-activity__primary" type="button" disabled={locked} onClick={advance}>{index >= node.questions.length - 1 ? "Review" : "Next"}<ArrowRight size={18} /></button>
+				<button className="shared-activity__primary" type="button" disabled={locked} onClick={checkOrAdvance}>{credit !== undefined && !checked ? "Check" : index >= node.questions.length - 1 ? "Review" : "Next"}<KeatingGlyph name="right" size={18} /></button>
 			</div>
 		</> : null}
-	</div>;
-}
-
-function QuizProgressBar({ resolved, total }: { resolved: number; total: number }) {
-	const percentage = total > 0 ? Math.round((resolved / total) * 100) : 0;
-	return <div
-		role="progressbar"
-		aria-valuemin={0}
-		aria-valuemax={total}
-		aria-valuenow={resolved}
-		aria-label="Quiz progress"
-		className={css({ height: "0.375rem", overflow: "hidden", borderRadius: "999px", background: "var(--muted)" })}
-	>
-		<div className={css({ height: "100%", background: "var(--primary)" })} style={{ width: `${percentage}%` }} />
-	</div>;
+	</LessonFrame>;
 }
 
 /**
@@ -660,33 +675,33 @@ function QuizProgressBar({ resolved, total }: { resolved: number; total: number 
  * Reference answers are deliberately not shown — the teacher works the
  * misconception instead of handing over an answer key.
  */
-function QuizResults({ node, answers, skipped, flagged, timedOut = [], timing }: { node: Extract<UiDocumentNode, { type: "quiz" }>; answers: Record<string, string>; skipped: string[]; flagged: string[]; timedOut?: string[]; timing?: UiQuizTiming }) {
+function QuizResults({ node, answers, skipped, flagged, timedOut = [], timing, showAll }: { showAll: boolean; node: Extract<UiDocumentNode, { type: "quiz" }>; answers: Record<string, string>; skipped: string[]; flagged: string[]; timedOut?: string[]; timing?: UiQuizTiming }) {
 	const grades = useContext(QuizGradesContext).grades[`${node.id}-result`] ?? [];
 	const summary = summarizeQuiz(node.questions, answers, skipped, grades);
-	return <div className={css({ display: "grid", gap: "0.5rem", border: "1px solid var(--border)", borderRadius: "0.5rem", padding: "0.75rem" })} data-quiz-results={node.id}>
-		<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "baseline", justifyContent: "space-between", gap: "0.5rem" })}>
-			<strong role="status">
-				{summary.decided > 0 ? `${formatPoints(summary.earned)} of ${summary.decided} scored` : "Awaiting your teacher's review"}
-			</strong>
-			<span className={css({ display: "inline-flex", alignItems: "baseline", gap: "0.625rem" })}>
-				{timing ? <span className="shared-quiz-result__total"><small>Total time</small><strong>{formatQuizDuration(timing.totalMs)}</strong></span> : null}
-				{summary.pending > 0 ? <small className={css({ color: "var(--muted-foreground)" })}>{summary.pending} awaiting grading</small> : null}
-			</span>
-		</div>
-		<QuizProgressBar resolved={summary.decided} total={summary.total} />
+	const partial = node.questions.filter(question => {
+		const outcome = quizOutcome(question, answers[question.id], {skipped: skipped.includes(question.id), grades});
+		return outcome.kind === "graded" && outcome.verdict === "partial";
+	}).length;
+	return <div className="lesson-results" data-quiz-results={node.id}>
+		<LessonScore score={summary.decided ? `${formatPoints(summary.earned)} of ${summary.decided} scored` : "Awaiting your teacher's review"}
+			percent={summary.decided ? summary.percentage : undefined} time={timing && formatQuizDuration(timing.totalMs)}
+			correct={summary.correct} partly={partial} missed={summary.decided - summary.skipped - summary.correct - partial}/>
+		{summary.pending > 0 && <small>{summary.pending} awaiting grading</small>}
 		<ol className={css({ display: "grid", gap: "0.25rem", margin: 0, paddingLeft: 0, listStyle: "none" })}>
 			{node.questions.map((question, questionIndex) => {
 				const outcome = quizOutcome(question, answers[question.id], { skipped: skipped.includes(question.id), grades });
+				if (!showAll && !flagged.includes(question.id) && !timedOut.includes(question.id) && (outcome.kind === "objective" && outcome.correct || outcome.kind === "graded" && outcome.verdict === "correct")) return null;
 				const timeMs = timing?.perQuestionMs[question.id];
 				const quick = isQuickQuizAnswer({ timeMs, timeLimitSeconds: questionSeconds(node, questionIndex), answered: Boolean(answers[question.id]?.trim()) && !skipped.includes(question.id), timedOut: timedOut.includes(question.id) });
 				return <li key={question.id} className="shared-quiz-result__question" data-quiz-outcome={outcome.kind} data-question-timing={question.id}>
-					<span aria-hidden="true" className="shared-quiz-result__mark">{outcomeMark(outcome)}</span>
+					<span aria-hidden="true" className="shared-quiz-result__mark"><KeatingGlyph name={outcomeMark(outcome)} size={13} /></span>
 					<div><p>{questionIndex + 1}. {question.header ?? question.prompt}</p>
 						<div className="shared-quiz-result__meta">
 							<span>{outcomeLabel(outcome)}</span>
+							{outcome.kind === "pending" && <span>{answers[question.id]}</span>}
 							{question.mathProblem && objectiveCredit(question, answers[question.id] ?? "") === undefined ? <span>Not independently checked</span> : null}
-							{timeMs !== undefined ? <span aria-label={`Time spent: ${formatQuizDuration(timeMs)}`}><Clock size={13} aria-hidden="true" /><time dateTime={`PT${timeMs / 1000}S`}>{formatQuizDuration(timeMs)}</time></span> : null}
-							{quick ? <span data-speed="quick" title="Answered within the first quarter of the question's time limit."><Zap size={13} aria-hidden="true" />Quick</span> : null}
+							{timeMs !== undefined ? <span aria-label={`Time spent: ${formatQuizDuration(timeMs)}`}><KeatingGlyph name="clock" size={13} /><time dateTime={`PT${timeMs / 1000}S`}>{formatQuizDuration(timeMs)}</time></span> : null}
+							{quick ? <span data-speed="quick" title="Answered within the first quarter of the question's time limit."><KeatingGlyph name="spark" size={13} />Quick</span> : null}
 							{timedOut.includes(question.id) ? <span data-timeout>Timed out</span> : null}
 							{flagged.includes(question.id) ? <span>Flagged</span> : null}
 						</div>
@@ -722,17 +737,17 @@ function formatPoints(value: number): string {
 	return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
 
-function outcomeMark(outcome: QuizOutcome): string {
-	if (outcome.kind === "objective") return outcome.correct ? "✓" : "✗";
-	if (outcome.kind === "graded") return outcome.verdict === "correct" ? "✓" : outcome.verdict === "partial" ? "◐" : "✗";
-	if (outcome.kind === "skipped") return "–";
-	return "◌";
+function outcomeMark(outcome: QuizOutcome): GlyphName {
+	if (outcome.kind === "objective") return outcome.correct ? "check" : "x";
+	if (outcome.kind === "graded") return outcome.verdict === "correct" ? "check" : outcome.verdict === "partial" ? "minus" : "x";
+	if (outcome.kind === "skipped") return "minus";
+	return "ring";
 }
 
 function outcomeLabel(outcome: QuizOutcome): string {
 	switch (outcome.kind) {
-		case "objective": return outcome.correct ? "correct" : "incorrect";
-		case "graded": return outcome.verdict;
+		case "objective": return outcome.correct ? "Correct" : "Not quite";
+		case "graded": return outcome.verdict === "correct" ? "Correct" : outcome.verdict === "partial" ? "Partly" : "Not quite";
 		case "skipped": return "skipped";
 		case "pending": return "grading…";
 		default: return "no answer";
@@ -774,14 +789,14 @@ function wordCount(value: string): number {
  * as they go and survives across sessions, so a task can be picked up later;
  * the submission is the one thing that ends it and hands the work back.
  */
-export function TaskBrief({ node }: { node: UiTaskNode }) {
+export function TaskBrief({ node, framed = false }: { node: UiTaskNode; framed?: boolean }) {
   const labels = TASK_LABEL[node.kind];
   const overdue = !!node.dueAt && Date.now() > Date.parse(node.dueAt);
   const notYetOpen = !!node.availableFrom && Date.now() < Date.parse(node.availableFrom);
   return <div data-task-brief={node.id} className={section}>
 		<div className={css({ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "0.5rem" })}>
-			<span className={badge}>{labels.badge}</span>
-			<h4 className={css({ flex: 1, fontWeight: 700 })}>{node.title}</h4>
+			{!framed && <span className={badge}>{labels.badge}</span>}
+			{!framed && <h4 className={css({ flex: 1, fontWeight: 700 })}>{node.title}</h4>}
 			{node.round !== undefined ? <small className={css({ color: "var(--muted-foreground)" })}>Round {node.round}</small> : null}
 			{node.estimatedMinutes !== undefined ? <small className={css({ color: "var(--muted-foreground)" })}>~{node.estimatedMinutes} min</small> : null}
 			{node.dueAt ? <small
@@ -817,11 +832,12 @@ function Task({ documentId, node, receipt, receipts, disabled, onAction }: { doc
 	const storageKey = taskSubmissionKey(documentId, node.id, node.round);
 	const draftKey = taskDraftKey(documentId, node.id, node.round);
 	const earlierRounds = useEarlierRounds(documentId, node);
+	const [draftSaved, setDraftSaved] = useState("");
 	const draftEdited = useRef(false);
 	useEffect(() => {
 		let active = true;
 		draftEdited.current = false;
-		setRestored(false); setSaved(undefined);
+		setDraftSaved(""); setRestored(false); setSaved(undefined);
 		void Promise.all([
 			localRead<SavedTask>("tasks", storageKey),
 			localRead<SavedTaskDraft>("tasks", draftKey).catch(() => undefined),
@@ -830,6 +846,7 @@ function Task({ documentId, node, receipt, receipts, disabled, onAction }: { doc
 			setSaved(value);
 			setSubmission(value?.intent.submission ?? submitted?.submission ?? draft?.submission ?? "");
 			setAttachments(value?.intent.attachments ?? submitted?.attachments ?? []);
+			if (!value && !submitted && draft?.savedAt) setDraftSaved(new Date(draft.savedAt).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}));
 			if (!value && !submitted && draft?.notes) setNote(draft.notes);
 			setRestored(true);
 		}).catch(() => { if (active) { setSaveError("Could not restore local work. Try saving again."); setRestored(true); } });
@@ -848,10 +865,12 @@ function Task({ documentId, node, receipt, receipts, disabled, onAction }: { doc
 	// Unsent work is kept on this device so the task can be finished, or printed with answers, later.
 	useEffect(() => {
 		if (!restored || terminal || !draftEdited.current) return;
+		let current = true;
+		setDraftSaved("");
 		const timer = setTimeout(() => {
-			void localWrite("tasks", draftKey, { submission, notes: note, savedAt: new Date().toISOString() } satisfies SavedTaskDraft).catch(() => undefined);
+			void localWrite("tasks", draftKey, { submission, notes: note, savedAt: new Date().toISOString() } satisfies SavedTaskDraft).then(() => current && setDraftSaved(new Date().toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}))).catch(() => undefined);
 		}, 600);
-		return () => clearTimeout(timer);
+		return () => { current = false; clearTimeout(timer); };
 	}, [draftKey, note, restored, submission, terminal]);
 	const answers = { submission: saved?.intent.submission ?? submitted?.submission ?? submission, notes: note };
 	const target = node.submission?.targetWords;
@@ -874,11 +893,9 @@ function Task({ documentId, node, receipt, receipts, disabled, onAction }: { doc
 		} finally { setSaving(false); }
 	};
 
-	return <div className={section} data-task={node.id} data-task-kind={node.kind}>
-		<TaskBrief node={node} />
+	return <LessonFrame glyph="checklist" title={node.title} kind={labels.badge} tools={<PrintAssignmentButton menu node={node} answers={answers}/>} data-task={node.id} data-task-kind={node.kind}>
+		<TaskBrief node={node} framed />
 		<EarlierRounds rounds={earlierRounds.rounds} failed={earlierRounds.failed} onRetry={earlierRounds.retry} />
-		<PrintAssignmentButton node={node} answers={answers} />
-		<SaveTaskToCourse task={node} />
 
 		{node.items?.length ? <div className={css({ display: "grid", gap: "0.375rem" })}>
 			<strong className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{labels.items}</strong>
@@ -928,27 +945,20 @@ function Task({ documentId, node, receipt, receipts, disabled, onAction }: { doc
                 setAttachments(current => [...current, file]);
                 setSubmission(current => [current.trim(), summary].filter(Boolean).join("\n\n"));
             }} /> : null}
-			<SubmissionAttachments value={attachments} onChange={setAttachments} disabled={disabled || !restored || saving || captureBusy} onBusyChange={setUploading} />
+
 			{format === "text" ? <p data-task-paper-hint className={css({ margin: 0, fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Worked on paper? Attach a photo or scan of your pages. The file is kept with your submission, but the tutor only sees its name, so add a line above about what you did.</p> : null}
 			{target ? <small className={css({ color: words >= target ? "var(--muted-foreground)" : "var(--muted-foreground)" })}>{words} of about {target} words</small> : null}
-			<div>
+			<footer className="lesson-foot"><SubmissionAttachments value={attachments} onChange={setAttachments} disabled={disabled || !restored || saving || captureBusy} onBusyChange={setUploading} />
+				{draftSaved && <small role="status">Draft saved {draftSaved}</small>}
 				<button className="shared-task__submit" type="button" disabled={disabled || !restored || saving || uploading || captureBusy || notYetOpen || (!submission.trim() && !attachments.length)} onClick={submit}>{saving ? "Saving…" : labels.verb}</button>
-			</div>
+			</footer>
 			{saveError ? <p role="alert">{saveError}</p> : null}
 		</div>}
-	</div>;
+	</LessonFrame>;
 }
 
 function Checklist({ title, nodeId, items, actionType, disabled, onAction }: { title: string; nodeId: string; items: Array<{ id: string; title: string; done: boolean }>; actionType: "complete-goal-step" | "complete-plan-item"; disabled: boolean; onAction?: (event: SharedUiActionEvent) => boolean }) {
 	return <div className={section}><h4 className={css({ fontWeight: 700 })}>{title}</h4>{items.map((item) => <label key={item.id} className={css({ display: "flex", gap: "0.5rem" })}><input disabled={disabled || (actionType === "complete-goal-step" && item.done)} type="checkbox" checked={item.done} onChange={() => onAction?.({ intent: actionType === "complete-goal-step" ? { type: actionType, nodeId, stepId: item.id } : { type: actionType, nodeId, itemId: item.id, completed: !item.done }, humanFriendlyMessage: `${item.done ? "Reopened" : "Completed"}: ${item.title}` })} />{item.title}</label>)}</div>;
-}
-
-function Plan({ nodeId, title, overview, items, disabled, onAction }: { nodeId: string; title: string; overview?: string; items: UiStudyPlanItem[]; disabled: boolean; onAction?: (event: SharedUiActionEvent) => boolean }) {
-	return <div className={section}><h4 className={css({ fontWeight: 700 })}>{title}</h4>{overview ? <MarkdownBlock content={overview} /> : null}<PlanItems nodeId={nodeId} items={items} disabled={disabled} onAction={onAction} /><LessonPlanJudgementReview plan={{ id: nodeId, title, overview, items }} disabled={disabled} /></div>;
-}
-
-function PlanItems({ nodeId, items, disabled, onAction }: { nodeId: string; items: UiStudyPlanItem[]; disabled: boolean; onAction?: (event: SharedUiActionEvent) => boolean }) {
-	return <ul className={css({ display: "grid", gap: "0.5rem", paddingLeft: "1rem" })}>{items.map((item) => <li key={item.id}><Checklist title={item.title} nodeId={nodeId} items={[{ id: item.id, title: item.detail ?? item.title, done: item.status === "done" }]} actionType="complete-plan-item" disabled={disabled} onAction={onAction} />{item.children ? <PlanItems nodeId={nodeId} items={item.children} disabled={disabled} onAction={onAction} /> : null}</li>)}</ul>;
 }
 
 function Notes({ node, disabled, onAction }: { node: Extract<UiDocumentNode, { type: "notes" }>; disabled: boolean; onAction?: (event: SharedUiActionEvent) => boolean }) {
@@ -966,6 +976,9 @@ function Deck({ node, receipts, disabled, onAction }: { node: Extract<UiDocument
 	const [pendingCompletion, setPendingCompletion] = useState<Extract<SharedUiActionIntent, { type: "complete-deck" }>>();
 	const [delivered, setDelivered] = useState(false);
 	const card = node.cards[index];
+	const [bookmarks,toggleBookmark] = useCardBookmarks();
+	const [settings,updateSettings] = useKeatingUiSettings();
+	const sound = settings.flashcardSoundEnabled;
 	const cardButton = useRef<HTMLButtonElement>(null);
 	const [lastRating, setLastRating] = useState<number | undefined>();
 	const ratingLock = useRef(false);
@@ -987,13 +1000,14 @@ function Deck({ node, receipts, disabled, onAction }: { node: Extract<UiDocument
 		}
 		return attempt.delivered;
 	};
-	if (!card || delivered) return <div className="shared-activity" data-deck={node.id}>
+	if (!card || delivered) return <LessonFrame glyph="layers" title={node.title} kind="Flashcards" data-deck={node.id}>
 		<CompletionMark detail={`Session complete. ${savedRatings.length || ratings.length} card${(savedRatings.length || ratings.length) === 1 ? "" : "s"} reviewed.`}>Deck complete</CompletionMark>
 		<p className="shared-activity__card-note">{node.title}</p>
-	</div>;
+	</LessonFrame>;
 	const rate = (rating: 0 | 1 | 2 | 3) => {
 		if (!revealed || disabled || pendingCompletion || ratingLock.current) return;
 		ratingLock.current = true;
+		playReviewSound(ratingSound(rating), sound);
 		const outcome = applyReview(initialSrsState(Date.now()), rating, Date.now());
 		const nextRatings = [...ratings, { cardId: card.id, rating, appliedIntervalDays: outcome.appliedIntervalDays, easeAfter: outcome.next.ease }];
 		setRatings(nextRatings);
@@ -1003,32 +1017,35 @@ function Deck({ node, receipts, disabled, onAction }: { node: Extract<UiDocument
 		else setIndex(index + 1);
 		requestAnimationFrame(() => { ratingLock.current = false; cardButton.current?.focus(); });
 	};
-	const ratingIcons = [RotateCcw, Lightbulb, ThumbsUp, Zap];
-	return <div className="shared-activity" data-deck={node.id} onKeyDown={(event) => {
+	const ratingIcons: GlyphName[] = ["refresh", "bulb", "up", "spark"];
+	return <LessonFrame glyph="layers" title={node.title} kind="Flashcards" data-deck={node.id} footer={<>
+		<IconButton glyph={sound ? "speaker" : "mute"} label="Card sounds" pressed={sound} onClick={()=>updateSettings({flashcardSoundEnabled:!sound})}/>
+		<IconButton glyph="bookmark" label="Keep this card" pressed={bookmarks.has(card.id)} onClick={()=>toggleBookmark(card.id)}/>
+		<small>{revealed ? "How easily did it come to you?" : "Think first, then reveal"}</small>
+	</>} onKeyDown={(event) => {
 		if (event.altKey || event.ctrlKey || event.metaKey || event.repeat || !revealed) return;
 		if (event.target instanceof HTMLElement && event.target.closest("input, textarea, select, [contenteditable='true']")) return;
 		const rating = Number(event.key) - 1;
 		if (rating >= 0 && rating <= 3 && Number.isInteger(rating)) { event.preventDefault(); rate(rating as 0 | 1 | 2 | 3); }
 	}}>
-		<div className="shared-activity__head"><h4>{node.title}</h4></div>
-		<RoundProgress current={index} total={node.cards.length} label="Cards reviewed" />
+		<Meter max={node.cards.length} value={index + 1} tone="ink" label="Card position" valueText={`${index + 1} of ${node.cards.length}`}/>
 		<FlashcardTimer timer={revealTimer} disabled={disabled || Boolean(pendingCompletion)} />
 		<span className="flashcard-timer-sr" aria-live="polite" aria-atomic="true">{revealed ? `Answer: ${card.back}` : ""}</span>
 		<div className="shared-activity__card-stack" key={card.id}>
-			<button ref={cardButton} disabled={disabled || Boolean(pendingCompletion)} className="shared-activity__card" data-revealed={revealed} type="button" aria-label={revealed ? "Hide answer" : "Reveal answer"} aria-describedby={`${node.id}-${card.id}-face`} aria-pressed={revealed} onClick={() => setRevealed((value) => !value)}>
+			<button ref={cardButton} disabled={disabled || Boolean(pendingCompletion)} className="shared-activity__card" data-revealed={revealed} type="button" aria-label={revealed ? "Hide answer" : "Reveal answer"} aria-describedby={`${node.id}-${card.id}-face`} aria-pressed={revealed} onClick={() => {if (!revealed) playReviewSound("flip", sound); setRevealed(!revealed);}}>
 				<small>{revealed ? "Answer" : "Recall the answer"}</small>
 				<span id={`${node.id}-${card.id}-face`} className="shared-activity__card-content" key={revealed ? "back" : "front"}>{revealed ? card.back : card.front}</span>
-				<small><RotateCcw size={14} aria-hidden="true" />{revealed ? "Tap to see the prompt" : "Tap to reveal"}</small>
+				<small><KeatingGlyph name="refresh" size={14} />{revealed ? "Tap to see the prompt" : "Reveal · Space"}</small>
 			</button>
 		</div>
 		{pendingCompletion ? <><p role="status">Final rating is ready to retry.</p><button disabled={disabled} className="shared-activity__primary" type="button" onClick={() => complete(pendingCompletion.ratings, pendingCompletion)}>Retry save deck</button></> : <>
 			<div className="shared-activity__ratings" aria-label="Rate your recall">{["Again", "Hard", "Good", "Easy"].map((label, rating) => {
-				const Icon = ratingIcons[rating]!;
-				return <button disabled={disabled || !revealed} key={label} className="shared-activity__rating" data-rating={rating} type="button" onClick={() => rate(rating as 0 | 1 | 2 | 3)} aria-keyshortcuts={String(rating + 1)}><Icon size={19} aria-hidden="true" />{label}</button>;
+				const glyph = ratingIcons[rating]!;
+				return <button disabled={disabled || !revealed} key={label} className="shared-activity__rating" data-rating={rating} type="button" onClick={() => rate(rating as 0 | 1 | 2 | 3)} aria-keyshortcuts={String(rating + 1)}><KeatingGlyph name={glyph} size={14} />{label}<small>{formatInterval(applyReview(initialSrsState(0), rating as 0 | 1 | 2 | 3, 0).appliedIntervalDays)}</small><kbd>{rating + 1}</kbd></button>;
 			})}</div>
-			<p className="shared-activity__card-note" role="status">{revealed ? "How easily did it come to you?" : lastRating === undefined ? "Think first. Flip when you're ready." : lastRating < 2 ? "Marked for more practice. Keep going." : "Got it. On to the next."}</p>
+			<p className="shared-activity__card-note" role="status">{lastRating === undefined || revealed ? "" : lastRating < 2 ? "Marked for more practice. Keep going." : "Got it. On to the next."}</p>
 		</>}
-	</div>;
+	</LessonFrame>;
 }
 
 function Resource({ nodeId, title, content, uri, markdown = false, receipt, disabled, onAction }: { nodeId?: string; title: string; content?: string; uri?: string; markdown?: boolean; receipt?: UiActionReceipt; disabled?: boolean; onAction?: (event: SharedUiActionEvent) => boolean }) {

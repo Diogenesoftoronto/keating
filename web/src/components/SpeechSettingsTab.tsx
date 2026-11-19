@@ -1,9 +1,19 @@
-import { Select } from "./Select";
 import { useEffect, useState } from "react";
-import { Trash2 } from "lucide-react";
+import {
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	Field,
+	IconButton,
+	Loading,
+	SelectField,
+	Switch,
+	TextInput,
+} from "../design-system/kit";
+import { speechProviderChoice } from "./settings/models/model-choices";
 import { SettingsSectionNav } from "./SettingsSectionNav";
-import { Toggle } from "./Toggle";
-import { SettingRow } from "./SettingRow";
+
+import { SettingRow, SavedHint } from "./settings/ui";
 import { AudioModelSelectorDialog } from "./ModelSelector";
 import {
 	isDuplexSpeechProvider,
@@ -18,7 +28,7 @@ import {
 } from "../keating/speech";
 import { primeDeviceSpeech } from "../keating/speech-providers/device-speech";
 import { useKeatingSetting } from "../hooks/use-keating-setting";
-import { css, cx } from "../../styled-system/css";
+
 import { gptLiveMaxCostMicrousd } from "../keating/speech-providers/gpt-live";
 import { GptLiveConsentSettings } from "./GptLiveConsentSettings";
 
@@ -31,93 +41,30 @@ export const SPEECH_SECTIONS = [
 	{ id: "speech-provider", label: "Provider" },
 	{ id: "speech-voice", label: "Voice" },
 	{ id: "speech-mic", label: "Microphone" },
+	{ id: "speech-video", label: "Visual input" },
 	{ id: "speech-custom", label: "Custom" },
 ];
 
-const stackClass = css({ display: "flex", flexDirection: "column", gap: "2rem" });
-const sectionClass = css({ display: "flex", flexDirection: "column", gap: "1rem", scrollMarginTop: "5rem" });
-const sectionTitleClass = css({ marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" });
-const sectionDescriptionClass = css({ fontSize: "0.875rem", color: "var(--muted-foreground)" });
-const fieldStackClass = css({ display: "flex", flexDirection: "column", gap: "0.5rem" });
-const fieldLabelClass = css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" });
-const inputClass = css({
-	borderRadius: "0.375rem",
-	border: "1px solid var(--border)",
-	backgroundColor: "var(--background)",
-	paddingInline: "0.75rem",
-	paddingBlock: "0.5rem",
-	fontSize: "0.875rem",
-	color: "var(--foreground)",
-});
-const monoInputClass = cx(inputClass, css({ fontFamily: "var(--mono-body)" }));
-const providerCardClass = css({
-	display: "flex",
-	cursor: "pointer",
-	alignItems: "flex-start",
-	gap: "0.75rem",
-	borderRadius: "0.375rem",
-	border: "1px solid var(--border)",
-	paddingInline: "0.75rem",
-	paddingBlock: "0.625rem",
-	transitionProperty: "color, background-color, border-color",
-	transitionDuration: "150ms",
-	_hover: { backgroundColor: "color-mix(in srgb, var(--accent) 40%, transparent)" },
-});
-const activeProviderClass = css({
-	borderColor: "var(--primary)",
-	backgroundColor: "color-mix(in srgb, var(--accent) 30%, transparent)",
-});
-const badgeClass = css({
-	display: "inline-flex",
-	alignItems: "center",
-	borderRadius: "9999px",
-	border: "1px solid var(--border)",
-	backgroundColor: "var(--muted)",
-	paddingInline: "0.375rem",
-	paddingBlock: "0.125rem",
-	fontSize: "10px",
-	textTransform: "uppercase",
-	letterSpacing: "0.025em",
-	color: "var(--muted-foreground)",
-});
-const iconButtonClass = css({
-	display: "inline-flex",
-	height: "1.75rem",
-	width: "1.75rem",
-	alignItems: "center",
-	justifyContent: "center",
-	borderRadius: "0.375rem",
-	color: "var(--muted-foreground)",
-	_hover: { backgroundColor: "color-mix(in srgb, var(--destructive) 10%, transparent)", color: "var(--destructive)" },
-});
-const primaryButtonClass = css({
-	display: "inline-flex",
-	alignItems: "center",
-	justifyContent: "center",
-	borderRadius: "0.375rem",
-	backgroundColor: "var(--primary)",
-	paddingInline: "0.75rem",
-	paddingBlock: "0.375rem",
-	fontSize: "0.75rem",
-	fontWeight: 500,
-	color: "var(--primary-foreground)",
-	transitionProperty: "color, background-color, border-color",
-	transitionDuration: "150ms",
-	_hover: { backgroundColor: "color-mix(in srgb, var(--primary) 90%, transparent)" },
-	_disabled: { opacity: 0.5 },
-});
-
+const blankEndpoint: CustomSpeechModel = {
+	id: "",
+	label: "",
+	baseUrl: "",
+	model: "",
+	voice: "",
+	providerKey: "openai",
+};
+export function speechModelChoice(model: string): Partial<WebSpeechSettings> {
+	return { model };
+}
 export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 	const [settings, patch] = useKeatingSetting("speech");
 	const [providers, setProviders] = useState<SpeechProviderDescriptor[]>([]);
-	const [draftCustom, setDraftCustom] = useState<CustomSpeechModel>({
-		id: "",
-		label: "",
-		baseUrl: "",
-		model: "",
-		voice: "",
-		providerKey: "openai",
-	});
+	const [draftCustom, setDraftCustom] =
+		useState<CustomSpeechModel>(blankEndpoint);
+	const [editing, setEditing] = useState(false);
+	const [removing, setRemoving] = useState<CustomSpeechModel | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [providerError, setProviderError] = useState(false);
 	const [customError, setCustomError] = useState<string>("");
 	const [audioModelPickerOpen, setAudioModelPickerOpen] = useState(false);
 	// Vision availability is a property of the chosen model, so the control
@@ -125,7 +72,8 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 	const liveTier = resolveSpeechRealtimeTier(settings);
 	const providerHostedLive = usesProviderHostedLiveSurface(settings);
 	const replyMode = speechReplyMode(settings);
-	const liveOnlyProvider = settings.providerId === "tavus" || settings.providerId === "gpt-live";
+	const liveOnlyProvider =
+		settings.providerId === "tavus" || settings.providerId === "gpt-live";
 
 	useEffect(() => {
 		let cancelled = false;
@@ -133,7 +81,12 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 			.then((p) => {
 				if (!cancelled) setProviders(p);
 			})
-			.catch(console.warn);
+			.catch(() => {
+				if (!cancelled) setProviderError(true);
+			})
+			.finally(() => {
+				if (!cancelled) setLoading(false);
+			});
 		return () => {
 			cancelled = true;
 		};
@@ -143,7 +96,9 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 
 	const activeProvider = providers.find((p) => p.id === settings.providerId);
 	const activeCustom = settings.providerId.startsWith("custom:")
-		? settings.customModels.find((m) => `custom:${m.id}` === settings.providerId)
+		? settings.customModels.find(
+				(m) => `custom:${m.id}` === settings.providerId,
+			)
 		: undefined;
 
 	/**
@@ -152,33 +107,39 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 	 * TTS) stay opt-in: turning the mic on there changes the composer's
 	 * behaviour without anything to talk to.
 	 */
-	const duplexMicDefault = (providerId: SpeechProviderId): Partial<WebSpeechSettings> =>
+	const duplexMicDefault = (
+		providerId: SpeechProviderId,
+	): Partial<WebSpeechSettings> =>
 		isDuplexSpeechProvider(providerId) ? { microphoneEnabled: true } : {};
 
 	const handleProviderChange = (providerId: SpeechProviderId) => {
 		setAudioModelPickerOpen(false);
-		if (providerId.startsWith("custom:")) {
-			const id = providerId.slice("custom:".length);
-			const model = settings.customModels.find((m) => m.id === id);
-			if (!model) return;
-			persist({ providerId, model: model.model, voiceName: model.voice });
-			return;
-		}
-		const next = providers.find((p) => p.id === providerId);
-		if (!next) return;
-		const firstModel = next.models[0]?.value ?? "";
-		const firstVoice = next.voices[0] ?? "";
-		persist({ providerId, model: firstModel, voiceName: firstVoice, ...duplexMicDefault(providerId) });
+		const choice = speechProviderChoice(
+			providerId,
+			providers,
+			settings.customModels,
+		);
+		if (choice) persist(choice);
 	};
 
 	const addCustomModel = () => {
 		setCustomError("");
-		const id = draftCustom.id.trim() || draftCustom.label.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
-		if (!id || !draftCustom.label.trim() || !draftCustom.baseUrl.trim() || !draftCustom.model.trim()) {
+		const id =
+			draftCustom.id.trim() ||
+			draftCustom.label
+				.trim()
+				.toLowerCase()
+				.replace(/[^a-z0-9_-]+/g, "-");
+		if (
+			!id ||
+			!draftCustom.label.trim() ||
+			!draftCustom.baseUrl.trim() ||
+			!draftCustom.model.trim()
+		) {
 			setCustomError("Label, base URL, and model id are required.");
 			return;
 		}
-		if (settings.customModels.some((m) => m.id === id)) {
+		if (!editing && settings.customModels.some((m) => m.id === id)) {
 			setCustomError(`A custom model with id "${id}" already exists.`);
 			return;
 		}
@@ -191,8 +152,17 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 			providerKey: draftCustom.providerKey.trim() || "openai",
 			apiPath: draftCustom.apiPath?.trim() || undefined,
 		};
-		persist({ customModels: [...settings.customModels, next] });
-		setDraftCustom({ id: "", label: "", baseUrl: "", model: "", voice: "", providerKey: "openai" });
+		const customModels = editing
+			? settings.customModels.map((m) => (m.id === id ? next : m))
+			: [...settings.customModels, next];
+		persist({
+			customModels,
+			...(editing && settings.providerId === "custom:" + id
+				? speechProviderChoice(settings.providerId, providers, customModels)
+				: {}),
+		});
+		setEditing(false);
+		setDraftCustom(blankEndpoint);
 	};
 
 	const removeCustomModel = (id: string) => {
@@ -201,164 +171,153 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 		if (settings.providerId === `custom:${id}`) {
 			const fallback = providers[0];
 			if (fallback) {
-				patch.providerId = fallback.id;
-				patch.model = fallback.models[0]?.value ?? "";
-				patch.voiceName = fallback.voices[0] ?? "";
-				Object.assign(patch, duplexMicDefault(fallback.id));
+				Object.assign(
+					patch,
+					speechProviderChoice(fallback.id, providers, remaining),
+				);
 			}
 		}
 		persist(patch);
 	};
 
-	const statusBadge = (status: SpeechProviderDescriptor["status"]) => {
-		if (status === "stable") return null;
-		const styles =
-			status === "preview"
-				? css({ borderColor: "rgb(245 158 11 / 0.4)", backgroundColor: "rgb(245 158 11 / 0.1)", color: "rgb(217 119 6)" })
-				: css({ borderColor: "rgb(168 85 247 / 0.4)", backgroundColor: "rgb(168 85 247 / 0.1)", color: "rgb(147 51 234)" });
-		return (
-			<span className={cx(css({ marginLeft: "0.5rem", display: "inline-flex", alignItems: "center", borderRadius: "9999px", border: "1px solid", paddingInline: "0.375rem", paddingBlock: "0.125rem", fontSize: "10px", fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.025em" }), styles)}>
-				{status}
-			</span>
-		);
-	};
-
 	return (
-		<div className={stackClass}>
+		<div className="pf-speech">
 			{!hideNav && <SettingsSectionNav sections={SPEECH_SECTIONS} />}
-
 			<SettingRow
 				id="settings-section-speech-enable"
-				title="Enable spoken responses"
-				description="When on, Keating can speak short explanations and recaps with the spoken-reply voice below."
-				className={css({ scrollMarginTop: "5rem" })}
+				label="Enable spoken responses"
+				help="When on, Keating can speak short explanations and recaps with the spoken-reply voice below."
+				scope="this device"
 			>
-				<Toggle
+				<Switch
+					labelledBy="settings-section-speech-enable-label"
 					checked={settings.enabled}
 					onChange={(checked) => {
-						persist({ enabled: checked, replyMode, ...(checked ? replyMode === "device" ? { microphoneEnabled: false } : duplexMicDefault(settings.providerId) : {}) });
+						persist({
+							enabled: checked,
+							replyMode,
+							...(checked
+								? replyMode === "device"
+									? { microphoneEnabled: false }
+									: duplexMicDefault(settings.providerId)
+								: {}),
+						});
 						if (checked && replyMode === "device") primeDeviceSpeech();
 					}}
 				/>
 			</SettingRow>
 
-			<SettingRow title="Spoken-reply voice" description="Device voice reads short chat replies with your browser. Live conversations always use the provider selected below.">
-				<Select aria-label="Spoken-reply voice" value={replyMode} onValueChange={(value) => {
-					if (value !== "device" && value !== "provider") return;
-					persist({ replyMode: value, ...(value === "device" ? { microphoneEnabled: false } : {}) });
-					if (value === "device" && settings.enabled) primeDeviceSpeech();
-				}}>
+			<SettingRow
+				id="spoken-mode"
+				scope="this device"
+				label="Spoken-reply voice"
+				help="Device voice reads short chat replies with your browser. Live conversations always use the provider selected below."
+			>
+				<SelectField
+					label="Spoken-reply voice"
+					value={replyMode}
+					onValueChange={(value) => {
+						if (value !== "device" && value !== "provider") return;
+						persist({
+							replyMode: value,
+							...(value === "device" ? { microphoneEnabled: false } : {}),
+						});
+						if (value === "device" && settings.enabled) primeDeviceSpeech();
+					}}
+				>
 					<option value="device">Device voice</option>
-					<option value="provider" disabled={liveOnlyProvider}>Selected provider{liveOnlyProvider ? " (Live conversations only)" : ""}</option>
-				</Select>
+					<option value="provider" disabled={liveOnlyProvider}>
+						Selected provider
+						{liveOnlyProvider ? " (Live conversations only)" : ""}
+					</option>
+				</SelectField>
 			</SettingRow>
 
-			<div id="settings-section-speech-provider" className={sectionClass}>
-				<div>
-					<h3 className={sectionTitleClass}>Provider</h3>
-					<p className={sectionDescriptionClass}>
-						Choose which speech engine generates audio. GPT Live and Tavus use your Not Organic account; other hosted providers use API keys in Providers & Models.
-					</p>
-				</div>
-				<div className={css({ display: "flex", flexDirection: "column", gap: "0.5rem" })}>
-					{providers.map((p) => (
-						<label
-							key={p.id}
-							className={cx(providerCardClass, settings.providerId === p.id ? activeProviderClass : "")}
-						>
-							<input
-								type="radio"
-								name="speech-provider"
-								value={p.id}
-								checked={settings.providerId === p.id}
-								onChange={() => handleProviderChange(p.id)}
-								className={css({ marginTop: "0.25rem", flexShrink: 0 })}
-							/>
-							<div className={css({ minWidth: 0, flex: 1 })}>
-								<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>
-									<span>{p.label}</span>
-									<span className={badgeClass}>
-										{p.kind === "duplex" ? "duplex" : "tts"}
-									</span>
-									{statusBadge(p.status)}
-								</div>
-								<div className={css({ marginTop: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{p.description}</div>
-								{p.needsApiKey && (
-									<div className={css({ marginTop: "0.25rem", fontSize: "11px", color: "var(--muted-foreground)" })}>
-										Needs <span className={css({ fontFamily: "var(--mono-body)" })}>{p.needsApiKey}</span> API key in Providers & Models.
-									</div>
-								)}
-							</div>
-						</label>
-					))}
-
-					{settings.customModels.map((m) => (
-						<label
-							key={`custom:${m.id}`}
-							className={cx(providerCardClass, settings.providerId === `custom:${m.id}` ? activeProviderClass : "")}
-						>
-							<input
-								type="radio"
-								name="speech-provider"
-								value={`custom:${m.id}`}
-								checked={settings.providerId === `custom:${m.id}`}
-								onChange={() => handleProviderChange(`custom:${m.id}`)}
-								className={css({ marginTop: "0.25rem", flexShrink: 0 })}
-							/>
-							<div className={css({ minWidth: 0, flex: 1 })}>
-								<div className={css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>{m.label}</div>
-								<div className={css({ marginTop: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-									{m.baseUrl} · {m.model} · voice {m.voice}
-								</div>
-							</div>
-							<button
-								type="button"
-								className={iconButtonClass}
-								aria-label={`Remove ${m.label}`}
-								onClick={(e) => {
-									e.preventDefault();
-									e.stopPropagation();
-									removeCustomModel(m.id);
-								}}
-							>
-								<Trash2 size={14} />
-							</button>
-						</label>
-					))}
-				</div>
-			</div>
-
-			{settings.providerId === "gpt-live" ? (
-				<><SettingRow
-					title="GPT Live account access"
-					description={`Connect Not Organic under Providers & Models and review live consent below. Each session has a $${(gptLiveMaxCostMicrousd() / 1_000_000).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USD spending ceiling. This provider supports voice conversation without live tools or visual input.`}
+			<SettingRow
+				id="settings-section-speech-provider"
+				label="Provider"
+				scope="this device"
+				help="Choose which speech engine generates audio. GPT Live and Tavus use your Not Organic account. Other hosted providers use keys in Models and connections."
+			>
+				<SelectField
+					label="Speech provider"
+					value={settings.providerId}
+					onValueChange={(v) => handleProviderChange(v as SpeechProviderId)}
 				>
-					<button type="button" className={inputClass} onClick={() => window.dispatchEvent(new CustomEvent("keating:open-settings", { detail: { tab: "models" } }))}>
-						Account settings
-					</button>
-				</SettingRow>
-				<GptLiveConsentSettings /></>
+					{providers.map((p) => (
+						<option key={p.id} value={p.id}>
+							{p.label} · {p.kind === "duplex" ? "duplex" : "TTS"}
+							{p.status !== "stable" ? " · " + p.status : ""}
+						</option>
+					))}
+					{settings.customModels.map((m) => (
+						<option key={m.id} value={"custom:" + m.id}>
+							{m.label}
+						</option>
+					))}
+				</SelectField>
+				{loading && <Loading label="Loading speech providers" size="inline" />}
+				{providerError && <p role="alert">Could not load speech providers.</p>}
+				{activeProvider && (
+					<p>
+						{activeProvider.description}{" "}
+						{activeProvider.needsApiKey &&
+							"Needs " +
+								activeProvider.needsApiKey +
+								" API key in Models and connections."}
+					</p>
+				)}
+				{activeCustom && (
+					<p>
+						{activeCustom.baseUrl} · {activeCustom.model} · voice{" "}
+						{activeCustom.voice}
+					</p>
+				)}
+			</SettingRow>
+			{settings.providerId === "gpt-live" ? (
+				<>
+					<SettingRow
+						id="live-account"
+						scope="your account"
+						label="GPT Live account access"
+						help={`Connect Not Organic under Models and connections and review live consent below. Each session has a $${(gptLiveMaxCostMicrousd() / 1_000_000).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USD spending ceiling. This provider supports voice conversation without live tools or visual input.`}
+					>
+						<Button
+							onClick={() =>
+								window.dispatchEvent(
+									new CustomEvent("keating:open-settings", {
+										detail: { section: "account" },
+									}),
+								)
+							}
+						>
+							Account settings
+						</Button>
+					</SettingRow>
+				</>
 			) : null}
 
+			<div id="settings-section-live-consent">
+				<GptLiveConsentSettings />
+			</div>
 			{(activeProvider || activeCustom) && (
-				<div id="settings-section-speech-voice" className={sectionClass}>
-					<div>
-						<h3 className={sectionTitleClass}>Model & voice</h3>
-						<p className={sectionDescriptionClass}>
-							Fine-tune the active provider's model and voice.
-						</p>
-					</div>
-					{activeProvider && activeProvider.models.length > 1 && (
-						<div className={fieldStackClass}>
-							<span className={fieldLabelClass}>Model</span>
-							<button
-								type="button"
-								aria-haspopup="dialog"
-								className={cx(inputClass, css({ cursor: "pointer", textAlign: "left", _hover: { borderColor: "var(--primary)" } }))}
-								onClick={() => setAudioModelPickerOpen(true)}
-							>
-								{activeProvider.models.find((model) => model.value === settings.model)?.label ?? settings.model}
-							</button>
+				<section id="settings-section-speech-voice" className="pf-fields">
+					<h4>Model and voice</h4>
+					{activeProvider && (
+						<div>
+							<small>Model</small>
+							{activeProvider.models.length > 1 ? (
+								<Button
+									aria-haspopup="dialog"
+									aria-label={"Change speech model: " + settings.model}
+									onClick={() => setAudioModelPickerOpen(true)}
+								>
+									{activeProvider.models.find((m) => m.value === settings.model)
+										?.label ?? settings.model}
+								</Button>
+							) : (
+								<p>{activeProvider.models[0]?.label ?? settings.model}</p>
+							)}
 						</div>
 					)}
 					{activeProvider && (
@@ -368,198 +327,249 @@ export function SpeechSettingsTab({ hideNav = false }: SpeechSettingsTabProps) {
 							currentModelId={settings.model}
 							onClose={() => setAudioModelPickerOpen(false)}
 							onSelect={(modelId) => {
-								persist({ model: modelId });
+								persist(speechModelChoice(modelId));
 							}}
 						/>
 					)}
-					{settings.providerId === "openai-realtime" && settings.model.startsWith("gpt-realtime-2") && (
-						<div className={fieldStackClass}>
-							<label className={fieldLabelClass}>Reasoning effort</label>
-							<Select aria-label="Reasoning effort"
-								className={inputClass}
-								value={settings.reasoningEffort}
-								onValueChange={(value) => persist({ reasoningEffort: value as WebSpeechSettings["reasoningEffort"] })}
-							>
-								<option value="minimal">Minimal — lowest latency</option>
-								<option value="low">Low</option>
-								<option value="medium">Medium</option>
-								<option value="high">High</option>
-								<option value="xhigh">Extra high</option>
-							</Select>
-						</div>
-					)}
-					{settings.providerId !== "tavus" ? <div className={fieldStackClass}>
-						<label className={fieldLabelClass}>Voice</label>
-						{activeProvider && activeProvider.voices.length > 0 ? (
-							<Select aria-label="Voice"
-								className={inputClass}
-								value={settings.voiceName}
-								onValueChange={(value) => persist({ voiceName: value })}
-							>
-								{activeProvider.voices.map((v) => (
-									<option key={v} value={v}>{v}</option>
-								))}
-							</Select>
-						) : (
-							<input
-								type="text"
-								className={inputClass}
-								value={settings.voiceName}
-								onChange={(e) => persist({ voiceName: e.target.value })}
-								placeholder="Voice name"
-							/>
+					{settings.providerId === "openai-realtime" &&
+						settings.model.startsWith("gpt-realtime-2") && (
+							<div className="pf-field">
+								<SelectField
+									id="speech-effort"
+									label="Reasoning effort"
+									value={settings.reasoningEffort}
+									onValueChange={(value) =>
+										persist({
+											reasoningEffort:
+												value as WebSpeechSettings["reasoningEffort"],
+										})
+									}
+								>
+									<option value="minimal">Minimal — lowest latency</option>
+									<option value="low">Low</option>
+									<option value="medium">Medium</option>
+									<option value="high">High</option>
+									<option value="xhigh">Extra high</option>
+								</SelectField>
+							</div>
 						)}
-					</div> : null}
-				</div>
+					{settings.providerId !== "tavus" ? (
+						<div className="pf-field">
+							{activeProvider && activeProvider.voices.length > 0 ? (
+								<SelectField
+									id="speech-voice-name"
+									label="Voice"
+									value={settings.voiceName}
+									onValueChange={(value) => persist({ voiceName: value })}
+								>
+									{activeProvider.voices.map((v) => (
+										<option key={v} value={v}>
+											{v}
+										</option>
+									))}
+								</SelectField>
+							) : (
+								<TextInput
+									id="speech-voice-name"
+									aria-label="Voice"
+									type="text"
+									value={settings.voiceName}
+									onChange={(e) => persist({ voiceName: e.target.value })}
+									placeholder="Voice name"
+								/>
+							)}
+						</div>
+					) : null}
+				</section>
 			)}
 
 			<SettingRow
 				id="settings-section-speech-mic"
-				title="Microphone (duplex providers)"
-				description="Duplex providers like GPT Live and OpenAI Realtime hold a live conversation, so the microphone turns on with them. TTS-only providers ignore this."
-				className={css({ scrollMarginTop: "5rem" })}
+				label="Microphone (duplex providers)"
+				help="Duplex providers like GPT Live and OpenAI Realtime hold a live conversation, so the microphone turns on with them. TTS-only providers ignore this."
+				scope="this device"
 			>
-				<Toggle checked={settings.microphoneEnabled} onChange={(checked) => persist({ microphoneEnabled: checked })} />
+				<Switch
+					labelledBy="settings-section-speech-mic-label"
+					checked={settings.microphoneEnabled}
+					onChange={(checked) => persist({ microphoneEnabled: checked })}
+				/>
 			</SettingRow>
 
 			<SettingRow
 				id="settings-section-speech-video"
-				title={providerHostedLive ? "Tavus video and activities" : liveTier.video ? "Camera or screen (live sessions)" : liveTier.image ? "Still images (live sessions)" : "Visual input (live sessions)"}
-				description={providerHostedLive
-					? "KeatingBot sees and hears through the private Tavus call. Its Magic Canvas can show questions, inputs, charts, images, and other interactive activities inside the video surface."
-					: liveTier.video
-					? `${liveTier.label}. This model has a live video lane, so Keating can use the camera or a shared screen.`
-					: liveTier.image
-						? `${liveTier.label}. Add a deliberate JPEG or PNG during the conversation. This model does not receive camera or screen video.`
-						: `Not available on this model. ${liveTier.capReason ?? ""}`}
-				className={css({ scrollMarginTop: "5rem" })}
+				label={
+					providerHostedLive
+						? "Tavus video and activities"
+						: liveTier.video
+							? "Camera or screen (live sessions)"
+							: liveTier.image
+								? "Still images (live sessions)"
+								: "Visual input (live sessions)"
+				}
+				help={
+					providerHostedLive
+						? "KeatingBot sees and hears through the private Tavus call. Its Magic Canvas can show questions, inputs, charts, images, and other interactive activities inside the video surface."
+						: liveTier.video
+							? `${liveTier.label}. This model has a live video lane, so Keating can use the camera or a shared screen.`
+							: liveTier.image
+								? `${liveTier.label}. Add a deliberate JPEG or PNG during the conversation. This model does not receive camera or screen video.`
+								: `Not available on this model. ${liveTier.capReason ?? ""}`
+				}
+				scope="this device"
 			>
 				{providerHostedLive ? (
-					<span className={badgeClass}>Controlled in Live</span>
+					<span className="pf-meta">Controlled in Live</span>
 				) : liveTier.video ? (
-					<Toggle
+					<Switch
+						labelledBy="settings-section-speech-video-label"
 						checked={settings.videoEnabled}
 						onChange={(checked) => persist({ videoEnabled: checked })}
 					/>
 				) : liveTier.image ? (
-					<span className={badgeClass}>Available in Live</span>
+					<span className="pf-meta">Available in Live</span>
 				) : (
-					<Toggle checked={false} disabled onChange={() => {}} />
+					<Switch
+						labelledBy="settings-section-speech-video-label"
+						checked={false}
+						disabled
+						onChange={() => {}}
+					/>
 				)}
 			</SettingRow>
 
 			{settings.videoEnabled && liveTier.video && !providerHostedLive && (
-				<div className={css({ display: "grid", gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } })}>
-					<div className={fieldStackClass}>
-						<label className={fieldLabelClass}>Source</label>
-						<Select aria-label="Video source"
-							className={inputClass}
+				<div className="pf-fields">
+					<div className="pf-field">
+						<SelectField
+							id="speech-source"
+							label="Video source"
 							value={settings.videoSource}
-							onValueChange={(value) => persist({ videoSource: value as WebSpeechSettings["videoSource"] })}
+							onValueChange={(value) =>
+								persist({
+									videoSource: value as WebSpeechSettings["videoSource"],
+								})
+							}
 						>
 							<option value="camera">Camera</option>
 							<option value="screen">Screen share</option>
-						</Select>
+						</SelectField>
 					</div>
-					<div className={fieldStackClass}>
-						<label className={fieldLabelClass}>Frame rate</label>
-						<Select aria-label="Video frame rate"
-							className={inputClass}
+					<div className="pf-field">
+						<SelectField
+							id="speech-frame-rate"
+							label="Video frame rate"
 							value={String(settings.frameIntervalMs)}
-							onValueChange={(value) => persist({ frameIntervalMs: Number(value) })}
+							onValueChange={(value) =>
+								persist({ frameIntervalMs: Number(value) })
+							}
 						>
 							{/* Gemini Live accepts at most one video frame per second. */}
 							<option value="1000">1 frame per second — most responsive</option>
 							<option value="2000">1 frame every 2 seconds</option>
 							<option value="5000">1 frame every 5 seconds — cheapest</option>
-						</Select>
+						</SelectField>
 					</div>
 				</div>
 			)}
 
-			<div id="settings-section-speech-custom" className={sectionClass}>
-				<div>
-					<h3 className={sectionTitleClass}>Add custom TTS endpoint</h3>
-					<p className={sectionDescriptionClass}>
-						Any OpenAI-compatible <code>/v1/audio/speech</code> endpoint can be plugged in here.
-					</p>
-				</div>
-				<div className={css({ display: "grid", gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } })}>
-					<div className={fieldStackClass}>
-						<label className={fieldLabelClass}>Label</label>
-						<input
-							type="text"
-							className={inputClass}
-							placeholder="e.g. My Self-Hosted TTS"
-							value={draftCustom.label}
-							onChange={(e) => setDraftCustom((d) => ({ ...d, label: e.target.value }))}
-						/>
-					</div>
-					<div className={fieldStackClass}>
-						<label className={fieldLabelClass}>Base URL</label>
-						<input
-							type="text"
-							className={monoInputClass}
-							placeholder="https://tts.example.com"
-							value={draftCustom.baseUrl}
-							onChange={(e) => setDraftCustom((d) => ({ ...d, baseUrl: e.target.value }))}
-						/>
-					</div>
-					<div className={fieldStackClass}>
-						<label className={fieldLabelClass}>Model id</label>
-						<input
-							type="text"
-							className={monoInputClass}
-							placeholder="e.g. piper-en-us"
-							value={draftCustom.model}
-							onChange={(e) => setDraftCustom((d) => ({ ...d, model: e.target.value }))}
-						/>
-					</div>
-					<div className={fieldStackClass}>
-						<label className={fieldLabelClass}>Default voice</label>
-						<input
-							type="text"
-							className={inputClass}
-							placeholder="e.g. alloy"
-							value={draftCustom.voice}
-							onChange={(e) => setDraftCustom((d) => ({ ...d, voice: e.target.value }))}
-						/>
-					</div>
-					<div className={fieldStackClass}>
-						<label className={fieldLabelClass}>Auth key from provider</label>
-						<input
-							type="text"
-							className={monoInputClass}
-							placeholder="openai"
-							value={draftCustom.providerKey}
-							onChange={(e) => setDraftCustom((d) => ({ ...d, providerKey: e.target.value }))}
-						/>
-					</div>
-					<div className={fieldStackClass}>
-						<label className={fieldLabelClass}>API path (optional)</label>
-						<input
-							type="text"
-							className={monoInputClass}
-							placeholder="/v1/audio/speech"
-							value={draftCustom.apiPath ?? ""}
-							onChange={(e) => setDraftCustom((d) => ({ ...d, apiPath: e.target.value }))}
-						/>
-					</div>
-				</div>
-				{customError && (
-					<div className={css({ borderRadius: "0.375rem", border: "1px solid color-mix(in srgb, var(--destructive) 30%, transparent)", backgroundColor: "color-mix(in srgb, var(--destructive) 5%, transparent)", paddingInline: "0.75rem", paddingBlock: "0.5rem", fontSize: "0.875rem", color: "var(--destructive)" })}>
-						{customError}
-					</div>
+			<section id="settings-section-speech-custom" className="pf-fields">
+				<h4>Custom speech endpoints</h4>
+				<p>
+					Any OpenAI-compatible <code>/v1/audio/speech</code> endpoint can be
+					plugged in here.
+				</p>
+				{settings.customModels.length === 0 && (
+					<EmptyState heading="No custom speech endpoints" />
 				)}
-				<div className={css({ display: "flex", justifyContent: "flex-end" })}>
-					<button
-						className={primaryButtonClass}
-						onClick={addCustomModel}
-					>
-						Add custom model
-					</button>
+				{settings.customModels.map((m) => (
+					<div className="pf-endpoint" key={m.id}>
+						<strong>{m.label}</strong>
+						<span>
+							{m.baseUrl} · {m.model}
+						</span>
+						<Button
+							variant="ghost"
+							onClick={() => {
+								setEditing(true);
+								setDraftCustom({ ...m });
+								setCustomError("");
+							}}
+						>
+							Edit {m.label}
+						</Button>
+						<IconButton
+							glyph="trash"
+							label={"Remove " + m.label}
+							disabled={
+								settings.providerId === "custom:" + m.id && !providers.length
+							}
+							onClick={() => setRemoving(m)}
+						/>
+					</div>
+				))}
+				<h4>
+					{editing ? "Edit custom TTS endpoint" : "Add custom TTS endpoint"}
+				</h4>
+				<div className="pf-endpoint-fields">
+					{(
+						[
+							["label", "Label", "e.g. My Self-Hosted TTS"],
+							["baseUrl", "Base URL", "https://tts.example.com"],
+							["model", "Model id", "e.g. piper-en-us"],
+							["voice", "Default voice", "e.g. alloy"],
+							["providerKey", "Auth key from provider", "openai"],
+							["apiPath", "API path (optional)", "/v1/audio/speech"],
+						] as const
+					).map(([key, label, hint]) => (
+						<Field key={key} label={label}>
+							<TextInput
+								placeholder={hint}
+								value={draftCustom[key] ?? ""}
+								onChange={(e) =>
+									setDraftCustom((d) => ({ ...d, [key]: e.target.value }))
+								}
+							/>
+						</Field>
+					))}
 				</div>
-			</div>
+				{customError && <p role="alert">{customError}</p>}
+				<div className="pf-persona-actions">
+					{editing && (
+						<Button
+							variant="ghost"
+							onClick={() => {
+								setDraftCustom(blankEndpoint);
+								setEditing(false);
+								setCustomError("");
+							}}
+						>
+							Cancel
+						</Button>
+					)}
+					<Button variant="primary" onClick={addCustomModel}>
+						{editing ? "Save endpoint" : "Add custom model"}
+					</Button>
+				</div>
+				<ConfirmDialog
+					open={!!removing}
+					title="Remove custom speech endpoint?"
+					description={removing?.label ?? ""}
+					confirmLabel="Remove endpoint"
+					onCancel={() => setRemoving(null)}
+					onConfirm={() => {
+						if (removing) {
+							removeCustomModel(removing.id);
+							if (editing && draftCustom.id === removing.id) {
+								setEditing(false);
+								setDraftCustom(blankEndpoint);
+							}
+						}
+						setRemoving(null);
+					}}
+				/>
+			</section>
+			<SavedHint />
 		</div>
 	);
 }

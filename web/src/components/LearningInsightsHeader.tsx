@@ -2,6 +2,41 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { css, cx } from "../../styled-system/css";
 
+import { AppBar, AppMenu, SubBar } from "../design-system/kit";
+import { KeatingGlyph } from "../design-system/glyphs";
+import "../pages/learning.css";
+
+const learningSections = [
+  { id: "activity", to: "/usage", label: "Activity", glyph: "trend" },
+  { id: "coming-up", to: "/coming-up", label: "Coming up", glyph: "calendar" },
+  { id: "benchmark", to: "/bench", label: "Benchmark", glyph: "ruler" },
+] as const;
+
+export function LearningShell({ current, controls, actions, children }: {
+  current: "activity" | "coming-up" | "benchmark";
+  controls?: ReactNode;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
+  return <>
+    <AppBar className="lr-appbar" title={<span role="heading" aria-level={1}>Learning</span>} subtitle="From sessions on this device"
+      back={{ label: "Chat", to: "/chat" }} start={<img className="lr-logo" src="/brand/logo-lockup-compact.avif" alt="Keating" />}>
+      {actions}
+    </AppBar>
+    <SubBar className="lr-sub">
+      <nav aria-label="Learning sections" className="lr-tabs" data-grow>
+        {learningSections.map(section => <Link key={section.id} to={section.to}
+          aria-current={current === section.id ? "page" : undefined}>
+          <KeatingGlyph name={section.glyph} />{section.label}
+        </Link>)}
+      </nav>
+      {controls && <div className="lr-controls">{controls}</div>}
+    </SubBar>
+    {children}
+    {current === "benchmark" && <div className="lr-phone-menu"><AppMenu/></div>}
+  </>;
+}
+
 const styles = {
   header: css({
     mx: "auto",

@@ -1,3 +1,7 @@
+import { motion } from "motion/react";
+import { DURATION, useMotionAllowed } from "../../design-system/motion";
+import { Button, Card, Chip, EmptyState, Eyebrow, Prose, TextArea } from "../../design-system/kit";
+import { KeatingGlyph } from "../../design-system/glyphs";
 /**
  * The reading desk: the centre column of the course workspace. With a selected
  * lesson it reads top to bottom as one article (header, objectives, reading,
@@ -5,19 +9,10 @@
  * completion); without one it shows the empty-course desk. Each band is its own
  * small component so the page-level order stays a flat list.
  */
-import {
-  Check,
-  Circle,
-  Layers3,
-  MessageSquareText,
-  PenLine,
-  Send,
-  StickyNote,
-} from "lucide-react";
-import { css, cx } from "../../../styled-system/css";
-import { CourseDocumentUploadButton } from "../../components/courses/CourseAddMenu";
+import { css } from "../../../styled-system/css";
+
 import type { CourseBuilderSection } from "../../components/courses/CourseBuilder";
-import { courseEmptyClass } from "../../components/courses/course-ui";
+
 import { LessonPrivateFork } from "../../components/private-fork/LessonPrivateFork";
 import type {
   CourseArtifact,
@@ -38,6 +33,7 @@ export interface DeskViewProps {
   snapshot: CourseViewerSnapshot;
   lesson?: CourseLesson;
   moduleTitle: string;
+  nextAction?: { label: string; run(): void };
   completed: boolean;
   mutate: WorkspaceMutate;
   saving: string;
@@ -59,6 +55,7 @@ export interface DeskViewProps {
   onSaveAnswer(): void;
 }
 export function DeskView(props: DeskViewProps) {
+  const allowMotion = useMotionAllowed();
   const { snapshot, lesson } = props;
   const { course } = snapshot;
   const courseArtifacts = course.artifacts.filter(
@@ -92,27 +89,19 @@ export function DeskView(props: DeskViewProps) {
   );
 
   return (
-    <article className={css({ mx: "auto", maxW: "48rem" })}>
+    <motion.article key={lesson.id} className="cw-desk" initial={allowMotion ? { opacity: 0.75 } : false} animate={{ opacity: 1 }} transition={{ duration: allowMotion ? DURATION.quick : 0 }}>
       <LessonHeader {...props} lesson={lesson} />
       <LessonIntro lesson={lesson} />
       <LessonReading
         lesson={lesson}
         canEditCourse={snapshot.permissions.canEditCourse}
       />
-      <LessonPrivateFork
-        key={snapshot.viewer.accountId}
-        context={{
-          courseId: course.id,
-          courseTitle: course.title,
-          lessonId: lesson.id,
-          lessonTitle: lesson.title,
-          revision: course.revision,
-          reading: lesson.reading,
-        }}
-      />
+      {!lesson.exercise && lesson.reading.trim() && <Card as="section" className="cw-fork">
+        <PrivateContinuation snapshot={snapshot} lesson={lesson} />
+      </Card>}
       {lessonMaterials.length ? (
-        <section className={css({ mt: "2rem" })}>
-          <p className={s.sectionLabel}>Lesson sources</p>
+        <Card as="section">
+          <Eyebrow>Lesson sources</Eyebrow>
           {lessonMaterials.map((material) => (
             <CourseSourceCard
               key={material.id}
@@ -121,7 +110,7 @@ export function DeskView(props: DeskViewProps) {
               onToggleReaction={props.onToggleReaction}
             />
           ))}
-        </section>
+        </Card>
       ) : null}
       {lessonArtifacts.map((artifact) => (
         <ArtifactWithReactions
@@ -148,8 +137,13 @@ export function DeskView(props: DeskViewProps) {
         courseArtifacts={courseArtifacts}
       />
       <SharedNotes {...props} />
-      <CompleteLessonBar completed={props.completed} onComplete={props.onComplete} />
-    </article>
+      <footer className="cw-completion">
+        <Button variant="line" glyph="check" aria-pressed={props.completed} onClick={props.onComplete}>
+          {props.completed ? "Lesson complete" : "Mark complete"}
+        </Button>
+        {props.nextAction && <Button variant="primary" onClick={props.nextAction.run}>{props.nextAction.label}<KeatingGlyph name="right" /></Button>}
+      </footer>
+    </motion.article>
   );
 }
 
@@ -163,54 +157,13 @@ interface CourseWideContent {
 function EmptyDesk(props: DeskViewProps & CourseWideContent) {
   const { snapshot, courseMaterials, courseArtifacts, courseAssignments } =
     props;
-  const { course, permissions } = snapshot;
+  const { permissions } = snapshot;
   return (
     <div className={css({ mx: "auto", maxW: "48rem" })}>
       <p className={s.sectionLabel}>Reading desk</p>
-      <h2
-        className={css({
-          mt: "0.5rem",
-          fontFamily: "Georgia, serif",
-          fontSize: { base: "2.2rem", md: "3rem" },
-          lineHeight: 1.03,
-        })}
-      >
-        Nothing to read yet.
-      </h2>
-      <p
-        className={css({
-          mt: "0.9rem",
-          maxW: "46ch",
-          color: "var(--ink-soft)",
-          lineHeight: 1.65,
-        })}
-      >
-        This course has no lessons. That is a valid state — add documents,
-        assignments, or cards first and shape the outline around them.
-      </p>
-      {permissions.canEditCourse ? (
-        <div
-          className={css({
-            mt: "1.25rem",
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "0.5rem",
-          })}
-        >
-          <button
-            type="button"
-            className={cx(s.button, s.primaryButton)}
-            onClick={() => props.onOpenBuilder("outline")}
-          >
-            <Layers3 size={14} /> Build the outline
-          </button>
-          <CourseDocumentUploadButton
-            courseId={course.id}
-            onSnapshot={props.onSnapshot}
-            onError={props.onError}
-          />
-        </div>
-      ) : null}
+      <h2 className="cw-empty-title">Nothing to read yet.</h2>
+      <EmptyState heading="This course has no lessons.">{permissions.canEditCourse && " Open Build to shape the outline, or use Add for course materials."}
+      </EmptyState>
       {courseMaterials.map((material) => (
         <CourseSourceCard
           key={material.id}
@@ -243,109 +196,21 @@ function EmptyDesk(props: DeskViewProps & CourseWideContent) {
   );
 }
 
-/** Module/duration label and the discuss / add-document / edit actions. */
 function LessonHeader(props: DeskViewProps & { lesson: CourseLesson }) {
-  const { snapshot, lesson } = props;
-  const { course, permissions } = snapshot;
-  return (
-    <div
-      className={css({
-        display: "flex",
-        flexWrap: "wrap",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "0.5rem",
-      })}
-    >
-      <p className={s.sectionLabel}>
-        {props.moduleTitle} ·{" "}
-        {lesson.estimatedMinutes
-          ? `${lesson.estimatedMinutes} min`
-          : "self paced"}
-      </p>
-      <div className={css({ display: "flex", flexWrap: "wrap", gap: "0.35rem" })}>
-        <button type="button" className={s.button} onClick={props.onDiscuss}>
-          <MessageSquareText size={13} /> Discuss
-          {props.threadCount ? ` · ${props.threadCount}` : ""}
-        </button>
-        {permissions.canEditCourse ? (
-          <>
-            <CourseDocumentUploadButton
-              courseId={course.id}
-              lessonId={lesson.id}
-              onSnapshot={props.onSnapshot}
-              onError={props.onError}
-              label="Add document"
-            />
-            <button
-              type="button"
-              className={s.button}
-              onClick={() => props.onOpenBuilder("lesson")}
-            >
-              <PenLine size={13} /> Edit
-            </button>
-          </>
-        ) : null}
-      </div>
-    </div>
-  );
+  return <header className="cw-lesson-header">
+    <Eyebrow>{props.moduleTitle} · {props.lesson.estimatedMinutes ? `${props.lesson.estimatedMinutes} min` : "self paced"}</Eyebrow>
+  </header>;
 }
 
-/** Title, summary, and "By the end" objectives. */
 function LessonIntro({ lesson }: { lesson: CourseLesson }) {
-  return (
-    <>
-      <h2
-        className={css({
-          mt: "0.75rem",
-          maxW: "18ch",
-          fontFamily: "Georgia, serif",
-          fontSize: { base: "2.35rem", md: "3.35rem" },
-          lineHeight: 1.02,
-          letterSpacing: "-0.035em",
-        })}
-      >
-        {lesson.title}
-      </h2>
-      {lesson.summary ? (
-        <p
-          className={css({
-            mt: "0.8rem",
-            fontFamily: "Georgia, serif",
-            fontSize: "1.15rem",
-            fontStyle: "italic",
-            color: "var(--ink-soft)",
-          })}
-        >
-          {lesson.summary}
-        </p>
-      ) : null}
-      {lesson.objectives.length > 0 && (
-        <div
-          className={css({
-            mt: "1.5rem",
-            borderLeft: "4px solid var(--course-green)",
-            bg: "var(--course-wash, #ddebdd)",
-            p: "1rem",
-          })}
-        >
-          <p className={s.sectionLabel}>By the end</p>
-          <ul
-            className={css({
-              mt: "0.5rem",
-              pl: "1.1rem",
-              lineHeight: 1.65,
-              listStyle: "square",
-            })}
-          >
-            {lesson.objectives.map((objective) => (
-              <li key={objective}>{objective}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </>
-  );
+  return <div className="cw-lesson-intro">
+    <h2 tabIndex={-1}>{lesson.title}</h2>
+    {lesson.summary && <p>{lesson.summary}</p>}
+    {lesson.objectives.length > 0 && <div className="cw-row cw-objectives">
+      <Eyebrow muted>By the end</Eyebrow>
+      {lesson.objectives.map((objective, index) => <Chip key={index}>{objective}</Chip>)}
+    </div>}
+  </div>;
 }
 
 function LessonReading({
@@ -357,112 +222,62 @@ function LessonReading({
 }) {
   if (!lesson.reading.trim())
     return (
-      <p className={cx(courseEmptyClass, css({ mt: "1.5rem" }))}>
-        This lesson has no reading yet.
-        {canEditCourse ? " Open Build → Lesson to write it." : ""}
-      </p>
+      <EmptyState heading="Nothing to read yet.">
+        {canEditCourse ? <> Open Build <KeatingGlyph name="chevr" size={12} /> Lesson to write it.</> : ""}
+      </EmptyState>
     );
   return (
-    <div
-      id={`lesson-reading-${lesson.id}`}
-      tabIndex={-1}
-      aria-label={`${lesson.title} reading`}
-      className={css({
-        mt: "2rem",
-        scrollMarginTop: "8rem",
-        fontFamily: "Georgia, serif",
-        fontSize: { base: "1.08rem", md: "1.17rem" },
-        lineHeight: 1.85,
-        "& p + p": { mt: "1.25rem" },
-      })}
-    >
+    <Prose id={`lesson-reading-${lesson.id}`} tabIndex={-1} aria-label={`${lesson.title} reading`} className="cw-reading">
       {lesson.reading.split(/\n\n+/).map((paragraph) => (
         <p key={paragraph.slice(0, 32)}>{paragraph}</p>
       ))}
-    </div>
+    </Prose>
   );
 }
 
-/** The lesson's exercise prompt with the learner's answer box and save control. */
+function PrivateContinuation({ snapshot, lesson }: { snapshot: CourseViewerSnapshot; lesson: CourseLesson }) {
+  // Private forks can verify reading passages only. A lesson without reading
+  // can still open a private chat, without copying the answer or course data.
+  if (!lesson.reading.trim()) return <a className="cw-private-link" href="/chat" target="_blank" rel="noreferrer">
+    Continue privately with Keating
+  </a>;
+  return <div className="cw-private-continuation">
+    <LessonPrivateFork key={snapshot.viewer.accountId} context={{
+      courseId: snapshot.course.id, courseTitle: snapshot.course.title,
+      lessonId: lesson.id, lessonTitle: lesson.title,
+      revision: snapshot.course.revision, reading: lesson.reading,
+    }} />
+    <small>with Keating</small>
+  </div>;
+}
+
 function WorkedExercise({
   exercise,
   ...props
 }: DeskViewProps & { exercise: NonNullable<CourseLesson["exercise"]> }) {
+  const audience = ["You"];
+  if (props.snapshot.viewer.teacherAccess === "full") audience.push("teachers");
+  if (props.shareAnswer) audience.push("peers");
   return (
-    <section
-      className={css({
-        mt: "2.5rem",
-        border: "2px solid var(--ink)",
-        bg: "var(--paper)",
-        boxShadow: "5px 5px 0 var(--amber, #e8a33d)",
-      })}
-    >
-      <header
-        className={css({
-          borderBottom: "1px solid var(--ink)",
-          px: "1rem",
-          py: "0.65rem",
-        })}
-      >
-        <p className={s.sectionLabel}>Worked exercise</p>
-      </header>
-      <div className={css({ p: "1rem" })}>
-        <p
-          className={css({
-            fontFamily: "Georgia, serif",
-            fontSize: "1.1rem",
-            lineHeight: 1.6,
-          })}
-        >
-          {exercise.prompt}
-        </p>
-        <textarea
-          value={props.answer}
-          onChange={(event) => props.setAnswer(event.target.value)}
-          placeholder={exercise.placeholder}
-          rows={7}
-          className={cx(
-            s.input,
-            css({ mt: "1rem", resize: "vertical", lineHeight: 1.55 }),
-          )}
-        />
-        <div
-          className={css({
-            mt: "0.75rem",
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "0.75rem",
-          })}
-        >
-          <label
-            className={css({
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.45rem",
-              fontSize: "0.78rem",
-            })}
-          >
-            <input
-              type="checkbox"
-              checked={props.shareAnswer}
-              onChange={(event) => props.setShareAnswer(event.target.checked)}
-            />
-            Share with peers
-          </label>
-          <button
-            type="button"
-            className={cx(s.button, s.primaryButton)}
-            disabled={!props.answer.trim() || props.saving === "answer"}
-            onClick={props.onSaveAnswer}
-          >
-            <Send size={14} />{" "}
-            {props.saving === "answer" ? "Saving…" : "Save work"}
-          </button>
-        </div>
+    <Card as="section" className="cw-exercise">
+      <Eyebrow>Worked exercise</Eyebrow>
+      <Prose><p>{exercise.prompt}</p></Prose>
+      <TextArea aria-label="Exercise answer" value={props.answer}
+        onChange={event => props.setAnswer(event.target.value)}
+        placeholder={exercise.placeholder} rows={4} />
+      <div className="cw-answer-visibility">
+        <label><input type="checkbox" checked={props.shareAnswer}
+          onChange={event => props.setShareAnswer(event.target.checked)} /> Share with peers</label>
+        <span role="status">Visible after saving · {audience.join(", ")}</span>
       </div>
-    </section>
+      <footer>
+        {props.lesson && <PrivateContinuation snapshot={props.snapshot} lesson={props.lesson} />}
+        <Button variant="primary" glyph="save"
+          disabled={!props.answer.trim() || props.saving === "answer"} onClick={props.onSaveAnswer}>
+          {props.saving === "answer" ? "Saving…" : "Save work"}
+        </Button>
+      </footer>
+    </Card>
   );
 }
 
@@ -474,19 +289,19 @@ function CourseWideShelves(
   const { snapshot, courseAssignments, courseArtifacts } = props;
   const shelf = css({
     mt: "2rem",
-    borderTop: "2px solid var(--ink)",
+    borderTop: "1px solid var(--line)",
     pt: "1rem",
   });
   const summary = css({
     cursor: "pointer",
-    fontFamily: "Georgia, serif",
-    fontSize: "1.2rem",
+    fontFamily: "var(--font-ui)",
+    fontSize: ".82rem",
     fontWeight: 700,
   });
   return (
     <>
       {courseAssignments.length ? (
-        <details className={shelf}>
+        <Card as="details" className={shelf}>
           <summary className={summary}>
             Course-wide assignments · {courseAssignments.length}
           </summary>
@@ -501,10 +316,10 @@ function CourseWideShelves(
               courseWide
             />
           ))}
-        </details>
+        </Card>
       ) : null}
       {courseArtifacts.length ? (
-        <details className={shelf}>
+        <Card as="details" className={shelf}>
           <summary className={summary}>
             Course artifact shelf · {courseArtifacts.length}
           </summary>
@@ -517,7 +332,7 @@ function CourseWideShelves(
               courseWide
             />
           ))}
-        </details>
+        </Card>
       ) : null}
     </>
   );
@@ -525,8 +340,8 @@ function CourseWideShelves(
 
 function SharedNotes(props: DeskViewProps) {
   return (
-    <section className={css({ mt: "2.5rem" })}>
-      <div
+    <Card as="section">
+      <div data-glyph-host
         className={css({
           display: "flex",
           alignItems: "end",
@@ -535,34 +350,20 @@ function SharedNotes(props: DeskViewProps) {
         })}
       >
         <div>
-          <p className={s.sectionLabel}>
+          <Eyebrow>
             Shared notes · version {props.sharedNoteVersion}
-          </p>
-          <h3
-            className={css({
-              mt: "0.25rem",
-              fontFamily: "Georgia, serif",
-              fontSize: "1.45rem",
-            })}
-          >
+          </Eyebrow>
+          <h3 className="cw-notes-title">
             The margin everyone can write in.
           </h3>
         </div>
-        <StickyNote size={22} />
+        <KeatingGlyph name="note" size={22} />
       </div>
-      <textarea
+      <TextArea aria-label="Shared notes"
         value={props.noteText}
         onChange={(event) => props.setNoteText(event.target.value)}
         rows={7}
-        className={cx(
-          s.input,
-          css({
-            mt: "0.8rem",
-            resize: "vertical",
-            bg: "#fff9dc",
-            lineHeight: 1.55,
-          }),
-        )}
+        className="cw-shared-note"
         placeholder="Add a definition, question, or useful example…"
       />
       <div
@@ -572,44 +373,15 @@ function SharedNotes(props: DeskViewProps) {
           justifyContent: "flex-end",
         })}
       >
-        <button
+        <Button
           type="button"
-          className={s.button}
+          variant="line"
           disabled={props.saving === "note"}
           onClick={props.onSaveNote}
         >
           {props.saving === "note" ? "Saving…" : "Save shared notes"}
-        </button>
+        </Button>
       </div>
-    </section>
-  );
-}
-
-function CompleteLessonBar({
-  completed,
-  onComplete,
-}: {
-  completed: boolean;
-  onComplete(): void;
-}) {
-  return (
-    <div
-      className={css({
-        mt: "2.5rem",
-        display: "flex",
-        justifyContent: "flex-end",
-        borderTop: "1px solid var(--ink)",
-        pt: "1rem",
-      })}
-    >
-      <button
-        type="button"
-        className={cx(s.button, completed && s.primaryButton)}
-        onClick={onComplete}
-      >
-        {completed ? <Check size={15} /> : <Circle size={15} />}
-        {completed ? "Lesson complete" : "Mark complete"}
-      </button>
-    </div>
+    </Card>
   );
 }

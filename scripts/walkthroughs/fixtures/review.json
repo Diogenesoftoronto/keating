@@ -1,0 +1,50 @@
+{
+  "sessionId": "11111111-2222-4333-8444-555555555555",
+  "review": {
+    "status": "draft",
+    "summary": "Sample review. The exchange gives Alex a way to trace returns. Keep the distinction between the call site and the next executed line.",
+    "ratings": {
+      "accuracy": 4,
+      "scaffolding": 3
+    }
+  },
+  "notes": [
+    {
+      "id": "sample-recursion-strength",
+      "turn": 1,
+      "quote": "Its own local variables stay where they are.",
+      "kind": "strength",
+      "category": "Teaching",
+      "note": "This sentence isolates what stays with the waiting call."
+    },
+    {
+      "id": "sample-recursion-problem",
+      "turn": 3,
+      "quote": "The waiting call for 1 can now print 1",
+      "kind": "problem",
+      "category": "Teaching",
+      "severity": 1,
+      "note": "The snippet was never shown. A reader needs to know where print sits."
+    },
+    {
+      "id": "sample-recursion-suggestion",
+      "turn": 3,
+      "quote": "The base case returns at 0.",
+      "kind": "suggestion",
+      "category": "Teaching",
+      "note": "Mark where the stack starts unwinding."
+    },
+    {
+      "id": "sample-recursion-rewrite",
+      "turn": 1,
+      "quote": "the first one resumes on the next line",
+      "kind": "suggestion",
+      "category": "Teaching",
+      "note": "Make it clear that execution resumes at the call site.",
+      "revision": {
+        "original": "the first one resumes on the next line"
+      },
+      "suggestedAlternative": "the first call continues from the call site"
+    }
+  ]
+}

@@ -1,5 +1,6 @@
-import { Sparkles } from "lucide-react";
-import { css, cx } from "../../styled-system/css";
+import { LessonFrame } from "./lesson/LessonFrame";
+import "./specialist-lessons.css";
+import { css } from "../../styled-system/css";
 import { buildHyperframesHtml } from "./animation-host";
 import { HyperframesPlayer } from "./HyperframesPlayer";
 
@@ -24,24 +25,11 @@ export interface AnimatedSceneProps {
 }
 
 export function AnimatedScene({ payload, className }: AnimatedSceneProps) {
-	// One frame only: no card border, no tinted header bar, no separate body
-	// padding. The animation itself is the object; the label sits above it as a
-	// quiet eyebrow. `kind` is dropped — "hyperframes" means nothing to a learner
-	// and it is the only renderer.
 	return (
-		<div className={cx(css({ marginBlock: "1.25rem", display: "grid", gap: "0.75rem" }), className)}>
-			<div className={css({ display: "grid", gap: "0.25rem" })}>
-				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem", minWidth: 0, fontSize: "0.6875rem", color: "var(--muted-foreground)" })}>
-					<Sparkles size={12} className={css({ color: "#f59e0b" })} />
-					<span className={cx("font-terminal", css({ textTransform: "uppercase", letterSpacing: "0.06em" }))}>Animation</span>
-					<span className={css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{payload.topic}</span>
-				</div>
-				{payload.summary && (
-					<p className={css({ fontSize: "0.875rem", color: "var(--foreground)" })}>{payload.summary}</p>
-				)}
-			</div>
+		<LessonFrame glyph="spark" title={payload.topic} kind="Animation" className={["specialist-animation", className].filter(Boolean).join(" ")}>
+			{payload.summary && <p>{payload.summary}</p>}
 			<AnimationBody payload={payload} />
-		</div>
+		</LessonFrame>
 	);
 }
 
@@ -61,7 +49,7 @@ function AnimationBody({ payload }: { payload: AnimationPayload }) {
 }
 
 function ErrorBody({ message }: { message: string }) {
-	return <div className={css({ padding: "1rem", fontSize: "0.875rem", color: "#f43f5e" })}>{message}</div>;
+	return <div className={css({ padding: "1rem", fontSize: "0.875rem", color: "var(--destructive)" })}>{message}</div>;
 }
 
 export function parseAnimationPayload(payload: string): AnimationPayload | null {

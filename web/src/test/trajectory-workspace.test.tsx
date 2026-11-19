@@ -122,10 +122,17 @@ describe("trajectory review workspace", () => {
 		);
 
 		expect(html).toContain("Fractions review");
+		expect(html).toContain("1 turn of “Fractions review”, 0 notes, 0 of 6 rubric scores, 0 chosen rewrites");
+		expect(html).toContain("Download ZIP");
+		expect(html).not.toContain("Exporting saves the review first");
 		expect(html).toContain("Review records stay local");
 		expect(html).toContain("Invert the divisor");
 		expect(html).toContain("Pedagogy rubric");
-		expect(html).toContain("Artifacts (1)");
+		expect(html).toMatch(/aria-controls="trajectory-artifact-panel"[^>]*> Artifacts<span class="k-count">1/);
+		expect(html).toContain('aria-label="Review status"');
+		expect(html).toContain('aria-label="The Margin"');
+		expect(html).toContain('id="rv-rewrites-tab"');
+		expect(html).not.toContain('aria-label="Active session turn"');
 		expect(html).toContain("Response reviewers");
 		// Pooled models identify themselves the way chat's picker does.
 		expect(html).toContain("Provider: openai · gpt-5-mini");
@@ -138,6 +145,7 @@ describe("trajectory review workspace", () => {
 		const html = renderToStaticMarkup(
 			<TrajectoryReviewWorkspace
 				data={{
+					reviewDirty: true,
 					session: { id: "media-session", title: "Native media review" },
 					messages: [],
 					artifacts: [{
@@ -173,9 +181,11 @@ describe("trajectory review workspace", () => {
 			/>,
 		);
 
-		expect(html).toContain("Drag to select an image region for annotation");
+		expect(html).toContain("Save and download");
+		expect(html).toContain("You have unsaved changes. Exporting saves the review first.");
+		expect(html).toContain("Drag to select an image region for a note");
 		expect(html).toContain("Annotate this image directly. Parallel candidates currently return text only and cannot materialize native media.");
-		expect(html).toMatch(/<button[^>]*disabled=""[^>]*>[\s\S]*?Generate<\/button>/);
+		expect(html).toMatch(/<button[^>]*disabled=""[^>]*>(?:(?!<\/button>)[\s\S])*?<span>Generate<\/span><\/button>/);
 	});
 
 	it("keeps an animation screenshot on the text-backed animation task", () => {
@@ -301,7 +311,7 @@ describe("trajectory review workspace", () => {
 		);
 
 		expect(html).toContain("Unavailable in the current model catalog: openai/shared-model-id.");
-		expect(html).toMatch(/<button[^>]*disabled=""[^>]*>[\s\S]*?Generate<\/button>/);
+		expect(html).toMatch(/<button[^>]*disabled=""[^>]*>(?:(?!<\/button>)[\s\S])*?<span>Generate<\/span><\/button>/);
 		expect(html).toContain("Cannot regenerate. Unavailable in the current model catalog: openai/shared-model-id.");
 		expect(html).toMatch(/<button[^>]*disabled=""[^>]*>[\s\S]*?Regenerate<\/button>/);
 	});

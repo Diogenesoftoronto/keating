@@ -1,6 +1,6 @@
 import { localRead, saveLocalAttachment, type LocalFile } from "../submissions/local-store";
 import { useContext, createContext, useId, useRef, useState } from "react";
-import { Check, File as FileIcon, Paperclip, RotateCcw, X } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import type { UiSubmissionAttachment } from "@keating/learner-contracts";
 import "./assignment-controls.css";
 
@@ -57,7 +57,7 @@ export function SubmissionAttachments({ value, onChange, disabled, onBusyChange 
   return <div className="submission-attachments">
     <div className="submission-attachments__toolbar">
       <button type="button" className="submission-attachments__button submission-attachments__add" disabled={disabled || busy || limitReached} aria-describedby={`${inputId}-limits`} onClick={() => input.current?.click()}>
-        <Paperclip aria-hidden="true" />{busy ? "Attaching…" : "Attach files"}
+        <KeatingGlyph name="clip" /><span className="submission-attachments__label">{busy ? "Attaching…" : "Attach files"}</span>
       </button>
       <span id={`${inputId}-limits`} className="assignment-control__hint">{limitReached ? "10-file limit reached" : "Up to 10 files · 25 MB each"}</span>
       <input ref={input} id={inputId} className="submission-attachments__input" aria-label="Choose files to attach" aria-describedby={`${inputId}-limits`} type="file" multiple tabIndex={-1} disabled={disabled || busy || limitReached} onChange={(event) => {
@@ -67,11 +67,11 @@ export function SubmissionAttachments({ value, onChange, disabled, onBusyChange 
       }} />
     </div>
     {value.length > 0 && <ul className="submission-attachments__files" aria-label="Attached files">{value.map((file) => <li className="submission-attachments__file" key={file.id}>
-      <FileIcon className="submission-attachments__file-icon" aria-hidden="true" />
-      <span className="submission-attachments__file-copy"><span className="submission-attachments__filename">{file.name}</span><span className="assignment-control__hint">{file.sizeBytes >= 1024 * 1024 ? `${(file.sizeBytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.ceil(file.sizeBytes / 1024))} KB`} <span className="submission-attachments__ready"><Check aria-hidden="true" /> Attached</span></span></span>
-      <button type="button" className="submission-attachments__button submission-attachments__remove" disabled={disabled || busy} onClick={() => onChange(value.filter((item) => item.id !== file.id))} aria-label={`Remove ${file.name}`}><X aria-hidden="true" /></button>
+      <KeatingGlyph name="doc" className="submission-attachments__file-icon" />
+      <span className="submission-attachments__file-copy"><span className="submission-attachments__filename">{file.name}</span><span className="assignment-control__hint">{file.sizeBytes >= 1024 * 1024 ? `${(file.sizeBytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.ceil(file.sizeBytes / 1024))} KB`} <span className="submission-attachments__ready"><KeatingGlyph name="check" /> Attached</span></span></span>
+      <button type="button" className="submission-attachments__button submission-attachments__remove" disabled={disabled || busy} onClick={() => onChange(value.filter((item) => item.id !== file.id))} aria-label={`Remove ${file.name}`}><KeatingGlyph name="x" /></button>
     </li>)}</ul>}
     <div className="assignment-control__status" role="status" aria-live="polite">{busy ? <span>Saving <strong>{savingName}</strong>…</span> : value.length > 0 ? <span>{value.length} file{value.length === 1 ? "" : "s"} attached</span> : null}</div>
-    {error && <div className="assignment-control__error"><p role="alert">{error}</p>{retryFiles.length > 0 && <button type="button" className="submission-attachments__button submission-attachments__retry" disabled={disabled || busy} onClick={() => void attach(retryFiles)}><RotateCcw aria-hidden="true" />Retry {retryFiles.length === 1 ? "file" : "files"}</button>}</div>}
+    {error && <div className="assignment-control__error"><p role="alert">{error}</p>{retryFiles.length > 0 && <button type="button" className="submission-attachments__button submission-attachments__retry" disabled={disabled || busy} onClick={() => void attach(retryFiles)}><KeatingGlyph name="refresh" />Retry {retryFiles.length === 1 ? "file" : "files"}</button>}</div>}
   </div>;
 }

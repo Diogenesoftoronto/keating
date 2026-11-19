@@ -12,7 +12,7 @@ const snapshot: TeachingDraftSnapshot = { phase: "checking", attempt: 1, maxAtte
 
 test("state inspector renders an accessible budget meter and content-free breakdown", () => {
   const html = renderToStaticMarkup(<JudgementStateInspector snapshot={snapshot} />);
-  expect(html).toContain("<meter");
+  expect(html).toContain('role="meter"');
   expect(html).toContain('aria-label="Estimated judgement context usage"');
   expect(html).toContain("At 80%");
   expect(html).toContain("toward 65%");
@@ -35,7 +35,7 @@ test("developer diagnostics are reachable during checking and after release", ()
 test("unknown or undispatched budgets do not imply zero usage", () => {
   const unknown = renderToStaticMarkup(<JudgementStateInspector snapshot={{ ...snapshot, state: { ...state, budgetTokens: null, fillRatio: null } }} />);
   expect(unknown).toContain("budget unknown");
-  expect(unknown).not.toContain("<meter");
+  expect(unknown).not.toContain('role="meter"');
   const missing = renderToStaticMarkup(<JudgementStateInspector snapshot={{ ...snapshot, state: undefined }} />);
   expect(missing).toContain("No judgement request dispatched yet");
 });

@@ -3,13 +3,7 @@
  * lesson is open and the records attached to it, the network indicator, and the
  * display name used in the live room. No React, so each rule is unit-testable.
  */
-import {
-  BookUp,
-  ClipboardCheck,
-  FileText,
-  Hammer,
-  MessageSquareText,
-} from "lucide-react";
+import type { GlyphName } from "../../design-system/glyphs";
 import type {
   Course,
   CourseLesson,
@@ -26,7 +20,7 @@ import type { WorkspaceView } from "./state";
 export interface WorkspaceTab {
   id: WorkspaceView;
   label: string;
-  icon: typeof BookUp;
+  icon: GlyphName;
 }
 
 /** Whoever can edit the course or its deck gets the Build tab. */
@@ -37,13 +31,13 @@ export function canBuild(permissions: CoursePermissions): boolean {
 /** Read and Discuss for everyone; Review for reviewers; Build for editors. */
 export function workspaceTabs(permissions: CoursePermissions): WorkspaceTab[] {
   return [
-    { id: "read", label: "Read", icon: FileText },
-    { id: "discuss", label: "Discuss", icon: MessageSquareText },
+    { id: "read", label: "Read", icon: "book" },
+    { id: "discuss", label: "Discuss", icon: "message" },
     ...(permissions.canReview
-      ? [{ id: "review" as const, label: "Review", icon: ClipboardCheck }]
+      ? [{ id: "review" as const, label: "Review", icon: "checklist" as const }]
       : []),
     ...(canBuild(permissions)
-      ? [{ id: "build" as const, label: "Build", icon: Hammer }]
+      ? [{ id: "build" as const, label: "Build", icon: "tool" as const }]
       : []),
   ];
 }

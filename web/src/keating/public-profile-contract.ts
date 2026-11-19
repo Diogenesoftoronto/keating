@@ -13,9 +13,11 @@
  * that passes here is exactly what a visitor sees.
  */
 export const LEARNING_PROFILE_COLLECTION = "app.keating.learningProfile";
+export const PROFILE_AVATAR_PREFIX = "data:image/jpeg;base64,";
 
 export const PROFILE_LIMITS = {
 	displayName: 64,
+	avatar: 6_144,
 	headline: 160,
 	about: 1_200,
 	learning: 8,
@@ -91,6 +93,7 @@ export interface ProfileAppearance {
 /** What a learner fills in. Every field is optional except by validation of its own contents. */
 export interface PublicProfileInput {
 	displayName?: unknown;
+	avatar?: unknown;
 	headline?: unknown;
 	about?: unknown;
 	learning?: unknown;
@@ -104,6 +107,7 @@ export interface PublicProfileInput {
 
 export interface PublicProfileContent {
 	displayName?: string;
+	avatar?: string;
 	headline?: string;
 	about?: string;
 	learning: LearningFocus[];
@@ -215,9 +219,29 @@ function appearanceFrom(value: unknown): ProfileAppearance {
 	return { accent, layout, sections };
 }
 
+export function isProfileAvatar(value: unknown): value is string {
+	return typeof value === "string" && value.length <= PROFILE_LIMITS.avatar && value.length % 4 === 0
+		&& /^\/9j\/[A-Za-z0-9+/]*={0,2}$/u.test(value) && atob(value.slice(-8)).endsWith("\xff\xd9");
+}
+
 /** Validates and normalises learner input. Unknown fields are dropped, never published. */
 export function publicProfileContent(input: PublicProfileInput): PublicProfileContent {
+	const appearance = appearanceFrom(input.appearance);
+	input = { ...input };
+	for (const section of PROFILE_SECTIONS) {
+		if (appearance.sections.includes(section)) continue;
+		delete input[section === "next" ? "nextSteps" : section];
+		if (section === "about") {
+			delete input.displayName;
+			delete input.avatar;
+			delete input.headline;
+		}
+	}
 	const displayName = oneLine(input.displayName, PROFILE_LIMITS.displayName, "displayName", "Your name");
+	const avatar = input.avatar === "" || input.avatar === undefined ? undefined : input.avatar;
+	if (avatar !== undefined && !isProfileAvatar(avatar)) {
+		fail("avatar", "Choose your profile image again.");
+	}
 	const headline = oneLine(input.headline, PROFILE_LIMITS.headline, "headline", "Your headline");
 	const about = paragraph(input.about, PROFILE_LIMITS.about, "about", "About");
 
@@ -272,24 +296,27 @@ export function publicProfileContent(input: PublicProfileInput): PublicProfileCo
 
 	return {
 		...(displayName ? { displayName } : {}),
+		...(avatar ? { avatar } : {}),
 		...(headline ? { headline } : {}),
 		...(about ? { about } : {}),
 		learning, topics, work, nextSteps, links,
-		appearance: appearanceFrom(input.appearance),
+		appearance,
 		...(savedSessions === undefined ? {} : { activity: { savedSessions: savedSessions as number } }),
 	};
 }
 
 /** True when a profile would publish nothing a visitor could read. */
 export function isEmptyProfile(content: PublicProfileContent): boolean {
-	return !content.displayName && !content.headline && !content.about && !content.learning.length
-		&& !content.topics.length && !content.work.length && !content.nextSteps.length && !content.links.length;
+	return !content.activity && !content.displayName && !content.avatar && !content.headline && visibleProfileSections(content).length === 0;
 }
 
-export function publicProfileRecord(input: PublicProfileInput, now = new Date()): FullLearningProfile {
+type SectionList = "learning" | "topics" | "work" | "nextSteps" | "links";
+export type PublishedProfileRecord = Omit<FullLearningProfile, SectionList> & Partial<Pick<FullLearningProfile, SectionList>>;
+
+export function publicProfileRecord(input: PublicProfileInput, now = new Date()): PublishedProfileRecord {
 	const content = publicProfileContent(input);
 	if (isEmptyProfile(content)) fail("profile", "Add at least one thing to share before publishing.");
-	return {
+	const record: PublishedProfileRecord = {
 		$type: LEARNING_PROFILE_COLLECTION,
 		schemaVersion: 1,
 		visibility: "public",
@@ -297,6 +324,10 @@ export function publicProfileRecord(input: PublicProfileInput, now = new Date())
 		...content,
 		updatedAt: now.toISOString(),
 	};
+	for (const section of PROFILE_SECTIONS) {
+		if (!content.appearance.sections.includes(section)) delete record[section === "next" ? "nextSteps" : section];
+	}
+	return record;
 }
 
 /**
@@ -350,4 +381,14 @@ export function isProfileDid(value: unknown): value is string {
 
 export function publicProfilePath(did: string): string {
 	return `/u/${encodeURIComponent(did)}`;
+}
+
+/** Visual presentation only. The public record carries only the opted-in count. */
+export function profilePlantStage(savedSessions: number) {
+	if (savedSessions === 0) return { stage: 1, label: "Has saved no sessions" };
+	if (savedSessions < 5) return { stage: 1, label: "Has saved between 1 and 4 sessions" };
+	if (savedSessions < 15) return { stage: 2, label: "Has saved between 5 and 14 sessions" };
+	if (savedSessions < 40) return { stage: 3, label: "Has saved between 15 and 39 sessions" };
+	if (savedSessions < 100) return { stage: 4, label: "Has saved between 40 and 99 sessions" };
+	return { stage: 5, label: "Has saved 100 or more sessions" };
 }

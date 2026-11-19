@@ -80,8 +80,10 @@ describe("simulation chart accessible fallback", () => {
 		expect(html).toContain('aria-label="Graph output"');
 		expect(html).toContain('aria-label="Time (s)"');
 		expect(html).toContain('aria-label="Speed (m/s)"');
-		expect(html).toContain("View sampled values");
+		expect(html).toContain("View as table");
 		expect(html).toContain("<table");
+		expect(html).toContain("kc-sample");
+		expect(html).not.toContain("<polyline");
 		expect(html).toContain("Distance (m)");
 		expect(html).toContain("Other controls stay at their current settings.");
 		expect(html).toContain(" (now)");

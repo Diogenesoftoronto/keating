@@ -1,0 +1,330 @@
+{
+  "slug": "review-a-session",
+  "title": "Reviewing a session",
+  "viewport": "desktop",
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "sessions",
+    "study",
+    "review"
+  ],
+  "ready": [
+    {
+      "text": "How recursion returns"
+    }
+  ],
+  "steps": [
+    {
+      "kind": "goto",
+      "path": "/review"
+    },
+    {
+      "kind": "chapter",
+      "id": "queue",
+      "title": "Find a session in Reviews",
+      "explanation": "Find the session in Reviews.",
+      "alt": "Find a session in Reviews"
+    },
+    {
+      "kind": "caption",
+      "text": "Find the session in Reviews."
+    },
+    {
+      "kind": "wait-for",
+      "text": "How recursion returns",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "queue"
+    },
+    {
+      "kind": "chapter",
+      "id": "selection",
+      "title": "Select a passage",
+      "explanation": "Select the part of the reply you want to mark.",
+      "alt": "Select a passage"
+    },
+    {
+      "kind": "caption",
+      "text": "Select the part of the reply you want to mark."
+    },
+    {
+      "kind": "click",
+      "label": "How recursion returns",
+      "contains": true,
+      "ready": [
+        {
+          "selector": ".rv-page-turn[data-role=\"assistant\"] [data-message-text]"
+        }
+      ]
+    },
+    {
+      "kind": "wait-for",
+      "text": "Transcript",
+      "timeout": 7000
+    },
+    {
+      "kind": "select-text",
+      "selector": "article[data-role=\"assistant\"] [data-message-text]",
+      "label": "The first call waits",
+      "contains": true,
+      "text": "The first call waits"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "selection"
+    },
+    {
+      "kind": "chapter",
+      "id": "problem",
+      "title": "Record a problem",
+      "explanation": "Mark a specific problem.",
+      "alt": "Record a problem"
+    },
+    {
+      "kind": "caption",
+      "text": "Mark a specific problem."
+    },
+    {
+      "kind": "click",
+      "label": "Problem",
+      "within": ".rv-page-selection",
+      "contains": true
+    },
+    {
+      "kind": "type",
+      "selector": ".rv-note-form textarea",
+      "text": "Name the frame before using stack terminology.",
+      "delay": 17
+    },
+    {
+      "kind": "pause",
+      "ms": 1700,
+      "still": "note-draft"
+    },
+    {
+      "kind": "click",
+      "label": "Add note",
+      "within": ".rv-note-form"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "problem"
+    },
+    {
+      "kind": "chapter",
+      "id": "strength",
+      "title": "Record a strength",
+      "explanation": "Save what the tutor did well.",
+      "alt": "Record a strength"
+    },
+    {
+      "kind": "caption",
+      "text": "Save what the tutor did well."
+    },
+    {
+      "kind": "select-text",
+      "selector": "article[data-role=\"assistant\"] [data-message-text]",
+      "label": "Imagine countdown(2)",
+      "contains": true,
+      "text": "Imagine countdown(2)"
+    },
+    {
+      "kind": "click",
+      "label": "Strength",
+      "within": ".rv-page-selection",
+      "contains": true
+    },
+    {
+      "kind": "type",
+      "selector": ".rv-note-form textarea",
+      "text": "The example gives the learner a prediction to test.",
+      "delay": 17
+    },
+    {
+      "kind": "click",
+      "label": "Add note",
+      "within": ".rv-note-form"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "strength"
+    },
+    {
+      "kind": "chapter",
+      "id": "suggestion",
+      "title": "Record a suggestion",
+      "explanation": "Suggest a concrete next move.",
+      "alt": "Record a suggestion"
+    },
+    {
+      "kind": "caption",
+      "text": "Suggest a concrete next move."
+    },
+    {
+      "kind": "select-text",
+      "selector": "article[data-role=\"assistant\"] [data-message-text]",
+      "label": "Try applying the same idea",
+      "contains": true,
+      "text": "Try applying the same idea"
+    },
+    {
+      "kind": "click",
+      "label": "Suggestion",
+      "within": ".rv-page-selection",
+      "contains": true
+    },
+    {
+      "kind": "type",
+      "selector": ".rv-note-form textarea",
+      "text": "Ask what changes at the base case.",
+      "delay": 17
+    },
+    {
+      "kind": "click",
+      "label": "Add note",
+      "within": ".rv-note-form"
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "suggestion"
+    },
+    {
+      "kind": "chapter",
+      "id": "rewrite",
+      "title": "Open a rewrite draft",
+      "explanation": "Open a proposal for a previously marked passage.",
+      "alt": "The Revise this text editor for the marked passage"
+    },
+    {
+      "kind": "caption",
+      "text": "Open a rewrite draft for the marked passage."
+    },
+    {
+      "kind": "select-text",
+      "selector": "article[data-role=\"assistant\"] [data-message-text]",
+      "label": "The first call waits",
+      "contains": true,
+      "text": "The first call waits"
+    },
+    {
+      "kind": "pause",
+      "ms": 1500,
+      "still": "rewrite-selection"
+    },
+    {
+      "kind": "click",
+      "label": "Rewrite",
+      "within": ".rv-page-selection",
+      "contains": true
+    },
+    {
+      "kind": "wait-for",
+      "text": "Revise this text",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3200,
+      "still": "rewrite"
+    },
+    {
+      "kind": "click",
+      "label": "Cancel",
+      "within": ".rv-note-form"
+    },
+    {
+      "kind": "chapter",
+      "id": "rubric",
+      "title": "Inspect a rubric score",
+      "explanation": "Read the rubric alongside the transcript.",
+      "alt": "Inspect a rubric score"
+    },
+    {
+      "kind": "caption",
+      "text": "Read the rubric alongside the transcript."
+    },
+    {
+      "kind": "click",
+      "label": "Rubric",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "rubric"
+    },
+    {
+      "kind": "chapter",
+      "id": "pass",
+      "title": "Inspect the pass menu",
+      "explanation": "See what a Socratic pass can propose.",
+      "alt": "Inspect the pass menu"
+    },
+    {
+      "kind": "caption",
+      "text": "See what a Socratic pass can propose."
+    },
+    {
+      "kind": "click",
+      "label": "Notes",
+      "contains": true
+    },
+    {
+      "kind": "click",
+      "label": "Socratic pass",
+      "contains": true
+    },
+    {
+      "kind": "pause",
+      "ms": 2100,
+      "still": "pass"
+    },
+    {
+      "kind": "press",
+      "key": "Escape"
+    },
+    {
+      "kind": "pause",
+      "ms": 1800
+    },
+    {
+      "kind": "chapter",
+      "id": "export",
+      "title": "Inspect the export sheet",
+      "explanation": "Check what goes into the review export.",
+      "alt": "Inspect the export sheet"
+    },
+    {
+      "kind": "caption",
+      "text": "Check what goes into the review export."
+    },
+    {
+      "kind": "click",
+      "label": "Save review"
+    },
+    {
+      "kind": "click",
+      "label": "Export"
+    },
+    {
+      "kind": "wait-for",
+      "text": "Cancel",
+      "timeout": 7000
+    },
+    {
+      "kind": "pause",
+      "ms": 3100,
+      "still": "export"
+    }
+  ],
+  "viewerNote": "Rubric ratings and earlier notes are authored sample data. The rewrite editor opens a local draft. The pass menu is shown without running a model pass."
+}

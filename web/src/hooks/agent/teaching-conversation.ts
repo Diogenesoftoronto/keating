@@ -14,6 +14,7 @@ import { FlueConversation } from "../../keating/flue/conversation";
 import { toModelMessagesWithTime } from "../../keating/flue/model-messages";
 import { withTeachingDraftGate } from "../../keating/judgement/draft-gate";
 import { clearTeachingDraftStatus, projectTeachingDraftSnapshot, publishTeachingDraftContent, publishTeachingDraftStatus } from "../../keating/judgement/draft-status";
+import { rememberTurnReceipt } from "../../keating/judgement/turn-receipts";
 import { teachingDraftEvidence } from "../../keating/judgement/draft-evidence";
 import { loadActiveWork } from "../../keating/judgement/active-work-host";
 import { createWebActivityLearning } from "../../keating/judgement/activity-learning";
@@ -138,16 +139,19 @@ export function createTeachingConversation({
     activityLearningState: activityLearning.turnSettings,
     onPublished: activityLearning.published,
     evidence: async latestSubmission => {
-      const [profile, activeWork] = await Promise.all([
+      const [profile, activeWork, presentations] = await Promise.all([
         loadCompleteLearnerStartupContext(keatingStorage),
         loadActiveWork(keatingStorage, sessionId),
+        // The resource review counts what this session has shown; a failed read only skips it.
+        keatingStorage.getOpenUiPresentations(sessionId).catch(() => null),
       ]);
       // Passages Clairic grounded are checkable sources, so a reply citing
       // them as [text](#ref-…) is verified against the original wording.
       const references = intelligence.references().map(reference => ({
         id: reference.id, url: `#${reference.id}`, text: `${reference.kind} passage from this conversation: ${reference.anchor.quote}`,
       }));
-      return { ...teachingDraftEvidence(profile, sessionId, latestSubmission), activeWork, ...(references.length ? { sources: references } : {}) };
+      return { ...teachingDraftEvidence(profile, sessionId, latestSubmission), activeWork, ...(references.length ? { sources: references } : {}),
+        ...(presentations ? { resourcePresentations: presentations.map(record => ({ component: record.component, presentedAt: record.createdAt })) } : {}) };
     },
     onProgress: snapshot => { publishTeachingDraftStatus(sessionId, snapshot); try { noteTurnDraft(sessionId, snapshot); } catch { /* Diagnostics only. */ } },
     captureDraftContent: () => loadKeatingUiSettings().showDeveloperDetails,
@@ -170,6 +174,7 @@ export function createTeachingConversation({
     },
     onReceipt: receipt => {
       try { noteTurnReceipt(sessionId, receipt.messageTimestamp, receipt.snapshot); } catch { /* Diagnostics only. */ }
+      rememberTurnReceipt(sessionId, receipt.messageTimestamp, projectTeachingDraftSnapshot(receipt.snapshot));
       void keatingStorage.recordTeachingDraftReceipt({
         id: `${sessionId}:${receipt.messageTimestamp}`,
         sessionId,

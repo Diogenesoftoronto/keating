@@ -1,30 +1,83 @@
 import { useEffect, useState } from "react";
 import { usePostHog } from "@posthog/react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { motion } from "motion/react";
 import {
-  ArrowRight,
-  BookOpen,
-  Clock3,
-  MessageSquareText,
-  Plus,
-  Users,
-  X,
-} from "lucide-react";
-import { css } from "../../styled-system/css";
-import { Nav } from "../components/Nav";
+  AppBar,
+  Button,
+  ButtonLink,
+  Card,
+  Chip,
+  Eyebrow,
+  EmptyState,
+  Loading,
+  SearchField,
+} from "../design-system/kit";
+import { Meter } from "../design-system/charts";
+import { KeatingGlyph } from "../design-system/glyphs";
+import { SOFT, useMotionAllowed } from "../design-system/motion";
+import "./course-workspace/courses.css";
 import { KeatingBot } from "../components/KeatingBot";
 import "./courses-mascot.css";
 import { CoursesAccessGate } from "../components/courses/CoursesAccessGate";
 import { CourseAssembler } from "../components/courses/CourseAssembler";
 import { listCourses } from "../courses/client";
 import type { CourseListItem } from "../courses/contracts";
-import {
-  type CoursesAccount,
-  useCoursesAccess,
-} from "../courses/useCoursesAccess";
+import { type CoursesAccount, useCoursesAccess } from "../courses/useCoursesAccess";
 import { useSeo } from "../hooks/useSeo";
 
+type LibraryFilter = "All" | "Learning" | "Teaching";
+const isTeaching = (course: CourseListItem) => course.role === "owner" || course.role === "teacher";
+
+export function courseLibraryView(courses: CourseListItem[], filter: LibraryFilter, query: string) {
+  const teachers = courses.filter(isTeaching).length;
+  const counts = { All: courses.length, Learning: courses.length - teachers, Teaching: teachers };
+  const needle = query.trim().toLowerCase();
+  const visible = courses.filter(
+    (course) =>
+      (filter === "All" || isTeaching(course) === (filter === "Teaching")) &&
+      [course.title, course.description].some((value) => value.toLowerCase().includes(needle)),
+  );
+  return { counts, visible };
+}
+
+export function CourseCard({ course, featured = false }: { course: CourseListItem; featured?: boolean }) {
+  const next = course.nextLesson;
+  const complete = course.lessonCount > 0 && course.completedLessons >= course.lessonCount;
+  return (
+    <Card as="article" tone={featured ? "hard" : "plain"} className={featured ? "cw-course k-lift" : "cw-course"}>
+      <Link className="courses-card-main" to="/courses/$courseId" params={{ courseId: course.id }} search={next ? { lesson: next.id } : {}}>
+        <div className="cw-row">
+          <Chip>{course.role[0]!.toUpperCase() + course.role.slice(1)}</Chip>
+          <small>{course.memberCount} {course.memberCount === 1 ? "person" : "people"}{course.presentCount !== undefined && ` · ${course.presentCount} here`}</small>
+        </div>
+        <h2>{course.title}</h2>
+        <p>{course.description || "A shared course in progress."}</p>
+        <Meter
+          label={`${course.title} progress`}
+          value={course.completedLessons}
+          max={course.lessonCount}
+          valueText={`${course.completedLessons} of ${course.lessonCount} lessons`}
+        />
+        {complete && !next && <strong>All lessons complete</strong>}
+        <div className="cw-course-next">
+          <span>{next ? `Continue · Lesson ${next.position} · ${next.title}` : "Open course"}</span>
+          <KeatingGlyph name="right" />
+        </div>
+      </Link>
+      {isTeaching(course) && course.pendingSubmissions !== undefined && (
+        <Link className="courses-card-review" to="/courses/$courseId" params={{ courseId: course.id }} search={{ tab: "review" }}>
+          {course.pendingSubmissions} waiting on you <KeatingGlyph name="right" />
+        </Link>
+      )}
+    </Card>
+  );
+}
+
 function CourseLibrary({ account }: { account: CoursesAccount }) {
+  const [filter, setFilter] = useState<LibraryFilter>("All");
+  const [query, setQuery] = useState("");
+  const motionAllowed = useMotionAllowed();
   const posthog = usePostHog();
   const navigate = useNavigate();
   const [courses, setCourses] = useState<CourseListItem[]>([]);
@@ -52,11 +105,7 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
             failure_type: cause instanceof Error ? cause.name : "unknown",
             workspace_mode: account.mode,
           });
-          setError(
-            cause instanceof Error
-              ? cause.message
-              : "Courses could not be loaded.",
-          );
+          setError(cause instanceof Error ? cause.message : "Courses could not be loaded.");
         }
       })
       .finally(() => {
@@ -67,10 +116,7 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
     };
   }, [account.mode, posthog]);
 
-  const selectCreationMethod = (
-    method: "chat" | "manual",
-    source: "header" | "empty_state",
-  ) => {
+  const selectCreationMethod = (method: "chat" | "manual", source: "header" | "empty_state") => {
     posthog?.capture("course_creation_method_selected", {
       method,
       source,
@@ -79,430 +125,162 @@ function CourseLibrary({ account }: { account: CoursesAccount }) {
     if (method === "manual") setAssemblerOpen(true);
   };
 
-  return (
-    <main
-      className={css({
-        mx: "auto",
-        maxW: "72rem",
-        px: "1rem",
-        py: { base: "2rem", md: "3rem" },
-      })}
+  const { counts, visible } = courseLibraryView(courses, filter, query);
+  const empty = !loading && !error && !courses.length && !assemblerOpen;
+  const plan = (source: "header" | "empty_state") => (
+    <Link
+      to="/chat"
+      search={{ courseMode: "create" }}
+      className="k-button k-primary k-md k-lift"
+      onClick={() => selectCreationMethod("chat", source)}
     >
-      <header
-        className={css({
-          display: "flex",
-          flexDir: { base: "column", sm: "row" },
-          alignItems: { sm: "end" },
-          justifyContent: "space-between",
-          gap: "1.5rem",
-          borderBottom: "2px solid var(--ink)",
-          pb: "1.5rem",
-        })}
+      <KeatingGlyph name="spark" />
+      Plan with Keating
+    </Link>
+  );
+  return (
+    <>
+      <AppBar
+        className="cw-bar"
+        start={<img className="courses-wordmark" src="/brand/logo-lockup-compact.avif" alt="Keating" />}
+        title="Courses"
+        back={{ label: "Chat", to: "/chat" }}
+        subtitle={
+          account.mode === "hosted"
+            ? "Account workspace"
+            : account.mode === "development"
+              ? "Development workspace"
+              : "Local workspace"
+        }
       >
-        <div className="courses-welcome">
-          <div className="courses-welcome__mascot">
-            <KeatingBot variant="body" size={144} label="" animated={!error}
-              state={error ? "idle" : loading ? "loading" : assemblerOpen ? "thinking" : courses.length ? "reading" : "waving"} />
-          </div>
-          <div className="courses-welcome__copy">
-          <p
-            className={css({
-              fontFamily: "var(--mono-display)",
-              fontSize: "0.7rem",
-              fontWeight: 700,
-              letterSpacing: "0.12em",
-              textTransform: "uppercase",
-              color: "var(--course-green-dark, #14743c)",
-            })}
-          >
-            Course library ·{" "}
-            {account.mode === "hosted"
-              ? "Account workspace"
-              : account.mode === "development"
-                ? "Development workspace"
-                : "Local workspace"}
-          </p>
-          <h1
-            className={css({
-              mt: "0.35rem",
-              fontFamily: "Georgia, serif",
-              fontSize: { base: "2.4rem", md: "3.5rem" },
-              lineHeight: 1,
-            })}
-          >
-            What’s next to learn?
-          </h1>
-          <p
-            className={css({
-              mt: "0.8rem",
-              maxW: "54ch",
-              color: "var(--ink-soft)",
-              lineHeight: 1.6,
-            })}
-          >
-            Pick up where you left off, or build something new with Keating.
-          </p>
-          </div>
-        </div>
-        <div
-          className={css({
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            gap: "0.65rem",
-          })}
-        >
-          <Link
-            to="/chat"
-            search={{ courseMode: "create" }}
-            onClick={() => selectCreationMethod("chat", "header")}
-            className={css({
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
-              border: "2px solid var(--ink)",
-              bg: "var(--course-green, #1e9b50)",
-              px: "1rem",
-              py: "0.75rem",
-              fontWeight: 800,
-              color: "white",
-              textDecoration: "none",
-              _hover: { bg: "var(--course-green-dark, #14743c)" },
-            })}
-          >
-            <MessageSquareText size={17} /> Plan with Keating
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              if (assemblerOpen) setAssemblerOpen(false);
-              else selectCreationMethod("manual", "header");
-            }}
-            aria-expanded={assemblerOpen}
-            className={css({
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
-              border: "1px solid var(--ink)",
-              bg: "var(--paper)",
-              px: "1rem",
-              py: "0.75rem",
-              fontWeight: 750,
-              color: "var(--ink)",
-              _hover: { bg: "var(--card)" },
-            })}
-          >
-            {assemblerOpen ? <X size={17} /> : <Plus size={17} />}
-            {assemblerOpen ? "Close assembler" : "Assemble manually"}
-          </button>
-          <Link
-            to="/learn"
-            className={css({
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "0.5rem",
-              border: "1px solid var(--ink)",
-              bg: "var(--paper)",
-              px: "1rem",
-              py: "0.75rem",
-              fontWeight: 750,
-              color: "var(--ink)",
-              textDecoration: "none",
-              _hover: { bg: "var(--card)" },
-            })}
-          >
-            <BookOpen size={17} /> Study one paper at your own pace
-          </Link>
-        </div>
-      </header>
-      {assemblerOpen && (
-        <CourseAssembler
-          account={account}
-          onClose={() => setAssemblerOpen(false)}
-          onCreated={(courseId) => {
-            void navigate({ to: "/courses/$courseId", params: { courseId } });
-          }}
+        <SearchField data-glyph-host
+          label="Find a course"
+          placeholder="Find a course…"
+          value={query}
+          onChange={setQuery}
         />
-      )}
+        {!empty && (
+          <>
+            <Button
+              variant="line"
+              aria-expanded={assemblerOpen}
+              onClick={() =>
+                assemblerOpen ? setAssemblerOpen(false) : selectCreationMethod("manual", "header")
+              }
+            >
+              {assemblerOpen ? "Close assembler" : "Assemble manually"}
+            </Button>
+            {plan("header")}
+          </>
+        )}
+      </AppBar>
+      <main className="cw-library">
+        <header className="courses-welcome k-halftone k-green">
+          <KeatingBot
+            variant="body"
+            size={52}
+            label=""
+            animated={!error}
+            state={error ? "idle" : loading ? "loading" : assemblerOpen ? "thinking" : "books"}
+          />
+          <div>
+            <h1>What’s next to learn?</h1>
+            <p>Pick up where you left off, or build something new with Keating.</p>
+          </div>
+          <div className="cw-row cw-filters">
+            {(["All", "Learning", "Teaching"] as const).map((item) => (
+              <Chip
+                as="button"
+                key={item}
+                selected={item === filter}
+                count={counts[item]}
+                onClick={() => setFilter(item)}
+              >
+                {item}
+              </Chip>
+            ))}
+          </div>
+        </header>
+        {assemblerOpen && (
+          <CourseAssembler
+            account={account}
+            onClose={() => setAssemblerOpen(false)}
+            onCreated={(courseId) => {
+              void navigate({ to: "/courses/$courseId", params: { courseId } });
+            }}
+          />
+        )}
 
-      {error && (
-        <p
-          role="alert"
-          className={css({
-            mt: "1rem",
-            borderLeft: "4px solid var(--destructive)",
-            bg: "color-mix(in srgb, var(--destructive) 7%, var(--card))",
-            p: "0.75rem",
-            color: "var(--destructive)",
-          })}
-        >
-          {error}
-        </p>
-      )}
-      {loading ? (
-        <p role="status"
-          className={css({
-            py: "5rem",
-            textAlign: "center",
-            color: "var(--ink-soft)",
-          })}
-        >
-          Opening your library…
-        </p>
-      ) : courses.length === 0 && !assemblerOpen ? (
-        <section
-          className={css({
-            mt: "2rem",
-            display: "grid",
-            border: "2px solid var(--ink)",
-            bg: "var(--card)",
-            md: { gridTemplateColumns: "1fr 1fr" },
-          })}
-        >
-          <div className={css({ p: { base: "1.5rem", md: "2.5rem" } })}>
-            <h2
-              className={css({
-                mt: "1.25rem",
-                fontFamily: "Georgia, serif",
-                fontSize: "2rem",
-              })}
-            >
-              Bring your first big question.
-            </h2>
-            <p
-              className={css({
-                mt: "0.75rem",
-                color: "var(--ink-soft)",
-                lineHeight: 1.65,
-              })}
-            >
-              What would you love to understand? Tell Keating what you want
-              to learn and bring any notes or readings. You’ll shape the
-              outline together before building your first course.
-            </p>
-            <div
-              className={css({
-                mt: "1.5rem",
-                display: "flex",
-                flexWrap: "wrap",
-                alignItems: "center",
-                gap: "0.65rem",
-              })}
-            >
-              <Link
-                to="/chat"
-                search={{ courseMode: "create" }}
-                onClick={() => selectCreationMethod("chat", "empty_state")}
-                className={css({
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  bg: "var(--ink)",
-                  px: "1rem",
-                  py: "0.75rem",
-                  fontWeight: 700,
-                  color: "var(--paper)",
-                  textDecoration: "none",
-                })}
-              >
-                Plan with Keating <ArrowRight size={16} />
-              </Link>
-              <button
-                type="button"
-                onClick={() => selectCreationMethod("manual", "empty_state")}
-                className={css({
-                  borderBottom: "1px solid currentColor",
-                  py: "0.25rem",
-                  fontSize: "0.82rem",
-                  fontWeight: 650,
-                })}
-              >
-                Or assemble manually
-              </button>
+        {error && <p role="alert">{error}</p>}
+        {loading ? (
+          <Loading label="Opening your library…" className="cw-state" />
+        ) : empty ? (
+          <section className="cw-empty">
+            <EmptyState heading={<span role="heading" aria-level={2}>Bring your first big question.</span>} actions={<>
+              {plan("empty_state")}
+              <Button variant="ghost" onClick={() => selectCreationMethod("manual", "empty_state")}>Or assemble manually</Button>
+            </>}>
+              What would you love to understand? Tell Keating what you want to learn and bring any
+              notes or readings. You’ll shape the outline together before building your first course.
+            </EmptyState>
+            <div className="courses-blocks">
+              <Eyebrow>Your building blocks</Eyebrow>
+              <ul>
+                <li>Blank modules and lessons</li>
+                <li>StudyPlans from saved chats</li>
+                <li>Selected plan sections</li>
+                <li>Saved flashcard decks</li>
+                <li>Quizzes, visuals, documents, and images</li>
+                <li>Editable questions, assignments, and cards</li>
+              </ul>
             </div>
-          </div>
-          <div
-            className={css({
-              borderTop: "2px solid var(--ink)",
-              bg: "var(--course-wash, #ddebdd)",
-              p: { base: "1.5rem", md: "2.5rem" },
-              md: { borderTop: 0, borderLeft: "2px solid var(--ink)" },
-            })}
-          >
-            <p
-              className={css({
-                fontFamily: "var(--mono-display)",
-                fontSize: "0.72rem",
-                fontWeight: 700,
-                letterSpacing: "0.08em",
-              })}
-            >
-              YOUR BUILDING BLOCKS
-            </p>
-            <ul
-              className={css({
-                mt: "1.25rem",
-                display: "grid",
-                gap: "1rem",
-                color: "var(--ink-soft)",
-              })}
-            >
-              <li>Blank modules and lessons</li>
-              <li>StudyPlans from saved chats</li>
-              <li>Selected plan sections</li>
-              <li>Saved flashcard decks</li>
-              <li>Quizzes, visuals, documents, and images</li>
-              <li>Editable questions, assignments, and cards</li>
-            </ul>
-          </div>
-        </section>
-      ) : courses.length > 0 ? (
-        <section
-          aria-label="Your courses"
-          className={css({
-            mt: "2rem",
-            display: "grid",
-            gap: "1rem",
-            md: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
-            xl: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" },
-          })}
-        >
-          {courses.map((course) => (
-            <Link
-              key={course.id}
-              to="/courses/$courseId"
-              params={{ courseId: course.id }}
-              className={css({
-                display: "flex",
-                minH: "15rem",
-                flexDir: "column",
-                border: "2px solid var(--ink)",
-                bg: "var(--card)",
-                p: "1.25rem",
-                color: "inherit",
-                textDecoration: "none",
-                boxShadow:
-                  "4px 4px 0 color-mix(in srgb, var(--ink) 25%, transparent)",
-                _hover: {
-                  borderColor: "var(--course-green-dark, #14743c)",
-                  transform: "translateY(-2px)",
-                },
-              })}
-            >
-              <div
-                className={css({
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "0.75rem",
-                })}
-              >
-                <span
-                  className={css({
-                    bg: "var(--course-wash, #ddebdd)",
-                    px: "0.5rem",
-                    py: "0.25rem",
-                    fontFamily: "var(--mono-display)",
-                    fontSize: "0.65rem",
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    color: "var(--course-green-dark, #14743c)",
-                  })}
+          </section>
+        ) : (
+          courses.length > 0 && (
+            <section aria-label="Your courses" className="cw-cards">
+              {visible.map((course, index) => (
+                <motion.div
+                  key={course.id}
+                  initial={motionAllowed ? { y: 6 } : false}
+                  animate={{ y: 0 }}
+                  transition={
+                    motionAllowed ? { ...SOFT, delay: Math.min(index, 6) * 0.06 } : { duration: 0 }
+                  }
                 >
-                  {course.role}
-                </span>
-                <ArrowRight size={17} />
-              </div>
-              <h2
-                className={css({
-                  mt: "1.25rem",
-                  fontFamily: "Georgia, serif",
-                  fontSize: "1.6rem",
-                  lineHeight: 1.15,
-                })}
-              >
-                {course.title}
-              </h2>
-              <p
-                className={css({
-                  mt: "0.65rem",
-                  color: "var(--ink-soft)",
-                  lineHeight: 1.5,
-                  lineClamp: 3,
-                })}
-              >
-                {course.description || "A shared course in progress."}
-              </p>
-              <div
-                className={css({
-                  mt: "auto",
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "0.9rem",
-                  pt: "1.5rem",
-                  fontSize: "0.75rem",
-                  color: "var(--ink-soft)",
-                })}
-              >
-                <span
-                  className={css({
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "0.3rem",
-                  })}
-                >
-                  <BookOpen size={14} /> {course.lessonCount} lessons
-                </span>
-                <span
-                  className={css({
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "0.3rem",
-                  })}
-                >
-                  <Users size={14} /> {course.memberCount}
-                </span>
-                <span
-                  className={css({
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: "0.3rem",
-                  })}
-                >
-                  <Clock3 size={14} /> {course.completedLessons} done
-                </span>
-              </div>
-            </Link>
-          ))}
-        </section>
-      ) : null}
-    </main>
+                  <CourseCard course={course} featured={index === 0} />
+                </motion.div>
+              ))}
+              {!visible.length && <EmptyState role="status" glyph="search" heading="No courses match this filter." />}
+            </section>
+          )
+        )}
+        <footer data-glyph-host className="cw-row cw-library-footer">
+          <KeatingGlyph name="book" /> Just one paper or topic?
+          <ButtonLink variant="ghost" to="/learn">
+            Study it at your own pace
+          </ButtonLink>
+          <small>Courses keep lessons, sources, notes, cards and teacher review together</small>
+        </footer>
+      </main>
+    </>
   );
 }
 
 export function Courses() {
   useSeo({
     title: "Courses — Keating",
-    description:
-      "Durable, shareable lesson plans for peers, students, and teachers.",
+    description: "Durable, shareable lesson plans for peers, students, and teachers.",
   });
   const [access, retry] = useCoursesAccess();
   return (
-    <div
-      className={css({
-        minH: "100vh",
-        bg: "var(--paper)",
-        color: "var(--ink)",
-      })}
-    >
-      <Nav />
+    <div className="cw-page">
       {access.status === "ready" ? (
         <CourseLibrary account={access.account} />
       ) : (
-        <CoursesAccessGate state={access} onRetry={retry} />
+        <>
+          <AppBar title="Courses" back={{ label: "Chat", to: "/chat" }} />
+          <CoursesAccessGate state={access} onRetry={retry} />
+        </>
       )}
     </div>
   );

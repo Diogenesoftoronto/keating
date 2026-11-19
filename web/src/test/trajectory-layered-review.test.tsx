@@ -171,6 +171,12 @@ describe("progressive annotation editor", () => {
 		expect(html).not.toContain("How did this affect the learner?");
 	});
 
+	it("keeps provenance controls on saved notes and identifies the selected kind", () => {
+		expect(editor(draft({ kind: "strength" }))).toContain('data-kind="strength"');
+		expect(editor(draft())).not.toContain("Note details");
+		expect(editor(draft({ id: "saved" }))).toContain("Note status");
+	});
+
 	it("opens a field that already carries text", () => {
 		const html = editor(draft({ note: "Circular.", pedagogicalImpact: "The learner cannot verify it." }));
 		expect(html).toContain("Pedagogical impact");

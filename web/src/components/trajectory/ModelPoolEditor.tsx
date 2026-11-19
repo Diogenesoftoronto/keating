@@ -1,5 +1,5 @@
+import { Button, EmptyState, IconButton } from "../../design-system/kit";
 import { Select } from "../Select";
-import { Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { ReviewGenerationTask, ReviewModelPool, StoredModelReference } from "../../keating/trajectory-review";
 import { modelFromStoredReference, storedModelReference } from "../../keating/trajectory-review";
@@ -7,7 +7,7 @@ import { css, cx } from "../../../styled-system/css";
 import { modelCapabilityBadges } from "../../keating/model-capabilities";
 import { ModelSelectorDialog } from "../ModelSelector";
 import { REVIEW_TASK_OPTIONS } from "./pool-compatibility";
-import { compactButtonClass, iconButtonClass, inputClass, metaTextClass, sectionHeadingClass } from "./styles";
+import { inputClass, metaTextClass, sectionHeadingClass } from "./styles";
 
 export interface ModelPoolEditorProps {
 	pools: ReviewModelPool[];
@@ -55,7 +55,7 @@ export function ModelPoolEditor({ pools, availableModels, activePoolId, onSelect
 						{pools.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
 					</Select>
 				</label>
-				<button type="button" className={compactButtonClass} onClick={onCreatePool}><Plus size={12} aria-hidden="true" /> New</button>
+				<Button variant="ghost" size="sm" glyph="plus" onClick={onCreatePool}>New</Button>
 			</div>
 
 			{pool ? (
@@ -65,7 +65,7 @@ export function ModelPoolEditor({ pools, availableModels, activePoolId, onSelect
 							Pool name
 							<input value={pool.name} className={cx(inputClass, css({ marginTop: "0.25rem" }))} onChange={(event) => onChange({ ...pool, name: event.currentTarget.value })} />
 						</label>
-						<button type="button" className={iconButtonClass} aria-label={`Delete ${pool.name}`} onClick={() => onDeletePool(pool.id)}><Trash2 size={14} aria-hidden="true" /></button>
+						<IconButton glyph="trash" size="sm" label={`Delete ${pool.name}`} onClick={() => onDeletePool(pool.id)} />
 					</div>
 
 					<div className={css({ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "0.5rem" })}>
@@ -113,7 +113,7 @@ export function ModelPoolEditor({ pools, availableModels, activePoolId, onSelect
 												Provider: {model.provider}{model.name === model.id ? "" : ` · ${model.id}`}
 											</div>
 										</div>
-										<button type="button" className={cx(iconButtonClass, css({ width: "2rem", height: "2rem", flexShrink: 0 }))} aria-label={`Remove ${model.name}`} onClick={() => onRemoveModel(pool.id, model)}><Trash2 size={13} aria-hidden="true" /></button>
+										<IconButton glyph="trash" size="sm" label={`Remove ${model.name}`} onClick={() => onRemoveModel(pool.id, model)} />
 									</div>
 									{badges.length > 0 || stale ? (
 										<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.25rem", marginTop: "0.375rem" })}>
@@ -130,18 +130,16 @@ export function ModelPoolEditor({ pools, availableModels, activePoolId, onSelect
 								</div>
 								);
 							})}
-							{pool.models.length === 0 ? <div className={css({ paddingBlock: "0.75rem", textAlign: "center", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Add at least one named model before generating candidates.</div> : null}
+							{pool.models.length === 0 ? <EmptyState heading="Add at least one named model before generating candidates." /> : null}
 							<div className={css({ borderTop: "1px solid var(--border)", paddingTop: "0.625rem" })}>
-								<button type="button" className={cx(compactButtonClass, css({ width: "100%", justifyContent: "center" }))} onClick={() => setPicking(true)}>
-									<Plus size={12} aria-hidden="true" /> Add model
-								</button>
+								<Button size="sm" variant="ghost" glyph="plus" onClick={() => setPicking(true)}>Add model</Button>
 							</div>
 							<div className={metaTextClass}>Picks come from the same catalog as chat, so hidden providers and custom models agree across both.</div>
 						</div>
 					</section>
 				</>
 			) : (
-				<div className={css({ display: "grid", minHeight: "10rem", placeItems: "center", padding: "1rem", textAlign: "center", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>Create a pool to group the models used for parallel review candidates.</div>
+				<EmptyState heading="Create a pool to group the models used for parallel review candidates." />
 			)}
 
 			{/* The same picker chat uses, so a pool sees one catalog with one set of

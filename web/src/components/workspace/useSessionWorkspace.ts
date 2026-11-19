@@ -51,8 +51,14 @@ function browserStorage(): Readable | null {
 
 /** Learner ticks in the chat card write the journal without an event; a light poll keeps the workspace in step. */
 const JOURNAL_POLL_MS = 1500;
+const NO_IDS: readonly string[] = [];
 
-export function useSessionWorkspace(sessionId: string, source: PlanRevisionSource, storage: Readable | null = browserStorage()): SessionWorkspaceState {
+/**
+ * @param watchDocumentIds Further documents (quizzes, notes, tasks…) whose
+ * journals the same poll watches, so the materials list follows learner
+ * progress without a second timer.
+ */
+export function useSessionWorkspace(sessionId: string, source: PlanRevisionSource, storage: Readable | null = browserStorage(), watchDocumentIds: readonly string[] = NO_IDS): SessionWorkspaceState {
 	const [load, setLoad] = useState<WorkspaceLoadState>({ status: "loading" });
 	const [proposals, setProposals] = useState<PlanRevisionProposal[]>([]);
 	const [history, setHistory] = useState<Record<string, PlanRevisionHistoryEntry[]>>({});
@@ -61,13 +67,16 @@ export function useSessionWorkspace(sessionId: string, source: PlanRevisionSourc
 	const request = useRef(0);
 	const planIds = useRef<string[]>([]);
 	const journalSnapshot = useRef("");
+	const watched = useRef(watchDocumentIds);
+	watched.current = watchDocumentIds;
+	const snapshotOf = useCallback((ids: readonly string[]) => [...ids, ...watched.current].map((id) => storage?.getItem(sharedUiActionStateKey(id)) ?? "").join("\u0000"), [storage]);
 
 	const readSide = useCallback((ids: readonly string[]) => {
 		setProposals(listPlanRevisionProposals(ids, storage));
 		setHistory(Object.fromEntries(ids.map((id) => [id, loadPlanHistory(storage, id)])));
 		setPendingSaves(listPendingPlanSaves().filter((save) => ids.includes(save.documentId)));
-		journalSnapshot.current = ids.map((id) => storage?.getItem(sharedUiActionStateKey(id)) ?? "").join("\u0000");
-	}, [storage]);
+		journalSnapshot.current = snapshotOf(ids);
+	}, [snapshotOf, storage]);
 
 	const reload = useCallback(() => {
 		const id = ++request.current;
@@ -112,8 +121,7 @@ export function useSessionWorkspace(sessionId: string, source: PlanRevisionSourc
 		window.addEventListener(PLAN_SAVE_STATUS_EVENT, onSide);
 		window.addEventListener(PLAN_PROPOSALS_CHANGED_EVENT, onSide);
 		const poll = window.setInterval(() => {
-			const snapshot = planIds.current.map((id) => storage?.getItem(sharedUiActionStateKey(id)) ?? "").join("\u0000");
-			if (snapshot !== journalSnapshot.current) reload();
+			if (snapshotOf(planIds.current) !== journalSnapshot.current) reload();
 		}, JOURNAL_POLL_MS);
 		return () => {
 			window.removeEventListener(PLAN_REVISED_EVENT, onRevised);
@@ -122,7 +130,7 @@ export function useSessionWorkspace(sessionId: string, source: PlanRevisionSourc
 			window.removeEventListener(PLAN_PROPOSALS_CHANGED_EVENT, onSide);
 			window.clearInterval(poll);
 		};
-	}, [reload, sessionId, storage]);
+	}, [reload, sessionId, snapshotOf]);
 
 	const dismissUpdated = useCallback(() => setUpdated(null), []);
 	return { load, proposals, history, pendingSaves, updated, dismissUpdated, reload };

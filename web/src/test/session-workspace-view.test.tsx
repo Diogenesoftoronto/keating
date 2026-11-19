@@ -104,7 +104,7 @@ describe("session workspace view", () => {
 		await revisePlan(source, "plan-doc", { op: "complete-item", itemId: "b" }, "autonomous", storage, () => 1000);
 		const html = view({ compareOpen: true, history: { "plan-doc": loadPlanHistory(storage, "plan-doc") } }, storage);
 		expect(html).toContain("Revision 1 (before the last change) compared with revision 2 (now)");
-		expect(html).toContain("Epsilon-delta: In progress → Done");
+		expect(html).toMatch(/Epsilon-delta: In progress <svg[^>]*data-glyph="right"[^>]*>[\s\S]*?<\/svg> Done<\/li>/);
 		expect(html).toContain("Rev 2");
 		expect(html).toContain("Changed by Keating");
 		expect(html).toContain('data-quote-source-revision="2"');

@@ -43,7 +43,7 @@ describe("CourseAssembler (before saved work loads)", () => {
     expect(box?.[1]).not.toContain("checked");
   });
   test("starts as an enabled blank course with the blank summary", () => {
-    const create = /<button[^>]*>(?:(?!<\/button>)[\s\S])*Create blank course<\/button>/.exec(html);
+    const create = /<button[^>]*>(?:(?!<\/button>)[\s\S])*Create blank course(?:<\/span>)?<\/button>/.exec(html);
     expect(create).not.toBeNull();
     expect(/<button\b([^>]*)>/.exec(create![0])![1]).not.toMatch(/(^|\s)disabled(=""|\s|$)/);
     const text = textOf(html);

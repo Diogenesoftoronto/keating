@@ -1,6 +1,7 @@
+import { Button, EmptyState, Loading } from "../../design-system/kit";
 import { Select } from "../Select";
 import { createContext, useContext, useId, useRef, useState } from "react";
-import { BookPlus, Check, FolderOpen, RotateCcw } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import type { UiTaskNode } from "@keating/learner-contracts";
 import { applyCourseOperation, getCourse, listCourses, newCourseOperationId } from "../../courses/client";
 import type { CourseListItem, CourseViewerSnapshot } from "../../courses/contracts";
@@ -62,11 +63,11 @@ export function SaveTaskToCourse({ task }: { task: UiTaskNode }) {
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not save this assignment."); }
     finally { writing.current = false; setPhase("idle"); }
   }
-  if (saved) return <div className="task-course task-course--saved" role="status"><Check aria-hidden="true" /><span><strong>Saved to {saved.course}</strong><span className="assignment-control__hint">{saved.destination}</span></span></div>;
+  if (saved) return <div data-glyph-host className="task-course task-course--saved" role="status"><KeatingGlyph name="check" /><span><strong>Saved to {saved.course}</strong><span className="assignment-control__hint">{saved.destination}</span></span></div>;
   const loadingCourse = phase === "destinations";
   const saving = phase === "saving";
   return <div className="task-course">
-    {courses === undefined ? <button type="button" className="task-course__button task-course__open" disabled={phase !== "idle"} onClick={() => void load()}><BookPlus aria-hidden="true" />{phase === "courses" ? "Loading courses…" : error ? "Retry courses" : "Save to course"}</button> : courses.length === 0 ? <div className="task-course__empty"><p>No courses you can edit yet.</p><button type="button" className="task-course__button task-course__secondary" disabled={phase !== "idle"} onClick={() => void load()}><RotateCcw aria-hidden="true" />{phase === "courses" ? "Loading courses…" : "Refresh courses"}</button></div> : <>
+    {courses === undefined ? <Button type="button" variant="line" disabled={phase !== "idle"} onClick={() => void load()}><KeatingGlyph name="book" />{phase === "courses" ? <Loading size="inline" label="Loading courses…" /> : error ? "Retry courses" : "Save to course"}</Button> : courses.length === 0 ? <div className="task-course__empty"><EmptyState heading="No courses you can edit yet." /><Button type="button" variant="line" disabled={phase !== "idle"} onClick={() => void load()}><KeatingGlyph name="refresh" />{phase === "courses" ? <Loading size="inline" label="Loading courses…" /> : "Refresh courses"}</Button></div> : <>
       <div className="task-course__fields">
         <label className="task-course__field" htmlFor={`${controlId}-course`}><span>Course</span><Select id={`${controlId}-course`} className="task-course__select" value={selected} disabled={saving} onValueChange={(value) => void chooseCourse(value)}>
           <option value="">Choose a course</option>{courses.map((course) => <option key={course.id} value={course.id}>{course.title}</option>)}
@@ -76,10 +77,10 @@ export function SaveTaskToCourse({ task }: { task: UiTaskNode }) {
           {snapshot?.course.modules.filter((module) => module.lessons.length).map((module) => <optgroup key={module.id} label={module.title}>{module.lessons.map((lesson) => <option key={lesson.id} value={lesson.id}>{lesson.title}</option>)}</optgroup>)}
         </Select></label>
       </div>
-      {snapshot && <p className="task-course__location"><FolderOpen aria-hidden="true" /><span>{snapshot.course.title}<span className="assignment-control__hint">{destination ? snapshot.course.modules.flatMap((module) => module.lessons).find((lesson) => lesson.id === destination)?.title : "Course assignments"}</span></span></p>}
-      <button type="button" className="task-course__button task-course__save" disabled={!selected || !snapshot || phase !== "idle"} onClick={() => void save()}><BookPlus aria-hidden="true" />{saving ? "Saving assignment…" : "Save assignment"}</button>
-      {loadingCourse && <p className="assignment-control__status" role="status">Loading destinations…</p>}
-      {error && selected && !snapshot && <button type="button" className="task-course__button task-course__secondary" disabled={phase !== "idle"} onClick={() => void chooseCourse(selected)}><RotateCcw aria-hidden="true" />Retry destinations</button>}
+      {snapshot && <p className="task-course__location"><KeatingGlyph name="folder" /><span>{snapshot.course.title}<span className="assignment-control__hint">{destination ? snapshot.course.modules.flatMap((module) => module.lessons).find((lesson) => lesson.id === destination)?.title : "Course assignments"}</span></span></p>}
+      <Button type="button" variant="primary" disabled={!selected || !snapshot || phase !== "idle"} onClick={() => void save()}><KeatingGlyph name="save" />{saving ? "Saving assignment…" : "Save assignment"}</Button>
+      {loadingCourse && <Loading size="inline" label="Loading destinations…" />}
+      {error && selected && !snapshot && <Button type="button" variant="line" disabled={phase !== "idle"} onClick={() => void chooseCourse(selected)}><KeatingGlyph name="refresh" />Retry destinations</Button>}
     </>}
     {error && <p className="assignment-control__error" role="alert">{error}</p>}
   </div>;

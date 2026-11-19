@@ -318,6 +318,10 @@ export interface RoomListItem extends RoomJoinDisclosure {
   courseTitle?: string;
   lessonTitle?: string;
   facilitatorName?: string;
+  present?: Pick<RoomMember, "accountId" | "displayName" | "role">[];
+  presentCount?: number;
+  keating?: import("../components/rooms/room-ui").KeatingRunState["kind"];
+  viewerIsFacilitator?: boolean;
   lastMessageAt?: string;
   updatedAt: string;
   /** Present on course listings for course members who have not joined yet. */

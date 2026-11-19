@@ -1,0 +1,92 @@
+{
+  "title": "Study rooms",
+  "viewport": "desktop",
+  "width": 1280,
+  "height": 800,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile",
+    "local-account"
+  ],
+  "transcript": "study-rooms",
+  "capturedAt": "2026-11-19T16:05:27.065Z",
+  "viewerNote": "Two local sample profiles use the same room. Keating’s reply is scripted and the invitation URL and QR code are hidden.",
+  "duration": 51.562999963760376,
+  "bytes": 2035212,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "create",
+      "title": "Name the room",
+      "start": 0.007999897003173828,
+      "explanation": "Create a room for the sample study group.",
+      "alt": "Name the room",
+      "still": "create"
+    },
+    {
+      "id": "approval",
+      "title": "Require teacher approval",
+      "start": 4.861999988555908,
+      "explanation": "Hold replies for teacher approval.",
+      "alt": "Require teacher approval",
+      "still": "approval"
+    },
+    {
+      "id": "invite",
+      "title": "Create a learner invitation",
+      "start": 9.766999959945679,
+      "explanation": "Make a limited learner invitation.",
+      "alt": "Create a learner invitation",
+      "still": "invite"
+    },
+    {
+      "id": "disclosure",
+      "title": "Read the join disclosure",
+      "start": 18.69599986076355,
+      "explanation": "Read what the room shares before joining.",
+      "alt": "Read the join disclosure",
+      "still": "disclosure"
+    },
+    {
+      "id": "join",
+      "title": "Join as Alex",
+      "start": 24.27300000190735,
+      "explanation": "Join through the learner invitation.",
+      "alt": "Join as Alex",
+      "still": "join"
+    },
+    {
+      "id": "guidance",
+      "title": "Send private guidance",
+      "start": 29.661999940872192,
+      "explanation": "Send guidance visible only to teachers.",
+      "alt": "Send private guidance",
+      "still": "guidance"
+    },
+    {
+      "id": "ask",
+      "title": "Ask Keating as a learner",
+      "start": 36.288999795913696,
+      "explanation": "Ask Keating a question from the learner profile.",
+      "alt": "Ask Keating as a learner",
+      "still": "ask"
+    },
+    {
+      "id": "approve",
+      "title": "Approve the held reply",
+      "start": 43.19599986076355,
+      "explanation": "Approve the held reply.",
+      "alt": "Approve the held reply",
+      "still": "approve"
+    },
+    {
+      "id": "people",
+      "title": "Check the learner transcript",
+      "start": 47.49199986457825,
+      "explanation": "The learner sees the approved reply.",
+      "alt": "Check the learner transcript",
+      "still": "people"
+    }
+  ]
+}

@@ -50,14 +50,14 @@ test("consent UI exposes disclosure and deliberate actions, never a grant action
 		<GptLiveConsentControls consent={value} busy={busy} error={error} onChange={() => {}} onRefresh={() => {}} />,
 	);
 	const pending = render(null, true);
-	expect(pending).not.toContain("Approve live content logging");
+	expect(pending).not.toContain(">Approve<");
 	expect(pending).toContain("Checking live consent");
 	const available = render(consent);
 	expect(available).toContain(consent.disclosure);
-	expect(available).toContain("Approve live content logging");
-	expect(available).not.toContain("Revoke live consent");
+	expect(available).toContain(">Approve<");
+	expect(available).not.toContain(">Revoke<");
 	const approved = render({ ...consent, granted: true });
-	expect(approved).toContain("Revoke live consent");
+	expect(approved).toContain(">Revoke<");
 	expect(approved).toContain("End any current call");
 	expect(render(consent, true)).toContain("disabled");
 	expect(render(null, false, "Consent endpoint unavailable")).toContain("Check again");

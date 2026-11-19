@@ -1,0 +1,116 @@
+{
+  "model": {
+    "id": "local-tutor",
+    "name": "Keating Demo",
+    "api": "openai-completions",
+    "provider": "Keating Demo",
+    "reasoning": false,
+    "input": [
+      "text"
+    ],
+    "cost": {
+      "input": 0,
+      "output": 0,
+      "cacheRead": 0,
+      "cacheWrite": 0
+    },
+    "contextWindow": 32000,
+    "maxTokens": 4096
+  },
+  "sessions": [
+    {
+      "id": "11111111-2222-4333-8444-555555555555",
+      "title": "How recursion returns",
+      "hoursAgo": 2,
+      "turns": [
+        [
+          "user",
+          "I can follow the calls down. What happens on the way back?"
+        ],
+        [
+          "assistant",
+          "The first call waits at the line that made the recursive call. Its own local variables stay where they are. When the second call returns, the first one resumes on the next line.\n\nBefore we trace it, where would a print after the recursive call show up?"
+        ],
+        [
+          "user",
+          "I'm confused about why the last print comes out first."
+        ],
+        [
+          "assistant",
+          "Imagine countdown(2) calls countdown(1), which calls countdown(0). The base case returns at 0. The waiting call for 1 can now print 1, then return so the call for 2 can print 2."
+        ],
+        [
+          "user",
+          "That makes sense. The innermost call finishes first, then each waiting call resumes."
+        ],
+        [
+          "assistant",
+          "Exactly. Try applying the same idea to a folder tree: when can the parent finish?"
+        ],
+        [
+          "user",
+          "What should I study next?"
+        ],
+        [
+          "assistant",
+          "Start with a short countdown. Once you can trace the return order, apply the same idea to a folder tree.\n\n```openui lifecycle=workspace id=sample-stored-recursion-path\nroot = LearningSurface([plan], \"\", \"\", \"workspace\")\nplan = StudyPlan(\"sample-recursion-path\", \"Learn recursion\", [{ id: \"trace\", title: \"Trace a countdown\", detail: \"Follow the calls down to the base case.\", estimatedMinutes: 5 }, { id: \"tree\", title: \"Trace a folder tree\", detail: \"Predict the order in which folders finish.\", estimatedMinutes: 10, dependsOn: [\"trace\"] }], \"workspace\")\n```"
+        ],
+        [
+          "user",
+          "Can I have one exercise to do later?"
+        ],
+        [
+          "assistant",
+          "Take the countdown away from the conversation and trace it on paper.\n\n```openui lifecycle=workspace id=sample-recursion-assignment-document\nroot = LearningSurface([assignment], \"\", \"\", \"workspace\")\nassignment = Assignment(\"sample-recursion-assignment\", \"Trace countdown(3)\", \"Write the call order and the return order for countdown(3). Mark the call that reaches the base case.\", [\"Give both orders.\", \"Identify the call that does not recurse.\"], \"workspace\", 5)\n```"
+        ]
+      ]
+    },
+    {
+      "id": "22222222-2222-4333-8444-555555555555",
+      "title": "Recursion in folder trees",
+      "parentSessionId": "11111111-2222-4333-8444-555555555555",
+      "hoursAgo": 1,
+      "turns": [
+        [
+          "user",
+          "What if a folder has two subfolders?"
+        ],
+        [
+          "assistant",
+          "Finish the first subfolder before visiting the second. A folder with no subfolders can return after visiting its files."
+        ],
+        [
+          "user",
+          "Got it. The parent is waiting while we finish one subtree."
+        ],
+        [
+          "assistant",
+          "Try sketching the order in which each folder returns."
+        ]
+      ]
+    },
+    {
+      "id": "33333333-2222-4333-8444-555555555555",
+      "title": "Combinatorics: counting paths",
+      "hoursAgo": 26,
+      "turns": [
+        [
+          "user",
+          "How many ways can I get to the far corner with two right steps and one up step?"
+        ],
+        [
+          "assistant",
+          "List where the up step can go. Which choices give you a different order?"
+        ],
+        [
+          "user",
+          "That helped. There are three positions for the up step."
+        ],
+        [
+          "assistant",
+          "Right. You can use the same approach for longer paths with only one up step."
+        ]
+      ]
+    }
+  ]
+}

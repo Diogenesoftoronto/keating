@@ -1,0 +1,352 @@
+<style>
+  .m1-ink { background-image: url("{{asset:tex-marble.webp}}"); }
+  .m1-field { background-image: url("{{asset:tex-doodles.webp}}"); }
+</style>
+<div class="wrap">
+<p class="lede"><b>Settings and the chart language.</b> The second pass: Settings rebuilt on the same kit as the rest of the app, and one way to draw every chart, meter and progress bar. Sample data throughout. Frames are a 1120px viewport scaled to fit; open full screen to use them at size.</p>
+<div class="controls">
+  <label>Theme <span class="tog" data-tog="theme"><button data-v="paper" aria-pressed="true">Paper</button><button data-v="dark" aria-pressed="false">Terminal</button></span></label>
+  <label>Motion <span class="tog" data-tog="motion"><button data-v="full" aria-pressed="true">Full</button><button data-v="reduced" aria-pressed="false">Reduced</button></span></label>
+  <label>Shaders <span class="tog" data-tog="fx"><button data-v="on" aria-pressed="true">On</button><button data-v="off" aria-pressed="false">Off</button></span></label>
+</div>
+
+
+<section class="board">
+  <div class="board-h"><span class="n">K1</span><h2>Borders, icons and texture</h2><p>See how Keating marks actions, surfaces and waiting.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt m1-spec"><div class="m1-rulegrid">
+  <div><h3>Quiet icons</h3><div class="row"><button class="ib m1-bloom" aria-label="Attach files">{{i:clip}}</button><span>Hover or focus to see the bloom</span></div><div class="row"><span class="m1-boxed" data-glyph-host>{{i:clip}}</span><span>Boxed icon · avoid</span></div></div>
+  <div><h3>One border per thing</h3><div class="comp"><div class="ta">Message Keating</div><div class="cbar"><button class="ib" aria-label="Attach files">{{i:clip}}</button><span class="sp"></span><button class="send" aria-label="Send">{{i:send}}</button></div></div></div>
+  <div><h3>Halftone, grid and lift</h3><div class="m1-halftone m1-sample">Section heading</div><div class="m1-grid m1-sample">Preview stage</div><button class="b pri">Primary action</button></div>
+  <div><h3>Loading</h3><div class="m1-loading" role="status"><span class="m1-ink" aria-hidden="true"></span><b>Loading sessions…</b></div></div>
+  <div><h3>Empty state</h3><div class="hero m1-empty"><span class="m1-field" aria-hidden="true"></span><b data-glyph-host>{{i:people}} No rooms yet</b><p>Start one for a study group or a class, then share an invite link.</p><button class="b pri">New room</button></div></div>
+</div></div></div></div>
+  <ol class="pts">
+    <li>Icon-only controls are 28px, or 22px in dense rows. The bloom lights up on hover or focus.</li>
+    <li>The composer, hard cards and primary buttons can use an ink edge. Use soft edges and dividers elsewhere.</li>
+    <li>Loading keeps a caption. Empty states keep an explanation and an action when available.</li>
+    <li>Texture sits on surfaces and states. The example still reads with effects off, reduced motion or forced colours.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ S1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">S1</span><h2>Settings: Interface</h2><p>Four groups instead of five tabs, every setting says where it is kept and when it takes effect, and the right column shows the result.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr" style="height:720px" data-enter="dash">
+    <header class="top">
+      <b style="font-family:var(--display);font-size:14px;margin-left:4px">Settings</b><span class="vr"></span>
+      <span class="sfind">{{i:search:s}}Find a setting<span class="sp"></span><kbd>/</kbd></span>
+      <span class="sp"></span><a class="b sm gh">{{i:book:s}}Documentation{{i:ext:s}}</a><button class="ib" title="Close settings">{{i:x}}</button>
+    </header>
+    <div class="sx">
+      <nav class="sx-n" data-w aria-label="Settings sections">
+        <a class="sx-g on">{{i:gear}}Interface</a>
+        <a class="sx-s on">Display and reading</a>
+        <a class="sx-s">Motion and effects</a>
+        <a class="sx-s">Chat layout</a>
+        <a class="sx-s">Companion and sound</a>
+        <a class="sx-s">Getting around</a>
+        <a class="sx-g" style="margin-top:6px">{{i:bulb}}Learning<small>Unsaved changes</small></a>
+        <a class="sx-g">{{i:chip}}Models and connections<small>1 needs a key</small></a>
+        <a class="sx-g">{{i:lock}}Data and support</a>
+        <span class="sp"></span>
+        <a class="sx-s" style="border:0;margin-left:0">{{i:compass:s}}Replay the tour</a>
+        <span class="mono faint" style="font-size:9.5px;padding:6px 8px 0">Keating 4.3.0 &middot; this browser</span>
+      </nav>
+      <div class="sx-m" data-w>
+        <h3>Display and reading</h3>
+        <div class="sec">
+          <div class="sr"><div><b>Theme <span class="scope">{{i:panel:s}}this device</span></b><span>Paper is light, Terminal is dark. System follows your computer.</span></div><div class="seg" data-pick><span class="on">System</span><span>{{i:sun:s}}Paper</span><span>{{i:moon:s}}Terminal</span></div></div>
+          <div class="sr"><div><b>Reply typeface <span class="scope">{{i:panel:s}}this device</span></b><span>Choose the typeface for Keating’s chat replies.</span></div><div class="seg" data-pick><span class="on">Reading serif</span><span>Sans</span><span>Mono</span></div></div>
+          <div class="sr"><div><b>Font family <span class="scope">this device</span></b><span>Used by interface elements that follow the app font preference.</span></div><span class="slt">JetBrains Mono {{i:chev:s}}</span></div>
+          <div class="sr"><div><b>Text size <span class="scope">{{i:person:s}}your profile</span></b><span>Adjust the size of text across Keating.</span></div><div class="seg" data-pick><span class="on">Default</span><span>Large</span><span>Larger</span></div></div>
+          <div class="sr"><div><b>Higher contrast <span class="scope">{{i:person:s}}your profile</span></b><span>Strengthen text and border contrast.</span></div><i class="swt"></i></div>
+        </div>
+        <div class="unsaved"><span class="st-dot ok"><i></i>Saved as you change it</span></div>
+      </div>
+      <aside class="sx-a" data-w>
+        <span class="eb">Preview</span>
+        <div class="pvw">
+          <span class="eb mu">Keating &middot; 3:07</span>
+          <p class="prose" style="font-size:14px;line-height:1.55">Each paused call sits on a stack. The most recent one finishes first, so the <code>after</code> lines unwind in reverse.</p>
+          <div class="row" style="gap:6px"><span class="chip">Explain another way</span><span class="chip">Quiz me</span></div>
+        </div>
+        <div class="pvw" style="flex-direction:row;align-items:center;gap:10px"><i class="bot" style="width:44px;height:44px"></i><span style="font-size:11.5px;line-height:1.4" class="soft">Keating sits beside the composer and reacts to the lesson. <a class="lnk">Companion</a></span></div>
+        <span class="faint" style="font-size:11px;line-height:1.45">{{i:panel:s}} <b style="font-weight:600">This device</b> means this browser only. {{i:person:s}} <b style="font-weight:600">Your profile</b> is saved here too and is included in what Keating is told.</span>
+      </aside>
+    </div>
+  </div></div></div>
+  <ol class="pts">
+    <li>Four groups hold the settings. The selected group has a hard edge; the selected section uses a wash and green rule.</li>
+    <li>Each displayed setting includes its scope. Changes in Interface save as you make them.</li>
+    <li>The preview sits beside the settings on desktop.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ S2 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">S2</span><h2>Settings: Models and connections</h2><p>Choose the model for each job and see what the current setup supports.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr" style="height:720px" data-enter="dash">
+    <header class="top">
+      <b style="font-family:var(--display);font-size:14px;margin-left:4px">Settings</b><span class="vr"></span>
+      <span class="sfind">{{i:search:s}}Find a setting<span class="sp"></span><kbd>/</kbd></span>
+      <span class="sp"></span><a class="b sm gh">{{i:book:s}}Documentation{{i:ext:s}}</a><button class="ib" title="Close settings">{{i:x}}</button>
+    </header>
+    <div class="sx">
+      <nav class="sx-n" data-w aria-label="Settings sections">
+        <a class="sx-g">{{i:gear}}Interface</a>
+        <a class="sx-g">{{i:bulb}}Learning<small>Unsaved changes</small></a>
+        <a class="sx-g on" style="margin-top:6px">{{i:chip}}Models and connections</a>
+        <a class="sx-s on">Models for each job</a>
+        <a class="sx-s">Providers and keys<span class="d" style="--c:var(--amber)"></span></a>
+        <a class="sx-s">Your account</a>
+        <a class="sx-s">Sources and web search</a>
+        <a class="sx-s">Checking replies</a>
+        <a class="sx-s">Offline tutor</a>
+        <a class="sx-s">Images</a>
+        <a class="sx-s">How this build is set up</a>
+        <a class="sx-g" style="margin-top:6px">{{i:lock}}Data and support</a>
+        <span class="sp"></span>
+        <a class="sx-s" style="border:0;margin-left:0">{{i:compass:s}}Replay the tour</a>
+      </nav>
+      <div class="sx-m" data-w>
+        <h3>Models for each job</h3>
+        <div class="sec">
+          <div class="prow" style="border-top:0">{{i:message}}<div><b>Teaching <span class="scope">new chats</span></b><small>A chat keeps the model it started with. You can switch it in the chat picker.</small></div><span class="chip">Most recently used</span><button class="b sm gh">Change</button></div>
+          <div class="prow">{{i:verified}}<div><b>Checking replies <span class="scope">this device</span></b><small>Reviews work and estimates mastery.</small></div><span class="chip">Hosted Jev</span><button class="b sm gh">Change</button></div>
+          <div class="prow">{{i:speaker}}<div><b>Voice <span class="scope">this device</span></b><small>Reading aloud and Live. GPT Live uses your Not Organic account.</small></div><span class="chip">Tavus KeatingBot</span><button class="b sm gh">Change</button></div>
+          <div class="prow">{{i:image}}<div><b>Images</b><small>diagrams and pictures in lessons</small></div><span class="st-dot warn"><i></i>Needs a key</span><button class="b sm gh">Choose</button></div>
+          <div class="prow">{{i:search}}<div><b>Web search</b><small>with sources shown under the reply</small></div><span class="st-dot ok"><i></i>On</span><i class="swt on"></i></div>
+        </div>
+        <div class="unsaved"><span class="st-dot ok"><i></i>Saved as you change it</span></div>
+        <div class="sr"><div><b>Reasoning level <span class="scope">new chats</span></b><span>Set how much the model thinks before responding. Higher levels produce more thorough answers but take longer.</span></div><span class="slt">Medium · Balanced depth and speed {{i:chev:s}}</span></div>
+      </div>
+      <aside class="sx-a m1-halftone" data-w>
+        <span class="eb mu">Right now</span>
+        <p class="m1-status"><i class="d"></i>New chats use the most recent teaching model.</p>
+        <p class="m1-status"><i class="d"></i>Hosted reviews are selected for checking replies.</p>
+        <p class="m1-status"><i class="d" style="--c:var(--amber)"></i>OpenAI needs a key for lesson pictures.</p>
+        <span class="eb mu">Keating credits</span>
+        <p>Connect your account to see your balance.</p>
+        <a class="lnk" style="align-self:flex-start">See charges in Activity</a>
+      </aside>
+    </div>
+  </div></div></div>
+  <div class="kt m2-frame"><button class="b ln" type="button" aria-haspopup="dialog" onclick="this.nextElementSibling.showModal()">Open model picker</button>
+  <dialog aria-label="Choose a model" class="m2-model-dialog hardc"><div class="m2-picker m2-stack"><div class="m2-row"><label class="find">{{i:search:s}}<input placeholder="Choose a model…" autofocus aria-label="Choose a model"></label><button type="button" class="ib sm" aria-label="Close model picker" title="Close model picker" onclick="this.closest('dialog').close()">{{i:x:s}}</button></div><div class="m2-row"><label class="fld">Provider<select class="inp"><option>All providers</option></select></label><label class="fld">Use it for<select class="inp"><option>Any conversation</option></select></label></div>
+    <div class="m2-stack"><span class="m2-label">Provider default</span><button class="m2-picker-row" aria-pressed="false" onclick="this.closest('dialog').close()"><b>Keating default</b><small class="m2-meta">Not Organic</small></button><span class="m2-label">Selected model</span><button class="m2-picker-row" aria-pressed="true" onclick="this.closest('dialog').close()"><b>Claude Sonnet 5.5</b><small class="m2-meta">Anthropic · Step-by-step reasoning</small></button><span class="m2-label">OpenAI</span><button class="m2-picker-row" aria-pressed="false" onclick="this.closest('dialog').close()"><b>GPT-5.4</b><small class="m2-meta">OpenAI · Understands images</small></button></div><small class="m2-meta">↑ ↓ to browse · Enter to choose · Esc to close</small></div></dialog></div><ol class="pts">
+    <li>Models and connections has eight sections. Offline tutor appears when the desktop bridge is available.</li>
+    <li>Right now summarizes model selection, checks, local availability, image setup and credits.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ S3 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">S3</span><h2>Settings: Data and support</h2><p>See which data is sent, where it goes, and the control that applies.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr" style="height:720px" data-enter="dash">
+    <header class="top">
+      <b style="font-family:var(--display);font-size:14px;margin-left:4px">Settings</b><span class="vr"></span>
+      <span class="sfind">{{i:search:s}}Find a setting<span class="sp"></span><kbd>/</kbd></span>
+      <span class="sp"></span><a class="b sm gh">{{i:book:s}}Documentation{{i:ext:s}}</a><button class="ib" title="Close settings">{{i:x}}</button>
+    </header>
+    <div class="sx" style="grid-template-columns:212px minmax(0,1fr)">
+      <nav class="sx-n" data-w aria-label="Settings sections">
+        <a class="sx-g">{{i:gear}}Interface</a>
+        <a class="sx-g">{{i:bulb}}Learning<small>Unsaved changes</small></a>
+        <a class="sx-g">{{i:chip}}Models and connections</a>
+        <a class="sx-g on" style="margin-top:6px">{{i:lock}}Data and support</a>
+        <a class="sx-s on">What leaves this device</a>
+        <a class="sx-s">Your data</a>
+        <a class="sx-s">Health</a>
+        <a class="sx-s">Developer tools</a>
+        <span class="sp"></span>
+        <a class="sx-s" style="border:0;margin-left:0">{{i:compass:s}}Replay the tour</a>
+      </nav>
+      <div class="sx-m" data-w style="padding-right:22px">
+        <h3>What leaves this device</h3>
+        <div class="m1-privacy">
+          <div class="bt bt-h m1-halftone"><span>What</span><span>What is sent</span><span>Goes to</span><span>Control</span></div>
+          <div class="bt"><div><b>Your lessons</b><small class="m1-scope">this device</small></div><span>Your messages and teaching context go to your teaching model so the tutor can answer.</span><span class="to">your teaching model's provider</span><span class="to">Always on with a hosted model</span></div>
+          <div class="bt"><div><b>Anonymous usage analytics</b><small class="m1-scope">this device</small></div><span>Analytics is not configured in this build, so no product events are sent.</span><span class="to">PostHog</span><i class="swt" aria-label="Off"></i></div>
+          <div class="bt"><div><b>Session replay</b><small class="m1-scope">this device</small></div><span>Session replay is not available in this build. A deployment must explicitly enable it.</span><span class="to">PostHog</span><i class="swt"></i></div>
+          <div class="bt"><div><b>Crash and error reports</b><small class="m1-scope">this device</small></div><span>Reports contain the app version, page and sanitized error messages. Prompts, replies, tool payloads and credentials are removed.</span><span class="to">Keating support</span><i class="swt" aria-label="Off"></i></div>
+          <div class="bt"><div><b>Learning extraction</b><small class="m1-scope">this device</small></div><span>Hosted requests use bounded lesson and learner passages to ground feedback, quizzes, constraints and memory.</span><span class="to">Keating (Not Organic)</span><i class="swt on"></i></div>
+          <div class="bt"><div><b>Save judgements for review</b><small class="m1-scope">this device</small></div><span>Each turn’s judgements, extracted passages and memory decisions are saved with the conversation and deleted with it.</span><span class="to">This device only</span><i class="swt"></i></div>
+          <div class="bt"><div><b>Arize evaluation</b><small class="m1-scope">this device</small></div><span>Arize evaluation is unavailable in this build. No turn data is sent.</span><span class="to">Arize</span><i class="swt"></i></div>
+          <div class="bt"><div><b>Live audio and content logging</b><small class="m1-scope">your account</small></div><span>GPT Live requires your account’s consent for live audio and content logging.</span><span class="to">GPT Live via Not Organic</span><span class="to">Consent unavailable<br>Voice and Live</span></div>
+          <div class="bt"><div><b>Public links</b><small class="m1-scope">this device</small></div><span>Copied links can carry the visible conversation, safe session artifacts and finalized review feedback. Every public share requires a fresh checkbox.</span><span class="to">Anyone with the link</span><div class="slt">Portable short {{i:chev:s}}</div></div>
+          <div class="sr"><div><span>Short links that work across browsers when share storage is available. No first-use sharing warning is acknowledged.</span></div><button class="b sm gh" disabled>Ask me again before the next public share</button></div>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+  <ol class="pts">
+    <li>The table explains which data can leave the device and where it goes.</li>
+    <li>Public links have a mode selector. Every public share requires a fresh checkbox.</li>
+    <li>Your data, Health and Developer tools are separate sections in the same group.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ S4 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">S4</span><h2>Settings on a phone</h2><p>Groups, then a section, then its rows. The names never turn into bare icons.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt phones" data-enter="phones">
+    <div class="ph-w"><span class="cap">Settings</span><div class="ph">
+      <header class="top"><button class="ib" title="Close settings">{{i:x}}</button><b style="font-family:var(--display);font-size:14px">Settings</b><span class="sp"></span><button class="ib" title="Find a setting">{{i:search}}</button></header>
+      <div style="display:flex;flex-direction:column;gap:8px;padding:12px">
+        <div class="sec"><div class="prow" style="border-top:0;grid-template-columns:18px minmax(0,1fr) auto">{{i:gear}}<div><b>Interface</b><small>Paper &middot; reading serif &middot; effects on</small></div>{{i:chevr:s}}</div></div>
+        <div class="sec"><div class="prow" style="border-top:0;grid-template-columns:18px minmax(0,1fr) auto">{{i:bulb}}<div><b>Learning</b><small>2 unsaved changes to your profile</small></div><span class="d" style="--c:var(--amber)"></span></div></div>
+        <div class="sec"><div class="prow" style="border-top:0;grid-template-columns:18px minmax(0,1fr) auto">{{i:chip}}<div><b>Models and connections</b><small>Sonnet 5.5 &middot; OpenRouter needs a key</small></div><span class="st-dot warn"><i></i></span></div></div>
+        <div class="sec"><div class="prow" style="border-top:0;grid-template-columns:18px minmax(0,1fr) auto">{{i:lock}}<div><b>Data and support</b><small>Crash reporting off</small></div>{{i:chevr:s}}</div></div>
+        <a class="lnk" style="align-self:flex-start;margin-top:6px">{{i:compass:s}} Replay the tour</a>
+        <a class="lnk" style="align-self:flex-start">{{i:book:s}} Documentation {{i:ext:s}}</a>
+      </div>
+    </div></div>
+    <div class="ph-w"><span class="cap">A group</span><div class="ph">
+      <header class="top"><b class="m1-display">Settings</b><span class="sfind">{{i:search:s}}Find a setting</span><button class="ib" title="Close settings">{{i:x}}</button></header><div class="sub"><button class="b ln">All settings</button><span class="sp"></span><span>Display and reading {{i:chev:s}}</span></div>
+      <div style="display:flex;flex-direction:column;gap:0;overflow:hidden">
+        <div class="sr" style="grid-template-columns:1fr;border-top:0"><div><b>Theme <span class="scope">this device</span></b><span>System follows your phone.</span></div><div class="seg wide" data-pick style="display:flex"><span style="flex:1;justify-content:center">System</span><span class="on" style="flex:1;justify-content:center">Paper</span><span style="flex:1;justify-content:center">Terminal</span></div></div>
+        <div class="sr" style="grid-template-columns:1fr"><div><b>Reply typeface <span class="scope">this device</span></b><span>For replies, lessons and review.</span></div><div class="seg wide" data-pick style="display:flex"><span class="on" style="flex:1;justify-content:center">Serif</span><span style="flex:1;justify-content:center">Sans</span><span style="flex:1;justify-content:center">Mono</span></div></div>
+        <div class="sr"><div><b>Higher contrast <span class="scope">your profile</span></b><span>Stronger lines and text.</span></div><i class="swt"></i></div>
+        <div class="sr"><div><b>Visual effects <span class="scope">this device</span></b><span>Grain, glass and ink washes.</span></div><i class="swt on"></i></div>
+        <div class="pvw" style="margin:10px 12px"><span class="eb mu">Preview</span><p class="prose" style="font-size:14px;line-height:1.5">The most recent call finishes first.</p></div>
+      </div>
+    </div></div>
+    <div class="ph-w"><span class="cap">Find a setting</span><div class="ph">
+      <header class="top"><button class="ib" title="Back">{{i:left}}</button><span class="sfind" style="flex:1;width:auto;color:var(--ink)">{{i:search:s}}reason<span class="sp"></span>{{i:x:s}}</span></header>
+      <div style="display:flex;flex-direction:column">
+        <div class="sr" style="border-top:0"><div><b>Reasoning <span class="scope">new chats</span></b><span>Models and connections &rsaquo; Models for each job</span></div></div>
+        <div class="sr"><div><b>Show reasoning <span class="scope">this device</span></b><span>Data and support &rsaquo; Developer tools</span></div></div>
+        <div class="sr"><div><b>Auto-open reasoning</b><span>Data and support &rsaquo; Developer tools</span></div></div>
+        <span class="mono faint" style="font-size:10px;padding:10px 12px">Use the arrow keys to move between matches.</span>
+      </div>
+    </div></div>
+  </div></div></div>
+  <ol class="pts">
+    <li>All settings returns to the group list from the current section.</li>
+    <li>Group names stay visible at phone width. Search can open the matching section.</li>
+  </ol>
+</section>
+
+<!-- ═══════════════ D1 ═══════════════ -->
+<section class="board">
+  <div class="board-h"><span class="n">D1</span><h2>Charts</h2><p>One language for every chart, meter and progress bar in the app, drawn with the cases it has to cover.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt scr" style="height:auto" data-enter="dash"><div class="cs">
+    <div class="card" data-w><span class="eb">Meter</span>
+      <div class="mrow"><span>Course progress</span><b>5 of 12</b><i class="hb"><u data-grow style="width:42%"></u></i></div>
+      <div class="mrow"><span>Evidence needed to rank</span><b>14 of 20</b><i class="hb"><u data-grow style="width:70%"></u><span class="tick" style="left:100%"></span></i></div>
+      <div class="mrow"><span>Offline tutor download</span><b>starting&hellip;</b><i class="hb ind"><u></u></i></div>
+      <div class="mrow"><span>Time left</span><b style="color:var(--ink)">0:12 &middot; hurry</b><i class="hb warn"><u style="width:14%"></u></i></div>
+      <small>6px track, square ends, one fill colour. A threshold is a 1px tick with its number. A warning changes colour and says so in words.</small>
+    </div>
+    <div class="card" data-w><span class="eb">Progress in steps</span>
+      <div class="mrow"><span>Quiz</span><b>3 of 8</b><div class="steps6" style="grid-column:1/-1"><i class="dn"></i><i class="dn"></i><i class="cu"></i><i></i><i></i><i></i><i></i><i></i></div></div>
+      <div class="mrow"><span>Reply</span><b>checking</b><div class="steps6" style="grid-column:1/-1"><i class="dn"></i><i class="cu"></i><i></i></div></div>
+      <div class="mrow"><span>Deck of 46 cards</span><b>19 of 46</b><i class="hb ink"><u data-grow style="width:41%"></u></i></div>
+      <small>Up to twelve steps are separate cells: done is ink, the current one is outlined. More than twelve becomes a meter. The count is always written.</small>
+    </div>
+    <div class="card" data-w><span class="eb">Headline numbers</span>
+      <div class="row" style="gap:16px;align-items:flex-start"><div class="tile bare"><span>Learning sessions</span><b>14</b><small>9 active days</small></div><div class="tile bare"><span>Score</span><b>6 of 8</b><small>75% &middot; 2 to review</small></div><div class="tile bare"><span>Est. spend</span><b>$2.41</b><small>30 days</small></div></div>
+      <small>The number in the display face, its label above in mono, one supporting line below. Never coloured by good or bad; the words carry that.</small>
+    </div>
+    <div class="card" data-w><span class="eb">Ranked bars</span>
+      <div class="bars"><span>Computing</span><i class="hb"><u data-grow style="width:100%"></u></i><b>9</b><span>Mathematics</span><i class="hb"><u data-grow style="width:67%"></u></i><b>6</b><span>Language</span><i class="hb"><u data-grow style="width:44%"></u></i><b>4</b><span>Life sciences</span><i class="hb"><u data-grow style="width:22%"></u></i><b>2</b></div>
+      <small>One measure, one colour, sorted. The value sits at the end of the row in ink.</small>
+    </div>
+    <div class="card" data-w><span class="eb">Parts of a whole</span>
+      <div class="stk" style="margin:4px 0"><u data-grow style="flex:41;background:var(--c1)"></u><u data-grow style="flex:12;background:var(--c3)"></u><u data-grow style="flex:5;background:var(--c2)"></u></div>
+      <div class="row" style="gap:12px;flex-wrap:wrap"><span class="lg"><i style="background:var(--c1)"></i>Confident <b>41</b></span><span class="lg"><i style="background:var(--c3)"></i>Confused <b>12</b></span><span class="lg"><i style="background:var(--c2)"></i>Off-track <b>5</b></span></div>
+      <div class="mrow" style="margin-top:4px"><span class="mono soft" style="font-size:10.5px">In a table row</span><b>31</b><div class="st3" style="grid-column:1/-1"><u style="flex:9"></u><u style="flex:4"></u><u style="flex:18"></u></div></div>
+      <small>14px as a card's headline, 6px inside rows. A 2px gap between parts. The legend always carries the numbers.</small>
+    </div>
+    <div class="card" data-w><span class="eb">A point and its range</span>
+      <span class="ax mono faint" style="font-size:9.5px;height:16px"><i>0</i><i>50</i><i>100</i></span>
+      <span class="iv"><span class="band" style="left:66%;width:16%"></span><span class="rg" data-grow style="left:66%;width:16%"></span><span class="pt" style="left:74%"></span><em style="left:calc(82% + 8px)">74</em></span>
+      <span class="iv"><span class="band" style="left:66%;width:16%"></span><span class="rg" data-grow style="left:58%;width:20%"></span><span class="pt" style="left:69%"></span><em style="left:calc(78% + 8px)">69</em></span>
+      <span class="iv"><span class="band" style="left:66%;width:16%"></span><span class="pt hollow" style="left:52%"></span><em style="left:calc(52% + 12px)">too few signals</em></span>
+      <span class="lg"><i class="bandk"></i>The shaded band is the leader's range</span>
+      <small>One shared axis. A square for the estimate, a bar for its range, a hollow square when there is no range yet. Used for benchmark outcomes and forecasts alike.</small>
+    </div>
+    <div class="card" data-w><span class="eb">Over time</span>
+      <svg class="lchart" viewBox="0 0 400 96" preserveAspectRatio="none" role="img" aria-label="Benchmark rose from 58 to 71 and evolved policy from 61 to 74 over seven runs">
+        <path class="gr" d="M0 12h400M0 48h400M0 84h400"/>
+        <path class="s1" data-draw d="M10 62L73 58L136 60L199 50L262 46L325 40L370 36"/>
+        <path class="s2" data-draw d="M10 56L73 54L136 49L199 47L262 39L325 36L370 30"/>
+        <rect class="m1" x="366" y="32" width="8" height="8"/><rect class="m2" x="366" y="26" width="8" height="8"/>
+      </svg>
+      <div class="row" style="justify-content:space-between"><span class="mono faint" style="font-size:9.5px">Oct 2</span><span class="lg"><i style="background:var(--c1)"></i>Benchmark <b>71</b></span><span class="lg"><i style="background:var(--c2)"></i>Evolved policy <b>74</b></span><span class="mono faint" style="font-size:9.5px">Nov 18</span></div>
+      <small>2px lines, square end markers, three quiet rules, dates only at the ends. Up to three series, each named with its latest value.</small>
+    </div>
+    <div class="card" data-w><span class="eb">How much, by cell</span>
+      <div class="hm" id="hm2" style="margin:2px 0;max-width:230px"></div>
+      <span class="lg">Less<i class="h1"></i><i class="h2"></i><i class="h3"></i><i class="h4"></i>More &middot; 1 to 6 sessions</span>
+      <small>A four-step ramp of one colour for quantities. The selected cell gets an ink outline; hover and focus show the count and date.</small>
+    </div>
+    <div class="card" data-w><span class="eb">Which state, by cell</span>
+      <div class="sgrid"><span></span><span>D1</span><span>D2</span><span>D3</span><span>D4</span><span>D5</span><span>D6</span>
+        <span>Asks first</span><i class="sg-f">{{i:x:s}}</i><i class="sg-p">{{i:check:s}}</i><i class="sg-p">{{i:check:s}}</i><i class="sg-p">{{i:check:s}}</i><i class="sg-p">{{i:check:s}}</i><i class="sg-p">{{i:check:s}}</i>
+        <span>No answer given</span><i class="sg-p">{{i:check:s}}</i><i class="sg-f">{{i:x:s}}</i><i class="sg-p">{{i:check:s}}</i><i class="sg-p">{{i:check:s}}</i><i class="sg-s"></i><i class="sg-p">{{i:check:s}}</i>
+        <span>Cites sources</span><i class="sg-s"></i><i class="sg-s"></i><i class="sg-p">{{i:check:s}}</i><i class="sg-f">{{i:x:s}}</i><i class="sg-p">{{i:check:s}}</i><i class="sg-p">{{i:check:s}}</i></div>
+      <div class="row" style="gap:12px;flex-wrap:wrap"><span class="lg">{{i:check:s}}Passed <b>12</b></span><span class="lg">{{i:x:s}}Failed <b>3</b></span><span class="lg"><i style="background:repeating-linear-gradient(135deg,var(--paper-deep) 0 3px,transparent 3px 6px);box-shadow:inset 0 0 0 1px var(--line)"></i>Not checked <b>3</b></span></div>
+      <small>States are never the quantity ramp: each has a glyph or a hatch as well as a tint, and the legend counts them.</small>
+    </div>
+    <div class="card" data-w><span class="eb">Where the time went</span>
+      <div class="tline"><span>Draft 1</span><span class="ln"><u style="left:0;width:38%"></u></span><span>4.1 s</span><span>Check</span><span class="ln"><u class="c2" style="left:calc(38% + 2px);width:12%"></u></span><span>1.3 s</span><span>Draft 2</span><span class="ln"><u style="left:calc(50% + 4px);width:30%"></u></span><span>3.2 s</span><span>Waiting</span><span class="ln"><u class="w" style="left:calc(80% + 6px);width:14%"></u></span><span>1.5 s</span></div>
+      <small>Bands on lanes with their durations written. Waiting is hatched, not a fourth colour.</small>
+    </div>
+    <div class="card" data-w><span class="eb">Asking a mark</span>
+      <span class="tip-s">Tue, Nov 17 &middot; 2 sessions &middot; 31 turns</span>
+      <small>Hover and keyboard focus show the same tooltip; Escape closes it. The browser's own title tooltip is never the only way to a number.</small>
+    </div>
+    <div class="card" data-w><span class="eb">The same numbers as a table</span>
+      <span class="lnk" style="align-self:flex-start">{{i:chev:s}} View as table</span>
+      <table class="tbl"><tr><th>Feedback</th><th>Sessions</th></tr><tr><td>Confident</td><td>41</td></tr><tr><td>Confused</td><td>12</td></tr><tr><td>Off-track</td><td>5</td></tr></table>
+      <small>Any chart with more than three values offers its table. The chart's accessible name states the main reading in a sentence.</small>
+    </div>
+  </div></div></div></div>
+  <ol class="pts">
+    <li>Chart colours identify the series. Labels and shapes also carry status.</li>
+    <li>Activity’s calendar uses a ramp for frequency. Check results use a glyph and a word.</li>
+    <li>The activity calendar has a table view. The benchmark lists model scores in a table alongside uncertainty ranges.</li>
+    <li>Teaching diagrams and simulations can keep their own data inside the lesson display.</li>
+  </ol>
+</section>
+
+<section class="board">
+  <div class="board-h"><span class="n">S5</span><h2>Settings search results</h2><p>Search lists settings with the scope and path for each match.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt m1-spec"><div class="m1-demo m1-search"><header class="top"><b class="m1-display">Settings</b><span class="sfind">{{i:search:s}}reason<span class="sp"></span><kbd>/</kbd></span><span class="sp"></span><button class="ib" aria-label="Close settings">{{i:x}}</button></header>
+  <div class="m1-results" role="listbox" aria-label="Matching settings">
+    <div class="sr" role="option" aria-selected="true"><div><b>Reasoning level <span class="scope">new chats</span></b><span>Models and connections › Models for each job</span></div></div>
+    <div class="sr" role="option" aria-selected="false"><div><b>My models <span class="scope">this device</span></b><span>Models and connections › Providers and keys</span></div></div>
+    <div class="sr" role="option" aria-selected="false"><div><b>Model and voice <span class="scope">this device</span></b><span>Learning › Voice and Live</span></div></div>
+    <div class="sr" role="option" aria-selected="false"><div><b>Reasoning effort <span class="scope">this device</span></b><span>Learning › Voice and Live</span></div></div>
+    <div class="sr" role="option" aria-selected="false"><div><b>Show reasoning <span class="scope">this device</span></b><span>Data and support › Developer tools</span></div></div>
+    <div class="sr" role="option" aria-selected="false"><div><b>Auto-open reasoning <span class="scope">this device</span></b><span>Data and support › Developer tools</span></div></div>
+    <div class="sr" role="option" aria-selected="false"><div><b>Reasoning level <span class="scope">new chats</span></b><span>Data and support › Developer tools</span></div></div>
+    <div class="sr" role="option" aria-selected="false"><div><b>Models for each job <span class="scope">new chats</span></b><span>Models and connections › Models for each job</span></div></div>
+    <div class="sr" role="option" aria-selected="false"><div><b>Developer tools <span class="scope">this device</span></b><span>Data and support › Developer tools</span></div></div>
+  </div></div></div></div></div>
+  <ol class="pts">
+    <li>Choose a result to open its section. The search also accepts older names.</li>
+    <li>Up and Down move between matches. Enter opens the selected match. Escape clears the query.</li>
+  </ol>
+</section>
+
+
+<section class="board">
+  <div class="board-h"><span class="n">K2</span><h2>Loading a section</h2><p>Marbled ink sits under the status caption.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt m1-spec"><div class="m1-stage"><div class="m1-loading m1-demo" role="status"><span class="m1-ink" aria-hidden="true"></span><b>Loading sessions…</b></div></div></div></div></div>
+  <ol class="pts">
+    <li>Loading has block, inline and page sizes. The caption carries the status when effects are off.</li>
+  </ol>
+</section>
+
+
+<section class="board">
+  <div class="board-h"><span class="n">K3</span><h2>Empty state</h2><p>A short explanation and a way forward sit above the study-object field.</p></div>
+  <div class="fit"><div class="canvas"><div class="kt m1-spec"><div class="m1-stage"><div class="hero m1-empty m1-demo"><span class="m1-field" aria-hidden="true"></span><b data-glyph-host>{{i:people}} No rooms yet</b><p>Start one for a study group or a class, then share an invite link.</p><button class="b pri">New room</button></div></div></div></div></div>
+  <ol class="pts">
+    <li>The field is decorative. The heading and action remain readable with effects off.</li>
+  </ol>
+</section>
+
+</div>

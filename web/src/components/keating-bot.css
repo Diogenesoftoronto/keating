@@ -179,3 +179,15 @@ html[data-motion="reduce"] .keating-bot__motion { animation: none !important; }
 /* Explicit frame inspection also takes precedence over reduced-motion rest poses. */
 .keating-bot[data-frozen="true"] .keating-bot__sprite { animation: none !important; background-position: var(--keating-bot-frame-x) var(--keating-bot-frame-y) !important; }
 .keating-bot[data-frozen="true"] .keating-bot__motion { animation: none !important; }
+
+.keating-bot[data-cadence="true"][data-animated="true"]:not([data-frozen="true"]) .keating-bot__sprite {
+  animation: keating-bot-attending var(--bot-period) steps(1, end) var(--bot-repeat) both;
+  animation-play-state: inherit;
+}
+.keating-bot[data-screen="true"] .keating-bot__motion { position: relative; }
+.keating-bot[data-screen="true"] .keating-bot__sprite { animation: none !important; }
+.keating-bot__screen { position: absolute; pointer-events: none; image-rendering: pixelated; }
+@media (prefers-reduced-motion: reduce) {
+  .keating-bot[data-cadence="true"] .keating-bot__sprite { animation: none !important; }
+}
+html[data-reduce-motion="true"] .keating-bot[data-cadence="true"] .keating-bot__sprite { animation: none !important; }

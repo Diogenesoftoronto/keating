@@ -1,0 +1,28 @@
+{
+  "sessionId": "11111111-2222-4333-8444-555555555555",
+  "topic": "Recursion",
+  "plan": {
+    "id": "sample-recursion-plan",
+    "content": "# Learn recursion\n\n1. Trace a countdown to its base case.\n2. Follow each return back to its caller.\n3. Apply the trace to a folder tree."
+  },
+  "verification": {
+    "id": "sample-recursion-verification",
+    "checklist": "- [ ] Identify the base case.\n- [ ] Mark the call that returns first.",
+    "completed": false
+  },
+  "deck": {
+    "id": "sample-recursion-deck",
+    "slug": "recursion-cards",
+    "title": "Recursion cards",
+    "description": "Sample recall practice for the Recursion Workshop.",
+    "cards": [
+      {"id": "pause", "front": "What happens to a call while its recursive call runs?", "back": "It waits at the call site with its own local variables."},
+      {"id": "base", "front": "What is the base case?", "back": "A branch that returns without making another recursive call."}
+    ]
+  },
+  "quiz": {"id": "sample-recursion-quiz", "score": 1, "totalQuestions": 1},
+  "feedback": [
+    {"turn": 1, "signal": "confused", "evidence": "Sample feedback: I couldn't follow the return order yet."},
+    {"turn": 3, "signal": "thumbs-up", "evidence": "Sample feedback: Following the countdown from zero clarified the order."}
+  ]
+}

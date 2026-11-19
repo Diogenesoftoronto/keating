@@ -1,7 +1,9 @@
 import { afterEach, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { JudgementBackendKey, JudgementCaller, JudgementOutcome, JudgementRequest } from "@keating/learner-contracts";
-import { JudgementDiagnostics } from "../components/JudgementDiagnostics";
+import { JudgementDiagnostics, MessageDiagnostics } from "../components/JudgementDiagnostics";
+import { recordLearningDiagnostic } from "../keating/learning-intelligence/diagnostics";
+import { beginTurn, finishTurn, noteTurnExtraction } from "../keating/judgement/turn-ledger";
 import { beginDiagnosticReply, beginJudgementDiagnostic, clearJudgementDiagnostics, configureJudgementDiagnostics, endDiagnosticReply, getJudgementDiagnostics, observeJudgementCaller } from "../keating/judgement/diagnostics";
 import { createJudgementOperationCaller } from "../keating/judgement/operation";
 import { createReplyJudgementObserver } from "../keating/judgement/reply-review";
@@ -120,7 +122,7 @@ test("reply reviews are explicit, correlated, bounded text only, cancellable on 
     requests.push(input); signals.push(signal!); return response();
   }; });
   const messages = [{ role: "user", content: "owner@example.com wants a hint" }, { role: "toolResult", content: "SECRET TOOL CONTENT" },
-    { role: "assistant", content: [{ type: "thinking", thinking: "SECRET REASONING" }, { type: "text", text: "Try the first step " + "x".repeat(7000) }] }];
+    { role: "assistant", timestamp: 320, content: [{ type: "thinking", thinking: "SECRET REASONING" }, { type: "text", text: "Try the first step " + "x".repeat(7000) }] }];
   observer.start(); observer.finish(messages);
   expect(requests).toEqual([]);
   configureJudgementDiagnostics({ reviewReplies: true });
@@ -131,6 +133,7 @@ test("reply reviews are explicit, correlated, bounded text only, cancellable on 
   expect(JSON.stringify(requests[0]!.state)).not.toContain("owner@example.com");
   expect((requests[0]!.state as { tutor: string }).tutor.length).toBeLessThanOrEqual(6000);
   expect(getJudgementDiagnostics().replies.at(-1)?.id).toBe(ids[0]);
+  expect(getJudgementDiagnostics().replies.at(-1)?.assistantTimestamp).toBe(320);
   expect(signals[0]?.aborted).toBe(false);
   observer.start(); expect(signals[0]?.aborted).toBe(true);
   observer.finish([...messages, { role: "assistant", content: "Interrupted", stopReason: "aborted" }]);
@@ -138,6 +141,41 @@ test("reply reviews are explicit, correlated, bounded text only, cancellable on 
   observer.start(messages.length); observer.finish(messages);
   expect(requests.length).toBe(1);
   observer.dispose();
+});
+
+test("inline diagnostics stay collapsed and belong to the specific message and session", () => {
+  const sessionId = "inline-session";
+  const messages = [{ role: "user", timestamp: 100 }, { role: "assistant", timestamp: 200 }];
+  configureJudgementDiagnostics({ enabled: true });
+  beginTurn(sessionId, messages.slice(0, 1));
+  finishTurn(sessionId, messages);
+  noteTurnExtraction(sessionId, 100, { role: "learner", status: "failed", items: [], reasons: ["Learner extraction failed"] });
+  const replyId = beginDiagnosticReply(sessionId);
+  endDiagnosticReply(replyId, false, 200);
+  beginJudgementDiagnostic(request, { origin: "reply-review", sessionId, replyId });
+  recordLearningDiagnostic({ kind: "extraction", status: "unavailable", sessionId, messageId: "tutor-200", reasons: ["Extraction account unavailable"] });
+  recordLearningDiagnostic({ kind: "forecast", status: "failed", sessionId: "other-session", messageId: "tutor-200", reasons: ["Unrelated forecast"] });
+  recordLearningDiagnostic({ kind: "forecast", status: "failed", sessionId, reasons: ["Unscoped forecast"] });
+
+  const tutor = renderToStaticMarkup(<MessageDiagnostics role="tutor" sessionId={sessionId} sourceIds={["tutor-200"]} timestamps={[200]} />);
+  expect(tutor).toContain("Extraction unavailable");
+  expect(tutor).toMatch(/<p[^>]*>Extraction account unavailable<\/p>/);
+  expect(tutor).toContain("Open Diagnostics settings");
+  expect(tutor).toContain("Raw judgement calls · 1");
+  expect(tutor.match(/^<details[^>]*>/)?.[0]).not.toContain(" open=");
+  expect(tutor).toMatch(/<details open=""><summary[^>]*>extraction · unavailable/);
+  expect(tutor).toContain(`Session: ${sessionId}\nReplies: ${replyId}`);
+  expect(tutor).toContain('aria-label="Copy IDs"');
+  expect(tutor).not.toContain("Learner extraction failed");
+  expect(tutor).not.toContain("Unrelated forecast");
+  expect(tutor).not.toContain("Unscoped forecast");
+  const learner = renderToStaticMarkup(<MessageDiagnostics role="learner" sessionId={sessionId} timestamps={[100]} />);
+  expect(learner).toContain("Learner extraction failed");
+  expect(learner).not.toContain("Extracted from this message");
+  expect(learner).not.toContain("Raw judgement calls");
+  expect(renderToStaticMarkup(<MessageDiagnostics role="tutor" sessionId={sessionId} timestamps={[201]} />)).toBe("");
+  configureJudgementDiagnostics({ enabled: false });
+  expect(renderToStaticMarkup(<MessageDiagnostics role="tutor" sessionId={sessionId} sourceIds={["tutor-200"]} timestamps={[200]} />)).toBe("");
 });
 
 test("turning capture off aborts background review and prevents hidden late capture", async () => {

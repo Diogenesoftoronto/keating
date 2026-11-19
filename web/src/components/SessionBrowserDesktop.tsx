@@ -1,3 +1,5 @@
+import { css } from "../../styled-system/css";
+import { ChatStorageLine } from "./chat/storage-line";
 import {
   memo,
   useCallback,
@@ -9,30 +11,20 @@ import {
   type KeyboardEvent,
   type PointerEvent,
 } from "react";
-import { PenLine } from "reicon-react/icons/PenLine";
-import { SidebarLeft } from "reicon-react/icons/SidebarLeft";
-import { ChevronDown } from "reicon-react/icons/ChevronDown";
-import { BranchUp } from "reicon-react/icons/BranchUp";
-import { Magnifier } from "reicon-react/icons/Magnifier";
-import { Xmark } from "reicon-react/icons/Xmark";
-import { KeatingIcon } from "./KeatingIcon";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { SessionCard, type SessionCardProps } from "./SessionCard";
-import { Select } from "./Select";
-import { flattenSessionTree } from "./session-tree";
+import { flattenSessionTree, type SessionTreeNode } from "./session-tree";
 import type { SessionBrowserSurfaceProps } from "./SessionBrowser";
-import type { CategoryKey } from "./session-card-visuals";
-import {
-  filterSessionLibrary,
-  sessionCategories,
-  SESSION_ACTIVITY_LABELS,
-  type SessionActivityFilter,
-} from "./session-library";
+import type { SessionSection } from "./session-placement";
+import { SessionLibraryEmpty, SessionSearch, SessionSubjectChips, useSubjectLibrary } from "./SessionLibraryTools";
 import "./session-panel.css";
 
+const expandedChevron = css({ "&&&": { transform: "rotate(0)" } });
+
 const TREE_COLLAPSED_STORAGE_KEY = "keating:session-tree-collapsed";
-const SIDEBAR_MIN_W = 288;
+const SIDEBAR_MIN_W = 224;
 const SIDEBAR_MAX_W = 640;
-const SIDEBAR_DEFAULT_W = 360;
+const SIDEBAR_DEFAULT_W = 264;
 const SIDEBAR_W_KEY = "keating_session_sidebar_width";
 
 function readCollapsedTreeNodes(): Set<string> {
@@ -84,6 +76,8 @@ function saveSidebarWidth(value: number) {
 }
 
 interface SessionTreeRowProps extends SessionCardProps {
+  onTogglePin: (id: string) => void;
+  onMoveSection: (id: string) => void;
   rowId: string;
   depth: number;
   branchCount: number;
@@ -93,12 +87,24 @@ interface SessionTreeRowProps extends SessionCardProps {
   onToggle: (id: string) => void;
 }
 
+const SECTION_LABELS: Record<SessionSection, string> = {
+  pinned: "Pinned",
+  recent: "Recent",
+  earlier: "Earlier",
+};
+
+interface SessionGroup {
+  key: SessionSection | "results";
+  rows: SessionTreeNode[];
+}
+
 // Updating the current session should only revisit the old and new rows.
 // Offscreen content-visibility saves layout work, but does not skip React work.
 const SessionTreeRow = memo(function SessionTreeRow({
-  rowId, depth, branchCount, expanded, filtering, focused, onToggle, ...cardProps
+  rowId, depth, branchCount, expanded, filtering, focused, onToggle, onTogglePin, onMoveSection, ...cardProps
 }: SessionTreeRowProps) {
   const { session, active } = cardProps;
+  const placementActions = depth === 0 ? { onTogglePin, onMoveSection } : {};
   return <li
     id={rowId}
     role="treeitem"
@@ -111,7 +117,7 @@ const SessionTreeRow = memo(function SessionTreeRow({
     className="session-panel__row"
     style={{ marginLeft: Math.min(depth, 3) * 12 }}
   >
-    <SessionCard {...cardProps} />
+    <SessionCard {...cardProps} {...placementActions} pinned={depth === 0 && cardProps.pinned} quickActions />
     {branchCount ? <button
       type="button"
       className="session-panel__forks"
@@ -120,9 +126,9 @@ const SessionTreeRow = memo(function SessionTreeRow({
       disabled={filtering}
       onClick={() => onToggle(session.id)}
     >
-      <KeatingIcon icon={BranchUp} size={14} />
+      <KeatingGlyph name="fork" size={14} />
       <span>{branchCount} {branchCount === 1 ? "fork" : "forks"}</span>
-      <ChevronDown size={14} data-expanded={expanded || undefined} aria-hidden />
+      <KeatingGlyph name="chev" size={14} className={expanded ? expandedChevron : undefined} />
     </button> : null}
   </li>;
 });
@@ -142,52 +148,50 @@ export function SessionBrowserDesktop({
 }: SessionBrowserSurfaceProps) {
   const [collapsedNodes, setCollapsedNodes] = useState(readCollapsedTreeNodes);
   const [sidebarWidth, setSidebarWidth] = useState(loadSidebarWidth);
-  const [category, setCategory] = useState<CategoryKey | "all">("all");
-  const [activity, setActivity] = useState<SessionActivityFilter>("all");
+  const searchInput = useRef<HTMLInputElement>(null);
+  const panel = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const focusOnSlash = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== "/" || event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey) return;
+      if (event.target instanceof Element && event.target.closest("input, textarea, select, [contenteditable]:not([contenteditable=false]), [role=textbox]")) return;
+      if (!panel.current?.getClientRects().length || document.querySelector("dialog[open], [aria-modal=true]:not(dialog):not([hidden])")) return;
+      event.preventDefault();
+      if (collapsed) { focusSearch.current = true; onCollapsedChange?.(false); }
+      else searchInput.current?.focus();
+    };
+    document.addEventListener("keydown", focusOnSlash);
+    return () => document.removeEventListener("keydown", focusOnSlash);
+  }, [collapsed, onCollapsedChange]);
+  const focusSearch = useRef(false);
   const [focusedId, setFocusedId] = useState(activeSessionId);
   const [error, setError] = useState("");
   const [treeFocused, setTreeFocused] = useState(false);
   const dragCleanup = useRef<(() => void) | null>(null);
   const treeId = useId();
+  const library = useSubjectLibrary(store, activeSessionId);
+  const { searching: filtering, filtered, sections, earlierPage, earlierOpen, sectionOf } = library;
   // The parent owns live callbacks and may recreate them on every agent update.
   // Stable delegates let unchanged rows keep their render without stale actions.
-  const actionsRef = useRef({ onLoad, onFork, onSuggestTitle, rename: store.rename, remove: store.remove });
-  actionsRef.current = { onLoad, onFork, onSuggestTitle, rename: store.rename, remove: store.remove };
+  const actionsRef = useRef({ onLoad, onFork, onSuggestTitle, rename: store.rename });
+  actionsRef.current = { onLoad, onFork, onSuggestTitle, rename: store.rename };
   const loadRow = useCallback((id: string) => actionsRef.current.onLoad(id), []);
   const forkRow = useCallback((id: string) => actionsRef.current.onFork(id), []);
   const renameRow = useCallback((id: string, title: string, aiGeneratedTitle?: boolean) => actionsRef.current.rename(id, title, aiGeneratedTitle), []);
-  const removeRow = useCallback((id: string) => actionsRef.current.remove(id), []);
   const suggestRowTitle = useCallback((id: string) => {
     const suggest = actionsRef.current.onSuggestTitle;
     if (!suggest) return Promise.reject(new Error("Title suggestions are unavailable."));
     return suggest(id);
   }, []);
-  const categories = useMemo(
-    () => sessionCategories(store.items),
-    [store.items],
-  );
-  const filtering = Boolean(
-    store.query.trim() || category !== "all" || activity !== "all",
-  );
-  const filtered = useMemo(
-    () =>
-      filterSessionLibrary({
-        roots: store.roots,
-        heroes: store.heroes,
-        queryResults: store.flatResults,
-        category,
-        activity,
-      }),
-    [store.roots, store.heroes, store.flatResults, category, activity],
-  );
-  const visible = useMemo(
-    () =>
-      flattenSessionTree(
-        filtered.roots,
-        filtering ? undefined : collapsedNodes,
-      ),
-    [filtered.roots, filtering, collapsedNodes],
-  );
+  // Section headers are not rows: arrow keys walk one flat list across sections.
+  const groups = useMemo<SessionGroup[]>(() => {
+    if (filtering) return [{ key: "results", rows: flattenSessionTree(filtered.roots) }];
+    return [
+      { key: "pinned" as const, rows: flattenSessionTree(sections.pinned, collapsedNodes) },
+      { key: "recent" as const, rows: flattenSessionTree(sections.recent, collapsedNodes) },
+      { key: "earlier" as const, rows: flattenSessionTree(earlierPage.roots, collapsedNodes) },
+    ];
+  }, [filtering, filtered.roots, sections, earlierPage.roots, collapsedNodes]);
+  const visible = useMemo(() => groups.flatMap((group) => group.rows), [groups]);
   const titles = useMemo(
     () => new Map(store.items.map((session) => [session.id, session.title])),
     [store.items],
@@ -255,7 +259,7 @@ export function SessionBrowserDesktop({
       );
     }
   };
-  const handleTreeKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
+  const handleTreeKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     // Native controls inside each row retain their own keyboard behavior.
     if (event.target !== event.currentTarget || !visible.length) return;
     const item = visible[focusedIndex];
@@ -335,15 +339,12 @@ export function SessionBrowserDesktop({
     window.addEventListener("pointercancel", finish);
     window.addEventListener("blur", finish);
   };
-  const resetFilters = () => {
-    store.setQuery("");
-    setCategory("all");
-    setActivity("all");
-  };
+  const { resetFilters } = library;
   const newButton = onNewSession ? (
     <button
       type="button"
-      className="session-panel__icon session-panel__new"
+      className="session-panel__icon session-panel__new k-lift"
+      data-glyph-surface="inverse"
       aria-label="New session"
       title="New session"
       onClick={() => {
@@ -351,111 +352,64 @@ export function SessionBrowserDesktop({
         onNewSession();
       }}
     >
-      <KeatingIcon icon={PenLine} size={20} />
+      <KeatingGlyph name="plus" size={13} /><span aria-hidden="true">New</span>
     </button>
   ) : null;
 
   if (collapsed)
     return (
-      <aside
+      <aside ref={panel}
         className="session-panel session-panel--collapsed"
         aria-label="Sessions"
       >
         <button
           type="button"
-          className="session-panel__icon"
+          className="session-panel__icon k-bloom"
           aria-label="Expand session panel"
           title="Expand session panel"
           onClick={() => onCollapsedChange?.(false)}
         >
-          <KeatingIcon icon={SidebarLeft} size={21} />
+          <KeatingGlyph name="panel" size={15} />
         </button>
         {newButton}
+        <button type="button" className="session-panel__icon k-bloom" aria-label="Search sessions" title="Search sessions"
+          onClick={() => { focusSearch.current = true; onCollapsedChange?.(false); }}>
+          <KeatingGlyph name="search" size={15} />
+        </button>
       </aside>
     );
 
   return (
-    <aside
+    <aside ref={panel}
       className="session-panel"
       aria-label="Sessions"
-      style={{ width: sidebarWidth }}
+      style={{ width: sidebarWidth === SIDEBAR_DEFAULT_W ? "12.7rem" : sidebarWidth }}
     >
       <header className="session-panel__header">
         <h2>
           {newButton}
-          <span>{store.items.length}</span>
+          <span>{store.items.length} {store.items.length === 1 ? "session" : "sessions"}</span>
         </h2>
         <div>
           {onCollapsedChange ? (
             <button
               type="button"
-              className="session-panel__icon"
+              className="session-panel__icon k-bloom"
               aria-label="Collapse session panel"
               title="Collapse session panel"
               onClick={() => onCollapsedChange(true)}
             >
-              <KeatingIcon icon={SidebarLeft} size={20} active />
+              <KeatingGlyph name="panel" size={15} active />
             </button>
           ) : null}
         </div>
       </header>
       <div className="session-panel__tools">
-        <label className="session-panel__search">
-          <KeatingIcon icon={Magnifier} size={18} />
-          <input
-            type="search"
-            aria-label="Search sessions"
-            placeholder="Find a session"
-            value={store.query}
-            onChange={(event) => store.setQuery(event.target.value)}
-          />
-          {store.query ? (
-            <button
-              type="button"
-              className="session-panel__icon"
-              aria-label="Clear search"
-      title="Clear search"
-              onClick={() => store.setQuery("")}
-            >
-              <KeatingIcon icon={Xmark} size={16} />
-            </button>
-          ) : null}
-        </label>
-        <div className="session-panel__filters">
-          <label>
-            <span>Category</span>
-            <Select
-              aria-label="Session category"
-              value={category}
-              onValueChange={(value) =>
-                setCategory(value as CategoryKey | "all")
-              }
-            >
-              <option value="all">All subjects</option>
-              {categories.map((item) => (
-                <option key={item.key} value={item.key}>
-                  {item.label} · {item.count}
-                </option>
-              ))}
-            </Select>
-          </label>
-          <label>
-            <span>Activity</span>
-            <Select
-              aria-label="Session activity"
-              value={activity}
-              onValueChange={(value) =>
-                setActivity(value as SessionActivityFilter)
-              }
-            >
-              {Object.entries(SESSION_ACTIVITY_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </Select>
-          </label>
-        </div>
+        <SessionSearch store={store} desktop inputRef={node => {
+          searchInput.current = node;
+          if (node && focusSearch.current) { focusSearch.current = false; node.focus(); }
+        }} />
+        <SessionSubjectChips library={library} total={store.items.length} />
       </div>
       {store.error || error ? (
         <div className="session-panel__error" role="alert">
@@ -482,7 +436,7 @@ export function SessionBrowserDesktop({
               </div>
             ))}
           </div>
-        ) : visible.length ? (
+        ) : (filtering ? visible.length : store.roots.length) ? (
           <>
             {filtering ? (
               <p className="session-panel__results" role="status">
@@ -493,7 +447,7 @@ export function SessionBrowserDesktop({
                 </button>
               </p>
             ) : null}
-            <ul
+            <div
               id={treeId}
               className="session-panel__tree"
               role="tree"
@@ -510,49 +464,80 @@ export function SessionBrowserDesktop({
               }
               onBlur={() => setTreeFocused(false)}
             >
-              {visible.map(({ session, depth, children }, index) => <SessionTreeRow
-                key={session.id}
-                rowId={rowId(session.id)}
-                session={session}
-                depth={depth}
-                branchCount={children.length}
-                expanded={filtering || !collapsedNodes.has(session.id)}
-                filtering={filtering}
-                focused={treeFocused && index === focusedIndex}
-                hero={store.heroes.get(session.id)}
-                active={session.id === activeSessionId}
-                forking={session.id === forkingSessionId}
-                justForked={session.id === forkedSessionId}
-                parentTitle={session.parentSessionId ? titles.get(session.parentSessionId) : undefined}
-                contextOnly={filtering && !filtered.matches.has(session.id)}
-                onLoad={loadRow}
-                onFork={forkRow}
-                onSuggestTitle={onSuggestTitle ? suggestRowTitle : undefined}
-                onRename={renameRow}
-                onDelete={removeRow}
-                onToggle={toggleNode}
-              />)}
-            </ul>
+              {groups.map((group) => {
+                const rows = group.rows.map(({ session, depth, children }) => {
+                  const rootSection = depth === 0 ? sectionOf.get(session.id) : undefined;
+                  return <SessionTreeRow
+                    key={session.id}
+                    rowId={rowId(session.id)}
+                    session={session}
+                    depth={depth}
+                    branchCount={children.length}
+                    expanded={filtering || !collapsedNodes.has(session.id)}
+                    filtering={filtering}
+                    focused={treeFocused && visible[focusedIndex]?.session.id === session.id}
+                    hero={store.heroes.get(session.id)}
+                    active={session.id === activeSessionId}
+                    forking={session.id === forkingSessionId}
+                    justForked={session.id === forkedSessionId}
+                    parentTitle={session.parentSessionId ? titles.get(session.parentSessionId) : undefined}
+                    contextOnly={filtering && !filtered.matches.has(session.id)}
+                    pinned={rootSection === "pinned"}
+                    inEarlier={rootSection === "earlier"}
+                    onLoad={loadRow}
+                    onFork={forkRow}
+                    onSuggestTitle={onSuggestTitle ? suggestRowTitle : undefined}
+                    onRename={renameRow}
+                    onDelete={library.remove}
+                    onTogglePin={library.togglePin}
+                    onMoveSection={library.moveSection}
+                    onToggle={toggleNode}
+                  />;
+                });
+                if (group.key === "results") return <ul key="results" role="none" className="session-panel__rows">{rows}</ul>;
+                if (group.key === "earlier") {
+                  if (!sections.earlier.length) return null;
+                  const headingId = `${treeId}-earlier`;
+                  return <div key="earlier" role="group" aria-labelledby={headingId} className="session-panel__section" data-section="earlier">
+                    <h3 className="session-panel__section-label">
+                      <button
+                        id={headingId}
+                        type="button"
+                        className="session-panel__earlier"
+                        aria-expanded={earlierOpen}
+                        aria-controls={`${headingId}-rows`}
+                        onClick={() => library.setEarlierOpen(!earlierOpen)}
+                      >
+                        <KeatingGlyph name="chev" size={14} className={earlierOpen ? expandedChevron : undefined} />
+                        <span>{SECTION_LABELS.earlier}</span>
+                        <span className="session-panel__count">{sections.earlier.length}</span>
+                      </button>
+                    </h3>
+                    <ul id={`${headingId}-rows`} role="none" className="session-panel__rows">{rows}</ul>
+                    {earlierPage.nextCount > 0 ? <button
+                      type="button"
+                      className="session-panel__more"
+                      onClick={library.showMoreEarlier}
+                    >
+                      Show {earlierPage.nextCount} more
+                    </button> : null}
+                  </div>;
+                }
+                if (!rows.length) return null;
+                const headingId = `${treeId}-${group.key}`;
+                const labelled = group.key === "pinned" || sections.pinned.length > 0 || sections.earlier.length > 0;
+                return <div key={group.key} role="group" aria-labelledby={labelled ? headingId : undefined} aria-label={labelled ? undefined : SECTION_LABELS[group.key]} className="session-panel__section" data-section={group.key}>
+                  {labelled ? <h3 id={headingId} className="session-panel__section-label">{SECTION_LABELS[group.key]}</h3> : null}
+                  <ul role="none" className="session-panel__rows">{rows}</ul>
+                </div>;
+              })}
+            </div>
           </>
         ) : (
-          <div className="session-panel__empty">
-            <KeatingIcon icon={filtering ? Magnifier : BranchUp} size={30} />
-            <h3>
-              {filtering ? "No sessions found" : "A place to pick up again"}
-            </h3>
-            <p>
-              {filtering
-                ? "Try another subject or search."
-                : "Your conversations and their forks will live here."}
-            </p>
-            {filtering ? (
-              <button type="button" onClick={resetFilters}>
-                Clear filters
-              </button>
-            ) : null}
-          </div>
+          <SessionLibraryEmpty desktop filtering={filtering} resetFilters={resetFilters} />
         )}
       </div>
+      <ChatStorageLine.Consumer>{line => line}</ChatStorageLine.Consumer>
       <div
         className="session-panel__resize"
         role="separator"

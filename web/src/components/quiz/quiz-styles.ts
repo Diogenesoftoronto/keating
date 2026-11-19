@@ -170,16 +170,7 @@ export const quizStyles = {
 		},
 		_disabled: { opacity: 0.4, pointerEvents: "none" },
 	}),
-	shell: css({
-		position: "relative",
-		isolation: "isolate",
-		display: "grid",
-		gap: "1rem",
-		marginBlock: "0.5rem",
-		paddingBlock: "0.75rem",
-		color: "var(--foreground)",
-		[sm]: { marginBlock: "0.75rem", gap: "1.25rem", paddingBlock: "1rem" },
-	}),
+	shell: "lesson-frame",
 	effectHeader: css({
 		position: "relative",
 		display: "grid",

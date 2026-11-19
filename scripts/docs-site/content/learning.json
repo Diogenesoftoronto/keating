@@ -36,10 +36,10 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/classroom-openui.png",
-            "alt": "An interactive thinking question asks how a piano sound felt, with a text answer field and a Submit answers button.",
-            "caption": "A real lesson from the earlier tutorial asks the learner to describe what they heard before continuing. This older activity says Submit answers; current single questions use Send answer and grouped checks use Finish check.",
-            "width": 1920,
-            "height": 1048
+            "alt": "A tutor reply with a two-choice quick check about recursive calls.",
+            "caption": "A scripted tutor asks for a prediction in Chat before explaining how a call returns.",
+            "width": 1280,
+            "height": 800
           }
         ],
         "paragraphs": [
@@ -54,6 +54,19 @@
           {
             "label": "Review a saved lesson",
             "href": "/sessions-and-review/"
+          },
+          {
+            "label": "Walkthrough chapters · Make a prediction",
+            "href": "https://keating.help/landing/walkthroughs/lesson-in-chat.html#lesson-in-chat-step-predict"
+          }
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/lesson-in-chat.mp4",
+            "poster": "/assets/tapes/posters/lesson-in-chat.jpg",
+            "captions": "/assets/tapes/captions/lesson-in-chat.vtt",
+            "title": "A lesson in chat",
+            "caption": "Watch Alex answer a quick check, rate flashcard recall, run a countdown and retry a reply from the scripted demo tutor."
           }
         ]
       },
@@ -62,20 +75,36 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/settings-learning-about-you.png",
-            "alt": "Settings is open to Learning and About You, with an empty field for goals, prior knowledge, interests, languages, and accessibility needs.",
-            "caption": "About You in the earlier tutorial, before learner context has been entered. The save control is outside this capture. Saved context stays in this browser and can accompany requests to a remote tutor when used.",
-            "width": 1920,
-            "height": 1048
+            "alt": "What Keating is told appears beside the Teaching preferences in Your profile.",
+            "caption": "Review the context that accompanies tutor requests before you save your profile.",
+            "width": 1280,
+            "height": 800
+          },
+          {
+            "src": "/assets/screenshots/current-public-profile-preview.png",
+            "alt": "The signed-out public profile editor shows Alex’s draft and the sign-in notice.",
+            "caption": "You can preview changes before signing in. Sign in before leaving to keep them.",
+            "width": 1280,
+            "height": 800
           }
         ],
         "paragraphs": [
-          "Open Settings, choose Learning, and find About You. Add useful context such as your goals, prior knowledge, preferred examples, languages, or accessibility needs, then choose Save about you. The saved setting lives in this browser and applies to the current conversation on your next message and to new sessions.",
-          "Learning also contains Teacher Persona and Speech & Voice. You can still steer any lesson directly in chat: ask for shorter explanations, less jargon, a visual example, or more time to work through a problem."
+          "Open Settings, choose Learning, and open Your profile. Add useful context such as your goals, prior knowledge, preferred examples, languages, or accessibility needs, then choose Save profile. The saved setting lives in this browser and applies to the current conversation on your next message and to new sessions.",
+          "Within Your profile, open Teaching to choose how Keating helps when you get stuck. Expand What Keating is told before saving to see the context Keating uses."
         ],
         "links": [
           {
             "label": "Use voice and attachments",
             "href": "/voice-and-attachments/"
+          }
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/profile.mp4",
+            "poster": "/assets/tapes/posters/profile.jpg",
+            "captions": "/assets/tapes/captions/profile.vtt",
+            "title": "Set your learning preferences",
+            "caption": "Choose a teaching preference and read the tutor context. See how the separate public-profile preview looks without publishing."
           }
         ]
       },
@@ -106,6 +135,24 @@
         "paragraphs": [
           "Tell Keating the topic and what you want to test. For example: Quiz me on the Krebs cycle. Ask questions that test deeper understanding, then help me revisit the parts I miss. For a shorter check, ask one question at a time and explain your reasoning.",
           "Questions may ask you to choose an answer, choose several answers, fill blanks, arrange items, or write an explanation. Follow the instructions on the current activity; a text explanation needs different review from a choice with a supplied answer key."
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/lesson-in-chat.mp4",
+            "poster": "/assets/tapes/posters/lesson-in-chat.jpg",
+            "captions": "/assets/tapes/captions/lesson-in-chat.vtt",
+            "title": "Try a quick check in chat",
+            "caption": "Alex makes a prediction and tries the check again after a hint from the scripted demo tutor."
+          }
+        ],
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/current-learner-response.png",
+            "alt": "Your response in the chat transcript shows the answer submitted to the recursion check.",
+            "caption": "After you choose Finish check, your answer appears in the conversation.",
+            "width": 1280,
+            "height": 800
+          }
         ]
       },
       {
@@ -154,17 +201,26 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/current-flashcard-review.png",
-            "alt": "Flashcard review with recall controls.",
-            "caption": "Current component capture with authored fixture data (2026-10-01). Review a card and rate what you recalled.",
-            "width": 938,
-            "height": 826
+            "alt": "The desktop inline card has a revealed answer and recall rating buttons.",
+            "caption": "Reveal a card in Chat and rate how well you remembered the answer.",
+            "width": 1280,
+            "height": 800
           },
           {
             "src": "/assets/screenshots/current-flashcard-mobile.png",
-            "alt": "Revealed flashcard answer with Again, Hard, Good, and Easy ratings at narrow browser width.",
-            "caption": "Current component capture with authored fixture data (2026-10-01). Reveal the answer and rate your recall in the narrow web layout.",
+            "alt": "The answer and recall ratings on a flashcard in narrow Chat.",
+            "caption": "Reveal the card’s answer, then estimate how well you recalled it.",
             "width": 390,
-            "height": 1100
+            "height": 844
+          }
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/activity-and-benchmark.mp4",
+            "poster": "/assets/tapes/posters/activity-and-benchmark.jpg",
+            "captions": "/assets/tapes/captions/activity-and-benchmark.vtt",
+            "title": "Find cards that are due",
+            "caption": "Open Coming up, reveal a sample card, and rate your recall. The same walkthrough also shows the private benchmark case bank."
           }
         ]
       },
@@ -199,6 +255,28 @@
           {
             "label": "Open Courses",
             "href": "https://chat.keating.help/courses"
+          },
+          {
+            "label": "Walkthrough chapters · Post a lesson comment",
+            "href": "https://keating.help/landing/walkthroughs/courses.html#courses-step-discussion"
+          }
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/courses.mp4",
+            "poster": "/assets/tapes/posters/courses.jpg",
+            "captions": "/assets/tapes/captions/courses.vtt",
+            "title": "Build and use a course",
+            "caption": "Create a blank course, then use a sample outline to read a lesson, mark it complete, comment, and inspect the owner-entered work."
+          }
+        ],
+        "screenshots": [
+          {
+            "src": "/assets/screenshots/current-course-sticky-tabs.png",
+            "alt": "The Read, Discuss, Review and Build tabs stay at the top when Lesson complete appears at the bottom.",
+            "caption": "After marking a lesson complete, use the tabs at the top to switch to Discuss or Review.",
+            "width": 390,
+            "height": 844
           }
         ]
       },
@@ -207,10 +285,10 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/surface-course-builder.png",
-            "alt": "An earlier course builder has title and purpose fields beside saved plans, flashcard decks, and an artifact tray containing generated interactions.",
-            "caption": "Earlier course assembly screen with saved lesson material alongside the course fields. The current guide refers to New course; this capture uses the older Create blank course label and does not show an assignment submission or delivery confirmation.",
-            "width": 1920,
-            "height": 1048
+            "alt": "The course assembler with title, description and available building blocks.",
+            "caption": "Use Or assemble manually to open the assembler and choose how to start the course.",
+            "width": 1280,
+            "height": 800
           }
         ],
         "paragraphs": [
@@ -278,7 +356,7 @@
       {
         "heading": "Share a tutoring session as a snapshot",
         "paragraphs": [
-          "Use Share session from chat to share a conversation. Settings, App, Share Links controls how the link carries its snapshot. Public modes upload or embed the visible conversation, supported session artifacts, and finalized review feedback so anyone with the link can read them. Local links work only from that browser's cache.",
+          "Open the Chat More menu and choose Share session to share a conversation. The Share session sheet describes what will be included and who can open the link. To change the link mode, open Settings → Data and support → What leaves this device. Public modes upload or embed the visible conversation, supported session artifacts, and finalized review feedback so anyone with the link can read them. Local links work only from that browser's cache.",
           "Review the visible conversation and any finalized feedback before confirming public sharing. The snapshot excludes drafts and hidden tool traffic, and unsupported or oversized artifacts may be omitted. Read the sharing result and any omission notice instead of assuming every attachment or artifact travelled with the link."
         ]
       },
@@ -317,6 +395,15 @@
           {
             "label": "Work with courses and invitations",
             "href": "/courses-and-sharing/"
+          }
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/study-rooms.mp4",
+            "poster": "/assets/tapes/posters/study-rooms.jpg",
+            "captions": "/assets/tapes/captions/study-rooms.vtt",
+            "title": "A study room with a teacher and learner",
+            "caption": "Morgan sets a one-use invitation and approves a scripted reply that Alex sees in a separate browser profile."
           }
         ]
       },
@@ -382,8 +469,17 @@
       {
         "heading": "Find a conversation you want to continue",
         "paragraphs": [
-          "Open the session browser and use Search sessions to find a saved conversation. Select a session to reopen it. In its actions, Rename lets you give it a useful title, such as Linear equations: balancing both sides.",
-          "Use New session for a fresh topic. Use Fork session when you want a separate continuation of an existing conversation, or Fork session from here on a response to explore a different direction from that point."
+          "Use Find a session in the sessions panel, or filter by subject. Select a session to reopen it. Open the row’s More menu and choose Rename to give the session a useful title.",
+          "Use New in the sessions panel for a fresh topic. Use Fork session when you want a separate continuation of an existing conversation, or Fork session from here on a response to explore a different direction from that point."
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/sessions-and-materials.mp4",
+            "poster": "/assets/tapes/posters/sessions-and-materials.jpg",
+            "captions": "/assets/tapes/captions/sessions-and-materials.vtt",
+            "title": "Find, pin and fork a session",
+            "caption": "Use search and subject filters, pin a session, fork a reply, open saved materials, and review the sharing consent sheet."
+          }
         ]
       },
       {
@@ -391,10 +487,10 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/surface-coming-up.png",
-            "alt": "Coming up shows zero cards due, a clear review runway, a disabled Start due review button, and the top of the Priority board.",
-            "caption": "Coming up in the earlier tutorial with no cards due. Start due review is disabled in this state. The Priority board below is separate from the schedule that determines when cards become due.",
-            "width": 1440,
-            "height": 900
+            "alt": "Coming up shows two due cards, Start due review and an open sample assignment.",
+            "caption": "Start due review or return to the assignment shown in Coming up.",
+            "width": 1280,
+            "height": 800
           }
         ],
         "paragraphs": [
@@ -413,14 +509,14 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/review-workspace.png",
-            "alt": "A review of Understanding Synths vs Samples has a Contents list on the left, the original learner and tutor messages in the centre, and a collapsed margin on the right.",
-            "caption": "Earlier tutorial capture of a saved lesson in Review. Contents keeps learner messages, tutor responses, and tool results together; the margin is folded away. The failed tool entries are part of the original record.",
-            "width": 1920,
-            "height": 1048
+            "alt": "The Turns list, transcript, selection toolbar and Margin beside a sample recursion lesson.",
+            "caption": "Open Review session to read the transcript beside notes and rubric ratings.",
+            "width": 1280,
+            "height": 800
           }
         ],
         "paragraphs": [
-          "Choose Review session in chat to inspect the teaching record. Use Contents to move between turns and read the learner's question alongside the tutor response. Tool calls and their results help you distinguish what the tutor said it checked from what actually ran.",
+          "Choose Review session in chat to inspect the teaching record. Use Turns to move between messages and read the learner's question alongside the tutor response. Tool calls and their results help you distinguish what the tutor said it checked from what actually ran.",
           "Use Rendered for normal reading and Raw when you need the exact source text. A useful review points to a concrete moment: an unexplained step, a misleading example, a helpful question, or an answer the tutor accepted too quickly."
         ]
       },
@@ -429,27 +525,40 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/review-selection-menu.png",
-            "alt": "Selected transcript text has a Mark as toolbar offering Problem, Strength, Suggestion, and Rewrite.",
-            "caption": "Earlier tutorial capture of selecting a passage to annotate. Choose the kind of note that fits the highlighted evidence, or draft a rewrite.",
-            "width": 1062,
-            "height": 300
+            "alt": "The selected passage has Problem, Strength, Suggestion and Rewrite actions.",
+            "caption": "Select a passage in Transcript to open the annotation toolbar.",
+            "width": 1280,
+            "height": 800
           },
           {
             "src": "/assets/screenshots/review-annotation.png",
-            "alt": "The Margin contains a new whole-turn annotation with Problem selected, an empty Why does this matter field, optional details, and Draft status.",
-            "caption": "A separate whole-turn note from the earlier tutorial, still in Draft. The rationale is empty and Add annotation is disabled; this frame shows a note being prepared, not a saved assessment.",
-            "width": 1920,
-            "height": 1048
+            "alt": "The Margin shows a Problem note anchored to a passage with its rationale filled in.",
+            "caption": "Explain why a passage matters, then choose Add note.",
+            "width": 1280,
+            "height": 800
           }
         ],
         "paragraphs": [
-          "Select text in the transcript or an artifact, then choose Problem, Strength, or Suggestion. Explain Why does this matter? and save the note. Add detail such as severity or an alternative only when it helps explain your judgement.",
-          "Choose Rewrite to draft an alternative while retaining the original text. In Assess, record the rubric ratings, summary, and verdict you can support with evidence. Set the review status to Final when you have finished; use Export to keep a copy of the review."
+          "Select text in the transcript or an artifact, then choose Problem, Strength, or Suggestion. Explain Why does this matter? and choose Add note. Add detail such as severity or an alternative only when it helps explain your judgement.",
+          "Reselect a marked passage and choose Rewrite to open Revise this text. The draft keeps the original text alongside Replacement text. Open Rubric in the Margin to record the ratings and verdict you can support with evidence. Set the review status to Final when you have finished. Choose Save review, then Export to keep a copy."
         ],
         "links": [
           {
             "label": "Choose a model for assisted review",
             "href": "/judgement-model/"
+          },
+          {
+            "label": "Walkthrough chapters · Open a rewrite draft",
+            "href": "https://keating.help/landing/walkthroughs/review-a-session.html#review-a-session-step-rewrite"
+          }
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/review-a-session.mp4",
+            "poster": "/assets/tapes/posters/review-a-session.jpg",
+            "captions": "/assets/tapes/captions/review-a-session.vtt",
+            "title": "Annotate a saved session",
+            "caption": "Select a passage, add Problem, Strength and Suggestion notes, revisit a marked passage to open a rewrite draft, then inspect the rubric and export."
           }
         ]
       },
@@ -458,16 +567,25 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/review-socratic-pass.png",
-            "alt": "The Socratic pass panel has a model-pool selector and separate Read the session and Score the rubric actions.",
-            "caption": "Earlier tutorial capture of the two model-assisted review actions before a pass runs. The menu offers a proposal workflow; no generated notes or completed rubric are shown here.",
-            "width": 1920,
-            "height": 1048
+            "alt": "The Socratic pass menu offers Read the session, Score the rubric and Finish this note.",
+            "caption": "Open Socratic pass to see the proposal actions.",
+            "width": 1280,
+            "height": 800
           }
         ],
         "paragraphs": [
           "The review tools include Read the session, Score the rubric, and Finish this note. These ask a model to propose notes or ratings. Inspect the cited passage, accept the notes you agree with, dismiss the others, and use Apply only when you agree with a proposed rubric assessment.",
           "A model judging another model's lesson is still model review. It does not independently verify all facts or demonstrate that a learner retained the material. Running a model-assisted pass sends review material to the selected model; check the provider you have chosen before starting it.",
           "Use the review to decide what to try next: a clearer explanation, a smaller step, or a new problem that tests whether the idea carries over."
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/activity-and-benchmark.mp4",
+            "poster": "/assets/tapes/posters/activity-and-benchmark.jpg",
+            "captions": "/assets/tapes/captions/activity-and-benchmark.vtt",
+            "title": "Inspect private benchmark evidence",
+            "caption": "The case bank shows sample replay cases and the benchmark shows that the evidence is too sparse to rank the demo model."
+          }
         ]
       },
       {
@@ -498,7 +616,7 @@
       {
         "heading": "Attach material with a question",
         "paragraphs": [
-          "In chat, open More actions and choose Attach files. Add your file, then say what you want to do with it: explain a passage, examine a diagram, compare two approaches, or make practice from a section. Check the attachment chips before sending and use Remove attachment if you selected the wrong file.",
+          "In the Chat composer, choose the paperclip button labelled Attach files. Add your file, then say what you want to do with it: explain a passage, examine a diagram, compare two approaches, or make practice from a section. Check the attachment chips before sending and use Remove attachment if you selected the wrong file.",
           "Chat accepts images, audio, readable text files, and PDFs. The selected model must support the input you send. For an image, choose a model that accepts images; a model that only accepts text cannot inspect the picture just because it is attached."
         ]
       },
@@ -521,15 +639,15 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/surface-live.png",
-            "alt": "The earlier Live with Keating setup page says Google key needed and offers Add a key above its model selector.",
-            "caption": "The earlier Google Live setup stops at a missing-key prompt. This is a setup state, not a connected conversation. Provider choices and model names can differ in your build; use the current configuration described above.",
-            "width": 1440,
-            "height": 900
+            "alt": "Live with Keating preflight with a provider picker and a local deployment readiness notice.",
+            "caption": "Open Live sessions to check provider readiness before pressing Start talking.",
+            "width": 1280,
+            "height": 800
           }
         ],
         "paragraphs": [
-          "Open Settings, Learning, Speech & Voice to choose speech options. The speech provider can differ from the main chat model and may need its own credentials. Live conversation requires a compatible live provider and browser microphone access; speech output alone does not establish live conversation support.",
-          "Use Start a live conversation when your configuration supports it. Start with a short exchange to check that you can hear the tutor and that it can hear you. Available visual inputs depend on the live provider and model, so use the options shown for your current configuration."
+          "Open Settings → Learning → Voice and Live to choose speech options. The speech provider can differ from the main chat model and may need its own credentials. Live conversation requires a compatible live provider and browser microphone access; speech output alone does not establish live conversation support.",
+          "To check setup first, open the Chat More menu and choose Live sessions. Check Who you talk to and the readiness message before choosing Start talking. The waveform button labelled Start a live conversation in the composer opens the call directly. Available visual inputs depend on the live provider and model, so use the options shown for your current configuration."
         ]
       },
       {
@@ -577,14 +695,14 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/settings-privacy-diagnostics.png",
-            "alt": "Settings, App, Privacy shows anonymous product analytics on, session replay off and unavailable, and Arize evaluation off and unavailable.",
-            "caption": "In this earlier tutorial capture, analytics is on while replay and Arize evaluation are unavailable and off. These are the captured browser's settings, not a statement of your preferences or the options enabled in your build.",
-            "width": 1920,
-            "height": 1048
+            "alt": "What leaves this device lists privacy choices, their defaults and destinations.",
+            "caption": "Find disclosure and sharing choices under Data and support.",
+            "width": 1280,
+            "height": 800
           }
         ],
         "paragraphs": [
-          "Open Settings → App → Privacy. These preferences apply to the browser where you change them. Controls that are unavailable in the current build explain that in their description."
+          "Open Settings → Data and support → What leaves this device. These preferences apply to the browser where you change them. Controls that are unavailable in the current build explain that in their description."
         ],
         "bullets": [
           "Anonymous product analytics controls future product events, such as feature use and response timing. Keating excludes prompts, replies, file contents, provider keys, and full share links from these PostHog events.",
@@ -597,15 +715,15 @@
         "screenshots": [
           {
             "src": "/assets/screenshots/usage-training-export.png",
-            "alt": "The Portable data panel has Export portable JSON and Import portable JSON controls above a separate Training data export panel.",
-            "caption": "Earlier tutorial capture: use Export portable JSON in the upper Portable data panel to move your lessons. The lower panel prepares a separate training dataset; its older Export training ZIP label is not the backup action.",
-            "width": 1920,
-            "height": 1048
+            "alt": "The Export your data confirmation sheet lists included and excluded records and the Portable Keating JSON format.",
+            "caption": "Read what goes into the portable JSON copy and where it will be saved.",
+            "width": 1280,
+            "height": 800
           }
         ],
         "paragraphs": [
-          "Open Learning usage and find Portable data. Choose whether to keep Include sandbox code history selected, then choose Export portable JSON. Save the downloaded keating-portable-data.json somewhere you can find from your next device.",
-          "The portable export includes saved sessions, learner state, learning artifacts, goals, quizzes, flashcards, and review records. Sandbox code history is optional. It does not transfer provider sign-ins, API-key settings, or downloaded model files.",
+          "Open Settings → Data and support → Your data. Choose Export next to Everything on this device. Read the sheet and choose Export to download the copy. Save the downloaded keating-portable-data.json somewhere you can find from your next device.",
+          "The portable export includes saved sessions, learner state, learning artifacts, goals, quizzes, flashcards, and review records. Available sandbox history is included. It does not transfer provider sign-ins, API-key settings, or downloaded model files.",
           "Wait for the export confirmation and check that the file downloaded before clearing any data. The JSON contains your learning content as readable text; store it as carefully as the original notes."
         ],
         "links": [
@@ -613,12 +731,21 @@
             "label": "Open Portable data on Learning usage",
             "href": "https://chat.keating.help/usage"
           }
+        ],
+        "videos": [
+          {
+            "src": "/assets/tapes/your-data.mp4",
+            "poster": "/assets/tapes/posters/your-data.jpg",
+            "captions": "/assets/tapes/captions/your-data.vtt",
+            "title": "Inspect and export your data",
+            "caption": "Read what can leave the browser, prepare a sample dataset with scoring off, and inspect the ZIP, review and portable JSON export sheets."
+          }
         ]
       },
       {
         "heading": "Restore in another browser",
         "paragraphs": [
-          "Open Keating in the destination browser, visit Learning usage → Portable data, and choose Import portable JSON. Select your saved export and wait for the import summary. Open a session to check its contents before discarding the original copy.",
+          "Open Keating in the destination browser, open Settings → Data and support → Your data, and choose Import next to Bring data in. Select your saved export and wait for the import summary. Open a session to check its contents before discarding the original copy.",
           "Export any existing work in the destination browser first. An import writes sessions and records with their saved identifiers, so importing an older copy can replace a matching saved record.",
           "Reconnect model providers on the destination device and download any local models again. A successful data import does not sign you in to those services or restore model downloads."
         ],
@@ -653,9 +780,9 @@
       {
         "heading": "Provider sign-in failed",
         "paragraphs": [
-          "Open Settings, Models & Providers and check the credentials for the provider used by the selected chat model. Re-enter an invalid or expired key, or complete the provider's sign-in flow where offered, then retry the failed turn. Check that the selected model belongs to the provider you configured.",
+          "Open Settings → Models and connections → Providers and keys. Check the credentials for the provider used by the selected chat model. Re-enter an invalid or expired key, or complete the provider's sign-in flow where offered, then retry the failed turn. Check that the selected model belongs to the provider you configured.",
           "Model access is not allowed means the provider account may lack access to that model. Choose a model available to the account or correct its permissions. Provider credits unavailable needs attention in that provider account, or another configured model; repeatedly retrying the same request will not restore credits.",
-          "If the error is Voice sign-in failed, check the speech provider separately in Learning, Speech & Voice. You can turn speech off and continue with text."
+          "If the error is Voice sign-in failed, check the speech provider separately in Learning → Voice and Live. You can turn speech off and continue with text."
         ]
       },
       {
@@ -690,7 +817,7 @@
         "heading": "Check offline readiness before relying on it",
         "paragraphs": [
           "A page opening from cache or a conversation being saved locally does not mean the selected tutor can answer offline. Hosted providers need a connection. A local model also needs its runtime and model files available on the device where it runs.",
-          "If your installed desktop build shows Offline tutor under Models & Providers, inspect its status. Resume download continues a paused download; Ready offline tells you to choose MiniCPM5 2B (Offline) in the model selector. Offline runtime unavailable in this build means that build cannot provide the offline runtime.",
+          "If your installed desktop build shows Offline tutor under Models and connections, inspect its status. Resume download continues a paused download; Ready offline tells you to choose MiniCPM5 2B (Offline) in the model selector. Offline runtime unavailable in this build means that build cannot provide the offline runtime.",
           "Before depending on offline tutoring, finish setup while connected, select the local model, disconnect, and try a short text conversation. This is a readiness check for your installation, not a promise that an offline installer is currently available. In the desktop offline tutor, images need a vision model and recordings need a transcript."
         ],
         "links": [

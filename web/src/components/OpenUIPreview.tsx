@@ -1,40 +1,28 @@
-import { BookMarked, CircleHelp, ClipboardList, Code2, SlidersHorizontal, FileQuestion, Flag, GitFork, Image, Languages, Layers, ListChecks, Music, Network, NotebookPen, Paperclip, Play } from "lucide-react";
+import { Chip } from "../design-system/kit";
+import { KeatingGlyph, type GlyphName } from "../design-system/glyphs";
 import { css } from "../../styled-system/css";
 import type { OpenUIPreviewArtifactKind, OpenUIPreviewBlock } from "../keating/openui/preview";
 import { MarkdownBlock, type MarkdownHighlightRange } from "./MarkdownBlock";
 
-const ARTIFACT_ICON: Record<OpenUIPreviewArtifactKind, typeof ListChecks> = {
-	"study-plan": ListChecks,
-	"concept-map": Network,
-	question: CircleHelp,
-	quiz: FileQuestion,
-	deck: Layers,
-	goal: Flag,
-	notes: NotebookPen,
-	image: Image,
-	media: Play,
-	artifact: Paperclip,
-	handoff: GitFork,
-	task: ClipboardList,
-	simulation: SlidersHorizontal,
-	coding: Code2,
-	music: Music,
-	language: Languages,
-	unavailable: BookMarked,
+const ARTIFACT_ICON: Record<OpenUIPreviewArtifactKind, GlyphName> = {
+	"study-plan": "checklist",
+	"concept-map": "tree",
+	question: "help",
+	quiz: "quiz",
+	deck: "layers",
+	goal: "flag",
+	notes: "note",
+	image: "image",
+	media: "play",
+	artifact: "clip",
+	handoff: "fork",
+	task: "checklist",
+	simulation: "filter",
+	coding: "code",
+	music: "music",
+	language: "globe",
+	unavailable: "book",
 };
-
-const chipClass = css({
-	display: "inline-flex",
-	maxWidth: "100%",
-	alignItems: "center",
-	gap: "0.5rem",
-	borderRadius: "0.5rem",
-	border: "1px solid var(--border)",
-	backgroundColor: "color-mix(in srgb, var(--muted) 30%, transparent)",
-	padding: "0.4375rem 0.625rem",
-	fontSize: "0.8125rem",
-	color: "var(--foreground)",
-});
 
 /**
  * Render an assistant turn for a surface that judges it rather than uses it.
@@ -75,15 +63,15 @@ export function OpenUIPreview({
 						/>
 					);
 				}
-				const Icon = ARTIFACT_ICON[block.kind];
+				const glyph = ARTIFACT_ICON[block.kind];
 				return (
-					<div key={block.id} className={chipClass} data-openui-preview={block.kind}>
-						<Icon aria-hidden="true" size={14} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
+					<Chip key={block.id} data-openui-preview={block.kind}>
+						<KeatingGlyph name={glyph} size={14} className={css({ flexShrink: 0, color: "var(--muted-foreground)" })} />
 						<span className={css({ fontWeight: 650, overflowWrap: "anywhere" })}>{block.label}</span>
 						{block.detail ? (
 							<span className={css({ color: "var(--muted-foreground)", overflowWrap: "anywhere" })}>· {block.detail}</span>
 						) : null}
-					</div>
+					</Chip>
 				);
 			})}
 		</div>

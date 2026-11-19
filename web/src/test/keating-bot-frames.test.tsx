@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import { AppStatusScreen } from "../components/AppStatusScreen";
-import { KeatingBot, keatingBotFramePosition, keatingBotSpriteVariant, KEATING_BOT_CHAT_STATES, KEATING_BOT_ACTIVITY_STATES, KEATING_BOT_ONBOARDING_STATES, type KeatingBotState } from "../components/KeatingBot";
+import { KeatingBot, keatingBotFramePosition, keatingBotSpriteVariant, KEATING_BOT_CHAT_STATES, KEATING_BOT_ACTIVITY_STATES, KEATING_BOT_ONBOARDING_STATES, KEATING_BOT_COMPANION_STATES, type KeatingBotState } from "../components/KeatingBot";
 
 describe("Keatingbot authored atlas frames", () => {
 	test("each row-major pose selects one of the eight distinct cells", () => {
@@ -21,22 +21,30 @@ describe("Keatingbot authored atlas frames", () => {
 		expect(keatingBotFramePosition(4.9)).toEqual({ x: "0%", y: "100%" });
 	});
 	test("every state exposes the final frozen frame and keeps accessible naming", () => {
-		for (const variant of ["head", "body"] as const) for (const state of [...KEATING_BOT_CHAT_STATES, ...KEATING_BOT_ACTIVITY_STATES, ...KEATING_BOT_ONBOARDING_STATES]) {
+		for (const variant of ["head", "body"] as const) for (const state of [...KEATING_BOT_CHAT_STATES, ...KEATING_BOT_ACTIVITY_STATES, ...KEATING_BOT_ONBOARDING_STATES, ...KEATING_BOT_COMPANION_STATES]) {
 			const html = renderToStaticMarkup(<KeatingBot variant={variant} state={state} frame={7} label="Keating is listening" />);
 			expect(html).toContain('data-frozen="true"');
 			expect(html).toContain('--keating-bot-frame-x:100%;--keating-bot-frame-y:100%');
 			expect(html).toContain('role="img" aria-label="Keating is listening"');
 		}
 	});
-	test("walking and flips keep the full pose visible at either placement", () => {
+	test("all 64 companion gestures resolve to installed full-body sheets", async () => {
+    expect(new Set(KEATING_BOT_COMPANION_STATES).size).toBe(64);
+    for (const state of KEATING_BOT_COMPANION_STATES) {
+      const variant = keatingBotSpriteVariant("head", state);
+      expect(variant).toBe("body");
+      expect(await Bun.file(new URL(`../../public/brand/stop-motion-v1/keatingbot-${variant}-${state}.avif`, import.meta.url)).exists()).toBe(true);
+    }
+  });
+  test("walking and flips keep the full pose visible at either placement", () => {
 		// Spelled out rather than derived from the function, so a state that quietly
 		// changes placement fails here instead of agreeing with itself.
-		const wholeBody = new Set<string>(["walking", "flipping", "lotus", "connecting", "understanding", ...KEATING_BOT_ONBOARDING_STATES]);
+		const wholeBody = new Set<string>(["walking", "flipping", "lotus", "connecting", "understanding", ...KEATING_BOT_ONBOARDING_STATES, ...KEATING_BOT_COMPANION_STATES]);
 		for (const state of wholeBody) {
 			expect(keatingBotSpriteVariant("head", state as KeatingBotState)).toBe("body");
 			expect(keatingBotSpriteVariant("body", state as KeatingBotState)).toBe("body");
 		}
-		for (const state of [...KEATING_BOT_CHAT_STATES, ...KEATING_BOT_ACTIVITY_STATES, ...KEATING_BOT_ONBOARDING_STATES]) {
+		for (const state of [...KEATING_BOT_CHAT_STATES, ...KEATING_BOT_ACTIVITY_STATES, ...KEATING_BOT_ONBOARDING_STATES, ...KEATING_BOT_COMPANION_STATES]) {
 			if (wholeBody.has(state)) continue;
 			expect(keatingBotSpriteVariant("head", state)).toBe("head");
 		}

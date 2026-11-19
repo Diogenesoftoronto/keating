@@ -1,0 +1,117 @@
+.lr-tabs,.lr-controls {display:flex;align-items:center;gap:.4rem}
+.lr-tabs a {display:inline-flex;align-items:center;gap:.25rem;padding:.52rem .6rem;border-bottom:2px solid transparent;color:var(--ink-soft);font-size:.625rem;text-decoration:none}
+.lr-tabs a[aria-current=page] {border-color:var(--ink);color:var(--ink);font-weight:700}
+@media(max-width:650px){
+  .lr-sub.k-sub {flex-wrap:wrap}
+  .lr-tabs,.lr-controls {width:100%}
+  .lr-tabs a {flex:1;justify-content:center;padding-inline:0}
+}
+.lr-logo {width:1.875rem;height:1.06rem;object-fit:contain}
+.lr-appbar .k-title b [role=heading] {font:inherit;color:inherit}
+.lr-dashboard {display:grid;gap:.577rem;margin:auto;padding:.77rem 1.058rem .96rem;max-width:72rem;color:var(--ink);font: .625rem/1.45 var(--font-ui)}
+.lr-dashboard :is(button,summary,a,label:has(input[type=file])) {cursor:pointer}
+.lr-dashboard :focus-visible,.lr-tabs :focus-visible,.lr-file:focus-within {outline:2px solid var(--ink);outline-offset:2px}
+.lr-row {display:grid;gap:.577rem;align-items:stretch}
+.lr-row > * {min-width:0}
+.lr-overview {grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}
+.lr-learning {grid-template-columns:minmax(0,1.2fr) minmax(0,1fr)}
+.lr-costs {grid-template-columns:minmax(0,1.6fr) minmax(0,1fr)}
+.lr-models:only-child {grid-column:1/-1}
+.lr-health {grid-template-columns:minmax(0,1fr) minmax(0,1.4fr)}
+.lr-tiles {display:grid;gap:.577rem}
+.lr-tile,.lr-disclosure,.lr-footer {border:1px solid var(--line);border-radius:.192rem;background:var(--card);padding:.48rem .673rem}
+.lr-tile {display:flex;flex-direction:column;justify-content:center;min-width:0;overflow-wrap:anywhere}
+.lr-tile span,.lr-period-label {font:.5rem/1.4 var(--mono-body);color:var(--ink-soft)}
+.lr-tile b {font:bold 1.15rem/1.15 var(--mono-display);font-variant-numeric:tabular-nums}
+.lr-tile small,.lr-caption,.lr-session small {font-size:.54rem;color:var(--ink-soft)}
+.lr-card header,.lr-footer,.lr-crumbs,.lr-legend {display:flex;align-items:center;gap:.48rem;flex-wrap:wrap}
+.lr-card header {justify-content:space-between}
+.lr-card h2,.lr-credits h2,.lr-disclosure>summary {font:600 .625rem/1.35 var(--font-ui)}
+.lr-session {overflow-wrap:anywhere}
+.lr-crumbs {font-size:.56rem;margin-block:.3rem}
+.lr-crumbs button,.lr-footer a {text-decoration:underline}
+.lr-session {display:grid;gap:.1rem;text-align:left;width:100%;padding:.44rem 0;border-top:1px solid var(--line-soft)}
+.lr-session b {font-size:.65rem}
+.lr-session span {color:var(--ink-soft);font-size:.58rem}
+.lr-session svg,.lr-footer svg {display:inline-block;vertical-align:middle}
+.lr-scroll {overflow:auto;max-height:15rem}
+.lr-dashboard table {width:100%;font-size:.6rem;font-variant-numeric:tabular-nums;border-collapse:collapse}
+.lr-dashboard th,.lr-dashboard td {padding:.32rem .4rem;font-size:inherit;border-bottom:1px solid var(--line)}
+.lr-scroll th,.lr-scroll td,.lr-scroll caption {text-align:left}
+.lr-models table {min-width:22rem}
+.lr-models .k-meter {min-width:2.4rem;flex:1}
+.lr-models div:has(>.k-meter) {min-width:4rem}
+.lr-credits {margin:0;border:1px solid var(--line);border-radius:.192rem}
+.lr-credits h2 {display:flex;align-items:center;gap:.4rem}
+.lr-credits summary,.lr-disclosure summary {width:fit-content}
+.lr-footer {font-size:.56rem}
+.lr-footer strong,.lr-footer a,.lr-footer label {display:inline-flex;align-items:center;gap:.24rem}
+.lr-footer a {margin-left:auto}
+.lr-footer p {flex-basis:100%}
+.lr-file {position:relative;padding:.24rem .48rem;border-radius:.192rem;border:1px solid var(--line)}
+.lr-file input {position:absolute;inset:0;width:100%;opacity:0;cursor:pointer}
+.lr-tooltip {position:fixed;z-index:50;max-width:10rem;padding:.25rem .4rem;background:var(--ink);color:var(--paper);border-radius:.19rem;pointer-events:none}
+.lr-dashboard[data-motion=true] :is(.lr-card,.lr-tile,.lr-disclosure,.lr-footer,.lr-credits) {animation:lr-rise .42s cubic-bezier(.2,.8,.2,1)}
+@keyframes lr-rise {from {transform:translateY(.38rem)}}
+@media(max-width:760px){
+ .lr-row {grid-template-columns:minmax(0,1fr)}
+ .lr-tiles {grid-row:1;grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem}
+ .lr-dashboard {padding:.48rem .577rem;gap:.48rem}
+ .lr-tile {padding:.38rem}
+ .lr-tile b {font-size:1rem}
+ .lr-costs > * {max-width:100%}
+ .lr-sub.k-sub {height:auto;flex-wrap:wrap;padding:.1rem .577rem .25rem}
+ .lr-sub.k-sub > .lr-tabs {flex:1 0 100%}
+ .lr-controls,.lr-controls .k-seg {width:100%}
+ .lr-controls .k-seg button {flex:1}
+ .lr-controls .lr-period-label,.lr-tabs svg,.lr-appbar .lr-logo,.lr-appbar .k-title > span {display:none}
+ .lr-footer a {margin-left:0}
+}
+.lr-card header.k-halftone {--k-halftone-strength:.32}
+.lr-card header h2 {background:var(--card)}
+/* Multiple empty charts can share the viewport. Reserve the live field for Topics. */
+.lr-dashboard .k-empty > .keating-fx-surface {display:none}
+.lr-dashboard .lr-learning > :last-child .k-empty > .keating-fx-surface {display:block}
+.lr-dashboard {grid-template-columns:minmax(0,1fr);width:100%;min-width:0}
+.lr-balances {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem;margin:.3rem 0}
+.lr-dates {display:flex;justify-content:space-between;font:.52rem var(--mono-body);color:var(--ink-soft)}
+/* "Models and cost" still carries the old panel classes; bring it to the same measure as the other cards. */
+.lr-models > div:first-child {padding:0 0 .3rem;border-bottom:0}
+.lr-models > div:first-child p {margin:.1rem 0 0;font-size:.54rem;color:var(--ink-soft)}
+.lr-models > div:has(> table) {padding:0}
+.lr-models :is(th,td) {font-size:.6rem}
+.lr-models thead th {font:.5rem/1.4 var(--mono-body);color:var(--ink-soft);font-weight:400}
+
+.lr-calendar {position:relative}.lr-calendar header {padding-right:6rem}.lr-calendar .kc-ramp {position:absolute;right:.7rem;top:.7rem}
+.lr-calendar .kc-grid {grid-auto-flow:column;grid-template-rows:repeat(7,auto);max-width:min(100%,calc(var(--week-count)*1.1rem));align-items:start}
+.lr-calendar .kc-cell:first-child {grid-row:var(--first-weekday)}
+.lr-calendar .kc-cell {width:100%}
+.lr-calendar .kc-table {min-width:0;overflow:auto;max-height:14rem}
+.lr-years,.lr-day {display:flex;flex-wrap:wrap;gap:.3rem}.lr-day {border-top:1px solid var(--line-soft);margin-top:.45rem;padding-top:.4rem;align-items:center}.lr-day-session {display:grid;gap:.12rem;text-align:left;padding:.32rem}.lr-day-session small {font:.5rem var(--mono-body)}
+.lr-policy-line .kc-legend {order:-1}.lr-policy-line select {max-width:100%}
+.lr-data-chip {border:1px solid var(--line);border-radius:.1923rem;padding:.18rem .3rem}.lr-data-chip:has(:checked) {background:var(--k-wash)}
+.lr-short {display:none}.lr-session {grid-template-columns:minmax(0,1fr) auto;align-items:center}
+.lr-session > b {grid-column:1;font:600 .65rem/1.35 var(--font-ui)}
+.lr-session > span {grid-column:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lr-session .lr-time {grid-column:2;grid-row:1 / 3;text-align:end;font-family:var(--mono-body)}
+.lr-session .lr-extra {grid-column:1 / -1;display:none}.lr-session:is(:focus-visible,:hover) .lr-extra {display:block}
+@media(max-width:760px){.lr-long,.lr-comparison {display:none}.lr-short {display:inline}.lr-session .lr-time {max-width:5rem}.lr-tiles .lr-tile {min-width:0}}
+@media(prefers-reduced-motion:no-preference){html:not([data-reduce-motion=true]) .lr-calendar .kc-cell[data-selected=true]{animation:lr-select .4s ease-out}@keyframes lr-select{from{transform:scale(.82)}to{transform:scale(1)}}}
+
+.lr-phone-menu {display:none}
+@media(max-width:760px){.lr-phone-menu {display:flex;justify-content:flex-end;padding:.4rem .6rem}}
+
+.lr-calendar .kc-grid .kc-cell {min-height:0!important;height:auto!important;aspect-ratio:1;padding:0!important;margin:0;max-width:100%}
+.lr-day-session {min-width:0;max-width:100%;flex:1 1 12rem;background:transparent;text-align:left}
+.lr-day-session b {font:600 .625rem/1.35 var(--font-ui);overflow-wrap:anywhere}
+.lr-day-session small {font-size:.6rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lr-inspect-day {display:none}
+@media(pointer:coarse){.lr-inspect-day {display:flex;align-items:center;gap:.4rem}.lr-inspect-day select {min-height:44px;max-width:100%}}
+
+@media(max-width:760px){
+ .lr-session {grid-template-columns:minmax(0,1fr)}
+ .lr-session .lr-time {grid-column:1;grid-row:auto;max-width:none;text-align:start}
+}
+
+.lr-controls .k-seg,.lr-dashboard .k-seg {border-color:var(--line)}
+html[data-fx="off"] .lr-dashboard .k-halftone::after {display:none}

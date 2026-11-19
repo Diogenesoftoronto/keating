@@ -1,0 +1,19 @@
+/* The runnable code figure: a caption bar with quiet actions over the code. It travels with the component, so it
+   looks the same in a chat reply, a review transcript, a shared session and a course lesson. */
+.ch-code {display:grid;min-width:0;border:1px solid var(--line);border-radius:.24rem;overflow:hidden;margin:.7rem 0}
+.ch-code {font-family:var(--font-ui);color:var(--foreground)}
+.ch-code > :first-child {padding:.3rem .45rem;background:var(--muted)}
+.ch-code .runnable-code-surface {border-radius:0}
+.ch-code-toolbar,.ch-code-actions {display:flex;align-items:center}
+.ch-code-toolbar {justify-content:space-between;gap:.3rem;font:.55rem/1.3 var(--font-ui)}
+.ch-code-caption {min-width:0;display:flex;align-items:baseline;gap:.35rem;flex-wrap:wrap;color:var(--muted-foreground)}
+.ch-code-caption b {font-family:var(--mono-body);text-transform:uppercase;color:var(--foreground);overflow-wrap:anywhere}
+.ch-code-actions {flex:none;gap:.12rem}
+.ch-code-actions button {white-space:nowrap}
+.ch-code .ch-code-actions .k-button,.ch-code .ch-code-actions .k-button:disabled {border-color:transparent;background:transparent}
+@media(max-width:639px){
+  .ch-code-caption {display:grid;gap:.05rem}
+}
+@media(pointer:coarse){
+  .ch-code-actions button {min-height:44px;min-width:44px}
+}

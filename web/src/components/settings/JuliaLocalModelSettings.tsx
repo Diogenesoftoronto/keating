@@ -1,3 +1,5 @@
+import { Meter } from "../../design-system/charts";
+import { ConfirmDialog } from "../../design-system/kit";
 import { useEffect, useState } from "react";
 import { JULIA_MODEL_ID, JULIA_TOTAL_BYTES } from "../../../../shared/julia/manifest.js";
 import { juliaBrowserModel, type JuliaBrowserStatus } from "../../stores/julia-model";
@@ -9,6 +11,7 @@ export function JuliaLocalModelSettings({ bridge }: { bridge?: DesktopOfflineBri
   const native = bridge?.supportedJudgementModels?.includes(JULIA_MODEL_ID) ? bridge : undefined;
   const [status, setStatus] = useState<JuliaBrowserStatus>(() => juliaBrowserModel.status());
   const [error, setError] = useState("");
+  const [confirmRemove,setConfirmRemove] = useState(false);
   const [testing, setTesting] = useState(false);
   const [preview, setPreview] = useState("");
   const [example, setExample] = useState("I was charged twice for the same order.");
@@ -60,12 +63,14 @@ export function JuliaLocalModelSettings({ bridge }: { bridge?: DesktopOfflineBri
     <p role="status">{status.downloading ? `Downloading ${(status.downloadedBytes / 1e6).toFixed(0)} of ${(JULIA_TOTAL_BYTES / 1e6).toFixed(0)} MB…`
       : status.installed ? "Julia is installed. Automatic reviews still require matching verified calibration."
         : status.available ? "Download once for local decision previews and calibrated reviews." : "The local runtime is unavailable in this browser."}</p>
+    {status.downloading && <Meter progress value={status.downloadedBytes} max={JULIA_TOTAL_BYTES} label="Julia download"/>}
     {status.downloading ? <button type="button" onClick={() => void perform("cancel")}>Pause download</button>
       : !status.installed ? <button type="button" disabled={!status.available} onClick={() => void perform("download")}>Download Julia</button>
         : <>
           <button type="button" disabled={testing} onClick={() => void perform("unload")}>Unload model</button>{" "}
-          <button type="button" disabled={testing} onClick={() => void perform("remove")}>Remove Julia</button>
+          <button type="button" disabled={testing} onClick={() => setConfirmRemove(true)}>Remove Julia</button>
         </>}
+    <ConfirmDialog open={confirmRemove} title="Remove Julia?" description="Deletes Julia’s downloaded model files from this device. Local decision previews need another download." confirmLabel="Remove Julia" onCancel={()=>setConfirmRemove(false)} onConfirm={()=>{setConfirmRemove(false);void perform("remove");}}/>
     {status.installed && <details>
       <summary>Try a local decision</summary>
       <label className="judgement-settings__field"><span>Support message</span><textarea maxLength={1500} value={example} onChange={event => setExample(event.target.value)} /></label>

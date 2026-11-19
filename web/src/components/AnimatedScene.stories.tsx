@@ -57,3 +57,8 @@ export const Hyperframes: Story = {
 		},
 	},
 };
+
+export const NarrowReply: Story = {
+  ...Hyperframes,
+  decorators: [Story => <div style={{ width: "min(320px, 100%)" }}><Story /></div>],
+};

@@ -1,3 +1,4 @@
+import { KeatingGlyph } from "../../design-system/glyphs";
 /** Multi-blank fill-in question: the template with one input per blank, answers joined by "|". */
 import { useMemo, useRef } from "react";
 import { css, cx } from "../../../styled-system/css";
@@ -65,8 +66,8 @@ export function MultiBlankFillIn({
 								}}
 							/>
 							{revealed && (
-								<span className={css({ fontSize: "0.625rem", color: isCorrect ? "#059669" : "var(--destructive)" })}>
-									{isCorrect ? "✓" : `✗ ${correctAnswers[bIdx] ?? ""}`}
+								<span className="lesson-verdict" data-result={isCorrect ? "correct" : "wrong"}>
+									<KeatingGlyph name={isCorrect ? "check" : "x"} size={13}/>{isCorrect ? "Correct" : `Not quite · ${correctAnswers[bIdx] ?? ""}`}
 								</span>
 							)}
 						</span>

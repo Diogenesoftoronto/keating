@@ -6,7 +6,7 @@
  * `./assembler/`.
  */
 import { useState } from "react";
-import { css } from "../../../styled-system/css";
+import "./course-builder.css";
 import type { CoursesAccount } from "../../courses/useCoursesAccess";
 import { ArtifactsSection } from "./assembler/ArtifactsSection";
 import { AssemblerHeader } from "./assembler/AssemblerHeader";
@@ -60,29 +60,10 @@ export function CourseAssembler({
   return (
     <section
       aria-labelledby="course-assembler-title"
-      className={css({
-        mt: "1.5rem",
-        border: "2px solid var(--ink)",
-        bg: "var(--card)",
-        boxShadow: "6px 6px 0 color-mix(in srgb, var(--ink) 22%, transparent)",
-      })}
-    >
-      <AssemblerHeader onClose={onClose} />
-      <div
-        className={css({
-          display: "grid",
-          lg: {
-            gridTemplateColumns: "minmax(18rem, 0.75fr) minmax(22rem, 1.25fr)",
-          },
-        })}
-      >
-        <div
-          className={css({
-            borderBottom: "1px solid var(--ink)",
-            p: "1rem",
-            lg: { borderRight: "1px solid var(--ink)", borderBottom: 0 },
-          })}
-        >
+      className="cb-assembler">
+      <AssemblerHeader onClose={onClose}/>
+      <div className="cb-assembly-grid">
+        <div className="cb-assembly-details">
           <DetailsFields
             title={title}
             description={description}
@@ -91,6 +72,12 @@ export function CourseAssembler({
             onDescriptionChange={setDescription}
             onReviewAfterSaveChange={setReviewAfterSave}
           />
+          <SelectionSummary
+            hasSources={pick.hasSources}
+            moduleCount={pick.moduleCount}
+            artifactCount={pick.artifactCount}
+            cardCount={pick.cardCount}
+          />
           <CreateFooter
             creating={creating}
             titleValid={!!title.trim()}
@@ -98,15 +85,9 @@ export function CourseAssembler({
             error={error}
             onCreate={() => void create()}
           />
-          <SelectionSummary
-            hasSources={pick.hasSources}
-            moduleCount={pick.moduleCount}
-            artifactCount={pick.artifactCount}
-            cardCount={pick.cardCount}
-          />
         </div>
 
-        <div className={css({ p: "1rem" })}>
+        <div className="cb-sources">
           <SourceStatus
             loading={!sources && !sourceError}
             error={sourceError}

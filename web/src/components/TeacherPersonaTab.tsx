@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, RotateCcw, Save } from "lucide-react";
-import { css } from "../../styled-system/css";
-import { primaryButton, outlineButton, textarea } from "../../styled-system/recipes";
+import { useCallback, useContext, useEffect, useState } from "react";
+import { Button, ConfirmDialog, TextArea } from "../design-system/kit";
+import { SettingsStatusContext, SettingsSection } from "./settings/ui";
 import {
 	DEFAULT_TEACHER_PERSONA,
 	isDefaultPersona,
@@ -11,104 +10,97 @@ import {
 	subscribePersona,
 } from "../keating/persona";
 
-const stackClass = css({ display: "flex", flexDirection: "column", gap: "1.25rem" });
-const headerClass = css({ display: "flex", flexDirection: "column", gap: "0.25rem" });
-const titleClass = css({ marginBottom: "0.5rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--foreground)" });
-const descriptionClass = css({ fontSize: "0.875rem", color: "var(--muted-foreground)" });
-const fieldStackClass = css({ display: "flex", flexDirection: "column", gap: "0.5rem" });
-const fieldLabelClass = css({ fontSize: "0.75rem", fontWeight: 500, color: "var(--muted-foreground)" });
-const metaRowClass = css({ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", color: "var(--muted-foreground)" });
-const actionRowClass = css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem" });
-const footnoteClass = css({ fontSize: "11px", lineHeight: "1.25rem", color: "var(--muted-foreground)" });
+// The shell owns this callback for one open dialog. Keep its unsaved persona
+// available to the shell's Save action while another section is mounted.
+const drafts = new WeakMap<object, string>();
 
 export function TeacherPersonaTab() {
-	const [draft, setDraft] = useState(() => loadPersona());
-	const [saved, setSaved] = useState(false);
-	const savedTimer = useRef<number | null>(null);
-
-	// Reflect external changes (e.g. reset from another tab/window).
-	useEffect(() => subscribePersona((persona) => setDraft(persona)), []);
-
-	useEffect(() => {
-		return () => {
-			if (savedTimer.current) window.clearTimeout(savedTimer.current);
-		};
-	}, []);
-
-	const stored = loadPersona();
+	const report = useContext(SettingsStatusContext);
+	const [stored, setStored] = useState(loadPersona);
+	const [draft, setDraft] = useState(() => drafts.get(report) ?? stored);
+	const [confirm, setConfirm] = useState(false);
+	const [notice, setNotice] = useState("");
+	useEffect(
+		() =>
+			subscribePersona((next) => {
+				setStored(next);
+				if (!drafts.has(report)) setDraft(next);
+			}),
+		[report],
+	);
 	const dirty = draft.trim() !== stored.trim();
-	const isDefault = isDefaultPersona(draft);
-
-	const flashSaved = useCallback(() => {
-		setSaved(true);
-		if (savedTimer.current) window.clearTimeout(savedTimer.current);
-		savedTimer.current = window.setTimeout(() => setSaved(false), 1600);
-	}, []);
-
-	const handleSave = useCallback(() => {
-		savePersona(draft.trim().length > 0 ? draft : DEFAULT_TEACHER_PERSONA);
-		flashSaved();
-	}, [draft, flashSaved]);
-
-	const handleReset = useCallback(() => {
-		resetPersona();
-		setDraft(DEFAULT_TEACHER_PERSONA);
-		flashSaved();
-	}, [flashSaved]);
-
+	const save = useCallback(() => {
+		drafts.delete(report);
+		savePersona(draft.trim() || DEFAULT_TEACHER_PERSONA);
+		report("teaching");
+		setDraft(loadPersona());
+		setStored(loadPersona());
+		setNotice("Persona saved");
+	}, [report, draft]);
+	useEffect(() => {
+		if (dirty) {
+			drafts.set(report, draft);
+			report("teaching", { count: 1, save });
+		} else {
+			drafts.delete(report);
+			report("teaching");
+		}
+	}, [report, dirty, draft, save]);
 	return (
-		<div className={stackClass}>
-			<div className={headerClass}>
-				<h3 className={titleClass}>Teacher Persona</h3>
-				<p className={descriptionClass}>
-					This is the editable identity and voice of your tutor — the "who" of the
-					system prompt. It defaults to John Keating from <em>Dead Poets Society</em>.
-					The agent's tools and teaching protocol are kept separate and always apply.
-				</p>
-			</div>
-
-			<div className={fieldStackClass}>
-				<label htmlFor="teacher-persona" className={fieldLabelClass}>
-					Persona
-				</label>
-				<textarea
-					id="teacher-persona"
-					className={textarea()}
+		<div id="settings-section-persona">
+			<SettingsSection
+				title="Teacher persona"
+				description="This is the editable identity and voice of your tutor. It defaults to John Keating from Dead Poets Society. The agent’s tools and teaching protocol always apply."
+			>
+				<label htmlFor="pf-persona">Persona</label>
+				<TextArea
+					id="pf-persona"
+					rows={8}
 					value={draft}
 					spellCheck={false}
-					onChange={(e) => setDraft(e.target.value)}
+					onChange={(e) => {
+						setDraft(e.target.value);
+						setNotice("");
+					}}
 					placeholder="Describe who the teacher is, their values, and their voice…"
 				/>
-				<div className={metaRowClass}>
-					<span>{draft.trim().length} characters</span>
-					<span>{isDefault ? "Default persona" : "Custom persona"}</span>
+				<small>
+					{draft.trim().length} characters ·{" "}
+					{isDefaultPersona(draft) ? "Default persona" : "Custom persona"}
+				</small>
+				<div className="pf-persona-actions">
+					<Button
+						variant="ghost"
+						disabled={isDefaultPersona(draft) && !dirty}
+						onClick={() => setConfirm(true)}
+					>
+						Reset to John Keating
+					</Button>
+					<Button variant="primary" disabled={!dirty} onClick={save}>
+						Save persona
+					</Button>
 				</div>
-			</div>
-
-			<div className={actionRowClass}>
-				<button
-					type="button"
-					onClick={handleSave}
-					disabled={!dirty}
-					className={primaryButton()}
-				>
-					{saved ? <Check size={15} /> : <Save size={15} />}
-					{saved ? "Saved" : "Save persona"}
-				</button>
-				<button
-					type="button"
-					onClick={handleReset}
-					disabled={isDefault && !dirty}
-					className={outlineButton()}
-				>
-					<RotateCcw size={14} />
-					Reset to John Keating
-				</button>
-			</div>
-
-			<p className={footnoteClass}>
-				Changes apply to the current conversation on the next message, and to all new sessions.
-			</p>
+				<p>
+					Changes apply to the current conversation on the next message, and to
+					all new sessions.
+				</p>
+				<span role="status">{notice}</span>
+				<ConfirmDialog
+					open={confirm}
+					title="Reset to John Keating?"
+					description="Replace your custom teacher persona with the default."
+					confirmLabel="Reset to John Keating"
+					onCancel={() => setConfirm(false)}
+					onConfirm={() => {
+						drafts.delete(report);
+						resetPersona();
+						setStored(loadPersona());
+						setDraft(loadPersona());
+						setConfirm(false);
+						setNotice("Default persona restored");
+					}}
+				/>
+			</SettingsSection>
 		</div>
 	);
 }

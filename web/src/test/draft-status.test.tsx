@@ -177,6 +177,16 @@ test("the interaction summary and variants survive projection, but unknown ids a
   expect(JSON.stringify(state)).not.toContain("PRIVATE_");
 });
 
+test("a session resource review survives projection only with known gap and trigger ids", () => {
+  const publish = (resourceReview: unknown) => publishTeachingDraftStatus("r", { ...snapshot, resourceReview } as unknown as TeachingDraftSnapshot);
+  publish({ gap: "retrieval", trigger: "session-length", note: "PRIVATE_NOTE" });
+  expect(getTeachingDraftStatus("r")!.snapshot.resourceReview).toEqual({ gap: "retrieval", trigger: "session-length" });
+  publish({ gap: "PRIVATE_GAP", trigger: "session-length" });
+  expect(getTeachingDraftStatus("r")!.snapshot.resourceReview).toBeUndefined();
+  publish({ gap: "plan", trigger: "PRIVATE_TRIGGER" });
+  expect(JSON.stringify(getTeachingDraftStatus("r"))).not.toContain("PRIVATE_");
+});
+
 test("a plan review survives projection only with known trigger and action ids", () => {
   const publish = (planReview: unknown) => publishTeachingDraftStatus("p", { ...snapshot, planReview } as unknown as TeachingDraftSnapshot);
   publish({ trigger: "stalled-focus", action: "expand-item", note: "PRIVATE_NOTE" });

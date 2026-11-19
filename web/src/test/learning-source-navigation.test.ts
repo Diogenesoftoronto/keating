@@ -53,6 +53,20 @@ test("visible row mapping uses original source identity after filtering and refu
     .toEqual([["user-1-42"], ["user-2-42"]]);
 });
 
+test("identical native tutor replies map within their matched learner turns", () => {
+  const originals = [
+    { role: "user", timestamp: 1, content: "First question" },
+    { role: "assistant", timestamp: 2, content: "Try a smaller example." },
+    { role: "user", timestamp: 3, content: "Second question" },
+    { role: "assistant", timestamp: 4, content: "Try a smaller example." },
+  ];
+  const rows = originals.map(({ role, timestamp, content }) => ({
+    id: `native-${timestamp}`, role, content, createdAt: role === "user" ? new Date(timestamp) : undefined,
+  }));
+  expect(learningRowSourceIds(rows, originals)).toEqual([["user-0-1"], ["assistant-1-2"], ["user-2-3"], ["assistant-3-4"]]);
+  expect(learningRowSourceIds(rows.slice(0, -1), originals)).toEqual([["user-0-1"], ["assistant-1-2"], ["user-2-3"]]);
+});
+
 test("cross-session opening verifies first, switches once, then checks the loaded source again", async () => {
   let active = "current", loads = 0, reveals = 0;
   const result = await openLearningSource(anchor, {

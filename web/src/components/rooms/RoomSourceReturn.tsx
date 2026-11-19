@@ -1,3 +1,4 @@
+import { Loading } from "../../design-system/kit";
 import { useEffect, useRef, useState } from "react";
 import { css } from "../../../styled-system/css";
 import type { RoomViewerSnapshot } from "../../rooms/contracts";
@@ -36,10 +37,10 @@ export function RoomSourceReturn({ snapshot, onLoadEarlier, onReveal }: { snapsh
   if (!target || target.state === "ready") return null;
   return <div role="status" className={`${s.notice} ${css({ mx: "0.75rem", mb: "0.5rem" })}`}>
     <p>{target.state === "earlier" ? "Your source message is not in the loaded transcript. Load earlier messages to find the exact source." : "This source message is no longer available to you. It may have been hidden or removed."}</p>
-    {target.state === "earlier" ? <button type="button" className={s.button} disabled={loading} onClick={() => {
+    {target.state === "earlier" ? <button type="button" className="k-button k-ghost k-sm" disabled={loading} onClick={() => {
       setLoading(true); setError("");
       void onLoadEarlier().catch(cause => setError(errorMessage(cause, "Earlier messages could not be loaded. Try again."))).finally(() => setLoading(false));
-    }}>{loading ? "Loading…" : "Load earlier source messages"}</button> : null}
+    }}>{loading ? <Loading size="inline" label="Loading…" /> : "Load earlier source messages"}</button> : null}
     {error ? <p role="alert" className={s.error}>{error}</p> : null}
   </div>;
 }

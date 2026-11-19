@@ -2,12 +2,31 @@ import { Link } from "@tanstack/react-router";
 import { Nav } from "../components/Nav";
 import { Footer } from "../components/Footer";
 import { DIAGNOSTIC_SUPPORT_EMAIL } from "../lib/diagnostics";
-import { DownloadPdfButton } from "../components/DownloadPdfButton";
+import { LegalContents, LegalDocumentHeader } from "../components/LegalDocumentHeader";
 import { useSeo } from "../hooks/useSeo";
-import { cx } from "../../styled-system/css";
-import { eyebrow, paperCard } from "../../styled-system/recipes";
 
 const LAST_UPDATED = "July 1, 2026";
+
+const SECTIONS = [
+  ["agreement", "Agreement"],
+  ["about", "What Keating is"],
+  ["eligibility", "Eligibility"],
+  ["workspace", "Workspace and providers"],
+  ["your-content", "Your content"],
+  ["shared-sessions", "Shared sessions"],
+  ["acceptable-use", "Acceptable use"],
+  ["educational-content", "Educational content"],
+  ["licenses", "Software and licenses"],
+  ["fees", "Fees"],
+  ["privacy", "Privacy"],
+  ["warranties", "Warranties"],
+  ["liability", "Liability"],
+  ["indemnification", "Indemnification"],
+  ["termination", "Termination"],
+  ["changes", "Changes to the terms"],
+  ["general", "General terms"],
+  ["contact", "Contact"],
+] as const;
 
 export function Terms() {
   useSeo({
@@ -18,16 +37,25 @@ export function Terms() {
   });
 
   return (
-    <div className={cx("retro-layout", "retro-page", "legal-layout")}>
-      <Nav />
-      <main className={cx("legal-page")}>
-        <article className={cx("wrap", "legal-doc", paperCard())}>
-          <div className={cx(eyebrow(), "prompt")}>cat TERMS_OF_SERVICE.txt</div>
-          <h1>Terms of Service</h1>
-          <p className={cx("legal-updated")}>Last updated: {LAST_UPDATED}</p>
-          <DownloadPdfButton label="Terms of Service" />
+    <div className="retro-layout retro-page public-page legal-layout legal-terms">
+      <Nav publication />
+      <main className="legal-page public-texture-paper">
+        <article className="wrap legal-doc">
+          <LegalDocumentHeader
+            title="Terms of Service"
+            updated={LAST_UPDATED}
+            glyph="book"
+            topics={[
+              ["your-content", "Your content"],
+              ["fees", "Fees"],
+              ["contact", "Contact"],
+            ]}
+          />
 
-          <section>
+          <div className="legal-reading-room">
+            <LegalContents sections={SECTIONS} />
+            <div className="legal-copy">
+          <section id="agreement">
             <h2>1. Agreement to these terms</h2>
             <p>
               These Terms of Service (the “Terms”) govern your access to and use of Keating — the
@@ -39,7 +67,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="about">
             <h2>2. What Keating is</h2>
             <p>
               Keating is an open-source teaching tool and learning workspace. It is local-first:
@@ -50,7 +78,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="eligibility">
             <h2>3. Eligibility</h2>
             <p>
               You must be old enough to form a binding contract in your jurisdiction, or use the
@@ -61,7 +89,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="workspace">
             <h2>4. Your account-free workspace, keys, and providers</h2>
             <p>
               Keating does not require a central account. Instead, you may configure third-party AI
@@ -77,7 +105,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="your-content">
             <h2>5. Your content</h2>
             <p>
               You retain all rights to the prompts, files, notes, study artifacts, quiz answers, and
@@ -93,7 +121,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="shared-sessions">
             <h2>6. Shared sessions and public links</h2>
             <p>
               Share links are effectively public: anyone who obtains a link may be able to read the
@@ -104,7 +132,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="acceptable-use">
             <h2>7. Acceptable use</h2>
             <p>You agree not to use the Service to:</p>
             <ul>
@@ -121,7 +149,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="educational-content">
             <h2>8. Educational content, not professional advice</h2>
             <p>
               Keating supports study and reasoning. Output produced with Keating — including output
@@ -132,7 +160,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="licenses">
             <h2>9. Open-source software and licenses</h2>
             <p>
               Keating’s source code is distributed under the license terms published in its public
@@ -143,7 +171,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="fees">
             <h2>10. Fees</h2>
             <p>
               The hosted Service is currently provided without charge. Third-party providers you
@@ -152,7 +180,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="privacy">
             <h2>11. Privacy</h2>
             <p>
               Our <Link to="/privacy">Privacy Policy</Link> explains what data the Service stores
@@ -161,7 +189,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="warranties">
             <h2>12. Disclaimer of warranties</h2>
             <p>
               THE SERVICE IS PROVIDED “AS IS” AND “AS AVAILABLE”, WITHOUT WARRANTIES OF ANY KIND,
@@ -173,7 +201,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="liability">
             <h2>13. Limitation of liability</h2>
             <p>
               TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE KEATING MAINTAINERS AND CONTRIBUTORS WILL
@@ -187,7 +215,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="indemnification">
             <h2>14. Indemnification</h2>
             <p>
               You will defend and hold harmless the Keating maintainers and contributors from claims
@@ -197,7 +225,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="termination">
             <h2>15. Termination</h2>
             <p>
               You may stop using the Service at any time; local data remains under your control. We
@@ -207,7 +235,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="changes">
             <h2>16. Changes to the Service and these Terms</h2>
             <p>
               The Service evolves: hosted pages, demos, downloads, experiments, and provider
@@ -218,7 +246,7 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="general">
             <h2>17. General</h2>
             <p>
               These Terms are the entire agreement between you and the Keating maintainers regarding
@@ -229,13 +257,15 @@ export function Terms() {
             </p>
           </section>
 
-          <section>
+          <section id="contact">
             <h2>18. Contact</h2>
             <p>
               For questions about these Terms, email{" "}
               <a href={`mailto:${DIAGNOSTIC_SUPPORT_EMAIL}`}>{DIAGNOSTIC_SUPPORT_EMAIL}</a>.
             </p>
           </section>
+            </div>
+          </div>
         </article>
       </main>
       <Footer />

@@ -39,6 +39,9 @@ export async function shareActiveSession(
       throw new Error("The active session changed while the share was being prepared. Share it again from the session you want.");
     }
   };
+  // Read the share mode now, while this is still the click the learner confirmed. Reading it after the
+  // saves below would let a change made in another tab turn a local share into a public one.
+  const shareLinkMode = loadKeatingUiSettings().shareLinkMode;
   await saveSessionSnapshot(agent);
   assertShareSourceIsCurrent();
   const trajectory = await buildSharedTrajectory(
@@ -58,7 +61,7 @@ export async function shareActiveSession(
   const result = await sharedSessionUrl(
     shared,
     window.location.origin,
-    loadKeatingUiSettings().shareLinkMode,
+    shareLinkMode,
   );
   await navigator.clipboard?.writeText(result.url).catch((error) => {
     console.warn("Failed to copy share link:", error);

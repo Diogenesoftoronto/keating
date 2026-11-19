@@ -1,16 +1,27 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, RotateCcw, Save } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { KeatingGlyph } from "../design-system/glyphs";
+import "./profile/settings-profile.css";
 import {
 	type DeclaredLearnerProfile,
+	DECLARED_PROFILE_FIELD_GROUPS,
 	MAX_DECLARED_NOTES_LENGTH,
 	answeredDeclaredProfileFields,
+	currentPursuit,
 	defaultDeclaredProfile,
 } from "@keating/learner-contracts";
-import { css } from "../../styled-system/css";
-import { outlineButton, primaryButton, textarea } from "../../styled-system/recipes";
+import {
+	Button,
+	ConfirmDialog,
+	EmptyState,
+	Prose,
+	TextArea,
+} from "../design-system/kit";
+import { profileSearchRows } from "./settings/search/learning";
+import { StatusLine, useSectionStatus } from "./settings/ui";
 import {
 	MAX_LEARNER_CONTEXT_LENGTH,
 	loadLearnerContext,
+	learnerContextPrompt,
 	resetLearnerContext,
 	saveLearnerContext,
 	subscribeLearnerContext,
@@ -41,16 +52,6 @@ export const LEARNER_PROFILE_SECTIONS: SettingsSection[] = [
 	{ id: "profile-notes", label: "Anything else" },
 ];
 
-const stackClass = css({ display: "flex", flexDirection: "column", gap: "2rem" });
-const descriptionClass = css({ fontSize: "0.875rem", lineHeight: "1.5rem", color: "var(--muted-foreground)" });
-const sectionClass = css({ display: "flex", flexDirection: "column", gap: "0.75rem", scrollMarginTop: "5rem" });
-const sectionHeadingClass = css({ fontSize: "0.8125rem", fontWeight: 600, color: "var(--foreground)" });
-const fieldStackClass = css({ display: "flex", flexDirection: "column", gap: "0.5rem" });
-const fieldLabelClass = css({ fontSize: "0.75rem", fontWeight: 500, color: "var(--foreground)" });
-const metaRowClass = css({ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: "0.5rem", fontSize: "11px", color: "var(--muted-foreground)" });
-const actionRowClass = css({ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.5rem", position: "sticky", bottom: 0, paddingBlock: "0.75rem", backgroundColor: "color-mix(in srgb, var(--background) 95%, transparent)" });
-const footnoteClass = css({ fontSize: "11px", lineHeight: "1.25rem", color: "var(--muted-foreground)" });
-
 /** Unchanged free-text contract: existing stories and any embedder keep working. */
 export interface LearnerProfileStore {
 	load: () => string;
@@ -63,7 +64,9 @@ export interface DeclaredProfileStore {
 	load: () => DeclaredLearnerProfile;
 	save: (profile: DeclaredLearnerProfile) => void;
 	reset: () => void;
-	subscribe: (listener: (profile: DeclaredLearnerProfile) => void) => () => void;
+	subscribe: (
+		listener: (profile: DeclaredLearnerProfile) => void,
+	) => () => void;
 }
 
 const browserLearnerProfileStore: LearnerProfileStore = {
@@ -80,149 +83,346 @@ const browserDeclaredProfileStore: DeclaredProfileStore = {
 	subscribe: subscribeDeclaredProfile,
 };
 
-/** `updatedAt` moves on every save, so it can never take part in the dirty check. */
-function sameProfile(a: DeclaredLearnerProfile, b: DeclaredLearnerProfile): boolean {
-	const strip = ({ updatedAt: _updatedAt, ...rest }: DeclaredLearnerProfile) => rest;
-	return JSON.stringify(strip(a)) === JSON.stringify(strip(b));
+function profileReading(p: DeclaredLearnerProfile) {
+	const who = p.preferredName.trim() || "The learner";
+	const active = currentPursuit(p.pursuits);
+	const clauses = [
+		[p.preferredName, p.pronouns].filter(Boolean).join(", "),
+		p.ageBand &&
+			(p.ageBand === "prefer-not-to-say"
+				? "Age range withheld"
+				: "Age range " + p.ageBand.replace("plus", "and older")),
+		p.interfaceLocale !== "system" &&
+			"Use the " +
+				(p.interfaceLocale === "fr-CA" ? "French" : "English") +
+				" interface",
+		p.explainInLanguage && "Explain in " + p.explainInLanguage,
+		p.instructionLanguageFluency &&
+			"Instruction-language fluency is " + p.instructionLanguageFluency,
+		p.otherLanguages.length &&
+			"Also speaks " +
+				p.otherLanguages
+					.map(
+						(l) =>
+							l +
+							(p.otherLanguageFluencies?.[l]
+								? " (" + p.otherLanguageFluencies[l] + ")"
+								: ""),
+					)
+					.join(", "),
+		p.educationStage && "Education stage: " + p.educationStage,
+		p.priorKnowledge && "Prior knowledge: " + p.priorKnowledge,
+		p.interests.length && "Use examples from " + p.interests.join(", "),
+		p.goalText && who + " wants to understand " + p.goalText,
+		active && "Current pursuit: " + active.title,
+		p.motivation && "Motivation: " + p.motivation.replaceAll("-", " "),
+		p.deadline && "Aim for " + p.deadline,
+		p.weeklyMinutes && "Allow " + p.weeklyMinutes + " minutes a week",
+		p.preferredSessionMinutes &&
+			"Plan for " + p.preferredSessionMinutes + "-minute sessions",
+		p.socraticIntensity &&
+			{
+				light: "Mostly explain, asking occasionally",
+				balanced: "Balance asking and telling",
+				deep: "Keep asking until it clicks",
+			}[p.socraticIntensity],
+		p.hintLevel &&
+			{
+				minimal: "Allow time to struggle",
+				moderate: "Give a nudge when stuck",
+				generous: "Give a clear hint when stuck",
+			}[p.hintLevel],
+		p.tone && "Use a " + p.tone + " tone",
+		p.depth &&
+			{
+				overview: "Give the shape of the idea",
+				standard: "Explain at standard depth",
+				rigorous: "Explain rigorously",
+			}[p.depth],
+		p.examplesFirst !== null &&
+			(p.examplesFirst
+				? "Start with a concrete example"
+				: "Start with the general rule"),
+		p.analogyDomains.length &&
+			"Draw analogies from " + p.analogyDomains.join(", "),
+		p.plainLanguage && "Use plain language",
+		p.screenReader && "Describe visuals in text",
+		p.captionsPreferred && "Provide captions and transcripts",
+		p.dyslexiaFriendlyFont && "Use dyslexia-friendly reading and speech",
+		p.reduceMotion && "Reduce motion",
+		p.highContrast && "Use higher contrast",
+		p.textScale && "Use " + p.textScale + " text",
+		p.notes.trim(),
+	];
+	return clauses
+		.filter((v): v is string => typeof v === "string" && !!v)
+		.map((v) => (/[.!?]$/.test(v) ? v : v + "."))
+		.join(" ");
 }
 
 export function LearnerProfileTab({
 	store = browserLearnerProfileStore,
 	profileStore = browserDeclaredProfileStore,
-}: { store?: LearnerProfileStore; profileStore?: DeclaredProfileStore }) {
-	const [stored, setStored] = useState<DeclaredLearnerProfile>(() => ({ ...profileStore.load(), notes: store.load() }));
-	const [draft, setDraft] = useState<DeclaredLearnerProfile>(stored);
-	const [saved, setSaved] = useState<"saved" | "cleared" | false>(false);
-	const [confirmingClear, setConfirmingClear] = useState(false);
-	const savedTimer = useRef<number | null>(null);
-
-	// An outside write (another tab, onboarding, the legacy writer) replaces an untouched draft only.
-	useEffect(() => profileStore.subscribe((next) => {
-		setStored((previous) => {
-			const merged = { ...next, notes: next.notes || previous.notes };
-			setDraft((current) => (sameProfile(current, previous) ? merged : current));
-			return merged;
-		});
-	}), [profileStore]);
-	useEffect(() => store.subscribe((notes) => {
-		setStored((previous) => {
-			const merged = { ...previous, notes };
-			setDraft((current) => (sameProfile(current, previous) ? merged : current));
-			return merged;
-		});
-	}), [store]);
-	useEffect(() => () => {
-		if (savedTimer.current) window.clearTimeout(savedTimer.current);
+	onCountsChange,
+}: {
+	store?: LearnerProfileStore;
+	profileStore?: DeclaredProfileStore;
+	onCountsChange?: (counts: Record<string, number>) => void;
+}) {
+	const [stored, setStored] = useState(() => ({
+		...profileStore.load(),
+		notes: store.load(),
+	}));
+	const [edits, setEdits] = useState<Partial<DeclaredLearnerProfile>>({});
+	const [active, setActive] = useState("profile-identity");
+	const [phoneList, setPhoneList] = useState(true);
+	const [summaryOpen, setSummaryOpen] = useState(false);
+	const [confirming, setConfirming] = useState(false);
+	const [notice, setNotice] = useState("");
+	useEffect(
+		() =>
+			profileStore.subscribe((next) =>
+				setStored({ ...next, notes: store.load() }),
+			),
+		[profileStore, store],
+	);
+	useEffect(
+		() =>
+			store.subscribe((notes) =>
+				setStored((previous) => ({ ...previous, notes })),
+			),
+		[store],
+	);
+	useEffect(() => {
+		const query = window.matchMedia("(min-width: 701px)");
+		const sync = () => setSummaryOpen(query.matches);
+		sync();
+		query.addEventListener("change", sync);
+		return () => query.removeEventListener("change", sync);
 	}, []);
-
-	const dirty = !sameProfile(draft, stored);
-	const answered = useMemo(() => answeredDeclaredProfileFields(draft).length, [draft]);
-	const patch = useCallback((next: Partial<DeclaredLearnerProfile>) => setDraft((current) => ({ ...current, ...next })), []);
-
-	const flashSaved = useCallback((kind: "saved" | "cleared" = "saved") => {
-		setSaved(kind);
-		if (savedTimer.current) window.clearTimeout(savedTimer.current);
-		savedTimer.current = window.setTimeout(() => setSaved(false), 1600);
-	}, []);
-
-	const handleSave = useCallback(() => {
-		profileStore.save(draft);
-		// Keep the free-text store authoritative for `notes`, including an injected one.
-		store.save(draft.notes);
-		setStored(draft);
-		flashSaved("saved");
-	}, [draft, flashSaved, profileStore, store]);
-
-	const handleReset = useCallback(() => {
-		profileStore.reset();
-		store.reset();
-		const cleared = defaultDeclaredProfile();
-		setStored(cleared);
-		setDraft(cleared);
-		setConfirmingClear(false);
-		flashSaved("cleared");
-	}, [flashSaved, profileStore, store]);
-
-	const groupProps = { profile: draft, onChange: patch, idPrefix: "learner-profile" };
-
+	const draft = { ...stored, ...edits };
+	const count = Object.keys(edits).filter(
+		(k) =>
+			JSON.stringify(edits[k as keyof typeof edits]) !==
+			JSON.stringify(stored[k as keyof typeof edits]),
+	).length;
+	const save = useCallback(() => {
+		const next = { ...profileStore.load(), notes: store.load(), ...edits };
+		profileStore.save(next);
+		store.save(next.notes);
+		setStored({ ...profileStore.load(), notes: store.load() });
+		setEdits({});
+		setNotice("Profile saved");
+	}, [edits, profileStore, store]);
+	useSectionStatus("profile", { count, save });
+	const answered = new Set(answeredDeclaredProfileFields(draft));
+	if (draft.examplesFirst === false) answered.add("examplesFirst");
+	const counts: Record<string, number> = {
+		"profile-notes": Number(!!draft.notes.trim()),
+	};
+	for (const [id, fields] of Object.entries(DECLARED_PROFILE_FIELD_GROUPS))
+		counts["profile-" + id] = fields.filter((key) => answered.has(key)).length;
+	const signature = JSON.stringify(counts);
+	useEffect(() => {
+		onCountsChange?.(JSON.parse(signature));
+	}, [signature, onCountsChange]);
+	const props = {
+		profile: draft,
+		idPrefix: "learner-profile",
+		onChange: (update: Partial<DeclaredLearnerProfile>) => {
+			setNotice("");
+			setEdits((previous) => {
+				const next = { ...previous, ...update };
+				for (const k of Object.keys(update) as (keyof DeclaredLearnerProfile)[])
+					if (JSON.stringify(next[k]) === JSON.stringify(stored[k]))
+						delete next[k];
+				return next;
+			});
+		},
+	};
+	function select(id: string) {
+		setActive(id);
+		setPhoneList(false);
+	}
+	const title = LEARNER_PROFILE_SECTIONS.find((s) => s.id === active)!.label;
+	const reading = profileReading(draft);
 	return (
-		<div className={stackClass}>
-			<p className={descriptionClass}>
-				Anything you fill in here shapes how Keating teaches you — the examples it picks, the language it uses, how much it asks before it explains. Every field is optional, and it is saved in this browser. Keating includes it in requests to your tutor model so it can tailor lessons.
-			</p>
-
-			<section id="settings-section-profile-identity" className={sectionClass}>
-				<h4 className={sectionHeadingClass}>About you</h4>
-				<IdentityFields {...groupProps} />
-			</section>
-
-			<section id="settings-section-profile-language" className={sectionClass}>
-				<h4 className={sectionHeadingClass}>Language</h4>
-				<LanguageFields {...groupProps} />
-			</section>
-
-			<section id="settings-section-profile-context" className={sectionClass}>
-				<h4 className={sectionHeadingClass}>Background</h4>
-				<ContextFields {...groupProps} />
-			</section>
-
-			<section id="settings-section-profile-goals" className={sectionClass}>
-				<h4 className={sectionHeadingClass}>Your pursuits</h4>
-				<GoalFields {...groupProps} showPursuits />
-			</section>
-
-			<section id="settings-section-profile-pedagogy" className={sectionClass}>
-				<h4 className={sectionHeadingClass}>How Keating should teach you</h4>
-				<PedagogyFields {...groupProps} />
-			</section>
-
-			<section id="settings-section-profile-accessibility" className={sectionClass}>
-				<h4 className={sectionHeadingClass}>Accessibility</h4>
-				<AccessibilityFields {...groupProps} />
-			</section>
-
-			<section id="settings-section-profile-notes" className={sectionClass}>
-				<h4 className={sectionHeadingClass}>Anything else</h4>
-				<div className={fieldStackClass}>
-					<label htmlFor="learner-profile" className={fieldLabelClass}>In your own words</label>
-					<textarea
-						id="learner-profile"
-						className={textarea()}
-						value={draft.notes}
-						maxLength={Math.min(MAX_LEARNER_CONTEXT_LENGTH, MAX_DECLARED_NOTES_LENGTH)}
-						onChange={(event) => patch({ notes: event.target.value })}
-						placeholder="I am learning for… I already know… I learn best with… I am interested in…"
-					/>
-					<div className={metaRowClass}>
-						<span>{draft.notes.length} / {MAX_LEARNER_CONTEXT_LENGTH} characters</span>
-						<span>{answered === 0 ? "Nothing filled in yet" : `${answered} ${answered === 1 ? "field" : "fields"} filled in`}</span>
-					</div>
-				</div>
-			</section>
-
-			<div className={actionRowClass}>
-				<button type="button" onClick={handleSave} disabled={!dirty} className={primaryButton()}>
-					{saved === "saved" ? <Check size={15} /> : <Save size={15} />}
-					{saved === "saved" ? "Saved" : "Save profile"}
-				</button>
-				{confirmingClear ? (
-					<>
-						<span className={footnoteClass} role="alert">Clear everything you have told Keating about yourself? This can’t be undone.</span>
-						<button type="button" onClick={handleReset} className={outlineButton()}>
-							<RotateCcw size={14} />
-							Yes, clear profile
-						</button>
-						<button type="button" onClick={() => setConfirmingClear(false)} className={outlineButton()} autoFocus>Keep my profile</button>
-					</>
-				) : (
-					<button type="button" onClick={() => setConfirmingClear(true)} className={outlineButton()}>
-						<RotateCcw size={14} />
-						Clear profile
+		<div className="pf-layout" data-list={phoneList}>
+			{LEARNER_PROFILE_SECTIONS.map((s) => (
+				<span
+					key={s.id}
+					className="pf-anchor"
+					tabIndex={-1}
+					id={"settings-section-" + s.id}
+					onFocus={() => {
+						select(s.id);
+						requestAnimationFrame(() =>
+							document.getElementById("pf-subheading")?.focus(),
+						);
+					}}
+				/>
+			))}
+			{profileSearchRows.map(([group, key]) => (
+				<span
+					className="pf-anchor"
+					key={key}
+					id={"pf-find-" + key}
+					tabIndex={-1}
+					onFocus={() => {
+						select("profile-" + group);
+						requestAnimationFrame(() => {
+							const input = document.getElementById(
+								key === "notes" ? "learner-profile" : "learner-profile-" + key,
+							);
+							(
+								input?.querySelector<HTMLElement>(
+									'[role="radio"][tabindex="0"]',
+								) ??
+								input ??
+								document.getElementById("pf-subheading")
+							)?.focus();
+						});
+					}}
+				/>
+			))}
+			<nav className="pf-outline k-halftone" aria-label="Your profile">
+				{LEARNER_PROFILE_SECTIONS.map((s) => (
+					<button
+						type="button"
+						key={s.id}
+						aria-current={active === s.id ? "page" : undefined}
+						onClick={() => {
+							select(s.id);
+							if (window.matchMedia("(max-width: 700px)").matches)
+								requestAnimationFrame(() =>
+									document.getElementById("pf-subheading")?.focus(),
+								);
+						}}
+					>
+						{s.label}
+						<small>{counts[s.id]}</small>
 					</button>
+				))}
+			</nav>
+			<div className="pf-canvas">
+				<Button
+					variant="ghost"
+					className="pf-back"
+					onClick={() => {
+						setPhoneList(true);
+						requestAnimationFrame(() =>
+							document
+								.querySelector<HTMLButtonElement>(".pf-outline [aria-current]")
+								?.focus(),
+						);
+					}}
+				>
+					‹ Your profile
+				</Button>
+				<h4 id="pf-subheading" tabIndex={-1}>
+					{active === "profile-pedagogy"
+						? "How Keating should teach you"
+						: title}
+				</h4>
+				<p className="pf-help">
+					{active === "profile-pedagogy"
+						? "These are preferences, not a test. Keating follows them."
+						: "Every field is optional."}
+				</p>
+				{active === "profile-identity" && <IdentityFields {...props} />}
+				{active === "profile-language" && <LanguageFields {...props} />}
+				{active === "profile-context" && <ContextFields {...props} />}
+				{active === "profile-goals" && <GoalFields {...props} showPursuits />}
+				{active === "profile-pedagogy" && <PedagogyFields {...props} />}
+				{active === "profile-accessibility" && (
+					<AccessibilityFields {...props} interfaceReadOnly />
 				)}
-				<span role="status" aria-live="polite" className={footnoteClass}>{saved === "cleared" ? "Profile cleared" : ""}</span>
+				{active === "profile-notes" && (
+					<label>
+						In your own words
+						<TextArea
+							id="learner-profile"
+							value={draft.notes}
+							maxLength={Math.min(
+								MAX_LEARNER_CONTEXT_LENGTH,
+								MAX_DECLARED_NOTES_LENGTH,
+							)}
+							onChange={(e) => props.onChange({ notes: e.target.value })}
+							placeholder="I am learning for… I already know… I learn best with… I am interested in…"
+						/>
+						<small>
+							{draft.notes.length} / {MAX_LEARNER_CONTEXT_LENGTH} characters ·{" "}
+							{answered.size} fields filled in
+						</small>
+					</label>
+				)}
 			</div>
-			<p className={footnoteClass}>Changes apply to the current conversation on the next message and to every new session.</p>
+			<details
+				className="pf-context"
+				open={summaryOpen}
+				onToggle={(e) => setSummaryOpen(e.currentTarget.open)}
+			>
+				<summary>What Keating is told</summary>
+				{reading ? (
+					<Prose>
+						<p>{reading}</p>
+					</Prose>
+				) : (
+					<EmptyState heading="Nothing filled in yet" />
+				)}
+				<details>
+					<summary>Show exactly what is sent</summary>
+					<pre>
+						{learnerContextPrompt(draft.notes, draft) ||
+							"Nothing filled in yet"}
+					</pre>
+				</details>
+				<p className="pf-privacy" data-glyph-host>
+					<KeatingGlyph name="lock" size={13} /> Saved in this browser. Keating
+					includes it in requests to your tutor model so it can tailor lessons.
+				</p>
+				<Button variant="ghost" onClick={() => setConfirming(true)}>
+					Clear profile
+				</Button>
+			</details>
+			<footer className="st-unsaved pf-actions">
+				<StatusLine tone={count ? "warn" : "ok"}>
+					{count
+						? `${count} unsaved ${count === 1 ? "change" : "changes"} · they apply on your next message`
+						: "Saved · nothing to apply"}
+				</StatusLine>
+				<Button
+					disabled={!count}
+					onClick={() => {
+						setEdits({});
+						setNotice("");
+					}}
+				>
+					Discard
+				</Button>
+				<Button variant="primary" disabled={!count} onClick={save}>
+					Save profile
+				</Button>
+			</footer>
+			<span role="status" className="sr-only">
+				{notice}
+			</span>
+			<ConfirmDialog
+				open={confirming}
+				title="Clear profile?"
+				description="Clear everything you have told Keating about yourself? This can’t be undone."
+				confirmLabel="Clear profile"
+				cancelLabel="Keep my profile"
+				onCancel={() => setConfirming(false)}
+				onConfirm={() => {
+					profileStore.reset();
+					store.reset();
+					setStored(defaultDeclaredProfile());
+					setEdits({});
+					setConfirming(false);
+					setNotice("Profile cleared");
+				}}
+			/>
 		</div>
 	);
 }

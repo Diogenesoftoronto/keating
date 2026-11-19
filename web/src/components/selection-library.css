@@ -45,3 +45,45 @@
 .material-library__row > svg { flex-shrink: 0; }
 @media (prefers-reduced-motion: reduce) { .model-picker *, .material-library * { transition: none !important; } }
 @media (max-width: 400px) { .model-picker__toolbar { padding: 12px; } .model-picker__hint { font-size: 11px; } }
+
+/* ── Model picker, second pass ────────────────────────────────────────────
+   The kit's sheet: one hard frame, a soft search field, mono group labels, and rows that mark the chosen
+   model with a green bar and a wash. No boxes inside the box. */
+.model-picker { border: 1.5px solid var(--k-strong-line, var(--ink)); border-radius: 5px; background: var(--card); box-shadow: var(--k-hard-shadow); font: 13px/1.45 var(--font-ui); color: var(--ink); }
+.model-picker__toolbar { padding: 12px 8px 10px 14px; }
+.model-picker .library-search { gap: 8px; min-height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); }
+.model-picker .library-search svg { flex-basis: 15px; width: 15px; height: 15px; color: var(--ink-faint); }
+.model-picker .library-search input { min-height: 32px; padding: 0 !important; font-size: 13px !important; }
+.model-picker .library-search:focus-within { outline: 2px solid var(--green-deep); outline-offset: 1px; }
+.model-picker .library-icon { flex-basis: 28px; width: 28px; height: 28px; min-height: 28px !important; border-radius: 4px; color: var(--ink-soft); }
+.model-picker .library-icon:hover { background: transparent; color: var(--ink); }
+.model-picker .library-icon svg { width: 15px; height: 15px; }
+.model-picker__filters { gap: 10px; padding: 0 14px 12px; border-bottom: 1px solid var(--line); }
+.model-picker__filters label { font: 600 10px/1.45 var(--mono-body); color: var(--ink-soft); }
+.model-picker__filters select { min-height: 30px; margin-top: 3px; padding: 0 6px 0 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--paper); font: 12.5px/1.2 var(--font-ui); color: var(--ink); }
+.model-picker__filters select:focus-visible { outline: 2px solid var(--green-deep); outline-offset: 1px; }
+.model-picker__results { padding: 0 0 10px; }
+.model-picker .library-group { padding: 12px 14px 4px; font: 600 9.5px/1.4 var(--mono-body); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-faint); }
+.model-picker .model-picker__option { gap: 10px; min-height: 46px; padding: 7px 14px 7px 11px; border-left: 3px solid transparent; border-radius: 0; }
+.model-picker .model-picker__option strong { font: 600 13.5px/1.3 var(--font-ui); }
+.model-picker .model-picker__option small { margin-top: 2px; font: 10.5px/1.4 var(--mono-body); color: var(--ink-faint); }
+.model-picker .model-picker__option svg { width: 15px; height: 15px; color: var(--green-deep); }
+.model-picker .model-picker__option[aria-pressed=true] { background: var(--k-wash); border-left-color: var(--green); }
+.model-picker .model-picker__option:hover { background: color-mix(in srgb, var(--k-wash) 55%, transparent); }
+.model-picker .model-picker__option[aria-pressed=true]:hover, .model-picker .model-picker__option:active { background: var(--k-wash); }
+.model-picker button:focus-visible { outline: 2px solid var(--green-deep); outline-offset: -2px; }
+.model-picker__details { margin: 0 14px 4px; font: 11px/1.45 var(--font-ui); color: var(--ink-soft); }
+.model-picker__item-action, .model-picker__error-action { padding: 0 14px 8px; font-size: 11.5px; color: var(--ink-soft); }
+.model-picker__item-action button, .model-picker__error-action button, .model-picker__item-action a { color: var(--ink); }
+.model-picker__notice { padding: 0 14px; font-size: 11.5px; color: var(--ink-soft); }
+.model-picker__hint { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding: 7px 14px; border-top: 1px solid var(--line); font: 10px/1.4 var(--mono-body); color: var(--ink-faint); }
+.model-picker__hint svg { display: inline-block; flex: none; }
+.model-picker .library-message { padding: 20px 14px; font-size: 12.5px; color: var(--ink-soft); }
+@media (pointer: coarse) {
+  .model-picker .library-search { min-height: 44px; }
+  .model-picker .library-search input { font-size: 16px !important; }
+  .model-picker .library-icon { flex-basis: 44px; width: 44px; height: 44px; min-height: 44px !important; }
+  .model-picker__filters select { min-height: 44px; font-size: 16px; }
+  .model-picker .model-picker__option { min-height: 52px; }
+}
+@media (max-width: 420px) { .model-picker__filters { grid-template-columns: 1fr; } }

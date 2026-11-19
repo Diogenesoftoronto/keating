@@ -1,5 +1,6 @@
+import { EmptyState } from "../../../design-system/kit";
 /** Saved study plans, each with per-module choices once the plan is ticked. */
-import { BookOpen } from "lucide-react";
+import { KeatingGlyph } from "../../../design-system/glyphs";
 import { css } from "../../../../styled-system/css";
 import type { SavedStudyPlanSource } from "../../../courses/course-assembly";
 import { choiceClass } from "./styles";
@@ -27,16 +28,14 @@ export function PlansSection({
         gap: "1rem",
       })}
     >
-      <h3
+      <h3 data-glyph-host
         className={css({
           display: "flex",
           alignItems: "center",
           gap: "0.45rem",
-          fontFamily: "Georgia, serif",
-          fontSize: "1.2rem",
         })}
       >
-        <BookOpen size={17} /> Plans from your chats
+        <KeatingGlyph name="book" size={17} /> Plans from your chats
       </h3>
       <span
         className={css({
@@ -99,11 +98,11 @@ export function PlansSection({
                         display: "inline-flex",
                         alignItems: "center",
                         gap: "0.3rem",
-                        border: "1px solid var(--ink)",
+                        border: "1px solid var(--line)",
                         bg:
                           (selectedModules[plan.id]?.has(item.id) ??
                           false)
-                            ? "var(--course-wash, #ddebdd)"
+                            ? "var(--k-wash)"
                             : "var(--paper)",
                         px: "0.45rem",
                         py: "0.3rem",
@@ -130,17 +129,7 @@ export function PlansSection({
         ))}
       </div>
     ) : (
-      <p
-        className={css({
-          mt: "0.5rem",
-          fontSize: "0.78rem",
-          color: "var(--ink-soft)",
-          lineHeight: 1.5,
-        })}
-      >
-        No saved StudyPlans yet. Ask Keating for a lesson plan in
-        chat, then it will appear here.
-      </p>
+      <EmptyState className="cb-source-empty k-halftone" heading="No saved StudyPlans yet. Ask Keating for a lesson plan in chat, then it will appear here." />
     )}
   </section>
   );

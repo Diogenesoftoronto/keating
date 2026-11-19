@@ -1,8 +1,9 @@
+import { Button, EmptyState, Loading } from "../../../design-system/kit";
 /**
  * Flashcard decks (saved and Anki-imported) with the Anki import control, the
  * "keep in review decks" opt-in, and the import notice.
  */
-import { Layers3, Upload } from "lucide-react";
+import { KeatingGlyph } from "../../../design-system/glyphs";
 import type { RefObject } from "react";
 import { css, cx } from "../../../../styled-system/css";
 import { ANKI_FILE_ACCEPT } from "../../../courses/course-anki";
@@ -38,7 +39,7 @@ export function DecksSection({
   <section
     className={css({
       mt: "1.25rem",
-      borderTop: "1px solid var(--ink)",
+      borderTop: "1px solid var(--line-soft)",
       pt: "1rem",
     })}
   >
@@ -50,16 +51,14 @@ export function DecksSection({
         gap: "1rem",
       })}
     >
-      <h3
+      <h3 data-glyph-host
         className={css({
           display: "flex",
           alignItems: "center",
           gap: "0.45rem",
-          fontFamily: "Georgia, serif",
-          fontSize: "1.2rem",
         })}
       >
-        <Layers3 size={17} /> Flashcard decks
+        <KeatingGlyph name="layers" size={17} /> Flashcard decks
       </h3>
       <span
         className={css({
@@ -83,28 +82,10 @@ export function DecksSection({
             if (file) onReadAnki(file);
           }}
         />
-        <button
-          type="button"
-          disabled={ankiReading}
-          onClick={() => ankiInputRef.current?.click()}
-          className={css({
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.3rem",
-            border: "1px solid var(--ink)",
-            px: "0.5rem",
-            py: "0.3rem",
-            fontSize: "0.68rem",
-            fontWeight: 750,
-            color: "var(--ink)",
-            cursor: "pointer",
-            _hover: { bg: "var(--course-wash, #ddebdd)" },
-            _disabled: { opacity: 0.5 },
-          })}
-        >
-          <Upload size={12} />
-          {ankiReading ? "Reading…" : "Import Anki file"}
-        </button>
+        <Button variant="line" disabled={ankiReading} onClick={() => ankiInputRef.current?.click()}>
+          <KeatingGlyph name="import" size={12} />
+          {ankiReading ? <Loading size="inline" label="Reading…" /> : "Import Anki file"}
+        </Button>
       </span>
     </div>
     {ankiFileName ? (
@@ -193,16 +174,7 @@ export function DecksSection({
         ))}
       </div>
     ) : (
-      <p
-        className={css({
-          mt: "0.5rem",
-          fontSize: "0.78rem",
-          color: "var(--ink-soft)",
-        })}
-      >
-        No saved decks yet. You can add cards after opening the
-        course.
-      </p>
+      <EmptyState className="cb-source-empty k-halftone" heading="No saved decks yet. You can add cards after opening the course." />
     )}
   </section>
   );

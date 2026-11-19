@@ -1,8 +1,11 @@
+import { useState } from "react";
+import { useMotionAllowed } from "../design-system/motion";
 import { css } from "../../styled-system/css";
 
 export interface SettingsSection {
 	id: string;
 	label: string;
+	count?: number;
 }
 
 const stickyNavClass = css({
@@ -48,23 +51,31 @@ const chipClass = css({
  * Sticky in-tab section jump nav shared by settings tabs (Speech, Providers, …).
  * Each button scrolls to the element with id `settings-section-{id}`.
  */
-export function SettingsSectionNav({ sections }: { sections: SettingsSection[] }) {
+export function SettingsSectionNav({ sections, sidebar = false }: { sections: SettingsSection[]; sidebar?: boolean }) {
+	const motionAllowed = useMotionAllowed();
+	const [active, setActive] = useState(sections[0]?.id);
 	const scrollToSection = (id: string) => {
-		const el = document.getElementById(`settings-section-${id}`);
-		if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+		if(document.querySelector("dialog.st-dialog[open]")) {
+      window.dispatchEvent(new CustomEvent("keating:settings-tab",{detail:{section:id}}));
+      return;
+    }
+    const el = document.getElementById(`settings-section-${id}`) ?? document.getElementById(id);
+		setActive(id);
+		if (el) el.scrollIntoView({ behavior: motionAllowed ? "smooth" : "instant", block: "start" });
 	};
 
 	return (
-		<nav className={stickyNavClass}>
+		<nav aria-label="Settings sections" className={sidebar ? "pf-settings-nav" : stickyNavClass}>
 			<div className={chipsRowClass}>
 				{sections.map((s) => (
 					<button
 						key={s.id}
 						type="button"
 						onClick={() => scrollToSection(s.id)}
+						aria-current={sidebar && active === s.id ? "location" : undefined}
 						className={chipClass}
 					>
-						{s.label}
+						{s.label}{s.count !== undefined && <small aria-label={`${s.count} fields filled`}>{s.count}</small>}
 					</button>
 				))}
 			</div>

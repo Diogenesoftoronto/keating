@@ -1,5 +1,4 @@
 import {
-	tryCompileOpenUISourceToSharedDocument,
 	validateUiActionJournal,
 	validateUiDocument,
 	type UiActionReceipt,
@@ -7,7 +6,7 @@ import {
 } from "@keating/learner-contracts";
 import type { StorageLike } from "../event-store";
 import { loadSharedUiActionState, sharedUiActionStateKey } from "../openui/shared-actions";
-import { parseOpenUIMessageSegments } from "../openui/segments";
+import { indexTranscriptDocuments, type TranscriptDocument } from "../openui/transcript-documents";
 import type { OpenUiPresentationRecord } from "../storage";
 import {
 	handedInAssignments,
@@ -56,73 +55,29 @@ export interface LoadedAssignments {
 	unrecoverable: number;
 }
 
-interface SessionMessage { role?: unknown; content?: unknown; timestamp?: unknown }
-
-function messageText(content: unknown): string {
-	if (typeof content === "string") return content;
-	if (!Array.isArray(content)) return "";
-	return content.map((part) => part && typeof part === "object" && (part as { type?: unknown }).type === "text" && typeof (part as { text?: unknown }).text === "string" ? (part as { text: string }).text : "").filter(Boolean).join("\n");
-}
-
 /** Prose of a reply, without OpenUI blocks; the feedback a learner reads. */
 export function replyProse(text: string): string {
 	return text.replace(/```+\s*openui[^\n]*\n[\s\S]*?(?:\n```+|$)/gi, "").replace(/\n{3,}/g, "\n\n").trim();
 }
 
-function documentsIn(text: string, sessionId: string, messageId: string): UiDocument[] {
-	return parseOpenUIMessageSegments(text, { sessionId, messageId }).flatMap((segment) => {
-		if (segment.type !== "openui" || !segment.complete) return [];
-		if (segment.format === "document") return segment.error || !segment.document ? [] : [segment.document];
-		const compiled = tryCompileOpenUISourceToSharedDocument(segment.program || segment.rawProgram, {
-			documentId: segment.metadata.id,
-			revision: segment.metadata.revision,
-			retention: segment.metadata.lifecycle,
-		});
-		return compiled.ok ? [compiled.document] : [];
-	});
-}
-
 interface TranscriptIndex {
-	documents: Map<string, { document: UiDocument; messageTimestamp?: number }>;
+	documents: Map<string, TranscriptDocument>;
 	replies: AssignmentFeedback[];
 }
 
-/**
- * Rebuild documents from a session transcript. Chat message ids are
- * `assistant-${index}-${timestamp}`; the index is the array position, which
- * is tried first, with a scan of nearby positions for native session trees.
- */
+/** Rebuild task documents from a session transcript and collect the replies a learner read. */
 function indexTranscript(sessionId: string, messages: readonly unknown[], wanted: ReadonlySet<string>): TranscriptIndex {
-	const documents = new Map<string, { document: UiDocument; messageTimestamp?: number }>();
 	const replies: AssignmentFeedback[] = [];
-	messages.forEach((raw, index) => {
-		const message = raw as SessionMessage;
-		if (message?.role !== "assistant") return;
-		const text = messageText(message.content);
-		const timestamp = typeof message.timestamp === "number" ? message.timestamp : undefined;
-		if (timestamp !== undefined) {
-			const prose = replyProse(text);
-			if (prose) replies.push({ text: prose, at: timestamp });
-		}
-		if (!text.includes("openui") || documents.size >= wanted.size) return;
-		// Scope changes ids, not content: skip messages that present no task at all.
-		const atIndex = documentsIn(text, sessionId, `assistant-${index}-${timestamp ?? ""}`);
-		if (!atIndex.some((document) => document.nodes.some((node) => node.type === "task"))) return;
-		const offsets = [0, ...Array.from({ length: 40 }, (_, step) => (step % 2 ? -1 : 1) * (Math.floor(step / 2) + 1))];
-		for (const offset of offsets) {
-			const candidate = index + offset;
-			if (candidate < 0) continue;
-			const found = documentsIn(text, sessionId, `assistant-${candidate}-${timestamp ?? ""}`).filter((document) => wanted.has(document.id));
-			if (!found.length) continue;
-			for (const document of found) documents.set(document.id, { document, ...(timestamp !== undefined ? { messageTimestamp: timestamp } : {}) });
-			break;
-		}
+	const documents = indexTranscriptDocuments(sessionId, messages, wanted, (document) => document.nodes.some((node) => node.type === "task"), (text, timestamp) => {
+		if (timestamp === undefined) return;
+		const prose = replyProse(text);
+		if (prose) replies.push({ text: prose, at: timestamp });
 	});
 	return { documents, replies };
 }
 
 /** A learner-advanced journal copy, when one exists, without the presented snapshot. */
-function journalOnly(storage: Pick<StorageLike, "getItem"> | null, documentId: string): { document: UiDocument; receipts: UiActionReceipt[] } | null {
+export function journalOnly(storage: Pick<StorageLike, "getItem"> | null, documentId: string): { document: UiDocument; receipts: UiActionReceipt[] } | null {
 	try {
 		const raw = storage?.getItem(sharedUiActionStateKey(documentId));
 		if (!raw) return null;
@@ -133,6 +88,18 @@ function journalOnly(storage: Pick<StorageLike, "getItem"> | null, documentId: s
 	} catch {
 		return null;
 	}
+}
+
+/** The on-device submission and draft copies for every task node of one document. */
+export async function readTaskRecords(source: Pick<AssignmentDataSource, "readLocal">, document: UiDocument): Promise<Pick<AssignmentEvidence, "submissions" | "drafts">> {
+	const submissions: Record<string, SavedTaskSubmission | undefined> = {};
+	const drafts: Record<string, SavedTaskDraft | undefined> = {};
+	for (const node of document.nodes) {
+		if (node.type !== "task") continue;
+		submissions[node.id] = await source.readLocal<SavedTaskSubmission>("tasks", taskSubmissionKey(document.id, node.id, node.round)).catch(() => undefined);
+		drafts[node.id] = await source.readLocal<SavedTaskDraft>("tasks", taskDraftKey(document.id, node.id, node.round)).catch(() => undefined);
+	}
+	return { submissions, drafts };
 }
 
 export async function gatherAssignmentEvidence(source: AssignmentDataSource, sessionId?: string): Promise<{ evidence: AssignmentEvidence[]; replies: Record<string, AssignmentFeedback[]>; unrecoverable: number }> {
@@ -164,14 +131,7 @@ export async function gatherAssignmentEvidence(source: AssignmentDataSource, ses
 				if (!journal) { unrecoverable += 1; continue; }
 				({ document, receipts } = journal);
 			}
-			const tasks = document.nodes.filter((node) => node.type === "task");
-			const submissions: Record<string, SavedTaskSubmission | undefined> = {};
-			const drafts: Record<string, SavedTaskDraft | undefined> = {};
-			for (const node of tasks) {
-				if (node.type !== "task") continue;
-				submissions[node.id] = await source.readLocal<SavedTaskSubmission>("tasks", taskSubmissionKey(documentId, node.id, node.round)).catch(() => undefined);
-				drafts[node.id] = await source.readLocal<SavedTaskDraft>("tasks", taskDraftKey(documentId, node.id, node.round)).catch(() => undefined);
-			}
+			const { submissions, drafts } = await readTaskRecords(source, document);
 			const messageTimestamp = transcript.documents.get(documentId)?.messageTimestamp;
 			evidence.push({
 				sessionId: session,

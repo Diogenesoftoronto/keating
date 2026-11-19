@@ -7,62 +7,6 @@
   "regenerate": "rtk devenv tasks run keating:docs-screenshots",
   "screenshots": [
     {
-      "name": "current-onboarding-desktop",
-      "source": "chat-onboarding--welcome",
-      "kind": "production-component-story",
-      "viewport": [
-        1280,
-        900
-      ],
-      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
-      "file": "current-onboarding-desktop.png",
-      "width": 1280,
-      "height": 900,
-      "sha256": "b92dc6527a4b09e216b5148f394fb1d47e18fb0d6a7d0ded66b3a82470431c8a"
-    },
-    {
-      "name": "current-onboarding-mobile",
-      "source": "chat-onboarding--mobile",
-      "kind": "production-component-story",
-      "viewport": [
-        390,
-        844
-      ],
-      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
-      "file": "current-onboarding-mobile.png",
-      "width": 390,
-      "height": 844,
-      "sha256": "111c4a18636961442f989ececcb0e2e8179e8db25bd0a5f67b51d157be10669b"
-    },
-    {
-      "name": "current-model-access",
-      "source": "chat-onboarding--model-access",
-      "kind": "production-component-story",
-      "viewport": [
-        1280,
-        900
-      ],
-      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
-      "file": "current-model-access.png",
-      "width": 1280,
-      "height": 900,
-      "sha256": "580a49e651235feb14607076745af26684328b43a8f6394aa6c016894e3fe1e4"
-    },
-    {
-      "name": "current-model-picker",
-      "source": "documentation-model-setup--populated-model-picker",
-      "kind": "production-component-story",
-      "viewport": [
-        1280,
-        900
-      ],
-      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
-      "file": "current-model-picker.png",
-      "width": 1280,
-      "height": 900,
-      "sha256": "1fa69920965a838656f4ac1e120a79c893e583a2c615572474bad42a4c7ccfa5"
-    },
-    {
       "name": "current-custom-provider",
       "source": "documentation-model-setup--custom-provider",
       "kind": "production-component-story",
@@ -147,34 +91,6 @@
       "sha256": "feb4d43222bb736f693f601e80df7c5ed1fde1f924ad5332db91830b925da8a1"
     },
     {
-      "name": "current-flashcard-review",
-      "source": "artifacts-flashcards--still-arena",
-      "kind": "production-component-story",
-      "viewport": [
-        1280,
-        1050
-      ],
-      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
-      "file": "current-flashcard-review.png",
-      "width": 938,
-      "height": 826,
-      "sha256": "d8654d5abd17b7a5c5128a96ea9ebdea541300cb95b301874c2d74c07c18aaca"
-    },
-    {
-      "name": "current-flashcard-mobile",
-      "source": "artifacts-flashcards--compact-chat-embed-revealed",
-      "kind": "production-component-story",
-      "viewport": [
-        390,
-        1100
-      ],
-      "fixture": "Authored component fixture; displayed state only, without real payment, download, or course delivery.",
-      "file": "current-flashcard-mobile.png",
-      "width": 390,
-      "height": 1100,
-      "sha256": "3f434848d034f7a7120224053c2a60c206178283f0437dbe3d547ea7c89cf5f4"
-    },
-    {
       "name": "current-assignment-submitted",
       "source": "learning-task--submitted",
       "kind": "production-component-story",
@@ -231,34 +147,6 @@
       "sha256": "5d21001e2d615e60b7076b1e8a75b5b1c110c91ce902a4d76f7e7c155c52d678"
     },
     {
-      "name": "current-classroom-desktop",
-      "source": "scripts/capture-classroom-shots.mjs (/chat)",
-      "kind": "application-route",
-      "viewport": [
-        1280,
-        900
-      ],
-      "fixture": "Authored lesson restored through production local session storage; no inference request. Mobile is narrow web, not a native client.",
-      "file": "current-classroom-desktop.png",
-      "width": 1280,
-      "height": 900,
-      "sha256": "e51adf51bbd0e82f000562cb5d3ab479083268bfa6cb1cae2485640fd1c98958"
-    },
-    {
-      "name": "current-classroom-mobile",
-      "source": "scripts/capture-classroom-shots.mjs (/chat)",
-      "kind": "application-route",
-      "viewport": [
-        390,
-        844
-      ],
-      "fixture": "Authored lesson restored through production local session storage; no inference request. Mobile is narrow web, not a native client.",
-      "file": "current-classroom-mobile.png",
-      "width": 390,
-      "height": 844,
-      "sha256": "07440a4c43a27dcd3bc9c590311c66664043ae5d9c451550b41f8e93bd7d46d8"
-    },
-    {
       "name": "current-tui-conversation",
       "source": "docs/tui-screenshots.tape (src/cli/main.ts tui)",
       "kind": "production-terminal-host",
@@ -299,6 +187,397 @@
       "width": 1440,
       "height": 900,
       "sha256": "9d98231e55530063b391484f5f65959382648307d20a8bf34cdd5958bb15c66a"
+    },
+    {
+      "name": "current-onboarding-mobile",
+      "source": "scripts/walkthroughs/storyboards/first-run-phone.json#question",
+      "kind": "application-route",
+      "viewport": [
+        390,
+        844
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "current-onboarding-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "88fb594880f1aed824a24c72f6da5809b71c8fdbf185de6593c283ebe794bbe7",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "surface-live",
+      "source": "scripts/walkthroughs/storyboards/settings.json#live",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "surface-live.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "b578275840482cb0ce0d9f30ff2a24fe2a6c2789f3f5fdff600261f11e4eba84",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "current-classroom-mobile",
+      "source": "scripts/walkthroughs/storyboards/lesson-in-chat-phone.json#predict",
+      "kind": "application-route",
+      "viewport": [
+        390,
+        844
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "current-classroom-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "7cbebb4f47aa2d15ca3c947dd9a839f13f528762860c38ece9480cee50910126",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "current-flashcard-mobile",
+      "source": "scripts/walkthroughs/storyboards/lesson-in-chat-phone.json#recall",
+      "kind": "application-route",
+      "viewport": [
+        390,
+        844
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "current-flashcard-mobile.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "dbf21ed4b604d490ba103d3d18268a61e5ec6edfbeb062ff4422e572f231126a",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "surface-course-builder",
+      "source": "scripts/walkthroughs/storyboards/courses.json#assemble",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "surface-course-builder.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "55037c827f56c5ee264fb70f316e0899fe4fc0620c1da117c543d8d78a689408",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "review-workspace",
+      "source": "scripts/walkthroughs/storyboards/review-a-session.json#selection",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "review-workspace.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "a816331143cfaf3c3977ec7e2811201a40d0654686bec59befbd848e0d298559",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "review-selection-menu",
+      "source": "scripts/walkthroughs/storyboards/review-a-session.json#selection",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "review-selection-menu.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "a816331143cfaf3c3977ec7e2811201a40d0654686bec59befbd848e0d298559",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "review-annotation",
+      "source": "scripts/walkthroughs/storyboards/review-a-session.json#note-draft",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "review-annotation.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "2041f3b7de5b355c1cdd436a3e5cb2f9ed2dbffd46c0f8b8b5c06aef155416e5",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "review-socratic-pass",
+      "source": "scripts/walkthroughs/storyboards/review-a-session.json#pass",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "review-socratic-pass.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "541f05a7eb63cf008631055cbed89a60248aee3a4b5627f35a37dd598a63f9f5",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "settings-privacy-diagnostics",
+      "source": "scripts/walkthroughs/storyboards/your-data.json#privacy",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "settings-privacy-diagnostics.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "ad1441d00d13feb2764283223b9df7e168bc2f5c28386c970cf10af6c2d15479",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "usage-training-export",
+      "source": "scripts/walkthroughs/storyboards/your-data.json#portable",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "usage-training-export.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "67461a63ae475af69cff8a8e55ac46c783c7614afae7409d23b3c250e42ca6cc",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "settings-learning-about-you",
+      "source": "scripts/walkthroughs/storyboards/profile.json#context",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "settings-learning-about-you.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "8537fd0a384aca39af0ff2c578f30d9f7028d90b42f35f65049590d202fe0dfc",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "surface-coming-up",
+      "source": "scripts/walkthroughs/storyboards/activity-and-benchmark.json#coming-up",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "surface-coming-up.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "b4136db7f873e7d3a74ec8de519aa0e658bee655b4a69f7c2c79d350662ea490",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "current-onboarding-desktop",
+      "source": "scripts/walkthroughs/storyboards/first-run.json#question",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "current-onboarding-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "88b208a791fc52155b7d8fdd37f462cb59b653cfce683fdb8b23201dfdadd7e7",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "current-model-picker",
+      "source": "scripts/walkthroughs/storyboards/first-run.json#picker",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "current-model-picker.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "ccba2abae0ab3c32e16ab630ccbeb4f7883125e63ed7f6cc6befdcdf256af107",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "current-model-access",
+      "source": "scripts/walkthroughs/storyboards/first-run.json#choices",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "current-model-access.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "0dae8601eeb1023ff14f205994d00e83803e447d8f9e1178026fd4ebd0cc7975",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "current-classroom-desktop",
+      "source": "scripts/walkthroughs/storyboards/lesson-in-chat.json#predict",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "current-classroom-desktop.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "cd0aaa470faa8b71586e2f468b0cf806f6cad5ba73d4d6923ab67227f0d59ff1",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "current-flashcard-review",
+      "source": "scripts/walkthroughs/storyboards/lesson-in-chat.json#recall",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "current-flashcard-review.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "66ec3aaa51147142ae6f27ad2f1ba5b92748665595252e42bf4ea74905a74a82",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "classroom-openui",
+      "source": "scripts/walkthroughs/storyboards/lesson-in-chat.json#predict",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "classroom-openui.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "a081b828aee4b73419b431708f70996485b0f9f81025e195544f905c6f964e77",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "current-learner-response",
+      "source": "scripts/walkthroughs/storyboards/lesson-in-chat.json#your-response",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "current-learner-response.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "cdb66e4e58e834147741aa5602d3ad30f2394ee423080342125367e5b2df1b89",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "current-public-profile-preview",
+      "source": "scripts/walkthroughs/storyboards/profile.json#preview",
+      "kind": "application-route",
+      "viewport": [
+        1280,
+        800
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "current-public-profile-preview.png",
+      "width": 1280,
+      "height": 800,
+      "sha256": "fad693ec287497e0072bae85b970716291b141097b44e91618d2f6e2e6752341",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "current-course-sticky-tabs",
+      "source": "scripts/walkthroughs/storyboards/courses-phone.json#complete",
+      "kind": "application-route",
+      "viewport": [
+        390,
+        844
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "current-course-sticky-tabs.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "9a0263558808926dc814021cae73f9da4640651b61afacc21778134f6e951c97",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
+    },
+    {
+      "name": "current-phone-sessions",
+      "source": "scripts/walkthroughs/storyboards/phone-tour.json#sessions",
+      "kind": "application-route",
+      "viewport": [
+        390,
+        844
+      ],
+      "fixture": "Disposable local browser profile with walkthrough sample data.",
+      "file": "current-phone-sessions.png",
+      "width": 390,
+      "height": 844,
+      "sha256": "6f3bd1f991d18ec983443609c99135f886cc96ab8f07c8a02e2eb7a37cb32fae",
+      "captureDate": "2026-11-19",
+      "sourceCommit": "e7d8a56b3c4d34f35ea083fab7e5e8f157a6224f",
+      "sourceHasUncommittedChanges": true
     }
   ]
 }

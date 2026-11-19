@@ -1,7 +1,6 @@
 import { css, cx } from "../../styled-system/css";
 import { eyebrow } from "../../styled-system/recipes";
-import Eye from "reicon-react/icons/Eye";
-import { KeatingIcon } from "./KeatingIcon";
+import { KeatingGlyph } from "../design-system/glyphs";
 
 export interface TutorialShotProps {
 	/**
@@ -91,7 +90,7 @@ export function TutorialShot({ src, alt, caption, slate, ratio = "16 / 10", clas
 							padding: "1rem",
 						})}
 					>
-						<KeatingIcon icon={Eye} size={22} />
+						<KeatingGlyph name="eye" size={22} />
 						<span className={css({ fontSize: "0.75rem", maxWidth: "28rem", lineHeight: 1.5 })}>{alt}</span>
 						<span className={cx(eyebrow(), css({ fontSize: "10px" }))}>Screenshot coming</span>
 					</div>

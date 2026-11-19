@@ -1,7 +1,7 @@
 import type { NoulQuestion } from "./contracts.js";
 import type { TeachingPolicyTurn } from "./teaching-policy-types.js";
 
-export const TEACHING_POLICY_VERSION = "keating-teaching-policy/v2.4.5";
+export const TEACHING_POLICY_VERSION = "keating-teaching-policy/v2.5.0";
 export const CHECKPOINT_FEEDBACK_ISSUE = "checkpoint_feedback_unsupported";
 export const POLICY_PROTOCOL_SOURCE = "web/src/keating/prompts/operational-protocol.md";
 const persona = "web/src/keating/persona.ts#DEFAULT_TEACHER_PERSONA";

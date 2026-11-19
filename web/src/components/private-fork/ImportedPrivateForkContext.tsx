@@ -1,5 +1,6 @@
+import { Note } from "../../design-system/kit";
 import type { ReactNode } from "react";
-import { ArrowUpRight, BookOpen } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css } from "../../../styled-system/css";
 import { privateForkId } from "../../keating/private-fork-provenance";
 
@@ -51,15 +52,10 @@ export function ImportedPrivateForkContext({ provenance, content, copyAction }: 
   const label = source?.kind === "room" ? "Imported room context"
     : source?.kind === "lesson" ? "Imported lesson context" : "Imported source context";
   return (
-    <section aria-label={label} className={css({
-      width: "100%", minWidth: 0, border: "1px solid var(--border)",
-      bg: "color-mix(in srgb, var(--foreground) 4%, var(--background))",
-      color: "var(--foreground)", p: "0.85rem", fontFamily: "var(--font-ui)",
-      fontSize: "0.82rem", lineHeight: 1.5, overflowWrap: "anywhere",
-    })}>
+    <Note glyph="fork" role="region" aria-label={label}>
       <div className={css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.35rem" })}>
         <h3 className={css({ display: "flex", alignItems: "center", gap: "0.4rem", fontWeight: 750 })}>
-          <BookOpen size={15} aria-hidden="true" /> {label}
+          {label}
         </h3>
         {copyAction}
       </div>
@@ -81,13 +77,13 @@ export function ImportedPrivateForkContext({ provenance, content, copyAction }: 
             _hover: { bg: "color-mix(in srgb, var(--foreground) 8%, var(--background))" },
             _focusVisible: { outline: "2px solid var(--foreground)", outlineOffset: "2px" },
           })}>
-            {link.label} <ArrowUpRight size={14} aria-hidden="true" />
+            {link.label} <KeatingGlyph name="ext" size={14} />
           </a>
           <p className={css({ mt: "0.25rem", fontSize: "0.74rem" })}>{link.note}</p>
         </div>
       ) : (
         <p className={css({ mt: "0.6rem", fontSize: "0.74rem" })}>The original source link is unavailable. The saved context is still available above.</p>
       )}
-    </section>
+    </Note>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, ArrowUpRight, BookOpen, RefreshCw, Search } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { Nav } from "../components/Nav";
 import { SimpleFooter } from "../components/Footer";
 import { MarkdownBlock } from "../components/MarkdownBlock";
@@ -107,7 +107,7 @@ function BlogState({ error, onRetry }: { error?: string | null; onRetry?: () => 
 			<p className={styles.stateText}>{error}</p>
 			{onRetry && (
 				<button type="button" onClick={onRetry} className={styles.retry}>
-					<RefreshCw size={14} /> Retry loading posts
+					<KeatingGlyph name="refresh" size={14} /> Retry loading posts
 				</button>
 			)}
 		</div>
@@ -158,7 +158,7 @@ export function AtprotoBlog() {
 							{feed && <span className={styles.count}>{feed.posts.length} {feed.posts.length === 1 ? "post" : "posts"}</span>}
 						</div>
 						<div className={styles.protocol}>
-							<span className={styles.protocolMark}><BookOpen size={14} /> STANDARD.SITE</span>
+							<span className={styles.protocolMark}><KeatingGlyph name="book" size={14} /> STANDARD.SITE</span>
 							<span>Published from {feed?.source.repo ?? "Keating's AT Protocol repository"}</span>
 						</div>
 					</header>
@@ -168,7 +168,7 @@ export function AtprotoBlog() {
 							<div className={styles.filters}>
 								<label className={styles.searchWrap}>
 									<span className={css({ srOnly: true })}>Search posts</span>
-									<Search size={17} className={styles.searchIcon} />
+									<KeatingGlyph name="search" size={17} className={styles.searchIcon} />
 									<input value={query} onChange={(event) => setQuery(event.target.value)} className={styles.search} placeholder="Search posts" />
 								</label>
 								{tags.length > 0 && (
@@ -192,7 +192,7 @@ export function AtprotoBlog() {
 												{post.description && <p className={styles.description}>{post.description}</p>}
 												{post.tags.length > 0 && <div className={styles.postTags}>{post.tags.slice(0, 4).map((value) => <span key={value} className={styles.postTag}>{value}</span>)}</div>}
 											</div>
-											<ArrowUpRight size={18} className={styles.arrow} aria-hidden="true" />
+											<KeatingGlyph name="right" size={18} className={styles.arrow} />
 										</Link>
 									))}
 								</div>
@@ -228,7 +228,7 @@ export function AtprotoBlogPost() {
 			<Nav />
 			<main className={styles.main}>
 				<div className={styles.articleWrap}>
-					<Link to="/blog" className={styles.back}><ArrowLeft size={14} /> All posts</Link>
+					<Link to="/blog" className={styles.back}><KeatingGlyph name="left" size={14} /> All posts</Link>
 					{!feed ? <BlogState error={error} onRetry={retry} /> : !post ? (
 						<div className={styles.state} role="alert">
 							<h1 className={styles.stateTitle}>Post not found</h1>
@@ -252,7 +252,7 @@ export function AtprotoBlogPost() {
 								<div className={styles.body}><MarkdownBlock content={post.body} /></div>
 								<footer className={styles.articleFooter}>
 									<span className={styles.record}>Source: {post.uri}</span>
-									{discussionUrl && <a href={discussionUrl} target="_blank" rel="noreferrer" className={styles.discuss}>Discuss on Bluesky <ArrowUpRight size={13} /></a>}
+									{discussionUrl && <a href={discussionUrl} target="_blank" rel="noreferrer" className={styles.discuss}>Discuss on Bluesky <KeatingGlyph name="ext" size={13} /></a>}
 								</footer>
 							</article>
 						</>

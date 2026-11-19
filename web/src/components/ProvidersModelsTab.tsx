@@ -1,31 +1,19 @@
-import { useEffect, useReducer, useState } from "react";
+import { ConfirmDialog } from "../design-system/kit";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { getProviders } from "@earendil-works/pi-ai/compat";
 import { getAppStorage } from "../keating/app-storage";
-import { css } from "../../styled-system/css";
-import { settingsSection } from "../../styled-system/recipes";
 import {
 	addCustomModel,
 	toggleProviderVisibility,
 } from "../keating/ui-settings";
-import { notifyProviderCredentialsChanged, setProvidersVisibility } from "../keating/model-prefs";
-import { useKeatingUiSettings } from "../hooks/use-ui-settings";
+import { notifyProviderCredentialsChanged } from "../keating/model-prefs";
 import { useModelPrefs } from "../hooks/use-model-prefs";
-import { SettingsSectionNav, type SettingsSection } from "./SettingsSectionNav";
-import {
-	MODELS_TAB_SECTION_IDS,
-	MODELS_TAB_SECTION_LABELS,
-} from "./settings/section-ids";
 import {
 	isNotOrganicFeatureEnabled,
 	NOTORGANIC_PROVIDER_ID,
 } from "../notorganic-provider";
-import { ModelRolesPanel } from "./settings/ModelRolesPanel";
 import { ProviderConnectPanel } from "./settings/ProviderConnectPanel";
-import { WebSearchSection } from "./settings/WebSearchSection";
 import { MyModelsSection } from "./settings/MyModelsSection";
-import { OfflineTutorSettings } from "./OfflineTutorSettings";
-import { JudgementSettings } from "./settings/JudgementSettings";
-import { desktopOfflineBridge } from "../lib/desktop-offline";
 import {
 	discoverCustomProviderModels,
 	type KeatingCustomProvider,
@@ -56,8 +44,7 @@ function sortProvidersByPriority(list: string[]): string[] {
 	});
 }
 
-const stackClass = css({ display: "flex", flexDirection: "column", gap: "2rem" });
-const dividerClass = css({ borderTop: "1px solid var(--border)" });
+
 
 type ProviderEditorState = {
 	dialog: ProviderDialogState;
@@ -65,6 +52,7 @@ type ProviderEditorState = {
 	error: string;
 	notice: string;
 	saving: boolean;
+	hadKey:boolean;
 };
 
 type ProviderEditorAction =
@@ -82,6 +70,7 @@ const INITIAL_PROVIDER_EDITOR: ProviderEditorState = {
 	error: "",
 	notice: "",
 	saving: false,
+	hadKey:false,
 };
 
 function providerEditorReducer(
@@ -104,6 +93,7 @@ function providerEditorReducer(
 			return {
 				...INITIAL_PROVIDER_EDITOR,
 				dialog: { open: true, provider: action.provider },
+				hadKey:!!(action.apiKey || action.provider.apiKey),
 				form: {
 					name: action.provider.name,
 					type: action.provider.type,
@@ -126,9 +116,18 @@ function providerEditorReducer(
 	}
 }
 
-export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: SettingsSection[] } = {}) {
+export function ProvidersModelsTab() {
 	const [customProviders, setCustomProviders] = useState<KeatingCustomProvider[]>([]);
-	const [settings, patch] = useKeatingUiSettings();
+	const addSection = useRef<HTMLDetailsElement>(null);
+	const openEditor = (id:string) => {
+		if (!addSection.current) return;
+		addSection.current.open = true;
+		const heading = addSection.current.querySelector<HTMLElement>("#"+id+" h3");
+		if (heading) {heading.tabIndex = -1; heading.focus();}
+	};
+	const [removal,setRemoval] = useState<KeatingCustomProvider>();
+	const [confirmKey,setConfirmKey] = useState(false);
+	const [deleteError,setDeleteError] = useState("");
 	const [modelPrefs] = useModelPrefs();
 	const [providerEditor, dispatchProviderEditor] = useReducer(
 		providerEditorReducer,
@@ -149,9 +148,6 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 		toggleProviderVisibility(provider, hidden);
 	};
 
-	const handleSetAllProvidersHidden = (hidden: boolean) => {
-		setProvidersVisibility(providers, hidden);
-	};
 
 	const handleAddModel = async (model: { name: string; id: string; provider: string; api: string; baseUrl: string; apiKey: string; reasoning: boolean; vision: boolean }) => {
 		const key = `${model.provider}::${model.api}::${model.id}`;
@@ -231,7 +227,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 	};
 
 	const handleDeleteProvider = async (provider: KeatingCustomProvider) => {
-		if (!confirm("Are you sure you want to delete this provider?")) return;
+		setRemoval(undefined); setDeleteError("");
 		try {
 			const storage = getAppStorage();
 			await storage.customProviders.delete(provider.id);
@@ -239,7 +235,7 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 			notifyProviderCredentialsChanged(provider.name);
 			await loadCustomProviders().then(setCustomProviders);
 		} catch (error) {
-			console.error("Failed to delete provider:", error);
+			setDeleteError(error instanceof Error ? error.message : "Failed to delete provider.");
 		}
 	};
 
@@ -253,56 +249,34 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 	};
 
 	return (
-		<div className={settingsSection()}>
-			<SettingsSectionNav
-				sections={[
-					...(desktopOfflineBridge() ? [{ id: "offline-tutor", label: "Offline tutor" }] : []),
-					{ id: "model-roles", label: "Your models" },
-					{ id: "cloud-providers", label: "Providers" },
-					{ id: "judgement", label: "Judgement" },
-					{ id: "web-search", label: "Web Search" },
-					{ id: "my-models", label: "My Models" },
-					{ id: "custom-providers", label: "Custom Providers" },
-					...(extraNavSections ?? []),
-				]}
-			/>
-
-			<OfflineTutorSettings />
-			<ModelRolesPanel />
-
-			<div className={dividerClass} />
-
-			<ProviderConnectPanel
+		<div className="s2-pane"><ProviderConnectPanel
 				providers={providers}
 				modelPrefs={modelPrefs}
+				customProviders={customProviders}
 				onToggleVisibility={handleToggleProvider}
 			/>
 
-			<div className={dividerClass} />
-			<JudgementSettings />
-
-			<div className={dividerClass} />
-
-			<WebSearchSection settings={settings} onPatch={patch} />
-
-			<div className={dividerClass} />
-
-			<MyModelsSection
+			{["my-models","custom-providers"].map(id => <span key={id} className="s2-anchor" id={"settings-section-"+id} tabIndex={-1} onFocus={()=>openEditor(id)}/>)}
+			<details className="s2-add" ref={addSection}>
+				<summary>Add a provider or your own endpoint</summary><MyModelsSection
 				modelPrefs={modelPrefs}
 				customProviders={customProviders}
 				onAddModel={handleAddModel}
 			/>
 
-			<div className={dividerClass} />
+			
 
 			<CustomProvidersSection
 				customProviders={customProviders}
 				notice={providerEditor.notice}
 				onEdit={openEdit}
-				onDelete={handleDeleteProvider}
+				onDelete={setRemoval}
 				onAddType={openAddType}
 			/>
 
+			</details>
+			{deleteError && <p role="alert">{deleteError}</p>}
+			<ConfirmDialog open={!!removal} title={"Remove "+(removal?.name ?? "provider")+"?"} description="Removes this endpoint, its discovered model list, and its saved provider key." confirmLabel="Remove provider" onCancel={() => setRemoval(undefined)} onConfirm={() => {if(removal) void handleDeleteProvider(removal);}}/>
 			<ProviderDialog
 				dialog={providerEditor.dialog}
 				form={providerEditor.form}
@@ -310,8 +284,9 @@ export function ProvidersModelsTab({ extraNavSections }: { extraNavSections?: Se
 				saving={providerEditor.saving}
 				onChange={(form) => dispatchProviderEditor({ type: "change", form })}
 				onClose={() => dispatchProviderEditor({ type: "close" })}
-				onSave={handleSaveProvider}
+				onSave={()=>{if(providerEditor.hadKey && !providerEditor.form.apiKey.trim()) setConfirmKey(true); else void handleSaveProvider();}}
 			/>
+			<ConfirmDialog open={confirmKey} title="Remove this provider key?" description="Saving this endpoint without its key removes the credential shared by its models." confirmLabel="Remove key and save" onCancel={()=>setConfirmKey(false)} onConfirm={()=>{setConfirmKey(false);void handleSaveProvider();}}/>
 		</div>
 	);
 }

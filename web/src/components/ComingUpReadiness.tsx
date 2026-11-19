@@ -1,19 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { css } from "../../styled-system/css";
+import { Button, Card } from "../design-system/kit";
 import { loadJudgementModelSettings, subscribeJudgementModelSettings } from "../keating/judgement-model";
 import { loadDeclaredProfile, subscribeDeclaredProfile } from "../keating/learner-profile-store";
 import { loadLearnerContext, subscribeLearnerContext } from "../keating/learner-context";
 import { createComingUpReadinessSession, loadComingUpReadiness, READINESS_HISTORY_SCOPE,
   type ComingUpReadinessSource, type ComingUpReadinessView as ReadinessViewState } from "../keating/judgement/coming-up-readiness";
 
-const styles = {
-  section: css({ mt: "1rem", py: "1rem", borderBottom: "1px solid var(--ink)", color: "var(--ink)" }),
-  row: css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }),
-  title: css({ fontFamily: "var(--mono-display)", fontSize: "0.875rem", fontWeight: 700 }),
-  copy: css({ mt: "0.375rem", maxW: "70ch", fontSize: "0.75rem", lineHeight: "1.3rem", color: "var(--ink-soft)", overflowWrap: "anywhere" }),
-  button: css({ minH: "2.75rem", border: "1px solid var(--ink)", borderRadius: "0.25rem", bg: "var(--card)", color: "var(--ink)", px: "0.875rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer",
-    _hover: { bg: "var(--ink)", color: "var(--paper)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" }, _disabled: { cursor: "not-allowed", opacity: 0.6 } }),
-};
 const blockedLabels = {
   "not-due": "Not due yet.", "not-covered": "No recorded exposure to this topic.",
   "unknown-prerequisites": "Prerequisite graph unavailable for this topic.",
@@ -33,32 +25,32 @@ export function ComingUpReadinessView({ view, hasDueDecks, onReview, onStart }: 
     : result?.reason === "unavailable" || review?.status === "unavailable" ? "Readiness review unavailable. Check judgement settings or account access."
     : review?.status === "no-ready-candidate" ? "No next-study recommendation from the available evidence. You can still choose a due deck below."
     : null;
-  return <section className={styles.section} aria-labelledby="study-readiness-title">
-    <div className={styles.row}>
-      <h2 id="study-readiness-title" className={styles.title}>Readiness for your due decks</h2>
-      <button type="button" className={styles.button} disabled={!hasDueDecks || view.pending} onClick={onReview}>
+  return <Card as="section" className="cu-panel" aria-labelledby="study-readiness-title">
+    <div className="cu-row">
+      <h2 id="study-readiness-title" className="cu-title">Readiness for your due decks</h2>
+      <Button disabled={!hasDueDecks || view.pending} onClick={onReview}>
         {view.pending ? "Checking readiness…" : "Check study readiness"}
-      </button>
+      </Button>
     </div>
-    <p className={styles.copy}>Uses saved answers and prerequisites from known topics or a bound saved study plan. Hosted review sends this evidence using your <a href="/chat?settings=judgement" style={{ textDecoration: "underline" }}>judgement settings</a>.</p>
-    <p className={styles.copy}>{READINESS_HISTORY_SCOPE} Your queue order and review dates stay as set.</p>
+    <p className="cu-copy">Uses saved answers and prerequisites from known topics or a bound saved study plan. Hosted review sends this evidence using your <a href="/chat?settings=judgement" style={{ textDecoration: "underline" }}>judgement settings</a>.</p>
+    <p className="cu-copy">{READINESS_HISTORY_SCOPE} Your queue order and review dates stay as set.</p>
     <div aria-live="polite" aria-busy={view.pending}>
-      {view.pending ? <p className={styles.copy} role="status">Checking saved evidence. Your due review is available above.</p> : null}
-      {reason ? <p className={styles.copy} role="status">{reason}</p> : null}
-      {review?.status === "uncalibrated" ? <p className={styles.copy}><strong>Uncalibrated readiness estimates.</strong> These model probabilities have not been validated for your learning, so no next-study recommendation is selected.</p> : null}
-      {selected ? <div className={styles.copy}><p><strong>Suggested next review: {selected.title}</strong></p>
+      {view.pending ? <p className="cu-copy" role="status">Checking saved evidence. Your due review is available above.</p> : null}
+      {reason ? <p className="cu-copy" role="status">{reason}</p> : null}
+      {review?.status === "uncalibrated" ? <p className="cu-copy"><strong>Uncalibrated readiness estimates.</strong> These model probabilities have not been validated for your learning, so no next-study recommendation is selected.</p> : null}
+      {selected ? <div className="cu-copy"><p><strong>Suggested next review: {selected.title}</strong></p>
         <p>Prerequisite checks and calibrated model gates passed. This is a planning suggestion, not measured mastery.</p>
-        <button type="button" className={styles.button} onClick={() => onStart(selected.targetId)}>Review {selected.title}</button>
+        <Button onClick={() => onStart(selected.targetId)}>Review {selected.title}</Button>
       </div> : null}
-      {review?.estimates.length ? <ul className={styles.copy} style={{ paddingLeft: "1.25rem" }}>{review.estimates.map(estimate => <li key={estimate.id}>
+      {review?.estimates.length ? <ul className="cu-copy" style={{ paddingLeft: "1.25rem" }}>{review.estimates.map(estimate => <li key={estimate.id}>
         {title(estimate.id)}: {Math.round(estimate.probability * 100)}% model readiness probability ({estimate.backend.model}).
       </li>)}</ul> : null}
-      {review?.blocked.length ? <ul className={styles.copy} style={{ paddingLeft: "1.25rem" }}>{review.blocked.map(blocked => <li key={blocked.id}>
+      {review?.blocked.length ? <ul className="cu-copy" style={{ paddingLeft: "1.25rem" }}>{review.blocked.map(blocked => <li key={blocked.id}>
         {title(blocked.id)}: {result?.input.candidates.find(candidate => candidate.id === blocked.id)?.prerequisiteGraphKnown === false
           ? blockedLabels["unknown-prerequisites"] : blockedLabels[blocked.reason]}
       </li>)}</ul> : null}
     </div>
-  </section>;
+  </Card>;
 }
 
 /** Only button activation dispatches. Source, profile, settings and page lifecycle revoke old results. */

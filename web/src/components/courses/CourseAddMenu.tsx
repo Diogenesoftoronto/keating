@@ -1,17 +1,6 @@
+import { KeatingGlyph } from "../../design-system/glyphs";
+import { Button, Loading, TextInput } from "../../design-system/kit";
 import { useEffect, useRef, useState } from "react";
-import {
-  BookUp,
-  ChevronDown,
-  CreditCard,
-  FileQuestion,
-  FilePlus2,
-  Layers3,
-  Link2,
-  Plus,
-  RefreshCw,
-  Shapes,
-  Upload,
-} from "lucide-react";
 import { css, cx } from "../../../styled-system/css";
 import {
   newCourseOperationId,
@@ -20,12 +9,7 @@ import {
 } from "../../courses/client";
 import type { CourseViewerSnapshot } from "../../courses/contracts";
 import type { CourseBuilderSection } from "./CourseBuilder";
-import {
-  courseButtonClass,
-  courseInputClass,
-  courseLabelClass,
-  coursePrimaryButtonClass,
-} from "./course-ui";
+import "./course-builder.css";
 
 type Mutate = (
   operation: Parameters<typeof applyCourseOperation>[0],
@@ -42,7 +26,7 @@ const menuItemClass = css({
   py: "0.55rem",
   textAlign: "left",
   cursor: "pointer",
-  _hover: { bg: "var(--course-wash, #ddebdd)" },
+  _hover: { bg: "var(--k-wash)" },
 });
 
 /**
@@ -92,21 +76,21 @@ export function CourseDocumentUploadButton({
             .finally(() => setBusy(false));
         }}
       />
-      <button
+      <Button
         type="button"
         disabled={busy}
-        className={cx(courseButtonClass, className)}
+        className={className}
         onClick={() => inputRef.current?.click()}
       >
-        {busy ? <RefreshCw size={14} /> : <FilePlus2 size={14} />}
-        {busy ? "Uploading…" : label}
-      </button>
+        {busy ? <Loading size="inline" label="Uploading…" /> : <><KeatingGlyph name="import" size={14} /> {label}</>}
+      </Button>
     </>
   );
 }
 
 /** Everything a course can gain, one menu, always in the same place. */
 export function CourseAddMenu({
+  triggerLabel = "Add",
   snapshot,
   activeLessonId,
   saving,
@@ -121,6 +105,7 @@ export function CourseAddMenu({
   mutate: Mutate;
   onSnapshot(snapshot: CourseViewerSnapshot): void;
   onError(message: string): void;
+  triggerLabel?: string;
   onOpenBuilder(section: CourseBuilderSection): void;
 }) {
   const [open, setOpen] = useState(false);
@@ -143,6 +128,7 @@ export function CourseAddMenu({
     };
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        containerRef.current?.querySelector<HTMLButtonElement>('button[aria-expanded]')?.focus();
         setOpen(false);
         setLinkOpen(false);
       }
@@ -213,35 +199,16 @@ export function CourseAddMenu({
             .finally(() => setUploading(false));
         }}
       />
-      <button
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        disabled={uploading}
-        className={cx(courseButtonClass, coursePrimaryButtonClass)}
-        onClick={() => setOpen((value) => !value)}
-      >
-        {uploading ? <RefreshCw size={14} /> : <Plus size={14} />}
-        <span className={css({ display: { base: "none", sm: "inline" } })}>
-          {uploading ? "Uploading…" : "Add"}
-        </span>
-        <ChevronDown size={13} />
-      </button>
+      <Button variant="line" glyph={uploading ? undefined : "plus"} aria-haspopup="dialog" aria-expanded={open}
+        disabled={uploading} onClick={() => setOpen(value => !value)}>
+        {uploading ? <Loading size="inline" label="Uploading…" /> : triggerLabel}
+      </Button>
       {open ? (
         <div
-          role="menu"
-          className={css({
-            position: "absolute",
-            top: "calc(100% + 0.4rem)",
-            right: 0,
-            zIndex: 60,
-            w: "min(20rem, calc(100vw - 2rem))",
-            border: "2px solid var(--ink)",
-            bg: "var(--card)",
-            boxShadow: "6px 6px 0 color-mix(in srgb, var(--ink) 30%, transparent)",
-          })}
+          role="dialog" aria-label="Add to course"
+          className="cb-add-menu"
         >
-          <p className={cx(courseLabelClass, css({ px: "0.7rem", pt: "0.6rem" }))}>
+          <p className={cx("k-eyebrow", css({ px: "0.7rem", pt: "0.6rem" }))}>
             {activeLessonId ? "Adds to the open lesson" : "Adds to the course"}
           </p>
           {canEdit ? (
@@ -251,7 +218,7 @@ export function CourseAddMenu({
                 className={menuItemClass}
                 onClick={() => fileRef.current?.click()}
               >
-                <Upload size={14} />
+                <KeatingGlyph name="import" size={14} />
                 <span>
                   <strong className={css({ display: "block", fontSize: "0.82rem" })}>
                     Upload a document or image
@@ -266,7 +233,7 @@ export function CourseAddMenu({
                 className={menuItemClass}
                 onClick={() => setLinkOpen((value) => !value)}
               >
-                <Link2 size={14} />
+                <KeatingGlyph name="link" size={14} />
                 <span>
                   <strong className={css({ display: "block", fontSize: "0.82rem" })}>
                     Add a link
@@ -287,24 +254,22 @@ export function CourseAddMenu({
                     p: "0.6rem",
                   })}
                 >
-                  <input
+                  <TextInput
                     value={linkTitle}
                     onChange={(event) => setLinkTitle(event.target.value)}
-                    className={courseInputClass}
                     placeholder="Link title"
                     aria-label="Link title"
                   />
-                  <input
+                  <TextInput
                     value={linkUrl}
                     onChange={(event) => setLinkUrl(event.target.value)}
-                    className={courseInputClass}
                     placeholder="https://…"
                     type="url"
                     aria-label="Link address"
                   />
-                  <button
+                  <Button
                     type="button"
-                    className={cx(courseButtonClass, coursePrimaryButtonClass)}
+                    variant="primary"
                     disabled={
                       !linkTitle.trim() ||
                       !linkUrl.trim() ||
@@ -312,8 +277,8 @@ export function CourseAddMenu({
                     }
                     onClick={() => void addLink()}
                   >
-                    <Plus size={13} /> Add link
-                  </button>
+                    <KeatingGlyph name="plus" size={13} /> Add link
+                  </Button>
                 </div>
               ) : null}
               <button
@@ -321,7 +286,7 @@ export function CourseAddMenu({
                 className={menuItemClass}
                 onClick={() => go("outline")}
               >
-                <Layers3 size={14} />
+                <KeatingGlyph name="tree" size={14} />
                 <span className={css({ fontSize: "0.82rem", fontWeight: 700 })}>
                   Module or lesson
                 </span>
@@ -331,7 +296,7 @@ export function CourseAddMenu({
                 className={menuItemClass}
                 onClick={() => go("assignments")}
               >
-                <BookUp size={14} />
+                <KeatingGlyph name="checklist" size={14} />
                 <span className={css({ fontSize: "0.82rem", fontWeight: 700 })}>
                   Assignment
                 </span>
@@ -341,7 +306,7 @@ export function CourseAddMenu({
                 className={menuItemClass}
                 onClick={() => go("artifacts")}
               >
-                <FileQuestion size={14} />
+                <KeatingGlyph name="quiz" size={14} />
                 <span className={css({ fontSize: "0.82rem", fontWeight: 700 })}>
                   Quiz or artifact
                 </span>
@@ -354,7 +319,7 @@ export function CourseAddMenu({
               className={menuItemClass}
               onClick={() => go("cards")}
             >
-              <CreditCard size={14} />
+              <KeatingGlyph name="layers" size={14} />
               <span className={css({ fontSize: "0.82rem", fontWeight: 700 })}>
                 Flashcard
               </span>
@@ -369,7 +334,7 @@ export function CourseAddMenu({
               )}
               onClick={() => go("documents")}
             >
-              <Shapes size={14} />
+              <KeatingGlyph name="tool" size={14} />
               <span className={css({ fontSize: "0.82rem", fontWeight: 700 })}>
                 Open the full builder
               </span>

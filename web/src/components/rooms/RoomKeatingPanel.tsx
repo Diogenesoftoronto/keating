@@ -1,5 +1,8 @@
+import { KeatingBot } from "../KeatingBot";
+import { Loading, Chip, Prose, IconButton } from "../../design-system/kit";
+import { KeatingGlyph } from "../../design-system/glyphs";
+import { useMediaQuery } from "../../hooks/use-media-query";
 import { useState } from "react";
-import { Hand, Lock, Pause, Play, Power } from "lucide-react";
 import { css } from "../../../styled-system/css";
 import type { RoomDraft, RoomMember, RoomMessage, RoomOperationInput, RoomViewerSnapshot } from "../../rooms/contracts";
 import type { RoomFacilitatorControls } from "../../rooms/useRoomFacilitator";
@@ -43,11 +46,11 @@ export function ModelAccessDisclosure({
   );
 }
 
-function outcomeLabel(snapshot: RoomViewerSnapshot): string | null {
+function outcomeLabel(snapshot: RoomViewerSnapshot, includeDetail = true): string | null {
   const outcome = snapshot.room.turn.lastOutcome;
   if (!outcome) return null;
   const when = formatRoomTime(outcome.at);
-  const detail = snapshot.permissions.canOversee && outcome.detail ? `: ${outcome.detail}` : "";
+  const detail = includeDetail && snapshot.permissions.canOversee && outcome.detail ? `: ${outcome.detail}` : "";
   switch (outcome.kind) {
     case "spoke": return `Last turn ${when}: replied.`;
     case "passed": return `Last turn ${when}: stayed quiet${detail}.`;
@@ -66,6 +69,8 @@ export function RoomKeatingPanel({
   facilitator: RoomFacilitatorControls;
   mutate: Mutate;
 }) {
+  const narrow = useMediaQuery("(max-width: 63.999em)");
+  const [expanded, setExpanded] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
@@ -104,13 +109,30 @@ export function RoomKeatingPanel({
 
   const outcome = outcomeLabel(snapshot);
 
+  const thinking = run.kind === "running" && (run.thinking || facilitator.status === "thinking");
+  const stateLine = run.kind === "running" ? (thinking ? "Keating is thinking" : "Keating is listening")
+    : run.kind === "paused" ? "Keating is paused" : "Keating is not running";
+  const pending = permissions.canOversee ? room.drafts.filter(draft => draft.status === "pending").length : 0;
   return (
-    <section aria-labelledby="room-keating-heading" className={s.section}>
-      <h2 id="room-keating-heading" className={s.heading}>Keating</h2>
-      <p role="status" className={css({ mt: "0.35rem", fontSize: "0.82rem", lineHeight: 1.5 })}>{status}</p>
+    <section aria-labelledby="room-keating-heading" className="rm-status">
+      <div className="rm-status-head k-halftone k-green">
+        <KeatingBot state="blank-idle" screen={thinking ? "dots" : run.kind === "running" ? "wave" : "face"} label="" size={36} />
+        <div><h2 id="room-keating-heading">{stateLine}</h2>
+          {(!narrow || expanded) && <p role="status">{status} {outcome && outcomeLabel(snapshot, false)}</p>}
+        </div>
+        {pending > 0 && <button type="button" className="rm-waiting" onClick={() => {
+          const card = document.querySelector<HTMLElement>(".rm-held");
+          card?.scrollIntoView({ block: "nearest" });
+          card?.focus({ preventScroll: true });
+        }}>{pending} waiting for review</button>}
+        {narrow && <IconButton glyph="more" label="Keating details and actions" aria-expanded={expanded} className="rm-overflow" onClick={() => setExpanded(!expanded)} />}
+      </div>
+      <div hidden={narrow && !expanded} className="rm-status-content">
+      <Chip>{room.settings.participation === "facilitate" ? "Joins in" : "When asked"}</Chip>
+      <Chip>{room.settings.replyReview === "teacher-approves" ? "Teacher approves replies" : "Post directly"}</Chip>
+      <details className="rm-status-details"><summary>Details</summary>
       <p className={s.help}>{describeKeatingBehavior(room.settings)}</p>
-      {outcome ? <p className={s.help}>{outcome}</p> : null}
-      {room.turn.requestedAt && run.kind === "running" ? <p className={s.help}>A teacher asked Keating to step in.</p> : null}
+      {outcome && <p className={s.help}>{outcome}</p>}
       {room.summary ? (
         <details className={css({ mt: "0.6rem", fontSize: "0.78rem", lineHeight: 1.5 })}>
           <summary className={css({ cursor: "pointer", color: "var(--ink-soft)" })}>
@@ -125,40 +147,42 @@ export function RoomKeatingPanel({
         </details>
       ) : null}
 
-      <div className={css({ mt: "0.75rem", display: "flex", flexWrap: "wrap", gap: "0.4rem" })}>
+      </details>
+      {room.turn.requestedAt && run.kind === "running" && <p className={s.help}>A teacher asked Keating to step in.</p>}
+      <div className="rm-status-actions">
         {thisTab ? (
-          <button type="button" className={s.button} disabled={Boolean(busy)} onClick={() => void act("stop", facilitator.stop)}>
-            <Power size={13} aria-hidden="true" /> Stop running Keating
+          <button type="button" className="k-button k-ghost k-sm" disabled={Boolean(busy)} onClick={() => void act("stop", facilitator.stop)}>
+            <KeatingGlyph name="power" size={13} /> Stop running Keating
           </button>
         ) : canStart && !confirming ? (
           <button type="button" className={s.primary} disabled={facilitator.status === "starting"} onClick={() => setConfirming(true)}>
-            <Play size={13} aria-hidden="true" /> {canTakeOver ? "Take over Keating" : "Run Keating from this tab"}
+            <KeatingGlyph name="play" size={13} /> {canTakeOver ? "Take over Keating" : "Run Keating from this tab"}
           </button>
         ) : null}
         {permissions.canOversee && room.status === "open" ? (
           <>
             <button
               type="button"
-              className={s.button}
-              disabled={Boolean(busy)}
-              onClick={() => void act("pause", () => mutate({ type: "settings.update", patch: { keating: room.settings.keating === "paused" ? "active" : "paused" } }))}
-            >
-              {room.settings.keating === "paused" ? <><Play size={13} aria-hidden="true" /> Resume Keating</> : <><Pause size={13} aria-hidden="true" /> Pause Keating</>}
-            </button>
-            <button
-              type="button"
-              className={s.button}
+              className="k-button k-ghost k-sm"
               disabled={Boolean(busy) || run.kind !== "running" || Boolean(room.turn.requestedAt)}
               onClick={() => void act("request", () => mutate({ type: "turn.request" }))}
             >
-              <Hand size={13} aria-hidden="true" /> Ask Keating to step in
+              <KeatingGlyph name="hand" size={13} /> Ask Keating to step in
+            </button>
+            <button
+              type="button"
+              className="k-button k-ghost k-sm"
+              disabled={Boolean(busy)}
+              onClick={() => void act("pause", () => mutate({ type: "settings.update", patch: { keating: room.settings.keating === "paused" ? "active" : "paused" } }))}
+            >
+              {room.settings.keating === "paused" ? <><KeatingGlyph name="play" size={13} /> Resume Keating</> : <><KeatingGlyph name="pause" size={13} /> Pause Keating</>}
             </button>
           </>
         ) : null}
       </div>
 
       {confirming && canStart ? (
-        <div role="group" aria-label="Confirm running Keating" className={css({ mt: "0.75rem", border: "1px solid var(--ink)", bg: "var(--paper)", p: "0.75rem" })}>
+        <div role="group" aria-label="Confirm running Keating" className="rm-run-confirm">
           <ModelAccessDisclosure
             includesGuidance={permissions.canOversee}
             {...(facilitator.modelLabel ? { modelLabel: facilitator.modelLabel } : {})}
@@ -174,9 +198,9 @@ export function RoomKeatingPanel({
                 void facilitator.start({ takeOver: canTakeOver });
               }}
             >
-              {facilitator.status === "starting" ? "Starting…" : canTakeOver ? "Use my model and take over" : "Use my model access"}
+              {facilitator.status === "starting" ? <Loading size="inline" label="Starting…" /> : canTakeOver ? "Use my model and take over" : "Use my model access"}
             </button>
-            <button type="button" className={s.button} onClick={() => setConfirming(false)}>Cancel</button>
+            <button type="button" className="k-button k-ghost k-sm" onClick={() => setConfirming(false)}>Cancel</button>
           </div>
         </div>
       ) : null}
@@ -193,6 +217,7 @@ export function RoomKeatingPanel({
         </p>
       ) : null}
       {error ? <p role="alert" className={`${s.error} ${css({ mt: "0.6rem" })}`}>{error}</p> : null}
+      </div>
     </section>
   );
 }
@@ -222,19 +247,26 @@ export function RoomDraftReview({
       : `${replies} ${replies === 1 ? "reply" : "replies"} and ${offers} private-study ${offers === 1 ? "offer" : "offers"} waiting for review`;
   return (
     <section aria-labelledby="room-drafts-heading" className={css({ borderBottom: "2px solid var(--ink)", bg: "color-mix(in srgb, var(--course-green, #1e9b50) 8%, var(--card))", px: "1rem", py: "0.75rem" })}>
-      <h2 id="room-drafts-heading" className={s.heading}>
+      <h2 id="room-drafts-heading" className="rm-heading">
         {heading}
       </h2>
       <p className={s.help}>
         {offers ? "Approve an offer to invite only its recipient to study privately. The learner chooses whether to open it." : "Learners do not see these until a teacher approves them."}
       </p>
       <ul className={css({ mt: "0.6rem", display: "grid", gap: "0.6rem" })}>
-        {pending.map((draft) => draft.privateFork ? (
-          <PrivateForkDraftItem key={draft.id} draft={draft} proposal={draft.privateFork} roomOpen={roomOpen} mutate={mutate} members={members} messages={messages} />
-        ) : <DraftItem key={draft.id} draft={draft} roomOpen={roomOpen} mutate={mutate} />)}
+        {pending.map(draft => <RoomDraftCard key={draft.id} draft={draft} roomOpen={roomOpen} mutate={mutate} members={members} messages={messages} />)}
+
       </ul>
     </section>
   );
+}
+
+export function RoomDraftCard(props: {
+  draft: RoomDraft; roomOpen: boolean; mutate: Mutate; members: readonly RoomMember[]; messages: readonly RoomMessage[];
+}) {
+  return props.draft.privateFork
+    ? <PrivateForkDraftItem {...props} proposal={props.draft.privateFork} />
+    : <DraftItem {...props} />;
 }
 
 function PrivateForkDraftItem({ draft, proposal, roomOpen, mutate, members, messages }: {
@@ -263,9 +295,9 @@ function PrivateForkDraftItem({ draft, proposal, roomOpen, mutate, members, mess
     }
   };
   return (
-    <li className={css({ border: "1px solid var(--ink)", bg: "var(--card)", p: "0.65rem", overflowWrap: "anywhere" })}>
+    <li className="rm-held" tabIndex={-1}>
       <p className={css({ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.86rem", fontWeight: 750 })}>
-        <Lock size={14} aria-hidden="true" /> Private-study offer
+        <Chip>Private-study offer</Chip>
       </p>
       <p className={css({ mt: "0.35rem", fontSize: "0.84rem" })}>
         For <strong>{recipient?.displayName ?? proposal.learnerAccountId}</strong>
@@ -274,7 +306,7 @@ function PrivateForkDraftItem({ draft, proposal, roomOpen, mutate, members, mess
         {draft.reason === "paused" ? "Proposed while Keating was paused" : "Held for review"} · {draft.model} · <time dateTime={draft.createdAt}>{formatRoomTime(draft.createdAt)}</time>
       </p>
       {source ? (
-        <a href={`#room-message-${source.id}`} className={`${s.button} ${css({ mt: "0.5rem", whiteSpace: "normal" })}`}>
+        <a href={`#room-message-${source.id}`} className={`k-button k-ghost k-sm ${css({ mt: "0.5rem", whiteSpace: "normal" })}`}>
           View source from {source.authorName}
         </a>
       ) : (
@@ -291,10 +323,10 @@ function PrivateForkDraftItem({ draft, proposal, roomOpen, mutate, members, mess
       <p className={s.help}>The invitation goes only to this learner. Their private conversation stays out of the room.</p>
       <div className={css({ mt: "0.5rem", display: "flex", flexWrap: "wrap", gap: "0.35rem" })}>
         <button type="button" className={s.primary} disabled={busy !== null || !roomOpen} onClick={() => void resolve("approve")}>
-          {busy === "approve" ? "Approving…" : "Approve private-study offer"}
+          {busy === "approve" ? <Loading size="inline" label="Approving…" /> : "Approve private-study offer"}
         </button>
         <button type="button" className={s.danger} disabled={busy !== null} onClick={() => void resolve("reject")}>
-          {busy === "reject" ? "Rejecting…" : "Reject offer"}
+          {busy === "reject" ? <Loading size="inline" label="Rejecting…" /> : "Reject offer"}
         </button>
       </div>
       {error ? <p role="alert" className={`${s.error} ${css({ mt: "0.5rem" })}`}>{error}</p> : null}
@@ -319,25 +351,27 @@ function DraftItem({ draft, roomOpen, mutate }: { draft: RoomDraft; roomOpen: bo
     }
   };
   return (
-    <li className={css({ border: "1px solid var(--ink)", bg: "var(--card)", p: "0.65rem" })}>
+    <li className="rm-held" tabIndex={-1}>
+      <div className="rm-held-head"><img src="/brand/mascot-head-v2.avif" width={24} height={24} alt="" /><strong>Keating drafted a reply</strong><Chip>waiting for a teacher</Chip>
+        {draft.addressedTo?.length ? <span className="rm-recipient">To {draft.addressedTo.join(", ")}</span> : null}
+      </div>
       <p className={css({ fontSize: "0.7rem", color: "var(--ink-soft)" })}>
         {draft.reason === "paused" ? "Written while Keating was paused" : "Held for review"} · {draft.model} · <time dateTime={draft.createdAt}>{formatRoomTime(draft.createdAt)}</time>
-        {draft.addressedTo?.length ? ` · to ${draft.addressedTo.join(", ")}` : ""}
       </p>
       {editing ? (
         <label className={css({ mt: "0.4rem", display: "block" })}>
           <span className={css({ srOnly: true })}>Edit Keating’s draft</span>
-          <textarea className={s.input} rows={4} value={body} onChange={(event) => setBody(event.target.value)} />
+          <textarea className="k-input" rows={4} value={body} onChange={(event) => setBody(event.target.value)} />
         </label>
       ) : (
-        <p className={css({ mt: "0.35rem", whiteSpace: "pre-wrap", fontSize: "0.86rem", lineHeight: 1.5 })}>{body}</p>
+        <Prose className="rm-message-body">{body}</Prose>
       )}
       <div className={css({ mt: "0.5rem", display: "flex", flexWrap: "wrap", gap: "0.35rem" })}>
         <button type="button" className={s.primary} disabled={busy || !roomOpen || !body.trim()} onClick={() => void resolve("approve")}>
-          {body.trim() !== draft.body ? "Post edited reply" : "Approve and post"}
+          <KeatingGlyph name="check" size={13} /> {body.trim() !== draft.body ? "Post edited reply" : "Approve and post"}
         </button>
-        <button type="button" className={s.button} disabled={busy} onClick={() => setEditing((value) => !value)} aria-pressed={editing}>
-          {editing ? "Done editing" : "Edit"}
+        <button type="button" className="k-button k-ghost k-sm" disabled={busy} onClick={() => setEditing((value) => !value)} aria-pressed={editing}>
+          <KeatingGlyph name="edit" size={13} /> {editing ? "Done editing" : "Edit"}
         </button>
         <button type="button" className={s.danger} disabled={busy} onClick={() => void resolve("reject")}>Reject</button>
       </div>

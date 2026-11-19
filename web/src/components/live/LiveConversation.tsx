@@ -1,42 +1,18 @@
-import { Select } from "../Select";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { JudgementDiagnostics } from "../JudgementDiagnostics";
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-	Camera,
-	CameraOff,
-	ImagePlus,
-	Mic,
-	MicOff,
-	MonitorUp,
-	PhoneOff,
-	RefreshCw,
-	Settings2,
-	SwitchCamera,
-	X,
-} from "lucide-react";
-
-import { css, cx } from "../../../styled-system/css";
+import { Button, EmptyState, Eyebrow, IconButton, Loading, Menu, Prose, SelectField, StatusDot } from "../../design-system/kit";
+import { ChartFrame } from "../../design-system/charts";
+import { KeatingGlyph, type GlyphName } from "../../design-system/glyphs";
 import type { LiveFailure } from "../../keating/live-errors";
 import { LIVE_IMAGE_ACCEPT } from "../../keating/live-image";
 import LiveVisualizer, { type VisualizerState } from "./LiveVisualizer";
 import TavusConversationSurface, { type TavusConversationControls } from "./TavusConversationSurface";
 import type { LiveSessionController } from "./use-live-session";
-
-/**
- * The live conversation surface.
- *
- * Modelled on a phone call rather than a dashboard: one big subject in the
- * middle, a single row of round controls at the bottom, and everything else
- * either folded away or absent. The previous version led with a telemetry HUD —
- * frames sent, tier labels, tool-call ledger — which is the wrong emphasis for
- * something a learner is meant to talk to.
- *
- * Rendered identically by the /live page and by the in-chat overlay; the only
- * difference is whether a close affordance is offered.
- */
+import "../../pages/live.css";
 
 export interface LiveConversationProps {
 	session: LiveSessionController;
+	diagnostics?: ReactNode;
 	/** Delay a provider-hosted room during preflight and isolated component previews. */
 	connectEmbeddedSurface?: boolean;
 	/** Shown as a dismiss control; omitted on the standalone page. */
@@ -51,694 +27,120 @@ function formatElapsed(ms: number): string {
 	const total = Math.floor(ms / 1000);
 	const minutes = Math.floor(total / 60);
 	const seconds = total % 60;
-	return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+	return `${String(minutes).padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
-/**
- * A round call control.
- *
- * The size is expressed as matching min/max rather than `width`, because a
- * global rule forces `width: auto !important` on every button inside a
- * `[role="dialog"]` (and the compact-button escape hatch forces the same
- * thing). Bounds are not `width`, so they survive it — and the result collapses
- * to exactly one size, which is all `width` was doing here anyway.
- */
-const controlButton = css({
-	display: "inline-flex",
-	alignItems: "center",
-	justifyContent: "center",
-	flex: "0 0 auto",
-	minWidth: "3.5rem",
-	maxWidth: "3.5rem",
-	minHeight: "3.5rem",
-	maxHeight: "3.5rem",
-	padding: 0,
-	marginBottom: 0,
-	borderRadius: "9999px",
-	border: "1px solid var(--border)",
-	backgroundColor: "color-mix(in srgb, var(--foreground) 8%, transparent)",
-	color: "var(--foreground)",
-	cursor: "pointer",
-	transition: "background-color 120ms ease, transform 120ms ease, opacity 120ms ease",
-	_hover: { backgroundColor: "color-mix(in srgb, var(--foreground) 16%, transparent)" },
-	_active: { transform: "scale(0.94)" },
-	_disabled: { opacity: 0.4, cursor: "not-allowed", _hover: { backgroundColor: "color-mix(in srgb, var(--foreground) 8%, transparent)" } },
-});
+type Action = {id: string; label: string; glyph: GlyphName; onSelect(): void; disabled?: boolean; description?: string};
 
-const controlActive = css({
-	backgroundColor: "var(--foreground)",
-	color: "var(--background)",
-	borderColor: "var(--foreground)",
-	_hover: { backgroundColor: "var(--foreground)" },
-});
-
-const controlDanger = css({
-	backgroundColor: "var(--destructive)",
-	borderColor: "var(--destructive)",
-	color: "var(--destructive-foreground, white)",
-	_hover: { backgroundColor: "color-mix(in srgb, var(--destructive) 85%, black)" },
-});
-
-const controlLabel = css({
-	fontSize: "0.6875rem",
-	letterSpacing: "0.04em",
-	textTransform: "uppercase",
-	color: "var(--muted-foreground)",
-	textAlign: "center",
-	marginTop: "0.375rem",
-});
-
-function Control({
-	icon,
-	label,
-	onClick,
-	active,
-	danger,
-	disabled,
-	title,
-}: {
-	icon: React.ReactNode;
-	label: string;
-	onClick: () => void;
-	active?: boolean;
-	danger?: boolean;
-	disabled?: boolean;
-	title?: string;
+function FailureCard({failure, session, onDismiss, onOpenSettings, onUseDictation, fatal}: LiveConversationProps & {
+	failure: LiveFailure; onDismiss(): void; fatal: boolean;
 }) {
-	return (
-		<div
-			className={css({
-				display: "flex",
-				flexDirection: "column",
-				alignItems: "center",
-				// Wide enough that a two-word label ("Share screen") does not push
-				// its neighbours around.
-				minWidth: "5.5rem",
-			})}
-		>
-			<button
-				type="button"
-				onClick={onClick}
-				disabled={disabled}
-				title={title ?? label}
-				aria-label={title ?? label}
-				aria-pressed={active}
-				className={cx(controlButton, active ? controlActive : undefined, danger ? controlDanger : undefined)}
-			>
-				{icon}
-			</button>
-			<span className={controlLabel}>{label}</span>
-		</div>
-	);
-}
-
-/**
- * A failure, rendered as the thing to do about it rather than as an error code.
- *
- * Every button here comes from a flag on the classification, so a new failure
- * kind gets the right recovery affordances without touching this component.
- */
-function FailureCard({
-	failure,
-	session,
-	onOpenSettings,
-	onUseDictation,
-	onDismiss,
-	tone,
-}: {
-	failure: LiveFailure;
-	session: LiveSessionController;
-	onOpenSettings?: (tab: "providers" | "speech") => void;
-	onUseDictation?: () => void;
-	onDismiss?: () => void;
-	tone: "fatal" | "notice";
-}) {
+	const actions: Action[] = [];
+	if (failure.retry) actions.push({id: "retry", label: "Try again", glyph: "refresh", onSelect: session.retry});
 	const alternative = session.alternativeModel;
-	return (
-		<div
-			role={tone === "fatal" ? "alert" : "status"}
-			className={css({
-				width: "100%",
-				maxWidth: "30rem",
-				borderRadius: "0.875rem",
-				border: "1px solid",
-				borderColor: tone === "fatal" ? "color-mix(in srgb, var(--destructive) 45%, transparent)" : "var(--border)",
-				backgroundColor: tone === "fatal"
-					? "color-mix(in srgb, var(--destructive) 10%, var(--background))"
-					: "color-mix(in srgb, var(--foreground) 5%, var(--background))",
-				padding: "1rem 1.125rem",
-				display: "flex",
-				flexDirection: "column",
-				gap: "0.5rem",
-				textAlign: "left",
-			})}
-		>
-			<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.75rem" })}>
-				<div className={css({ flex: 1, minWidth: 0 })}>
-					<p className={css({ fontWeight: 600, fontSize: "0.9375rem" })}>{failure.title}</p>
-					<p className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)", marginTop: "0.25rem" })}>
-						{failure.message}
-					</p>
-					{failure.hint ? (
-						<p className={css({ fontSize: "0.875rem", marginTop: "0.375rem" })}>{failure.hint}</p>
-					) : null}
-				</div>
-				{onDismiss ? (
-					<button
-						type="button"
-						onClick={onDismiss}
-						aria-label="Dismiss"
-						className={cx("dialog-compact-button", css({
-							flexShrink: 0,
-							padding: "0.25rem",
-							borderRadius: "0.375rem",
-							color: "var(--muted-foreground)",
-							cursor: "pointer",
-							_hover: { color: "var(--foreground)" },
-						}))}
-					>
-						<X size={16} />
-					</button>
-				) : null}
-			</div>
-
-			<div className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginTop: "0.25rem" })}>
-				{failure.retry ? (
-					<button type="button" onClick={session.retry} className={cx("dialog-compact-button", primaryActionClass)}>
-						<RefreshCw size={14} /> Try again
-					</button>
-				) : null}
-				{failure.switchModel && alternative ? (
-					<button
-						type="button"
-						onClick={() => session.switchModel(alternative.value)}
-						className={cx("dialog-compact-button", secondaryActionClass)}
-					>
-						Use {alternative.label}
-					</button>
-				) : null}
-				{failure.settings && onOpenSettings ? (
-					<button
-						type="button"
-						onClick={() => onOpenSettings(failure.settings as "providers" | "speech")}
-						className={cx("dialog-compact-button", secondaryActionClass)}
-					>
-						<Settings2 size={14} /> {failure.settings === "providers" ? "Providers & Models" : "Speech settings"}
-					</button>
-				) : null}
-				{failure.dictation && onUseDictation ? (
-					<button type="button" onClick={onUseDictation} className={cx("dialog-compact-button", secondaryActionClass)}>
-						<Mic size={14} /> Type or dictate instead
-					</button>
-				) : null}
-			</div>
-
-			{failure.detail && failure.detail !== failure.message ? (
-				<details className={css({ marginTop: "0.25rem" })}>
-					<summary className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)", cursor: "pointer" })}>
-						Technical detail
-					</summary>
-					<p className={css({
-						fontSize: "0.75rem",
-						fontFamily: "var(--mono-body)",
-						color: "var(--muted-foreground)",
-						marginTop: "0.375rem",
-						wordBreak: "break-word",
-					})}>
-						{failure.detail}
-					</p>
-				</details>
-			) : null}
-		</div>
-	);
+	if (failure.switchModel && alternative) actions.push({id: "alternative", label: "Use " + alternative.label, glyph: "refresh", onSelect: () => session.switchModel(alternative.value)});
+	const tab = failure.settings;
+	if (tab && onOpenSettings) actions.push({id: "settings", label: tab === "providers" ? "Providers & Models" : "Speech settings", glyph: "gear", onSelect: () => onOpenSettings(tab)});
+	if (failure.dictation && onUseDictation) actions.push({id: "dictation", label: "Type or dictate instead", glyph: "mic", onSelect: onUseDictation});
+	return <section className="lv-failure" role={fatal ? "alert" : "status"}>
+		<div className="lv-row"><strong>{failure.title}</strong><IconButton label="Dismiss" glyph="x" onClick={onDismiss}/></div>
+		<p>{failure.message}</p>{failure.hint && <p>{failure.hint}</p>}
+		<div className="lv-recover">{actions.map((a,i) => <Button key={a.id} variant={i === 0 ? "primary" : "line"} glyph={a.glyph} onClick={a.onSelect}>{a.label}</Button>)}</div>
+		{failure.detail && failure.detail !== failure.message && <details><summary>Technical detail</summary><p>{failure.detail}</p></details>}
+	</section>;
 }
 
-const primaryActionClass = css({
-	display: "inline-flex",
-	alignItems: "center",
-	gap: "0.375rem",
-	borderRadius: "0.5rem",
-	border: "1px solid var(--primary)",
-	backgroundColor: "var(--primary)",
-	color: "var(--primary-foreground)",
-	paddingInline: "0.75rem",
-	paddingBlock: "0.4375rem",
-	fontSize: "0.8125rem",
-	fontWeight: 600,
-	cursor: "pointer",
-});
-
-const secondaryActionClass = css({
-	display: "inline-flex",
-	alignItems: "center",
-	gap: "0.375rem",
-	borderRadius: "0.5rem",
-	border: "1px solid var(--border)",
-	backgroundColor: "transparent",
-	color: "var(--foreground)",
-	paddingInline: "0.75rem",
-	paddingBlock: "0.4375rem",
-	fontSize: "0.8125rem",
-	cursor: "pointer",
-	_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
-});
-
-/**
- * Which animation the visualizer should be running.
- *
- * A running tool outranks everything else: a session that has gone quiet
- * because it is fetching something looks exactly like one that has died, and
- * that ambiguity is what makes people give up and reload.
- */
-function visualizerState(session: LiveSessionController): VisualizerState {
-	if (session.phase === "failed" || session.phase === "ended") return "idle";
-	if (session.phase === "connecting") return "connecting";
-	if (session.tools.some((tool) => tool.status === "running")) return "working";
-	if (session.speechState === "speaking") return "speaking";
-	// A muted mic has nothing to meter, so it gets the still state rather than
-	// a listening animation that would never move.
-	return session.micMuted ? "idle" : "listening";
+function TranscriptLine({speaker, text, draft}: {speaker: "You" | "Keating"; text: string; draft?: boolean}) {
+	if (!text) return null;
+	return <div className="lv-utterance"><Eyebrow muted={speaker === "You"}>{speaker}{draft && " · now"}</Eyebrow>
+		{speaker === "Keating" ? <Prose><p>{draft ? <em>{text}</em> : text}</p></Prose> : <p>{draft ? <em>{text}</em> : text}</p>}
+	</div>;
 }
 
-export default function LiveConversation({ session, connectEmbeddedSurface = true, onClose, onOpenSettings, onUseDictation }: LiveConversationProps) {
-	const transcriptRef = useRef<HTMLDivElement | null>(null);
-	const imageInputRef = useRef<HTMLInputElement | null>(null);
-	const [tavusControls, setTavusControls] = useState<TavusConversationControls | null>(null);
-	const handleTavusControls = useCallback((controls: TavusConversationControls | null) => setTavusControls(controls), []);
-
-	// Keep the newest line in view without stealing focus from the controls.
+export default function LiveConversation({session, diagnostics, connectEmbeddedSurface = true, onClose, onOpenSettings, onUseDictation}: LiveConversationProps) {
+	const transcriptRef = useRef<HTMLDivElement>(null);
+	const imageInputRef = useRef<HTMLInputElement>(null);
+	const [captions, setCaptions] = useState(true);
+	const [dismissedFailure, setDismissedFailure] = useState<LiveFailure | null>(null);
+	const [host, setHost] = useState<TavusConversationControls | null>(null);
+	const onControls = useCallback((v: TavusConversationControls | null) => setHost(v), []);
 	useEffect(() => {
 		const node = transcriptRef.current;
 		if (node) node.scrollTop = node.scrollHeight;
-	}, [session.transcript]);
-
-	const videoOn = session.videoSource !== null;
+	}, [session.transcript, captions]);
 	const embedded = session.embeddedSurface;
+	const muted = embedded ? host?.microphoneOn === false : session.micMuted;
+	const camera = embedded ? host?.cameraOn === true : session.videoSource === "camera";
+	const screen = embedded ? Boolean(host?.screenOn) : session.videoSource === "screen";
 	const failed = session.phase === "failed";
-	const runningTools = session.tools.filter((tool) => tool.status === "running");
-	const visualState = visualizerState(session);
-
-	const statusText = failed
-		? "Not connected"
-		: session.phase === "connecting"
-			? "Connecting…"
-			: embedded
-				? "KeatingBot is live"
-			: session.speechState === "speaking"
-				? "Keating is speaking"
-				: session.micMuted
-					? "Muted"
-					: "Listening";
-
-	return (
-		<div
-			className={css({
-				position: "relative",
-				display: "flex",
-				flexDirection: "column",
-				height: "100%",
-				minHeight: 0,
-				backgroundColor: "var(--background)",
-				color: "var(--foreground)",
-			})}
-		>
-			{/* Header: identity and state, nothing actionable except leaving. */}
-			<header
-				className={css({
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					gap: "0.75rem",
-					paddingInline: "1rem",
-					paddingBlock: "0.75rem",
-					borderBottom: "1px solid var(--border)",
-				})}
-			>
-				<div className={css({ display: "flex", alignItems: "center", gap: "0.625rem", minWidth: 0 })}>
-					<span
-						className={css({ width: "0.5rem", height: "0.5rem", borderRadius: "9999px", flexShrink: 0 })}
-						style={{
-							backgroundColor: failed
-								? "var(--destructive)"
-								: session.phase === "connecting"
-									? "var(--amber, orange)"
-									: "var(--accent-green, limegreen)",
-						}}
-					/>
-					<div className={css({ minWidth: 0 })}>
-						<p className={css({ fontSize: "0.875rem", fontWeight: 600, lineHeight: 1.2 })}>{statusText}</p>
-						<p
-							className={css({
-								fontSize: "0.75rem",
-								color: "var(--muted-foreground)",
-								whiteSpace: "nowrap",
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-							})}
-						>
-							{session.model.label}
-							{session.phase === "live" ? ` · ${formatElapsed(session.elapsedMs)}` : ""}
-						</p>
-					</div>
+	const live = session.phase === "live";
+	const tools = session.tools.filter(tool => tool.status === "running");
+	const visualState: VisualizerState = failed || session.phase === "ended" ? "idle" : !live ? "connecting" :
+		tools.length ? "working" : session.speechState === "speaking" ? "speaking" : muted ? "idle" : "listening";
+	const stageState = visualState === "working" ? "thinking" : failed ? "not connected" :
+		session.phase === "ended" ? "ended" : muted && visualState === "idle" ? "microphone muted" : visualState;
+	const status = live ? "Live" : failed ? "Not connected" : session.phase === "ended" ? "Ended" : "Connecting…";
+	const actions: Action[] = [{id: "mic", label: muted ? "Unmute your microphone" : "Mute your microphone",
+		glyph: muted ? "micoff" : "mic", onSelect: embedded ? () => host?.toggleMicrophone() : session.toggleMic, disabled: embedded ? !host?.ready : !live}];
+	if (embedded || session.videoCapable) {
+		const disabled = embedded ? !host?.ready : session.videoStarting || failed;
+		actions.push({id: "camera", label: camera ? "Turn your camera off" : "Turn your camera on", glyph: camera ? "camera" : "cameraoff",
+			onSelect: embedded ? () => host?.toggleCamera() : () => camera ? session.stopVideo() : session.startVideo("camera"), disabled});
+		actions.push({id: "screen", label: screen ? "Stop sharing your screen" : "Share your screen", glyph: "screen",
+			onSelect: embedded ? () => host?.toggleScreen() : () => screen ? session.stopVideo() : session.startVideo("screen"),
+			disabled: disabled || Boolean(embedded && !host?.screenShareSupported),
+			description: embedded && host && !host.screenShareSupported ? "Screen sharing is unavailable in this browser" : undefined});
+	}
+	if (embedded || camera) actions.push({id: "flip", label: "Flip your camera", glyph: "refresh",
+		onSelect: embedded ? () => host?.flipCamera() : session.flipCamera, disabled: embedded ? !host?.ready || !camera : session.videoStarting});
+	if (!embedded && session.imageCapable) actions.push({id: "photo", label: session.imageSending ? "Preparing image…" : "Add an image",
+		glyph: "image", onSelect: () => imageInputRef.current?.click(), disabled: session.imageSending || !live});
+	const {turns, draft} = session.transcript;
+	const failure = failed ? session.failure : session.notice;
+	return <div className="lv-session">
+		<header className="lv-header k-halftone"><b>Live with Keating</b><SelectField label="Live model" value={session.model.value} onValueChange={session.switchModel}>
+			{!session.models.some(m => m.value === session.model.value) && <option value={session.model.value}>{session.model.label}</option>}
+			{session.models.map(m => <option key={m.value} value={m.value}>{m.label}{m.grade === "recommended" ? " · recommended" :
+				m.video === "none" ? m.image ? " · image input" : " · no vision" : ""}</option>)}
+		</SelectField>{onClose && <IconButton glyph="x" label="Close live conversation" onClick={onClose}/>}</header>
+		<main className="lv-call">
+			<section className="lv-stage" aria-label="Conversation stage">
+				{embedded ? <TavusConversationSurface key={embedded.url} url={embedded.url} title={embedded.title} onEvent={session.handleEmbeddedEvent} onControlsChange={onControls} connect={connectEmbeddedSurface}/>
+					: <ChartFrame title="Audio activity" reading={"Keating · " + stageState}>
+						<LiveVisualizer state={visualState} inputStream={session.inputStream} size={158}/></ChartFrame>}
+				<span className="lv-speaker" role="status">Keating · {stageState}</span>
+				{!embedded && <div className="lv-inset k-grid"><video ref={session.previewRef} muted playsInline autoPlay aria-label="Your camera or shared screen"
+					hidden={!session.videoSource} style={{transform: camera && session.cameraFacing === "user" ? "scaleX(-1)" : undefined}}/>
+					<span>{screen ? "Sharing your screen" : camera ? "Your camera is on" : "Your camera is off"}</span></div>}
+				{tools.length > 0 && <Loading className="lv-tool" size="inline" label={`Working on ${tools.map(t => t.name).join(", ")}…`} />}
+			</section>
+			<div className="lv-controls"><div className="lv-clock">{visualState === "connecting" ? <Loading size="inline" label={status}/> : <><StatusDot tone={failed ? "bad" : live ? "ok" : "idle"} aria-hidden="true"/>{status}</>}
+				{live && <time>{formatElapsed(session.elapsedMs)}</time>}</div>
+				{actions.map((a,i) => <span className={i >= 2 && actions.length > 3 ? "lv-extra" : undefined} key={a.id} title={a.description}>
+					<IconButton glyph={a.glyph} label={a.label} aria-description={a.description} disabled={a.disabled} onClick={a.onSelect}/></span>)}
+				{actions.length > 3 && <Menu className="lv-more" label="More call controls" trigger={<IconButton glyph="more" label="More call controls"/>} items={actions.slice(2)}/>}
+				<Button glyph="hangup" className="lv-end k-lift" onClick={session.end}>End</Button>
+			</div>
+			{!embedded && session.imageCapable && <input hidden ref={imageInputRef} type="file" accept={LIVE_IMAGE_ACCEPT} aria-label="Choose a still image" onChange={event => {
+				const file = event.currentTarget.files?.[0]; event.currentTarget.value = ""; if (file) void session.shareImage(file);
+			}}/>}
+			{session.sharedImage && !session.videoSource && <figure className="lv-image k-grid"><img src={session.sharedImage.previewUrl} alt={"Shared image: " + session.sharedImage.filename}/>
+				<figcaption><b>Image shared</b><p>{session.sharedImage.filename}</p></figcaption></figure>}
+			{session.imageError && <p className="lv-failure" role="alert">{session.imageError}</p>}
+			{failure && (!failed || dismissedFailure !== failure) && <FailureCard failure={failure} fatal={failed} session={session}
+				onOpenSettings={onOpenSettings} onUseDictation={failed ? onUseDictation : undefined} onDismiss={failed ? () => setDismissedFailure(failure) : session.dismissNotice}/>}
+			{diagnostics}
+			<section className="lv-said" aria-label="Transcript">
+				<div ref={transcriptRef} hidden={!captions} className="lv-lines" tabIndex={0}>
+					{!turns.length && !draft.user && !draft.assistant && <EmptyState heading={failed || session.phase === "ended" ? "Nothing was said." :
+						live && !muted ? "Say something to begin — Keating is listening." : "No transcript yet."} />}
+					{turns.map((t,i) => <div key={i}><TranscriptLine speaker="You" text={t.user}/><TranscriptLine speaker="Keating" text={t.assistant}/></div>)}
+					<div aria-live="polite"><TranscriptLine speaker="You" text={draft.user} draft/><TranscriptLine speaker="Keating" text={draft.assistant} draft/></div>
 				</div>
-
-				<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
-					{/* Model switching is available at any time, not only after a failure. */}
-					<div className={css({ position: "relative", display: { base: "none", sm: "block" } })}>
-						<Select
-							value={session.model.value}
-							onValueChange={(value) => session.switchModel(value)}
-							aria-label="Live model"
-							className={css({
-								appearance: "none",
-								borderRadius: "0.5rem",
-								border: "1px solid var(--border)",
-								backgroundColor: "transparent",
-								color: "var(--muted-foreground)",
-								fontSize: "0.75rem",
-								paddingInline: "0.625rem 1.5rem",
-								paddingBlock: "0.3125rem",
-								cursor: "pointer",
-							})}
-						>
-							{session.models.some((entry) => entry.value === session.model.value) ? null : (
-								<option value={session.model.value}>{session.model.label}</option>
-							)}
-							{session.models.map((entry) => (
-								<option key={entry.value} value={entry.value}>
-									{entry.label}
-									{entry.grade === "recommended"
-										? " · recommended"
-										: entry.video === "none" && entry.image
-											? " · image input"
-											: entry.video === "none"
-												? " · no vision"
-												: ""}
-								</option>
-							))}
-						</Select>
-					</div>
-					{onClose ? (
-						<button
-							type="button"
-							onClick={onClose}
-							aria-label="Close live conversation"
-							className={cx("dialog-compact-button", css({
-								padding: "0.375rem",
-								borderRadius: "0.5rem",
-								color: "var(--muted-foreground)",
-								cursor: "pointer",
-								_hover: { backgroundColor: "var(--accent)", color: "var(--accent-foreground)" },
-							}))}
-						>
-							<X size={18} />
-						</button>
-					) : null}
-				</div>
-			</header>
-
-			{/* Stage: video if there is any, otherwise the orb. */}
-			<div
-				className={css({
-					position: "relative",
-					flex: 1,
-					minHeight: 0,
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					justifyContent: "center",
-					gap: "1rem",
-					padding: "1rem",
-					overflow: "hidden",
-				})}
-			>
-				{embedded ? (
-					<TavusConversationSurface
-						key={embedded.url}
-						url={embedded.url}
-						title={embedded.title}
-						onEvent={session.handleEmbeddedEvent}
-						onControlsChange={handleTavusControls}
-						connect={connectEmbeddedSurface}
-					/>
-				) : null}
-				<video
-					ref={session.previewRef}
-					muted
-					playsInline
-					autoPlay
-					aria-label="Your camera or shared screen"
-					className={css({
-						position: "absolute",
-						inset: 0,
-						width: "100%",
-						height: "100%",
-						objectFit: "contain",
-						backgroundColor: "black",
-					})}
-					style={{
-						display: videoOn && !embedded ? "block" : "none",
-						// Only a front camera is mirrored; a rear camera or a shared
-						// screen shown flipped is disorienting.
-						transform: session.videoSource === "camera" && session.cameraFacing === "user" ? "scaleX(-1)" : undefined,
-					}}
-				/>
-
-				{embedded ? null : videoOn ? (
-					// Over video the visualizer shrinks into a corner badge, so the
-					// learner's own work stays the largest thing on screen while turn
-					// taking is still readable.
-					<div className={css({ position: "absolute", top: "0.75rem", right: "0.75rem", pointerEvents: "none" })}>
-						<LiveVisualizer state={visualState} inputStream={session.inputStream} size={84} />
-					</div>
-				) : (
-					<LiveVisualizer state={visualState} inputStream={session.inputStream} size={208} />
-				)}
-
-				{session.sharedImage && !videoOn ? (
-					<div
-						className={css({
-							position: "relative",
-							display: "flex",
-							alignItems: "center",
-							gap: "0.625rem",
-							maxWidth: "24rem",
-							padding: "0.5rem",
-							border: "1px solid var(--border)",
-							borderRadius: "0.75rem",
-							backgroundColor: "color-mix(in srgb, var(--foreground) 5%, var(--background))",
-						})}
-					>
-						<img
-							src={session.sharedImage.previewUrl}
-							alt={`Shared image: ${session.sharedImage.filename}`}
-							className={css({ width: "4rem", height: "4rem", objectFit: "cover", borderRadius: "0.5rem" })}
-						/>
-						<div className={css({ minWidth: 0, textAlign: "left" })}>
-							<p className={css({ fontSize: "0.8125rem", fontWeight: 600 })}>Image shared</p>
-							<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>
-								{session.sharedImage.filename}
-							</p>
-						</div>
-					</div>
-				) : null}
-
-				{session.imageError ? (
-					<p role="alert" className={css({ position: "relative", fontSize: "0.8125rem", color: "var(--destructive)" })}>
-						{session.imageError}
-					</p>
-				) : null}
-
-				{failed && session.failure ? (
-					<div className={css({ position: "relative", width: "100%", display: "flex", justifyContent: "center" })}>
-						<FailureCard
-							failure={session.failure}
-							session={session}
-							onOpenSettings={onOpenSettings}
-							onUseDictation={onUseDictation}
-							tone="fatal"
-						/>
-					</div>
-				) : null}
-
-				{!failed && session.notice ? (
-					<div className={css({ position: "relative", width: "100%", display: "flex", justifyContent: "center" })}>
-						<FailureCard
-							failure={session.notice}
-							session={session}
-							onOpenSettings={onOpenSettings}
-							onDismiss={session.dismissNotice}
-							tone="notice"
-						/>
-					</div>
-				) : null}
-
-				{runningTools.length > 0 ? (
-					<p
-						className={css({
-							position: "relative",
-							fontSize: "0.8125rem",
-							color: "var(--muted-foreground)",
-							backgroundColor: "color-mix(in srgb, var(--background) 80%, transparent)",
-							borderRadius: "9999px",
-							paddingInline: "0.75rem",
-							paddingBlock: "0.25rem",
-						})}
-					>
-						Working on {runningTools.map((tool) => tool.name).join(", ")}…
-					</p>
-				) : null}
-			</div>
-
-			{/* Every provider writes into the same Keating transcript and chat history. */}
-			<div
-				ref={transcriptRef}
-				className={css({
-					flexShrink: 0,
-					maxHeight: "9rem",
-					overflowY: "auto",
-					paddingInline: "1rem",
-					paddingBlock: "0.5rem",
-					borderTop: "1px solid var(--border)",
-					fontSize: "0.875rem",
-					lineHeight: 1.5,
-					display: "flex",
-					flexDirection: "column",
-					gap: "0.375rem",
-				})}
-			>
-				{session.transcript.turns.length === 0 && !session.transcript.draft.user && !session.transcript.draft.assistant ? (
-					<p className={css({ color: "var(--muted-foreground)" })}>
-						{failed ? "Nothing was said." : "Say something to begin — Keating is listening."}
-					</p>
-				) : null}
-				{session.transcript.turns.map((turn, index) => (
-					<div key={index} className={css({ display: "flex", flexDirection: "column", gap: "0.125rem" })}>
-						{turn.user ? <p><span className={css({ color: "var(--muted-foreground)" })}>You: </span>{turn.user}</p> : null}
-						{turn.assistant ? <p><span className={css({ color: "var(--primary)" })}>Keating: </span>{turn.assistant}</p> : null}
-					</div>
-				))}
-				{session.transcript.draft.user ? (
-					<p className={css({ opacity: 0.65 })}><span className={css({ color: "var(--muted-foreground)" })}>You: </span>{session.transcript.draft.user}</p>
-				) : null}
-				{session.transcript.draft.assistant ? (
-					<p className={css({ opacity: 0.65 })}><span className={css({ color: "var(--primary)" })}>Keating: </span>{session.transcript.draft.assistant}</p>
-				) : null}
-			</div>
-
-			{session.judgementSessionId && <JudgementDiagnostics sessionId={session.judgementSessionId} />}
-
-			{/* Controls. One row, thumb-reachable, same order every time. */}
-			<div
-				className={css({
-					flexShrink: 0,
-					display: "flex",
-					alignItems: "flex-start",
-					justifyContent: "center",
-					flexWrap: "wrap",
-					gap: "1.25rem",
-					paddingInline: "1rem",
-					paddingBlock: "1rem",
-					paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
-					borderTop: "1px solid var(--border)",
-				})}
-			>
-				{embedded ? (
-					<>
-						<Control
-							icon={tavusControls?.microphoneOn === false ? <MicOff size={22} /> : <Mic size={22} />}
-							label={tavusControls?.microphoneOn === false ? "Unmute" : "Mute"}
-							onClick={() => tavusControls?.toggleMicrophone()}
-							active={tavusControls?.microphoneOn === false}
-							disabled={!tavusControls?.ready}
-						/>
-						<Control
-							icon={tavusControls?.cameraOn === false ? <Camera size={22} /> : <CameraOff size={22} />}
-							label={tavusControls?.cameraOn === false ? "Camera" : "Camera off"}
-							onClick={() => tavusControls?.toggleCamera()}
-							active={tavusControls?.cameraOn === true}
-							disabled={!tavusControls?.ready}
-						/>
-						<Control
-							icon={<MonitorUp size={22} />}
-							label={tavusControls?.screenOn ? "Stop sharing" : "Share screen"}
-							onClick={() => tavusControls?.toggleScreen()}
-							active={tavusControls?.screenOn}
-							disabled={!tavusControls?.ready || !tavusControls.screenShareSupported}
-							title={tavusControls && !tavusControls.screenShareSupported ? "Screen sharing is unavailable in this browser" : undefined}
-						/>
-						<Control
-							icon={<SwitchCamera size={22} />}
-							label="Flip"
-							onClick={() => tavusControls?.flipCamera()}
-							disabled={!tavusControls?.ready || tavusControls.cameraOn === false}
-						/>
-					</>
-				) : (
-					<Control
-						icon={session.micMuted ? <MicOff size={22} /> : <Mic size={22} />}
-						label={session.micMuted ? "Unmute" : "Mute"}
-						onClick={session.toggleMic}
-						active={session.micMuted}
-						disabled={session.phase !== "live"}
-					/>
-				)}
-				{!embedded && session.videoCapable ? (
-					<>
-						<Control
-							icon={session.videoSource === "camera" ? <CameraOff size={22} /> : <Camera size={22} />}
-							label={session.videoSource === "camera" ? "Camera off" : "Camera"}
-							onClick={() => (session.videoSource === "camera" ? session.stopVideo() : session.startVideo("camera"))}
-							active={session.videoSource === "camera"}
-							disabled={session.videoStarting || session.phase === "failed"}
-						/>
-						<Control
-							icon={<MonitorUp size={22} />}
-							label={session.videoSource === "screen" ? "Stop sharing" : "Share screen"}
-							onClick={() => (session.videoSource === "screen" ? session.stopVideo() : session.startVideo("screen"))}
-							active={session.videoSource === "screen"}
-							disabled={session.videoStarting || session.phase === "failed"}
-						/>
-					</>
-				) : null}
-				{!embedded && session.imageCapable ? (
-					<>
-						<Control
-							icon={<ImagePlus size={22} />}
-							label={session.imageSending ? "Preparing" : "Add image"}
-							onClick={() => imageInputRef.current?.click()}
-							disabled={session.imageSending || session.phase !== "live"}
-							title="Add a still image to this conversation"
-						/>
-						<input
-							ref={imageInputRef}
-							type="file"
-							accept={LIVE_IMAGE_ACCEPT}
-							aria-label="Choose a still image"
-							className={css({ position: "absolute", width: "1px", height: "1px", overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap" })}
-							onChange={(event) => {
-								const file = event.currentTarget.files?.[0];
-								event.currentTarget.value = "";
-								if (file) void session.shareImage(file);
-							}}
-						/>
-					</>
-				) : null}
-				{!embedded && session.videoSource === "camera" ? (
-					<Control
-						icon={<SwitchCamera size={22} />}
-						label="Flip"
-						onClick={session.flipCamera}
-						disabled={session.videoStarting}
-					/>
-				) : null}
-				<Control
-					icon={<PhoneOff size={22} />}
-					label="End"
-					onClick={session.end}
-					danger
-				/>
-			</div>
-		</div>
-	);
+				<footer className="lv-footer"><span data-glyph-host><KeatingGlyph name="lock" size={14}/> Saved to this session when you end</span>
+					<Button variant="line" aria-pressed={captions} onClick={() => setCaptions(!captions)}>Captions {captions ? "on" : "off"}</Button></footer>
+			</section>
+			{session.judgementSessionId && <JudgementDiagnostics sessionId={session.judgementSessionId}/>}
+		</main>
+	</div>;
 }

@@ -14,6 +14,7 @@ import { assessTeachingPolicyAdherence, followsSingleFeedbackQuestion, hasTeachi
 import { TEACHING_POLICY_RULES, TEACHING_POLICY_VERSION } from "../teaching-policy-catalog.js";
 
 import type { PlanReview } from "../plan-review.js";
+import type { ResourceReview } from "../resource-review.js";
 import { projectActivityObservations, type ReleasedActivitySelection } from "../activity-observations.js";
 import { projectActivitySelectionReceipt } from "../activity-learning.js";
 import { validateBackgroundActivityPolicy } from "../background-activity-policy.js";
@@ -60,6 +61,7 @@ interface DraftContext<T> {
   planningMs: number | undefined;
   interaction: TeachingDraftInteraction | undefined;
   planReview: PlanReview | undefined;
+  resourceReview: ResourceReview | undefined;
   activitySelection: ReleasedActivitySelection | undefined;
   backgroundActivity: BackgroundActivityGuidance | undefined;
   usage: JudgementUsage | null;
@@ -111,6 +113,7 @@ function createDraftContext<T>(options: TeachingDraftOptions<T>): DraftContext<T
   let planningMs: number | undefined;
   let interaction: TeachingDraftInteraction | undefined;
   let planReview: PlanReview | undefined;
+  let resourceReview: ResourceReview | undefined;
   let activitySelection: ReleasedActivitySelection | undefined;
   let backgroundActivity: BackgroundActivityGuidance | undefined;
   let usage: JudgementUsage | null = { inputTokens: 0, outputTokens: 0 };
@@ -132,7 +135,7 @@ function createDraftContext<T>(options: TeachingDraftOptions<T>): DraftContext<T
     start, controller, cancel, timeout, ceiling,
     requestTokens, stateQuestionTokens, turn, reasoning, standard,
     phase, attempt, judgeModel, judgeIdentity, selectedAttempt,
-    reason, planningMs, interaction, planReview, activitySelection,
+    reason, planningMs, interaction, planReview, resourceReview, activitySelection,
     backgroundActivity, usage, selectorProbabilities, selectionCandidateAttempts, selectionOmittedForBudget,
     attempts, state, slides, stateHistory, requestIndex,
     candidates, usableDrafts, synthesisUsed, synthesisSourceAttempts,
@@ -146,7 +149,7 @@ type DraftPlan = {
   readonly feedbackAlternatives: boolean;
   readonly predictionAlternatives: boolean;
   readonly gradingAlternatives: boolean;
-  readonly reviewScope: { readonly domain: TeachingPolicyTurn["domain"]; readonly researchRequired: boolean };
+  readonly reviewScope: { readonly domain: TeachingPolicyTurn["domain"]; readonly researchRequired: boolean; readonly practiceInvited?: boolean };
   readonly variantOrder: readonly TeachingDraftVariant[];
 };
 type Provenance = Pick<TeachingDraftAttempt, "feedbackOnly" | "predictionQuestionOnly" | "gradeOnly" | "synthesisSourceAttempts" | "trimmedCheckpointSuffix" | "repairedAssessmentBrief">;
@@ -197,6 +200,7 @@ export class TeachingDraftSession<T> {
     ...(this.context.state ? { state: structuredClone(this.context.state) } : {}), slides: structuredClone(this.context.slides), stateHistory: structuredClone(this.context.stateHistory),
     ...(this.context.planningMs === undefined ? {} : { planningMs: this.context.planningMs }), ...(this.context.interaction ? { interaction: structuredClone(this.context.interaction) } : {}),
     ...(this.context.planReview ? { planReview: { ...this.context.planReview } } : {}),
+    ...(this.context.resourceReview ? { resourceReview: { ...this.context.resourceReview } } : {}),
     ...(this.context.activitySelection ? { activityLearning: structuredClone(this.context.activitySelection.receipt) } : {}),
     ...(this.context.backgroundActivity ? { backgroundActivity: { ...this.context.backgroundActivity } } : {}) }; }
 
@@ -321,7 +325,7 @@ export class TeachingDraftSession<T> {
     if (chosenStandard && Object.hasOwn(standardInstructions, chosenStandard)) this.context.standard = chosenStandard as TeachingDraftStandard;
     const observations = projectActivityObservations(this.context.turn, decision);
     const guided = applyBackgroundActivityGuidance(
-      projectTeachingPolicyDecision(this.context.turn, decision, { planReview: this.options.planReview ?? null, ...(this.options.planChanges ? { planChanges: this.options.planChanges } : {}) }),
+      projectTeachingPolicyDecision(this.context.turn, decision, { planReview: this.options.planReview ?? null, ...(this.options.planChanges ? { planChanges: this.options.planChanges } : {}), resources: this.options.resources ?? null }),
       observations, this.context.backgroundPolicy);
     const plan = guided.plan;
     // Trust the model that actually planned the turn, including a provider fallback.
@@ -333,6 +337,7 @@ export class TeachingDraftSession<T> {
     }
     this.context.backgroundActivity = guided.guidance;
     if (plan.planReview) this.context.planReview = plan.planReview;
+    if (plan.resourceReview) this.context.resourceReview = plan.resourceReview;
     const compareLiveAlternatives = this.options.activityLearningMode === "live" && this.options.activityLearning !== undefined;
     const targetCandidates = this.context.standard === "concise" || (!this.context.extended && !compareLiveAlternatives) ? 1 : Math.min(2, this.context.maxAttempts);
     // Interactive and prose drafts compete only when an activity is recommended and two candidates are wanted.
@@ -340,6 +345,7 @@ export class TeachingDraftSession<T> {
     const reviewScope = {
       domain: this.context.turn.domain === "unknown" && plan.features.executable_code === true ? "code" as const : this.context.turn.domain,
       researchRequired: plan.decisions.fresh_sources_needed !== false,
+      ...(plan.resourceReview?.gap === "retrieval" ? { practiceInvited: true } : {}),
     };
     this.context.interaction = interactionSummary(plan, paired);
     const variantOrder: readonly TeachingDraftVariant[] = !paired ? ["default"]

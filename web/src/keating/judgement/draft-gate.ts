@@ -12,6 +12,8 @@ import {
   advancePlanReview,
   EMPTY_PLAN_REVIEW_MEMORY,
   formatActiveWork,
+  sessionResources,
+  type ResourcePresentation,
   type ActiveWork,
   type ActivitySelection,
   type ActivitySelectionInput,
@@ -139,7 +141,10 @@ export interface TeachingDraftGateOptions {
   /** Test/host override for the exact judgement model's native budgets. */
   readonly judgementModel?: { readonly id: string; readonly requestTokens: number | null; readonly stateQuestionTokens: number | null };
   /** Trusted runtime observations, never parsed back out of the system prompt. */
-  readonly evidence?: (latestSubmission?: string) => Promise<Partial<TeachingPolicyTurn> & DraftSubmissionEvidence>;
+  readonly evidence?: (latestSubmission?: string) => Promise<Partial<TeachingPolicyTurn> & DraftSubmissionEvidence & {
+    /** What this session has shown so far, for the resource review. Never sent to the judge. */
+    readonly resourcePresentations?: readonly ResourcePresentation[];
+  }>;
   readonly domain?: TeachingPolicyTurn["domain"];
   readonly maxReasoning?: TeachingDraftReasoning;
   readonly maxAttempts?: number;
@@ -502,6 +507,10 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
       // Tutor and judge read the same record-derived view of the lesson plan.
       const activeWork = formatActiveWork(turn.activeWork);
       const planReview = planReviewTrigger(snapshot, turn.activeWork);
+      // Counts only: which kinds of material this session has shown, and how many learner turns ago.
+      const resources = evidence?.resourcePresentations
+        ? sessionResources(evidence.resourcePresentations, snapshot.messages.flatMap(message => message.role === "user" ? [message.timestamp] : []))
+        : null;
       // Evidence loading needs its own interruption, but the draft controller
       // owns the remaining deadline so it can return an already-reviewed
       // candidate when a later generation runs out of time.
@@ -510,6 +519,7 @@ export function withTeachingDraftGate(stream: StreamFn, options: TeachingDraftGa
         turn,
         ...(evidence?.submittedComprehension && lastMessage?.role === "user" ? { submittedComprehension: evidence.submittedComprehension } : {}),
         planReview,
+        resources,
         planChanges: loadKeatingUiSettings().planChanges,
         judge,
         activityLearning: options.activityLearning,

@@ -1,0 +1,99 @@
+{
+  "title": "A lesson in Chat",
+  "viewport": "desktop",
+  "width": 1280,
+  "height": 800,
+  "theme": "light",
+  "fixtures": [
+    "demo",
+    "profile"
+  ],
+  "transcript": "lesson-in-chat",
+  "capturedAt": "2026-11-19T17:03:52.036Z",
+  "viewerNote": "Keating’s replies are scripted. The progress rail shows its stage labels with independent review turned off.",
+  "duration": 59.17077191734314,
+  "bytes": 2282937,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "ask",
+      "title": "Ask Keating",
+      "start": 0.003000020980834961,
+      "explanation": "Type a concrete learning question in Message Keating. Send it to start the lesson.",
+      "alt": "The chat composer contains Teach me how recursion returns.",
+      "still": "ask"
+    },
+    {
+      "id": "draft",
+      "title": "Follow the reply",
+      "start": 4.165999889373779,
+      "explanation": "The progress rail names the stages of the turn. The tutor starts by asking for a prediction.",
+      "alt": "Keating's progress rail shows Draft, Review and Reply.",
+      "still": "draft"
+    },
+    {
+      "id": "predict",
+      "title": "Make a prediction",
+      "start": 12.248999834060669,
+      "explanation": "Choose the first answer and send it. Keating responds with a hint and asks you to think again.",
+      "alt": "The first choice is selected in the recursion quick check.",
+      "still": "predict"
+    },
+    {
+      "id": "try-again",
+      "title": "Try the question again",
+      "start": 20.54199981689453,
+      "explanation": "Choose The first call waits and send your answer. Keating explains where the waiting call resumes.",
+      "alt": "The second quick check has The first call waits selected.",
+      "still": "try-again"
+    },
+    {
+      "id": "recall",
+      "title": "Reveal a flashcard",
+      "start": 30.506999969482422,
+      "explanation": "Reveal the card, compare your recall with the answer, and rate it Good.",
+      "alt": "A revealed flashcard explains where a recursive call waits.",
+      "still": "recall"
+    },
+    {
+      "id": "run",
+      "title": "Run the countdown",
+      "start": 36.57799983024597,
+      "explanation": "Run tests executes the starter function with the sample inputs. Read both results in the code activity.",
+      "alt": "The countdown coding activity with its sample test results.",
+      "still": "run"
+    },
+    {
+      "id": "sources",
+      "title": "Read the sources",
+      "start": 40.70799994468689,
+      "explanation": "The Sources footer names the references for the reply. You can return to them after the exercise.",
+      "alt": "The Sources footer links to MDN’s recursion and call stack entries.",
+      "still": "sources"
+    },
+    {
+      "id": "study-chip",
+      "title": "Use a study chip",
+      "start": 43.73899984359741,
+      "explanation": "Explain another way adds a follow-up to the composer. Read the suggested wording before you send.",
+      "alt": "The composer has the suggested follow-up from Explain another way.",
+      "still": "study-chip"
+    },
+    {
+      "id": "failed-reply",
+      "title": "Notice the failed reply",
+      "start": 46.800999879837036,
+      "explanation": "The scripted demo tutor interrupts the reply. Your question stays in the conversation.",
+      "alt": "The failed response offers a Retry response button.",
+      "still": "failed-reply"
+    },
+    {
+      "id": "recover",
+      "title": "Retry the reply",
+      "start": 50.39399981498718,
+      "explanation": "Retry response sends the same request again. The scripted tutor replies with a folder-tree example.",
+      "alt": "A completed tutor reply explains the folder-tree example.",
+      "still": "poster"
+    }
+  ]
+}

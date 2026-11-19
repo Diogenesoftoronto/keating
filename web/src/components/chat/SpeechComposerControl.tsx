@@ -6,7 +6,8 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useAui } from "@assistant-ui/react";
-import { AudioLines, CircleAlert, Keyboard, Mic, X } from "lucide-react";
+import { ChartFrame } from "../../design-system/charts";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css, cx } from "../../../styled-system/css";
 import { KeatingBot } from "../KeatingBot";
 import { RecordingWaveform } from "../RecordingWaveform";
@@ -31,7 +32,7 @@ import {
   type MicRecorder,
 } from "../../keating/speech-providers/stt";
 import { diagnosticsSummaryForFailure, speechDiagnosticsSummary } from "./error-classification";
-import { composerIconButtonClass, composerIconButtonStyles, srInteractiveClass } from "./composer-styles";
+import { composerIconButtonClass } from "./composer-styles";
 
 // Voice is a real composer mode, not a small attachment action. Duplex models
 // open the realtime surface; other providers use press-and-hold dictation and
@@ -256,7 +257,7 @@ export function SpeechComposerControl({
     liveOpen && typeof document !== "undefined"
       ? createPortal(
           <LiveVoiceOverlay
-            onClose={() => setLiveOpen(false)}
+            onClose={() => { setLiveOpen(false); window.dispatchEvent(new Event("keating:live-overlay-closed")); }}
             onConversationComplete={onConversationComplete}
             initialVideoPromise={pendingLiveVideoRef.current}
             onOpenSettings={(tab) => {
@@ -268,6 +269,7 @@ export function SpeechComposerControl({
             }}
             onFallback={() => {
               setLiveOpen(false);
+              window.dispatchEvent(new Event("keating:live-overlay-closed"));
               setForceStt(true);
               onExpandedChange(true);
             }}
@@ -287,10 +289,10 @@ export function SpeechComposerControl({
       boxShadow: "0 4px 24px #0003", fontSize: "0.8125rem", lineHeight: 1.5,
     })}>
       <div className={css({display: "flex", alignItems: "center", gap: "0.5rem"})}>
-        <CircleAlert size={16} aria-hidden="true" />
+        <KeatingGlyph name="alert" size={15} />
         <strong className={css({flex: 1})}>{retryAudioRef.current ? "Transcript unavailable" : "Recording unavailable"}</strong>
         <button type="button" onClick={() => setAudioError("")} aria-label="Dismiss notification"
-          className={composerIconButtonClass}><X size={16} /></button>
+          className={composerIconButtonClass}><KeatingGlyph name="x" size={15} /></button>
       </div>
       <p>{audioError}</p>
       {retryAudioRef.current && <>
@@ -317,17 +319,9 @@ export function SpeechComposerControl({
           }}
           title="Record an audio message"
           aria-label="Record an audio message"
-          className={cx(
-            composerIconButtonClass,
-            css({
-              _hover: {
-                backgroundColor: "var(--muted)",
-                color: "var(--foreground)",
-              },
-            }),
-          )}
+          className={composerIconButtonClass}
         >
-          <Mic size={16} />
+          <KeatingGlyph name="mic" size={15} />
         </button>
         <button
           type="button"
@@ -335,22 +329,9 @@ export function SpeechComposerControl({
           title="Start a live conversation"
           aria-label="Start a live conversation"
           aria-haspopup="dialog"
-          className={cx(
-            srInteractiveClass,
-            css(composerIconButtonStyles, {
-              borderColor: "transparent",
-              backgroundColor: "var(--foreground)",
-              color: "var(--background)",
-              _hover: {
-                backgroundColor:
-                  "color-mix(in srgb, var(--foreground) 85%, var(--background))",
-                color: "var(--background)",
-              },
-              _focusVisible: { outline: "2px solid var(--ring)", outlineOffset: "3px" },
-            }),
-          )}
+          className={composerIconButtonClass}
         >
-          <AudioLines size={16} />
+          <KeatingGlyph name="wave" size={15} />
         </button>
         {audioErrorToast}
         {liveOverlay}
@@ -360,7 +341,7 @@ export function SpeechComposerControl({
 
   return (
     <>
-      <div
+      <div style={{ position: "relative" }}
         className={css({
           display: "flex",
           minWidth: 0,
@@ -369,6 +350,7 @@ export function SpeechComposerControl({
           gap: "0.375rem",
         })}
       >
+        {recording && recordingStream && <RecordingInputChart stream={recordingStream} />}
         <button
           type="button"
           disabled={busy}
@@ -423,9 +405,8 @@ export function SpeechComposerControl({
           ) : recording ? (
             <KeatingBot state="listening" size={32} label="" />
           ) : (
-            <Mic size={16} />
+            <KeatingGlyph name="mic" size={15} />
           )}
-          {recording && recordingStream && <RecordingWaveform stream={recordingStream} />}
           <span>
             {busy
               ? "Preparing audio"
@@ -441,13 +422,22 @@ export function SpeechComposerControl({
           title="Switch to keyboard"
           className={composerIconButtonClass}
         >
-          <Keyboard size={16} />
+          <KeatingGlyph name="keyboard" size={15} />
         </button>
       </div>
       {audioErrorToast}
       {liveOverlay}
     </>
   );
+}
+
+/** The recorder keeps pointer capture while the readout appears above its control. */
+export function RecordingInputChart({ stream }: { stream: MediaStream }) {
+  return <div className="chat-recording-level">
+    <ChartFrame title="Microphone input" reading="Recording">
+      <RecordingWaveform stream={stream} />
+    </ChartFrame>
+  </div>;
 }
 
 // The live conversation surface, rendered over the chat. The session runtime
@@ -494,24 +484,16 @@ function LiveVoiceOverlay({
       role="dialog"
       aria-modal="true"
       aria-label="Live voice conversation"
-      className={css({
-        position: "fixed",
-        inset: 0,
-        zIndex: 60,
-        backgroundColor: "var(--background)",
-      })}
+      className="lv-overlay"
     >
       <LiveConversation
+        diagnostics={liveDiagnosticsSummary && <ErrorDiagnosticsActions summary={liveDiagnosticsSummary} />}
         session={session}
         onClose={session.end}
         onOpenSettings={onOpenSettings}
         onUseDictation={onFallback}
       />
-      {liveDiagnosticsSummary && (
-        <div className={css({ position: "absolute", left: "1rem", right: "1rem", bottom: "7.5rem", zIndex: 1, display: "flex", justifyContent: "center" })}>
-          <ErrorDiagnosticsActions summary={liveDiagnosticsSummary} />
-        </div>
-      )}
+
     </div>
   );
 }

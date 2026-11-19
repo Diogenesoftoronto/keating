@@ -59,3 +59,8 @@ export const Blocked: Story = {
 export const Crashed: Story = {
 	render: (args) => <InteractivePageFallback status="crashed" title={args.title} description={args.description} message="ReferenceError: plot is not defined" onReload={fn()} />,
 };
+
+export const NarrowReply: Story = {
+  ...GradientDescentExplorer,
+  decorators: [Story => <div style={{ width: "min(320px, 100%)" }}><Story /></div>],
+};

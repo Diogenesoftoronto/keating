@@ -23,7 +23,7 @@ export interface JudgementDiagnostic {
   usage?: { inputTokens: number; outputTokens: number };
   evidence?: string;
 }
-export interface DiagnosticReply { id: string; sessionId: string; status: "streaming" | "completed" | "cancelled" }
+export interface DiagnosticReply { id: string; sessionId: string; status: "streaming" | "completed" | "cancelled"; assistantTimestamp?: number }
 interface Snapshot {
   enabled: boolean; details: boolean; reviewReplies: boolean; reviewLiveTranscripts: boolean;
   events: readonly JudgementDiagnostic[]; replies: readonly DiagnosticReply[];
@@ -63,8 +63,11 @@ export function beginDiagnosticReply(sessionId: string): string | undefined {
   publish({ ...snapshot, replies: [...snapshot.replies, { id, sessionId: identifier(sessionId), status: "streaming" as const }].slice(-20) });
   return id;
 }
-export function endDiagnosticReply(id: string | undefined, cancelled = false) {
-  publish({ ...snapshot, replies: snapshot.replies.map(reply => reply.id === id ? { ...reply, status: cancelled ? "cancelled" : "completed" } : reply) });
+export function endDiagnosticReply(id: string | undefined, cancelled = false, assistantTimestamp?: number) {
+  publish({ ...snapshot, replies: snapshot.replies.map(reply => reply.id === id ? {
+    ...reply, status: cancelled ? "cancelled" : "completed",
+    ...(assistantTimestamp !== undefined ? { assistantTimestamp } : {}),
+  } : reply) });
 }
 export function beginJudgementDiagnostic(request: JudgementRequest, context: JudgementDiagnosticContext = { origin: "judgement" }): string | undefined {
   if (!snapshot.enabled) return undefined;

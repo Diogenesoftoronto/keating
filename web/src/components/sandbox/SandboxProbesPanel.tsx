@@ -1,12 +1,11 @@
+import { Loading } from "../../design-system/kit";
 /** Diagnostics tab of the sandbox runtime dialog: probe operation, JSON payload, run and latest result. */
-import Copy from "reicon-react/icons/Copy";
-import Play from "reicon-react/icons/Play";
 import { css, cx } from "../../../styled-system/css";
 import { JsonCrackBlock } from "../JsonCrackBlock";
-import { KeatingIcon } from "../KeatingIcon";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { Select } from "../Select";
 import type { SandboxLogEvent } from "./sandbox-helpers";
-import { RuntimeSpinner, styles } from "./sandbox-shared";
+import { styles } from "./sandbox-shared";
 import type { SandboxProbe } from "./useSandboxProbe";
 
 export function SandboxProbesPanel({ probe, events }: { probe: SandboxProbe; events: SandboxLogEvent[] }) {
@@ -43,12 +42,11 @@ export function SandboxProbesPanel({ probe, events }: { probe: SandboxProbe; eve
           disabled={runningProbe}
           className={styles.primaryButton}
         >
-          {runningProbe ? <RuntimeSpinner size={15} /> : <KeatingIcon icon={Play} size={15} />}
-          Run check
+          {runningProbe ? <Loading size="inline" label="Run check" /> : <><KeatingGlyph name="play" size={15} /> Run check</>}
         </button>
         {events.some((e) => e.tab === "probes") && (
           <button type="button" onClick={copyOutput} className={styles.outlineButton}>
-            <KeatingIcon icon={Copy} size={14} /> {copiedIndex !== null ? "Copied" : "Copy latest"}
+            <KeatingGlyph name="copy" size={14} /> {copiedIndex !== null ? "Copied" : "Copy latest"}
           </button>
         )}
       </div>

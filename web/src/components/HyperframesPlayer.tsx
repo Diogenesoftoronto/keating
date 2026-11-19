@@ -1,5 +1,7 @@
+import { Button, Loading } from "../design-system/kit";
+import { PlaybackPosition } from "./PlaybackPosition";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CircleAlert, Pause, Play, RotateCcw, Repeat } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css, cx } from "../../styled-system/css";
 import { withHyperframesBridge } from "./hyperframes-bridge";
 
@@ -7,6 +9,7 @@ interface HyperframesPlayerProps {
 	html: string;
 	title: string;
 	className?: string;
+	duration?: number;
 }
 
 type HyperframesCommand =
@@ -46,7 +49,7 @@ function isHyperframesErrorMessage(value: unknown): value is HyperframesErrorMes
 		&& message.message.trim().length > 0;
 }
 
-export function HyperframesPlayer({ html, title, className }: HyperframesPlayerProps) {
+export function HyperframesPlayer({ html, title, className, duration }: HyperframesPlayerProps) {
 	const iframeRef = useRef<HTMLIFrameElement | null>(null);
 	const [playing, setPlaying] = useState(false);
 	const [looping, setLooping] = useState(true);
@@ -109,6 +112,7 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 		setLoadTimedOut(false);
 	}, [src]);
 
+	const loading = !bridgeReady && !runtimeError && !loadTimedOut;
 	const controlLabel = !bridgeReady ? "Loading" : !hasTimeline ? "Unavailable" : playing ? "Pause" : "Play";
 
 	return (
@@ -121,7 +125,7 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 				src={src || undefined}
 				sandbox="allow-scripts"
 				onLoad={() => postCommand({ type: "keating-hyperframes-command", action: "request-state" })}
-				className={css({ display: "block", aspectRatio: "16 / 9", width: "100%", borderRadius: "0.75rem", border: "none", background: "black" })}
+				className="specialist-animation-stage k-grid"
 			/>
 			{runtimeError && (
 				<div
@@ -137,7 +141,7 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 						color: "var(--destructive)",
 					})}
 				>
-					<CircleAlert size={14} className={css({ marginTop: "0.0625rem", flexShrink: 0 })} />
+					<KeatingGlyph name="alert" size={14} className={css({ marginTop: "0.0625rem", flexShrink: 0 })} />
 					<span>Animation failed to render: {runtimeError}</span>
 				</div>
 			)}
@@ -149,68 +153,57 @@ export function HyperframesPlayer({ html, title, className }: HyperframesPlayerP
 						alignItems: "flex-start",
 						gap: "0.5rem",
 						borderRadius: "0.375rem",
-						background: "color-mix(in srgb, #f59e0b 12%, transparent)",
+						background: "var(--k-wash)",
 						padding: "0.75rem",
 						fontSize: "0.75rem",
 						color: "var(--foreground)",
 					})}
 				>
-					<CircleAlert size={14} className={css({ marginTop: "0.0625rem", flexShrink: 0, color: "#d97706" })} />
+					<KeatingGlyph name="alert" size={14} className={css({ marginTop: "0.0625rem", flexShrink: 0, color: "var(--ink-soft)" })} />
 					<span>The animation loaded without a controllable timeline. Its script may be blocked or still loading.</span>
 				</div>
 			)}
-			<div className={css({ display: "grid", gridTemplateColumns: "auto auto 1fr auto", alignItems: "center", gap: "0.75rem" })}>
-				<button
+			<div className="specialist-playback">
+				<Button variant="ghost" size="sm"
 					type="button"
 					disabled={!hasTimeline}
+					glyph={loading ? undefined : playing && hasTimeline ? "pause" : "play"}
 					aria-label={controlLabel}
 					onClick={() => {
 						const next = !playing;
 						setPlaying(next);
 						postCommand({ type: "keating-hyperframes-command", action: next ? "play" : "pause" });
 					}}
-					className={controlButtonClass}
 				>
-					{playing && hasTimeline ? <Pause size={14} /> : <Play size={14} />}
-					{controlLabel}
-				</button>
-				<button
+					{loading ? <Loading size="inline" label={controlLabel} /> : controlLabel}
+				</Button>
+				<Button variant="ghost" size="sm"
 					type="button"
 					onClick={() => {
 						setPlaying(true);
 						setProgress(0);
 						postCommand({ type: "keating-hyperframes-command", action: "replay" });
 					}}
-					className={controlButtonClass}
 				>
-					<RotateCcw size={14} />
+					<KeatingGlyph name="refresh" size={14} />
 					Replay
-				</button>
-				<input
-					type="range"
-					min={0}
-					max={1000}
-					value={Math.round(progress * 1000)}
-					disabled={!seekable}
-					onChange={(event) => {
-						const next = Math.max(0, Math.min(1, Number(event.target.value) / 1000));
+				</Button>
+				<PlaybackPosition label="Animation progress" value={progress * (duration || 1)} max={duration || 1} seconds={Boolean(duration)} disabled={!seekable}
+					onSeek={value => {
+						const next = value / (duration || 1);
 						setProgress(next);
 						setPlaying(false);
-						postCommand({ type: "keating-hyperframes-command", action: "seek", progress: next });
-					}}
-					aria-label="Animation progress"
-					className={css({ minWidth: 0, accentColor: "var(--primary)" })}
-				/>
-				<button
+						postCommand({type:"keating-hyperframes-command", action:"seek", progress:next});
+					}} />
+				<Button variant="ghost" size="sm"
 					type="button"
 					onClick={() => setLooping((value) => !value)}
 					aria-pressed={looping}
 					disabled={!seekable}
-					className={cx(controlButtonClass, looping && css({ color: "var(--primary)", _hover: { color: "var(--primary)" } }))}
 				>
-					<Repeat size={14} />
+					<KeatingGlyph name="refresh" size={14} />
 					Loop
-				</button>
+				</Button>
 			</div>
 		</div>
 	);
@@ -226,21 +219,3 @@ function useBlobUrl(source: string, type: string): string {
 	}, [blob]);
 	return url;
 }
-
-// Borderless: the controls read as a row of actions, not a strip of boxes.
-const controlButtonClass = css({
-	display: "inline-flex",
-	height: "2rem",
-	alignItems: "center",
-	justifyContent: "center",
-	gap: "0.375rem",
-	borderRadius: "0.375rem",
-	paddingInline: "0.5rem",
-	fontSize: "0.75rem",
-	fontWeight: 500,
-	whiteSpace: "nowrap",
-	color: "var(--muted-foreground)",
-	transition: "color 150ms, background-color 150ms",
-	_disabled: { cursor: "not-allowed", opacity: 0.55 },
-	_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
-});

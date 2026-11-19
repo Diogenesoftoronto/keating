@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LogIn, LogOut } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css } from "../../styled-system/css";
 import { NOTORGANIC_PROVIDER_ID, notOrganicPublicClient } from "../notorganic-provider";
 import { notifyProviderCredentialsChanged, PROVIDER_CREDENTIALS_CHANGED_EVENT } from "../keating/model-prefs";
@@ -52,7 +52,7 @@ export function NotOrganicAccountMenuItem({ className, onSignIn }: { className?:
         void promptNotOrganicAccess({ allowSignIn: true });
       }
     }}>
-      {connected || busy ? <LogOut size={16} aria-hidden="true" /> : <LogIn size={16} aria-hidden="true" />}
+      {connected || busy ? <KeatingGlyph name="signout" size={16} /> : <KeatingGlyph name="signin" size={16} />}
       {busy ? "Logging out…" : connected ? "Log out" : "Sign in"}
     </button>
     {error && <p role="alert" className={css({ padding: "0.5rem 0.75rem", fontSize: "0.75rem", color: "var(--destructive)", overflowWrap: "anywhere" })}>{error}</p>}

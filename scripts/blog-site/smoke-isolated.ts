@@ -32,6 +32,9 @@ try {
       ["/assets/vt323-regular.ttf", 200, "font"],
       ["/assets/logo-lockup-compact.avif", 200, "image"],
       ["/assets/mascot-head-v2.png", 200, "image"],
+      ["/assets/keating-doodles.webp", 200, "image/webp"],
+      ["/assets/keating-paper.webp", 200, "image/webp"],
+      ["/assets/keatingbot-body-writing.avif", 200, "image/avif"],
       ["/assets/katex/katex.min.css", 200, "text/css"],
       ["/", 503, "text/html"],
       ["/api/blog", 503, "application/json"],
@@ -44,7 +47,7 @@ try {
       }
       await response.arrayBuffer();
     }
-    console.log("Isolated bundle smoke passed: 12 HTTP checks, no repository or runtime dependencies.");
+    console.log("Isolated bundle smoke passed: 15 HTTP checks, no repository or runtime dependencies.");
   } finally { clearTimeout(timeout); }
 } finally {
   child?.kill();

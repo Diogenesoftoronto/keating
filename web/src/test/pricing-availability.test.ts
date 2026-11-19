@@ -3,6 +3,7 @@ import {
 	isPublicCheckoutConfigured,
 	pricingAvailability,
 	pricingPackAction,
+	pricingPackStatus,
 	pricingPlanAction,
 	pricingWaitlistCta,
 } from "../pages/Pricing";
@@ -100,5 +101,28 @@ describe("pricing availability", () => {
 				expect(label).not.toMatch(/waitlist|launch|buy|unavailable/i);
 			}
 		}
+	});
+
+	test("the pack status line says only what the pack buttons will do", () => {
+		// Nothing can be bought here: the line must not mention checkout opening or sign-in.
+		for (const action of ["waitlist", "unavailable"] as const) {
+			const status = pricingPackStatus([action, action, action]);
+			expect(status?.open).toBe(false);
+			expect(status?.text).toMatch(/waitlist/);
+			expect(status?.text).not.toMatch(/opens (checkout|sign-in)/);
+		}
+		expect(pricingPackStatus(["connect", "connect", "connect"])).toEqual({ open: true, text: "Choosing a pack opens sign-in first." });
+		expect(pricingPackStatus(["checkout", "checkout", "checkout"])).toEqual({ open: true, text: "Choosing a pack opens checkout." });
+		// A wallet that offers one pack only: say both outcomes rather than promise checkout for all.
+		const mixed = pricingPackStatus(["unavailable", "checkout", "unavailable"]);
+		expect(mixed?.open).toBe(true);
+		expect(mixed?.text).toMatch(/Some packs/);
+		expect(mixed?.text).toMatch(/waitlist/);
+		// While the wallet loads nothing is promised, and a failed load leaves the word to its own alert.
+		const loading = pricingPackStatus(["loading", "loading", "loading"]);
+		expect(loading?.open).toBe(false);
+		expect(loading?.text).not.toMatch(/checkout|waitlist|sign-in/);
+		expect(pricingPackStatus(["balance_error", "balance_error", "balance_error"])).toBeNull();
+		expect(pricingPackStatus([])).toBeNull();
 	});
 });

@@ -1,0 +1,10 @@
+{
+  "turns": [
+    {
+      "match": "I want to understand recursion well enough",
+      "reply": "Let\u2019s trace countdown(2). Its first call starts countdown(1). What happens to the first call while the second runs?"
+    }
+  ],
+  "auxiliaryReply": "How recursion returns",
+  "topicCategory": "computing"
+}

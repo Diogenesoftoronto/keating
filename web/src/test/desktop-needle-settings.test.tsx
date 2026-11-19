@@ -25,7 +25,7 @@ test("managed installation and in-progress download have distinct remove and can
   expect(localRecallSettingsMessage(true, true, installed, false)).toBe("Downloaded model in Keating app data. Local recall is off.");
   const downloading = { available: false, model: null, installed: false, downloading: true, downloadedBytes: 18, totalBytes: 36 };
   expect(render(downloading)).toContain("Cancel download");
-  expect(render(downloading)).toContain('value="50"');
+  expect(render(downloading)).toContain('aria-valuenow="50"');
   expect(render(downloading, true, "cancel")).toContain("disabled");
   expect(render(downloading)).not.toContain("Remove local recall model");
   expect(render({ available: false, model: null, installed: true })).toContain("Remove local recall model");

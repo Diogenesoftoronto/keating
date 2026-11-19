@@ -1,5 +1,5 @@
 import { useEffect, useState, useTransition } from "react";
-import { Check, GitCompareArrows, SkipForward, X } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css, cx } from "../../styled-system/css";
 import type {
 	PendingResponseComparison,
@@ -84,7 +84,7 @@ export function ResponseComparisonPanel({ comparison, onChoose }: ResponseCompar
 						_hover: { backgroundColor: "var(--accent)", borderColor: "var(--primary)" },
 					})}
 				>
-					<GitCompareArrows size={16} className={css({ flexShrink: 0, color: "var(--primary)" })} />
+					<KeatingGlyph name="compare" size={16} className={css({ flexShrink: 0, color: "var(--primary)" })} />
 					<span className={css({ minWidth: 0, flex: 1 })}>
 						<span className={css({ display: "block", fontSize: "0.75rem", fontWeight: 650, color: "var(--foreground)" })}>
 							Another explanation is ready
@@ -134,7 +134,7 @@ export function ResponseComparisonPanel({ comparison, onChoose }: ResponseCompar
 						onClick={(event) => event.stopPropagation()}
 					>
 						<header className={css({ display: "flex", alignItems: "flex-start", gap: "0.75rem", borderBottom: "1px solid var(--border)", padding: "1rem" })}>
-							<GitCompareArrows size={18} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--primary)" })} />
+							<KeatingGlyph name="compare" size={18} className={css({ marginTop: "0.125rem", flexShrink: 0, color: "var(--primary)" })} />
 							<div className={css({ minWidth: 0, flex: 1 })}>
 								<h2 id="response-comparison-title" className={css({ fontSize: "0.9375rem", fontWeight: 700 })}>
 									Which explanation helped more?
@@ -144,7 +144,7 @@ export function ResponseComparisonPanel({ comparison, onChoose }: ResponseCompar
 								</p>
 							</div>
 							<button type="button" onClick={() => setOpen(false)} aria-label="Close comparison" className={css({ display: "inline-flex", height: "2rem", width: "2rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.375rem", _hover: { backgroundColor: "var(--accent)" } })}>
-								<X size={16} />
+								<KeatingGlyph name="x" size={16} />
 							</button>
 						</header>
 
@@ -170,7 +170,7 @@ export function ResponseComparisonPanel({ comparison, onChoose }: ResponseCompar
 
 						<footer className={css({ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.75rem", borderTop: "1px solid var(--border)", padding: "0.75rem 1rem" })}>
 							<button type="button" disabled={Boolean(decision)} onClick={() => void choose("skipped")} className={css({ display: "inline-flex", minHeight: "2.25rem", alignItems: "center", gap: "0.375rem", fontSize: "0.75rem", color: "var(--muted-foreground)", _hover: { color: "var(--foreground)" }, _disabled: { opacity: 0.6 } })}>
-								{decision === "skipped" ? <Spinner size={13} /> : <SkipForward size={13} />}
+								{decision === "skipped" ? <Spinner size={13} /> : <KeatingGlyph name="skip" size={13} />}
 								Skip
 							</button>
 							<span className={css({ fontSize: "11px", color: "var(--muted-foreground)" })}>Comparisons appear in about 1% of replies</span>
@@ -225,7 +225,7 @@ function ResponseOption({
 						: css({ border: "1px solid var(--border)", _hover: { backgroundColor: "var(--accent)" } }),
 				)}
 			>
-				{decision === choice ? <Spinner size={14} /> : <Check size={14} />}
+				{decision === choice ? <Spinner size={14} /> : <KeatingGlyph name="check" size={14} />}
 				Choose {choice}
 			</button>
 		</article>

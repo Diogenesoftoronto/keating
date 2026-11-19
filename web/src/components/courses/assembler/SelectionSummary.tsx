@@ -1,5 +1,5 @@
 /** Plain-language summary of what the new course will start with. */
-import { Check, Rows3 } from "lucide-react";
+import { KeatingGlyph } from "../../../design-system/glyphs";
 import { css } from "../../../../styled-system/css";
 
 export function SelectionSummary({
@@ -14,10 +14,10 @@ export function SelectionSummary({
   cardCount: number;
 }) {
   return (
-<div
+<div role="status" data-glyph-host
   className={css({
     mt: "1rem",
-    border: "1px solid var(--ink)",
+    borderTop: "1px solid var(--line-soft)",
     bg: "var(--paper)",
     p: "0.8rem",
   })}
@@ -30,7 +30,7 @@ export function SelectionSummary({
       fontWeight: 750,
     })}
   >
-    {hasSources ? <Check size={16} /> : <Rows3 size={16} />}{" "}
+    {hasSources ? <KeatingGlyph name="check" size={16} /> : <KeatingGlyph name="menu" size={16} />}{" "}
     {hasSources ? "Assembled start" : "Blank start"}
   </p>
   <p

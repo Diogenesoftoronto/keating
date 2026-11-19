@@ -174,3 +174,8 @@ function SaveRecoveryExam(args: ExamRendererProps) {
     />
   );
 }
+
+export const NarrowReply: Story = {
+  ...Completed,
+  decorators: [Story => <div style={{ width: "min(320px, 100%)" }}><Story /></div>],
+};

@@ -1,32 +1,38 @@
-import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronDown } from "reicon-react/icons/ChevronDown";
-import { BranchUp as GitBranch } from "reicon-react/icons/BranchUp";
-import { Layers2 as Layers3 } from "reicon-react/icons/Layers2";
-import { Plus } from "reicon-react/icons/Plus";
-import { Magnifier as Search } from "reicon-react/icons/Magnifier";
-import { Xmark as X } from "reicon-react/icons/Xmark";
+import { css } from "../../styled-system/css";
+import { useEffect, useId, useRef, useState } from "react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import type { SessionBrowserSurfaceProps } from "./SessionBrowser";
 import { SessionCard } from "./SessionCard";
-import { Select } from "./Select";
 import { flattenSessionTree, type SessionTreeNode } from "./session-tree";
-import { type CategoryKey } from "./session-card-visuals";
-import {
-  filterSessionLibrary,
-  sessionCategories,
-  SESSION_ACTIVITY_LABELS,
-  type SessionActivityFilter,
-} from "./session-library";
+import type { SessionSection } from "./session-placement";
+import { SessionLibraryEmpty, SessionSearch, SessionSubjectChips, useSubjectLibrary } from "./SessionLibraryTools";
 import "./session-library.css";
+
+const expandedChevron = css({ "&&&": { transform: "rotate(0)" } });
+
+const SECTION_LABELS: Record<SessionSection, string> = {
+  pinned: "Pinned",
+  recent: "Recent",
+  earlier: "Earlier",
+};
 
 function SessionFamily({
   root,
   matches,
   filtering,
+  section,
+  onTogglePin,
+  onMoveSection,
+  onDelete,
   ...props
 }: SessionBrowserSurfaceProps & {
   root: SessionTreeNode;
   matches: ReadonlySet<string>;
   filtering: boolean;
+  section?: SessionSection;
+  onTogglePin: (id: string) => void;
+  onMoveSection: (id: string) => void;
+  onDelete: (id: string) => Promise<void>;
 }) {
   const branches = flattenSessionTree(root.children);
   const [expanded, setExpanded] = useState(
@@ -55,7 +61,15 @@ function SessionFamily({
       onFork={props.onFork}
       onSuggestTitle={props.onSuggestTitle}
       onRename={props.store.rename}
-      onDelete={props.store.remove}
+      onDelete={onDelete}
+      {...(node === root
+        ? {
+            pinned: section === "pinned",
+            inEarlier: section === "earlier",
+            onTogglePin,
+            onMoveSection,
+          }
+        : {})}
     />
   );
   return (
@@ -71,11 +85,11 @@ function SessionFamily({
             disabled={filtering}
             onClick={() => setExpanded(!expanded)}
           >
-            <GitBranch size={15} />
+            <KeatingGlyph name="fork" size={15} />
             <span>
               {branches.length} {branches.length === 1 ? "fork" : "forks"}
             </span>
-            <ChevronDown size={15} data-expanded={showBranches || undefined} />
+            <KeatingGlyph name="chev" size={15} className={showBranches ? expandedChevron : undefined} />
           </button>
           {showBranches ? (
             <ul
@@ -103,42 +117,14 @@ function SessionFamily({
 /** The mobile library keeps sessions and their forks together at every filter. */
 export function SessionBrowserSheet(props: SessionBrowserSurfaceProps) {
   const { store, onMobileClose, onNewSession } = props;
-  const [category, setCategory] = useState<CategoryKey | "all">("all");
-  const [activity, setActivity] = useState<SessionActivityFilter>("all");
   const [forkedSource, setForkedSource] = useState<string | null>(null);
   const forkTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
   const dialogRef = useRef<HTMLDialogElement>(null);
   const headingId = useId();
-  const categories = useMemo(
-    () => sessionCategories(store.items),
-    [store.items],
-  );
-  const result = useMemo(
-    () =>
-      filterSessionLibrary({
-        roots: store.roots,
-        heroes: store.heroes,
-        queryResults: store.flatResults,
-        category,
-        activity,
-      }),
-    [store.roots, store.heroes, store.flatResults, category, activity],
-  );
-  const filtering =
-    Boolean(store.query.trim()) || category !== "all" || activity !== "all";
-  const activityOptions = (
-    Object.keys(SESSION_ACTIVITY_LABELS) as SessionActivityFilter[]
-  ).filter(
-    (value) =>
-      value === "all" ||
-      value === "forks" ||
-      value === activity ||
-      [...store.heroes.values()].some((hero) =>
-        (hero.types ?? [hero.type]).includes(value),
-      ),
-  );
+  const library = useSubjectLibrary(store, props.activeSessionId);
+  const { searching: filtering, filtered: result, sections, earlierPage, earlierOpen } = library;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -158,11 +144,7 @@ export function SessionBrowserSheet(props: SessionBrowserSurfaceProps) {
     };
   }, []);
 
-  const resetFilters = () => {
-    setCategory("all");
-    setActivity("all");
-    store.setQuery("");
-  };
+  const { resetFilters } = library;
   const handleLoad = async (id: string) => {
     await props.onLoad(id);
     onMobileClose?.();
@@ -173,6 +155,23 @@ export function SessionBrowserSheet(props: SessionBrowserSurfaceProps) {
     clearTimeout(forkTimer.current);
     forkTimer.current = setTimeout(() => setForkedSource(null), 1800);
   };
+
+  const renderFamily = (root: SessionTreeNode, section?: SessionSection) => (
+    <SessionFamily
+      key={root.session.id}
+      {...props}
+      root={root}
+      matches={result.matches}
+      filtering={filtering}
+      section={section ?? library.sectionOf.get(root.session.id)}
+      onLoad={handleLoad}
+      onFork={handleFork}
+      onTogglePin={library.togglePin}
+      onMoveSection={library.moveSection}
+      onDelete={library.remove}
+      forkedSessionId={props.forkedSessionId ?? forkedSource}
+    />
+  );
 
   return (
     <dialog
@@ -198,22 +197,13 @@ export function SessionBrowserSheet(props: SessionBrowserSurfaceProps) {
       title="Close sessions"
             onClick={onMobileClose}
           >
-            <X size={22} />
+            <KeatingGlyph name="x" size={22} />
           </button>
         ) : null}
       </header>
       <div className="session-library__tools">
         <div className="session-library__search-row">
-          <label className="session-library__search">
-            <Search size={18} aria-hidden="true" />
-            <input
-              type="search"
-              aria-label="Search sessions"
-              value={store.query}
-              placeholder="Search sessions"
-              onChange={(event) => store.setQuery(event.target.value)}
-            />
-          </label>
+          <SessionSearch store={store} />
           {onNewSession ? (
             <button
               type="button"
@@ -225,41 +215,11 @@ export function SessionBrowserSheet(props: SessionBrowserSurfaceProps) {
                 onMobileClose?.();
               }}
             >
-              <Plus size={18} />
+              <KeatingGlyph name="plus" size={18} />
             </button>
           ) : null}
         </div>
-        <div
-          className="session-library__categories"
-          role="group"
-          aria-label="Filter sessions by category"
-        >
-          <button
-            type="button"
-            aria-pressed={category === "all"}
-            onClick={() => setCategory("all")}
-          >
-            All<span>{store.items.length}</span>
-          </button>
-          {categories.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              aria-pressed={category === item.key}
-              onClick={() =>
-                setCategory(category === item.key ? "all" : item.key)
-              }
-            >
-              <span
-                className="session-entry__category-dot"
-                style={{ background: item.accent }}
-                aria-hidden="true"
-              />
-              {item.label}
-              <span>{item.count}</span>
-            </button>
-          ))}
-        </div>
+        <SessionSubjectChips library={library} total={store.items.length} />
         <div className="session-library__browse-row">
           <p role="status" aria-live="polite">
             {store.loading
@@ -267,24 +227,12 @@ export function SessionBrowserSheet(props: SessionBrowserSurfaceProps) {
               : filtering
                 ? `${result.matches.size} ${result.matches.size === 1 ? "match" : "matches"}`
                 : `${store.items.length} ${store.items.length === 1 ? "session" : "sessions"}`}
-            <span>{filtering ? "" : " · recent first"}</span>
           </p>
-          <label className="session-library__activity">
-            <Layers3 size={14} aria-hidden="true" />
-            <Select
-              aria-label="Filter sessions by activity"
-              value={activity}
-              onValueChange={(value) =>
-                setActivity(value as SessionActivityFilter)
-              }
-            >
-              {activityOptions.map((value) => (
-                <option key={value} value={value}>
-                  {SESSION_ACTIVITY_LABELS[value]}
-                </option>
-              ))}
-            </Select>
-          </label>
+          {filtering ? (
+            <button type="button" onClick={resetFilters}>
+              Clear filters
+            </button>
+          ) : null}
         </div>
       </div>
       <div className="session-library__scroll">
@@ -306,40 +254,68 @@ export function SessionBrowserSheet(props: SessionBrowserSurfaceProps) {
               </div>
             ))}
           </div>
-        ) : result.roots.length ? (
-          <ul className="session-library__families" aria-label="Saved sessions">
-            {result.roots.map((root) => (
-              <SessionFamily
-                key={root.session.id}
-                {...props}
-                root={root}
-                matches={result.matches}
-                filtering={filtering}
-                onLoad={handleLoad}
-                onFork={handleFork}
-                forkedSessionId={props.forkedSessionId ?? forkedSource}
-              />
-            ))}
+        ) : filtering && result.roots.length ? (
+          <ul className="session-library__families" aria-label="Matching sessions">
+            {result.roots.map((root) => renderFamily(root))}
           </ul>
-        ) : !store.error ? (
-          <div className="session-library__empty">
-            <Search size={28} aria-hidden="true" />
-            <h3>
-              {filtering
-                ? "No sessions found"
-                : "Your next question starts here"}
-            </h3>
-            <p>
-              {filtering
-                ? "Try another subject or search term."
-                : "Start a session to explore something new."}
-            </p>
-            {filtering ? (
-              <button type="button" onClick={resetFilters}>
-                Clear filters
-              </button>
+        ) : !filtering && store.roots.length ? (
+          <div className="session-library__sections">
+            {(["pinned", "recent"] as const).map((key) =>
+              sections[key].length ? (
+                <section
+                  key={key}
+                  className="session-library__section"
+                  aria-labelledby={`${headingId}-${key}`}
+                >
+                  <h3
+                    id={`${headingId}-${key}`}
+                    className="session-library__section-label"
+                    hidden={key === "recent" && !sections.pinned.length && !sections.earlier.length}
+                  >
+                    {SECTION_LABELS[key]}
+                  </h3>
+                  <ul className="session-library__families">
+                    {sections[key].map((root) => renderFamily(root, key))}
+                  </ul>
+                </section>
+              ) : null,
+            )}
+            {sections.earlier.length ? (
+              <section
+                className="session-library__section"
+                aria-labelledby={`${headingId}-earlier`}
+              >
+                <h3 className="session-library__section-label">
+                  <button
+                    id={`${headingId}-earlier`}
+                    type="button"
+                    className="session-library__earlier"
+                    aria-expanded={earlierOpen}
+                    aria-controls={`${headingId}-earlier-rows`}
+                    onClick={() => library.setEarlierOpen(!earlierOpen)}
+                  >
+                    <KeatingGlyph name="chev" size={15} className={earlierOpen ? expandedChevron : undefined} />
+                    <span>{SECTION_LABELS.earlier}</span>
+                    <span className="session-library__count">{sections.earlier.length}</span>
+                  </button>
+                </h3>
+                <ul id={`${headingId}-earlier-rows`} className="session-library__families">
+                  {earlierPage.roots.map((root) => renderFamily(root, "earlier"))}
+                </ul>
+                {earlierPage.nextCount > 0 ? (
+                  <button
+                    type="button"
+                    className="session-library__more"
+                    onClick={library.showMoreEarlier}
+                  >
+                    Show {earlierPage.nextCount} more
+                  </button>
+                ) : null}
+              </section>
             ) : null}
           </div>
+        ) : !store.error ? (
+          <SessionLibraryEmpty filtering={filtering} resetFilters={resetFilters} />
         ) : null}
       </div>
     </dialog>

@@ -1,0 +1,18 @@
+{
+  "input": {
+    "title": "Recursion Study Room",
+    "topic": "The call stack",
+    "goal": "Trace a countdown together and explain when calls return.",
+    "displayName": "Morgan Lee",
+    "settings": {"participation": "on-request", "replyReview": "teacher-approves"}
+  },
+  "operations": [
+    {
+      "type": "message.post",
+      "messageId": "sample-countdown-opener",
+      "body": "Sample discussion: label the calls from 2 down to 0. Which one can return first?"
+    }
+  ],
+  "learner": {"displayName": "Alex Rivera", "role": "learner", "message": "@Keating, which call returns first?"},
+  "guidance": "Ask Alex to identify the base case before explaining the return order."
+}

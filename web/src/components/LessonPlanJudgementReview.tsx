@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Button, Loading } from "../design-system/kit";
 import { css } from "../../styled-system/css";
 import { LESSON_PLAN_CRITERIA, lessonPlanBlocks, type LessonPlanReview } from "../../../shared/pedagogy/lesson-plan-judgement";
 import { renderedLessonPlanInput, saveAndReviewLessonPlan, type ReviewableStudyPlan } from "../keating/judgement/lesson-plan-review";
@@ -28,11 +29,10 @@ export function LessonPlanJudgementReview({ plan, disabled = false }: { plan: Re
   };
   const review = result?.key === key ? result.review : null;
   const blocks = lessonPlanBlocks(input.content);
-  return <aside aria-label="Lesson plan review" className={css({ borderTop: "1px solid var(--border)", p: "0.8rem", fontSize: "0.75rem", lineHeight: 1.5 })}>
-    <button type="button" disabled={disabled || settings.backend === "off" || status === "saving" || status === "reviewing"} onClick={() => void start()}
-      className={css({ border: "1px solid var(--border)", borderRadius: "0.35rem", p: "0.5rem", fontWeight: 650 })}>
-      {status === "saving" ? "Saving plan…" : status === "reviewing" ? "Reviewing saved plan…" : "Save & review plan"}
-    </button>
+  return <aside aria-label="Lesson plan review" className="lesson-review">
+    <Button size="sm" variant="ghost" disabled={disabled || settings.backend === "off" || status === "saving" || status === "reviewing"} onClick={() => void start()}>
+      {status === "saving" || status === "reviewing" ? <Loading size="inline" label={status === "saving" ? "Saving plan…" : "Reviewing saved plan…"} /> : "Save & review plan"}
+    </Button>
     {status === "reviewing" && <button type="button" onClick={() => { controller.current?.abort(); setStatus("idle"); }} className={css({ ml: "0.7rem" })}>Cancel review</button>}
     <p>{disabled ? "Review is available when this plan is complete and active." : settings.backend === "off" ? "Judgement is off in Settings." : settings.backend === "hosted" ? "Saves this plan first, then may send its text to your configured hosted judgement service." : "Saves this plan first, then uses the independent local judgement model."}</p>
     {status === "reviewing" && <p role="status">Plan saved. You can keep working while review runs.</p>}

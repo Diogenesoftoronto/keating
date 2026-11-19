@@ -1,0 +1,9 @@
+{
+  "preferredName": "Alex Rivera",
+  "goalText": "Trace a recursive function and explain how each call returns.",
+  "priorKnowledge": "I can write a loop and read a short JavaScript function.",
+  "interests": ["Programming", "Recursion"],
+  "examplesFirst": true,
+  "preferredSessionMinutes": 15,
+  "notes": "Sample learner profile. I learn best when I predict a small example before seeing the explanation."
+}

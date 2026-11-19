@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { css } from "../../../styled-system/css";
-import { courseAvatarColor } from "../courses/course-ui";
+import { Avatar, EmptyState, Note } from "../../design-system/kit";
+import { Meter } from "../../design-system/charts";
 import type { RoomInviteRole, RoomMember, RoomOperationInput, RoomViewerSnapshot } from "../../rooms/contracts";
 import { summarizeParticipation, type ParticipationStatus } from "../../rooms/participation";
 import { ROLE_LABELS, articleRole, errorMessage, memberActions, memberName, roomStyles as s } from "./room-ui";
@@ -32,11 +33,15 @@ function MemberRow({
   member,
   snapshot,
   online,
+  messages,
+  total,
   mutate,
 }: {
   member: RoomMember;
   snapshot: RoomViewerSnapshot;
   online: boolean;
+  messages: number | undefined;
+  total: number;
   mutate: Mutate;
 }) {
   const actions = memberActions(snapshot, member);
@@ -61,16 +66,16 @@ function MemberRow({
   return (
     <li className={css({ display: "grid", gap: "0.35rem", py: "0.45rem", borderBottom: "1px solid color-mix(in srgb, var(--ink) 18%, transparent)", _last: { borderBottom: 0 } })}>
       <div className={css({ display: "flex", alignItems: "center", gap: "0.55rem", fontSize: "0.8rem" })}>
-        <span aria-hidden="true" className={css({ position: "relative", display: "grid", h: "1.75rem", w: "1.75rem", flexShrink: 0, placeItems: "center", borderRadius: "50%", fontWeight: 800, color: "white" })} style={{ background: courseAvatarColor(member.role === "host" || member.role === "teacher" ? "teacher" : "student") }}>
-          {member.displayName.charAt(0).toUpperCase()}
-          <span className={css({ position: "absolute", right: "-1px", bottom: "-1px", h: "0.55rem", w: "0.55rem", border: "1px solid var(--paper-deep, #e9e2d2)", borderRadius: "50%" })} style={{ background: online ? "var(--phosphor, #4be388)" : "#9ba19a" }} />
-        </span>
+        <Avatar name={member.displayName} />
         <span className={css({ minW: 0, flex: 1 })}>
           <strong className={css({ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" })}>{memberName(member, snapshot.viewer.accountId)}</strong>
           <span className={css({ fontSize: "0.68rem", color: "var(--ink-soft)" })}>
             {ROLE_LABELS[member.role]} · {online ? "here now" : "away"}{member.muted ? " · muted" : ""}
           </span>
         </span>
+        {messages !== undefined && <div className="rm-participation">
+          <Meter value={messages} max={total} label={`${member.displayName} messages in the loaded transcript`} valueText={String(messages)} />
+        </div>}
       </div>
       {manageable ? (
         <div className={css({ display: "flex", flexWrap: "wrap", gap: "0.3rem", pl: "2.3rem" })}>
@@ -78,7 +83,7 @@ function MemberRow({
             <label className={css({ display: "inline-flex", alignItems: "center" })}>
               <span className={css({ srOnly: true })}>New role for {member.displayName}</span>
               <select
-                className={s.button}
+                className="k-button k-ghost k-sm"
                 value={stagedRole}
                 disabled={busy}
                 onChange={(event) => setStagedRole(event.target.value as RoomInviteRole | "")}
@@ -127,13 +132,13 @@ export function RoomParticipationSummary({ snapshot }: { snapshot: RoomViewerSna
   const summary = useMemo(() => summarizeParticipation(room.members, room.messages), [room.members, room.messages]);
   return (
     <section aria-labelledby="room-participation-heading" className={s.section}>
-      <h2 id="room-participation-heading" className={s.heading}>Participation</h2>
+      <h2 id="room-participation-heading" className="rm-heading">Participation</h2>
       <p className={s.help}>
         Counts of who has spoken in the loaded transcript. They measure taking part, not understanding.
         Keating uses them to invite quieter learners in.
       </p>
       {summary.learners.length === 0 ? (
-        <p className={s.help}>No learners have joined yet.</p>
+        <EmptyState glyph="people" heading="No learners have joined yet." />
       ) : (
         <table className={css({ mt: "0.5rem", w: "100%", borderCollapse: "collapse", fontSize: "0.74rem", "& th, & td": { textAlign: "left", py: "0.3rem", pr: "0.4rem", borderBottom: "1px solid color-mix(in srgb, var(--ink) 15%, transparent)" }, "& th": { fontWeight: 750 } })}>
           <thead>
@@ -193,13 +198,13 @@ function SelfControls({ snapshot, mutate, onLeft }: { snapshot: RoomViewerSnapsh
   };
   return (
     <section aria-labelledby="room-self-heading" className={s.section}>
-      <h2 id="room-self-heading" className={s.heading}>You</h2>
-      <form className={css({ mt: "0.45rem", display: "flex", gap: "0.35rem" })} onSubmit={(event) => { event.preventDefault(); void rename(); }}>
+      <h2 id="room-self-heading" className="rm-heading">You</h2>
+      <form className="rm-rename" onSubmit={(event) => { event.preventDefault(); void rename(); }}>
         <label className={css({ flex: 1 })}>
           <span className={css({ srOnly: true })}>Your name in this room</span>
-          <input className={s.input} value={name} maxLength={120} onChange={(event) => { setName(event.target.value); setSaved(false); }} />
+          <input className="k-input" value={name} maxLength={120} onChange={(event) => { setName(event.target.value); setSaved(false); }} />
         </label>
-        <button type="submit" className={s.button} disabled={busy || !name.trim() || name.trim() === viewer.displayName}>Rename</button>
+        <button type="submit" className="k-button k-ghost k-sm" disabled={busy || !name.trim() || name.trim() === viewer.displayName}>Rename</button>
       </form>
       {saved ? <p role="status" className={s.help}>Name updated.</p> : null}
       {viewer.role !== "host" ? (
@@ -233,7 +238,12 @@ export function RoomPeoplePanel({
   mutate: Mutate;
   onLeft: () => void;
 }) {
+  const summary = useMemo(() => snapshot.permissions.canOversee
+    ? summarizeParticipation(snapshot.room.members, snapshot.room.messages) : undefined,
+    [snapshot.permissions.canOversee, snapshot.room.members, snapshot.room.messages]);
+  const counts = new Map(summary?.learners.map(person => [person.accountId, person.messages]));
   const present = new Set(presentAccountIds);
+  const silent = summary?.learners.filter(person => present.has(person.accountId) && person.messages === 0);
   const members = [...snapshot.room.members].sort((left, right) =>
     Number(present.has(right.accountId)) - Number(present.has(left.accountId))
     || ROLE_ORDER[left.role] - ROLE_ORDER[right.role]
@@ -241,16 +251,18 @@ export function RoomPeoplePanel({
   return (
     <>
       <section aria-labelledby="room-people-heading" className={s.section}>
-        <h2 id="room-people-heading" className={s.heading}>
-          People <span className={css({ fontFamily: "var(--mono-display)", fontSize: "0.72rem", color: "var(--ink-soft)" })}>{present.size} here · {members.length} total</span>
+        <h2 id="room-people-heading" className="rm-people-heading">
+          <span className="k-sr">People </span><span className={css({ fontFamily: "var(--mono-display)", fontSize: "0.72rem", color: "var(--ink-soft)" })}>{present.size} here · {members.length} total</span>
+          {summary && <span>Messages</span>}
         </h2>
         <ul className={css({ mt: "0.4rem" })}>
           {members.map((member) => (
-            <MemberRow key={member.accountId} member={member} snapshot={snapshot} online={present.has(member.accountId)} mutate={mutate} />
+            <MemberRow key={member.accountId} member={member} messages={counts.get(member.accountId)} total={summary?.learnerMessages ?? 0} snapshot={snapshot} online={present.has(member.accountId)} mutate={mutate} />
           ))}
         </ul>
       </section>
-      {snapshot.permissions.canOversee ? <RoomParticipationSummary snapshot={snapshot} /> : null}
+      {Boolean(silent?.length) && <Note data-glyph-host>{silent?.map(person => person.displayName).join(", ")} {silent?.length === 1 ? "is here and has" : "are here and have"} not posted {snapshot.hasEarlierMessages ? "in the loaded transcript" : "yet"}.</Note>}
+      {summary && <details className="rm-details"><summary>Details</summary><RoomParticipationSummary snapshot={snapshot} /></details>}
       <SelfControls snapshot={snapshot} mutate={mutate} onLeft={onLeft} />
     </>
   );

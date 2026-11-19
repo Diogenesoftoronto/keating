@@ -270,3 +270,63 @@ export function splitSearchSources(text: string): { text: string; sites: WebSear
   const sites = sitesFromText(footer);
   return sites.length ? { text: text.slice(0, marker), sites } : { text, sites: [] };
 }
+
+export type WebSearchCallState = "running" | "success" | "error";
+
+export interface WebSearchCall extends ParsedWebSearch {
+	id: string;
+	state: WebSearchCallState;
+}
+
+interface MessagePartLike {
+	type: string;
+	text?: string;
+	toolCallId?: string;
+	toolName?: string;
+	args?: unknown;
+	result?: unknown;
+	isError?: boolean;
+}
+
+function callState(part: MessagePartLike, hasResult: boolean): WebSearchCallState {
+	if (part.isError) return "error";
+	return hasResult ? "success" : "running";
+}
+
+/**
+ * Group consecutive web-search tool calls in a message so several queries render
+ * as one activity line. Reasoning and blank text between searches do not split a
+ * run; prose the learner can read does.
+ */
+export function webSearchRuns(
+	parts: readonly MessagePartLike[],
+	hasResult: (result: unknown) => boolean,
+): WebSearchCall[][] {
+	const runs: WebSearchCall[][] = [];
+	let current: WebSearchCall[] | null = null;
+	parts.forEach((part, index) => {
+		if (part.type === "tool-call" && part.toolName && isWebSearchToolName(part.toolName)) {
+			const call: WebSearchCall = {
+				...parseWebSearchResult(part.result, part.args),
+				id: part.toolCallId ?? `search-${index}`,
+				state: callState(part, hasResult(part.result)),
+			};
+			if (!current) runs.push((current = []));
+			current.push(call);
+			return;
+		}
+		if (part.type === "reasoning" || (part.type === "text" && !part.text?.trim())) return;
+		current = null;
+	});
+	return runs;
+}
+
+/** Every distinct source across a message's searches, in first-seen order. */
+export function citationsFromCalls(calls: readonly WebSearchCall[]): WebSearchSite[] {
+	const byUrl = new Map<string, WebSearchSite>();
+	for (const call of calls) {
+		if (call.state !== "success") continue;
+		for (const site of call.sites) if (!byUrl.has(site.url)) byUrl.set(site.url, site);
+	}
+	return [...byUrl.values()];
+}

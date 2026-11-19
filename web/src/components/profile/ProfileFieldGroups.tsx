@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
 	type DeclaredLearnerProfile,
 	type LanguageFluency,
@@ -9,6 +9,7 @@ import {
 	setCurrentPursuit,
 	startPursuit,
 } from "@keating/learner-contracts";
+import { Segmented } from "../../design-system/kit";
 import { Select } from "../Select";
 import { Toggle } from "../Toggle";
 import { css } from "../../../styled-system/css";
@@ -132,9 +133,9 @@ const FLUENCY_LABELS: Record<LanguageFluency, string> = {
 	native: "Native speaker",
 };
 
-function ToggleRow({ title, description, checked, onChange }: { title: string; description: string; checked: boolean; onChange: (next: boolean) => void }) {
+function ToggleRow({ id, title, description, checked, onChange }: { id?: string; title: string; description: string; checked: boolean; onChange: (next: boolean) => void }) {
 	return (
-		<div className={toggleRowClass}>
+		<div id={id} tabIndex={id ? -1 : undefined} className={toggleRowClass}>
 			<span className={toggleTextClass}>
 				<span className={toggleTitleClass}>{title}</span>
 				<span className={hintClass}>{description}</span>
@@ -259,11 +260,8 @@ export function LanguageFields({ profile, onChange, idPrefix = "profile" }: Prof
 		<div className={groupClass}>
 			<div className={rowClass}>
 				<Field id={`${idPrefix}-locale`} label="Interface language" hint="Changes the app's own wording. Keating currently ships English and French (Canada).">
-					<Select id={`${idPrefix}-locale`} aria-label="Interface language" value={profile.interfaceLocale} onValueChange={(value) => onChange({ interfaceLocale: value as DeclaredLearnerProfile["interfaceLocale"] })}>
-						<option value="system">Match my browser</option>
-						<option value="en-CA">English</option>
-						<option value="fr-CA">Français</option>
-					</Select>
+					<Segmented id={`${idPrefix}-locale`} label="Interface language" value={profile.interfaceLocale} onChange={(value) => onChange({ interfaceLocale: value as DeclaredLearnerProfile["interfaceLocale"] })}
+						options={[{ value: "system", label: "Match my browser" }, { value: "en-CA", label: "English" }, { value: "fr-CA", label: "Français" }]} />
 				</Field>
 				<Field id={`${idPrefix}-explain-language`} label="Explain things in" hint="Any language. Keating will teach in it even when the interface stays in English.">
 					<ChoiceWithOther
@@ -280,13 +278,8 @@ export function LanguageFields({ profile, onChange, idPrefix = "profile" }: Prof
 			</div>
 			<div>
 				<Field id={`${idPrefix}-fluency`} label="Your fluency in that language" hint="Sets vocabulary and sentence length — not difficulty.">
-					<Select id={`${idPrefix}-fluency`} aria-label="Fluency in the language of instruction" value={profile.instructionLanguageFluency} onValueChange={(value) => onChange({ instructionLanguageFluency: value as DeclaredLearnerProfile["instructionLanguageFluency"] })}>
-						<option value="">Not answered</option>
-						<option value="beginner">Beginner</option>
-						<option value="intermediate">Intermediate</option>
-						<option value="fluent">Fluent</option>
-						<option value="native">Native speaker</option>
-					</Select>
+					<Segmented id={`${idPrefix}-fluency`} label="Fluency in the language of instruction" value={profile.instructionLanguageFluency} onChange={(value) => onChange({ instructionLanguageFluency: value as DeclaredLearnerProfile["instructionLanguageFluency"] })}
+						options={[{ value: "", label: "Not answered" }, { value: "beginner", label: "Beginner" }, { value: "intermediate", label: "Intermediate" }, { value: "fluent", label: "Fluent" }, { value: "native", label: "Native speaker" }]} />
 				</Field>
 			</div>
 			<fieldset className={css({ display: "flex", flexDirection: "column", gap: "0.75rem", border: 0, padding: 0, margin: 0, minWidth: 0 })}>
@@ -310,14 +303,13 @@ export function LanguageFields({ profile, onChange, idPrefix = "profile" }: Prof
 							}}
 						/>
 						<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem", minWidth: 0, "& > :first-child": { flex: 1, minWidth: 0 } })}>
-							<Select id={`${idPrefix}-other-fluency-${index}`} aria-label={`Fluency in ${name}`} value={fluencyFor(language)} disabled={!language.trim()}
-								onValueChange={(value) => onChange({ otherLanguageFluencies: Object.fromEntries([
+							<fieldset disabled={!language.trim()}>
+								<Segmented id={`${idPrefix}-other-fluency-${index}`} label={`Fluency in ${name}`} value={fluencyFor(language)}
+								onChange={(value) => onChange({ otherLanguageFluencies: Object.fromEntries([
 									...Object.entries(fluencies).filter(([entry]) => entry !== language),
 									...(value ? [[language, value as LanguageFluency]] : []),
-								]) })}>
-								<option value="">Fluency</option>
-								{(Object.keys(FLUENCY_LABELS) as LanguageFluency[]).map(level => <option key={level} value={level}>{FLUENCY_LABELS[level]}</option>)}
-							</Select>
+								]) })} options={[{ value: "", label: "Not answered" }, ...Object.entries(FLUENCY_LABELS).map(([value, label]) => ({ value, label }))]}/>
+							</fieldset>
 							<button type="button" className={outlineButton()} aria-label={`Remove ${name}`}
 								disabled={languages.length === 1 && !language.trim()}
 								onClick={() => { setDuplicateOf(null); changeLanguages(languages.filter((_, row) => row !== index)); }}>Remove</button>
@@ -525,80 +517,255 @@ export function GoalFields({
 	);
 }
 
-export function PedagogyFields({ profile, onChange, idPrefix = "profile" }: ProfileGroupProps) {
+function OptionalSegments(props: {
+	id: string;
+	label: string;
+	value: string;
+	onChange(value: string): void;
+	options: { value: string; label: string }[];
+}) {
+	const group = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		if (!props.value) {
+			const first =
+				group.current?.querySelector<HTMLButtonElement>('[role="radio"]');
+			if (first) first.tabIndex = 0;
+		}
+	}, [props.value]);
 	return (
-		<div className={groupClass}>
-			<div className={rowClass}>
-				<Field id={`${idPrefix}-socratic`} label="How much should Keating ask before it tells?" hint="Keating teaches by questioning. This sets how insistent that is.">
-					<Select id={`${idPrefix}-socratic`} aria-label="Socratic intensity" value={profile.socraticIntensity} onValueChange={(value) => onChange({ socraticIntensity: value as DeclaredLearnerProfile["socraticIntensity"] })}>
-						<option value="">Not answered</option>
-						<option value="light">Mostly explain, ask sometimes</option>
-						<option value="balanced">A balance of both</option>
-						<option value="deep">Keep asking until it clicks</option>
-					</Select>
-				</Field>
-				<Field id={`${idPrefix}-hints`} label="When you are stuck">
-					<Select id={`${idPrefix}-hints`} aria-label="Hint level" value={profile.hintLevel} onValueChange={(value) => onChange({ hintLevel: value as DeclaredLearnerProfile["hintLevel"] })}>
-						<option value="">Not answered</option>
-						<option value="minimal">Let me struggle a while</option>
-						<option value="moderate">Nudge me</option>
-						<option value="generous">Give me a clear hint</option>
-					</Select>
-				</Field>
-			</div>
-			<div className={rowClass}>
-				<Field id={`${idPrefix}-tone`} label="Tone">
-					<Select id={`${idPrefix}-tone`} aria-label="Tone" value={profile.tone} onValueChange={(value) => onChange({ tone: value as DeclaredLearnerProfile["tone"] })}>
-						<option value="">Not answered</option>
-						<option value="warm">Warm and encouraging</option>
-						<option value="neutral">Neutral</option>
-						<option value="direct">Direct, no padding</option>
-						<option value="playful">Playful</option>
-					</Select>
-				</Field>
-				<Field id={`${idPrefix}-depth`} label="Depth">
-					<Select id={`${idPrefix}-depth`} aria-label="Explanation depth" value={profile.depth} onValueChange={(value) => onChange({ depth: value as DeclaredLearnerProfile["depth"] })}>
-						<option value="">Not answered</option>
-						<option value="overview">Give me the shape of it</option>
-						<option value="standard">Standard</option>
-						<option value="rigorous">Rigorous, with the details</option>
-					</Select>
-				</Field>
-			</div>
-			<div className={rowClass}>
-				<Field id={`${idPrefix}-sequencing`} label="Start with">
-					<Select id={`${idPrefix}-sequencing`} aria-label="Sequencing" value={profile.examplesFirst === null ? "" : profile.examplesFirst ? "examples" : "rule"} onValueChange={(value) => onChange({ examplesFirst: value === "" ? null : value === "examples" })}>
-						<option value="">Not answered</option>
-						<option value="examples">A concrete example</option>
-						<option value="rule">The general rule</option>
-					</Select>
-				</Field>
-				<Field id={`${idPrefix}-analogies`} label="Draw analogies from" hint="Comma separated. Fields you know well enough to reason by comparison.">
-					<ListInput id={`${idPrefix}-analogies`} entries={profile.analogyDomains} onEntries={(analogyDomains) => onChange({ analogyDomains })} placeholder="cooking, music, carpentry" />
-				</Field>
-			</div>
+		<div className="pf-choice">
+			<Segmented {...props} ref={group} wide />
+			{props.value ? (
+				<button
+					type="button"
+					aria-label={`Clear ${props.label}`}
+					onClick={() => {
+						props.onChange("");
+						group.current
+							?.querySelector<HTMLButtonElement>('[role="radio"]')
+							?.focus();
+					}}
+				>
+					Clear
+				</button>
+			) : (
+				<small>Not answered</small>
+			)}
 		</div>
 	);
 }
 
-export function AccessibilityFields({ profile, onChange, idPrefix = "profile" }: ProfileGroupProps) {
+export function PedagogyFields({
+	profile,
+	onChange,
+	idPrefix = "profile",
+}: ProfileGroupProps) {
+	return (
+		<div className={groupClass + " pf-pedagogy"}>
+			<Field
+				id={`${idPrefix}-socratic`}
+				label="How much should Keating ask before it tells?"
+				hint="Keating teaches by questioning. This sets how insistent that is."
+			>
+				<OptionalSegments
+					id={`${idPrefix}-socratic`}
+					label="Socratic intensity"
+					value={profile.socraticIntensity}
+					onChange={(value) =>
+						onChange({
+							socraticIntensity:
+								value as DeclaredLearnerProfile["socraticIntensity"],
+						})
+					}
+					options={[
+						{ value: "light", label: "Mostly explain, ask sometimes" },
+						{ value: "balanced", label: "A balance of both" },
+						{ value: "deep", label: "Keep asking until it clicks" },
+					]}
+				/>
+			</Field>
+			<div className={rowClass}>
+				<Field id={`${idPrefix}-hints`} label="When you are stuck">
+					<OptionalSegments
+						id={`${idPrefix}-hints`}
+						label="Hint level"
+						value={profile.hintLevel}
+						onChange={(value) =>
+							onChange({
+								hintLevel: value as DeclaredLearnerProfile["hintLevel"],
+							})
+						}
+						options={[
+							{ value: "minimal", label: "Let me struggle" },
+							{ value: "moderate", label: "Nudge me" },
+							{ value: "generous", label: "Clear hint" },
+						]}
+					/>
+				</Field>
+				<Field id={`${idPrefix}-depth`} label="Depth">
+					<OptionalSegments
+						id={`${idPrefix}-depth`}
+						label="Explanation depth"
+						value={profile.depth}
+						onChange={(value) =>
+							onChange({ depth: value as DeclaredLearnerProfile["depth"] })
+						}
+						options={[
+							{ value: "overview", label: "The shape" },
+							{ value: "standard", label: "Standard" },
+							{ value: "rigorous", label: "Rigorous" },
+						]}
+					/>
+				</Field>
+			</div>
+			<div className={rowClass}>
+				<Field id={`${idPrefix}-tone`} label="Tone">
+					<OptionalSegments
+						id={`${idPrefix}-tone`}
+						label="Tone"
+						value={profile.tone}
+						onChange={(value) =>
+							onChange({ tone: value as DeclaredLearnerProfile["tone"] })
+						}
+						options={[
+							{ value: "warm", label: "Warm" },
+							{ value: "neutral", label: "Neutral" },
+							{ value: "direct", label: "Direct" },
+							{ value: "playful", label: "Playful" },
+						]}
+					/>
+				</Field>
+				<Field id={`${idPrefix}-sequencing`} label="Start with">
+					<OptionalSegments
+						id={`${idPrefix}-sequencing`}
+						label="Sequencing"
+						value={
+							profile.examplesFirst === null
+								? ""
+								: profile.examplesFirst
+									? "examples"
+									: "rule"
+						}
+						onChange={(value) =>
+							onChange({
+								examplesFirst: value === "" ? null : value === "examples",
+							})
+						}
+						options={[
+							{ value: "examples", label: "A concrete example" },
+							{ value: "rule", label: "The general rule" },
+						]}
+					/>
+				</Field>
+			</div>
+			<Field
+				id={`${idPrefix}-analogies`}
+				label="Draw analogies from"
+				hint="Comma separated. Fields you know well enough to reason by comparison."
+			>
+				<ListInput
+					id={`${idPrefix}-analogies`}
+					entries={profile.analogyDomains}
+					onEntries={(analogyDomains) => onChange({ analogyDomains })}
+					placeholder="cooking, music, carpentry"
+				/>
+			</Field>
+		</div>
+	);
+}
+
+export function AccessibilityFields({
+	profile,
+	onChange,
+	idPrefix = "profile",
+	interfaceReadOnly = false,
+}: ProfileGroupProps & { interfaceReadOnly?: boolean }) {
 	return (
 		<div className={groupClass}>
-			<p className={hintClass}>Keating treats these as requirements, not suggestions.</p>
-			<ToggleRow title="Plain language" description="Short sentences, no jargon unless it is the thing being taught." checked={profile.plainLanguage} onChange={(plainLanguage) => onChange({ plainLanguage })} />
-			<ToggleRow title="I use a screen reader" description="Keating describes diagrams and visuals in text rather than relying on them." checked={profile.screenReader} onChange={(screenReader) => onChange({ screenReader })} />
-			<ToggleRow title="Prefer captions and transcripts" description="Applies to spoken lessons and voice mode." checked={profile.captionsPreferred} onChange={(captionsPreferred) => onChange({ captionsPreferred })} />
-			<ToggleRow title="Dyslexia-friendly reading and speech" description="Uses Atkinson Hyperlegible with wider spacing. Saving enables spoken replies and turns microphone input off. With a Live-only provider, replies use your device voice." checked={profile.dyslexiaFriendlyFont} onChange={(dyslexiaFriendlyFont) => onChange({ dyslexiaFriendlyFont })} />
-			<ToggleRow title="Reduce motion" description="Removes animated transitions across the interface." checked={profile.reduceMotion} onChange={(reduceMotion) => onChange({ reduceMotion })} />
-			<ToggleRow title="Higher contrast" description="Strengthens text and border contrast." checked={profile.highContrast} onChange={(highContrast) => onChange({ highContrast })} />
-			<Field id={`${idPrefix}-text-scale`} label="Text size">
-				<Select id={`${idPrefix}-text-scale`} aria-label="Text size" value={profile.textScale} onValueChange={(value) => onChange({ textScale: value as DeclaredLearnerProfile["textScale"] })}>
-					<option value="">Not answered</option>
-					<option value="default">Default</option>
-					<option value="large">Large</option>
-					<option value="larger">Larger</option>
-				</Select>
-			</Field>
+			<p className={hintClass}>
+				Keating treats these as requirements, not suggestions.
+			</p>
+			<ToggleRow
+				id={`${idPrefix}-plain-language`}
+				title="Plain language"
+				description="Short sentences, no jargon unless it is the thing being taught."
+				checked={profile.plainLanguage}
+				onChange={(plainLanguage) => onChange({ plainLanguage })}
+			/>
+			<ToggleRow
+				id={`${idPrefix}-screen-reader`}
+				title="I use a screen reader"
+				description="Keating describes diagrams and visuals in text rather than relying on them."
+				checked={profile.screenReader}
+				onChange={(screenReader) => onChange({ screenReader })}
+			/>
+			<ToggleRow
+				id={`${idPrefix}-captions`}
+				title="Prefer captions and transcripts"
+				description="Applies to spoken lessons and voice mode."
+				checked={profile.captionsPreferred}
+				onChange={(captionsPreferred) => onChange({ captionsPreferred })}
+			/>
+			<ToggleRow
+				id={`${idPrefix}-dyslexia`}
+				title="Dyslexia-friendly reading and speech"
+				description="Uses Atkinson Hyperlegible with wider spacing. Saving enables spoken replies and turns microphone input off. With a Live-only provider, replies use your device voice."
+				checked={profile.dyslexiaFriendlyFont}
+				onChange={(dyslexiaFriendlyFont) => onChange({ dyslexiaFriendlyFont })}
+			/>
+			{interfaceReadOnly ? (
+				<div className="pf-interface-values">
+					<p>Text size · {profile.textScale || "Default"}</p>
+					<p>Higher contrast · {profile.highContrast ? "On" : "Off"}</p>
+					<p>Reduce motion · {profile.reduceMotion ? "On" : "Follow system"}</p>
+					<a
+						href="/chat?settings=interface.display"
+						onClick={(event) => {
+							event.preventDefault();
+							window.dispatchEvent(
+								new CustomEvent("keating:settings-tab", {
+									detail: "interface.display",
+								}),
+							);
+						}}
+					>
+						Change in Interface
+					</a>
+				</div>
+			) : (
+				<>
+					<ToggleRow
+						title="Reduce motion"
+						description="Removes animated transitions across the interface."
+						checked={profile.reduceMotion}
+						onChange={(reduceMotion) => onChange({ reduceMotion })}
+					/>
+					<ToggleRow
+						title="Higher contrast"
+						description="Strengthens text and border contrast."
+						checked={profile.highContrast}
+						onChange={(highContrast) => onChange({ highContrast })}
+					/>
+					<Field id={`${idPrefix}-text-scale`} label="Text size">
+						<Segmented
+							id={`${idPrefix}-text-scale`}
+							label="Text size"
+							value={profile.textScale}
+							onChange={(value) =>
+								onChange({
+									textScale: value as DeclaredLearnerProfile["textScale"],
+								})
+							}
+							options={[
+								{ value: "", label: "Not answered" },
+								{ value: "default", label: "Default" },
+								{ value: "large", label: "Large" },
+								{ value: "larger", label: "Larger" },
+							]}
+						/>
+					</Field>
+				</>
+			)}
 		</div>
 	);
 }

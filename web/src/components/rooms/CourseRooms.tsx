@@ -5,8 +5,10 @@
  * Nothing about anyone's private course progress is shared by joining.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
+import "./rooms.css";
+import { EmptyState, Loading } from "../../design-system/kit";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Plus, Users, X } from "lucide-react";
+import { KeatingGlyph } from "../../design-system/glyphs";
 import { css } from "../../../styled-system/css";
 import { createRoom, joinCourseRoom, listCourseRooms } from "../../rooms/client";
 import type { RoomListItem } from "../../rooms/contracts";
@@ -93,7 +95,7 @@ export function CourseRooms({
         <h2 id="course-rooms-heading" className={s.label}>Study rooms</h2>
         {canOpen ? (
           <button type="button" className={s.quiet} aria-expanded={creating} onClick={() => setCreating((value) => !value)}>
-            {creating ? <X size={13} aria-hidden="true" /> : <Plus size={13} aria-hidden="true" />} {creating ? "Close" : "Open room"}
+            {creating ? <KeatingGlyph name="x" size={13} /> : <KeatingGlyph name="plus" size={13} />} {creating ? "Close" : "Open room"}
           </button>
         ) : null}
       </div>
@@ -131,9 +133,9 @@ export function CourseRooms({
       ) : null}
 
       {rooms === null && !error ? (
-        <p className={s.help}>Loading rooms…</p>
+        <Loading label="Loading rooms…" />
       ) : rooms && open.length === 0 ? (
-        <p className={s.help}>{canOpen ? "No open rooms. Open one for the current lesson." : "No open rooms yet. Your teacher can open one."}</p>
+        <EmptyState glyph="people" heading={canOpen ? "No open rooms." : "No open rooms yet."}>{canOpen ? "Open one for the current lesson." : "Your teacher can open one."}</EmptyState>
       ) : (
         <ul className={css({ mt: "0.5rem", display: "grid", gap: "0.4rem" })}>
           {open.map((room) => {
@@ -144,7 +146,7 @@ export function CourseRooms({
             <li key={room.id} className={css({ border: "1px solid color-mix(in srgb, var(--ink) 35%, transparent)", bg: "var(--card)", p: "0.55rem" })}>
               <strong className={css({ display: "block", fontSize: "0.8rem", overflowWrap: "anywhere" })}>{room.title}</strong>
               <span className={css({ display: "flex", flexWrap: "wrap", gap: "0.5rem", mt: "0.15rem", fontSize: "0.68rem", color: "var(--ink-soft)" })}>
-                <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.2rem" })}><Users size={11} aria-hidden="true" /> {room.memberCount}</span>
+                <span className={css({ display: "inline-flex", alignItems: "center", gap: "0.2rem" })}><KeatingGlyph name="people" size={13} /> {room.memberCount}</span>
                 {room.lessonTitle ? <span>{room.lessonTitle}</span> : null}
                 <span>{room.facilitatorName ? "Keating running" : "Keating off"}</span>
               </span>
@@ -159,16 +161,16 @@ export function CourseRooms({
               <div className={css({ mt: "0.45rem", display: "flex", gap: "0.35rem" })}>
                 <button
                   type="button"
-                  className={`${room.joined || !confirming ? s.button : s.primary} ${css({ flex: 1 })}`}
+                  className={`${room.joined || !confirming ? "k-button k-ghost k-sm" : s.primary} ${css({ flex: 1 })}`}
                   disabled={joiningId === room.id}
                   onClick={() => void join(room)}
                   aria-expanded={room.joined ? undefined : confirming}
                   aria-label={room.joined ? `Open ${room.title}` : confirming ? `Join ${room.title} as ${joinRole}` : `Review joining ${room.title}`}
                 >
-                  {joiningId === room.id ? "Joining…" : room.joined ? "Open" : confirming ? `Join as ${ROLE_LABELS[joinRole].toLowerCase()}` : "Join…"}
-                  <ArrowRight size={13} aria-hidden="true" />
+                  {joiningId === room.id ? <Loading size="inline" label="Joining…" /> : room.joined ? "Open" : confirming ? `Join as ${ROLE_LABELS[joinRole].toLowerCase()}` : "Join…"}
+                  <KeatingGlyph name="right" size={13} />
                 </button>
-                {confirming ? <button type="button" className={s.button} onClick={() => setConfirmId("")}>Cancel</button> : null}
+                {confirming ? <button type="button" className="k-button k-ghost k-sm" onClick={() => setConfirmId("")}>Cancel</button> : null}
               </div>
             </li>
             );

@@ -1,9 +1,11 @@
+import { Meter } from "../../design-system/charts";
+import { motion, AnimatePresence } from "motion/react";
+import { useMotionAllowed } from "../../design-system/motion";
 import { css, cx } from "../../../styled-system/css";
 import { eyebrow, marginNote } from "../../../styled-system/recipes";
 import type { CritiqueProposal, RubricSweepProposal } from "../../keating/trajectory-passes";
 import { PEDAGOGY_RUBRIC_KEYS } from "../../keating/trajectory-review";
-import { KeatingIcon } from "../KeatingIcon";
-import { reviewIcon } from "./review-icons";
+import { reviewIcon, ReviewIcon } from "./review-icons";
 import { RUBRIC_LABELS, annotationKindLabel, ratingLabel, severityLabel, verdictLabel } from "./review-vocabulary";
 
 const groupHead = css({
@@ -70,7 +72,7 @@ function Citation({ quote, anchored }: { quote?: string; anchored: boolean }) {
 	}
 	return (
 		<p className={cx(quiet, css({ marginTop: "0.3rem", display: "flex", alignItems: "center", gap: "0.3rem" }))}>
-			<KeatingIcon icon={reviewIcon.problem} size={12} />
+			<ReviewIcon icon={reviewIcon.problem} size={12} />
 			Unanchored — no matching quote in that turn.
 		</p>
 	);
@@ -92,7 +94,8 @@ export interface CritiqueProposalsProps {
  * teacher's click turns a proposal into a note on the record.
  */
 export function CritiqueProposals({ proposals, onAccept, onDismiss, onDismissAll, onReveal, busy }: CritiqueProposalsProps) {
-	if (proposals.length === 0) return null;
+	const allowed = useMotionAllowed();
+	if (!proposals.length) return null;
 
 	return (
 		<section aria-label="Proposed notes">
@@ -102,36 +105,18 @@ export function CritiqueProposals({ proposals, onAccept, onDismiss, onDismissAll
 			</div>
 
 			<ul className={css({ display: "grid", gap: "0.4rem" })}>
-				{proposals.map((proposal) => (
-					<li key={proposal.id} className={marginNote({ kind: proposal.kind, state: "proposed" })}>
+				<AnimatePresence initial={false}>{proposals.map((proposal) => (
+					<motion.li exit={allowed ? { height: 0, opacity: 0, overflow: "hidden" } : undefined} transition={{ duration: allowed ? .16 : 0 }} key={proposal.id} className={cx("rv-desk-proposal", marginNote({ kind: proposal.kind, state: "proposed" }))}>
 						<div className={css({ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem" })}>
 							<div className={css({ minWidth: 0 })}>
 								<span className={cx(eyebrow(), css({ fontSize: "10px" }))}>
-									{annotationKindLabel(proposal.kind)}
+									<i aria-hidden="true" className={`rv-kind rv-${proposal.kind}`}/> {annotationKindLabel(proposal.kind)}
 									{proposal.severity ? ` · ${severityLabel(proposal.severity)}` : ""}
 									{proposal.category ? ` · ${proposal.category}` : ""}
 								</span>
 								<p className={css({ marginTop: "0.2rem", color: "var(--ink)" })}>{proposal.note}</p>
 							</div>
-							<div className={proposalActions}>
-								<button
-									type="button"
-									className={ghostButton}
-									aria-label="Accept this note"
-									disabled={busy}
-									onClick={() => onAccept(proposal)}
-								>
-									<KeatingIcon icon={reviewIcon.accept} size={14} />
-								</button>
-								<button
-									type="button"
-									className={ghostButton}
-									aria-label="Dismiss this note"
-									onClick={() => onDismiss(proposal.id)}
-								>
-									<KeatingIcon icon={reviewIcon.dismiss} size={14} />
-								</button>
-							</div>
+
 						</div>
 
 						<Citation quote={proposal.anchor?.quote} anchored={proposal.anchored} />
@@ -150,13 +135,32 @@ export function CritiqueProposals({ proposals, onAccept, onDismiss, onDismissAll
 							</p>
 						) : null}
 
+						<div className={proposalActions}>
+								<button
+									type="button"
+									className="rv-desk-proposal-action"
+									aria-label="Accept this note"
+									disabled={busy}
+									onClick={() => onAccept(proposal)}
+								>
+									Accept
+								</button>
+								<button
+									type="button"
+									className="rv-desk-proposal-action"
+									aria-label="Dismiss this note"
+									onClick={() => onDismiss(proposal.id)}
+								>
+									Dismiss
+								</button>
+							</div>
 						{onReveal && proposal.messageId ? (
 							<button type="button" className={cx(textButton, css({ marginTop: "0.35rem" }))} onClick={() => onReveal(proposal)}>
 								Show the turn
 							</button>
 						) : null}
-					</li>
-				))}
+					</motion.li>
+				))}</AnimatePresence>
 			</ul>
 		</section>
 	);
@@ -185,11 +189,12 @@ export function RubricProposal({ proposal, onApply, onDismiss, busy }: RubricPro
 				<div className={proposalActions}>
 					<button type="button" className={textButton} disabled={busy || proposal.ratings.length === 0} onClick={() => onApply(proposal)}>Apply</button>
 					<button type="button" className={ghostButton} aria-label="Dismiss proposed scoring" onClick={onDismiss}>
-						<KeatingIcon icon={reviewIcon.dismiss} size={14} />
+						<ReviewIcon icon={reviewIcon.dismiss} size={14} />
 					</button>
 				</div>
 			</div>
 
+			<details className="rv-desk-details"><summary>Scoring evidence</summary>
 			{proposal.judgement ? <p className={quiet}>
 				{proposal.judgement.calibrated ? "Calibrated model estimate" : "Uncalibrated model estimate"}
 				{` · ${proposal.judgement.backend.backend}/${proposal.judgement.backend.model}. Review the cited evidence before applying.`}
@@ -202,9 +207,7 @@ export function RubricProposal({ proposal, onApply, onDismiss, busy }: RubricPro
 						<div key={key}>
 							<dt className={css({ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: "0.5rem", fontSize: "0.72rem", fontWeight: 650, color: "var(--ink)" })}>
 								<span>{RUBRIC_LABELS[key]}</span>
-								<span className={css({ fontFamily: "var(--mono-body)", color: "var(--accent-dim)" })}>
-									{rating.rating}/5 · {ratingLabel(rating.rating)}
-								</span>
+								<Meter max={5} value={rating.rating} label={RUBRIC_LABELS[key]} valueText={`${rating.rating}/5 · ${ratingLabel(rating.rating)}`}/>
 							</dt>
 							<dd className={quiet}>{rating.justification}</dd>
 							{rating.anchored && rating.anchor ? <Citation quote={rating.anchor.quote} anchored /> : null}
@@ -227,6 +230,7 @@ export function RubricProposal({ proposal, onApply, onDismiss, busy }: RubricPro
 					{proposal.verdict ? verdictLabel(proposal.verdict) : ""}
 				</p>
 			) : null}
+			</details>
 		</section>
 	);
 }

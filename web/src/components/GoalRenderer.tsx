@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
-import { Check, Circle, Flag, Target } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { css } from "../../styled-system/css";
+import { Progress } from "../design-system/charts";
 import { Spinner } from "./Spinner";
 import {
 	advanceGoalStep,
@@ -73,7 +74,7 @@ export function GoalRenderer({ goal: initialGoal }: GoalRendererProps) {
 		})}>
 			<div className={css({ display: "flex", alignItems: "flex-start", gap: "0.75rem" })}>
 				<div className={css({ display: "flex", height: "2.25rem", width: "2.25rem", flexShrink: 0, alignItems: "center", justifyContent: "center", borderRadius: "0.5rem", background: "color-mix(in srgb, var(--primary) 15%, transparent)" })}>
-					<Target size={18} className={css({ color: "var(--primary)" })} />
+					<KeatingGlyph name="target" size={18} className={css({ color: "var(--primary)" })} />
 				</div>
 				<div className={css({ minWidth: 0, flex: 1 })}>
 					<div className={css({ display: "flex", alignItems: "center", gap: "0.5rem" })}>
@@ -90,18 +91,7 @@ export function GoalRenderer({ goal: initialGoal }: GoalRendererProps) {
 				</div>
 			</div>
 
-			{/* Progress */}
-			<div className={css({ marginTop: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" })}>
-				<div className={css({ height: "0.375rem", flex: 1, overflow: "hidden", borderRadius: "9999px", background: "var(--muted)" })}>
-					<div
-						className={css({ height: "100%", borderRadius: "9999px", background: "var(--primary)", transition: "all 150ms" })}
-						style={{ width: `${progress.percent}%` }}
-					/>
-				</div>
-				<span className={css({ fontSize: "0.6875rem", color: "var(--muted-foreground)", fontVariantNumeric: "tabular-nums" })}>
-					{progress.done}/{progress.total}
-				</span>
-			</div>
+			<Progress done={progress.done} total={progress.total} label="Completed goal steps" />
 
 			{/* Steps */}
 			<ol className={css({ marginTop: "1rem", "& > * + *": { marginTop: "0.5rem" } })}>
@@ -165,13 +155,13 @@ export function GoalRenderer({ goal: initialGoal }: GoalRendererProps) {
 									{saving ? (
 										<Spinner size={14} />
 									) : step.status === "done" ? (
-										<Check size={15} />
+										<KeatingGlyph name="check" size={15} />
 									) : step.status === "in_progress" ? (
 										<Spinner size={14} />
 									) : step.kind === "milestone" || step.kind === "project" ? (
-										<Flag size={13} />
+										<KeatingGlyph name="flag" size={15} />
 									) : (
-										<Circle size={12} />
+										<KeatingGlyph name="ring" size={15} />
 									)}
 								</button>
 								<div className={css({ minWidth: 0, flex: 1 })}>

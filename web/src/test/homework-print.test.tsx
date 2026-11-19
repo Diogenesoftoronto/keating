@@ -175,7 +175,8 @@ describe("revise loop in the task card", () => {
 	test("a first round shows no earlier rounds, and the card says paper work can be attached", () => {
 		const html = renderToStaticMarkup(<SharedUiDocumentRenderer document={doc("doc-1", [task({ kind: "assignment" })])} />);
 		expect(html).not.toContain("data-task-earlier-rounds");
-		expect(html).toContain("data-print-assignment");
+		expect(html).toContain('aria-label="More assignment actions"');
+		expect(html).toContain('aria-haspopup="menu"');
 		expect(html).toContain("Worked on paper? Attach a photo or scan");
 	});
 

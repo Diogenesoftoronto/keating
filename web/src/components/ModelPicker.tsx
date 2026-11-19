@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Check, Search, X } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import "./selection-library.css";
 
 export interface PickerItem {
@@ -67,11 +67,11 @@ export function ModelPicker({ open, label, items, selected, onSelect, onClose, f
   } }}>
   <div className="model-picker__body">
    <div className="model-picker__toolbar">
-    <label className="library-search"><Search size={18} aria-hidden="true" />
+    <label className="library-search"><KeatingGlyph name="search" size={18} />
      <input ref={searchRef} aria-label={label} placeholder={label} value={query} onChange={event => setQuery(event.target.value)}
       onKeyDown={event => { if (event.key === "ArrowDown" && ordered.length) { event.preventDefault(); focus(0); } }} />
     </label>
-    <button type="button" className="library-icon" aria-label="Close model picker" onClick={onClose}><X size={18}/></button>
+    <button type="button" className="library-icon" aria-label="Close model picker" onClick={onClose}><KeatingGlyph name="x" size={18}/></button>
    </div>
    {filters && <div className="model-picker__filters">{filters}</div>}
    <div className="model-picker__results" aria-label="Models" aria-busy={loading}>
@@ -92,14 +92,14 @@ export function ModelPicker({ open, label, items, selected, onSelect, onClose, f
         if (destination !== null) { event.preventDefault(); focus(destination); }
        }}>
        <span><strong>{item.name}</strong><small>{item.summary || item.group}</small></span>
-       {busy === item.id ? <small>Loading…</small> : item.id === selected ? <Check size={18} aria-label="Selected"/> : null}
+       {busy === item.id ? <small>Loading…</small> : item.id === selected ? <KeatingGlyph name="check" size={18} label="Selected"/> : null}
       </button>
       {item.details && <details className="model-picker__details"><summary>Model details</summary>{item.details}</details>}
       {item.action && <div className="model-picker__item-action">{item.action}</div>}
      </div>)}
    </div>
    {notice && <details className="model-picker__notice"><summary>{noticeLabel}</summary>{notice}</details>}
-   <div className="model-picker__hint" role="status">↑ ↓ to browse · Enter to choose · Esc to close</div>
+   <div className="model-picker__hint" role="status"><KeatingGlyph name="rise" size={13} label="Up arrow" /> <KeatingGlyph name="down" size={13} label="Down arrow" /> to browse · Enter to choose · Esc to close</div>
   </div>
  </dialog>;
 }

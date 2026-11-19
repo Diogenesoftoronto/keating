@@ -1,0 +1,72 @@
+{
+  "title": "Design-system reel",
+  "viewport": "desktop",
+  "width": 1280,
+  "height": 800,
+  "theme": "light",
+  "fixtures": [],
+  "transcript": null,
+  "capturedAt": "2026-11-19T16:08:07.274Z",
+  "viewerNote": "This reel shows interactive design boards. Chart values are sample data.",
+  "duration": 38.140000104904175,
+  "bytes": 3380393,
+  "webmBytes": 0,
+  "chapters": [
+    {
+      "id": "glyphs",
+      "title": "Explore the glyph set",
+      "start": 0.005000114440917969,
+      "explanation": "Design boards · the glyph set in motion.",
+      "alt": "Explore the glyph set",
+      "still": "glyphs"
+    },
+    {
+      "id": "controls",
+      "title": "Try Copy message",
+      "start": 6.452000141143799,
+      "explanation": "The same glyphs live inside controls.",
+      "alt": "Try Copy message",
+      "still": "controls"
+    },
+    {
+      "id": "motion",
+      "title": "Try reduced motion",
+      "start": 11.284000158309937,
+      "explanation": "Reduced motion keeps the state change visible.",
+      "alt": "Try reduced motion",
+      "still": "motion"
+    },
+    {
+      "id": "ink",
+      "title": "Explore Marbled ink",
+      "start": 17.549999952316284,
+      "explanation": "Shaders respond to the pointer and theme.",
+      "alt": "Explore Marbled ink",
+      "still": "ink"
+    },
+    {
+      "id": "fallback",
+      "title": "Disable shaders",
+      "start": 22.43500018119812,
+      "explanation": "Turn off the shader and keep the layout.",
+      "alt": "Disable shaders",
+      "still": "fallback"
+    },
+    {
+      "id": "charts",
+      "title": "Read the chart sheet",
+      "start": 26.78600001335144,
+      "explanation": "Compare several kinds of evidence on the chart sheet.",
+      "alt": "Read the chart sheet",
+      "still": "charts"
+    },
+    {
+      "id": "chart-theme",
+      "title": "Compare chart themes",
+      "start": 31.272000074386597,
+      "explanation": "The chart keeps the same values in both themes.",
+      "alt": "Compare chart themes",
+      "still": "chart-theme"
+    }
+  ]
+}

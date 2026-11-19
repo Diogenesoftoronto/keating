@@ -1,0 +1,251 @@
+.chat-page-shell .chat-header { height:2.2rem; padding:.15rem .4rem; gap:.25rem }
+.ch-title { flex:1; min-width:0; line-height:1.15 }
+.ch-title strong,.ch-title small { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis }
+.ch-title strong { font-size:.73rem }
+.ch-title small,.ch-storage { font:.53rem/1.4 var(--mono-body); color:var(--muted-foreground) }
+.chat-header .chat-actions { flex:0 0 auto; margin:0; overflow:visible }
+.chat-header :is(.chat-model-button,.ch-review,[data-material-count],.knowledge-sources-button) { display:inline-flex; align-items:center; justify-content:center; gap:.2rem; width:auto; height:1.55rem; padding:0 .35rem; border:1px solid var(--border); border-radius:.22rem; font-size:.62rem }
+.ch-storage { display:flex; align-items:center; justify-content:center; gap:.25rem; padding:.35rem }
+.ch-storage span {color:var(--amber-deep)}
+.ch-storage button:first-of-type {text-decoration:underline}
+@media(max-width:780px){
+.chat-header .ch-label,.chat-header .chat-model-button span {display:none}
+.chat-header .chat-brand {padding:0;max-width:1.4rem;overflow:hidden}
+.chat-header .chat-brand img {max-width:none}
+.chat-header .chat-actions [data-material-count],.chat-header .chat-actions button,.chat-header .ch-panel-toggle {min-width:1.45rem;width:1.45rem;min-height:1.55rem;height:1.55rem}
+}
+
+.chat-page-panel [data-learning-message-ids],.chat-page-panel .composer-root,.chat-page-panel .composer-hint { max-width:var(--ch-column,29rem) }
+.chat-page-panel .keating-bubble [data-chat-prose] {font-size:.7692rem;line-height:1.62}
+.ch-reading {min-width:0;overflow-wrap:anywhere}
+.you-bubble .ch-reading,.ch-reading :is(button, label, [role=status], .ch-code) {font-family:var(--font-ui)}
+html[data-reply-typeface=mono] .keating-bubble .ch-reading {font-family:var(--mono-body)}
+.ch-actions {display:flex;align-items:center;gap:.16rem;flex-wrap:wrap;margin-top:.38rem}
+.ch-actions .turn-summary {margin-inline-start:auto}
+.msg-meta time {margin-inline-start:.2rem}
+
+.ch-toolbar,.ch-study {display:flex;align-items:center;gap:.28rem;min-width:0}
+.ch-spacer {flex:1}
+/* Composer, as drawn on board C1: one hard-edged box, quiet icons on the left, Send the only filled control. */
+.chat-page-panel .composer-root {gap:0;padding:0;border:1.5px solid var(--k-strong-line,var(--ink));background:var(--card)}
+.chat-page-panel .composer-root textarea {min-height:1.8269rem;padding:.4808rem .5769rem .1923rem;font-size:.7212rem;line-height:1.5}
+.chat-page-panel .composer-root > :not(textarea,.ch-toolbar) {margin:.2885rem .2885rem 0}
+.chat-page-panel .ch-toolbar {gap:.1923rem;padding:.1923rem .2885rem .2885rem}
+.ch-toolbar select,.ch-toolbar button {font:.5048rem var(--mono-body);max-width:100%}
+.ch-reason {display:inline-flex;align-items:center;gap:.1923rem;height:1.3462rem;padding-inline:.2885rem;border-radius:.1923rem;color:var(--ink-soft);cursor:pointer}
+.ch-reason:hover,.ch-reason:focus-within {color:var(--ink)}
+.ch-reason select {appearance:none;border:0;padding:0;background:transparent;color:inherit;cursor:pointer;field-sizing:content;outline:0}
+.ch-reason:has(select:focus-visible) {outline:2px solid var(--green-deep);outline-offset:1px}
+.ch-reason:has(select:disabled) {opacity:.5;cursor:not-allowed}
+.ch-toolbar :is(.ch-send,.ch-stop) {width:1.5385rem;border:0}
+.ch-toolbar .ch-send,.ch-toolbar .ch-send:hover {background:var(--primary);color:var(--primary-foreground)}
+.ch-toolbar .ch-stop,.ch-toolbar .ch-stop:hover {background:var(--ink);color:var(--paper)}
+/* Send lifts off the page on hover and seats again when pressed, like the hard-shadowed cards. */
+.ch-toolbar :is(.ch-send,.ch-stop)::before {display:none}
+.ch-toolbar :is(.ch-send,.ch-stop):not(:disabled):hover {transform:translate(-1px,-1px);box-shadow:2px 2px 0 var(--k-strong-line,var(--ink))}
+.ch-toolbar :is(.ch-send,.ch-stop):not(:disabled):active {transform:translate(1px,1px);box-shadow:none}
+.chat-page-panel .composer-hint {padding-top:.3846rem;font:.4567rem/1.4 var(--mono-body);letter-spacing:.06em;color:var(--ink-faint)}
+.chat-page-panel .composer-hint > span {white-space:nowrap}
+.ch-study,.chat-page-panel .chat-mascot-perch {width:100%;max-width:var(--ch-column,29rem);margin-inline:auto}
+.ch-study {padding:.3rem 0;flex-wrap:wrap}
+.ch-study button {font-size:.55rem;padding:.12rem .32rem;min-height:1.35rem}
+.chat-mascot-perch:not([data-expanded=true]):has(+ .ch-study) {height:0}
+.chat-mascot-perch:not([data-expanded=true]):has(+ .ch-study) .chat-mascot-perch__bot {width:2.3rem;height:2.3rem;top:-.15rem}
+.chat-mascot-perch:not([data-expanded=true]) + .ch-study {padding-left:2.55rem;min-height:2.1rem}
+/* Keating's seat: a short shelf that continues the composer's top edge into the gutter, so he sits on something.
+   --ch-seat-drop is the distance from the perch down to the composer's top edge (the chip row, when present). */
+.chat-page-panel .chat-mascot-perch[data-expanded=true] {--ch-seat-drop:0rem}
+.chat-page-panel .chat-mascot-perch[data-expanded=true]:has(+ .ch-study) {--ch-seat-drop:1.95rem}
+.chat-page-panel .chat-mascot-perch[data-expanded=true]::after {content:"";position:absolute;left:calc(100% - 1px);bottom:calc(var(--ch-seat-drop) * -1 - 1.5px);width:118px;height:1.5px;background:var(--ink);pointer-events:none}
+.chat-page-panel .chat-mascot-perch[data-expanded=true] .chat-mascot-perch__bot {left:calc(100% + 6px);bottom:calc(var(--ch-seat-drop) * -1)}
+.chat-page-panel .chat-mascot-perch[data-expanded=true] .chat-mascot-perch__bot:has(.keating-bot:is([data-state="blank-sitting"],[data-state="ledge-sitting"])) {bottom:calc(var(--ch-seat-drop) * -1 - 22px)}
+html.dark .chat-page-panel .chat-mascot-perch[data-expanded=true]::after {background:var(--line)}
+/* Keep the subject and its abbreviation together in the compact session row. */
+.session-panel .session-entry__category {min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;gap:.18rem}
+.session-panel .session-entry__eyeline {gap:.3rem;min-width:0}
+.session-panel .session-entry__meta {gap:.4rem}
+.session-panel .session-entry__meta > span:last-child {flex:none;white-space:nowrap}
+
+.ch-empty {position:relative;isolation:isolate;margin:auto;display:grid;align-content:center;justify-items:stretch;gap:.65rem;width:min(100%,32rem);padding:.7rem 0}
+.ch-empty > :not(:first-child) {position:relative}
+.ch-empty .chat-mascot-perch {height:0}
+.ch-empty .chat-mascot-perch:not([data-expanded=true]) {height:auto}
+.ch-empty .chat-mascot-perch:not([data-expanded=true]) .chat-mascot-perch__bot {height:1.6rem;width:1.6rem}
+.ch-greeting {text-align:center}
+.ch-greeting h1 {font:600 1.202rem/1.2 var(--mono-display);margin:.4rem 0}
+.ch-greeting p {font-size:.7rem;color:var(--muted-foreground)}
+.ch-starters {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.35rem}
+.ch-starters button {text-align:left;font:.68rem/1.4 var(--font-ui);border:1px solid var(--border);background:var(--card);padding:.6rem;border-radius:.22rem}
+.ch-starters small {display:block;text-transform:uppercase;letter-spacing:.08em;font:.53rem var(--mono-body);color:var(--muted-foreground);margin-bottom:.22rem}
+.ch-other {justify-self:start;text-decoration:underline;font-size:.65rem}
+@media(max-width:639px){.ch-starters{grid-template-columns:1fr}.ch-empty{margin:0 auto}}
+
+.chat-page-panel [data-chat-recovery] {border:0;border-inline-start:3px solid var(--destructive);border-radius:0;background:color-mix(in srgb,var(--destructive) 5%,var(--background));padding:.65rem;box-shadow:none}
+.ch-latest {position:absolute;bottom:100%;inset-inline:0;display:flex;justify-content:center;pointer-events:none}
+.ch-latest[data-unread] {border-bottom:2px solid var(--primary)}
+.ch-latest button {pointer-events:auto;display:inline-flex;align-items:center;gap:.2rem;border:1px solid var(--border);border-radius:2rem;background:var(--card);font-size:.65rem;padding:.25rem .6rem}
+
+.ch-empty-cards {position:relative;width:min(100%,var(--ch-column,29rem));margin:.55rem auto auto}
+
+.chat-page-panel div:has(> .ch-empty-cards) > div:has(> .ch-empty) {flex:0 0 auto;margin-top:auto}
+.chat-page-panel div:has(> .ch-empty-cards) > :has(> .composer-root) {position:relative;background:transparent}
+.ch-spark {position:fixed;width:4px;height:4px;background:var(--phosphor,var(--primary));z-index:100;pointer-events:none}
+@media(prefers-reduced-motion:no-preference) {
+html:not([data-reduce-motion=true]) .ch-banner {animation:ch-rise .2s ease-out}
+html:not([data-reduce-motion=true]) .ch-title {animation:ch-fade .16s ease-out}
+}
+@keyframes ch-rise {from{transform:translateY(.2rem);opacity:.7}}
+@keyframes ch-fade {from{opacity:.5}}
+
+.ch-compact-logo,.ch-sources-glyph {display:none}
+.ch-sources {position:relative}
+.ch-actions details {margin-inline-start:auto;min-width:0}
+.ch-actions details[open],.ch-actions .turn-summary:has([aria-expanded=true]) {flex-basis:100%}
+.chat-page-panel .ch-reading :is(p, ol, ul, blockquote) {max-width:100%}
+html[data-reply-typeface=mono] .chat-page-panel .keating-bubble [data-chat-prose] {font-size:.6971rem}
+.chat-page-panel .you-bubble [data-chat-prose] {font: .7692rem/1.5 var(--font-ui)}
+@media(max-width:780px) {
+.chat-header .chat-brand img {display:none}
+.chat-header .ch-compact-logo {display:block}
+.ch-sources .knowledge-sources-button {width:1.45rem;font-size:0}
+.ch-sources .ch-sources-glyph {display:block;position:absolute;pointer-events:none;top:50%;left:50%;transform:translate(-50%,-50%)}
+}
+
+.chat-page-panel [aria-label="Alternative response available"] {max-width:var(--ch-column,29rem)}
+.ch-greeting .keating-bot {margin-inline:auto}
+/* The send button keeps its own ink when idle; the shared composer-button rule would grey it out on green. */
+.chat-page-panel .composer-root button[aria-label="Send message"]:disabled {color:var(--primary-foreground);opacity:.5}
+
+.chat-recording-level {
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: calc(100% + .24rem);
+  z-index: 2;
+  pointer-events: none;
+  padding: .38rem .48rem;
+  border: 1px solid var(--line);
+  border-radius: .1923rem;
+  background: var(--card);
+  color: var(--ink);
+  font: .625rem/1.4 var(--font-ui);
+}
+.chat-recording-level canvas { color: var(--series-1) !important; }
+
+.chat-page-panel {--ch-column:29rem}
+.chat-page-panel .composer-root {border-radius:var(--k-radius,4px);box-shadow:var(--k-hard-shadow)}
+.chat-page-panel .you-bubble {border-color:transparent;box-shadow:none;background:var(--k-wash)}
+.chat-page-panel .chat-avatar-you {border-color:transparent;background:transparent;box-shadow:none}
+.ch-empty-footer,.ch-other {display:flex;align-items:center}
+.ch-empty-footer {justify-content:space-between;gap:.4rem;margin-block-start:.4rem}
+.ch-empty-footer span {font:.52rem/1.45 var(--mono-body);color:var(--muted-foreground)}
+.ch-other {gap:.2rem}
+.chat-page-panel :has(> .ch-empty-cards) > :has(.composer-root) .composer-hint > span:first-child {display:none}
+@media(max-width:639px){
+  .ch-empty-cards:empty {display:none}
+  .chat-page-panel div:has(> .ch-empty-cards) > div:has(> .ch-empty) {flex:1 0 auto;margin-top:0}
+  .ch-empty-footer span {display:none}
+  .ch-greeting h1 {font-size:.962rem}
+  .ch-empty {align-content:start}
+}
+@media(pointer:coarse){
+  .ch-other,.ch-study button,.ch-toolbar :is(button,select),.ch-latest button {min-height:44px;min-width:44px}
+}
+
+/* Session navigation */
+.chat-header :is(.ch-review,[data-material-count]) {border-color:transparent;background:transparent}
+.chat-header .ch-review:hover,.chat-header [data-material-count]:hover {background:var(--k-wash)}
+.chat-header .ch-sources .knowledge-sources-button {width:auto;padding-inline:1.3rem 1rem;font:.6rem var(--mono-body)}
+.chat-header .ch-sources :is(.ch-sources-glyph,.ch-sources-caret) {display:block;position:absolute;pointer-events:none;top:50%;transform:translateY(-50%)}
+.chat-header .ch-sources-glyph {left:.4rem}
+.chat-header .ch-sources-caret {right:.28rem}
+@media(max-width:780px) {
+  .chat-header [aria-label="Chat actions"] {max-width:calc(100vw - 1rem)}
+  .chat-header [aria-label="Chat actions"] .knowledge-sources-button {justify-content:flex-start;width:100%;border:0}
+}
+@media(pointer:coarse) {
+  .chat-page-shell .chat-header {min-height:max(44px,2.1154rem)}
+  .chat-header :is(.ch-panel-toggle,.chat-actions button,.chat-actions [data-material-count],.knowledge-sources-button,.ch-review,.chat-model-button) {min-width:44px;min-height:44px}
+}
+
+@media(prefers-reduced-motion:no-preference){
+  html:not([data-reduce-motion=true]) .turn-thinking__dots {animation:ch-dots-enter .22s .16s backwards}
+}
+@keyframes ch-dots-enter {from{opacity:0;transform:translateY(3px)}}
+
+/* The dev inspector portals its closed drawer into body. Its off-screen
+   transform otherwise extends the root scroll area beyond the chat viewport. */
+body.chat-shell-active aside[aria-label="OpenUI Inspect"][inert] {display:none!important}
+
+/* ── Chat shell, as drawn on board C1 (second pass: fewer boxes) ─────────
+   Header: a sans title, two soft-edged pickers, a hairline, then quiet actions. */
+.chat-page-shell .chat-header .ch-title strong {font:600 .6731rem/1.2 var(--font-ui);letter-spacing:0}
+.chat-page-shell .chat-header :is(.chat-model-button,.knowledge-sources-button) {height:1.3462rem;border:1px solid var(--line);border-radius:.1923rem;background:transparent;font:500 .5529rem/1 var(--mono-body);color:var(--ink)}
+.chat-page-shell .chat-header :is(.chat-model-button,.knowledge-sources-button):hover {border-color:var(--ink-soft);background:transparent}
+.chat-page-shell .chat-header .chat-model-button .k-dot {border-radius:1px}
+.chat-page-shell .chat-header :is(.ch-review,[data-material-count],.chat-actions > button.chat-action-button:has(.ch-label)) {height:1.3462rem;border-color:transparent;background:transparent;font:500 .5529rem/1 var(--mono-body);color:var(--ink-soft)}
+.chat-page-shell .chat-header :is(.ch-review,[data-material-count],.chat-actions > button.chat-action-button:has(.ch-label)):hover {background:transparent;color:var(--ink)}
+.chat-page-shell .chat-header :is(.ch-review,[data-material-count])[aria-pressed=true] {background:var(--k-wash);color:var(--ink)}
+.chat-page-shell .chat-header .chat-actions {display:flex;align-items:center;gap:.1923rem}
+.chat-page-shell .chat-header .chat-actions::before {content:"";flex:none;width:1px;height:.8654rem;margin-inline:.1923rem .0962rem;background:var(--line)}
+.chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > button.chat-action-button:not(:has(.ch-label))) {width:1.3462rem;height:1.3462rem;min-width:0;min-height:0;border:0;background:transparent;color:var(--ink-soft)}
+.chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > button.chat-action-button:not(:has(.ch-label))):hover {background:transparent;color:var(--ink)}
+
+/* Your message: a plain card at the trailing edge. No avatar unless you set a photo, no label; the time and
+   Copy sit under it and show when you point at or tab into the message. */
+.chat-page-panel .you-bubble {padding:.3846rem .5769rem;border:1px solid var(--line);border-radius:.1923rem;background:var(--card);box-shadow:none;font-size:.6731rem;line-height:1.5}
+.dark .chat-page-panel .you-bubble {border-color:var(--line)}
+.chat-page-panel .chat-avatar-you:not(:has(img)) {display:none}
+.chat-page-panel :has(> .you-bubble) > .msg-meta {order:2;display:flex;align-items:center;gap:.1923rem;margin:.0962rem 0 0;opacity:0}
+.chat-page-panel :has(> .you-bubble) > .msg-meta > b {display:none}
+.chat-page-panel :has(> .you-bubble):is(:hover,:focus-within) > .msg-meta {opacity:1}
+
+/* Reply actions: one even row of bare icons, flush with the text. Earlier replies show theirs on hover or focus. */
+.chat-page-panel .ch-actions {gap:2px;margin-top:.3846rem;margin-left:-.2885rem;min-height:1.3462rem}
+.chat-page-panel .ch-actions > button {width:1.3462rem;height:1.3462rem;min-width:0;min-height:0;padding:0;border-radius:.1923rem}
+.chat-page-panel .ch-actions > button > svg[data-glyph] {width:15px;height:15px}
+.chat-page-panel .ch-actions > button[aria-pressed=true] {background:var(--k-wash);color:var(--ink)}
+.chat-page-panel [data-learning-message-ids]:has(~ [data-learning-message-ids]) .ch-actions:not(:has([aria-pressed=true],[aria-expanded=true],details[open])) {opacity:0}
+.chat-page-panel [data-learning-message-ids]:has(~ [data-learning-message-ids]):is(:hover,:focus-within) .ch-actions {opacity:1}
+@media (prefers-reduced-motion:no-preference) {
+  .chat-page-panel .ch-actions,.chat-page-panel :has(> .you-bubble) > .msg-meta {transition:opacity .14s ease}
+}
+@media (hover:none) {
+  .chat-page-panel [data-learning-message-ids] .ch-actions,.chat-page-panel :has(> .you-bubble) > .msg-meta {opacity:1 !important}
+}
+
+/* Send arms itself: flat while there is nothing to send, a hard shadow once there is. */
+.chat-page-panel .composer-root button.ch-send:disabled {opacity:1}
+.chat-page-panel .composer-root button.ch-send:disabled > svg {opacity:.55}
+.chat-page-panel .composer-root button.ch-send:not(:disabled) {box-shadow:1.5px 1.5px 0 var(--k-strong-line,var(--ink))}
+.chat-page-panel .composer-hint {flex-wrap:wrap;max-height:1.5em;overflow:hidden}
+@media (pointer:coarse) {
+  .chat-page-panel .ch-actions > button,.chat-page-shell .chat-header :is(.ch-panel-toggle,.chat-actions > button.chat-action-button) {min-width:44px;min-height:44px}
+  .chat-page-panel .composer-root textarea {font-size:16px}
+}
+/* Rhythm from the board: a reply's actions close it, then the next message follows without a second gap. */
+.chat-page-panel .composer-hint {max-height:calc(1.5em + .3846rem)}
+.chat-page-panel [data-learning-message-ids] {margin-bottom:.4808rem}
+.chat-page-panel [data-learning-message-ids]:has(.you-bubble) {margin-bottom:1.1538rem}
+.chat-page-shell .chat-page-panel .msg-meta {margin-bottom:.2885rem}
+.chat-page-shell .chat-page-panel .msg-meta {line-height:1.4}
+.chat-page-panel :has(> .you-bubble) {position:relative}
+.chat-page-panel :has(> .you-bubble) > .msg-meta {position:absolute;top:100%;right:0;margin:1px 0 0;white-space:nowrap}
+.chat-page-panel :has(> .you-bubble) > .msg-meta > button {width:1.0577rem;height:1.0577rem}
+@media (max-width:640px) {
+  .chat-page-panel .composer-hint {max-height:none}
+  .chat-page-panel .composer-hint > span {white-space:normal}
+}
+/* "Jump to latest" is a square chip like every other control here, not a pill. */
+.ch-latest button {gap:.2404rem;min-height:1.1538rem;padding:0 .3846rem;border:1px solid var(--line);border-radius:.1923rem;background:var(--card);font:500 .5048rem/1 var(--mono-body);color:var(--ink-soft)}
+.ch-latest button:hover {color:var(--ink);border-color:var(--ink-soft)}
+@media(pointer:coarse){
+  .ch-latest button {min-height:44px}
+}
+/* "Jump to latest" sits at the trailing end of the study-chip row, inside the dock. Above the dock it covered
+   whatever part of the lesson had scrolled under it (a flashcard's rating buttons, at phone width). */
+.chat-page-panel .ch-latest {bottom:auto;top:1.148rem;inset-inline:0;z-index:1;width:100%;max-width:var(--ch-column,29rem);margin-inline:auto;justify-content:flex-end}
+.chat-page-panel .ch-latest[data-unread] {border-bottom:0}
+.chat-page-panel .ch-latest[data-unread] button {border-color:var(--green-deep);background:var(--k-wash);color:var(--ink)}
+@media (max-width:640px) {
+  .chat-page-panel .ch-latest button {width:1.3462rem;min-width:0;padding:0;gap:0;justify-content:center;font-size:0}
+}

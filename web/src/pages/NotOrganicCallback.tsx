@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { CircleAlert, LoaderCircle } from "lucide-react";
+import { KeatingGlyph } from "../design-system/glyphs";
 import { Footer } from "../components/Footer";
 import { Nav } from "../components/Nav";
 import { NotOrganicPublicClient, publicClientConfig, safeAuthorizationReturnTo } from "../notorganic-provider/public-client";
@@ -48,7 +48,7 @@ export function NotOrganicCallback() {
 			<Nav />
 			<main className="notorganic-callback">
 				<section aria-labelledby="connection-title" aria-busy={!error || retrying}>
-					{error ? <CircleAlert size={28} aria-hidden="true" className="connection-icon" /> : <LoaderCircle size={28} aria-hidden="true" className="connection-icon connection-spinner" />}
+					{error ? <KeatingGlyph name="alert" size={28} className="connection-icon" /> : <KeatingGlyph name="spin" size={28} className="connection-icon k-glyph-working" />}
 					<h1 id="connection-title" className="notorganic-callback-title">{error ? "Let’s reconnect" : "Connecting your account"}</h1>
 					<p className="connection-message" role={error ? "alert" : "status"}>{error ?? "Confirming your Not Organic sign-in. You’ll return to Keating in a moment."}</p>
 					{error && <div className="connection-actions">

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 
-import { css } from "../../../styled-system/css";
+import { useMotionAllowed } from "../../design-system/motion";
+import "../../pages/live.css";
 import { createLevelMeter } from "../../keating/live-audio-level";
 import { KeatingBot } from "../KeatingBot";
 
@@ -37,6 +38,7 @@ export interface LiveVisualizerProps {
 const RINGS = [0.62, 0.78, 0.94];
 
 export default function LiveVisualizer({ state, inputStream, size = 208 }: LiveVisualizerProps) {
+	const allowMotion = useMotionAllowed();
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const refreshRef = useRef<(() => void) | null>(null);
 	// The loop reads state through a ref so a state change never restarts it —
@@ -58,13 +60,8 @@ export default function LiveVisualizer({ state, inputStream, size = 208 }: LiveV
 		context.scale(ratio, ratio);
 
 		const meter = createLevelMeter(inputStream);
-		const motionPreference = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-		const prefersReducedMotion = () => (motionPreference?.matches ?? false) || document.documentElement.dataset.motion === "reduce";
-		let reduceMotion = prefersReducedMotion();
-
-		// Read the theme's accent once per loop start; it is a CSS variable, so it
-		// cannot be interpolated inside the canvas without resolving it first.
-		const accent = getComputedStyle(canvas).getPropertyValue("--primary").trim() || "#1e9b50";
+		const reduceMotion = !allowMotion;
+		const accent = getComputedStyle(canvas).color;
 
 		let frame = 0;
 		let phase = 0;
@@ -82,20 +79,20 @@ export default function LiveVisualizer({ state, inputStream, size = 208 }: LiveV
 			// make Keating's turn flicker with room noise.
 			const target = current === "listening" ? meter.read() : 0;
 			const responseTime = target > level ? 0.07 : 0.22;
-			level += (target - level) * (1 - Math.exp(-elapsed / responseTime));
+			level = reduceMotion ? target : level + (target - level) * (1 - Math.exp(-elapsed / responseTime));
 
 			const centre = size / 2;
 			const radius = size / 2;
 			context.clearRect(0, 0, size, size);
 
 			if (current === "working") {
-				drawWorking(context, centre, radius, phase, accent, reduceMotion);
+				drawWorking(context, centre, radius, phase, accent, true);
 			} else {
-				drawRings(context, centre, radius, phase, level, current, accent, reduceMotion);
+				drawRings(context, centre, radius, phase, level, current, accent, reduceMotion || current === "connecting");
 			}
 
 			// Static preferences and idle/hidden sessions do not need a render loop.
-			if (!reduceMotion && current !== "idle" && !document.hidden) frame = requestAnimationFrame(draw);
+			if ((current === "listening" || (!reduceMotion && current === "speaking")) && !document.hidden) frame = requestAnimationFrame(draw);
 		};
 
 		const refresh = () => {
@@ -103,44 +100,35 @@ export default function LiveVisualizer({ state, inputStream, size = 208 }: LiveV
 			lastTime = performance.now();
 			draw(lastTime);
 		};
-		const onMotionPreference = () => {
-			reduceMotion = prefersReducedMotion();
-			refresh();
-		};
 		refreshRef.current = refresh;
-		motionPreference?.addEventListener("change", onMotionPreference);
-		const motionObserver = new MutationObserver(onMotionPreference);
-		motionObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-motion"] });
 		document.addEventListener("visibilitychange", refresh);
 		refresh();
 		return () => {
 			cancelAnimationFrame(frame);
 			refreshRef.current = null;
-			motionPreference?.removeEventListener("change", onMotionPreference);
-			motionObserver.disconnect();
 			document.removeEventListener("visibilitychange", refresh);
 			meter.stop();
 		};
-	}, [inputStream, size]);
+	}, [inputStream, size, allowMotion]);
 
 	useEffect(() => { refreshRef.current?.(); }, [state]);
 
 	return (
 		<div
-			className={css({ position: "relative", display: "grid", placeItems: "center" })}
+			className="lv-visualizer"
 			data-live-state={state}
 			style={{ width: size, height: size }}
 		>
 			<canvas
 				ref={canvasRef}
 				aria-hidden="true"
-				className={css({ position: "absolute", inset: 0 })}
+				className="lv-canvas"
 				style={{ width: size, height: size }}
 			/>
 			<KeatingBot
 				state={state === "connecting" || state === "working" ? "thinking" : state}
 				size={Math.round(size * 0.58)}
-				animated={state !== "idle"}
+				animated={allowMotion && state === "speaking"}
 				label=""
 			/>
 		</div>
@@ -167,7 +155,7 @@ function drawRings(
 	const speaking = state === "speaking";
 	const connecting = state === "connecting";
 	// Speaking animates on its own clock; listening rides the microphone.
-	const drive = reduceMotion ? 0 : speaking ? 1 : connecting ? 0.12 : level;
+	const drive = reduceMotion ? level : speaking ? 1 : connecting ? 0.12 : level;
 	const speed = speaking ? 1.5 : connecting ? 0.45 : 0.7;
 
 	RINGS.forEach((fraction, index) => {

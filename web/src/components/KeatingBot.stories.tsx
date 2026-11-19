@@ -1,8 +1,8 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { KeatingBot, KEATING_BOT_CHAT_STATES, KEATING_BOT_ACTIVITY_STATES, KEATING_BOT_ONBOARDING_STATES, type KeatingBotState } from "./KeatingBot";
+import { KeatingBot, KEATING_BOT_CHAT_STATES, KEATING_BOT_ACTIVITY_STATES, KEATING_BOT_ONBOARDING_STATES, KEATING_BOT_COMPANION_STATES, type KeatingBotState } from "./KeatingBot";
 
-const states: KeatingBotState[] = [...KEATING_BOT_CHAT_STATES, ...KEATING_BOT_ACTIVITY_STATES, ...KEATING_BOT_ONBOARDING_STATES];
+const states: KeatingBotState[] = [...KEATING_BOT_CHAT_STATES, ...KEATING_BOT_ACTIVITY_STATES, ...KEATING_BOT_ONBOARDING_STATES, ...KEATING_BOT_COMPANION_STATES];
 const meta = {
 	title: "Brand/KeatingBot",
 	component: KeatingBot,
@@ -76,3 +76,13 @@ export const Flipping: Story = { args: { state: "flipping", variant: "body", siz
 export const ActivityFrames: Story = { ...SpeakingFrames, args: { state: "reading", variant: "body", size: 160 } };
 
 export const Loading: Story = { args: { state: "loading", variant: "body", size: 200 } };
+
+export const CompanionSeat: Story = { args: { state: "blank-sitting", screen: "face", size: 144 } };
+
+export const FacePrograms: Story = {
+  render: () => <div style={{ display: "flex", flexWrap: "wrap", gap: 16 }}>
+    {(["face","dots","wave","search","timer","progress","check","question","heart","k","pong"] as const).map(screen =>
+      <figure key={screen}><KeatingBot state="blank-idle" screen={screen} size={128} /><figcaption>{screen}</figcaption></figure>
+    )}
+  </div>,
+};

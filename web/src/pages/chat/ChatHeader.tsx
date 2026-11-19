@@ -1,3 +1,7 @@
+import { StatusDot } from "../../design-system/kit";
+import { useMediaQuery } from "../../hooks/use-media-query";
+import { KeatingGlyph } from "../../design-system/glyphs";
+import { categorize } from "../../components/session-card-visuals";
 /**
  * Chat page header: session panel toggle, brand, model button, toolbar actions
  * and the overflow menu. The overflow menu's open state lives here; everything
@@ -5,15 +9,7 @@
  */
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { usePostHog } from "@posthog/react";
-import {
-  ChevronDown,
-  LibraryBig,
-  Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Settings,
-  X,
-} from "lucide-react";
+
 import { useNavigate } from "@tanstack/react-router";
 import { css, cx } from "../../../styled-system/css";
 import { AppLink as Link } from "../../components/AppLink";
@@ -67,6 +63,8 @@ const menuItemClass = css({
 
 
 export interface ChatHeaderProps {
+  sessionTitle?: string;
+  messageCount?: number;
   isPending: boolean;
   modelLabel: string;
   activeSessionId: string;
@@ -74,6 +72,8 @@ export interface ChatHeaderProps {
   speechEnabled: boolean;
   canvasEnabled: boolean;
   artifactBrowserOpen: boolean;
+  /** Materials in the active session, shown as a badge on the materials button. */
+  materialCount?: number;
   shareState: ShareState;
   toggleMobileSidebar: () => void;
   openModelSelector: () => void;
@@ -83,17 +83,19 @@ export interface ChatHeaderProps {
   handleShare: () => Promise<void>;
   confirmShare: () => Promise<void>;
   toggleSpeech: () => void;
+  onOpenOriginal?: () => void;
   onOpenNodePod: () => void;
 }
 
 export function ChatHeader({
   isPending,
-  modelLabel,
+  modelLabel, sessionTitle, messageCount = 0,
   activeSessionId,
   mobileSidebarOpen,
   speechEnabled,
   canvasEnabled,
   artifactBrowserOpen,
+  materialCount = 0,
   shareState,
   toggleMobileSidebar,
   openModelSelector,
@@ -101,23 +103,26 @@ export function ChatHeader({
   toggleArtifactBrowser,
   newSession,
   handleShare,
-  confirmShare,
   toggleSpeech,
-  onOpenNodePod,
+  onOpenOriginal, onOpenNodePod,
 }: ChatHeaderProps) {
+  const subject = categorize(sessionTitle);
+  const compact = useMediaQuery("(max-width: 780px)");
+  const reviewHref = activeSessionId ? `/review/sessions/${encodeURIComponent(activeSessionId)}` : "/review";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // Close mobile menu on click outside or escape
   useEffect(() => {
     if (!mobileMenuOpen) return;
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileMenuOpen(false);
+      if (e.key === "Escape" && !mobileMenuRef.current?.querySelector("dialog[open]")) { setMobileMenuOpen(false); menuButtonRef.current?.focus(); }
     };
     const handleClickOutside = (e: MouseEvent) => {
       if (
         mobileMenuRef.current &&
-        !mobileMenuRef.current.contains(e.target as Node)
+        !mobileMenuRef.current.contains(e.target as Node) && !menuButtonRef.current?.contains(e.target as Node)
       ) {
         setMobileMenuOpen(false);
       }
@@ -157,7 +162,7 @@ export function ChatHeader({
         type="button"
         className={cx(
           actionButtonClass,
-          css({ display: "inline-flex", lg: { display: "none" } }),
+          "ch-panel-toggle",
         )}
         title={
           mobileSidebarOpen ? "Close sessions panel" : "Open sessions panel"
@@ -169,13 +174,13 @@ export function ChatHeader({
         onClick={toggleMobileSidebar}
       >
         {mobileSidebarOpen ? (
-          <PanelLeftClose size={16} />
+          <KeatingGlyph name={compact ? "menu" : "panel"} active />
         ) : (
-          <PanelLeftOpen size={16} />
+          <KeatingGlyph name={compact ? "menu" : "panel"} />
         )}
       </button>
-      <Link
-        to={applicationRootHref(window.location.hostname, import.meta.env.KEATING_WEB_BUILD_TARGET === "app")}
+      {!compact && <Link
+        to={applicationRootHref(globalThis.location?.hostname ?? "", import.meta.env.KEATING_WEB_BUILD_TARGET === "app")}
         className={cx(
           "chat-brand",
           css({
@@ -191,6 +196,7 @@ export function ChatHeader({
         )}
         aria-label="Go to Keating chat"
       >
+        <KeatingGlyph name="kmark" className="ch-compact-logo" />
         <img
 								src="/brand/logo-lockup-compact.avif"
           alt="Keating"
@@ -200,14 +206,12 @@ export function ChatHeader({
             objectFit: "contain",
           })}
         />
-      </Link>
-      {/*
-       * Model belongs in the top-left, next to the identity, not buried in
-       * the composer: it frames the whole conversation rather than the one
-       * message you are typing, and it needs to be readable at a glance
-       * without opening anything.
-       */}
-      <button
+      </Link>}
+      <div key={activeSessionId} className="ch-title">
+        <strong>{sessionTitle || "New session"}</strong>
+        {compact ? <small>{modelLabel} · Socratic</small> : <small>Socratic{subject.key !== "general" && ` · ${subject.label}`} · {messageCount} {messageCount === 1 ? "message" : "messages"}</small>}
+      </div>
+      {!compact && <button
         type="button"
         onClick={openModelSelector}
         title={`Model: ${modelLabel}`}
@@ -235,6 +239,7 @@ export function ChatHeader({
           }),
         )}
       >
+        <StatusDot tone="ok" label="Model selected" />
         <span
           className={css({
             overflow: "hidden",
@@ -244,13 +249,9 @@ export function ChatHeader({
         >
           {modelLabel}
         </span>
-        <ChevronDown size={13} className={css({ flexShrink: 0 })} />
-      </button>
-      <KnowledgeSourcesButton />
-      <span className="chat-mode-badge chat-only-desktop">
-        MODE: SOCRATIC
-      </span>
-
+        <KeatingGlyph name="chev" size={15} className={css({ flexShrink: 0 })} />
+      </button>}
+      {!compact && <HeaderSources />}
       {/* Actions */}
       <div
         className={cx(
@@ -267,64 +268,85 @@ export function ChatHeader({
           }),
         )}
       >
-        <button className={actionButtonClass} aria-label="Settings" title="Settings" onClick={openSettings}><Settings size={16}/></button>
-        {canvasEnabled && <button className={actionButtonClass} aria-label={artifactBrowserOpen ? "Close materials" : "Open materials"} aria-pressed={artifactBrowserOpen} onClick={() => toggleArtifactBrowser("toolbar")}><LibraryBig size={16}/></button>}
+        {canvasEnabled && <button
+          className={cx(actionButtonClass, css({ position: "relative" }))}
+          aria-label={`${artifactBrowserOpen ? "Close materials" : "Open materials"}${materialCount ? `, ${materialCount} in this session` : ""}`}
+          title={materialCount ? `Materials (${materialCount} in this session)` : "Materials"}
+          aria-pressed={artifactBrowserOpen}
+          data-material-count={materialCount}
+          onClick={() => toggleArtifactBrowser("toolbar")}
+        >
+          <KeatingGlyph name="layers" /><span className="ch-label">Materials{materialCount > 0 && ` · ${materialCount}`}</span>
+        </button>}
+        {!compact && <Link to={reviewHref} className="ch-review" aria-label="Review session" title="Review session">
+          <KeatingGlyph name="pen" /><span className="ch-label">Review</span>
+        </Link>}
         <button
           className={actionButtonClass}
+          ref={menuButtonRef}
           title="Menu"
           aria-label="More menu"
           aria-expanded={mobileMenuOpen}
           aria-haspopup="true"
           onClick={() => setMobileMenuOpen((o) => !o)}
         >
-          {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
+          <KeatingGlyph name={mobileMenuOpen ? "x" : "more"} />
         </button>
       </div>
 
       {/* Overflow menu */}
       {mobileMenuOpen && (
         <ChatOverflowMenu
+          compact={compact} reviewHref={reviewHref} openModelSelector={openModelSelector} modelLabel={modelLabel}
           menuRef={mobileMenuRef}
           isPending={isPending}
-          activeSessionId={activeSessionId}
+          openSettings={openSettings}
           speechEnabled={speechEnabled}
           shareState={shareState}
           onClose={() => setMobileMenuOpen(false)}
           newSession={newSession}
-          handleShare={handleShare}
-          confirmShare={confirmShare}
+          handleShare={async () => { menuButtonRef.current?.focus(); await handleShare(); }}
           toggleSpeech={toggleSpeech}
-          onOpenNodePod={onOpenNodePod}
+          onOpenOriginal={onOpenOriginal} onOpenNodePod={onOpenNodePod}
         />
       )}
     </nav>
   );
 }
 
+function HeaderSources() {
+  return <div className="ch-sources" data-glyph-host>
+    <KnowledgeSourcesButton />
+    <KeatingGlyph name="book" size={15} className="ch-sources-glyph" />
+    <KeatingGlyph name="chev" size={13} className="ch-sources-caret" />
+  </div>;
+}
+
 /** Overflow menu entries. Every entry closes the menu before acting. */
 function ChatOverflowMenu({
+  compact, reviewHref, openModelSelector, modelLabel,
   menuRef,
   isPending,
-  activeSessionId,
+  openSettings,
   speechEnabled,
   shareState,
   onClose,
   newSession,
   handleShare,
-  confirmShare,
   toggleSpeech,
-  onOpenNodePod,
+  onOpenOriginal, onOpenNodePod,
 }: {
+  compact: boolean; reviewHref: string; openModelSelector: () => void; modelLabel: string;
   menuRef: RefObject<HTMLDivElement | null>;
   isPending: boolean;
-  activeSessionId: string;
+  openSettings: () => void;
   speechEnabled: boolean;
   shareState: ShareState;
   onClose: () => void;
   newSession: () => void;
   handleShare: () => Promise<void>;
-  confirmShare: () => Promise<void>;
   toggleSpeech: () => void;
+  onOpenOriginal?: () => void;
   onOpenNodePod: () => void;
 }) {
   const posthog = usePostHog();
@@ -360,6 +382,13 @@ function ChatOverflowMenu({
           padding: "0.25rem",
         })}
       >
+        {compact && <>
+          <button type="button" className={menuItemClass} onClick={() => { onClose(); openModelSelector(); }}>Change model · {modelLabel}</button>
+          <HeaderSources />
+          <Link to={reviewHref} className={menuItemClass} onClick={onClose}><KeatingGlyph name="pen" size={16} />Review session</Link>
+          <Link to={applicationRootHref(globalThis.location?.hostname ?? "", import.meta.env.KEATING_WEB_BUILD_TARGET === "app")} className={menuItemClass} onClick={onClose}>Go to Keating chat</Link>
+        </>}
+        {onOpenOriginal && <button type="button" className={menuItemClass} onClick={() => { onClose(); onOpenOriginal(); }}>Open original</button>}
         <NotOrganicAccountMenuItem className={menuItemClass} onSignIn={() => onClose()} />
         <button
           className={cx(menuItemClass, "")}
@@ -373,29 +402,11 @@ function ChatOverflowMenu({
           New session
         </button>
         <button
-          className={cx(
-            menuItemClass,
-            "",
-            shareState === "copied"
-              ? css({ color: "var(--primary)" })
-              : "",
-            shareState === "error"
-              ? css({ color: "var(--destructive)" })
-              : "",
-          )}
-          onClick={() => {
-            onClose();
-            if (shareState === "confirm") confirmShare();
-            else handleShare();
-          }}
+          className={menuItemClass}
+          onClick={() => { onClose(); void handleShare(); }}
           disabled={isPending || shareState === "sharing"}
         >
-
-          {shareState === "copied"
-            ? "Link copied"
-            : shareState === "confirm"
-              ? "Confirm public share"
-              : "Share session"}
+          <KeatingGlyph name="share" size={16} /> Share session
         </button>
         <button
           className={cx(
@@ -470,20 +481,7 @@ function ChatOverflowMenu({
         >
           Live sessions
         </Link>
-        <button
-          className={menuItemClass}
-          onClick={() => {
-            onClose();
-            if (activeSessionId) {
-              navigate({ to: "/review/sessions/$sessionId", params: { sessionId: activeSessionId } });
-            } else {
-              navigate({ to: "/review" });
-            }
-          }}
-        >
-
-          Review session
-        </button>
+        <button className={menuItemClass} onClick={() => { onClose(); openSettings(); }}><KeatingGlyph name="gear" size={16}/>Settings</button>
         <div
           className={cx(
             "",

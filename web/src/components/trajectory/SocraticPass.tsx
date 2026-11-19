@@ -1,11 +1,11 @@
 import { Select } from "../Select";
 import { useEffect, useId, useRef, useState } from "react";
 import { css, cx } from "../../../styled-system/css";
-import { eyebrow, reviewCard } from "../../../styled-system/recipes";
+import { eyebrow } from "../../../styled-system/recipes";
 import type { ReviewPassKind } from "../../keating/trajectory-passes";
 import type { ReviewModelPool } from "../../keating/trajectory-review";
-import { KeatingIcon } from "../KeatingIcon";
-import { reviewIcon } from "./review-icons";
+import { Loading } from "../../design-system/kit";
+import { reviewIcon, ReviewIcon } from "./review-icons";
 
 export interface SocraticPassOption {
 	kind: ReviewPassKind;
@@ -34,17 +34,6 @@ const shell = css({
 	borderBottom: "1px solid var(--line)",
 	background: "color-mix(in srgb, var(--accent) 5%, var(--paper))",
 	overflow: "hidden",
-});
-
-/** The scan line that travels the panel while a pass is drafting. */
-const sweep = css({
-	position: "absolute",
-	insetInline: 0,
-	top: 0,
-	height: "2px",
-	background: "linear-gradient(90deg, transparent, var(--accent-dim), transparent)",
-	animation: "socratic-sweep 1.6s {easings.standard} infinite",
-	pointerEvents: "none",
 });
 
 const launcher = css({
@@ -102,6 +91,7 @@ export function SocraticPass({
 }: SocraticPassProps) {
 	const [open, setOpen] = useState(false);
 	const panelId = useId();
+	const trigger = useRef<HTMLButtonElement>(null);
 	const firstOption = useRef<HTMLButtonElement>(null);
 
 	// A pass that finishes while the menu is open has said what it has to say;
@@ -118,29 +108,34 @@ export function SocraticPass({
 	const busyOption = running ? options.find((option) => option.kind === running) : undefined;
 
 	return (
-		<section className={cx(shell, className)} aria-label="Socratic pass">
-			{running ? <span className={sweep} aria-hidden="true" /> : null}
-
+		<section className={cx(shell, "rv-desk-pass", className)} aria-label="Socratic pass" onKeyDown={event => {
+			if (open && event.key === "Escape") {
+				event.stopPropagation();
+				setOpen(false);
+				trigger.current?.focus();
+			}
+		}}>
 			<button
 				type="button"
-				className={launcher}
+				ref={trigger}
+				className={cx(launcher,"rv-desk-launcher")}
 				aria-expanded={running ? undefined : open}
 				aria-controls={running ? undefined : panelId}
 				data-active={running ? "true" : undefined}
 				onClick={() => (running ? onCancel() : setOpen((current) => !current))}
 			>
-				<KeatingIcon
+				<ReviewIcon
 					icon={reviewIcon[busyOption?.icon ?? "pass"]}
 					size={17}
 					active={Boolean(running)}
 					className={running ? nibRunning : undefined}
 				/>
 				<span className={css({ minWidth: 0, flex: 1 })}>
-					<span className={css({ display: "block", fontFamily: "var(--mono-display)", fontSize: "0.8rem", fontWeight: 700, letterSpacing: "0.01em" })}>
-						{running ? `${busyOption?.label ?? "Pass"}…` : "Socratic pass"}
+					<span className="rv-pass-title">
+						{running ? <Loading size="inline" label={`${busyOption?.label ?? "Pass"}…`} /> : "Socratic pass"}
 					</span>
 					<span className={optionBlurb}>
-						{running ? "Reading the session. Click to stop." : "Have Keating read this session with you."}
+						{running ? "Reading the session. Click to stop." : footnote || "Have Keating read this session with you."}
 					</span>
 				</span>
 				<span className={cx(eyebrow(), css({ fontSize: "10px" }))} aria-hidden="true">
@@ -150,8 +145,27 @@ export function SocraticPass({
 
 			{open && !running ? (
 				<div id={panelId} className={list}>
-					{pools.length > 1 ? (
-						<label className={css({ display: "grid", gap: "0.25rem", marginBottom: "0.15rem" })}>
+					{options.map((option, index) => (
+						<button
+							key={option.kind}
+							ref={index === 0 ? firstOption : undefined}
+							type="button"
+							className="rv-pass-action"
+							disabled={option.disabled}
+							title={option.disabled ? option.disabledReason : undefined}
+							onClick={() => { setOpen(false); trigger.current?.focus(); onRun(option.kind); }}
+						>
+							<span className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem" })}>
+								<ReviewIcon icon={reviewIcon[option.icon]} size={16} className={css({ marginTop: "0.1rem", color: "var(--accent-dim)" })} />
+								<span className={css({ minWidth: 0 })}>
+									<span className={css({ display: "block", fontSize: "0.78rem", fontWeight: 650, color: "var(--ink)" })}>{option.label}</span>
+									<span className={optionBlurb}>{option.disabled ? option.disabledReason ?? option.blurb : option.blurb}</span>
+								</span>
+							</span>
+						</button>
+					))}
+					{pools.length > 0 ? (
+						<label className="rv-pass-pool">
 							<span className={cx(eyebrow(), css({ fontSize: "10px" }))}>Model pool</span>
 							<Select aria-label="Socratic model pool"
 								value={poolId}
@@ -173,27 +187,7 @@ export function SocraticPass({
 						</label>
 					) : null}
 
-					{options.map((option, index) => (
-						<button
-							key={option.kind}
-							ref={index === 0 ? firstOption : undefined}
-							type="button"
-							className={reviewCard()}
-							disabled={option.disabled}
-							title={option.disabled ? option.disabledReason : undefined}
-							onClick={() => onRun(option.kind)}
-						>
-							<span className={css({ display: "flex", alignItems: "flex-start", gap: "0.5rem" })}>
-								<KeatingIcon icon={reviewIcon[option.icon]} size={16} className={css({ marginTop: "0.1rem", color: "var(--accent-dim)" })} />
-								<span className={css({ minWidth: 0 })}>
-									<span className={css({ display: "block", fontSize: "0.78rem", fontWeight: 650, color: "var(--ink)" })}>{option.label}</span>
-									<span className={optionBlurb}>{option.disabled ? option.disabledReason ?? option.blurb : option.blurb}</span>
-								</span>
-							</span>
-						</button>
-					))}
 
-					{footnote ? <p className={cx(optionBlurb, css({ paddingInline: "0.15rem" }))}>{footnote}</p> : null}
 				</div>
 			) : null}
 		</section>

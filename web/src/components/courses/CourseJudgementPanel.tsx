@@ -1,12 +1,12 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
-import { css } from "../../../styled-system/css";
+import { Button, Eyebrow, Loading, Note } from "../../design-system/kit";
+import "../../pages/course-workspace/course-tabs.css";
 import type { CourseViewerSnapshot } from "../../courses/contracts";
 import { buildCourseAuthorSnapshot, clearCourseJudgement, courseReviewKey, queueCourseReview, readCourseJudgement, subscribeCourseJudgements,
   type CourseJudgementReceipt, type CourseJudgementSnapshot, type CourseReviewTarget, type ReviewUnavailable } from "../../courses/course-judgement";
 import { buildCourseSubmissionSnapshot } from "../../courses/course-submission-judgement";
 import { loadJudgementModelSettings, subscribeJudgementModelSettings } from "../../keating/judgement-model";
 import { judgementAccountStatus } from "../../keating/judgement/public-account";
-import { courseButtonClass, courseLabelClass } from "./course-ui";
 
 const explanations: Record<ReviewUnavailable, string> = {
   permission: "Review is unavailable with your current course access.",
@@ -20,11 +20,11 @@ const explanations: Record<ReviewUnavailable, string> = {
 
 export function CourseJudgementDetails({ source, receipt }: { source: CourseJudgementSnapshot; receipt: CourseJudgementReceipt }) {
   if (receipt.sourceDigest !== source.sourceDigest) return null;
-  return <div className={css({ mt: "0.7rem" })}>
-    <p className={courseLabelClass}>Uncalibrated reviewer suggestions · {receipt.backend.backend} / {receipt.backend.model}</p>
-    <p className={css({ fontSize: "0.73rem", mt: "0.3rem" })}>Review pointers, not verified facts. Only the supplied text was checked. Saved for this tab only.</p>
-    {source.omitted.map(text => <p key={text} className={css({ fontSize: "0.73rem", mt: "0.3rem" })}>{text}</p>)}
-    <ul className={css({ mt: "0.6rem", display: "grid", gap: "0.65rem", listStyle: "none", p: 0 })}>
+  return <div className="ct-stack">
+    <Eyebrow>Uncalibrated reviewer suggestions · {receipt.backend.backend} / {receipt.backend.model}</Eyebrow>
+    <p>Review pointers, not verified facts. Only the supplied text was checked. Saved for this tab only.</p>
+    {source.omitted.map(text => <p key={text}>{text}</p>)}
+    <ul className="ct-findings">
       {receipt.findings.map(finding => {
         const criterion = source.criteria.find(item => item.id === finding.criterionId);
         const block = source.blocks.find(item => item.id === finding.evidenceBlockId);
@@ -33,15 +33,15 @@ export function CourseJudgementDetails({ source, receipt }: { source: CourseJudg
           <strong>{criterion.label}: {finding.verdict === "attention" ? "check this" : finding.verdict === "supported" ? "appears supported" : "unknown"}</strong>
           {finding.verdict === "attention" && <p>{criterion.action}</p>}
           {finding.verdict === "unknown" && <p>Insufficient evidence for a suggestion.</p>}
-          {block && <details className={css({ mt: "0.2rem" })}>
+          {block && <details>
             <summary>Review source · {block.label}</summary>
-            <code className={css({ fontSize: "0.65rem", overflowWrap: "anywhere" })}>{block.id}</code>
-            <blockquote className={css({ whiteSpace: "pre-wrap", overflowWrap: "anywhere", borderLeft: "2px solid var(--ink)", pl: "0.7rem", mt: "0.3rem" })}>{block.text}</blockquote>
+            <code>{block.id}</code>
+            <blockquote className="ct-source">{block.text}</blockquote>
           </details>}
         </li>;
       })}
     </ul>
-    <p className={css({ mt: "0.6rem", fontSize: "0.72rem" })}>{source.target.kind === "author" ? "Edit and publish decisions remain yours." : "Write your own feedback below. Marking work reviewed remains a separate action."}</p>
+    <p>{source.target.kind === "author" ? "Edit and publish decisions remain yours." : "Write your own feedback below. Marking work reviewed remains a separate action."}</p>
   </div>;
 }
 
@@ -75,16 +75,16 @@ export function CourseJudgementPanel({ snapshot, target = { kind: "author" } }: 
   if (!permitted) return null;
   const title = target.kind === "author" ? "Review course design" : "Review this submission";
   const reason = state?.status === "unavailable" ? state.reason : source?.unavailable;
-  return <section aria-label={title} className={css({ my: "0.8rem", borderTop: "1px solid var(--ink)", pt: "0.7rem", fontSize: "0.78rem", lineHeight: 1.5 })}>
-    <div className={css({ display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" })}>
-      <button type="button" className={courseButtonClass} disabled={settings.backend === "off" || state?.status === "pending" || !!source?.unavailable || !source}
-        onClick={() => queueCourseReview(snapshot, target)}>{state?.status === "pending" ? "Reviewing…" : title}</button>
-      {state?.status === "pending" && <button type="button" className={courseButtonClass} onClick={() => clearCourseJudgement(key)}>Cancel review</button>}
+  return <section aria-label={title} className="ct-judgement">
+    <div className="ct-row">
+      <Button variant="line" size="sm" disabled={settings.backend === "off" || state?.status === "pending" || !!source?.unavailable || !source}
+        onClick={() => queueCourseReview(snapshot, target)}>{state?.status === "pending" ? "Reviewing…" : title}</Button>
+      {state?.status === "pending" && <Button variant="line" size="sm" onClick={() => clearCourseJudgement(key)}>Cancel review</Button>}
       <span>{settings.backend === "off" ? "Judgement is off in Settings." : settings.backend === "hosted" ? "This action may send the listed text to your configured hosted judgement service." : "Uses the independent local judgement model."}</span>
     </div>
-    <p className={css({ mt: "0.3rem", fontSize: "0.72rem" })}>{target.kind === "author" ? "Checks saved objectives, teaching order, assessments, instructions and answer support. Unsaved edits are not included." : "Checks only this submitted answer against its task, rubric and reference reading. Attachments are not opened."}</p>
-    {state?.status === "pending" && <p role="status">You can keep working while the suggestion is prepared.</p>}
-    {reason && <p role="status">{explanations[reason]}</p>}
+    <p>{target.kind === "author" ? "Checks saved objectives, teaching order, assessments, instructions and answer support. Unsaved edits are not included." : "Checks only this submitted answer against its task, rubric and reference reading. Attachments are not opened."}</p>
+    {state?.status === "pending" && <Loading label="You can keep working while the suggestion is prepared." size="inline" />}
+    {reason && <Note role="status">{explanations[reason]}</Note>}
     {settings.backend !== "off" && source && state?.status === "ready" && <CourseJudgementDetails source={source} receipt={state.receipt} />}
   </section>;
 }

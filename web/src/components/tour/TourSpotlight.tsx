@@ -9,6 +9,8 @@ import {
 	visibleTourSteps,
 } from "../../keating/interface-tour";
 import { useOnboardingAnalytics } from "../../lib/onboarding-analytics";
+import { Button, Eyebrow } from "../../design-system/kit";
+import { KeatingBot } from "../KeatingBot";
 import "./tour-spotlight.css";
 
 export interface TourSpotlightProps {
@@ -191,16 +193,18 @@ export function TourSpotlight({
 					if (event.key === "ArrowLeft") { event.preventDefault(); goTo(index - 1); }
 				}}
 			>
-				<p className="tour-spotlight__progress">{index + 1} of {total}</p>
+				<div className="tour-spotlight__head"><span className="tour-spotlight__bot" data-right={!!rect && rect.left + rect.width / 2 > placement.left + 28}>
+					<KeatingBot size={48} state="pointing-left" label=""/></span>
+				<Eyebrow>{index + 1} of {total}</Eyebrow></div>
 				<h2 id="tour-spotlight-title" ref={heading} tabIndex={-1}>{step.title}</h2>
 				<p id="tour-spotlight-body">{step.body}</p>
 				<div className="tour-spotlight__actions">
-					<button type="button" className="tour-spotlight__skip" onClick={() => settle("skipped")}>Skip tour</button>
+					<Button variant="ghost" onClick={() => settle("skipped")}>Skip tour</Button>
 					<div className="tour-spotlight__advance">
-						{index > 0 && <button type="button" className="tour-spotlight__secondary" onClick={() => goTo(index - 1)}>Back</button>}
-						<button type="button" className="tour-spotlight__primary" onClick={() => goTo(index + 1)}>
+						{index > 0 && <Button variant="line" onClick={() => goTo(index - 1)}>Back</Button>}
+						<Button variant="primary" onClick={() => goTo(index + 1)}>
 							{index === total - 1 ? "Done" : "Next"}
-						</button>
+						</Button>
 					</div>
 				</div>
 			</div>

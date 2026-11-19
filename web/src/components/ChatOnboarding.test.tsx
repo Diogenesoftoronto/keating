@@ -21,33 +21,29 @@ test("first render leaves completion unset and exposes the unconditional skip ac
 	expect(hasCompletedChatOnboarding(saved)).toBe(false);
 	const html = renderToStaticMarkup(<ChatOnboarding {...inert} initialStep={0} />);
 	expect(html).toContain("Go straight to chat");
-	expect(html).toContain("Next");
-	expect(html).toContain("1 of 8");
+	expect(html).toContain("Continue");
+	expect(html).toContain("1 of 4");
 	expect(saved.getItem(CHAT_ONBOARDING_STORAGE_KEY)).toBeNull();
 });
 
-test("the welcome step explains the interface rather than asking for setup", () => {
-	const html = renderToStaticMarkup(<ChatOnboarding {...inert} initialStep={0} />);
-	for (const landmark of ["composer", "side panel", "Sessions", "Settings"]) expect(html).toContain(landmark);
+test("both tracks share four named stages", () => {
+	expect(ONBOARDING_STEPS.map(step => step.label)).toEqual(["Question", "Model", "You", "Ready"]);
+	for (const [index, step] of ONBOARDING_STEPS.entries()) {
+		const html = renderToStaticMarkup(<ChatOnboarding {...inert} initialStep={index}/>);
+		expect(html).toContain(`aria-current="step" aria-label="Step ${index + 1} of 4: ${step.label}"`);
+	}
 });
 
 test("model access still leads, unchanged, on its own step", () => {
-	const access = ONBOARDING_STEPS.findIndex((step) => step.id === "access");
+	const access = ONBOARDING_STEPS.findIndex((step) => step.id === "model");
 	const html = renderToStaticMarkup(<ChatOnboarding {...inert} initialStep={access} />);
 	expect(html).toContain(NOTORGANIC_DEFAULT_MODEL.name);
 	expect(html).toContain("Bring your own key");
 	expect(html).toMatch(/checked=""[^>]*value="keating"/);
 });
 
-test("every profile step can be passed over without answering anything", () => {
-	for (const [index, step] of ONBOARDING_STEPS.entries()) {
-		const html = renderToStaticMarkup(<ChatOnboarding {...inert} initialStep={index} />);
-		expect(html.includes("Skip this")).toBe(Boolean(step.group));
-	}
-});
-
 test("asking for age offers a band and a refusal, never a date of birth", () => {
-	const identity = ONBOARDING_STEPS.findIndex((step) => step.id === "identity");
+	const identity = ONBOARDING_STEPS.findIndex((step) => step.id === "you");
 	const html = renderToStaticMarkup(<ChatOnboarding {...inert} initialStep={identity} />);
 	expect(html).toContain("Age range");
 	expect(html).toContain("Prefer not to say");
@@ -65,9 +61,9 @@ test("explicit completion and skipping persist only versioned outcome metadata",
 
 test("an unfinished run resumes where it stopped without counting as complete", () => {
 	const saved = storage();
-	expect(markChatOnboarding("in-progress", saved, 4)).toBe(true);
+	expect(markChatOnboarding("in-progress", saved, 2)).toBe(true);
 	expect(hasCompletedChatOnboarding(saved)).toBe(false);
-	expect(readChatOnboardingStep(saved)).toBe(4);
+	expect(readChatOnboardingStep(saved)).toBe(2);
 	expect(JSON.parse(saved.getItem(CHAT_ONBOARDING_STORAGE_KEY)!).completedAt).toBeNull();
 });
 
@@ -99,4 +95,14 @@ test("unavailable browser storage never blocks explicit completion", () => {
 	expect(hasCompletedChatOnboarding(blocked)).toBe(false);
 	expect(readChatOnboardingStep(blocked)).toBe(0);
 	expect(markChatOnboarding("skipped", blocked)).toBe(false);
+});
+
+test("legacy screen ids and numeric positions migrate to the corresponding stage", () => {
+	const saved = storage();
+	for (const [index, id] of ["welcome","access","setup","identity","learning","teaching","accessibility","finish"].entries()) {
+		for (const position of [{ stepId: id, step: 0 }, { step: index }]) {
+			saved.setItem(CHAT_ONBOARDING_STORAGE_KEY, JSON.stringify({ version: 2, outcome: "in-progress", ...position }));
+			expect(readChatOnboardingStep(saved)).toBe([0,1,1,2,2,2,2,3][index]);
+		}
+	}
 });

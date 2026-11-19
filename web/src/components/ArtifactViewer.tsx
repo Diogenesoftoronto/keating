@@ -1,21 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
-import {
-	BookOpen,
-	ChevronRight,
-	Download,
-	Eye,
-	EyeOff,
-	GitBranch,
-	Layers,
-	Map as MapIcon,
-	MessageSquare,
-	PanelRightClose,
-	Play,
-	Search,
-	Settings2,
-	Sparkles,
-	Wrench,
-} from "lucide-react";
+import { Button, Chip, EmptyState, IconButton, Loading } from "../design-system/kit";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { KeatingGlyph } from "../design-system/glyphs";
+import { Meter, Stat } from "../design-system/charts";
 import { MermaidRenderer } from "./MermaidRenderer";
 import { AnimationPlayer } from "./AnimationPlayer";
 import { FlashcardRenderer } from "./FlashcardRenderer";
@@ -26,6 +12,7 @@ import { KeatingStorage, type LessonPlan, type LessonMap, type Animation, type B
 import { sessions, getInitPromise } from "../hooks/keating-storage";
 import type { SessionMetadata } from "../types/session";
 import "./selection-library.css";
+import "./workspace/materials.css";
 import { css, cx } from "../../styled-system/css";
 
 interface ArtifactViewerProps {
@@ -34,7 +21,7 @@ interface ArtifactViewerProps {
 	onClose?: () => void;
 }
 
-type ArtifactType = "plan" | "map" | "animation" | "deck" | "benchmark" | "evolution" | "verification" | "prompt-evolution" | "improvement";
+export type ArtifactType = "plan" | "map" | "animation" | "deck" | "benchmark" | "evolution" | "verification" | "prompt-evolution" | "improvement";
 
 type ArtifactAudience = "user" | "agent";
 
@@ -55,15 +42,15 @@ const AUDIENCE_MAP: Record<ArtifactType, ArtifactAudience> = {
 };
 
 const TYPE_META: Record<ArtifactType, { label: string; icon: React.ReactNode }> = {
-	plan: { label: "Lesson Plan", icon: <BookOpen size={14} /> },
-	map: { label: "Concept Map", icon: <MapIcon size={14} /> },
-	animation: { label: "Animation", icon: <Play size={14} /> },
-	deck: { label: "Flashcards", icon: <Layers size={14} /> },
-	verification: { label: "Verification", icon: <ChevronRight size={14} /> },
-	benchmark: { label: "Benchmark", icon: <Sparkles size={14} /> },
-	evolution: { label: "Evolution", icon: <Settings2 size={14} /> },
-	"prompt-evolution": { label: "Prompt Evo", icon: <Sparkles size={14} /> },
-	improvement: { label: "Improvement", icon: <Wrench size={14} /> },
+	plan: { label: "Lesson Plan", icon: <KeatingGlyph name="book" size={14} /> },
+	map: { label: "Concept Map", icon: <KeatingGlyph name="route" size={14} /> },
+	animation: { label: "Animation", icon: <KeatingGlyph name="play" size={14} /> },
+	deck: { label: "Flashcards", icon: <KeatingGlyph name="layers" size={14} /> },
+	verification: { label: "Verification", icon: <KeatingGlyph name="checklist" size={14} /> },
+	benchmark: { label: "Benchmark", icon: <KeatingGlyph name="spark" size={14} /> },
+	evolution: { label: "Evolution", icon: <KeatingGlyph name="gear" size={14} /> },
+	"prompt-evolution": { label: "Prompt Evo", icon: <KeatingGlyph name="spark" size={14} /> },
+	improvement: { label: "Improvement", icon: <KeatingGlyph name="tool" size={14} /> },
 };
 
 interface Artifact {
@@ -214,6 +201,16 @@ ${improvement.hypothesis}
 
 export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerProps) {
 	const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+	const detail = useRef<HTMLDialogElement>(null);
+	const [expanded, setExpanded] = useState(false);
+	const resize = () => {
+		const node = detail.current;
+		if (!node) return;
+		node.close();
+		if (expanded) node.show();
+		else node.showModal();
+		setExpanded(!expanded);
+	};
 	const [selected, setSelected] = useState<Artifact | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [query, setQuery] = useState("");
@@ -353,61 +350,23 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 		);
 	};
 
-	if (loading) {
-		return (
-			<div className={css({ padding: "2rem", textAlign: "center", color: "var(--muted-foreground)" })}>
-				<div className={css({ animation: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite" })}>Loading artifacts...</div>
-			</div>
-		);
-	}
+	if (loading) return <Loading label="Loading artifacts..." />;
 
 	if (selected) {
 		return (
-			<div className={cx("artifact-detail", css({ minWidth: 0, maxWidth: "100%", color: "var(--foreground)" }))}>
-				<div className={css({ marginBottom: "1rem", paddingBottom: "0.5rem", borderBottomWidth: "1px", borderColor: "var(--border)" })}>
-					<div className={css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" })}>
-						<button onClick={() => setSelected(null)} className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)", _hover: { textDecoration: "underline" } })}>
-							← Back to list
-						</button>
-						<div className={css({ display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0 })}>
-						<button
-							type="button"
-							onClick={() => downloadSelected(selected)}
-							className={css({
-								display: "inline-flex",
-								height: "2rem",
-								alignItems: "center",
-								gap: "0.375rem",
-								borderRadius: "0.375rem",
-								borderWidth: "1px",
-								borderColor: "var(--border)",
-								paddingInline: "0.625rem",
-								fontSize: "0.75rem",
-								fontWeight: 500,
-								color: "var(--muted-foreground)",
-								transitionProperty: "color, background-color, border-color, text-decoration-color, fill, stroke",
-								transitionDuration: "150ms",
-								_hover: { background: "var(--accent)", color: "var(--accent-foreground)" },
-							})}
-						>
-							<Download size={14} />
-							Download
-						</button>
-						{onClose && <button type="button" className="library-icon" aria-label="Close artifact panel" title="Close artifact panel" onClick={onClose}><PanelRightClose size={18}/></button>}
-						</div>
+			<dialog ref={detail} open aria-label={selected.label} className="h1-artifact-detail"
+				onCancel={event => { event.preventDefault(); if (expanded) resize(); }}>
+				<header>
+					<div className="h1-toolbar k-halftone">
+						<Button variant="ghost" size="sm" glyph="left" onClick={() => { setExpanded(false); setSelected(null); }}>Back to list</Button>
+						<IconButton size="sm" glyph={expanded ? "collapse" : "expand"} label={expanded ? "Exit full size" : "Open full size"} pressed={expanded} onClick={resize} />
+						<Button variant="ghost" size="sm" glyph="export" onClick={() => downloadSelected(selected)}>Download</Button>
+						{onClose && <IconButton size="sm" glyph="x" label="Close artifact panel" onClick={onClose} />}
 					</div>
-					<h2 className={css({ marginTop: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: "1.125rem", fontWeight: 600, color: "var(--foreground)" })}>{selected.label}</h2>
-					<div className={css({ marginTop: "0.25rem", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.375rem 0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
-						<span className={css({ display: "inline-flex", alignItems: "center", gap: "0.25rem", borderRadius: "0.25rem", background: "var(--muted)", paddingInline: "0.375rem", paddingBlock: "0.125rem" })}>
-							{TYPE_META[selected.type].icon}
-							{TYPE_META[selected.type].label}
-						</span>
-						<span>{new Date(selected.createdAt).toLocaleString()}</span>
-						{AUDIENCE_MAP[selected.type] === "agent" && (
-							<span className={css({ fontSize: "10px", textTransform: "uppercase", letterSpacing: "0.05em", color: "#f59e0b" })}>Agent</span>
-						)}
-					</div>
-				</div>
+					<h2>{selected.label}</h2>
+					<Chip>{TYPE_META[selected.type].label}</Chip> <small>{new Date(selected.createdAt).toLocaleString()}</small>
+					{AUDIENCE_MAP[selected.type] === "agent" && <Chip>Agent</Chip>}
+				</header>
 				<div
 					className={cx("artifact-content", css({
 						minWidth: 0,
@@ -422,25 +381,17 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
 					aria-label={`${selected.label} artifact content`}
 					tabIndex={0}
 				>
-					{selected.type === "plan" && <PlanViewer plan={selected.data as LessonPlan} />}
-					{selected.type === "map" && <MapView map={selected.data as LessonMap} />}
-					{selected.type === "animation" && <AnimationViewer animation={selected.data as Animation} />}
-					{selected.type === "deck" && <DeckViewer deck={selected.data as FlashcardDeck} />}
-					{selected.type === "benchmark" && <BenchmarkViewer benchmark={selected.data as BenchmarkResult} />}
-					{selected.type === "evolution" && <EvolutionViewer evolution={selected.data as EvolutionResult} />}
-					{selected.type === "verification" && <VerificationViewer data={selected.data} />}
-					{selected.type === "prompt-evolution" && <PromptEvolutionViewer promptEvolution={selected.data as PromptEvolutionResult} />}
-					{selected.type === "improvement" && <ImprovementViewer improvement={selected.data as ImprovementAttemptRecord} />}
+					<StoredArtifactContent type={selected.type} data={selected.data} />
 				</div>
-			</div>
+			</dialog>
 		);
 	}
 
  return <section className="material-library" aria-label="Learning materials">
-  <header className="material-library__header"><div><h2>Your materials</h2><p>Plans, maps and practice from your conversations.</p></div>
-   {onClose && <button className="library-icon" type="button" aria-label="Close artifact panel" onClick={onClose}><PanelRightClose size={18}/></button>}
+  <header className="material-library__header k-halftone"><div><h2>Saved library</h2><p>Lesson plans, maps, decks and animations saved as separate items.</p></div>
+   {onClose && <IconButton glyph="panelr" label="Close artifact panel" onClick={onClose}/>}
   </header>
-  <label className="library-search"><Search size={18} aria-hidden="true"/><input aria-label="Search materials" value={query} placeholder="Find a material" onChange={event => setQuery(event.target.value)}/></label>
+  <label className="library-search" data-glyph-host><KeatingGlyph name="search" size={18}/><input aria-label="Search materials" value={query} placeholder="Find a material" onChange={event => setQuery(event.target.value)}/></label>
   <div className="material-library__filters" aria-label="Material type">
    {(["all", "plan", "map", "deck", "animation"] as const).map(type => <button type="button" key={type} aria-pressed={kind === type} onClick={() => setKind(type)}>{type === "all" ? "All" : TYPE_META[type].label}</button>)}
   </div>
@@ -448,15 +399,30 @@ export function ArtifactViewer({ storage, artifactId, onClose }: ArtifactViewerP
    <label><input type="checkbox" checked={showAgentArtifacts} onChange={toggleShowAgent}/> Include tutor reports ({agentArtifactCount})</label>
    <button type="button" onClick={downloadVisibleArtifacts} disabled={!filteredArtifacts.length}>Download these materials</button>
   </details>
-  {!filteredArtifacts.length ? <div className="library-message"><BookOpen size={24}/><h3>{artifacts.length ? "No matching materials" : "Your learning starts here"}</h3><p>{artifacts.length ? "Try a different search or material type." : "Ask your tutor for a lesson plan, concept map or flashcards. You can return to them here."}</p></div> :
+  {!filteredArtifacts.length ? <EmptyState glyph="book" heading={<span role="heading" aria-level={3}>{artifacts.length ? "No matching materials" : "Your learning starts here"}</span>}>{artifacts.length ? "Try a different search or material type." : "Ask your tutor for a lesson plan, concept map or flashcards. You can return to them here."}</EmptyState> :
    <div>{sortedGroupKeys.map(groupKey => <section key={groupKey}>
     <h3 className="library-group">{sessionMap.get(groupKey)?.title || "Saved materials"}</h3>
     {groupedBySession.get(groupKey)!.map(artifact => <button type="button" className="material-library__row" key={artifact.id} onClick={() => setSelected(artifact)}>
      <span className="material-library__type" aria-hidden="true">{TYPE_META[artifact.type].icon}</span>
-     <span><strong>{artifact.label}</strong><small>{TYPE_META[artifact.type].label} · {formatArtifactDate(artifact.createdAt)}{artifact.type === "deck" ? " · " + artifactPreviewText(artifact) : ""}</small></span><ChevronRight size={16} aria-hidden="true"/>
+     <span><strong>{artifact.label}</strong><small>{TYPE_META[artifact.type].label} · {formatArtifactDate(artifact.createdAt)}{artifact.type === "deck" ? " · " + artifactPreviewText(artifact) : ""}</small></span><KeatingGlyph name="chevr" size={16}/>
     </button>)}
    </section>)}</div>}
  </section>;
+}
+
+/** The body of one stored record, by type; shared with the session materials panel. */
+export function StoredArtifactContent({ type, data }: { type: ArtifactType; data: unknown }) {
+	switch (type) {
+		case "plan": return <PlanViewer plan={data as LessonPlan} />;
+		case "map": return <MapView map={data as LessonMap} />;
+		case "animation": return <AnimationViewer animation={data as Animation} />;
+		case "deck": return <DeckViewer deck={data as FlashcardDeck} />;
+		case "benchmark": return <BenchmarkViewer benchmark={data as BenchmarkResult} />;
+		case "evolution": return <EvolutionViewer evolution={data as EvolutionResult} />;
+		case "verification": return <VerificationViewer data={data} />;
+		case "prompt-evolution": return <PromptEvolutionViewer promptEvolution={data as PromptEvolutionResult} />;
+		case "improvement": return <ImprovementViewer improvement={data as ImprovementAttemptRecord} />;
+	}
 }
 
 // ── Sub-viewers (unchanged from before) ───────────────────────────────────
@@ -492,7 +458,7 @@ function ArtifactMarkdownViewer({ content }: { content: string }) {
 			{parts.map((part, index) => {
 				if (part.type === "mermaid") {
 					return (
-						<div key={index} className={css({ overflow: "auto", borderRadius: "0.5rem", borderWidth: "1px", borderColor: "var(--border)", background: "var(--background)", padding: "1rem" })}>
+						<div key={index} className="h1-preview-stage k-grid">
 							<MermaidRenderer content={part.content} />
 						</div>
 					);
@@ -513,7 +479,7 @@ function ArtifactMarkdownViewer({ content }: { content: string }) {
 function PlanViewer({ plan }: { plan: LessonPlan }) {
 	return (
 		<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
-			<div className={css({ borderRadius: "0.5rem", borderWidth: "1px", borderColor: "var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
+			<div className="h1-artifact-summary">
 				<p className={css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>Lesson artifact</p>
 				<p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>
 					Work through the lesson below. When you're ready, ask for a quiz and the tutor will craft one from what you covered.
@@ -548,7 +514,7 @@ function AnimationViewer({ animation }: { animation: Animation }) {
 function DeckViewer({ deck }: { deck: FlashcardDeck }) {
 	return (
 		<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
-			<div className={css({ borderRadius: "0.5rem", borderWidth: "1px", borderColor: "var(--border)", background: "color-mix(in srgb, var(--muted) 20%, transparent)", padding: "0.75rem" })}>
+			<div className="h1-artifact-summary">
 				<p className={css({ fontSize: "0.875rem", fontWeight: 500, color: "var(--foreground)" })}>{deck.cards.length} flashcards</p>
 				{deck.description && <p className={css({ fontSize: "0.75rem", color: "var(--muted-foreground)" })}>{deck.description}</p>}
 			</div>
@@ -557,13 +523,21 @@ function DeckViewer({ deck }: { deck: FlashcardDeck }) {
 	);
 }
 
+/** A score out of 100 in the chart language: the number in ink, written out, with one meter. */
+function ScoreOutOf100({ label, score }: { label: string; score: number }) {
+  const shown = score.toFixed(1);
+  return (
+    <div className={css({ display: "grid", gap: "0.35rem", maxWidth: "18rem" })}>
+      <Stat label={label} value={shown} support="out of 100" />
+      <Meter aria-hidden="true" value={score} max={100} tone="ink" />
+    </div>
+  );
+}
+
 function BenchmarkViewer({ benchmark }: { benchmark: BenchmarkResult }) {
 	return (
 		<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
-			<div className={css({ display: "flex", alignItems: "center", gap: "1rem" })}>
-				<div className={css({ fontSize: "1.875rem", lineHeight: "2.25rem", fontWeight: 700, color: "var(--primary)" })}>{benchmark.score.toFixed(1)}</div>
-				<div className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>/ 100</div>
-			</div>
+			<ScoreOutOf100 label="Score" score={benchmark.score} />
 			<ArtifactMarkdownViewer content={benchmark.report} />
 			{benchmark.trace && (
 				<details>
@@ -578,10 +552,7 @@ function BenchmarkViewer({ benchmark }: { benchmark: BenchmarkResult }) {
 function EvolutionViewer({ evolution }: { evolution: EvolutionResult }) {
 	return (
 		<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
-			<div className={css({ display: "flex", alignItems: "center", gap: "1rem" })}>
-				<div className={css({ fontSize: "1.875rem", lineHeight: "2.25rem", fontWeight: 700, color: "var(--primary)" })}>{evolution.bestScore.toFixed(1)}</div>
-				<div className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>/ 100 best score</div>
-			</div>
+			<ScoreOutOf100 label="Best score" score={evolution.bestScore} />
 			<ArtifactMarkdownViewer content={evolution.report} />
 			{evolution.trace && (
 				<details>
@@ -596,10 +567,7 @@ function EvolutionViewer({ evolution }: { evolution: EvolutionResult }) {
 function PromptEvolutionViewer({ promptEvolution }: { promptEvolution: PromptEvolutionResult }) {
 	return (
 		<div className={css({ "& > * + *": { marginTop: "1rem" } })}>
-			<div className={css({ display: "flex", alignItems: "center", gap: "1rem" })}>
-				<div className={css({ fontSize: "1.875rem", lineHeight: "2.25rem", fontWeight: 700, color: "var(--primary)" })}>{promptEvolution.bestScore.toFixed(1)}</div>
-				<div className={css({ fontSize: "0.875rem", color: "var(--muted-foreground)" })}>best prompt score</div>
-			</div>
+			<Stat label="Best prompt score" value={promptEvolution.bestScore.toFixed(1)} />
 			<ArtifactMarkdownViewer content={promptEvolution.report} />
 			<details>
 				<summary className={css({ cursor: "pointer", fontSize: "0.875rem", color: "var(--muted-foreground)" })}>View Prompt</summary>

@@ -1,6 +1,7 @@
-import { Suspense, use, useEffect, useMemo, useState } from "react";
+import { IntervalPlot, StackBar, Meter, Timeline } from "../design-system/charts";
+import { useId, useEffect, useMemo, useState } from "react";
 import { usePostHog } from "@posthog/react";
-import { Activity, BarChart3, BookOpenCheck, ClipboardList, Database, Download, FileText, Info, LineChart, Medal, Scale, UploadCloud } from "lucide-react";
+
 import type { AgentMessage } from "@earendil-works/pi-agent-core";
 import type { Model } from "@earendil-works/pi-ai";
 import { useSeo } from "../hooks/useSeo";
@@ -11,10 +12,14 @@ import type { SessionData } from "../types/session";
 import { feedbackToOutcomeScore, inferBrowserLearnerTurnSignal, MIN_REAL_OUTCOMES } from "../keating/core";
 import { listCachedSharedSessions, type SharedModelInfo } from "../keating/shared-sessions";
 import { downloadTextFile } from "../lib/browser-download";
-import { describeRanking, meanInterval, rankByEvidence, type ScoreInterval } from "../keating/bench-stats";
-import { css, cx } from "../../styled-system/css";
-import { Nav } from "../components/Nav";
-import { LearningInsightsHeader, LearningMetric } from "../components/LearningInsightsHeader";
+import { describeRanking, meanInterval, rankByEvidence, type RankResult, type ScoreInterval } from "../keating/bench-stats";
+
+
+import { useMotionAllowed } from "../design-system/motion";
+import "./bench.css";
+import { Button, Loading, EmptyState, Card, Chip, DefinitionList, IconButton, Eyebrow, Note, Segmented } from "../design-system/kit";
+import { KeatingGlyph } from "../design-system/glyphs";
+import { LearningShell } from "../components/LearningInsightsHeader";
 
 type BenchmarkSource = "shared" | "local" | "all";
 
@@ -61,7 +66,7 @@ interface BenchmarkData {
 	feedbackEntries: FeedbackEntry[];
 }
 
-let dataPromise: Promise<BenchmarkData> | null = null;
+
 
 type ReadinessBand = "waiting" | "sparse" | "provisional" | "rankable" | "stable";
 type ReplayStage = "diagnosis" | "confusion-recovery" | "correction" | "transfer" | "retention";
@@ -107,93 +112,6 @@ const READINESS_THRESHOLDS = {
 	stable: 100,
 };
 
-const styles = {
-	page: css({ minH: "100vh", bg: "var(--paper)", color: "var(--ink)" }),
-	min0: css({ minW: 0 }),
-	main: css({ mx: "auto", maxW: "72rem", px: "1rem", py: "1.5rem" }),
-	button: css({ display: "inline-flex", h: "2.25rem", w: "100%", alignItems: "center", justifyContent: "center", gap: "0.5rem", border: "1px solid var(--ink)", bg: "var(--card)", px: "0.75rem", fontSize: "0.875rem", sm: { w: "auto" }, _hover: { bg: "var(--accent)", color: "var(--accent-foreground)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } }),
-	sourceTabs: css({ display: "grid", w: "100%", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", overflow: "hidden", border: "1px solid var(--ink)", sm: { display: "inline-flex", w: "auto" } }),
-	sourceButton: css({ minW: 0, h: "2.25rem", px: "0.25rem", fontSize: "0.75rem", sm: { px: "0.75rem", fontSize: "0.875rem" } }),
-	sourceCompactLabel: css({ sm: { display: "none" } }),
-	sourceWideLabel: css({ display: "none", sm: { display: "inline" } }),
-	sourceActive: css({ bg: "var(--ink)", color: "var(--paper)" }),
-	sourceInactive: css({ bg: "var(--card)", _hover: { bg: "var(--accent)", color: "var(--accent-foreground)" } }),
-	metricGrid: css({ display: "grid", gap: "0.75rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" }, xl: { gridTemplateColumns: "repeat(4, minmax(0, 1fr))" } }),
-	truncate: css({ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }),
-	shrink0: css({ flexShrink: 0 }),
-	readinessBase: css({ display: "inline-flex", borderRadius: "0.375rem", border: "1px solid", px: "0.5rem", py: "0.25rem", fontSize: "11px", fontWeight: "500" }),
-	readinessGood: css({ borderColor: "color-mix(in srgb, #059669 70%, transparent)", bg: "color-mix(in srgb, #22c55e 10%, transparent)", color: "#047857" }),
-	readinessProvisional: css({ borderColor: "color-mix(in srgb, #0284c7 70%, transparent)", bg: "color-mix(in srgb, #0ea5e9 10%, transparent)", color: "#0369a1" }),
-	readinessSparse: css({ borderColor: "color-mix(in srgb, #d97706 70%, transparent)", bg: "color-mix(in srgb, #f59e0b 10%, transparent)", color: "#b45309" }),
-	readinessWaiting: css({ borderColor: "color-mix(in srgb, var(--muted-foreground) 30%, transparent)", bg: "var(--muted)", color: "var(--muted-foreground)" }),
-	pill: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", bg: "var(--muted)", px: "0.5rem", py: "0.25rem", fontSize: "11px", color: "var(--muted-foreground)" }),
-	block: css({ minW: 0, border: "1px solid var(--border)", bg: "var(--card)", p: "1rem" }),
-	blockHead: css({ mb: "0.75rem", display: "flex", alignItems: "center", gap: "0.5rem" }),
-	mutedIcon: css({ color: "var(--muted-foreground)" }),
-	blockTitle: css({ fontSize: "0.875rem", fontWeight: "600" }),
-	bodyText: css({ "& > * + *": { mt: "0.5rem" }, fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" }),
-	definitionRow: css({ display: "grid", gap: "0.25rem", borderRadius: "0.375rem", bg: "var(--muted)", p: "0.75rem", sm: { gridTemplateColumns: "8rem minmax(0, 1fr)", gap: "0.75rem" } }),
-	definitionLabel: css({ fontSize: "0.75rem", fontWeight: "500", color: "var(--foreground)" }),
-	definitionValue: css({ fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" }),
-	explainerGrid: css({ mt: "1.5rem", display: "grid", gap: "1rem", lg: { gridTemplateColumns: "minmax(0, 1.05fr) minmax(0, 0.95fr)" } }),
-	methodology: css({ mt: "1.5rem", border: "1px solid var(--ink)", bg: "var(--card)", p: "1rem" }),
-	methodologyHead: css({ mb: "1rem", display: "flex", alignItems: "center", gap: "0.5rem" }),
-	howDetails: css({ mt: "1.5rem" }),
-	howSummary: css({ display: "flex", alignItems: "center", minH: "2.75rem", px: "1rem", border: "1.5px solid var(--line)", borderRadius: "{radii.keating}", bg: "var(--card)", fontSize: "0.875rem", fontWeight: "650", cursor: "pointer", transitionProperty: "border-color", transitionDuration: "{durations.fast}", transitionTimingFunction: "{easings.standard}", _hover: { borderColor: "var(--ink)" }, _focusVisible: { outline: "3px solid var(--accent-dim)", outlineOffset: "2px" } }),
-	twoGrid: css({ display: "grid", gap: "0.75rem", gridTemplateColumns: "minmax(0, 1fr)", lg: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } }),
-	section: css({ mt: "1.5rem", overflow: "hidden", border: "1px solid var(--ink)", bg: "var(--card)" }),
-	sectionHeader: css({ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", borderBottom: "1px solid var(--border)", px: "1rem", py: "0.75rem" }),
-	sectionTitle: css({ fontSize: "0.875rem", fontWeight: "600" }),
-	sectionSubtitle: css({ mt: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
-	inlineMuted: css({ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
-	overflowX: css({ overflowX: "auto" }),
-	table: css({ w: "100%", minW: "1140px", textAlign: "left", fontSize: "0.875rem" }),
-	thead: css({ borderBottom: "1px solid var(--border)", bg: "color-mix(in srgb, var(--muted) 60%, transparent)", fontSize: "0.75rem", textTransform: "uppercase", color: "var(--muted-foreground)" }),
-	thRank: css({ w: "4rem", px: "1rem", py: "0.75rem" }),
-	th: css({ px: "1rem", py: "0.75rem" }),
-	tbody: css({ "& > * + *": { borderTop: "1px solid var(--border)" } }),
-	emptyCell: css({ px: "1rem", py: "3rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
-	tableRow: css({ verticalAlign: "top", _hover: { bg: "color-mix(in srgb, var(--accent) 50%, transparent)" } }),
-	tdRank: css({ px: "1rem", py: "1rem", fontSize: "1.125rem", fontWeight: "600", fontVariantNumeric: "tabular-nums" }),
-	td: css({ px: "1rem", py: "1rem" }),
-	modelCell: css({ maxW: "18rem", px: "1rem", py: "1rem" }),
-	fontMedium: css({ fontWeight: "500" }),
-	smallMuted: css({ fontSize: "0.75rem", color: "var(--muted-foreground)" }),
-	tinyMuted: css({ fontSize: "11px", color: "var(--muted-foreground)" }),
-	scoreRow: css({ display: "flex", alignItems: "center", gap: "0.75rem" }),
-	scoreNumber: css({ w: "5rem", fontSize: "1.125rem", fontWeight: "600", fontVariantNumeric: "tabular-nums" }),
-	barTrack: css({ h: "0.5rem", w: "7rem", overflow: "hidden", borderRadius: "0.125rem", bg: "var(--muted)" }),
-	prosperFill: css({ h: "100%", bg: "linear-gradient(90deg, #1e9b50, #0ea5e9, #f59e0b)" }),
-	outcomeScore: css({ fontSize: "1.125rem", fontWeight: "600", fontVariantNumeric: "tabular-nums" }),
-	wrapGap1: css({ display: "flex", flexWrap: "wrap", gap: "0.25rem" }),
-	stageCount: css({ borderRadius: "0.375rem", bg: "var(--muted)", px: "0.5rem", py: "0.25rem", fontSize: "11px" }),
-	tabular: css({ fontVariantNumeric: "tabular-nums" }),
-	belowGrid: css({ mt: "1.5rem", display: "grid", gap: "1.5rem", gridTemplateColumns: "minmax(0, 1fr)", lg: { gridTemplateColumns: "minmax(0, 1fr) minmax(0, 0.85fr)" } }),
-	cardSection: css({ minW: 0, border: "1px solid var(--ink)", bg: "var(--card)", p: "1rem" }),
-	cardSectionHead: css({ mb: "1rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }),
-	paragraph: css({ mb: "1rem", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)" }),
-	stack3: css({ "& > * + *": { mt: "0.75rem" } }),
-	dimensionCard: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", p: "0.75rem" }),
-	dimensionHead: css({ mb: "0.75rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem" }),
-	dimensionGrid: css({ display: "grid", gap: "0.5rem", sm: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" } }),
-	dimensionRow: css({ display: "grid", gridTemplateColumns: "4.5rem minmax(0, 1fr) 2.5rem", alignItems: "center", gap: "0.5rem" }),
-	progressTrack: css({ h: "0.5rem", overflow: "hidden", borderRadius: "0.125rem", bg: "var(--muted)" }),
-	progressFill: css({ h: "100%", bg: "var(--primary)" }),
-	rightTiny: css({ textAlign: "right", fontSize: "11px", fontVariantNumeric: "tabular-nums" }),
-	empty: css({ py: "2rem", textAlign: "center", fontSize: "0.875rem", color: "var(--muted-foreground)" }),
-	divideText: css({ fontSize: "0.875rem", "& > * + *": { borderTop: "1px solid var(--border)" } }),
-	replayStep: css({ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.75rem", py: "0.75rem" }),
-	statusPill: css({ borderRadius: "0.375rem", border: "1px solid var(--border)", px: "0.5rem", py: "0.25rem", fontSize: "0.75rem", color: "var(--muted-foreground)" }),
-	replayList: css({ "& > * + *": { borderTop: "1px solid var(--border)" } }),
-	replayCase: css({ display: "grid", gap: "0.75rem", px: "1rem", py: "0.75rem", gridTemplateColumns: "minmax(0, 1fr)", lg: { gridTemplateColumns: "10rem minmax(0, 1fr) 12rem" } }),
-	replayLeft: css({ display: "flex", flexWrap: "wrap", alignItems: "flex-start", gap: "0.5rem" }),
-	lineClamp2: css({ mt: "0.25rem", overflow: "hidden", fontSize: "0.75rem", lineHeight: "1.25rem", color: "var(--muted-foreground)", lineClamp: 2 }),
-	twoColNums: css({ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "0.5rem", fontSize: "0.75rem", fontVariantNumeric: "tabular-nums" }),
-	statBox: css({ borderRadius: "0.375rem", bg: "var(--muted)", p: "0.5rem" }),
-	mt1FontMedium: css({ mt: "0.25rem", fontWeight: "500" }),
-	centerContent: css({ display: "flex", minH: "16rem", alignItems: "center", justifyContent: "center", fontSize: "0.875rem", color: "var(--ink-soft)" }),
-};
-
 function textFromMessage(message: AgentMessage): string {
 	const content = (message as any).content;
 	if (typeof content === "string") return content;
@@ -215,7 +133,6 @@ function serializeModel(model: Model<any> | SharedModelInfo | undefined): Shared
 }
 
 async function loadBenchmarkData(): Promise<BenchmarkData> {
-	await getInitPromise();
 	const localMetadata = await sessions.getAllMetadata();
 	const localSessions = await Promise.all(
 		localMetadata.map(async (metadata) => {
@@ -240,8 +157,8 @@ async function loadBenchmarkData(): Promise<BenchmarkData> {
 		messages: session.messages,
 	}));
 	const [quizRecords, learnerState] = await Promise.all([
-		keatingStorage.getQuizResults().catch(() => [] as QuizResultRecord[]),
-		keatingStorage.getLearnerState().catch(() => null),
+		keatingStorage.getQuizResults(),
+		keatingStorage.getLearnerState(),
 	]);
 	return {
 		samples: [
@@ -251,12 +168,6 @@ async function loadBenchmarkData(): Promise<BenchmarkData> {
 		quizRecords,
 		feedbackEntries: learnerState?.feedbackHistory ?? [],
 	};
-}
-
-function useBenchmarkData() {
-	use(getInitPromise());
-	if (!dataPromise) dataPromise = loadBenchmarkData();
-	return use(dataPromise);
 }
 
 function modelKey(model: SharedModelInfo) {
@@ -563,39 +474,63 @@ function percent(value: number) {
 }
 
 function SourceTabs({ value, onChange }: { value: BenchmarkSource; onChange: (value: BenchmarkSource) => void }) {
-	const options: Array<{ value: BenchmarkSource; label: string; compactLabel: string; accessibleLabel: string }> = [
-		{ value: "shared", label: "Shared", compactLabel: "Shared", accessibleLabel: "Shared sessions" },
-		{ value: "all", label: "All local", compactLabel: "All", accessibleLabel: "Shared and private sessions" },
-		{ value: "local", label: "Private", compactLabel: "Local", accessibleLabel: "Private local sessions" },
-	];
-	return (
-		<div className={styles.sourceTabs}>
-			{options.map((option) => (
-				<button
-					key={option.value}
-					type="button"
-					aria-label={option.accessibleLabel}
-					className={cx(styles.sourceButton, value === option.value ? styles.sourceActive : styles.sourceInactive)}
-					onClick={() => onChange(option.value)}
-				>
-					<span className={styles.sourceCompactLabel}>{option.compactLabel}</span>
-					<span className={styles.sourceWideLabel}>{option.label}</span>
-				</button>
-			))}
-		</div>
-	);
+	return <div className="bench-source"><span>Evidence from</span><Segmented label="Evidence from" size="sm" value={value} onChange={onChange}
+		options={[{ value: "shared", label: "Shared" }, { value: "local", label: "Private" }, { value: "all", label: "Both" }]} /></div>;
 }
 
-function ReadinessBadge({ readiness }: { readiness: ModelAggregate["readiness"] }) {
-	const label = readiness === "stable" ? "Stable" : readiness === "rankable" ? "Rankable" : readiness === "provisional" ? "Provisional" : readiness === "sparse" ? "Sparse" : "Waiting";
-	const className = readiness === "stable" || readiness === "rankable"
-		? styles.readinessGood
-		: readiness === "provisional"
-			? styles.readinessProvisional
-			: readiness === "sparse"
-			? styles.readinessSparse
-			: styles.readinessWaiting;
-	return <span className={cx(styles.readinessBase, className)}>{label}</span>;
+type BenchRow = ModelAggregate & RankResult & { outcome: number; interval: ScoreInterval };
+
+const dimensions: [keyof ProsperVector, string][] = [
+	["performance", "Performance"], ["robustness", "Robustness"], ["outcomeLift", "Outcome lift"],
+	["sparseCaution", "Sparse caution"], ["personalization", "Personalization"],
+	["evidenceQuality", "Evidence quality"], ["retentionTransfer", "Transfer"],
+];
+
+function OutcomePlot({ row, leader }: { row: BenchRow; leader?: ScoreInterval }) {
+	const value = Math.round(row.outcome);
+    return <div className="bench-interval" style={{"--score":value+"%"} as React.CSSProperties}>
+      <IntervalPlot label={row.rank === null ? `${row.name}: ${value}. Too few signals for a range` : `${row.name}: ${value}, likely ${Math.round(row.interval.low)} to ${Math.round(row.interval.high)}`} band={leader && [leader.low,leader.high]}
+        data={[{label:row.name,value,range:row.rank === null ? undefined : [row.interval.low,row.interval.high]}]}/>
+      <small className="bench-mobile">PROSPER {row.prosperScore.toFixed(1)} · {formatNumber(row.signals)} signals</small>
+    </div>;
+}
+
+function ModelRow({ row, leader, index, partner }: { partner?:string; row: BenchRow; leader?: ScoreInterval; index: number }) {
+	const [expanded, setExpanded] = useState(false);
+	const id = useId();
+	const [visited, setVisited] = useState(false);
+	const split = [row.quizCount, row.explicitSignals, row.inferredSignals];
+	const splitText = split.map((n, i) => formatNumber(n) + " " + ["quiz", "explicit", "inferred"][i]).join(" · ");
+	const quiz = row.quizAverage === null ? "—" : percent(row.quizAverage);
+	const replayMix = Object.entries(row.outcomes.reduce<Partial<Record<ReplayStage, number>>>((counts, item) => {
+		counts[item.stage] = (counts[item.stage] ?? 0) + 1;
+		return counts;
+	}, {})).map(([stage, n]) => stage + " " + n).join(" · ");
+	return <tbody className="bench-model" data-unranked={row.rank === null} style={{ "--bench-order": Math.min(index, 12) } as React.CSSProperties}>
+		<tr onClick={event => { if (!(event.target as Element).closest("button,details,summary,a")) {setVisited(true); setExpanded(!expanded);} }}>
+			<td className="bench-rank">{row.rank ?? "—"}{row.tiedWithRank !== null && <small>tied with {row.tiedWithRank}{row.tiedWithRank !== 1 && partner && ` · ${partner}`}</small>}</td>
+			<th scope="row"><button type="button" className="bench-toggle" aria-expanded={expanded} aria-controls={id} onClick={() => { setVisited(true); setExpanded(!expanded); }}>
+				<KeatingGlyph name={expanded ? "chev" : "chevr"} />{row.name}
+			</button><small>{row.provider}</small></th>
+			<td className="bench-desktop"><b>{row.prosperScore.toFixed(1)}</b><Meter label="PROSPER" value={row.prosperScore} max={100} tone="data" /></td>
+			<td className="bench-outcome"><OutcomePlot row={row} leader={leader} /></td>
+			<td className="bench-desktop">{quiz}<small>{row.quizCount ? formatNumber(row.quizCount) + " graded" : "No quizzes yet"}</small></td>
+			<td className="bench-desktop">{formatNumber(row.signals)}<StackBar label={splitText} data={split.map((value,i) => ({label:["Quiz","Explicit","Inferred"][i],value}))}/></td>
+			<td className="bench-status"><Chip>{row.readiness[0].toUpperCase() + row.readiness.slice(1)}</Chip>{row.rank === null && <small>{row.signalsNeeded} more signals to rank</small>}</td>
+		</tr>
+		<tr className="bench-detail-row"><td colSpan={7}><div className="bench-reveal" id={id} aria-hidden={!expanded} data-open={expanded}><div>
+			{(expanded || visited) && <div className="bench-detail"><div><Eyebrow muted>PROSPER dimensions</Eyebrow>
+				{dimensions.map(([key, label]) => <div className="bench-dimension" key={key}><span>{label}</span>
+					<Meter label={label} max={1} value={row.prosper[key]} tone="data" /><b>{percent(row.prosper[key])}</b></div>)}</div>
+				<DefinitionList items={[
+					{ term: "Sessions", detail: formatNumber(row.sessions) + " · " + row.sharedSessions + " shared, " + row.localSessions + " private" },
+					{ term: "Signals", detail: splitText }, { term: "Replay mix", detail: replayMix || "—" },
+					{ term: "Tokens", detail: formatNumber(row.tokens) }, { term: "Cost", detail: formatCost(row.cost) },
+					{ term: "Latest", detail: formatDate(row.latestAt) }, { term: "Model ID", detail: row.key },
+					{ term: "Evidence", detail: percent(row.confidence) }, { term: "Quiz average", detail: quiz + " · " + row.quizCount + " graded" },
+				]} /></div>}
+		</div></div></td></tr>
+	</tbody>;
 }
 
 function filteredSamples(samples: SessionSample[], source: BenchmarkSource) {
@@ -606,8 +541,25 @@ function replayCasesFor(samples: SessionSample[], source: BenchmarkSource) {
 	return filteredSamples(samples, source).flatMap((sample) => extractReplayCases(sample, serializeModel(sample.model)));
 }
 
-function StagePill({ stage }: { stage: ReplayStage }) {
-	return <span className={styles.pill}>{stage}</span>;
+function ReplayBank({ cases }: { cases: ReplayCase[] }) {
+	const [stage, setStage] = useState<ReplayStage | "All">("All");
+	const [limit, setLimit] = useState(8);
+	const stages = Array.from(new Set(cases.map(item => item.stage)));
+	const visible = stage === "All" ? cases : cases.filter(item => item.stage === stage);
+	return <Card as="section" className="bench-bank">
+		<h2>Replay case bank</h2><p>Inspectable learner states used to build the model judgement.</p>
+		<div role="group" aria-label="Filter replay cases by stage" className="bench-chips">
+			{(["All", ...stages] as const).map(value => <Chip as="button" key={value} selected={stage === value}
+				onClick={() => { setStage(value); setLimit(8); }}>{value}</Chip>)}</div>
+		{visible.slice(0, limit).map(item => <article key={item.source + ":" + item.id} className="bench-case">
+			<div><Chip>{item.stage}</Chip><small>{item.signal}</small></div>
+			<div><h3>{item.sessionTitle}</h3><p>{item.learnerText}</p></div>
+			<div><b>{percent(item.outcomeScore)}</b><small>outcome</small></div>
+			<div><b>{prosperTotal(item.prosper).toFixed(1)}</b><small>PROSPER</small></div>
+		</article>)}
+		{!visible.length && <EmptyState heading="No replay cases yet"/>}
+		{visible.length > limit && <Button onClick={() => setLimit(limit + 8)}>Show more</Button>}
+	</Card>;
 }
 
 function ExplainerBlock({
@@ -620,29 +572,29 @@ function ExplainerBlock({
 	children: React.ReactNode;
 }) {
 	return (
-		<div className={styles.block}>
-			<div className={styles.blockHead}>
-				<span className={styles.mutedIcon}>{icon}</span>
-				<h3 className={styles.blockTitle}>{title}</h3>
+		<div className="bench-block">
+			<div className="bench-block-head" data-glyph-host>
+				<span className="bench-muted-icon">{icon}</span>
+				<h3 className="bench-block-title">{title}</h3>
 			</div>
-			<div className={styles.bodyText}>{children}</div>
+			<div className="bench-body-text">{children}</div>
 		</div>
 	);
 }
 
 function DefinitionRow({ label, value }: { label: string; value: string }) {
 	return (
-		<div className={styles.definitionRow}>
-			<div className={styles.definitionLabel}>{label}</div>
-			<div className={styles.definitionValue}>{value}</div>
+		<div className="bench-definition-row">
+			<div className="bench-definition-label">{label}</div>
+			<div className="bench-definition-value">{value}</div>
 		</div>
 	);
 }
 
 function KeatingBenchExplainer() {
 	return (
-		<section className={styles.explainerGrid}>
-			<ExplainerBlock icon={<BookOpenCheck size={18} />} title="What KeatingBench Tests">
+		<section className="bench-explainer-grid">
+			<ExplainerBlock icon={<KeatingGlyph name="help" size={18} />} title="What KeatingBench Tests">
 				<p>
 					KeatingBench evaluates teaching models by learner outcomes, not by generic chat preference. It looks for moments where a learner signals understanding, confusion, correction, transfer, review need, or dissatisfaction during a teaching session.
 				</p>
@@ -651,16 +603,16 @@ function KeatingBenchExplainer() {
 				</p>
 			</ExplainerBlock>
 
-			<ExplainerBlock icon={<Scale size={18} />} title="How The Score Works">
+			<ExplainerBlock icon={<KeatingGlyph name="ruler" size={18} />} title="How The Score Works">
 				<p>
 					The headline rank is the PROSPER score. Raw learner outcome is shown separately so a model cannot win only by making learners sound happy while ignoring robustness, transfer, or evidence quality.
 				</p>
 				<p>
-					The ranking adjusts for confidence. More replay cases increase trust in the score; sparse evidence remains visible but is marked as weak evidence.
+					Models with enough evidence are ordered by PROSPER. More replay cases increase trust in the score; sparse evidence remains visible but is marked as weak evidence.
 				</p>
 			</ExplainerBlock>
 
-			<ExplainerBlock icon={<ClipboardList size={18} />} title="Replay Case Bank">
+			<ExplainerBlock icon={<KeatingGlyph name="layers" size={18} />} title="Replay Case Bank">
 				<p>
 					A replay case is a learner state extracted from a session turn. KeatingBench captures the learner text, nearby assistant context, inferred feedback signal, topic context, and the teaching stage.
 				</p>
@@ -669,9 +621,9 @@ function KeatingBenchExplainer() {
 				</p>
 			</ExplainerBlock>
 
-			<ExplainerBlock icon={<Info size={18} />} title="Current Limitations">
+			<ExplainerBlock icon={<KeatingGlyph name="alert" size={18} />} title="Current Limitations">
 				<p>
-					Today this is deterministic scoring over observed session data. Provider replay execution is queued, so the page does not yet call every model on the same extracted learner states.
+					Today this is deterministic scoring over observed session data. Provider replay execution is not built, so the page does not yet call every model on the same extracted learner states.
 				</p>
 				<p>
 					Inferred feedback is useful but imperfect. Explicit thumbs up / down / confused signals and graded quiz results are now folded into each model's score — quizzes are the strongest evidence because they measure observed retrieval, not sentiment.
@@ -683,12 +635,12 @@ function KeatingBenchExplainer() {
 
 function MethodologyExplainer() {
 	return (
-		<section className={styles.methodology}>
-			<div className={styles.methodologyHead}>
-				<FileText size={18} className={styles.mutedIcon} />
-				<h2 className={styles.blockTitle}>Methodology</h2>
+		<section className="bench-methodology">
+			<div className="bench-methodology-head" data-glyph-host>
+				<KeatingGlyph name="book" size={18} className="bench-muted-icon" />
+				<h2 className="bench-block-title">Methodology</h2>
 			</div>
-			<div className={styles.twoGrid}>
+			<div className="bench-two-grid">
 				<DefinitionRow label="Outcome" value="A normalized learner signal. Thumbs up maps high, confused maps mid-low, thumbs down maps low. Inferred learner turns use the same score scale." />
 				<DefinitionRow label="Quiz evidence" value="Graded quiz results (objective auto-grading plus teacher-judged open answers) attributed to the model that taught the session. Scored as fraction correct; the highest-quality evidence in the vector." />
 				<DefinitionRow label="PROSPER" value="A weighted composite over performance, robustness, outcome lift, sparse-data caution, personalization, evidence quality, and retention or transfer. Most of these are scored by looking for keyword patterns in the tutor's reply, so treat it as a rough heuristic for ordering models, not a measurement of how much anyone learned." />
@@ -707,9 +659,9 @@ function MethodologyExplainer() {
 	);
 }
 
-function KeatingBenchContent() {
+export function KeatingBenchContent({ samples, quizRecords, feedbackEntries }: BenchmarkData) {
 	const posthog = usePostHog();
-	const { samples, quizRecords, feedbackEntries } = useBenchmarkData();
+	const allowed = useMotionAllowed();
 	const [source, setSource] = useState<BenchmarkSource>("shared");
 	const aggregates = useMemo(() => aggregateSamples(samples, source, quizRecords, feedbackEntries), [samples, source, quizRecords, feedbackEntries]);
 	// Only models with enough evidence get a place; the rest are listed as collecting evidence.
@@ -724,7 +676,7 @@ function KeatingBenchContent() {
 			acc.signals += row.signals;
 			acc.sessions += row.sessions;
 			acc.models += 1;
-			acc.ready += row.readiness === "rankable" || row.readiness === "stable" ? 1 : 0;
+			acc.ready += row.rank === null ? 0 : 1;
 			acc.quizzes += row.quizCount;
 			acc.explicit += row.explicitSignals;
 			return acc;
@@ -764,242 +716,73 @@ function KeatingBenchContent() {
 	};
 
 	return (
-		<>
-			<LearningInsightsHeader
-				current="bench"
-				context="Learning intelligence // Benchmark"
-				title="Model learning benchmark"
-				description="Compare teaching models using learner outcomes, quiz evidence, feedback signals, and inspectable replay cases."
-				actions={
-					<>
-						<SourceTabs value={source} onChange={setSource} />
-						<button
-							type="button"
-							className={styles.button}
-							onClick={exportLeaderboard}
-						>
-							<Download size={16} />
-							Export results
-						</button>
-					</>
-				}
-			/>
-			<main className={styles.main}>
-				<div className={styles.metricGrid}>
-					<LearningMetric icon={<Database size={18} />} label="Sessions" value={formatNumber(totals.sessions)} detail={`${formatNumber(samples.filter((sample) => sample.source === "shared").length)} shared cached`} />
-					<LearningMetric icon={<BarChart3 size={18} />} label="Models" value={formatNumber(totals.models)} detail={`${formatNumber(totals.ready)} ready for ranking`} />
-					<LearningMetric icon={<Activity size={18} />} label="Feedback signals" value={formatNumber(totals.signals)} detail={`${formatNumber(totals.explicit)} explicit | ${READINESS_THRESHOLDS.rankable} for ranked status`} />
-					<LearningMetric icon={<BookOpenCheck size={18} />} label="Graded quizzes" value={formatNumber(totals.quizzes)} detail="Strongest evidence: observed retrieval performance" />
+		<LearningShell current="benchmark" actions={<IconButton className="bench-export-mobile" glyph="export" label="Export results" onClick={exportLeaderboard} />} controls={<>
+			<SourceTabs value={source} onChange={setSource} />
+			<Button className="bench-export-desktop" size="sm" variant="ghost" glyph="export" onClick={exportLeaderboard}>Export results</Button>
+		</>}>
+			<main className="bench-main" data-motion={allowed}>
+				<div className="bench-overview">
+					<Card as="section" tone="hard" className="bench-verdict k-halftone">
+						<Eyebrow>Ranking</Eyebrow>
+						<h2 role="status"><span className="bench-desktop">{rankingSummary}</span><span className="bench-mobile">{rankingSummary.split(". ")[0].split(": ")[0].replace(/[.]?$/, ".")}</span></h2>
+                        <p className="bench-mobile">{totals.ready >= 2 ? (rows[1].tiedWithRank === 1 ? "The current evidence cannot separate the top two models." : "The two leading models have separate outcome ranges.") : totals.ready === 1 ? "Ranking needs a second model to compare." : `A model needs ${READINESS_THRESHOLDS.provisional} signals to rank.`}</p>
+						{totals.ready >= 2 && <p>{rows[0].name} and {rows[1].name} score {rows[0].prosperScore.toFixed(1)} and {rows[1].prosperScore.toFixed(1)} on PROSPER, a gap of {(rows[0].prosperScore - rows[1].prosperScore).toFixed(1)} points.
+							{" "}{rows[1].tiedWithRank === 1 ? "The first two models’ outcome ranges overlap." : "The first two models’ outcome ranges are separate."}</p>}
+						<div className="bench-chips">
+							<Chip>{formatNumber(totals.models)} {totals.models === 1 ? "model" : "models"}</Chip><Chip>{formatNumber(totals.ready)} ranked</Chip>
+							<Chip>{formatNumber(totals.signals)} {totals.signals === 1 ? "signal" : "signals"}</Chip><Chip>{formatNumber(totals.quizzes)} graded {totals.quizzes === 1 ? "quiz" : "quizzes"}</Chip>
+						</div>
+						<small>{formatNumber(totals.sessions)} sessions · {formatNumber(samples.filter(sample => sample.source === "shared").length)} shared cached · {formatNumber(totals.explicit)} explicit signals</small>
+						<Note data-glyph-host glyph="alert"><span className="bench-mobile">Different learners and topics can affect the scores.</span><span className="bench-desktop">Each model is scored on the sessions it happened to teach, with different learners and topics. A gap may come from who and what it taught.</span></Note>
+					</Card>
+					<Card as="section" className="bench-threshold">
+						<h2><Eyebrow muted>How much evidence a model needs</Eyebrow></h2>
+						<div className="bench-threshold-chart">
+              <Timeline domain={[0,100]} label="Readiness thresholds in signals" lanes={[{label:"Signals",bands:Object.entries(READINESS_THRESHOLDS).map(([band,end],index,entries) => ({
+                label:`To ${band === "provisional" ? "ranked" : band} threshold`, start:index ? entries[index-1][1] : 0,end,
+              }))}]}/>
+              <div className="bench-threshold-labels">{Object.entries(READINESS_THRESHOLDS).map(([band,value]) =>
+                <span key={band} style={{left:value+"%"}}><b>{value}</b>{band === "provisional" ? "ranked" : band}</span>)}</div>
+            </div>
+						<p>A model is placed once it has {READINESS_THRESHOLDS.provisional} signals. Graded quizzes are the strongest evidence. Inferred signals are the weakest.</p>
+					</Card>
 				</div>
-
-
-				<section className={styles.section}>
-					<div className={styles.sectionHeader}>
-						<div>
-							<h2 className={styles.sectionTitle}>Leaderboard</h2>
-							<p className={styles.sectionSubtitle}>PROSPER orders the ranked models; outcome is the direct learner-signal score with its 95% range.</p>
-							<p className={styles.sectionSubtitle} role="status">{rankingSummary}</p>
-						</div>
-						<div className={styles.inlineMuted}>
-							<Scale size={15} />
-							<span>{source === "shared" ? "Shared session data" : source === "local" ? "Private session data" : "Shared plus private data"}</span>
-						</div>
+				<Card as="section" className="bench-board" aria-label="Leaderboard">
+					<table><caption className="bench-sr">Leaderboard. PROSPER orders the ranked models.</caption>
+						<thead><tr>{["Rank", "Model", "PROSPER"].map(label => <th key={label}>{label}</th>)}
+							<th>Outcome, with its 95% range<span className="bench-axis"><i>0</i><i>50</i><i>100</i></span></th>
+							<th>Quizzes</th><th>Signals</th><th>Status</th>
+						</tr></thead>
+						{rows.map((row, index) => <ModelRow key={row.key} row={row} index={index} partner={row.tiedWithRank ? rows[row.tiedWithRank-1]?.name : undefined} leader={rows[0]?.rank === 1 ? rows[0].interval : undefined} />)}
+					</table>
+					{!rows.length && <EmptyState heading="No benchmarkable sessions in this view."/>}
+					<div className="bench-legend">
+						{["quiz", "explicit", "inferred"].map((label, i) => <span key={label}><i style={{ background: "var(--series-" + (i + 1) + ")" }} />{label}</span>)}
+						<span><i className="bench-band-key" />The shaded band is the leader’s range. Ranked models that touch it are tied with the leader.</span>
 					</div>
-					<div className={styles.overflowX}>
-						<table className={styles.table}>
-							<thead className={styles.thead}>
-								<tr>
-									<th className={styles.thRank}>Rank</th>
-									<th className={styles.th}>Model</th>
-									<th className={styles.th}>PROSPER</th>
-									<th className={styles.th}>Outcome</th>
-									<th className={styles.th}>Quiz avg</th>
-									<th className={styles.th}>Replay mix</th>
-									<th className={styles.th}>Signals</th>
-									<th className={styles.th}>Sessions</th>
-									<th className={styles.th}>Tokens</th>
-									<th className={styles.th}>Cost</th>
-									<th className={styles.th}>Status</th>
-								</tr>
-							</thead>
-							<tbody className={styles.tbody}>
-								{rows.length === 0 ? (
-									<tr>
-										<td colSpan={11} className={styles.emptyCell}>
-											No benchmarkable sessions in this view.
-										</td>
-									</tr>
-								) : rows.map((row) => (
-									<tr key={row.key} className={styles.tableRow}>
-										<td className={styles.tdRank}>
-											{row.rank === null
-												? <span className={styles.smallMuted} title={`Needs ${row.signalsNeeded} more signals to be ranked`}>Not ranked<span className={css({ srOnly: true })}>: needs {row.signalsNeeded} more signals</span></span>
-												: <>{row.rank}{row.tiedWithRank !== null && <div className={styles.smallMuted}>tied with {row.tiedWithRank}</div>}</>}
-										</td>
-										<td className={styles.modelCell}>
-											<div className={cx(styles.truncate, styles.fontMedium)}>{row.name}</div>
-											<div className={cx(styles.smallMuted, styles.truncate, css({ mt: "0.25rem" }))}>{row.provider} | {row.key.split(":").slice(1).join(":")}</div>
-										</td>
-										<td className={styles.td}>
-											<div className={styles.scoreRow}>
-												<div className={styles.scoreNumber}>{row.prosperScore.toFixed(1)}</div>
-												<div className={styles.barTrack}>
-													<div className={styles.prosperFill} style={{ width: `${Math.max(2, Math.min(100, row.prosperScore))}%` }} />
-												</div>
-											</div>
-											<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>Evidence {Math.round(row.confidence * 100)}%</div>
-										</td>
-										<td className={styles.td}>
-											<div className={styles.outcomeScore}>{row.outcome.toFixed(1)}</div>
-											<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>
-												{row.signals < 2 ? "Too few signals for a range" : `Likely ${Math.round(row.interval.low)} to ${Math.round(row.interval.high)}`}
-											</div>
-										</td>
-										<td className={styles.td}>
-											<div className={styles.outcomeScore}>{row.quizAverage === null ? "—" : `${Math.round(row.quizAverage * 100)}%`}</div>
-											<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>{row.quizCount > 0 ? `${formatNumber(row.quizCount)} graded` : "No quizzes yet"}</div>
-										</td>
-										<td className={styles.td}>
-											<div className={styles.wrapGap1}>
-												{(["confusion-recovery", "correction", "transfer", "retention"] as ReplayStage[]).map((stage) => {
-													const count = row.outcomes.filter((outcome) => outcome.stage === stage).length;
-													return count > 0 ? <span key={stage} className={styles.stageCount}>{stage}: {count}</span> : null;
-												})}
-											</div>
-										</td>
-										<td className={styles.td}>
-												<div className={styles.tabular}>{formatNumber(row.signals)}</div>
-												<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>{formatNumber(row.quizCount)} quiz | {formatNumber(row.explicitSignals)} explicit | {formatNumber(row.inferredSignals)} inferred</div>
-											</td>
-										<td className={styles.td}>
-											<div className={styles.tabular}>{formatNumber(row.sessions)}</div>
-											<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>{formatNumber(row.sharedSessions)} shared | {formatNumber(row.localSessions)} private</div>
-										</td>
-										<td className={cx(styles.td, styles.tabular)}>{formatNumber(row.tokens)}</td>
-										<td className={cx(styles.td, styles.tabular)}>{formatCost(row.cost)}</td>
-										<td className={styles.td}>
-											<ReadinessBadge readiness={row.readiness} />
-											{row.rank === null && <div className={cx(styles.smallMuted, css({ mt: "0.5rem" }))}>{row.signalsNeeded} more signals to rank</div>}
-											<div className={cx(styles.smallMuted, css({ mt: "0.5rem" }))}>Latest {formatDate(row.latestAt)}</div>
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</div>
-				</section>
-
-				<div className={styles.belowGrid}>
-					<section className={styles.cardSection}>
-						<div className={styles.cardSectionHead}>
-							<h2 className={styles.sectionTitle}>PROSPER dimensions</h2>
-							<LineChart size={18} className={styles.mutedIcon} />
-						</div>
-						<p className={styles.paragraph}>
-							Each bar shows one objective in the judgement vector. The final score is weighted across these objectives so narrow wins are less likely to outrank balanced teaching behavior.
-						</p>
-						<div className={styles.stack3}>
-							{rows.slice(0, 5).map((row) => (
-								<div key={row.key} className={styles.dimensionCard}>
-									<div className={styles.dimensionHead}>
-										<div className={cx(styles.truncate, css({ fontSize: "0.875rem", fontWeight: "500" }))}>{row.name}</div>
-										<div className={cx(styles.smallMuted, styles.tabular)}>{row.prosperScore.toFixed(1)}</div>
-									</div>
-									<div className={styles.dimensionGrid}>
-										{[
-											["Perf", row.prosper.performance],
-											["Robust", row.prosper.robustness],
-											["Lift", row.prosper.outcomeLift],
-											["Sparse", row.prosper.sparseCaution],
-											["Personal", row.prosper.personalization],
-											["Evidence", row.prosper.evidenceQuality],
-											["Transfer", row.prosper.retentionTransfer],
-										].map(([label, value]) => (
-											<div key={label as string} className={styles.dimensionRow}>
-												<div className={styles.tinyMuted}>{label}</div>
-												<div className={styles.progressTrack}>
-													<div className={styles.progressFill} style={{ width: percent(value as number) }} />
-												</div>
-												<div className={styles.rightTiny}>{percent(value as number)}</div>
-											</div>
-										))}
-									</div>
-								</div>
-							))}
-							{rows.length === 0 && <div className={styles.empty}>No PROSPER dimensions yet</div>}
-						</div>
-					</section>
-
-					<section className={styles.cardSection}>
-						<div className={styles.cardSectionHead}>
-							<h2 className={styles.sectionTitle}>Cross-model replay</h2>
-							<UploadCloud size={18} className={styles.mutedIcon} />
-						</div>
-						<p className={styles.paragraph}>
-							Replay turns human session data into reusable benchmark states. Today each model is scored only on the sessions it actually taught, so models are not yet compared on the same learner states. Sending matched states to every model is not built.
-						</p>
-						<div className={styles.divideText}>
-							{[
-								{ item: "shared-session ingestion", detail: `${formatNumber(replayCases.length)} replay states extracted`, status: "live" },
-								{ item: "deterministic replay scoring", detail: "PROSPER vector runs over observed learner states", status: "live" },
-								{ item: "provider replay execution", detail: "matched learner states sent to every model for a like-for-like comparison", status: "not built" },
-							].map(({ item, detail, status }) => (
-								<div key={item} className={styles.replayStep}>
-									<div className={styles.min0}>
-										<div className={cx(styles.truncate, styles.fontMedium)}>{item}</div>
-										<div className={cx(styles.smallMuted, css({ mt: "0.25rem" }))}>{detail}</div>
-									</div>
-									<span className={styles.statusPill}>{status}</span>
-								</div>
-							))}
-						</div>
-					</section>
+				</Card>
+				<div className="bench-lower">
+					<ReplayBank key={source} cases={replayCases} />
+					<Card as="section" className="bench-guide">
+						<h2>How to read this</h2>
+						<DefinitionList items={[
+							{ term: "Outcome", detail: "A learner signal from 0 to 100, drawn from feedback, transcript cues and graded quizzes." },
+							{ term: "PROSPER", detail: "A weighted mix of seven dimensions. Most use keyword patterns, so treat it as a rough ordering." },
+							{ term: "Not built", detail: "Sending the same learner moment to every model for a like-for-like comparison." },
+						]} />
+						<details><summary>How these scores are computed, and what they cannot show</summary>
+							<KeatingBenchExplainer /><MethodologyExplainer />
+						</details>
+						<h3>Cross-model replay</h3>
+						<DefinitionList items={[
+							{ term: "Session ingestion", detail: formatNumber(replayCases.length) + " replay states extracted · live" },
+							{ term: "Deterministic replay scoring", detail: "PROSPER vector runs over observed learner states · live" },
+							{ term: "Provider replay execution", detail: "Matched learner states sent to every model for a like-for-like comparison · not built" },
+						]} />
+					</Card>
 				</div>
-
-				<section className={styles.section}>
-					<div className={styles.sectionHeader}>
-						<div>
-							<h2 className={styles.sectionTitle}>Replay case bank</h2>
-							<p className={styles.sectionSubtitle}>Inspectable learner states used to build the model judgement.</p>
-						</div>
-						<Medal size={18} className={styles.mutedIcon} />
-					</div>
-					<div className={styles.replayList}>
-						{replayCases.slice(0, 8).map((replayCase) => (
-							<div key={replayCase.id} className={styles.replayCase}>
-								<div className={styles.replayLeft}>
-									<StagePill stage={replayCase.stage} />
-									<span className={styles.pill}>{replayCase.signal}</span>
-								</div>
-								<div className={styles.min0}>
-									<div className={cx(styles.truncate, css({ fontSize: "0.875rem", fontWeight: "500" }))}>{replayCase.sessionTitle}</div>
-									<p className={styles.lineClamp2}>
-										{replayCase.learnerText}
-									</p>
-								</div>
-								<div className={styles.twoColNums}>
-									<div className={styles.statBox}>
-										<div className={styles.mutedIcon}>Outcome</div>
-										<div className={styles.mt1FontMedium}>{Math.round(replayCase.outcomeScore * 100)}%</div>
-									</div>
-									<div className={styles.statBox}>
-										<div className={styles.mutedIcon}>PROSPER</div>
-										<div className={styles.mt1FontMedium}>{prosperTotal(replayCase.prosper).toFixed(1)}</div>
-									</div>
-								</div>
-							</div>
-						))}
-						{replayCases.length === 0 && <div className={styles.empty}>No replay cases yet</div>}
-					</div>
-				</section>
-
-				<details className={styles.howDetails}>
-					<summary className={styles.howSummary}>How these scores are computed, and what they cannot show</summary>
-					<KeatingBenchExplainer />
-					<MethodologyExplainer />
-				</details>
 			</main>
-		</>
+		</LearningShell>
 	);
 }
 
@@ -1009,16 +792,46 @@ export function KeatingBench() {
 		description: "Rank teaching models by shared learner-session outcomes and feedback signals.",
 		canonical: "https://keating.help/bench",
 	});
-	return (
-		<div className={cx("retro-layout", "retro-page", styles.page)}>
-			<Nav />
-			<Suspense fallback={
-				<div className={styles.centerContent}>
-					Loading KeatingBench...
-				</div>
-			}>
-				<KeatingBenchContent />
-			</Suspense>
-		</div>
-	);
+	const [attempt, setAttempt] = useState(0);
+	const [data, setData] = useState<BenchmarkData | null>(null);
+	const [failure, setFailure] = useState<"startup" | "evidence" | null>(null);
+	useEffect(() => {
+		let active = true;
+		async function load() {
+			try {
+				await getInitPromise();
+			} catch {
+				if (active) setFailure("startup");
+				return;
+			}
+			if (!active) return;
+			try {
+				const result = await loadBenchmarkData();
+				if (active) setData(result);
+			} catch {
+				if (active) setFailure("evidence");
+			}
+		}
+		void load();
+		return () => { active = false; };
+	}, [attempt]);
+
+	function retry() {
+		// Storage initialization is cached for the lifetime of the app.
+		if (failure === "startup") {
+			window.location.reload();
+			return;
+		}
+		setFailure(null);
+		setAttempt(value => value + 1);
+	}
+
+	return <div className="bench-page">
+		{data ? <KeatingBenchContent {...data} /> : <LearningShell current="benchmark">
+			<main className="bench-state">{failure ? <>
+				<p role="alert">Could not load benchmark evidence.</p>
+				<Button onClick={retry}>Try again</Button>
+			</> : <Loading size="page" label="Loading KeatingBench..."/>}</main>
+		</LearningShell>}
+	</div>;
 }
