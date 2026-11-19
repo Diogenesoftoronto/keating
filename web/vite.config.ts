@@ -496,15 +496,10 @@ export default defineConfig({
         // initialization, pending sign-in callbacks, and unsaved composers.
         importScripts: ["__sw__.js"],
         globIgnores: ["**/__sw__.js", "**/sw-update-reload.js"],
-        // Never substitute the precached SPA shell for share routes, API
-        // routes, or hashed assets. A stale service worker serving the old
-        // index.html for /s/:id caused "module script … MIME type text/html"
-        // (the shell referenced an asset hash the new server no longer has).
-        // Share/API routes must reach the server (also required for the
-        // server-rendered OpenGraph meta on /s/:id).
-        // Report pages, their interactive examples and PDFs are standalone
-        // documents. Let navigations reach the requested asset in an installed PWA.
-        navigateFallbackDenylist: [/^\/s\//, /^\/api\//, /^\/assets\//, /^\/reports\//, /^\/(?:__preview__|__virtual__|oauth|notorganic)\//, /\.pdf(?:\?|$)/i],
+        // Let the navigation route below handle `/` instead of matching it to
+        // the precached index.html before Workbox considers runtime routes.
+        directoryIndex: null,
+        navigateFallback: null,
         // vite-plugin-pwa FAILS the build if a precached file exceeds this
         // limit (it does not silently skip), so it must stay above the largest
         // emitted chunk. sandbox-export is currently ~4.3MB; we round up to
@@ -513,6 +508,16 @@ export default defineConfig({
         // exceeding this cap.
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6MB
         runtimeCaching: [
+          {
+            // Online reloads must load the deployed page and its current
+            // hashed bundles. Retain the precached app shell for offline use.
+            // Server-rendered shares, reports, auth and NodePod are separate paths.
+            urlPattern: ({ request, url, sameOrigin }) => sameOrigin && request.mode === "navigate"
+              && !/^\/(?:s|api|assets|reports|__preview__|__virtual__|oauth|notorganic)(?:\/|$)/.test(url.pathname)
+              && !/\.pdf$/i.test(url.pathname),
+            handler: "NetworkOnly",
+            options: { precacheFallback: { fallbackURL: "/index.html" } },
+          },
           {
             // Explicit Julia installation saves both local runtime assets.
             // Keep this before generic asset rules so a first offline preview
